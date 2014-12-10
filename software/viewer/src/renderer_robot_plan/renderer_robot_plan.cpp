@@ -20,31 +20,8 @@
 #define PARAM_KD_INC 1
 
 #define RENDERER_NAME "Planning"
-#define PARAM_WIRE "Show BBoxs For Meshes"  
-#define PARAM_HIDE "Hide Plan"  
-//#define PARAM_USE_COLORMAP "Use Colormap"
 #define PARAM_PLAN_PART "Part of Plan"  
-#define PARAM_SHOW_DURING_CONTROL "During Control"  
-#define DRAW_PERSIST_SEC 4
-#define PARAM_START_PLAN "Start Planning"
-#define PARAM_SEND_COMMITTED_PLAN "Send Plan"
-#define PARAM_ADJUST_ENDSTATE "Adjust end keyframe"
 #define PARAM_SHOW_FULLPLAN "Show Full Plan"	
-#define PARAM_SHOW_KEYFRAMES "Show Keyframes"
-#define PARAM_SSE_KP_LEFT "Kp_L"  
-#define PARAM_SSE_KD_LEFT "Kd_L"  
-#define PARAM_SSE_KP_RIGHT "Kp_R"  
-#define PARAM_SSE_KD_RIGHT "Kd_R"
-#define PARAM_MANIP_PLAN_MODE "ManipPlnr Mode"
-#define PARAM_EXEC_SPEED "EE Speed Limit(cm/s)"
-#define PARAM_EXEC_ANG_SPEED "Joint Speed Limit(deg/s)"
-#define PARAM_UPDATE_PLANNER_PARAMS "Update Params"
-#define PARAM_PLAN_ADJUST_MODE "Plan Adjustment Filter"
-#define PARAM_MANIP_PLAN_INITSEED_MODE "ManipPlanFromCurrentState"
-#define PARAM_PLAN_USING_BDI_HEIGHT_MODE "Plan & Control w BDI Height"
-#define PARAM_ADJUST_PLAN_TO_CURRENT_POSE "Adjust Plan To Current Pose"
-#define PARAM_ADJUST_PLAN_AND_REACH "Achieve First Posture"
-#define PARAM_COMPENSATE_LAST_FRAME_FOR_SSE "Compensate for SSE"
 
 using namespace std;
 using namespace boost;
@@ -56,9 +33,6 @@ _renderer_free (BotRenderer *super)
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
   free(self);
 }
-
-
-//=================================
 
 
 // Convert number to jet colour coordinates
@@ -78,7 +52,6 @@ static inline void jet_rgb(float value,float rgb[]){
    }
   }
 }
-
 
 static void 
 draw_state(BotViewer *viewer, BotRenderer *super, uint i, float rgb[]){
@@ -199,93 +172,6 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
 static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) ehandler->user;
-  if((ehandler->picking==0)||(self->selection_enabled==0)){
-    //fprintf(stderr, "Ehandler Not active\n");
-   (*self->selection)  = " ";
-    return 0;
-  }
- // fprintf(stderr, "RobotPlanRenderer Ehandler Activated\n");
-  self->clicked = 1;
-  //fprintf(stderr, "Mouse Press : %f,%f\n",ray_start[0], ray_start[1]);
-  collision::Collision_Object * intersected_object = NULL;
-   if((self->robotPlanListener->_is_manip_plan) && 
-      (self->selected_keyframe_index!=-1) &&
-      (self->robotPlanListener->_gl_robot_keyframe_list.size()>0) &&
-      (self->selected_keyframe_index > 0) &&
-      (self->selected_keyframe_index < self->robotPlanListener->_gl_robot_keyframe_list.size())
-     )
-   {
-   // cout << "keyframe: " << self->selected_keyframe_index << " " << self->robotPlanListener->_gl_robot_keyframe_list.size()<< endl;
-    self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object ); 
-    if( intersected_object != NULL ){
-        std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
-        std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
-        (*self->selection)  = std::string(intersected_object->id().c_str());
-        
-	      std::string body_name = self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_unique_name; 
-        self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->highlight_body(body_name);
-        //self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->highlight_link((*self->selection));
-     }
-
-   }
-   else{
-    if(self->selected_plan_index < self->robotPlanListener->_gl_robot_list.size())
-    {
-      self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->_collision_detector->ray_test( self->ray_start, self->ray_end, intersected_object );
-      if( intersected_object != NULL ){
-          std::cout << "prev selection :" << (*self->selection)  <<  std::endl;
-          std::cout << "intersected :" << intersected_object->id().c_str() <<  std::endl;
-          (*self->selection)  = std::string(intersected_object->id().c_str());
-          self->robotPlanListener->_gl_robot_list[self->selected_plan_index]->highlight_link((*self->selection));
-       }// end if
-     }// end if
-   }
-
-
-    if((event->button==3) &&(event->type==GDK_2BUTTON_PRESS)) // right dbl clk
-    {
-      string name(self->renderer.name);
-      self->_renderer_foviate=!self->_renderer_foviate;
-      (*self->_rendererFoviationSignalRef)((void*)self->viewer,name,self->_renderer_foviate); 
-    }
-
-  if((self->robotPlanListener->_is_manip_plan) && 
-     (((*self->selection)  != " ")||((*self->marker_selection)  != " ")) &&
-     (event->button==1) &&
-     (self->selected_keyframe_index< self->robotPlanListener->_gl_robot_keyframe_list.size()) &&
-     (event->type==GDK_2BUTTON_PRESS) 
-    )
-  {
-
-   if((*self->marker_selection)  == " ")
-    cout << "DblClk: " << (*self->selection) << endl;
-   else
-    cout << "DblClk on Marker: " << (*self->marker_selection) << endl;
-    // On double click create/toggle  local copies of right and left sticky hand duplicates and spawn them with markers
-    if(self->selected_keyframe_index!=-1)// dbl clk on keyframe then toogle 
-    { 
-
-      bool markeractive = false;
-
-      bool toggle=true;
-
-      
-      if(!toggle){
-        (*self->marker_selection)  = " ";
-      }
-    }
-   return 1;// consumed if pop up comes up.    
-  }
-  else if(((*self->marker_selection)  != " "))
-  {
-    self->dragging = 1;
-    
-    KDL::Frame T_world_marker;
-    //Marker Foviation Logic
-    self->marker_offset_on_press << self->ray_hit[0]-T_world_marker.p[0],self->ray_hit[1]-T_world_marker.p[1],self->ray_hit[2]-T_world_marker.p[2]; 
-    std::cout << "RendererRobotPlan: Event is consumed" <<  std::endl;
-    return 1;// consumed
-  }
 
   bot_viewer_request_redraw(self->viewer);
   return 0;
@@ -341,161 +227,12 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
 }
 
 
-
-/*static void keyboardSignalCallback(int keyval, bool is_pressed)
-{
-  if(is_pressed) 
-  {
-    cout << "RendererRobotPlan::KeyPress Signal Received:  Keyval: " << keyval << endl;
-  }
-  else {
-    cout << "RendererRobotPlan::KeyRelease Signal Received: Keyval: " << keyval << endl;
-  }
-}*/
-
-// ------------------------END Event Handling-------------------------------------------
-
-static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel, 
-                               const drc_utime_t *msg, void *user){
-  RendererRobotPlan *self = (RendererRobotPlan*) user;
-  self->robot_utime = msg->utime;
-}
-
-static void onPlanExecuteEvent (const lcm_recv_buf_t * buf, const char *channel, 
-                               const drc_utime_t *msg, void *user)
-{
-    RendererRobotPlan *self = (RendererRobotPlan*) user;
-    if((!self->robotPlanListener->_current_plan_committed)&&(self->plan_execute_button!=NULL))
-    {
-      gtk_widget_destroy (self->plan_execute_button);
-      self->plan_execute_button= NULL;
-      self->robotPlanListener->_current_plan_committed = true;
-    }
-}
-
-static void onPlanRejectEvent (const lcm_recv_buf_t * buf, const char *channel, 
-                               const drc_robot_plan_t *msg, void *user)
-{
-    RendererRobotPlan *self = (RendererRobotPlan*) user;
-}
-
-static void
-onAtlasStatus(const lcm_recv_buf_t * buf, const char *channel, const drc_atlas_status_t *msg, void *user_data){
-  RendererRobotPlan *self = (RendererRobotPlan*) user_data;
-  self->atlas_state = msg->behavior;
-  self->atlas_status_utime = msg->utime; 
-}
-
-static void update_planar_params( void *user)
-{
-    RendererRobotPlan *self = (RendererRobotPlan*) user;  
-                            
-     {                                    
-       drc::plan_execution_speed_t msg;
-       msg.utime = bot_timestamp_now();
-       msg.speed = (M_PI/180)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_ANG_SPEED); //pub in rads/s; converting from deg/s
-       self->lcm->publish("DESIRED_JOINT_SPEED", &msg);
-       msg.speed = (0.01)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_SPEED);//pub in m/s; converting from cm/s
-       self->lcm->publish("DESIRED_EE_ARC_SPEED", &msg);
-     }
-     
-     {
-       drc::manip_plan_control_t msg;
-       msg.utime= bot_timestamp_now();
-       msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_MANIP_PLAN_MODE);
-        if(msg.mode!=1)
-        {
-          self->adjust_endstate = true;
-          bot_gtk_param_widget_set_bool(self->pw, PARAM_ADJUST_ENDSTATE,self->adjust_endstate);
-        }
-       self->lcm->publish("MANIP_PLANNER_MODE_CONTROL", &msg);
-     }
-     {  
-       drc::plan_adjust_mode_t msg;
-       msg.utime = bot_timestamp_now();
-       msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_MANIP_PLAN_INITSEED_MODE);
-       self->lcm->publish("MANIP_PLAN_FROM_CURRENT_STATE", &msg);
-     }
-              
-     {
-       drc::plan_adjust_mode_t msg;
-       msg.utime = bot_timestamp_now();
-       msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_PLAN_USING_BDI_HEIGHT_MODE);
-       self->lcm->publish("PLAN_USING_BDI_HEIGHT", &msg);
-     }
-
-}
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) user;
-  if(! strcmp(name, PARAM_WIRE)) {
-    self->visualize_bbox = bot_gtk_param_widget_get_bool(pw, PARAM_WIRE);
-  }  else if(! strcmp(name,PARAM_ADJUST_ENDSTATE)) {
-    self->adjust_endstate = bot_gtk_param_widget_get_bool(pw, PARAM_ADJUST_ENDSTATE);
-  }  else if(! strcmp(name,PARAM_SHOW_FULLPLAN)) {
+  if(! strcmp(name,PARAM_SHOW_FULLPLAN)) {
     self->show_fullplan = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_FULLPLAN);
-  }  else if(! strcmp(name,PARAM_SHOW_KEYFRAMES)) {
-    self->show_keyframes = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_KEYFRAMES);
-  }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
-    self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->_received_plan) );
   }
-  else if(!strcmp(name,  PARAM_EXEC_SPEED)){ 
-    drc::plan_execution_speed_t msg;
-    msg.utime = bot_timestamp_now();
-    msg.speed = (0.01)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_SPEED);//pub in m/s; converting from cm/s
-    self->lcm->publish("DESIRED_EE_ARC_SPEED", &msg);
-  }
-  else if(!strcmp(name,  PARAM_EXEC_ANG_SPEED)){ 
-    drc::plan_execution_speed_t msg;
-    msg.utime = bot_timestamp_now();
-    msg.speed = (M_PI/180)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_ANG_SPEED); //pub in rads/s; converting from deg/s
-    self->lcm->publish("DESIRED_JOINT_SPEED", &msg);
-  }
-  else if(!strcmp(name,PARAM_UPDATE_PLANNER_PARAMS))
-  {
-     update_planar_params(self);
-  }
-  else if(! strcmp(name, PARAM_MANIP_PLAN_MODE)){
-    drc::manip_plan_control_t msg;
-    msg.utime = self->robot_utime;
-    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_MANIP_PLAN_MODE);
-    if(msg.mode!=1)
-    {
-      self->adjust_endstate = true;
-      bot_gtk_param_widget_set_bool(pw, PARAM_ADJUST_ENDSTATE,self->adjust_endstate);
-    }
-    self->lcm->publish("MANIP_PLANNER_MODE_CONTROL", &msg);
-  }
-  else if(! strcmp(name, PARAM_ADJUST_PLAN_TO_CURRENT_POSE)){
-    drc::plan_adjust_mode_t msg;
-    msg.utime = self->robot_utime;
-    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
-    self->lcm->publish("ADJUST_PLAN_TO_CURRENT_PELVIS_POSE", &msg);
-  }
-  else if(! strcmp(name, PARAM_ADJUST_PLAN_AND_REACH)){
-    drc::plan_adjust_mode_t msg;
-    msg.utime = self->robot_utime;
-    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
-    self->lcm->publish("ADJUST_PLAN_AND_REACH", &msg);
-  }
-  else if(! strcmp(name, PARAM_MANIP_PLAN_INITSEED_MODE)){
-    drc::plan_adjust_mode_t msg;
-    msg.utime = self->robot_utime;
-    msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_MANIP_PLAN_INITSEED_MODE);
-    self->lcm->publish("MANIP_PLAN_FROM_CURRENT_STATE", &msg);
-  }
-  else if(! strcmp(name, PARAM_PLAN_USING_BDI_HEIGHT_MODE)){
-    drc::plan_adjust_mode_t msg;
-    msg.utime = self->robot_utime;
-    msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_PLAN_USING_BDI_HEIGHT_MODE);
-    self->lcm->publish("PLAN_USING_BDI_HEIGHT", &msg);
-  }
-  else if(! strcmp(name, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE)){
-    drc::plan_adjust_mode_t msg;
-    msg.utime = self->robot_utime;
-    msg.mode = (int) bot_gtk_param_widget_get_bool(self->pw,PARAM_PLAN_ADJUST_MODE);
-    self->lcm->publish("MOVE_TO_COMPENSATE_SSE", &msg);
-  }  
   bot_viewer_request_redraw(self->viewer);
   
 }
@@ -531,72 +268,15 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
     
-    // C-style subscribe:
-    drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
-    drc_atlas_status_t_subscribe(self->lcm->getUnderlyingLCM(),"ATLAS_STATUS",onAtlasStatus,self);
-    drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_PLAN_EXECUTE_EVENT",onPlanExecuteEvent,self);
-    drc_robot_plan_t_subscribe(self->lcm->getUnderlyingLCM(),"REJECTED_ROBOT_PLAN",onPlanRejectEvent,self);
-
-    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
-
-    // commented out unused buttons:
-    // bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
-    // bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
-    // bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
-    self->adjust_endstate = true;
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, self->adjust_endstate, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FULLPLAN, 1, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_KEYFRAMES, 1, NULL);
- 
-    
+     
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
-    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
-                                                    
-    bot_gtk_param_widget_add_separator (self->pw,"Replanning");
-    bot_gtk_param_widget_add_enum(self->pw, PARAM_PLAN_ADJUST_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::plan_adjust_mode_t::LEFT_HAND, 
-                                       "LHnd", drc::plan_adjust_mode_t::LEFT_HAND,
-                                       "RHnd", drc::plan_adjust_mode_t::RIGHT_HAND,
-                                       "BothHnds", drc::plan_adjust_mode_t::BOTH_HANDS,
-                                       "LFoot", drc::plan_adjust_mode_t::LEFT_FOOT,
-                                       "RFoot", drc::plan_adjust_mode_t::RIGHT_FOOT,
-                                       "BothFeet", drc::plan_adjust_mode_t::BOTH_FEET,
-                                       "All", drc::plan_adjust_mode_t::ALL, NULL);
     
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_PLAN_TO_CURRENT_POSE, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_ADJUST_PLAN_AND_REACH, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE, NULL);
-                                       
-    bot_gtk_param_widget_add_separator (self->pw,"Planner Params"); 
-    bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1, 20, 0.5, 10);                                     
-    bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_ANG_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1,50, 1, 15); 
-
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_MANIP_PLAN_INITSEED_MODE, 1, NULL);
-
-                                                     
-    bot_gtk_param_widget_add_enum(self->pw, PARAM_MANIP_PLAN_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::manip_plan_control_t::IKSEQUENCE_ON, 
-                                       "IkSequenceOn", drc::manip_plan_control_t::IKSEQUENCE_ON,
-                                       "IkSequenceOff", drc::manip_plan_control_t::IKSEQUENCE_OFF,
-                                       "Teleop", drc::manip_plan_control_t::TELEOP,
-                                       "Fixed Joints", drc::manip_plan_control_t::FIXEDJOINTS,
-                                       NULL);
-
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PLAN_USING_BDI_HEIGHT_MODE, 1, NULL);
-    
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_PLANNER_PARAMS, NULL);
-    // don't publish these on launch: 
-    // update_planar_params(self);
+    g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+    self->selection_enabled = 1;
 
 
-        
-   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-  	self->selection_enabled = 1;
-
-    // off by default. only ever turned on for drilling (dec 2013, mfallon):
-    bot_gtk_param_widget_set_bool(self->pw, PARAM_PLAN_USING_BDI_HEIGHT_MODE,false); 
     self->use_colormap = 1; // default - never changed now
     //bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
     self->clicked = 0;	
@@ -620,7 +300,6 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->_renderer_foviate = false;
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
     self->show_fullplan = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FULLPLAN);
-    self->show_keyframes = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_KEYFRAMES);
     double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
     if ((self->show_fullplan)||(plan_size==0)){
       self->displayed_plan_index = -1;
@@ -648,5 +327,4 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     ehandler->user = self;
     
     bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
-   
 }

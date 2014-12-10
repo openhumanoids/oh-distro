@@ -75,8 +75,6 @@ namespace renderer_robot_plan
     int selected_plan_index;
     int selected_keyframe_index;
     int displayed_plan_index;
-    // Our only source of a free running clock:
-    int64_t robot_utime;
     int atlas_state;
     int64_t atlas_status_utime; 
   

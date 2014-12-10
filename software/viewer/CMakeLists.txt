@@ -16,20 +16,20 @@ include(cmake/pods.cmake)
 #add_subdirectory(src/renderers)
 add_subdirectory(src/renderer_robot_state)
 add_subdirectory(src/renderer_robot_plan)
-#add_subdirectory(src/renderer_crawling_plan) # deprecated
 add_subdirectory(src/renderer_affordances)
 add_subdirectory(src/renderer_sticky_feet)
-#add_subdirectory(src/renderer_end_effector_goal)# deprecated
 add_subdirectory(src/renderer_manipulation)
 add_subdirectory(src/renderer_walking)
+#add_subdirectory(src/renderer_crawling_plan) # deprecated
+#add_subdirectory(src/renderer_end_effector_goal)# deprecated
 #add_subdirectory(src/renderer_driving)# deprecated
-add_subdirectory(src/renderer_scrollingplots)
 add_subdirectory(src/renderer_status)
+add_subdirectory(src/renderer_controller_options)
+add_subdirectory(src/renderer_scrollingplots)
 add_subdirectory(src/renderer_drcgrid)
 add_subdirectory(src/renderer_recovery)
 add_subdirectory(src/renderer_cam_thumb_drc)
 add_subdirectory(src/renderer_frames_drc)
-add_subdirectory(src/renderer_controller_options)
 add_subdirectory(src/viewer)
 
 file(COPY scripts/lcmviewer-ppms2avi DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
