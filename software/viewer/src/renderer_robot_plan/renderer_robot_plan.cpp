@@ -1,9 +1,6 @@
 
 #include "renderer_robot_plan.hpp"
 #include "RobotPlanListener.hpp"
-#include "plan_execution_gui_utils.hpp" 
-#include "plan_approval_gui_utils.hpp"
-#include "plan_store_gui_utils.hpp"
 #include "lcmtypes/drc/ee_goal_t.hpp"
 #include "lcmtypes/drc/ee_manip_gain_t.hpp"
 #include "lcmtypes/drc/manip_plan_control_t.hpp"
@@ -53,7 +50,6 @@
 using namespace std;
 using namespace boost;
 using namespace renderer_robot_plan;
-using namespace renderer_robot_plan_gui_utils;
 
 static void
 _renderer_free (BotRenderer *super)
@@ -130,12 +126,7 @@ draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
   }
   
   
-  bool markeractive = (self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_pelvis->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_com->is_bodypose_adjustment_enabled());
+  bool markeractive = 0;
   
   if(markeractive)
     alpha = 0.2;
@@ -168,24 +159,6 @@ draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
  {
   alpha = 0.9;
   //  Marker Foviation Logic 
-  if(self->marker_choice_state == HANDS)
-  {
-    self->robotPlanListener->_gl_left_hand->draw_body(c_blue,alpha);
-    self->robotPlanListener->_gl_right_hand->draw_body(c_blue,alpha);
-  }
-  else if(self->marker_choice_state == FEET)
-  {
-    self->robotPlanListener->_gl_left_foot->draw_body(c_blue,alpha);
-    self->robotPlanListener->_gl_right_foot->draw_body(c_blue,alpha);
-  }  
-  else if(self->marker_choice_state == PELVIS)
-  {
-    self->robotPlanListener->_gl_pelvis->draw_body(c_blue,alpha);
-  }
-  else if(self->marker_choice_state == COM)
-  {
-    self->robotPlanListener->_gl_com->draw_body(c_red,alpha);
-  }
  } 
   
 }
@@ -253,13 +226,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
    self->selected_keyframe_index=-1; // clear selected keyframe index
   }      
   
-  bool markeractive = (self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_pelvis->is_bodypose_adjustment_enabled());
-  markeractive = markeractive||(self->robotPlanListener->_gl_com->is_bodypose_adjustment_enabled());
-  
+  bool markeractive = false;  
     
   if (self->show_fullplan){
     int max_num_states = 20;
@@ -315,29 +282,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   }
   */
 
-  if(self->robotPlanListener->is_multi_approval_plan())
-  {
-   if((self->multiapprove_plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
-      spawn_plan_execution_dock(self); 
-  }
-  else
-  {
-   if(!self->robotPlanListener->_is_manip_map)
-   {
-    if(self->plan_execution_dock==NULL)
-      spawn_plan_execution_dock(self);
-    else if ((self->plan_execute_button==NULL)&&(!self->robotPlanListener->_current_plan_committed))
-    {
-      gtk_widget_destroy(self->plan_execution_dock);
-      self->plan_execution_dock= NULL;
-      spawn_plan_execution_dock(self);
-    }
-      
-   }
-  }
 
-   if((self->plan_approval_dock==NULL)&&(self->robotPlanListener->_is_manip_map))
-       spawn_plan_approval_dock (self);
 
 }
 
@@ -524,29 +469,13 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     if(self->selected_keyframe_index!=-1)// dbl clk on keyframe then toogle 
     { 
 
-      bool markeractive = (self->robotPlanListener->_gl_left_hand->is_bodypose_adjustment_enabled());
-      markeractive = markeractive||(self->robotPlanListener->_gl_right_hand->is_bodypose_adjustment_enabled());
-      markeractive = markeractive||(self->robotPlanListener->_gl_left_foot->is_bodypose_adjustment_enabled());
-      markeractive = markeractive||(self->robotPlanListener->_gl_right_foot->is_bodypose_adjustment_enabled());
-      markeractive = markeractive||(self->robotPlanListener->_gl_pelvis->is_bodypose_adjustment_enabled());
-      markeractive = markeractive||(self->robotPlanListener->_gl_com->is_bodypose_adjustment_enabled());
+      bool markeractive = false;
 
       bool toggle=true;
       if (self->robotPlanListener->is_in_motion(self->selected_keyframe_index)){
          toggle = !markeractive;
       }
 
-      self->robotPlanListener->set_in_motion_hands_state(self->selected_keyframe_index);
-      self->robotPlanListener->_gl_left_hand->enable_bodypose_adjustment(toggle); 
-      self->robotPlanListener->_gl_right_hand->enable_bodypose_adjustment(toggle);
-      self->robotPlanListener->set_in_motion_feet_state(self->selected_keyframe_index);
-      self->robotPlanListener->_gl_left_foot->enable_bodypose_adjustment(toggle); 
-      self->robotPlanListener->_gl_right_foot->enable_bodypose_adjustment(toggle);     
-      self->robotPlanListener->set_in_motion_pelvis_state(self->selected_keyframe_index);
-      self->robotPlanListener->_gl_pelvis->enable_bodypose_adjustment(toggle); 
-      self->robotPlanListener->set_in_motion_com_state(self->selected_keyframe_index);
-      self->robotPlanListener->_gl_com->enable_bodypose_adjustment(toggle);
-      
       
       if(!toggle){
         (*self->marker_selection)  = " ";
@@ -560,28 +489,6 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     
     KDL::Frame T_world_marker;
     //Marker Foviation Logic
-    if(self->in_motion_state == HANDS) {
-      if(self->is_left_in_motion) {
-        T_world_marker = self->robotPlanListener->_gl_left_hand->_T_world_body; 
-      }
-      else {
-        T_world_marker = self->robotPlanListener->_gl_right_hand->_T_world_body; 
-      }
-    }
-    else if(self->in_motion_state == FEET) {
-       if(self->is_left_in_motion) {
-        T_world_marker = self->robotPlanListener->_gl_left_foot->_T_world_body; 
-      }
-      else {
-        T_world_marker = self->robotPlanListener->_gl_right_foot->_T_world_body; 
-      }
-    }
-    else if(self->in_motion_state == PELVIS) {
-      T_world_marker = self->robotPlanListener->_gl_pelvis->_T_world_body;
-    }
-    else if(self->in_motion_state == COM) {
-      T_world_marker = self->robotPlanListener->_gl_com->_T_world_body;
-    }   
     self->marker_offset_on_press << self->ray_hit[0]-T_world_marker.p[0],self->ray_hit[1]-T_world_marker.p[1],self->ray_hit[2]-T_world_marker.p[2]; 
     std::cout << "RendererRobotPlan: Event is consumed" <<  std::endl;
     return 1;// consumed

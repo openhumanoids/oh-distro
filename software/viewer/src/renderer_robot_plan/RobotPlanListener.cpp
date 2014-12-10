@@ -66,30 +66,6 @@ namespace renderer_robot_plan
     //load foot pelvis and com marker URDFS
     //hands and _gl_phantom_robot are set in urdf handler.
     
-    std::string _left_foot_urdf_xml_string,_right_foot_urdf_xml_string;
-    if(!load_foot_urdfs(_left_foot_urdf_xml_string,_right_foot_urdf_xml_string))
-       cerr << "\n Foot Urdfs Not Found" << endl;
-    else{
-        string unique_foot_name = "lfoot_local_copy";
-       _gl_left_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_left_foot_urdf_xml_string,true,unique_foot_name));
-       unique_foot_name = "rfoot_local_copy"; 
-       _gl_right_foot = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_right_foot_urdf_xml_string,true,unique_foot_name));
-    }
-    
-    std::string _pelvis_urdf_xml_string,_com_urdf_xml_string;
-    if(!load_misc_marker_urdfs(_pelvis_urdf_xml_string,_com_urdf_xml_string))
-       cerr << "\n Pelvis and COM Urdfs Not Found" << endl;
-    else{
-        string unique_name = "pelvis_local_copy";
-       _gl_pelvis = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_pelvis_urdf_xml_string,true,unique_name));
-       unique_name = "com_local_copy"; 
-       _gl_com = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_com_urdf_xml_string,true,unique_name));
-    }
-    
-    _lhand_ee_name = " ";
-    _rhand_ee_name = " ";
-    _T_base_palm_l = KDL::Frame::Identity();
-    _T_base_palm_r = KDL::Frame::Identity();
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
   }
   
@@ -233,7 +209,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
         {
             drc::robot_state_t state_msg  = msg->plan[i];
             // Merge in grasp state transitions into the plan states.
-            appendHandStatesToStateMsg(msg,&state_msg,append_currenthandstate);
             std::stringstream oss;
             oss << _robot_name << "_" << "keyframe"<< "_"<< count; 
             shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,true,oss.str()));
@@ -252,7 +227,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     {
         drc::robot_state_t state_msg  = msg->plan[count];
         // Merge in grasp state transitions into the plan states.
-        appendHandStatesToStateMsg(msg,&state_msg,append_currenthandstate);
         std::stringstream oss;
         oss << _robot_name << "_"<< count; 
         shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,false,oss.str()));
@@ -267,7 +241,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       count = 0;
       drc::robot_state_t state_msg  = msg->plan[count];
       // Merge in grasp state transitions into the plan states.
-      appendHandStatesToStateMsg(msg,&state_msg,append_currenthandstate);
     	std::stringstream oss;
     	oss << _robot_name << "_"<< count; 
     	shared_ptr<InteractableGlKinematicBody> new_object_ptr(new InteractableGlKinematicBody(*_base_gl_robot,false,oss.str()));
@@ -367,67 +340,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _base_gl_robot->disable_joint_limit_enforcement();
     cout<< "Number of Joints: " << _base_gl_robot->get_num_joints() <<endl;
     
-   /*
-     // determine sandia hands or irobot hands by inspecting robot urdf.
- 
-    std::vector<std::string > robot_link_names;
-    robot_link_names = _base_gl_robot->get_link_names();
-  
-    std::vector<std::string>::const_iterator found1,found2;
-    found1 = std::find (robot_link_names.begin(), robot_link_names.end(), "left_palm");
-    found2 = std::find (robot_link_names.begin(), robot_link_names.end(), "left_base_link");        
-    if (found1 != robot_link_names.end()) {
-      _is_left_sandia = true;
-      _lhand_ee_name = "left_palm";
-    }
-    else if (found2 != robot_link_names.end()) {
-      _is_left_sandia = false;
-      _lhand_ee_name = "left_base_link"; 
-    }
-    else{
-      cerr << "ERROR: left_palm or left_base_link was not found robot urdf." << endl;
-      _is_left_sandia = true;
-      _lhand_ee_name = "left_palm";
-    }
-    
-    found1 = std::find(robot_link_names.begin(), robot_link_names.end(), "right_palm");
-    found2 = std::find(robot_link_names.begin(), robot_link_names.end(), "right_base_link");        
-    if (found1 != robot_link_names.end()) {
-      _is_right_sandia = true;
-      _rhand_ee_name = "right_palm";
-    }
-    else if (found2 != robot_link_names.end()) {
-      _is_right_sandia = false; 
-      _rhand_ee_name = "right_base_link";
-    }
-    else{
-      cerr << "ERROR: right_palm or right_base_link was not found robot urdf." << endl;
-      _is_right_sandia = true;
-      _rhand_ee_name = "left_palm";
-    }  */         
-    
-    std::string _left_hand_urdf_xml_string,_right_hand_urdf_xml_string;
-    if(!load_hand_urdfs( msg->left_hand, msg->right_hand,_left_hand_urdf_xml_string,_right_hand_urdf_xml_string))
-       cerr << "\nHand Urdfs Not Found" << endl;
-    else{
-        string unique_hand_name = "lhand_local_copy";
-       _gl_left_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_left_hand_urdf_xml_string,true,unique_hand_name));
-       unique_hand_name = "rhand_local_copy"; 
-       _gl_right_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_right_hand_urdf_xml_string,true,unique_hand_name));
-    
-      KDL::Frame T_urdfroot_palm_l,T_urdfroot_palm_r;
-      T_urdfroot_palm_l = KDL::Frame::Identity();
-      T_urdfroot_palm_r = KDL::Frame::Identity();
-
-      bool success;
-      success = _gl_left_hand->get_link_frame(_lhand_ee_name,T_urdfroot_palm_l);
-      _T_base_palm_l = _gl_left_hand->_T_world_body.Inverse()*T_urdfroot_palm_l;
-      success=_gl_right_hand->get_link_frame(_rhand_ee_name,T_urdfroot_palm_r);
-      _T_base_palm_r = _gl_right_hand->_T_world_body.Inverse()*T_urdfroot_palm_r;
-    }       
-    
-    
-    //_gl_phantom_robot = shared_ptr<GlKinematicBody>(new GlKinematicBody(_urdf_xml_string)); // used for keyframe adjustment via joint dof markers.
 
     //remember that we've parsed the urdf already
     _urdf_parsed = true;
@@ -576,7 +488,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
             }
             
             string channel ="COMMITTED_GRASP";
-            commit_desired_grasp_state(utime,channel,kmax_inds);
             msg.num_grasp_transitions = 1;
             msg.grasps.push_back(_received_plan.grasps[k_max]); 
             usleep(1000000);
@@ -684,248 +595,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
   }
   
   
-  void RobotPlanListener::commit_desired_grasp_state(int64_t utime, std::string &channel, std::vector<int> &received_plan_grasp_indices)
-  {
-    int num_grasps = received_plan_grasp_indices.size();
-    
-    std::vector<drc::grasp_transition_state_t> states;
-     int ind = received_plan_grasp_indices[0];
-     states.push_back(_received_plan.grasps[ind]);
-    if(num_grasps>1){
-     ind = received_plan_grasp_indices[1];
-     states.push_back(_received_plan.grasps[ind]); 
-     }
-     
-    if(num_grasps>2){
-      cerr<< "ERROR: More than two grasps for a given transition are actieve. Only one left and one right are physically possible . " << endl;
-      return;
-    }
-     
-    //drc::grasp_transition_state_t state = _received_plan.grasps[received_plan_grasp_index];  
-    drc::desired_grasp_state_t msg;
-    msg.utime = utime;
-    msg.robot_name = _robot_name;
-    
-    msg.object_name = " ";
-    msg.geometry_name = " ";
-    msg.unique_id = states[0].affordance_uid;
-    msg.num_r_joints =0;
-    msg.num_l_joints =0;
-    msg.l_hand_pose.rotation.w = 1;
-    msg.r_hand_pose.rotation.w = 1;
-    if(states[0].grasp_type==drc::grasp_transition_state_t::LEFT)
-    {
-      msg.grasp_type = msg.SANDIA_LEFT;
-      msg.l_hand_pose = states[0].hand_pose;
-      msg.num_l_joints =states[0].num_joints;
-      msg.l_joint_name  =states[0].joint_name;
-      msg.l_joint_position=states[0].joint_position;
-      
-      if(num_grasps>1){
-          if(states[1].grasp_type==drc::grasp_transition_state_t::RIGHT){
-            msg.grasp_type = msg.SANDIA_BOTH;
-            msg.r_hand_pose = states[1].hand_pose;
-            msg.num_r_joints =states[1].num_joints;
-            msg.r_joint_name  =states[1].joint_name;
-            msg.r_joint_position=states[1].joint_position;
-          }
-          else
-          {
-            cerr<< "ERROR: Two grasps for a given transition are both left.  Two left grasps are not physically possible" << endl;
-            return;
-          }
-      }      
-    }
-    else
-    {
-      msg.grasp_type = msg.SANDIA_RIGHT;
-      msg.r_hand_pose = states[0].hand_pose;
-      msg.num_r_joints =states[0].num_joints;
-      msg.r_joint_name  =states[0].joint_name;
-      msg.r_joint_position=states[0].joint_position;
-      if(num_grasps>1){
-        if(states[1].grasp_type==drc::grasp_transition_state_t::LEFT){
-          msg.grasp_type = msg.SANDIA_BOTH;
-          msg.l_hand_pose = states[1].hand_pose;
-          msg.num_l_joints =states[1].num_joints;
-          msg.l_joint_name  =states[1].joint_name;
-          msg.l_joint_position=states[1].joint_position;
-        }
-        else{
-            cerr<< "ERROR: Two grasps for a given transition are both right.  Two left grasps are not physically possible" << endl;
-            return;
-        }
-      }  
-    }
-    msg.power_grasp = states[0].power_grasp;
-    if(num_grasps>1)
-     msg.power_grasp = (states[0].power_grasp||states[1].power_grasp);
-    _lcm->publish(channel, &msg);
-  }
-  
-  void RobotPlanListener::commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate,bool revert)
-  {
-  
-    drc::plan_control_t  msg;
-    msg.utime = utime;
-    if((pause)&&(!terminate)&&(!revert)){
-      msg.control = msg.PAUSE;
-      _plan_paused = true;
-    }
-    else if((!pause)&&(!terminate)&&(revert)){
-      msg.control = msg.REVERT;
-      _plan_paused = false;
-    }
-    else if((!pause)&&(!terminate)&&(!revert)){
-      msg.control = msg.UNPAUSE;
-      _plan_paused = false;
-    }
-    else{
-       msg.control = msg.TERMINATE; 
-       _plan_paused = false;
-    }
-    _lcm->publish(channel, &msg);
-  }  
-  
-  bool RobotPlanListener::load_hand_urdfs(int left_hand_type, int right_hand_type, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string)
-  {
-  
-    string urdf_models_path = string(getModelsPath()) + "/mit_gazebo_models/mit_robot_hands/"; 
-    
 
-    vector<string> urdf_files = vector<string>();
-    get_URDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
-
-    std::string filename, ext;
-    visualization_utils::get_hand_palm_link_name_given_urdf_handtype(left_hand_type,_lhand_ee_name);
-    visualization_utils::get_hand_palm_link_name_given_urdf_handtype(right_hand_type,_rhand_ee_name);
-    
-      
-    if(left_hand_type==drc::robot_urdf_t::LEFT_SANDIA)    
-      filename ="sandia_hand_left";
-    else if(left_hand_type==drc::robot_urdf_t::LEFT_IROBOT)   
-      filename ="irobot_hand_left";
-    else if(left_hand_type==drc::robot_urdf_t::LEFT_ROBOTIQ)   
-      filename ="robotiq_hand_left";
-    else 
-      filename ="inert_hand_left";  
-    ext=".urdf";
-    
-    std::vector<std::string>::const_iterator found;
-    found = std::find(urdf_files.begin(),urdf_files.end(), filename);
-    if (found != urdf_files.end()) {
-      std::stringstream oss;   
-      oss << urdf_models_path  << filename << ext;   
-      get_xmlstring_from_file(oss.str(),_left_hand_urdf_xml_string);     
-    }
-    else{
-      return false;
-    }
-    
-    if(right_hand_type==drc::robot_urdf_t::RIGHT_SANDIA)    
-      filename ="sandia_hand_right";
-    else if(right_hand_type==drc::robot_urdf_t::RIGHT_IROBOT)   
-      filename ="irobot_hand_right";
-    else if(right_hand_type==drc::robot_urdf_t::RIGHT_ROBOTIQ)   
-      filename ="robotiq_hand_right";
-    else 
-      filename ="inert_hand_right";  
-    ext=".urdf";
-    
-    if (found != urdf_files.end()) {
-      std::stringstream oss;   
-      oss << urdf_models_path  << filename << ext;   
-      get_xmlstring_from_file(oss.str(),_right_hand_urdf_xml_string);
-    }
-    else{
-      return false;
-    }
-  
-     return true;
-  }
-
-  bool RobotPlanListener::load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string)
-  {
-  
-    string urdf_models_path = string(getModelsPath()) + "/mit_gazebo_models/mit_robot_feet/"; 
-    
-
-    vector<string> urdf_files = vector<string>();
-    get_URDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
-
-    std::string filename, ext;
-
-        
-    filename ="l_foot";
-    ext=".urdf";
-    
-    std::vector<std::string>::const_iterator found;
-    found = std::find(urdf_files.begin(),urdf_files.end(), filename);
-    if (found != urdf_files.end()) {
-      std::stringstream oss;   
-      oss << urdf_models_path  << filename << ext;   
-      get_xmlstring_from_file(oss.str(),_left_foot_urdf_xml_string);     
-    }
-    else{
-      return false;
-    }
-    
-    filename ="r_foot";
-    ext=".urdf";
-    
-    if (found != urdf_files.end()) {
-      std::stringstream oss;   
-      oss << urdf_models_path  << filename << ext;   
-      get_xmlstring_from_file(oss.str(),_right_foot_urdf_xml_string);
-    }
-    else{
-      return false;
-    }
-  
-     return true;
-  }  
-  
-  
-  bool RobotPlanListener::load_misc_marker_urdfs(std::string &_pelvis_urdf_xml_string,std::string &_com_urdf_xml_string)
-  {
-  
-    string urdf_models_path = string(getModelsPath()) + "/mit_gazebo_models/mit_robot_feet/other_marker_urdfs/"; 
-    
-
-    vector<string> urdf_files = vector<string>();
-    get_URDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
-
-    std::string filename, ext;
-
-        
-    filename ="pelvis";
-    ext=".urdf";
-    
-    std::vector<std::string>::const_iterator found;
-    found = std::find(urdf_files.begin(),urdf_files.end(), filename);
-    if (found != urdf_files.end()) {
-      std::stringstream oss;   
-      oss << urdf_models_path  << filename << ext;   
-      get_xmlstring_from_file(oss.str(),_pelvis_urdf_xml_string);     
-    }
-    else{
-      return false;
-    }
-    
-    filename ="com";
-    ext=".urdf";
-    
-    if (found != urdf_files.end()) {
-      std::stringstream oss;   
-      oss << urdf_models_path  << filename << ext;   
-      get_xmlstring_from_file(oss.str(),_com_urdf_xml_string);
-    }
-    else{
-      return false;
-    }
-  
-     return true;
-  } 
 
  
 } //namespace renderer_robot_plan
