@@ -213,52 +213,10 @@ namespace renderer_robot_plan
   inline static double get_shortest_distance_from_a_plan_frame (void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
-    collision::Collision_Object * intersected_object = NULL;
-    Eigen::Vector3f hit_pt;
     double shortest_distance = -1;
-     if((self->displayed_plan_index!=-1)
-         &&(self->robotPlanListener->_gl_robot_list.size()>0)
-         &&(self->displayed_plan_index < self->robotPlanListener->_gl_robot_list.size())
-        ) 
-     {
-        self->robotPlanListener->_gl_robot_list[self->displayed_plan_index]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
-        if( intersected_object != NULL ){
-            Eigen::Vector3f diff = (from-hit_pt);
-            //shortest_distance = diff.norm();
-            //self->selected_plan_index=self->displayed_plan_index;
-            double distance =diff.norm();
-            if(shortest_distance>0) {
-              if (distance < shortest_distance)
-                shortest_distance = distance;
-                self->ray_hit = hit_pt;
-                self->ray_hit_drag = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
-                self->selected_plan_index=self->displayed_plan_index;
-                self->selected_keyframe_index=-1;
-            }
-            else {
-              shortest_distance = distance;
-              self->ray_hit = hit_pt;
-              self->ray_hit_drag = hit_pt;
-              self->ray_hit_t = (hit_pt - self->ray_start).norm();
-              self->selected_plan_index=self->displayed_plan_index;
-              self->selected_keyframe_index=-1;
-            }
-       }
-      }
-    
-         
-    self->prev_ray_hit_drag = self->ray_hit_drag;   
+
     return shortest_distance;  
   }
-  
-// ===================================================================
-
-  inline static void publish_traj_opt_constraint(void *user,string &channel, int index)
-  {
-    RendererRobotPlan *self = (RendererRobotPlan*) user;
-
-  }  
   
 // ===================================================================  
   inline static void adjust_keyframe_on_marker_motion(void *user,Eigen::Vector3f start,Eigen::Vector3f dir)

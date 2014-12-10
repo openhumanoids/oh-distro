@@ -107,61 +107,6 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i, float rgb[]){
 }
 
 
-static void 
-draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
-   
-  float c_blue[3] = {0.3,0.3,0.6}; // light blue
-  float c_green[3] = {0.3,0.6,0.3}; // green
-  float c_red[3] = {1.0,0.1,0.1}; // red
-  float alpha = 0.7;
-  RendererRobotPlan *self = (RendererRobotPlan*) super->user;
-  float c[3];
-  if((self->use_colormap)) {
-    // Each model Jet: blue to red
-    float j = (float)i/ (self->robotPlanListener->_gl_robot_keyframe_list.size() -1);
-    jet_rgb(j,c);
-  }
-  else{
-   c[0] = c_blue[0];c[1] = c_blue[1];c[2] = c_blue[2];
-  }
-  
-  
-  bool markeractive = 0;
-  
-  if(markeractive)
-    alpha = 0.2;
-  
-  glColor4f(c[0],c[1],c[2], alpha);
-  
-  //self->robotPlanListener->_gl_robot_keyframe_list[i]->enable_link_selection(self->selection_enabled);
-  
-	std::string selected_keyframe_name = " ";
-	//if(self->selected_keyframe_index!=-1)
-	
-	
-	if((markeractive)&&(self->selected_keyframe_index==i))
-	{
-    self->robotPlanListener->_gl_robot_keyframe_list[i]->highlight_body(selected_keyframe_name);
-    self->robotPlanListener->_gl_robot_keyframe_list[i]->draw_body(c,alpha);
-  } 
-  else if(!markeractive)
-  {
-  	if(((*self->selection)  != " ")
-  	    &&(self->selected_keyframe_index!=-1)
-  	    &&(self->selected_keyframe_index < self->robotPlanListener->_gl_robot_keyframe_list.size()))
-	   selected_keyframe_name = self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_unique_name; 
-    self->robotPlanListener->_gl_robot_keyframe_list[i]->highlight_body(selected_keyframe_name);
-    self->robotPlanListener->_gl_robot_keyframe_list[i]->draw_body(c,alpha);
-  } 
-  
-     
- if ((self->robotPlanListener->is_in_motion(i))&&(markeractive)) 
- {
-  alpha = 0.9;
-  //  Marker Foviation Logic 
- } 
-  
-}
 
 static void 
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
@@ -213,18 +158,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     return;
   }
 
-   // Show keyframes
-  if((self->show_keyframes)&&(self->robotPlanListener->_is_manip_plan)&&(self->robotPlanListener->_gl_robot_keyframe_list.size()>0))
-  {
-    for(uint i = 1; i < self->robotPlanListener->_gl_robot_keyframe_list.size(); i++) 
-    { 
-        draw_keyframe(viewer,super,i);
-    }
-  }
-  else
-  {
-   self->selected_keyframe_index=-1; // clear selected keyframe index
-  }      
+  self->selected_keyframe_index=-1; // clear selected keyframe index
   
   bool markeractive = false;  
     
@@ -256,92 +190,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
       draw_state(viewer,super,w_plan,c);
   }
   
-
-  /* disabled_for_cleanup
-  if(bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_DURING_CONTROL) ){
-    if(self->robotPlanListener->_controller_status == drc::controller_status_t::WALKING){ // walking 
-      int rx_plan_size = self->robotPlanListener->_received_plan.num_states;
-      int64_t last_plan_utime = self->robotPlanListener->_received_plan.plan[rx_plan_size-1].utime;
-      double current_plan_part = ((double) self->robotPlanListener->_controller_utime / last_plan_utime);
-      
-      //printf ("controller time: %lld \n", self->robotPlanListener->_controller_utime); 
-      //std::cout << self->robotPlanListener->_received_plan.num_states << " is rxd plan size\n";
-      //std::cout << plan_size << " is plan size\n";
-      //std::cout << last_plan_utime << " is last_plan_utime\n";
-      //std::cout << current_plan_part << " is current_plan_part\n";    
-      if((current_plan_part >0.0 )&&(current_plan_part <1.0)){
-        double plan_part = bot_gtk_param_widget_get_double(self->pw, PARAM_PLAN_PART);
-        uint w_plan = (uint) round(current_plan_part* (plan_size -1));
-        //printf("                                  Show around %f of %d    %d\n", plan_part, plan_size, w_plan);
-        self->displayed_plan_index = w_plan;
-        
-        float c[3] = {0.6,0.3,0.3}; // light red        
-        draw_state(viewer,super,w_plan,c);
-      }
-    }
-  }
-  */
-
-
-
 }
 
-
-// temporary method: will be replaced later
-  static void publish_eegoal_to_start_planning(boost::shared_ptr<lcm::LCM> &_lcm, std::string channel)
-  {
-    drc::ee_goal_t goalmsg;
-    goalmsg.robot_name = "atlas";
-    goalmsg.root_name = "pelvis";
-    goalmsg.ee_name = "ee_plan_start";
-    
-    double x,y,z,w;
-    // desired ee position in world frame
-    KDL::Frame T_body_ee;
-    T_body_ee = KDL::Frame::Identity();; // send them in world frame for now.
-
-    goalmsg.ee_goal_pos.translation.x = T_body_ee.p[0];
-    goalmsg.ee_goal_pos.translation.y = T_body_ee.p[1];
-    goalmsg.ee_goal_pos.translation.z = T_body_ee.p[2];
-
-    goalmsg.ee_goal_pos.rotation.x = 0;
-    goalmsg.ee_goal_pos.rotation.y = 0;
-    goalmsg.ee_goal_pos.rotation.z = 0;
-    goalmsg.ee_goal_pos.rotation.w = 1;
-
-    goalmsg.ee_goal_twist.linear_velocity.x = 0.0;
-    goalmsg.ee_goal_twist.linear_velocity.y = 0.0;
-    goalmsg.ee_goal_twist.linear_velocity.z = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.x = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.y = 0.0;
-    goalmsg.ee_goal_twist.angular_velocity.z = 0.0;
-
-    goalmsg.num_chain_joints  =0;
-    // No specified posture bias
-    goalmsg.use_posture_bias  = false;
-    goalmsg.joint_posture_bias.resize(goalmsg.num_chain_joints);
-    goalmsg.chain_joint_names.resize(goalmsg.num_chain_joints);
-    for(int i = 0; i < goalmsg.num_chain_joints; i++){
-    goalmsg.joint_posture_bias[i]=0;
-    goalmsg.chain_joint_names[i]= " ";
-    }
-
-    // Publish the message
-    goalmsg.halt_ee_controller = false;
-
-    _lcm->publish(channel, &goalmsg);
-  }
-  
-  static void publish_manip_gain(boost::shared_ptr<lcm::LCM> &_lcm, std::string channel,int64_t utime, double Kp, double Kd, int ee_type)
-  {
-    drc::ee_manip_gain_t  msg;
-    msg.utime = utime;
-    msg.is_leg = false;      
-    msg.ee_type=ee_type;
-    msg.Kp=Kp;
-    msg.Kd=Kd;
-    _lcm->publish(channel, &msg);
-  }
   
 //========================= Event Handling ================
 
@@ -516,10 +366,6 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
     Eigen::Vector3f diff=self->ray_hit_drag-self->ray_hit;
     double movement = diff.norm();
 
-    if(((*self->marker_selection)  != " ")&&(movement>=1e-3)&&(self->selected_keyframe_index!=-1)){
-    //cout << "publishing manip_plan_constraint \n";
-    publish_traj_opt_constraint(self,channel,self->selected_keyframe_index);
-    }
   }
   if (ehandler->picking==1)
     ehandler->picking=0; //release picking(IMPORTANT)
@@ -664,8 +510,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->show_fullplan = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_FULLPLAN);
   }  else if(! strcmp(name,PARAM_SHOW_KEYFRAMES)) {
     self->show_keyframes = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_KEYFRAMES);
-  }else if(!strcmp(name,PARAM_START_PLAN)){
-    publish_eegoal_to_start_planning(self->lcm,"EE_PLAN_START");
   }else if(!strcmp(name,PARAM_SEND_COMMITTED_PLAN)){
     self->lcm->publish("COMMITTED_ROBOT_PLAN", &(self->robotPlanListener->_received_plan) );
   }
@@ -684,24 +528,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   else if(!strcmp(name,PARAM_UPDATE_PLANNER_PARAMS))
   {
      update_planar_params(self);
-  }
-  else if(!strcmp(name,PARAM_SSE_KP_LEFT)){
-    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_LEFT);
-    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_LEFT);
-    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,0);
-  }else if(!strcmp(name,PARAM_SSE_KD_LEFT)){
-    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_LEFT);
-    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_LEFT); 
-    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,0);
-  }
-   else if(!strcmp(name,PARAM_SSE_KP_RIGHT)){
-    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_RIGHT);
-    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_RIGHT);
-    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,1);
-  }else if(!strcmp(name,PARAM_SSE_KD_RIGHT)){
-    double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_RIGHT);
-    double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_RIGHT); 
-    publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,1);
   }
   else if(! strcmp(name, PARAM_MANIP_PLAN_MODE)){
     drc::manip_plan_control_t msg;
