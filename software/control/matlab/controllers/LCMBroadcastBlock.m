@@ -10,6 +10,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     hokuyo_max_range;
     hokuyo_spin_rate;
     joint_names_cache;
+    r_hand_joint_names_cache;
+    r_hand_joint_inds;
     
     % FC publish period
     fc_publish_period = 0.01;
@@ -68,29 +70,40 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
-      atlascoordnames = obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
-      atlascoordnames = atlascoordnames(7:end); % cut off the floating base
-      if (r.hands>0)
-        hand_names = obj.getInputFrame.getFrameByName('HandState').getCoordinateNames;
-        names = [atlascoordnames;
-                hand_names(1:30)];
-        % all of the hand names should be prepended as being right hand
-        for i=29:length(names)
-          names{i} = ['right_', names{i}];
-        end
+      if (isa(obj.getInputFrame, 'AtlasState'))
+        atlascoordnames = obj.getInputFrame.getCoordinateNames;
       else
-        names = [atlascoordnames];
+        atlascoordnames = obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
       end
-      % Append hokuyo_joint if we're not going to have state_sync help with
-      % this
-      if (obj.publish_truth)
-        names = [names; ;
-                'hokuyo_joint'];
-      end
-      obj.joint_names_cache = cell(length(names), 1);
+      atlascoordnames = atlascoordnames(7:length(atlascoordnames)/2); % cut off the floating base
+
+      obj.joint_names_cache = cell(length(atlascoordnames), 1);
       % (this is the part that we really don't want to run repeatedly...)
-      for i=1:length(names)
-        obj.joint_names_cache(i) = java.lang.String(names(i));
+      for i=1:length(atlascoordnames)
+        obj.joint_names_cache(i) = java.lang.String(atlascoordnames(i));
+      end
+      % write down names for the hands. these differ from simul a bit
+      % (we have the fourbar explicitely), so I'm doing this by hand...
+      if (r.hands>0)
+        hand_names = {'right_finger_1_joint_1',
+                      'right_finger_1_joint_2',
+                      'right_finger_1_joint_3',
+                      'right_finger_2_joint_1',
+                      'right_finger_2_joint_2',
+                      'right_finger_2_joint_3',
+                      'right_finger_middle_joint_1',
+                      'right_finger_middle_joint_2',
+                      'right_finger_middle_joint_3',
+                      'right_palm_finger_1_joint',
+                      'right_palm_finger_2_joint'
+                      };
+        obj.r_hand_joint_names_cache = cell(11, 1);
+        for i=1:length(hand_names)
+          obj.r_hand_joint_names_cache(i) = java.lang.String(hand_names{i});
+        end
+        % not sure what the last two correspond to. for now I'm going to 
+        % zero them.
+        obj.r_hand_joint_inds = [1, 2, 3, 11, 12, 13, 21, 22, 23, 10, 20];
       end
       
       % figure out joint reordering -- atlas_state_t assumes joints
@@ -134,29 +147,41 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
-      inp = obj.getInputFrame();
-      num = inp.getFrameNumByName('AtlasState');
-      if length(num)~=1
-        error(['No atlas state found as input for LCMBroadcastBlock!']);
-      end
-      atlas_state = varargin{num};
-      
-      num = inp.getFrameNumByName('HandState');
+      atlas_state = [];
       hand_state = [];
-      if (length(num)>1)
-        error(['Ambiguous hand state. No support for two hands yet...']);
-      elseif (length(num)==1)
-        hand_state = varargin{num};
-      end
-      
-      num = inp.getFrameNumByName('hokuyo');
       laser_state = [];
-      if (length(num)>1)
-        error(['Ambiguous hand state. No support for two hands yet...']);
-      elseif (length(num)==1)
-        laser_state = varargin{num};
+      if (length(varargin) == 1)
+        % Only atlas state coming in, no need for lots of logic to extract
+        % frames
+        atlas_state = varargin{1};
+      else
+        inp = obj.getInputFrame();
+        num = inp.getFrameNumByName('AtlasState');
+        if length(num)~=1
+          error(['No atlas state found as input for LCMBroadcastBlock!']);
+        end
+        atlas_state = varargin{num};
+
+        num = inp.getFrameNumByName('HandState');
+
+        if (length(num)>1)
+          error(['Ambiguous hand state. No support for two hands yet...']);
+        elseif (length(num)==1)
+          hand_state_ours = varargin{num};
+          % Map it to the hand state the rest of the system understands
+          hand_state = [hand_state_ours(obj.r_hand_joint_inds);
+                        hand_state_ours(length(hand_state_ours)/2+obj.r_hand_joint_inds)];
+          hand_state(10:11) = [0;0];
+        end
+        
+        num = inp.getFrameNumByName('hokuyo');
+        laser_state = [];
+        if (length(num)>1)
+          error(['Ambiguous hand state. No support for two hands yet...']);
+        elseif (length(num)==1)
+          laser_state = varargin{num};
+        end
       end
-      
       if (~isempty(laser_state))
         laser_spindle_angle = laser_state(1)+pi/2;
         laser_ranges = laser_state(2:end);
@@ -244,9 +269,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % est_robot_state
         state_msg.num_joints = num_dofs-6+1;
         % only est_robot_state atlas_state message has joint names
-        state_msg.joint_name = obj.joint_names_cache;
+        state_msg.joint_name = [obj.joint_names_cache; obj.r_hand_joint_names_cache; 'hokuyo_joint'];
       else
-        state_msg.num_joints = num_dofs-6;
+        state_msg.num_joints = atlas_dofs-6;
       end
       
       state_msg.joint_position=zeros(1,state_msg.num_joints);
@@ -258,8 +283,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         atlas_pos = atlas_pos(obj.reordering);
         atlas_vel = atlas_vel(obj.reordering);
-         state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs)];
-        state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end)];
+        state_msg.joint_position =atlas_pos;
+        state_msg.joint_velocity = atlas_vel;
       else
         % need another factor of pi/2though I wouldn't mind it being earlier rather than later to get drawn multisense to agree with
         % the "true" (functionally true, anyway) mirror position
@@ -304,6 +329,17 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.lc.publish('POSE_BDI', pose_body_frame);
       end
       
+      % state_sync expects separate message for the hand state
+      if (~obj.publish_truth && ~isempty(hand_state))
+        robotiq_right_state = drc.hand_state_t();
+        robotiq_right_state.utime = t*1000*1000;
+        robotiq_right_state.num_joints = 11;
+        robotiq_right_state.joint_name = obj.r_hand_joint_names_cache;
+        robotiq_right_state.joint_position = hand_state(1:hand_dofs);
+        robotiq_right_state.joint_velocity = hand_state(hand_dofs+1:end);
+        robotiq_right_state.joint_effort = zeros(11, 1);
+        obj.lc.publish('ROBOTIQ_RIGHT_STATE', robotiq_right_state);
+      end
       
       % Send over
       % -- "MULTISENSE_STATE" -- lcm_state msg for joint hokuyo_joint,
