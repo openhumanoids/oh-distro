@@ -3,10 +3,6 @@
 
 atlas
 multisense
-
 ipwebcam
 ptgrey
-3dmouse
-irobothand
 robotiqhand
-takktile

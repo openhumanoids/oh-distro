@@ -17,7 +17,7 @@
 #include <pcl/io/pcd_io.h>
 #include <drc_utils/PointConvert.h>
 
-#include <affordance/AffordanceUtils.hpp>
+//#include <affordance/AffordanceUtils.hpp>
 #include <renderer_affordances/CandidateGraspSeedListener.hpp>
 #include <visualization_utils/stickyfoot_utils/sticky_foot_utils.hpp>
 
@@ -204,8 +204,8 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
         vector<vector<float> > points;
         vector<vector<int> > triangles;
         string file = getenv("HOME") + string("/drc/software/models/otdf/") + msg->aff.modelfile;
-        AffordanceUtils affutils;
-        affutils.getModelAsLists(file, points, triangles);
+        //AffordanceUtils affutils;
+        //affutils.getModelAsLists(file, points, triangles);
         
         convertVec3(points, it->second._gl_object->points);
         convertVec3(triangles, it->second._gl_object->triangles);

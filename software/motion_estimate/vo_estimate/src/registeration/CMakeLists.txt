@@ -26,7 +26,7 @@ pods_install_pkg_config_file(registeration
 add_executable(drc-registeration registeration-app.cpp)
 target_link_libraries(drc-registeration boost_system)
 pods_use_pkg_config_packages(drc-registeration
-  bot2-vis visualization-utils
+  bot2-vis 
   pronto_vis opencv
   bot2-param-client
   bot2-frames
@@ -38,7 +38,7 @@ pods_install_executables(drc-registeration)
 add_executable(drc-registeration-batch registeration-batch.cpp)
 target_link_libraries(drc-registeration-batch boost_system)
 pods_use_pkg_config_packages(drc-registeration-batch
-  bot2-vis visualization-utils
+  bot2-vis 
   pronto_vis opencv
   lcm bot2-lcmgl-client registeration  )
 pods_install_executables(drc-registeration-batch)

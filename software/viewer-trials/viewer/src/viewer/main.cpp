@@ -19,9 +19,9 @@
 #include <renderer_cam_thumb_drc/renderer_cam_thumb_drc.h>
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
-#include <maps-renderer/maps_renderer.hpp>
-#include <data-control-renderer/DataControlRenderer.hpp>
-#include <atlas-camera-renderer/CameraRenderer.hpp>
+//#include <maps-renderer/maps_renderer.hpp>
+//#include <data-control-renderer/DataControlRenderer.hpp>
+//#include <atlas-camera-renderer/CameraRenderer.hpp>
 // #include <renderer_annotated_camera/AnnotatedCameraRenderer.hpp>
 #include <multisense/multisense_renderer.h>
 #include <occ_map/occ_map_renderers.h>
@@ -39,7 +39,7 @@
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
-#include <tracker-renderer/TrackerRenderer.hpp>
+// #include <tracker-renderer/TrackerRenderer.hpp>
 
 // state estimation renderers:
 #include <mav_state_est/mav_state_est_renderers.h>
@@ -275,11 +275,11 @@ int main(int argc, char *argv[])
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
   collections_add_renderer_to_viewer(viewer, 1, lcm);
   setup_renderer_robot_state(viewer, 0, lcm,0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
-  maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  // maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 
-  if (use_depreciated_renderers){
-    data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  }
+  //if (use_depreciated_renderers){
+  //  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  //}
   //atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);

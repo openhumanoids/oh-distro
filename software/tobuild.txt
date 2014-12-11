@@ -3,7 +3,7 @@
 #externals
 pronto
 drc_lcmtypes
-object_template_model
+#object_template_model
 latency
 drivers
 utils

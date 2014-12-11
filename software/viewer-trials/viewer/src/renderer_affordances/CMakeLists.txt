@@ -63,5 +63,5 @@ pods_install_pkg_config_file(renderer_affordances
     REQUIRES ${REQUIRED_PACKAGES_AFFORDANCES} 
     VERSION 0.0.1)
 
-pods_use_pkg_config_packages(renderer_affordances affordance-utils
-  ${REQUIRED_PACKAGES_AFFORDANCES})
+pods_use_pkg_config_packages(renderer_affordances 
+  ${REQUIRED_PACKAGES_AFFORDANCES})  # affordance-utils

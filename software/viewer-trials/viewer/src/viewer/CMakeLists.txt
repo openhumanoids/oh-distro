@@ -8,10 +8,7 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         multisense-renderer
         octomap-renderer
         occ-map-renderers
-        maps-renderer
         mav-state-est-renderers
-        atlas-camera-renderer
-        data-control-renderer
         lcmtypes_drc_lcmtypes
         renderer_robot_state
         renderer_robot_plan
@@ -22,11 +19,14 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         renderer_scrollingplots
         renderer_status
         renderer_drcgrid
-        tracker-renderer
         renderer_bdi
-        renderer_cam_thumb_drc
-        renderer_recovery
-        renderer_controller_options)
+        renderer_cam_thumb_drc)
+#        maps-renderer
+#        atlas-camera-renderer
+#        data-control-renderer
+#        tracker-renderer
+#        renderer_recovery
+#        renderer_controller_options)
 
 ###
 add_executable(drc-viewer main.cpp udp_util.c RendererGroupUtil.cpp)

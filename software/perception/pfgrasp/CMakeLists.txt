@@ -16,6 +16,7 @@ add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/tld-tracker)
 
 add_executable(drc-pfgrasp src/pfgrasp.cpp src/ImageWarper.cpp src/ImageWarper.cpp src/libparticle/particle_filter.cpp src/libparticle/particle.cpp
                src/libparticle/rng.cpp)

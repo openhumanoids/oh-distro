@@ -1,5 +1,7 @@
 package drc; 
 
+// used in perception
+
 struct rect_t 
 {
     float x, y;
