@@ -4,9 +4,9 @@ cmake_minimum_required(VERSION 2.6.0)
 set(POD_NAME drc_utils)
 include(cmake/pods.cmake)
 
-add_subdirectory(src)
+add_subdirectory(src/drc_utils)
 add_subdirectory(src/bot_frames_cpp)
-add_subdirectory(src/gtkmm-renderer)
+#add_subdirectory(src/gtkmm-renderer)
 add_subdirectory(src/joint_utils)
 
 

@@ -16,30 +16,17 @@
 //imported renderers
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
 #include <laser_utils/renderer_laser.h>
-//#include <renderer_cam_thumb_drc/renderer_cam_thumb_drc.h>
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
-//#include <maps-renderer/maps_renderer.hpp>
-//#include <data-control-renderer/DataControlRenderer.hpp>
-//#include <atlas-camera-renderer/CameraRenderer.hpp>
-// #include <renderer_annotated_camera/AnnotatedCameraRenderer.hpp>
 #include <multisense/multisense_renderer.h>
 #include <occ_map/occ_map_renderers.h>
-// Individual Renderers:
-#include <renderer_drc/renderer_scrollingplots.h>
-#include <renderer_drc/renderer_walking.hpp>
-#include <renderer_drc/renderer_controller_options.hpp>
-//#include <renderer_drc/renderer_status.hpp>
 #include <renderer_drc/renderer_drcgrid.h>
-#include <renderer_drc/renderer_recovery.hpp>
 #include <renderer_drc/renderer_bdi.hpp>
 
 // block of renderers
 #include <renderer_robot_state/renderer_robot_state.hpp>
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
-#include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
-// #include <tracker-renderer/TrackerRenderer.hpp>
 
 // state estimation renderers:
 #include <mav_state_est/mav_state_est_renderers.h>
@@ -283,7 +270,7 @@ int main(int argc, char *argv[])
   //atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   //setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
-  setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
+//  setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   // setup_renderer_controller_options(viewer, 0, lcm, bot_param, bot_frames);
   //status_add_renderer_to_viewer(viewer, 0, lcm);

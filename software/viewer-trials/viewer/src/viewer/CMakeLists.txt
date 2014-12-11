@@ -4,7 +4,7 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
 #        bot2-frames-renderers  
         bot2-frames-renderers-drc  
         laser-util-renderer
-        renderer_walking
+#        renderer_walking
         multisense-renderer
         octomap-renderer
         occ-map-renderers
@@ -14,9 +14,9 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         renderer_robot_plan
         renderer_sticky_feet
         collections_renderer
-        renderer_manipulation
         renderer_drcgrid
         renderer_bdi)
+#        renderer_manipulation
 #        renderer_affordances
 #        renderer_scrollingplots
 #        renderer_status
@@ -34,12 +34,3 @@ pods_use_pkg_config_packages(drc-viewer ${RENDERERS})
 # depreciated for now: renderer_annotated_camera
 pods_install_executables(drc-viewer)
 
-
-
-
-
-
-add_executable(camera-viewer main_camera.cpp udp_util.c)
-pods_use_pkg_config_packages(camera-viewer renderer_cam_thumb_drc)
-# depreciated for now: renderer_annotated_camera
-pods_install_executables(camera-viewer)

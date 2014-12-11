@@ -2,9 +2,3 @@
 # and lines starting with '#' are ignored
 
 drc_utils
-kinematics
-collision
-opengl
-state
-interface
-qt4
