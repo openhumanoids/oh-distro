@@ -16,7 +16,7 @@
 //imported renderers
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
 #include <laser_utils/renderer_laser.h>
-#include <renderer_cam_thumb_drc/renderer_cam_thumb_drc.h>
+//#include <renderer_cam_thumb_drc/renderer_cam_thumb_drc.h>
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
 //#include <maps-renderer/maps_renderer.hpp>
@@ -29,7 +29,7 @@
 #include <renderer_drc/renderer_scrollingplots.h>
 #include <renderer_drc/renderer_walking.hpp>
 #include <renderer_drc/renderer_controller_options.hpp>
-#include <renderer_drc/renderer_status.hpp>
+//#include <renderer_drc/renderer_status.hpp>
 #include <renderer_drc/renderer_drcgrid.h>
 #include <renderer_drc/renderer_recovery.hpp>
 #include <renderer_drc/renderer_bdi.hpp>
@@ -281,13 +281,13 @@ int main(int argc, char *argv[])
   //  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   //}
   //atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+  //setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   // setup_renderer_controller_options(viewer, 0, lcm, bot_param, bot_frames);
-  status_add_renderer_to_viewer(viewer, 0, lcm);
-  add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
+  //status_add_renderer_to_viewer(viewer, 0, lcm);
+  //add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   bdi_add_renderer_to_viewer(viewer, 0, lcm);
 
   if (use_multisense_renderer) {

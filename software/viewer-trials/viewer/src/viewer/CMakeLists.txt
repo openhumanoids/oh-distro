@@ -12,15 +12,15 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         lcmtypes_drc_lcmtypes
         renderer_robot_state
         renderer_robot_plan
-        renderer_affordances
         renderer_sticky_feet
         collections_renderer
         renderer_manipulation
-        renderer_scrollingplots
-        renderer_status
         renderer_drcgrid
-        renderer_bdi
-        renderer_cam_thumb_drc)
+        renderer_bdi)
+#        renderer_affordances
+#        renderer_scrollingplots
+#        renderer_status
+#        renderer_cam_thumb_drc)
 #        maps-renderer
 #        atlas-camera-renderer
 #        data-control-renderer
