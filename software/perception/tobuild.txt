@@ -1,40 +1,19 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
-
 image_io_utils
 # sudeep:
 opencv-utils
-
 # library to create depth masks:
 rgbd_simulation 
-stereo-bm
-
-# core lidar tools (antone) and affordance store (fleder)
-world_model
-
+affordance
+maps
 # too to filter lidar self detections
-lidar-passthrough
-
-# to check for self-collisions (and collisions with lidar eventually -
-# commented out for now)
-lidar-plancheck
-# and module to apply object masks:
-image-passthrough
-
+#lidar-passthrough
+# to check for self-collisions 
+#lidar-plancheck
+# module to apply object masks:
+#image-passthrough
 # particle-filter based tracking
 particle_filter
-trackers
-
-affordance-tags
-
 pfgrasp
 jpl-tags
-
-# i think these are deprecated
-# maurice's sandbox:
-# some quick start examples:
-#tutorials
-#mfallon_sandbox
-#driving-perception
-#kintinuous-utils
-#camunits-drc
