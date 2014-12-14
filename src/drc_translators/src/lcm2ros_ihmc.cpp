@@ -155,9 +155,14 @@ void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string 
   mout.dataType = msg->data_type;
   mout.referenceFrame = msg->reference_frame;
   mout.toHomePosition = msg->to_home_position;
-  mout.position = msg->position;
-  mout.orientation = msg->orientation;
-  mout.trajectoryTime = msg->trajectoryTime;
+  mout.position.x = msg->position[0];
+  mout.position.y = msg->position[1];
+  mout.position.z = msg->position[2];
+  mout.orientation.w = msg->orientation[0];
+  mout.orientation.x = msg->orientation[1];
+  mout.orientation.y = msg->orientation[2];
+  mout.orientation.z = msg->orientation[3];
+  mout.trajectoryTime = msg->trajectory_time;
   mout.jointAngles = msg->joint_angles;
   hand_pose_pub_.publish(mout);
 }
