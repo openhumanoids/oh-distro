@@ -7,5 +7,5 @@ add_executable(${LIBRARY_NAME}
   FusedDepthHandler.cpp
   StereoHandler.cpp
   ServerMain.cpp)
-pods_use_pkg_config_packages(${LIBRARY_NAME} maps opencv stereo-bm)
+pods_use_pkg_config_packages(${LIBRARY_NAME} maps opencv)
 pods_install_executables(${LIBRARY_NAME})
