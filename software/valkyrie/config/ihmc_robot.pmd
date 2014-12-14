@@ -1,17 +1,17 @@
 group "0.params_and_model_pub" {
     cmd "pserver" {
         exec = "bot-param-server $DRC_BASE/software/config/simul_robot.cfg";
-        host = "base";
+        host = "localhost";
     }
 
     cmd "model_LR_RR" {
         exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_sim.urdf";
-        host = "base";
+        host = "localhost";
     }
 
     cmd "ihmc_bridge" {
         exec = "roslaunch drc_translators ihmc_bridge.launch";
-        host = "base";
+        host = "localhost";
     }
 }
 
@@ -19,7 +19,7 @@ group "1.state_mit" {
 
     cmd "joints2frames" {
         exec = "drc-joints2frames -g -m -b";
-        host = "base";
+        host = "localhost";
     }
 
 }
@@ -29,12 +29,12 @@ group "2.plan_and_control" {
 
     cmd "contact_monitor" {        
     	exec = "drc-contact-monitor";
-        host = "robot";
+        host = "localhost";
     }
 
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
-       host = "base";
+       host = "localhost";
        stop_signal = 15;
     }
 
@@ -44,17 +44,17 @@ group "5.maps" {
 
     cmd "data-request-server" {
         exec = "data-request-server";
-        host = "base";
+        host = "localhost";
     }
 
     cmd "maps-server" {
         exec = "maps-server";
-        host = "base";
+        host = "localhost";
     }
 
     cmd "lidar-passthrough" {
-        exec = "drc-lidar-passthrough -c 0.06";
-        host = "base";
+        exec = "drc-lidar-passthrough -s  -d 0.01";
+        host = "localhost";
     }
 
 }
@@ -67,22 +67,11 @@ cmd "drake-designer" {
 
 cmd "pose-util" {
     exec = "drc-robot-pose-util";
-    host = "base";
-}
-
-cmd "base_deputy" {
-    exec = "bot-procman-deputy -n base";
     host = "localhost";
 }
 
-cmd "robot_deputy" {
-    exec = "bot-procman-deputy -n robot";
-    host = "localhost";
-}
 
-script "0.prep" {
-    start cmd "base_deputy";
-    wait ms 1000;
+script "start" {
     start group "0.params_and_model_pub";
     wait ms 1000;
     start group "1.state_mit";
@@ -90,21 +79,3 @@ script "0.prep" {
     start group "5.maps";
 }
 
-script "1.power_on" {
-    stop cmd "atlas-off";
-    wait ms 2000;
-    start cmd "atlas-high";
-}
-
-script "2.stop_clean" {
-    stop cmd "atlas-off";
-    stop cmd "atlas-high";
-    stop cmd "AtlasController";
-    stop cmd "fusion";
-    stop cmd "state-sync";
-    wait ms 2000;
-    start cmd "atlas-off";
-    start cmd "state-sync";
-    start cmd "fusion";
-    start cmd "AtlasController";
-}
