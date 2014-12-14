@@ -272,14 +272,28 @@ void Pass::prepareModel(){
 }
 
 
+
+Eigen::Isometry3d getPose(double xyz[3], double rpy[3]){
+  Matrix3d m;
+  m = AngleAxisd ( rpy[2], Vector3d::UnitZ ())
+                  * AngleAxisd (rpy[1] , Vector3d::UnitY ())
+                  * AngleAxisd ( rpy[0] , Vector3d::UnitX ());  
+  Eigen::Isometry3d pose =  Eigen::Isometry3d::Identity();
+  pose *= m;  
+  pose.translation()  << xyz[0], xyz[1], xyz[2];  
+  
+  return pose;
+}
+
 void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){
     std::map<string,double> am;
     for (size_t j=0; j< affplus.aff.nparams; j++){
       am[ affplus.aff.param_names[j] ] = affplus.aff.params[j];
     }
 
-    //Eigen::Isometry3d transform = affutils.getPose(affplus.aff.param_names, affplus.aff.params);
-    Eigen::Isometry3d transform = affutils.getPose(affplus.aff.origin_xyz, affplus.aff.origin_rpy );
+    // removed affutils dependency in Dec 2014: 
+    //Eigen::Isometry3d transform = affutils.getPose(affplus.aff.origin_xyz, affplus.aff.origin_rpy );
+    Eigen::Isometry3d transform = getPose(affplus.aff.origin_xyz, affplus.aff.origin_rpy );
 
     string otdf_type = affplus.aff.otdf_type;
 
@@ -292,15 +306,15 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
     }else if(otdf_type == "steering_cyl"){
       //cout  << aff_uid << " is a steering_cyl\n";
       mesh_out = prim_->getCylinderWithTransform(transform, am.find("radius")->second, am.find("radius")->second, am.find("length")->second );
-    }else if(otdf_type == "dynamic_mesh"){
-      //cout  << aff_uid << " is a dynamic_mesh ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
-      mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
-    }else if(otdf_type == "dynamic_mesh_w_1_cylinder"){ // Ignores the cylinder and just draws the mesh
-      //cout  << aff_uid << " is a dynamic_mesh_w_1_cylinder ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
-      mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
-    }else if(otdf_type == "plane"){
-      //cout  << aff_uid << " is a plane ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
-      mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
+    //}else if(otdf_type == "dynamic_mesh"){
+    //  //cout  << aff_uid << " is a dynamic_mesh ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
+    //  mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
+    //}else if(otdf_type == "dynamic_mesh_w_1_cylinder"){ // Ignores the cylinder and just draws the mesh
+    //  //cout  << aff_uid << " is a dynamic_mesh_w_1_cylinder ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
+    //  mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
+    //}else if(otdf_type == "plane"){
+    //  //cout  << aff_uid << " is a plane ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
+    //  mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
     }else if(otdf_type == "firehose"){
       // the simple two cylinder model maurice used in dec 2013
       // NB: I don't support otdf - so this is hard coded here for now

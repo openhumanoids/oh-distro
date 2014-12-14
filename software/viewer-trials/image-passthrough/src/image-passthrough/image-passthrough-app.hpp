@@ -17,7 +17,7 @@
 #include <model-client/model-client.hpp> // Receive the robot model
 
 #include <path_util/path_util.h>
-#include <affordance/AffordanceUtils.hpp>
+// #include <affordance/AffordanceUtils.hpp>
 
 #include "lcmtypes/drc/affordance_plus_t.hpp"
 #include "lcmtypes/drc/affordance_plus_collection_t.hpp"
@@ -124,7 +124,7 @@ class Pass{
     pcl::PolygonMesh::Ptr combined_aff_mesh_ ;
     bool aff_mesh_filled_;
     
-    AffordanceUtils affutils;
+    // disable dec 2014 to break dependency: AffordanceUtils affutils;
     
     void prepareModel();
     
