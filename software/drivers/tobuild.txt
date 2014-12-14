@@ -6,3 +6,4 @@ multisense
 ipwebcam
 ptgrey
 robotiqhand
+irobothand
