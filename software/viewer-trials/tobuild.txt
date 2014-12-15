@@ -4,6 +4,7 @@ object_template_model
 kinematics_model
 collision
 opengl
+state
 interface
 qt4
 drc_viewer_utils
