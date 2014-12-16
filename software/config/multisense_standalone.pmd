@@ -1,0 +1,41 @@
+group "startup" {
+    cmd "model" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/multisense_sl/multisense_sl_sim.urdf ";
+        host = "localhost";
+    }
+    cmd "param" {
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_mit.cfg";
+        host = "localhost";
+    }
+    cmd "sync" {
+        exec = "drc-state-sync -l";
+        host = "localhost";
+    }
+    cmd "multisense" {
+        exec = "multisense-lcm-driver";
+        host = "localhost";
+    }
+    cmd "imu2posebody" {
+        exec = "drc-motion-estimate-imu-ypr-only";
+        host = "localhost";
+    }
+}
+
+cmd "microstrain_from_sudo" {
+    exec = "microstrain_comm  -r";
+    host = "localhost";
+}
+
+cmd "drake-designer" {
+    exec = "drake-designer";
+    host = "localhost";
+}
+
+cmd "drc-viewer" {
+    exec = "drc-viewer";
+    host = "localhost";
+}
+
+script "startup" {
+    start group "startup";
+}

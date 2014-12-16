@@ -631,7 +631,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   if (cl_cfg_->simulation_mode){ // to be deprecated..
     lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
   }
-  
+
   if (cl_cfg_->bdi_motion_estimate){
     if ( insertPoseInRobotState(robot_state_msg, pose_BDI_) ){
       bot_core::pose_t pose_body;
@@ -640,7 +640,9 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
       lcm_->publish( cl_cfg_->output_channel  , &robot_state_msg);
     }
   }else if(cl_cfg_->standalone_head || cl_cfg_->standalone_hand ){
-    lcm_->publish( cl_cfg_->output_channel , &robot_state_msg);
+    if ( insertPoseInRobotState(robot_state_msg, pose_MIT_) ){
+      lcm_->publish( cl_cfg_->output_channel , &robot_state_msg);
+    }
   }else{ // typical motion estimation
     if ( insertPoseInRobotState(robot_state_msg, pose_MIT_) ){
       lcm_->publish( cl_cfg_->output_channel, &robot_state_msg);
