@@ -1,7 +1,7 @@
 function traj = simulateWalking(r, walking_ctrl_data, ts, use_mex, use_ik, use_bullet, use_angular_momentum, draw_button)
 %NOTEST
 
-addpath(fullfile(getDrakePath,'examples','ZMP'));
+path_handle = addpathTemporary(fullfile(getDrakePath(), 'examples', 'Atlas', 'controllers'));
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
