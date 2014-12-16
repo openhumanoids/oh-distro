@@ -29,7 +29,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.001;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
@@ -59,6 +59,8 @@ request.params.nom_step_width = 0.24;
 request.params.max_step_width = 0.3;
 request.params.nom_forward_step = 0.5;
 request.params.max_forward_step = 0.5;
+request.params.nom_upward_step = 0.25;
+request.params.nom_downward_step = 0.25;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_mode = drc.footstep_plan_params_t.HORIZONTAL_PLANE;
