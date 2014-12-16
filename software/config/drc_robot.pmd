@@ -72,7 +72,7 @@ group "2.plan_and_control" {
 group "4.perception_drivers" {
 
     cmd "multisense" {
-        exec = "drc-multisense -o 0";
+        exec = "multisense-lcm-driver -o 0 -n hokuyo_joint";
         host = "robot";
     }
 
