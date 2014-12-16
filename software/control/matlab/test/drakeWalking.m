@@ -10,7 +10,7 @@ if (nargin<3); use_bullet = false; end
 if (nargin<4); use_angular_momentum = false; end
 if (nargin<5); random_navgoal = false; end
 
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat'));
 if random_navgoal
   xstar(1) = randn();
   xstar(2) = randn();
@@ -29,10 +29,12 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.001;
+options.atlas_version = 4;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
+xstar(3) = xstar(3) + 0.007; % TODO REMOVE THIS ADJUSTMENT WHEN FOOT CONTACT POINT LOCATIONS ARE FIXED
 % set initial state to fixed point
 r = r.setInitialState(xstar);
 
