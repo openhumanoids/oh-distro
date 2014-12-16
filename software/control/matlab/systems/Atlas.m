@@ -21,7 +21,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'terrain')
         options.terrain = RigidBodyFlatTerrain;
       end
-      
+      if ~isfield(options,'hands')
+        options.hands = 'none';
+      end
       if ~isfield(options,'control_rate')
         options.control_rate = 250;
       end
@@ -29,10 +31,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
       
-      % add hands
-      if ~isfield(options,'hands')
-        options.hands = 'none';
-      end
       if (~strcmp(options.hands, 'none'))
         if (strcmp(options.hands, 'robotiq'))
           options_hand.weld_to_link = 29;
@@ -112,7 +110,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         obj.getStateFrame().setMaxRate(obj.control_rate);
       end
       
-      obj.floating = options.floating;
 
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
       obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
@@ -253,34 +250,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
     end
 
-    function z = getPelvisHeightAboveFeet(obj,q)
+    function [zmin,zmax] = getPelvisHeightLimits(obj,q) % for BDI manip mode
       kinsol = doKinematics(obj,q);
       foot_z = getFootHeight(obj,q);
       pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
-      z = pelvis(3) - foot_z;
-    end
-    
-    function bool = isDoubleSupport(obj,rigid_body_support_state)
-      bool = any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
-    end
-
-    function bool = isLeftSupport(obj,rigid_body_support_state)
-      bool = any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && ~any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
-    end
-
-    function bool = isRightSupport(obj,rigid_body_support_state)
-      bool = ~any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
-    end
-    
-    function foot_z = getFootHeight(obj,q)
-      kinsol = doKinematics(obj,q);
-      rfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.right);
-      lfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.left);
-      foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
-    end
-
-    function [zmin,zmax] = getPelvisHeightLimits(obj,q) % for BDI manip mode
-      z_above_feet = getPelvisHeightAboveFeet(obj,q);
+      z_above_feet = pelvis(3) - foot_z;
       zmin = q(3) - (z_above_feet-obj.pelvis_min_height);
       zmax = q(3) + (obj.pelvis_max_height-z_above_feet);
     end
@@ -293,6 +267,10 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         sizecheck(x0,obj.getNumStates());
         obj.x0 = x0;
       end
+    end
+
+    function x0 = getInitialState(obj)
+      x0 = obj.x0;
     end
 
     function weights = getFootstepOptimizationWeights(obj)
@@ -313,10 +291,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       weights = struct('relative', [1;1;1;0;0;0.5],...
                        'relative_final', [10;10;10;0;0;2],...
                        'goal', [100;100;0;0;0;10]);
-    end
-
-    function x0 = getInitialState(obj)
-      x0 = obj.x0;
     end
 
     function [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = constructQPWalkingController(obj,controller_data,options)
@@ -388,10 +362,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
 
       if isfield(options,'use_foot_motion_block') && options.use_foot_motion_block
-        options.Kp = options.Kp_foot;
-        options.Kd = getDampingGain(options.Kp,options.foot_damping_ratio);
-        lfoot_control_block = FootMotionControlBlock(obj,'l_foot',controller_data,options);
-        rfoot_control_block = FootMotionControlBlock(obj,'r_foot',controller_data,options);
+        foot_options = struct('Kp', options.Kp_foot,...
+                              'Kd', getDampingGain(options.Kp,options.foot_damping_ratio),...
+                              'use_plan_shift', true);
+        lfoot_control_block = BodyMotionControlBlock(obj,'l_foot',controller_data,foot_options);
+        rfoot_control_block = BodyMotionControlBlock(obj,'r_foot',controller_data,foot_options);
         motion_frames = {lfoot_control_block.getOutputFrame,rfoot_control_block.getOutputFrame,...
           pelvis_control_block.getOutputFrame};
       else
@@ -405,14 +380,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options.Kd = getDampingGain(options.Kp,options.q_damping_ratio);
       pd = IKPDBlock(obj,controller_data,options);
     end
-    
+
   end
-  properties
-    fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
-  end
+
   properties (SetAccess = protected, GetAccess = public)
     x0
-    floating
     control_rate
     inverse_dyn_qp_controller;
     pelvis_min_height = 0.65; % [m] above feet, for hardware
@@ -450,7 +422,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
     foot_force_sensors = false;
     hands = 0; % 0, none; 1, Robotiq
-    
+    fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
     % preconstructing these for efficiency
     left_full_support
     left_toe_support
