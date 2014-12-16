@@ -29,6 +29,13 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
       
+      if isfield(options,'atlas_version')
+        obj.atlas_version = options.atlas_version;
+      else
+        obj.atlas_version = 3;
+      end
+      obj = compile(obj);
+      
       % add hands
       if ~isfield(options,'hands')
         options.hands = 'none';
@@ -142,6 +149,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     end
 
     function obj = compile(obj)
+      if isempty(obj.atlas_version)
+        return;
+      end
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
 
       % Sanity check if we have hands.
@@ -459,5 +469,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     left_full_right_full_support
     left_toe_right_full_support
     left_full_right_toe_support
+    atlas_version=[] % model version 3, 4, 5
   end
 end

@@ -30,7 +30,7 @@ classdef AtlasInput < LCMCoordinateFrame & Singleton
       end
       
       if (obj.mex_ptr==0)
-        obj.mex_ptr = AtlasCommandPublisher(input_names,gains.k_q_p*0,gains.k_q_i*0,...
+        obj.mex_ptr = AtlasCommandPublisher(input_names,r.atlas_version,gains.k_q_p*0,gains.k_q_i*0,...
           gains.k_qd_p*0,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
       end
     end
