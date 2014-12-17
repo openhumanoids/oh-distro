@@ -3,7 +3,7 @@
   <link name="l_clav">
     <inertial>
       <mass value="3.45" />
-      <origin xyz="0 0.048 -0.084" rpy="0 0 0" />
+      <origin xyz="0 0 -0.084" rpy="0 0 0" />
       <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="-0.004" izz="0.004" />
     </inertial>
     <visual>
@@ -11,9 +11,22 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_clav.dae"/>
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 1.5707963267949 0" xyz="0 0.11 -0.248"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_clav.dae" />
+        <cylinder radius="0.0555" length="0.1525"/>
+      </geometry>
+    </collision>
+    <collision group="yet_another">
+      <origin rpy="0 0 0" xyz="0.005 0.015 -0.08"/>
+      <geometry>
+        <cylinder radius="0.067" length="0.26"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="-1.05 0 0" xyz="0.004 0.064 -0.247"/>
+      <geometry>
+        <box size="0.1 0.07 0.072"/>
       </geometry>
     </collision>
   </link>
@@ -29,18 +42,19 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_foot.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin xyz="${0.048-0.007} 0 ${-0.056119+0.007}" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_foot.dae" />
+        <box size="${0.26-0.0005} ${0.124887+0.009} 0.05"/>
       </geometry>
     </collision>
   </link>
 
   <link name="l_hand">
     <inertial>
-      <mass value="0.53" />
-      <origin xyz="0 0.06 0" rpy="0 0 0" />
-      <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446" />
+      <mass value="0.5839" />
+      <origin xyz="0.00016 0.08159 0.00002" rpy="0 0 0" />
+      <inertia ixx="0.000388" ixy="0" ixz="0" iyy="0.000477" iyz="0" izz="0.000379" />
     </inertial>
   </link>
 
@@ -55,27 +69,77 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_larm.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="1.5707963267949 0 0" xyz="0.00 0.075 -0.01"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_larm.dae" />
+        <cylinder radius="0.051" length="0.04"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 1.5707963267949 0" xyz="-0.012 0 0.0025"/>
+      <geometry>
+        <cylinder radius="0.045" length="0.147"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.07 0.077 -0.015"/>
+      <geometry>
+        <box size="0.025 0.155 0.07"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.05 0.067 -0.009"/>
+      <geometry>
+        <box size="0.025 0.06 0.06"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.032 0.071 -0.06"/>
+      <geometry>
+        <box size="0.04 0.115 0.05"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.03 0.01 -0.05"/>
+      <geometry>
+        <box size="0.045 0.055 0.023"/>
       </geometry>
     </collision>
   </link>
 
   <link name="l_lfarm">
     <inertial>
-      <mass value="2.65" />
-      <origin xyz="0 -0.07 0" rpy="0 0 0" />
-      <inertia ixx="0.007" ixy="0" ixz="0" iyy="0.004" iyz="0" izz="0.007" />
+      <mass value="0.648" />
+      <origin xyz="0.00017 0.02515 0.00163" rpy="0 0 0" />
+      <inertia ixx="0.000764" ixy="0" ixz="0" iyy="0.000429" iyz="0" izz="0.000825" />
     </inertial>
     <visual>
       <geometry>
         <mesh filename="package://atlas_description/meshes_unplugged/l_hand.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="connector">
+      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.104 0.00"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_hand.dae" />
+        <cylinder radius="0.031" length="0.02"/>
+      </geometry>
+    </collision>
+    <collision group="connector_outer">
+      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.087 0.00"/>
+      <geometry>
+        <cylinder radius="0.045" length="0.015"/>
+      </geometry>
+    </collision>
+    <collision group="wrist_outer">
+      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.075 0.00"/>
+      <geometry>
+        <cylinder radius="0.052" length="0.015"/>
+      </geometry>
+    </collision>
+    <collision group="wrist">
+      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.052 0.00"/>
+      <geometry>
+        <cylinder radius="0.043" length="0.027"/>
       </geometry>
     </collision>
   </link>
@@ -91,9 +155,23 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_lglut.dae" />
       </geometry>
     </visual>
-    <collision>
+
+    <collision group="default">
+      <origin rpy="1.5707963267949 0 0" xyz="0.05 ${0.022488+0.005} ${-0.05-0.017}"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_lglut.dae" />
+        <cylinder radius="0.02009687" length="0.060306"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 1.5707963267949 0" xyz="0.0115 0 0"/>
+      <geometry>
+        <cylinder radius="0.02" length="0.144"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="0.01 0.02 0.01"/>
+      <geometry>
+        <box size="0.0975 0.069 0.103"/>
       </geometry>
     </collision>
   </link>
@@ -109,9 +187,10 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_lleg.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 0.10 0" xyz="0.02 0.00295 ${-0.18-0.002}"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_lleg.dae" />
+        <cylinder radius="0.07" length="0.40"/>
       </geometry>
     </collision>
   </link>
@@ -127,9 +206,28 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_scap.dae" />
       </geometry>
     </visual>
-    <collision>
+   <collision group="another">
+      <origin rpy="-1.5707963267949 0 0" xyz="-0.005 0.115 -0.014"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_scap.dae" />
+        <cylinder radius="0.057" length="0.105"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="-0.005 0.075 -0.015"/>
+      <geometry>
+        <box size="0.16 0.17 0.08"/>
+      </geometry>
+    </collision>
+    <collision group="and_another">
+      <origin rpy="-2.25 0 0" xyz="0.076 0.0615 0.0128"/>
+      <geometry>
+        <box size="0.02 0.029 0.018"/>
+      </geometry>
+    </collision>
+    <collision group="final">
+      <origin rpy="-1 0 0" xyz="-0.075 -0.015 0.019"/>
+      <geometry>
+        <box size="0.028 0.090 0.05"/>
       </geometry>
     </collision>
   </link>
@@ -145,9 +243,16 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_talus.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_talus.dae" />
+        <cylinder radius="0.010181" length="0.029542"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="1.5707963267949 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.010348" length="0.010059"/>
       </geometry>
     </collision>
   </link>
@@ -155,7 +260,7 @@
   <link name="l_uarm">
     <inertial>
       <mass value="3.388" />
-      <origin xyz="0 -0.065 0" rpy="0 0 0" />
+      <origin xyz="0.0 0.065 0.0" rpy="0 0 0" />
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656" />
     </inertial>
     <visual>
@@ -163,18 +268,25 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_uarm.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="another">
+      <origin rpy="-1.5708 0 0" xyz="0.0 0.035 -0.005"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_uarm.dae" />
+        <cylinder radius="0.065" length="0.11"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 1.5707963267949 0" xyz="-0.01 0.043 0.002"/>
+      <geometry>
+        <box size="0.05 0.07 0.15"/>
       </geometry>
     </collision>
   </link>
 
   <link name="l_ufarm">
     <inertial>
-      <mass value="2.12" />
-      <origin xyz="0 -0.2 0" rpy="0 0 0" />
-      <inertia ixx="0.006" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.006" />
+      <mass value="2.4798" />
+      <origin xyz="0.00015 -0.08296 0.00037" rpy="0 0 0" />
+      <inertia ixx="0.012731" ixy="0" ixz="0" iyy="0.002857" iyz="0" izz="0.011948" />
     </inertial>
     <visual>
       <geometry>
@@ -182,8 +294,21 @@
       </geometry>
     </visual>
     <collision>
+      <origin xyz="0 -0.15 0" rpy="1.57 0 0" />
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_farm.dae" />
+        <cylinder radius="0.053" length="0.1"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 1.5707963267949 0" xyz="-0.001 -0.07 0.0"/>
+      <geometry>
+        <box size="0.08 0.09 0.11"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.005 0" rpy="0 1.57 0" />
+      <geometry>
+        <cylinder radius="0.040" length="0.125"/>
       </geometry>
     </collision>
   </link>
@@ -199,9 +324,16 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_uglut.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_uglut.dae" />
+        <cylinder radius="0.019096" length="0.078396"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.019841" length="0.080842"/>
       </geometry>
     </collision>
   </link>
@@ -217,9 +349,37 @@
         <mesh filename="package://atlas_description/meshes_unplugged/l_uleg.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 0 0" xyz="${-0.0179-0.002} ${0.02085-0.015} ${-0.13+0.008}"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/l_uleg.dae" />
+        <cylinder radius="0.09" length="0.15"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 -0.3 0" xyz="${-0.03-0.002} ${0.01-0.015} ${-0.23+0.006}"/>
+      <geometry>
+        <cylinder radius="0.07" length="0.15"/>
+      </geometry>
+    </collision>
+    <!-- to cover the logo shield -->
+    <collision group="other">
+      <origin rpy="-0.15 0.13 0" xyz="${0.005-0.002} ${0.03-0.015} ${-0.26+0.006}"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.15"/>
+      </geometry>
+    </collision>
+    <!-- inside strut -->
+    <collision group="other">
+      <origin rpy="0.0 0.0 0" xyz="${-0.005-0.002} ${-0.023-0.030} ${-0.058+0.006}"/>
+      <geometry>
+        <box size="0.07 0.038 0.15"/>
+      </geometry>
+    </collision>
+    <!-- outside strut -->
+    <collision group="other">
+      <origin rpy="0.0 0.0 0" xyz="${-0.015-0.002} ${0.078-0.0185} ${-0.055+0.006}"/>
+      <geometry>
+        <box size="0.07 0.038 0.14"/>
       </geometry>
     </collision>
   </link>
@@ -235,11 +395,6 @@
         <mesh filename="package://atlas_description/meshes_unplugged/ltorso.dae" />
       </geometry>
     </visual>
-    <collision>
-      <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/ltorso.dae" />
-      </geometry>
-    </collision>
   </link>
 
   <link name="mtorso">
@@ -253,9 +408,10 @@
         <mesh filename="package://atlas_description/meshes_unplugged/mtorso.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="0.0 0 -0.02"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/mtorso.dae" />
+        <cylinder radius="0.02" length="0.15"/>
       </geometry>
     </collision>
   </link>
@@ -271,9 +427,34 @@
         <mesh filename="package://atlas_description/meshes_unplugged/pelvis.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="1.5707963267949 0 0" xyz="0.046 0.0 ${-0.02+0.03}"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/pelvis.dae" />
+        <cylinder radius="0.11" length="0.06"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="1.5707963267949 0 0" xyz="-0.03 0.0 ${-0.02+0.03}"/>
+      <geometry>
+        <cylinder radius="0.11" length="0.06"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="0.01 0.042 ${0.09}"/>
+      <geometry>
+        <cylinder radius="0.16" length="0.05"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="0.01 -0.042 ${0.09}"/>
+      <geometry>
+        <cylinder radius="0.16" length="0.05"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="-0.1 0 ${-0.05+0.03}"/>
+      <geometry>
+        <box size="0.1 0.15 0.2"/>
       </geometry>
     </collision>
   </link>
@@ -281,7 +462,7 @@
   <link name="r_clav">
     <inertial>
       <mass value="3.45" />
-      <origin xyz="0 -0.048 -0.084" rpy="0 0 0" />
+      <origin xyz="0 0 -0.084" rpy="0 0 0" />
       <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="0.004" izz="0.004" />
     </inertial>
     <visual>
@@ -289,9 +470,22 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_clav.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 1.5707963267949 0" xyz="0 -0.11 -0.248"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_clav.dae" />
+        <cylinder radius="0.0555" length="0.1525"/>
+      </geometry>
+    </collision>
+    <collision group="yet_another">
+      <origin rpy="0 0 0" xyz="0.005 -0.015 -0.08"/>
+      <geometry>
+        <cylinder radius="0.067" length="0.26"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="1.05 0 0" xyz="0.004 -0.064 -0.247"/>
+      <geometry>
+        <box size="0.1 0.07 0.072"/>
       </geometry>
     </collision>
   </link>
@@ -307,20 +501,22 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_foot.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin xyz="${0.048-0.007} 0 ${-0.056119+0.007}" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_foot.dae" />
+        <box size="${0.26-0.0005} ${0.124887+0.009} 0.05"/>
       </geometry>
     </collision>
   </link>
 
   <link name="r_hand">
     <inertial>
-      <mass value="0.53" />
-      <origin xyz="0 -0.06 0" rpy="0 0 0" />
-      <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446" />
+      <mass value="0.5839" />
+      <origin xyz="0.00016 -0.08159 0.00002" rpy="0 0 0" />
+      <inertia ixx="0.000388" ixy="0" ixz="0" iyy="0.000477" iyz="0" izz="0.000379" />
     </inertial>
   </link>
+
   <link name="r_larm">
     <inertial>
       <mass value="2.509" />
@@ -332,27 +528,77 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_larm.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="-1.5707963267949 0 0" xyz="0.00 -0.075 -0.01"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_larm.dae" />
+        <cylinder radius="0.051" length="0.04"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 1.5707963267949 0" xyz="-0.012 0 0.0025"/>
+      <geometry>
+        <cylinder radius="0.045" length="0.147"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.07 -0.077 -0.015"/>
+      <geometry>
+        <box size="0.025 0.155 0.07"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.05 -0.067 -0.009"/>
+      <geometry>
+        <box size="0.025 0.06 0.06"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.032 -0.071 -0.06"/>
+      <geometry>
+        <box size="0.04 0.115 0.05"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.03 0.01 -0.05"/>
+      <geometry>
+        <box size="0.045 0.055 0.023"/>
       </geometry>
     </collision>
   </link>
 
   <link name="r_lfarm">
     <inertial>
-      <mass value="2.65" />
-      <origin xyz="0 0.07 0" rpy="0 0 0" />
-      <inertia ixx="0.007" ixy="0" ixz="0" iyy="0.004" iyz="0" izz="0.007" />
+      <mass value="0.648" />
+      <origin xyz="0.00017 -0.02515 0.00163" rpy="0 0 0" />
+      <inertia ixx="0.000764" ixy="0" ixz="0" iyy="0.000429" iyz="0" izz="0.000825" />
     </inertial>
     <visual>
       <geometry>
         <mesh filename="package://atlas_description/meshes_unplugged/r_hand.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="connector">
+      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.104 0.00"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_hand.dae" />
+        <cylinder radius="0.031" length="0.02"/>
+      </geometry>
+    </collision>
+    <collision group="connector_outer">
+      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.087 0.00"/>
+      <geometry>
+        <cylinder radius="0.045" length="0.015"/>
+      </geometry>
+    </collision>
+    <collision group="wrist_outer">
+      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.075 0.00"/>
+      <geometry>
+        <cylinder radius="0.052" length="0.015"/>
+      </geometry>
+    </collision>
+    <collision group="wrist">
+      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.052 0.00"/>
+      <geometry>
+        <cylinder radius="0.043" length="0.027"/>
       </geometry>
     </collision>
   </link>
@@ -368,9 +614,22 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_lglut.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="1.5707963267949 0 0" xyz="0.05 ${-0.022488-0.005} ${-0.05-0.017}"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_lglut.dae" />
+        <cylinder radius="0.02009687" length="0.060306"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 1.5707963267949 0" xyz="0.0105 0 0"/>
+      <geometry>
+        <cylinder radius="0.02" length="0.142"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="0.01 -0.02 0.01"/>
+      <geometry>
+        <box size="0.0975 0.069 0.103"/>
       </geometry>
     </collision>
   </link>
@@ -386,9 +645,10 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_lleg.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 0.10 0" xyz="0.02 -0.00295 ${-0.18-0.002}"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_lleg.dae" />
+        <cylinder radius="0.07" length="0.40"/>
       </geometry>
     </collision>
   </link>
@@ -404,9 +664,28 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_scap.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="another">
+      <origin rpy="1.5707963267949 0 0" xyz="-0.005 -0.115 -0.014"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_scap.dae" />
+        <cylinder radius="0.057" length="0.105"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="-0.005 -0.075 -0.015"/>
+      <geometry>
+        <box size="0.16 0.17 0.08"/>
+      </geometry>
+    </collision>
+    <collision group="and_another">
+      <origin rpy="2.25 0 0" xyz="0.076 -0.0615 0.0128"/>
+      <geometry>
+        <box size="0.02 0.029 0.018"/>
+      </geometry>
+    </collision>
+    <collision group="final">
+      <origin rpy="1 0 0" xyz="-0.075 0.015 0.019"/>
+      <geometry>
+        <box size="0.028 0.090 0.05"/>
       </geometry>
     </collision>
   </link>
@@ -422,9 +701,16 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_talus.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_talus.dae" />
+        <cylinder radius="0.010181" length="0.029542"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="1.5707963267949 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.010348" length="0.010059"/>
       </geometry>
     </collision>
   </link>
@@ -440,18 +726,25 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_uarm.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="another">
+      <origin rpy="1.5708 0 0" xyz="0.0 -0.035 -0.005"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_uarm.dae" />
+        <cylinder radius="0.065" length="0.11"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 1.5707963267949 0" xyz="-0.01 -0.043 0.002"/>
+      <geometry>
+        <box size="0.05 0.07 0.15"/>
       </geometry>
     </collision>
   </link>
 
   <link name="r_ufarm">
     <inertial>
-      <mass value="2.12" />
-      <origin xyz="0 0.2 0" rpy="0 0 0" />
-      <inertia ixx="0.006" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.006" />
+      <mass value="2.4798" />
+      <origin xyz="0.00015 0.08296 0.00037" rpy="0 0 0" />
+      <inertia ixx="0.012731" ixy="0" ixz="0" iyy="0.002857" iyz="0" izz="0.011948" />
     </inertial>
     <visual>
       <geometry>
@@ -459,8 +752,21 @@
       </geometry>
     </visual>
     <collision>
+      <origin xyz="0 0.15 0" rpy="1.57 0 0" />
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_farm.dae" />
+        <cylinder radius="0.053" length="0.1"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="0 1.5707963267949 0" xyz="-0.001 0.07 0.0"/>
+      <geometry>
+        <box size="0.08 0.09 0.11"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.005 0" rpy="0 1.57 0" />
+      <geometry>
+        <cylinder radius="0.040" length="0.125"/>
       </geometry>
     </collision>
   </link>
@@ -476,9 +782,16 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_uglut.dae" />
       </geometry>
     </visual>
-    <collision>
+    <collision group="default">
+      <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_uglut.dae" />
+        <cylinder radius="0.019096" length="0.078396"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.019841" length="0.080842"/>
       </geometry>
     </collision>
   </link>
@@ -494,9 +807,38 @@
         <mesh filename="package://atlas_description/meshes_unplugged/r_uleg.dae" />
       </geometry>
     </visual>
-    <collision>
+
+    <collision group="default">
+      <origin rpy="0 0 0" xyz="${-0.0179-0.002} ${-0.02085+0.015} ${-0.13+0.008}"/>
       <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/r_uleg.dae" />
+        <cylinder radius="0.09" length="0.15"/>
+      </geometry>
+    </collision>
+    <collision group="other">
+      <origin rpy="0 -0.3 0" xyz="${-0.03-0.002} ${-0.01+0.015} ${-0.23+0.006}"/>
+      <geometry>
+        <cylinder radius="0.07" length="0.15"/>
+      </geometry>
+    </collision>
+    <!-- to cover the logo shield -->
+    <collision group="other">
+      <origin rpy="0.15 0.13 0" xyz="${0.005-0.002} ${-0.03+0.015} ${-0.26+0.006}"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.15"/>
+      </geometry>
+    </collision>
+    <!-- inside strut -->
+    <collision group="other">
+      <origin rpy="0.0 0.0 0" xyz="${-0.005-0.002} ${0.023+0.030} ${-0.058+0.006}"/>
+      <geometry>
+        <box size="0.07 0.038 0.15"/>
+      </geometry>
+    </collision>
+    <!-- outside strut -->
+    <collision group="other">
+      <origin rpy="0.0 0.0 0" xyz="${-0.015-0.002} ${-0.078+0.0185} ${-0.055+0.006}"/>
+      <geometry>
+        <box size="0.07 0.038 0.14"/>
       </geometry>
     </collision>
   </link>
@@ -513,9 +855,59 @@
       </geometry>
     </visual>
     <collision>
-      <geometry>
-        <mesh filename="package://atlas_description/meshes_unplugged/utorso.dae" />
-      </geometry>
+        <origin xyz="-0.052 0 0.25" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.500175 0.35 0.5"/>
+        </geometry>
+    </collision>
+
+    <collision>
+        <origin xyz="0.2 0 0.26" rpy="0 1.7 0"/>
+        <geometry>
+          <box size="0.50175 0.35 0.10"/>
+        </geometry>
+    </collision>
+
+    <collision>
+        <origin xyz="-0.06 0 0.6265" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.456306 0.341719 0.12"/>
+        </geometry>
+    </collision>
+
+    <collision>
+        <origin xyz="0.208 0 0.8215" rpy="1.5707 0 0"/>
+        <geometry>
+          <cylinder radius="0.008" length="0.13"/>
+        </geometry>
+    </collision>
+
+    <collision>
+        <origin xyz="-0.029 0 0.731" rpy="0 -0.65 0"/>
+        <geometry>
+          <box size="0.2 0.25 0.01"/>
+        </geometry>
+    </collision>
+
+    <collision>
+        <origin xyz="0.063 0 0.8215" rpy="1.5707 0 0"/>
+        <geometry>
+          <cylinder radius="0.008" length="0.13"/>
+        </geometry>
+    </collision>
+
+    <collision>
+        <origin xyz="0.261 0.156 0.6215" rpy="1.5707 0 0"/>
+        <geometry>
+          <cylinder radius="0.05" length="0.016"/>
+        </geometry>
+    </collision>
+
+    <collision>
+        <origin xyz="0.261 -0.156 0.6215" rpy="1.5707 0 0"/>
+        <geometry>
+          <cylinder radius="0.05" length="0.016"/>
+        </geometry>
     </collision>
   </link>
 
