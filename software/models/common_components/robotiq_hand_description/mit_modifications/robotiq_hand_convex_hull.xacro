@@ -1,0 +1,43 @@
+<robot name="robotiq" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="robotiq_convex_hull" params="is_left is_open">
+    <xacro:if value="${is_left}">
+      <xacro:robotiq_convex_hull_local prefix="l" yaw="0" y_offset_sign="1" is_open="${is_open}"/>
+    </xacro:if>
+    <xacro:unless value="${is_left}">
+      <xacro:robotiq_convex_hull_local prefix="r" yaw="3.142" y_offset_sign="-1" is_open="${is_open}"/>
+    </xacro:unless>
+  </xacro:macro>
+
+  <xacro:macro name="robotiq_convex_hull_local" params="prefix yaw y_offset_sign is_open">
+    <link name="${prefix}_robotiq_convex_hull">
+      <visual>
+        <origin rpy="-1.57079 -1.57079 ${yaw}" xyz="0 ${y_offset_sign*0.29016} ${y_offset_sign*0.0112}"/>
+        <geometry>
+          <xacro:if value="${is_open}">
+            <mesh filename="../common_components/robotiq_hand_description/meshes/s-model/visual/GRIPPER_OPEN.obj" scale="1 1 1"/>
+          </xacro:if>
+          <xacro:unless value="${is_open}">
+            <mesh filename="../common_components/robotiq_hand_description/meshes/s-model/visual/GRIPPER_CLOSED.obj" scale="1 1 1"/>
+          </xacro:unless>
+        </geometry>
+      </visual>
+      <collision group="${prefix}_hand_robotiq">
+        <origin rpy="-1.57079 -1.57079 ${yaw}" xyz="0 ${y_offset_sign*0.29016} ${y_offset_sign*0.0112}"/>
+        <geometry>
+          <xacro:if value="${is_open}">
+            <mesh filename="../common_components/robotiq_hand_description/meshes/s-model/collision/GRIPPER_OPEN_chull.obj" scale="1 1 1"/>
+          </xacro:if>
+          <xacro:unless value="${is_open}">
+            <mesh filename="../common_components/robotiq_hand_description/meshes/s-model/collision/GRIPPER_CLOSED.obj" scale="1 1 1"/>
+          </xacro:unless>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}_robotiq_convex_hull_joint" type="fixed">
+      <!--<origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>-->
+      <!--<parent link="${prefix}_hand_force_torque"/>-->
+      <parent link="${prefix}_hand"/>
+      <child link="${prefix}_robotiq_convex_hull"/>
+    </joint>
+  </xacro:macro>
+</robot>
