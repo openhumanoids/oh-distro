@@ -269,13 +269,13 @@ options.output_qdd = true;
 
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 vo = VelocityOutputIntegratorBlock(r,options);
-fcb = FootContactBlock(r);
+fcb = atlasControllers.FootContactBlock(r);
 
 % cascade PD block
 options.Kp = 50.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
 options.use_ik = false;
-pd = IKPDBlock(r,ctrl_data,options);
+pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;

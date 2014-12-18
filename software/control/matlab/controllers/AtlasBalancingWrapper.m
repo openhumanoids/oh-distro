@@ -97,8 +97,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
         options.contact_threshold = 0.002;
         options.use_contact_logic_OR = true;
       end
-      obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
-      obj.foot_contact_block = FootContactBlock(r,controller_data,options);
+      obj.qtraj_eval_block = atlasControllers.QTrajEvalBlock(r,controller_data,options);
+      obj.foot_contact_block = atlasControllers.FootContactBlock(r,controller_data,options);
       
       obj.robot = r;
       obj.input_map = getActuatedJoints(r);

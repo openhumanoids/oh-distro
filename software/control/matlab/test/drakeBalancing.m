@@ -96,8 +96,8 @@ options.q_damping_ratio = 0.6;
 
 options.use_lcm=false;
 options.contact_threshold = 0.002;
-fc = FootContactBlock(r,ctrl_data,options);
-qt = QTrajEvalBlock(r,ctrl_data,options);
+fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
+qt = atlasControllers.QTrajEvalBlock(r,ctrl_data,options);
 
 sys = constructQPFeedbackCombination(r,qp,fc,pd,qt,[],[],pelvis_controller);
 

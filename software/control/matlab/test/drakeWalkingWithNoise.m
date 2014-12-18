@@ -174,19 +174,19 @@ clear ins;
 
 % feedback foot contact detector with QP/atlas
 options.use_lcm=false;
-fc = FootContactBlock(r,ctrl_data,options);
+fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
 ins(1).system = 2;
 ins(1).input = 1;
 sys = mimoFeedback(fc,sys,[],[],ins,outs);
 clear ins;  
 
-pd = IKPDBlock(r,ctrl_data,options);
+pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
 clear ins;
 
-qt = QTrajEvalBlock(rctrl,ctrl_data,options);
+qt = atlasControllers.QTrajEvalBlock(rctrl,ctrl_data,options);
 sys = mimoFeedback(qt,sys,[],[],[],outs);
 
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');

@@ -179,8 +179,8 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       obj.pelvis_controller = pelvis_controller;
       options.use_lcm=false;
       options.contact_threshold = 0.002;
-      obj.fc = FootContactBlock(r,ctrl_data,options);
-      obj.qt = QTrajEvalBlock(r,ctrl_data,options);
+      obj.fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
+      obj.qt = atlasControllers.QTrajEvalBlock(r,ctrl_data,options);
       
       ins(1).system = 1;
       ins(1).input = 1;

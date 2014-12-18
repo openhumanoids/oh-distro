@@ -14,7 +14,7 @@ classdef BracingController < DRCController
             refpub = PositionRefFeedthroughBlock(r,struct('gains_id','bracing'));
             
             % cascade qtraj eval block
-            qt = QTrajEvalBlock(r,ctrl_data);
+            qt = atlasControllers.QTrajEvalBlock(r,ctrl_data);
             ins(1).system = 1;
             ins(1).input = 1;
             outs(1).system = 2;

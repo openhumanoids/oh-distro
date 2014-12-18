@@ -42,7 +42,7 @@ classdef AtlasManipController < DRCController
       ctrl_data = AtlasManipControllerData(data);
 
       options.use_error_integrator = true;
-      qt = QTrajEvalBlock(r,ctrl_data,options);
+      qt = atlasControllers.QTrajEvalBlock(r,ctrl_data,options);
 
       if options.controller_type == 1 % PID control
         
@@ -113,7 +113,7 @@ classdef AtlasManipController < DRCController
         options.Kd = 12.0*ones(getNumPositions(r),1);
         options.use_qddtraj = true;
         options.use_ik = false;
-        pd = IKPDBlock(r,ctrl_data,options);
+        pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
         ins(1).system = 1;
         ins(1).input = 1;
         outs(1).system = 1;

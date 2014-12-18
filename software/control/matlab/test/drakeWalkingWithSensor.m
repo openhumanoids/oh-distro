@@ -159,14 +159,14 @@ if (use_ik)
 
   % feedback foot contact detector with QP/atlas
   options.use_lcm=false;
-  fc = FootContactBlock(r,ctrl_data,options);
+  fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
   ins(1).system = 2;
   ins(1).input = 1;
   sys = mimoFeedback(fc,sys,[],[],ins,outs);
   clear ins;  
   
 	% feedback PD block
-	pd = IKPDBlock(r,ctrl_data,options);
+	pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
 	sys = mimoFeedback(pd,sys,[],[],ins,outs);
@@ -207,7 +207,7 @@ else
   
   % feedback foot contact detector with QP/atlas
   options.use_lcm=false;
-  fc = FootContactBlock(r,ctrl_data,options);
+  fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
   ins(1).system = 2;
 	ins(1).input = 1;
 	ins(2).system = 2;
@@ -265,7 +265,7 @@ v.display_dt = 0.05;
 	clear ins outs;
 end
 
-qt = QTrajEvalBlock(r,ctrl_data);
+qt = atlasControllers.QTrajEvalBlock(r,ctrl_data);
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);

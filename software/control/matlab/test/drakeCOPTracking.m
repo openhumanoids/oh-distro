@@ -130,7 +130,7 @@ clear ins;
 % feedback foot contact detector with QP/atlas
 options.use_lcm=false;
 options.contact_threshold = 0.002;
-fc = FootContactBlock(r,ctrl_data,options);
+fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
 
 ins(1).system = 2;
 ins(1).input = 1;
@@ -140,14 +140,14 @@ clear ins;
 % feedback PD trajectory controller
 options.Kp = 80.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
-pd = IKPDBlock(r,ctrl_data,options);
+pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
 
 ins(1).system = 1;
 ins(1).input = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
 clear ins;
 
-qt = QTrajEvalBlock(r,ctrl_data);
+qt = atlasControllers.QTrajEvalBlock(r,ctrl_data);
 sys = mimoFeedback(qt,sys,[],[],[],outs);
 
 v = r.constructVisualizer;
