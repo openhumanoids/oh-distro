@@ -18,7 +18,7 @@ joints_act_fixed = ~cellfun(@isempty,strfind(r_fixed.getInputFrame.coordinates,j
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
-ref_frame = AtlasPosTorqueRef(r);
+ref_frame = drcFrames.AtlasPosTorqueRef(r);
 
 nq = getNumPositions(r);
 nu = getNumInputs(r);

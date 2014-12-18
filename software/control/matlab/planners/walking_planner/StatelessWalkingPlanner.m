@@ -62,7 +62,7 @@ classdef StatelessWalkingPlanner
       end
 
       
-      walking_ctrl_data = WalkingControllerData.from_drake_walking_data(walking_plan_data, qstar);
+      walking_ctrl_data = WalkingControllerData.from_drake_walking_data(walking_plan_data);
       ts = linspace(0,walking_ctrl_data.comtraj.tspan(2),150);
 
       lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
@@ -84,7 +84,7 @@ classdef StatelessWalkingPlanner
         if simulate
           x0_resolved = r.resolveConstraints(r.getInitialState());
           r = r.setInitialState(x0_resolved);
-          traj = simulateWalking(r, walking_ctrl_data, walking_plan.ts, 1, false, false, false, false);
+          traj = simulateWalking(r, walking_ctrl_data, 1, false, false, false, false);
           ts = traj.getBreaks();
           if length(ts) > 300
             % Limit the number of samples in the plan to get around LCM packet size issues in Java/Matlab

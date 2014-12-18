@@ -9,9 +9,9 @@ r = compile(r);
 r = r.setInitialState(xstar);
 
 % setup frames
-state_plus_effort_frame = AtlasStateAndEffort(r);
+state_plus_effort_frame = drcFrames.AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
-force_torque_frame = AtlasForceTorque();
+force_torque_frame = drcFrames.AtlasForceTorque();
 force_torque_frame.subscribe('EST_ROBOT_STATE');
 
 foot_indices_struct.l_foot_fz_idx = find(strcmp('l_foot_fz',force_torque_frame.coordinates));

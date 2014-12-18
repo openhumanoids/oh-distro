@@ -47,10 +47,10 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
-state_plus_effort_frame = AtlasStateAndEffort(r);
+state_plus_effort_frame = drcFrames.AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
-ref_frame = AtlasPosVelTorqueRef(r);
+ref_frame = drcFrames.AtlasPosVelTorqueRef(r);
 
 nu = getNumInputs(r);
 nq = getNumPositions(r);

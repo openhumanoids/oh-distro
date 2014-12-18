@@ -96,7 +96,7 @@ classdef AtlasManipController < DRCController
       elseif options.controller_type == 4 % use inverse dynamics
 
         % cascade eval block with signal duplicator
-        dupl = SignalDuplicator(AtlasCoordinates(r),2);
+        dupl = SignalDuplicator(drcFrames.AtlasCoordinates(r),2);
         ins(1).system = 1;
         ins(1).input = 1;
         outs(1).system = 2;
@@ -155,7 +155,7 @@ classdef AtlasManipController < DRCController
         
       end
       
-      obj = obj@DRCController(name,sys,AtlasState(r));
+      obj = obj@DRCController(name,sys,drcFrames.AtlasState(r));
  
       obj.robot = r;
       obj.controller_data = ctrl_data;

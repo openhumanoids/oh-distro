@@ -21,7 +21,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       typecheck(controller_data,'AtlasQPControllerData');
       
       input_frame = getStateFrame(r);
-      output_frame = AtlasPosVelTorqueRef(r);
+      output_frame = drcFrames.AtlasPosVelTorqueRef(r);
       
       force_controlled_joints = controller_data.force_controlled_joints;
       position_controlled_joints = controller_data.position_controlled_joints;

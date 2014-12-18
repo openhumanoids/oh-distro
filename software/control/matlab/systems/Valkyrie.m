@@ -34,7 +34,7 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
 
-      state_frame = ValkyrieState(obj);
+      state_frame = drcFrames.ValkyrieState(obj);
       obj = obj.setStateFrame(state_frame);
       obj = obj.setOutputFrame(state_frame);
 

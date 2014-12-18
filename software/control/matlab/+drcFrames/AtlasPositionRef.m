@@ -1,24 +1,24 @@
-classdef AtlasPosTorqueRef < LCMCoordinateFrame & Singleton
+classdef AtlasPositionRef < LCMCoordinateFrame & Singleton
   % atlas input coordinate frame
   methods
-    function obj=AtlasPosTorqueRef(r,gains_id)
+    function obj=AtlasPositionRef(r,gains_id)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
       num_u = getNumInputs(r);
-      dim = 2*num_u;
+      dim = num_u;
       
-      obj = obj@LCMCoordinateFrame('AtlasPosTorqueRef',dim,'x');
+      obj = obj@LCMCoordinateFrame('drcFrames.AtlasPositionRef',dim,'x');
       obj = obj@Singleton();
-      
-      obj.nu=num_u;
-      
+
+      obj.nu = num_u;
+
       if isempty(obj.lcmcoder)  % otherwise I had a singleton
         input_names = r.getInputFrame().coordinates;
         input_names = regexprep(input_names,'_motor',''); % remove motor suffix
         input_frame = getInputFrame(r);
         input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
-      
-        if nargin<3 % controlling robot
+
+        if nargin<2 % controlling robot
           gains = getAtlasGains();
         else
           typecheck(gains_id,'char');
@@ -36,24 +36,23 @@ classdef AtlasPosTorqueRef < LCMCoordinateFrame & Singleton
         end
 
         coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
-          gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
+          gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
         obj = setLCMCoder(obj,JLCMCoder(coder));
       
         coords = input_names;
-        coords = vertcat(coords,cellfun(@(a) [a,'_effort'],input_names,'UniformOutput',false));
         obj.setCoordinateNames(coords);
         obj.setDefaultChannel('ATLAS_COMMAND');
       end
       
       if (obj.mex_ptr==0)
         obj.mex_ptr = AtlasCommandPublisher(input_names,gains.k_q_p,gains.k_q_i,...
-          gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
+        gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
       end
     end
     
     function publish(obj,t,x,channel)
       % short-cut java publish with a faster mex version
-      AtlasCommandPublisher(obj.mex_ptr,channel,t,[x(1:obj.nu);zeros(obj.nu,1); x(obj.nu+1:end)]);
+      AtlasCommandPublisher(obj.mex_ptr,channel,t,[x;0*x;0*x]);
     end
     
     function delete(obj)
@@ -71,16 +70,17 @@ classdef AtlasPosTorqueRef < LCMCoordinateFrame & Singleton
       assert(isfield(gains,'ff_const'));
       
       obj.mex_ptr = AtlasCommandPublisher(obj.mex_ptr,gains.k_q_p,gains.k_q_i,...
-        gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
+        gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
     end
-    
+
     function obj = setLCMCoder(obj,lcmcoder)
       typecheck(lcmcoder,'LCMCoder');
       obj.lcmcoder = lcmcoder;
       msg = obj.lcmcoder.encode(0,zeros(obj.nu*3,1));
       obj.monitor = drake.util.MessageMonitor(msg,obj.lcmcoder.timestampName());
       obj.lc = lcm.lcm.LCM.getSingleton();
-    end    
+    end  
+    
   end
   
   methods (Static)
@@ -89,7 +89,7 @@ classdef AtlasPosTorqueRef < LCMCoordinateFrame & Singleton
       obj=a;
     end
   end
-  
+
   properties
     mex_ptr=0;
     nu;

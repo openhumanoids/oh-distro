@@ -7,7 +7,7 @@ end
 
 fr = getInputFrame(r);
 if (isa(fr, 'MultiCoordinateFrame'))
-  fr = fr.getFrameByName('AtlasInput');
+  fr = fr.getFrameByName('drcFrames.AtlasInput');
 end
 Kp = Point(fr);
 Kd = Point(fr);

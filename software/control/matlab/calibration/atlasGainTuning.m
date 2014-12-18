@@ -67,7 +67,7 @@ r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_mod
 % setup frames
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
-ref_frame = AtlasPosVelTorqueRef(r);
+ref_frame = drcFrames.AtlasPosVelTorqueRef(r);
 
 nq = getNumPositions(r);
 nu = getNumInputs(r);

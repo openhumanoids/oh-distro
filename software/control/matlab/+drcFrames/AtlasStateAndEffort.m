@@ -4,7 +4,7 @@ classdef AtlasStateAndEffort < LCMCoordinateFrame & Singleton
     function obj=AtlasStateAndEffort(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
-      obj = obj@LCMCoordinateFrame('AtlasStateAndEffort',r.getNumPositions*3,'x');
+      obj = obj@LCMCoordinateFrame('drcFrames.AtlasStateAndEffort',r.getNumPositions*3,'x');
       obj = obj@Singleton();
 
       if isempty(obj.lcmcoder)  % otherwise I had a singleton

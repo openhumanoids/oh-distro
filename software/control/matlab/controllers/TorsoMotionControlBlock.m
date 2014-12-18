@@ -18,7 +18,7 @@ classdef TorsoMotionControlBlock < DrakeSystem
       typecheck(controller_data,'QPControllerData');
       
       input_frame = getStateFrame(r);
-      output_frame = BodySpatialAcceleration(r,name);
+      output_frame = drcFrames.BodySpatialAcceleration(r,name);
       obj = obj@DrakeSystem(0,0,input_frame.dim,output_frame.dim,true,false);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);

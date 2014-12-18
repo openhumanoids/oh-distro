@@ -7,7 +7,7 @@ classdef AtlasPosVelTorqueRef < LCMCoordinateFrame & Singleton
       nu = getNumInputs(r);
       dim = 3*nu;
       
-      obj = obj@LCMCoordinateFrame('AtlasPosVelTorqueRef',dim,'x');
+      obj = obj@LCMCoordinateFrame('drcFrames.AtlasPosVelTorqueRef',dim,'x');
       obj = obj@Singleton();
       
       if isempty(obj.lcmcoder)  % otherwise I had a singleton

@@ -1,40 +1,13 @@
-classdef WalkingControllerData
+classdef WalkingControllerData < WalkingPlanData
   properties
-    S
-    s1
-    s2
-    s1dot
-    s2dot
-    support_times
-    supports
-    comtraj
-    mu
     t_offset
-    link_constraints
-    zmptraj
-    qtraj
     ignore_terrain
   end
 
   methods
-    function obj = WalkingControllerData(V, support_times,...
-                                         supports, comtraj, mu, t_offset,...
-                                         link_constraints, zmptraj, qtraj,...
-                                         ignore_terrain)
-      obj.S = V.S;
-      obj.s1 = V.s1;
-      obj.s2 = V.s2;
-      obj.s1dot = fnder(obj.s1,1);
-      obj.s2dot = fnder(obj.s2,1);
-      obj.support_times = support_times;
-      obj.supports = supports;
-      obj.comtraj = comtraj;
-      obj.mu = mu;
+    function obj = WalkingControllerData(q0, support_times, supports, link_constraints, zmptraj, V, c, comtraj, mu, ignore_terrain, t_offset)
+      obj = obj@WalkingPlanData(q0, support_times, supports, link_constraints, zmptraj, V, c, comtraj, mu);
       obj.t_offset = t_offset;
-      
-      obj.link_constraints = link_constraints;
-      obj.zmptraj = zmptraj;
-      obj.qtraj = qtraj;
       obj.ignore_terrain = ignore_terrain;
     end
 
@@ -43,23 +16,23 @@ classdef WalkingControllerData
 
       msg.robot_name = 'atlas';
       msg.utime = 0;
-      msg.qtraj = mxSerialize(obj.qtraj);
+      msg.qtraj = mxSerialize(obj.q0);
       msg.n_qtraj_bytes = length(msg.qtraj);
 
-      msg.S = mxSerialize(obj.S);
+      msg.S = mxSerialize(obj.V.S);
       msg.n_S_bytes = length(msg.S);
 
-      msg.s1 = mxSerialize(obj.s1);
+      msg.s1 = mxSerialize(obj.V.s1);
       msg.n_s1_bytes = length(msg.s1);
 
-      msg.s1dot = mxSerialize(obj.s1dot);
-      msg.n_s1dot_bytes = length(msg.s1dot);
+      % msg.s1dot = mxSerialize(obj.s1dot);
+      % msg.n_s1dot_bytes = length(msg.s1dot);
 
-      msg.s2 = mxSerialize(obj.s2);
+      msg.s2 = mxSerialize(obj.V.s2);
       msg.n_s2_bytes = length(msg.s2);
 
-      msg.s2dot = mxSerialize(obj.s2dot);
-      msg.n_s2dot_bytes = length(msg.s2dot);
+      % msg.s2dot = mxSerialize(obj.s2dot);
+      % msg.n_s2dot_bytes = length(msg.s2dot);
 
       msg.n_support_times = length(obj.support_times);
       msg.support_times = obj.support_times;
@@ -87,10 +60,10 @@ classdef WalkingControllerData
   end
 
   methods (Static = true)
-    function obj = from_drake_walking_data(data, qstar)
+    function obj = from_drake_walking_data(data)
       t_offset = 0;
       ignore_terrain = false;
-      obj = WalkingControllerData(data.V, data.support_times, data.supports, data.comtraj, data.mu, t_offset, data.link_constraints, data.zmptraj, qstar, ignore_terrain);
+      obj = WalkingControllerData(data.q0, data.support_times, data.supports, data.link_constraints, data.zmptraj, data.V, data.c, data.comtraj, data.mu, ignore_terrain, t_offset);
     end
 
     function obj = from_walking_plan_t(msg_data)
@@ -112,16 +85,20 @@ classdef WalkingControllerData
       comtraj = mxDeserialize(msg_data.comtraj);
       zmptraj = mxDeserialize(msg_data.zmptraj);
       link_constraints = mxDeserialize(msg_data.link_constraints);
-      qtraj = mxDeserialize(msg_data.qtraj);
+      q0 = mxDeserialize(msg_data.qtraj);
 
       V = struct('S', S, 's1', s1, 's2', s2);
-      obj = WalkingControllerData(V, msg_data.support_times,...
-                                     supports, comtraj, msg_data.mu, ...
-                                     msg_data.t_offset,...
-                                     link_constraints, zmptraj, qtraj,...
-                                     msg_data.ignore_terrain);
-%       obj.s1dot = s1dot;
-%       obj.s2dot = s2dot;
+      obj = WalkingControllerData(q0,...
+       msg_data.support_times,...
+       supports,...
+       link_constraints,...
+       zmptraj,...
+       V,...
+       [],...
+       comtraj,...
+       msg_data.mu,...
+       msg_data.ignore_terrain,...
+       msg_data.t_offset);
     end
   end
 end

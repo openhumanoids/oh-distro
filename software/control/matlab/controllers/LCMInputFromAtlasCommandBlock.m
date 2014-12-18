@@ -38,10 +38,10 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       end
 
       % Generate AtlasInput as out (we'll do translation manually)
-      output_frame = AtlasInput(r);
+      output_frame = drcFrames.AtlasInput(r);
       
       % We'll need atlas state as input
-      input_frame = AtlasState(r_control);
+      input_frame = drcFrames.AtlasState(r_control);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
@@ -103,7 +103,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       
       % And compute for ourselves the drake_to_atlas_joint_map
       obj.drake_to_atlas_joint_map = zeros(length(obj.joint_names), 1);
-      dummyInput = AtlasInput(obj.r);
+      dummyInput = drcFrames.AtlasInput(obj.r);
       for i=1:length(obj.joint_names)
         in_joint_name_i = obj.joint_names(i, :);
         obj.drake_to_atlas_joint_map(i) = dummyInput.findCoordinateIndex(strtrim(in_joint_name_i));
@@ -144,7 +144,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(2),[0;0;0],1));
       
       ctrl_data = QPControllerData(false,struct(...
-        'acceleration_input_frame',AtlasCoordinates(r),...
+        'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
         'D',-com(3)/9.81*eye(2),...
         'Qy',eye(2),...
         'S',V.S,...
@@ -248,7 +248,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       end
       
       % And set neck pitch via simple PD controller
-      dummyInput = AtlasInput(obj.r_control);
+      dummyInput = drcFrames.AtlasInput(obj.r_control);
       neck_in_i = dummyInput.findCoordinateIndex('neck_ay');
       neck_in_i = neck_in_i(1);
       neck_out_i = dummyInput.findCoordinateIndex('neck_ay');

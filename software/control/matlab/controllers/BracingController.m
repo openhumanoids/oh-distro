@@ -21,7 +21,7 @@ classdef BracingController < DRCController
             outs(1).output = 1;
             sys = mimoCascade(qt,refpub,[],ins,outs);
             
-            obj = obj@DRCController(name,sys,AtlasState(r));
+            obj = obj@DRCController(name,sys,drcFrames.AtlasState(r));
             
             obj.robot = r;
             obj.controller_data = ctrl_data;

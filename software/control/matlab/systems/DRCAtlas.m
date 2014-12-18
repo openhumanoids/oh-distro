@@ -77,7 +77,7 @@ classdef DRCAtlas < Atlas
         obj.control_rate = options.control_rate;
       end
       if (isa(obj.getStateFrame(), 'MultiCoordinateFrame'))
-        obj.getStateFrame().getFrameByName('AtlasState').setMaxRate(obj.control_rate);
+        obj.getStateFrame().getFrameByName('drcFrames.AtlasState').setMaxRate(obj.control_rate);
       else
         obj.getStateFrame().setMaxRate(obj.control_rate);
       end
@@ -98,16 +98,16 @@ classdef DRCAtlas < Atlas
       end
       % Construct state vector itself
       if (obj.hands == 0 && obj.foot_force_sensors == 0)
-        atlas_state_frame = AtlasState(obj);
+        atlas_state_frame = drcFrames.AtlasState(obj);
       else
         atlas_state_frame = getStateFrame(obj);
-        atlas_state_frame = replaceFrameNum(atlas_state_frame,1,AtlasState(obj));
+        atlas_state_frame = replaceFrameNum(atlas_state_frame,1,drcFrames.AtlasState(obj));
       end
       if (obj.hands > 0)
         % Sub in handstates for the hand (curently assuming just 1)
         % TODO: by name?
         for i=2:2
-          atlas_state_frame = replaceFrameNum(atlas_state_frame,i,HandState(obj,i,'HandState'));
+          atlas_state_frame = replaceFrameNum(atlas_state_frame,i,drcFrames.HandState(obj,i,'drcFrames.HandState'));
         end
       end
       if (obj.foot_force_sensors)
@@ -116,7 +116,7 @@ classdef DRCAtlas < Atlas
           startind = startind + 2;
         end
         for i=startind:startind+1
-          atlas_state_frame = replaceFrameNum(atlas_state_frame, i, ForceTorque());
+          atlas_state_frame = replaceFrameNum(atlas_state_frame, i, drcFrames.ForceTorque());
         end
       end
       tsmanip_state_frame = obj.getStateFrame();
@@ -133,14 +133,14 @@ classdef DRCAtlas < Atlas
       % Same bit of complexity for input frame to get hand inputs
       if (obj.hands > 0)
         input_frame = getInputFrame(obj);
-        input_frame  = replaceFrameNum(input_frame,1,AtlasInput(obj));
+        input_frame  = replaceFrameNum(input_frame,1,drcFrames.AtlasInput(obj));
         % Sub in handstates for each hand
         % TODO: by name?
         for i=2:2
-          input_frame = replaceFrameNum(input_frame,i,HandInput(obj,i,'HandInput'));
+          input_frame = replaceFrameNum(input_frame,i,drcFrames.HandInput(obj,i,'drcFrames.HandInput'));
         end
       else
-        input_frame = AtlasInput(obj);
+        input_frame = drcFrames.AtlasInput(obj);
       end
       obj = obj.setInputFrame(input_frame);
       obj.manip = obj.manip.setInputFrame(input_frame);

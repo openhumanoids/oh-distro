@@ -64,7 +64,6 @@ addpath(fullfile(pwd,'matlab','planners','footstep_planner'));
 addpath(fullfile(pwd,'matlab','planners','walking_planner'));
 addpath(fullfile(pwd,'matlab','planners','atlas_keyframe_planners'));
 addpath(fullfile(pwd,'matlab','util'));
-addpath(fullfile(pwd,'matlab','frames'));
 addpath(fullfile(pwd,'matlab','test'));
 addpath(fullfile(pwd,'matlab','systems'));
 addpath(fullfile(pwd,'collections_utils'));

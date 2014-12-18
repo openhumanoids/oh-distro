@@ -58,8 +58,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       % Cache names, which have to be converted to java strings (slow!)
       if (r.hands>0)
-        atlas_names= obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
-        hand_names = obj.getInputFrame.getFrameByName('HandState').getCoordinateNames;
+        atlas_names= obj.getInputFrame.getFrameByName('drcFrames.AtlasState').getCoordinateNames;
+        hand_names = obj.getInputFrame.getFrameByName('drcFrames.HandState').getCoordinateNames;
         names = [atlas_names(1:34);
                 hand_names(1:30);
                 'hokuyo_joint'];
@@ -67,7 +67,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
           names{i} = ['right_', names{i}];
         end
       else
-        atlas_names= obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+        atlas_names= obj.getInputFrame.getFrameByName('drcFrames.AtlasState').getCoordinateNames;
         names = [atlas_names(1:34);
                 'hokuyo_joint'];
       end
@@ -83,13 +83,13 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     
     function varargout=mimoOutput(obj,t,~,varargin)
       inp = obj.getInputFrame();
-      num = inp.getFrameNumByName('AtlasState');
+      num = inp.getFrameNumByName('drcFrames.AtlasState');
       if length(num)~=1
         error(['No atlas state found as input for LCMBroadcastBlock!']);
       end
       atlas_state = varargin{num};
       
-      num = inp.getFrameNumByName('HandState');
+      num = inp.getFrameNumByName('drcFrames.HandState');
       hand_state = [];
       if (length(num)>1)
         error(['Ambiguous hand state. No support for two hands yet...']);
@@ -117,7 +117,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % the foot contact state message, publish if so.
       if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
         % Get foot force state
-%         num = inp.getFrameNumByName('ForceTorque');
+%         num = inp.getFrameNumByName('drcFrames.ForceTorque');
 %         hand_state = [];
 %         if (length(num)~=2)
 %           lfoot_force = [];

@@ -22,8 +22,8 @@ if use_java
 %   t_u = parser.getTu();
 %   x_data = reshape(parser.getStateData, [], length(t_x));
 %   u_data = reshape(parser.getInputData, [], length(t_u));
-    input_frame = AtlasPosVelTorqueRef(plant);
-    state_frame = AtlasStateAndEffort(plant);
+    input_frame = drcFrames.AtlasPosVelTorqueRef(plant);
+    state_frame = drcFrames.AtlasStateAndEffort(plant);
     
     parser = drc.control.LCMLogParser;
     parser.addChannel('EST_ROBOT_STATE',state_frame.lcmcoder.jcoder);
