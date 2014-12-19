@@ -9,14 +9,30 @@ import mitUrdfUtils as mit
 from jointNameMap import jointNameMap
 from lxml import etree
 import tempfile
+from glob import glob
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
+meshesDirectory = '../meshes'
 
 original_urdf_path = "../multisense_sl_original.urdf"
 urdf_path = "../multisense_sl.urdf"
 no_joint_urdf_path = "../multisense_sl_no_joint.urdf"
 convex_hull_urdf_path = "../multisense_sl_convex_hull.urdf"
 no_collision_urdf_path = "../multisense_sl_no_collision.urdf"
+
+# Convert meshes
+for inFile in glob(os.path.join(meshesDirectory, "*.dae")):
+    mit.convertMeshTo(inFile, ".obj")
+    mit.convertMeshTo(inFile, ".wrl")
+
+for inFile in glob(os.path.join(meshesDirectory, "*.obj")):
+    if "chull" not in inFile:
+        mit.createConvexHullMesh(inFile)
+
+for inFile in glob(os.path.join(meshesDirectory, "*.wrl")):
+    if "chull" not in inFile:
+        mit.createConvexHullMesh(inFile)
 
 # Expand all includes to allow us to appropriately change mesh filenames
 tmp = tempfile.NamedTemporaryFile()
