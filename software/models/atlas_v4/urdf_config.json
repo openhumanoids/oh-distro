@@ -95,5 +95,6 @@
     "r_arm_elx",
     "r_arm_uwy",
     "r_arm_mwx"
-  ]
+  ],
+  "fixedPointFile" : "../../control/matlab/data/atlas_v4_fp.mat"
 }
