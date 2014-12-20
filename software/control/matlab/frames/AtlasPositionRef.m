@@ -35,7 +35,7 @@ classdef AtlasPositionRef < LCMCoordinateFrame & Singleton
           gains.ff_qd = diag(Kd);
         end
 
-        coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
+        coder = drc.control.AtlasCommandCoder(input_names,r.atlas_version,gains.k_q_p,gains.k_q_i,...
           gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
         obj = setLCMCoder(obj,JLCMCoder(coder));
       
@@ -45,7 +45,7 @@ classdef AtlasPositionRef < LCMCoordinateFrame & Singleton
       end
       
       if (obj.mex_ptr==0)
-        obj.mex_ptr = AtlasCommandPublisher(input_names,gains.k_q_p,gains.k_q_i,...
+        obj.mex_ptr = AtlasCommandPublisher(input_names,r.atlas_version,gains.k_q_p,gains.k_q_i,...
         gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
       end
     end
