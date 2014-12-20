@@ -1,10 +1,8 @@
-function drakeAtlasSimulation
+function drakeAtlasSimulation(atlas_version)
 %NOTEST
+if nargin < 1, atlas_version = 4; end
 
 visualize = false; % should be a function arg
-
-% load in Atlas initial state
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -25,13 +23,15 @@ options.obstacles = false; % Replaced by step terrain
 boxes = [1.0, 0.0, 1.2, 1, 0.15;
          1.2, 0.0, 0.8, 1, 0.30;];
 options.terrain = RigidBodyStepTerrain(boxes);
+options.atlas_version = atlas_version;
 % TODO: get from LCM
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+%r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = Atlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+xstar = load(r.fixed_point_file);
 xstar(1) = 0;
 xstar(2) = 0;
 xstar(3) = xstar(3) + 0.08;

@@ -12,12 +12,15 @@ classdef CombinedPlanner
   end
 
   methods (Static)
-    function r = constructAtlas()
+    function r = constructAtlas(atlas_version)
+      if nargin >= 1
+        options.atlas_version = atlas_version;
+      end
       options.floating = true;
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-      r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+      r = Atlas([],options);
       r = removeCollisionGroupsExcept(r,{'heel','toe'});
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
@@ -45,9 +48,9 @@ classdef CombinedPlanner
   end
 
   methods
-    function obj = CombinedPlanner(biped)
+    function obj = CombinedPlanner(biped, varargin)
       if nargin < 1
-        biped = CombinedPlanner.constructAtlas();
+        biped = CombinedPlanner.constructAtlas(varargin{:});
       end
 
       obj.biped = biped;

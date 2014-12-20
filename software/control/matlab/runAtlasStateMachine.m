@@ -1,4 +1,4 @@
-function runAtlasStateMachine(controller_type, run_in_simul_mode)
+function runAtlasStateMachine(controller_type, run_in_simul_mode,atlas_version)
 
 if nargin < 1
   controller_type = 2; % 1: PID, 2: PID+manip params, 3: PD+gravity comp, 4: inverse dynamics
@@ -7,6 +7,9 @@ if nargin < 1
 end
 if nargin < 2
   run_in_simul_mode = 0;
+end
+if nargin < 3
+  atlas_version = 4
 end
 
 % silence some warnings
@@ -17,8 +20,9 @@ options.visual = false; % loads faster
 options.floating = true;
 options.ignore_friction = true;
 options.run_in_simul_mode = run_in_simul_mode;
+options.atlas_version = atlas_version;
 
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = Atlas([],options);
 r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
