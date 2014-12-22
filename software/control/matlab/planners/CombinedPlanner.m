@@ -49,7 +49,7 @@ classdef CombinedPlanner
 
   methods
     function obj = CombinedPlanner(biped, varargin)
-      if nargin < 1
+      if nargin < 1 || isempty(biped)
         biped = CombinedPlanner.constructAtlas(varargin{:});
       end
 
