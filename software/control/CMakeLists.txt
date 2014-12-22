@@ -12,7 +12,17 @@ find_file(ROS_MODEL_PKG mit_drcsim_scripts PATHS ${CMAKE_INSTALL_PREFIX}/.. $ENV
 if (NOT ROS_MODEL_PKG)
    message(FATAL_ERROR "mit_drcsim_scripts not found (checked ${CMAKE_INSTALL_PREFIX}/.. and $ENV{HOME} and $ENV{DRC_BASE}/ros_workspace )")
 endif()
+find_file(MODELS models PATHS ${CMAKE_INSTALL_PREFIX}/.. $ENV{HOME} $ENV{DRC_BASE}/models)
+if (NOT MODELS)
+   message(FATAL_ERROR "models not found (checked ${CMAKE_INSTALL_PREFIX}/..  and $ENV{HOME} and $ENV{DRC_BASE} )")
+endif()
+find_file(COMMON_COMPONENTS common_components PATHS ${CMAKE_INSTALL_PREFIX}/..  $ENV{HOME} ${MODELS})
+if (NOT COMMON_COMPONENTS)
+   message(FATAL_ERROR "models not found (checked ${CMAKE_INSTALL_PREFIX}/..  and $ENV{HOME} and ${MODELS} )")
+endif()
 set(ROS_MODEL_PKG "${ROS_MODEL_PKG}" CACHE STRING "${ROS_MODEL_PKG}" )
+set(MODELS "${MODELS}" CACHE STRING "${MODELS}" )
+set(COMMON_COMPONENTS "${COMMON_COMPONENTS}" CACHE STRING "${COMMON_COMPONENTS}" )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreturn-type -Wuninitialized -Wunused-variable")
 
@@ -44,8 +54,8 @@ message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTAL
 
 file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/addpath_control.m
 	   "function addpath_control()\n"
-	   "  setenv('ROS_PACKAGE_PATH',[getenv('ROS_PACKAGE_PATH'),':${ROS_MODEL_PKG}']);\n"
-       	   "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
+     "  setenv('ROS_PACKAGE_PATH',[getenv('ROS_PACKAGE_PATH'),':${ROS_MODEL_PKG}:${MODELS}:${COMMON_COMPONENTS}']);\n"
+     "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
 	   "  addpath_control();\n"
 	   "  cd(wd);\n"
     )
