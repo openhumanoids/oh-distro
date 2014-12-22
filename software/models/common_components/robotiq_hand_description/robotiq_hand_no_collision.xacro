@@ -9,7 +9,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0.020 0 0"/>
         <geometry>
-          <mesh filename="../common_components/robotiq_hand_description/meshes/s-model_articulated/visual/link_0.obj"/>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.obj"/>
         </geometry>
         <material name="green">
           <color rgba="0 1 0 1"/>
@@ -20,7 +20,7 @@
       <visual>
         <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
         <geometry>
-          <mesh filename="../common_components/robotiq_hand_description/meshes/s-model_articulated/visual/link_1.obj"/>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.obj"/>
         </geometry>
         <material name="green"/>
       </visual>
@@ -34,7 +34,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
         <geometry>
-          <mesh filename="../common_components/robotiq_hand_description/meshes/s-model_articulated/visual/link_2.obj"/>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.obj"/>
         </geometry>
         <material name="green"/>
       </visual>
@@ -43,7 +43,7 @@
       <visual>
         <origin rpy="0 0 0.52" xyz="0 0 0"/>
         <geometry>
-          <mesh filename="../common_components/robotiq_hand_description/meshes/s-model_articulated/visual/link_3.obj"/>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.obj"/>
         </geometry>
         <material name="green"/>
       </visual>
@@ -84,7 +84,7 @@
     <link name="${prefix}palm">
       <visual>
         <geometry>
-          <mesh filename="../common_components/robotiq_hand_description/meshes/s-model_articulated/visual/palm.obj"/>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/palm.obj"/>
         </geometry>
         <material name="green">
           <color rgba="0 1 0 1"/>

@@ -27,7 +27,7 @@ mit.xacro(original_urdf_path, tmp.name, includes_only=True,
 urdf = etree.parse(tmp.name)
 
 # Replace package:// syntax
-mit.replacePackageWithPathInMeshPaths(urdf, "../common_components")
+#mit.replacePackageWithPathInMeshPaths(urdf, "../common_components")
 
 # Use MITDRC joint names and .obj meshes
 mit.useObjMeshes(urdf)

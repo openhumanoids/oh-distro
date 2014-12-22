@@ -116,10 +116,10 @@ def replacePackageWithPathInMeshPaths(urdf, newPath):
         element.set("filename", filename)
 
 
-def replaceMeshPaths(urdf, relativeMeshPath):
+def replaceMeshPaths(urdf, meshDirectory):
     for mesh in urdf.findall(".//mesh"):
         filename = mesh.get("filename")
-        newFilename = os.path.join(relativeMeshPath, os.path.basename(filename))
+        newFilename = os.path.join(meshDirectory, os.path.basename(filename))
 
         mesh.set("filename", newFilename)
 

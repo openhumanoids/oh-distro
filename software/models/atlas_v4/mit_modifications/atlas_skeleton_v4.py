@@ -38,7 +38,7 @@ mit.xacro(full_mesh_urdf_path, full_mesh_xacro_path)
 urdf = etree.parse(full_mesh_urdf_path)
 mit.renameJoints(urdf, jointNameMap)
 
-mit.replaceMeshPaths(urdf, "meshes/atlas_skeleton_v4")
+mit.replaceMeshPaths(urdf, "package://atlas_v4/meshes/atlas_skeleton_v4")
 mit.useObjMeshes(urdf)
 
 mit.addFrame(urdf, "l_foot_sole", "l_foot", "0.0480 0 -0.081119", "0 0 0")
