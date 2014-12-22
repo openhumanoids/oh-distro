@@ -32,8 +32,9 @@ namespace collision {
 
   class Collision_Object_GFE : public Collision_Object {
   public:
-    Collision_Object_GFE( std::string id = "N/A", collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION );
-    Collision_Object_GFE( std::string id, std::string xmlString, collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION );
+    Collision_Object_GFE( std::string id = "N/A", kinematics::Atlas_Version atlas_version = kinematics::V3, collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION );
+    Collision_Object_GFE( std::string id, std::string xmlString, kinematics::Atlas_Version atlas_version = kinematics::V3, collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION );
+    Collision_Object_GFE( std::string id, std::string xmlString, collision_object_gfe_collision_object_type_t collisionObjectType = COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION, kinematics::Atlas_Version atlas_version = kinematics::V3 );
     Collision_Object_GFE( const Collision_Object_GFE& other );
     ~Collision_Object_GFE();
 
