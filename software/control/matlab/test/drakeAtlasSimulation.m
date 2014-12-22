@@ -14,7 +14,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 % construct robot model
 options.floating = true;
 options.ignore_friction = true;
-options.dt = 0.002;
+options.dt = 0.00333;
 options.visualize = visualize;
 options.hokuyo = true;
 options.hokuyo_spin_rate = 3;
@@ -39,7 +39,7 @@ xstar(6) = 0;
 x0 = zeros(r.getNumStates, 1);
 x0(1:length(xstar)) = xstar;
 r = r.setInitialState(x0);
-
+true
 
 % LCM interpret in
 outs(1).system = 2;
@@ -53,7 +53,8 @@ sys = mimoFeedback(lcmInputBlock, r, [], [], [], outs);
 
 % LCM broadcast out
 broadcast_opts = options;
-broadcast_opts.publish_truth = 1;
+broadcast_opts.publish_truth = 0;
+broadcast_opts.publish_imu = 1;
 lcmBroadcastBlock = LCMBroadcastBlock(r, r, broadcast_opts);
 sys = mimoCascade(sys, lcmBroadcastBlock);
 

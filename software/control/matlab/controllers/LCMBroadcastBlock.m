@@ -24,8 +24,16 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % (or if not, publish approp messages to feed state_sync state est.)
     publish_truth = 1;
     
+    % Publishing IMU?
+    publish_imu = 0;
+    
     % reordering to generate atlas_state_t messages for state est
     reordering;
+    
+    % Shared data handle for storing the state from the last step
+    % (quick hack to check out if this kind of numerical imu approx might start
+    % to work here...)
+    last_floating_state = SharedDataHandle(zeros(12, 1));
     
   end
   
@@ -65,6 +73,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       if isfield(options,'publish_truth')
         obj.publish_truth = options.publish_truth;
+      end
+      
+      if isfield(options,'publish_imu')
+        obj.publish_imu = options.publish_imu;
       end
       
       % Get LCM set up for broadcast on approp channels
@@ -293,18 +305,18 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       state_msg.force_torque = drc.force_torque_t();
       % if we're publishing to satisfy state est we need force sensing from feet
-%       if (~obj.publish_truth)
-%         % Get binary foot contact, call it force:
-%         x = atlas_state;
-%         [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
-%         within_thresh = phiC < 0.002;
-%         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-%         fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
-%           any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
-%         % pack it up
-%         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
-%         state_msg.force_torque.r_foot_force_z = fc(1)*1000;
-%       end
+      if (~obj.publish_truth)
+        % Get binary foot contact, call it force:
+        x = atlas_state;
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        within_thresh = phiC < 0.002;
+        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
+        fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
+          any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
+        % pack it up
+        state_msg.force_torque.l_foot_force_z = fc(1)*1000;
+        state_msg.force_torque.r_foot_force_z = fc(2)*1000;
+      end
       
       if (~obj.publish_truth)
         obj.lc.publish('ATLAS_STATE', state_msg);
@@ -394,9 +406,47 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.lc.publish('SCAN', lcm_laser_msg);
         
       end
+      
+      % construct and publish a reasonable microstrain imu message
+      % given our states over time
+      if (obj.publish_imu)
+        this_state = [atlas_state(1:6); atlas_state(atlas_dofs+1:atlas_dofs+6)];
+        last_state = obj.last_floating_state.getData();
+        obj.last_floating_state.setData(this_state);
+        
+        % Gyro 
+        gyro = rpydot2angularvel(this_state(4:6),this_state(10:12));
+        
+        % Get acc by time difference velocities
+        dt = obj.getSampleTime;
+        acc = (this_state(7:9) - last_state(7:9))/dt(1);
+        acc = acc + [0;0;9.81];
+        
+        % Get them in local frame of pelvis plus BODY_TO_IMU rotation
+        quat_body_to_world = rpy2quat(this_state(4:6) + [0; 180; -45+180]*pi/180.);
+        quat_world_to_body = quatConjugate(quat_body_to_world);
+        gyro = quatRotateVec(quat_body_to_world, gyro);
+        acc = quatRotateVec(quat_body_to_world, acc);
+        
+        % This isn't perfectly accurate as the imu is offset from the
+        % very core of the body frame by a small amount (BODY_TO_IMU
+        % has nonzero translation).
+        imu_msg = microstrain.ins_t();
+        imu_msg.utime = t*1000*1000;
+        imu_msg.device_time = t*1000*1000;
+        imu_msg.gyro = gyro;
+        imu_msg.mag = zeros(3, 1);
+        imu_msg.accel = acc;
+        imu_msg.quat = quat_body_to_world;
+        imu_msg.pressure = 0;
+        imu_msg.rel_alt = 0;
+        obj.lc.publish('MICROSTRAIN_INS', imu_msg);
+      end
+      
       varargout = varargin;
       
     end
+    
   end
   
 end
