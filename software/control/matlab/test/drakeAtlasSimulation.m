@@ -31,7 +31,8 @@ r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
 % set initial state to fixed point
-xstar = load(r.fixed_point_file);
+S = load(r.fixed_point_file);
+xstar = S.xstar;
 xstar(1) = 0;
 xstar(2) = 0;
 xstar(3) = xstar(3) + 0.08;
