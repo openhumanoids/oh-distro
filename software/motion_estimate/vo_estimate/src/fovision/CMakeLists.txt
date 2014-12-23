@@ -26,16 +26,16 @@ set(FK_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics model-client)
     
 
 ##############################################
-add_executable (drc-fovision-odometry fovision_odometry.cpp)
-target_link_libraries(drc-fovision-odometry boost_system)
-pods_use_pkg_config_packages(drc-fovision-odometry eigen3 
+add_executable (se-simple-fusion fovision_odometry.cpp)
+target_link_libraries(se-simple-fusion boost_system)
+pods_use_pkg_config_packages(se-simple-fusion eigen3
   lcm bot2-core bot2-frames   bot2-frames_cpp
   lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain_comm
   voconfig   vofeatures   voestimator   fovision
   pronto_vis  
   opencv image_io_utils
   ${FK_PACKAGES})
-pods_install_executables(drc-fovision-odometry)
+pods_install_executables(se-simple-fusion)
 
 
 ##############################################

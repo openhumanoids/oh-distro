@@ -74,12 +74,12 @@ void Pass::insHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel
   pose_msg.utime = msg->utime;
   pose_msg.pos[0] =0;
   pose_msg.pos[1] =0;
-  pose_msg.pos[2] =1;
+  pose_msg.pos[2] =1.6;
   pose_msg.orientation[0] = rotation.w();
   pose_msg.orientation[1] = rotation.x();
   pose_msg.orientation[2] = rotation.y();
   pose_msg.orientation[3] = rotation.z();
-  lcm_->publish("POSE_HEAD", &pose_msg); 
+  lcm_->publish("POSE_BODY", &pose_msg); 
 }
 
 

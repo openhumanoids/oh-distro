@@ -56,6 +56,7 @@ void FoVision::doOdometry(uint8_t *left_buf,uint8_t *right_buf, int64_t utime){
 void FoVision::doOdometry(uint8_t *left_buf,float *disparity_buf, int64_t utime){
   prev_timestamp_ = current_timestamp_;
   current_timestamp_ = utime;
+
   stereo_disparity_->setDisparityData(disparity_buf);
   odom_.processFrame(left_buf, stereo_disparity_);
   const fovis::MotionEstimator * me = odom_.getMotionEstimator();
@@ -79,7 +80,6 @@ void FoVision::send_delta_translation_msg(Eigen::Isometry3d motion_estimate,
   //const Eigen::MatrixXd & motion_cov = odom_.getMotionEstimateCov();
   const fovis::MotionEstimator* me = odom_.getMotionEstimator();
   fovis::MotionEstimateStatusCode estim_status = odom_.getMotionEstimateStatus();
-  
   
   fovis_update_t update_msg;
   update_msg.timestamp =  current_timestamp_;// msg->timestamp;//secs * 1E6 + nsecs/1E3;

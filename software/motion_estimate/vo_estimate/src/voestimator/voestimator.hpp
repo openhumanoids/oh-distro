@@ -29,6 +29,7 @@ public:
   ~VoEstimator();
 
   void voUpdate(int64_t utime, Eigen::Isometry3d delta_camera);
+  void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
   void publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, Eigen::Isometry3d local_to_body);
   void publishUpdateRobotState(const drc::robot_state_t * TRUE_state_msg);
   
@@ -40,18 +41,7 @@ public:
     local_to_head_ = local_to_head_in;
     pose_initialized_ = true;
   }
-  
-  // Clamp the Z-height to this value (which comes from gazebo - as a dev cheat)
-  void setHeadPoseZ(double clamp_z_value){
-    local_to_head_.translation().z() = clamp_z_value;
-    zheight_initialized_ = true;
-  }  
-  
-  // If not using setHeadPoseZ, then set this:
-  void setHeadPoseZInitialized(){
-    zheight_initialized_=true;
-  }
-  
+
   // Input is assumed to be YPR -  this is required because of a poor decision by me. Calulations are all done in RPY within Eigen:
   void setBodyRotRateImu(Eigen::Vector3d body_rot_rate_imu_in){
     body_rot_rate_imu_  = body_rot_rate_imu_in;
@@ -64,7 +54,6 @@ private:
   // have we received the first pose estimate:?
   bool pose_initialized_;
   bool vo_initialized_;
-  bool zheight_initialized_; // only required in the short term (due to controller limitation).
 
   BotFrames* botframes_;
   bot::frames* botframes_cpp_;

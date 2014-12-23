@@ -5,11 +5,11 @@ using namespace Eigen;
 VoEstimator::VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes_,
   std::string channel_extension_):
   lcm_(lcm_), botframes_(botframes_), channel_extension_(channel_extension_),
-  utime_prev_(0), pose_initialized_(false), vo_initialized_(false), zheight_initialized_(false){
+  utime_prev_(0), pose_initialized_(false), vo_initialized_(false){
   local_to_head_.setIdentity();
 
   // Assume head to camera is rigid:
-  botframes_cpp_->get_trans_with_utime( botframes_ ,  "head", "CAMERA", 0, camera_to_head_);
+  botframes_cpp_->get_trans_with_utime( botframes_ ,  "head", "CAMERA_LEFT", 0, camera_to_head_);
   head_to_camera_= camera_to_head_.inverse();
 
   if(!lcm_->good()){
@@ -32,9 +32,6 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   Eigen::Isometry3d head_to_body_cur;
   int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "head", utime, head_to_body_cur);
   local_to_body_ = local_to_head_ * head_to_body_cur;  
-  if (head_to_body_cur.translation().z()==0 ){
-    std::cout << "head to body is zero - this shouldnt happen=======================\n";  
-  }
   
   // Evaluate Rates:
   double elapsed_time =  ( (double) utime - utime_prev_)/1E6;
@@ -146,10 +143,9 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
 }
   
 void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, Eigen::Isometry3d local_to_body){
-  if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
+  if ((!pose_initialized_) || (!vo_initialized_)) {
     std::cout << (int) pose_initialized_ << " pose\n";
     std::cout << (int) vo_initialized_ << " vo\n";
-    std::cout << (int) zheight_initialized_ << " zheight\n\n";  
     std::cout << "pose, vo, zheight not initialized, refusing to publish POSE_HEAD nad POSE_BODY\n";
     return;
   }
@@ -239,11 +235,26 @@ Eigen::Isometry3d VoEstimator::extrapolateHeadRates(float d_time){
   return extrapol;
 }
 
+
+void VoEstimator::publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime =   utime;
+  pose_msg.pos[0] = pose.translation().x();
+  pose_msg.pos[1] = pose.translation().y();
+  pose_msg.pos[2] = pose.translation().z();
+  Eigen::Quaterniond r_x(pose.rotation());
+  pose_msg.orientation[0] =  r_x.w();
+  pose_msg.orientation[1] =  r_x.x();
+  pose_msg.orientation[2] =  r_x.y();
+  pose_msg.orientation[3] =  r_x.z();
+  lcm_->publish( channel, &pose_msg);
+}
+
+// This function is deprecated, Dec 2014:
 void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_msg){
-  if (((!pose_initialized_) || (!vo_initialized_))  || (!zheight_initialized_)) {
+  if ((!pose_initialized_) || (!vo_initialized_))  {
     std::cout << (int) pose_initialized_ << " pose\n";
     std::cout << (int) vo_initialized_ << " vo\n";
-    std::cout << (int) zheight_initialized_ << " zheight\n\n";  
     std::cout << "pose or vo or zheight not initialized, refusing to publish EST_ROBOT_STATE\n";
     return;
   }
@@ -272,10 +283,7 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   Eigen::Isometry3d head_to_body_cur;
   int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "head", TRUE_state_msg->utime , head_to_body_cur);
   Eigen::Isometry3d current_local_to_body = current_local_to_head* head_to_body_cur;  
-  if (head_to_body_cur.translation().z()==0 ){
-    std::cout << "head to body is zero - this shouldnt happen=======================\n";  
-  }  
-  
+
   // Publish to Bot Frames:
   //publishUpdate(utime_prev_, current_local_to_head , current_local_to_body);
 
@@ -303,5 +311,5 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   msgout = *TRUE_state_msg;
   msgout.pose = origin;
   msgout.twist = twist;
-  lcm_->publish("EST_ROBOT_STATE" + channel_extension_, &msgout); 
+  lcm_->publish("EST_ROBOT_STATE" + channel_extension_, &msgout);
 }
