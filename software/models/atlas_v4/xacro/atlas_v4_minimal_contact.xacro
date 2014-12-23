@@ -6,11 +6,11 @@
 
   <!-- Set the initial hand position and orientation by changing 'rpy' and 'xyz'
   to mach the values in your actual robot. -->
-  <xacro:robotiq_hand side="left" parent="l_hand" reflect="-1">
-    <origin rpy="3.14159 3.14159 3.14159" xyz="-0.00125 0.17 0.01"/>
+  <xacro:robotiq_hand side="left" parent="l_hand_force_torque" reflect="1">
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
   </xacro:robotiq_hand>
-  <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="3.14159 0 0" xyz="-0.00125 -0.17 0.01"/>
+  <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="1">
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
   </xacro:robotiq_hand>
 
   <xacro:robotiq_camera  side_letter="l" reflect="1" parent="l_hand_force_torque" >
