@@ -11,6 +11,7 @@ jef-client_*.txt
 jrf-client_*.txt
 jrf-client.out
 *_text_log_*
+fort.15
 
 #######################
 # Ignores for lcmtypes
