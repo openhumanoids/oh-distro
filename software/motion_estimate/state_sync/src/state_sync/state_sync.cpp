@@ -303,7 +303,7 @@ void checkJointLengths(size_t previous_size , size_t incoming_size, std::string 
 void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg){
   checkJointLengths( head_joints_.position.size(),  msg->joint_position.size(), channel);
   
-  //std::cout << "got multisense\n";
+  // std::cout << "got multisense\n";
   head_joints_.name = msg->joint_name;
   head_joints_.position = msg->joint_position;
   head_joints_.velocity = msg->joint_velocity;
@@ -631,7 +631,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   if (cl_cfg_->simulation_mode){ // to be deprecated..
     lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
   }
-  
+
   if (cl_cfg_->bdi_motion_estimate){
     if ( insertPoseInRobotState(robot_state_msg, pose_BDI_) ){
       bot_core::pose_t pose_body;
@@ -640,7 +640,9 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
       lcm_->publish( cl_cfg_->output_channel  , &robot_state_msg);
     }
   }else if(cl_cfg_->standalone_head || cl_cfg_->standalone_hand ){
-    lcm_->publish( cl_cfg_->output_channel , &robot_state_msg);
+    if ( insertPoseInRobotState(robot_state_msg, pose_MIT_) ){
+      lcm_->publish( cl_cfg_->output_channel , &robot_state_msg);
+    }
   }else{ // typical motion estimation
     if ( insertPoseInRobotState(robot_state_msg, pose_MIT_) ){
       lcm_->publish( cl_cfg_->output_channel, &robot_state_msg);
