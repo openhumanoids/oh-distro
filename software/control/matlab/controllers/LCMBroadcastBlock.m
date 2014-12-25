@@ -420,7 +420,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % Get acc by time difference velocities
         dt = obj.getSampleTime;
         acc = (this_state(7:9) - last_state(7:9))/dt(1);
-        acc = acc + [0;0;9.81];
+        acc = acc + [0;0;9.80665];
         
         % Get them in local frame of pelvis plus BODY_TO_IMU rotation
         quat_body_to_world = rpy2quat(this_state(4:6) + [0; 180; -45+180]*pi/180.);
