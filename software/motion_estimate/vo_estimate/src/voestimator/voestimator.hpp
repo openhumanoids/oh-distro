@@ -30,13 +30,19 @@ public:
 
   void voUpdate(int64_t utime, Eigen::Isometry3d delta_camera);
   void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
-  void publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, Eigen::Isometry3d local_to_body);
+  void publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head,
+                     Eigen::Isometry3d local_to_body, std::string channel);
   void publishUpdateRobotState(const drc::robot_state_t * TRUE_state_msg);
   
+  void publishPoseRatesOnly(Eigen::Vector3d velocity_linear, Eigen::Vector3d velocity_angular,
+                                       int64_t utime, std::string channel);
+
   Eigen::Isometry3d getCameraPose(){ return local_to_head_*head_to_camera_; }
   Eigen::Isometry3d getHeadPose(){ return local_to_head_; }
 
-  
+  Eigen::Vector3d getBodyLinearRate(){ return body_lin_rate_; }
+  Eigen::Vector3d getBodyRotationRate(){ return body_rot_rate_; }
+
   void setHeadPose(Eigen::Isometry3d local_to_head_in){
     local_to_head_ = local_to_head_in;
     pose_initialized_ = true;
@@ -67,9 +73,9 @@ private:
   int64_t utime_prev_;
   int64_t elapsed_time_prev_;
   
-  // Cache of rates: All are stored as YPR but all conversion orders are RPY - which is a bad mistake by me. TODO!
+  // Cache of rates: All are stored as RPY
   Eigen::Vector3d local_to_head_rot_rate_, local_to_head_lin_rate_;
-  Eigen::Vector3d local_to_body_rot_rate_, local_to_body_lin_rate_;
+  Eigen::Vector3d body_rot_rate_, body_lin_rate_;
   Eigen::Isometry3d extrapolateHeadRates(float d_time);
   
   // Raw sensed rates from IMU:

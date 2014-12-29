@@ -41,6 +41,8 @@ struct CommandLineConfig
   std::string output_extension;
   bool output_signal;
   bool vicon_init; // initializae off of vicon
+  std::string input_channel;
+  bool verbose;
 };
 
 class StereoOdom{
@@ -121,7 +123,7 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
   vo_ = new FoVision(lcm_ , stereo_calibration_);
   features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
   estimator_ = new VoEstimator(lcm_ , botframes_, cl_cfg_.output_extension );
-  lcm_->subscribe("CAMERA",&StereoOdom::multisenseLDHandler,this);
+  lcm_->subscribe( cl_cfg_.input_channel,&StereoOdom::multisenseLDHandler,this);
   
  
   pose_initialized_ = false;
@@ -364,7 +366,8 @@ void StereoOdom::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
 int main(int argc, char **argv){
   CommandLineConfig cl_cfg;
   cl_cfg.camera_config = "CAMERA";
-  cl_cfg.output_signal = FALSE; 
+  cl_cfg.input_channel = "CAMERA_BLACKENED";
+  cl_cfg.output_signal = FALSE;
   cl_cfg.feature_analysis = FALSE; 
   cl_cfg.vicon_init = FALSE;
   cl_cfg.fusion_mode = 0;
@@ -374,8 +377,9 @@ int main(int argc, char **argv){
   parser.add(cl_cfg.camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
   parser.add(cl_cfg.output_signal, "p", "output_signal", "Output POSE_BODY and POSE_BODY_ALT signals");
   parser.add(cl_cfg.feature_analysis, "f", "feature_analysis", "Publish Feature Analysis Data");
-  parser.add(cl_cfg.vicon_init, "v", "vicon_init", "Bootstrap internal estimate using VICON_FRONTPLATE");
-  parser.add(cl_cfg.fusion_mode, "i", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
+  parser.add(cl_cfg.vicon_init, "g", "vicon_init", "Bootstrap internal estimate using VICON_FRONTPLATE");
+  parser.add(cl_cfg.fusion_mode, "m", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
+  parser.add(cl_cfg.input_channel, "i", "input_channel", "input_channel - CAMERA or CAMERA_BLACKENED");
   parser.add(cl_cfg.output_extension, "o", "output_extension", "Extension to pose channels (e.g. '_VO' ");
   parser.parse();
   cout << cl_cfg.fusion_mode << " is fusion_mode\n";

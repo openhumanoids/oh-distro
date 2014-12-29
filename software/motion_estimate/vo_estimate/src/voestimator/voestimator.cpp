@@ -42,37 +42,25 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   }else{
     vo_initialized_ = true;
     
-    Eigen::Vector3d delta_head_to_local = local_to_head_.translation() - local_to_head_prev_.translation();
-    local_to_head_lin_rate_ = delta_head_to_local/elapsed_time; // velocity (linear rate)
-    Eigen::Vector3d head_rpy,head_rpy_prev, delta_local_to_head_rot;
-    quat_to_euler(  Eigen::Quaterniond(local_to_head_.rotation()) , head_rpy(0), head_rpy(1), head_rpy(2));
-    quat_to_euler(  Eigen::Quaterniond(local_to_head_prev_.rotation()) , head_rpy_prev(0), head_rpy_prev(1), head_rpy_prev(2));
-    delta_local_to_head_rot = head_rpy - head_rpy_prev ;
-    local_to_head_rot_rate_ = delta_local_to_head_rot/elapsed_time; // rotation rate
 
-    Eigen::Vector3d delta_body_to_local = local_to_body_.translation() - local_to_body_prev_.translation();
-    local_to_body_lin_rate_ = delta_body_to_local/elapsed_time; // velocity (linear rate)
-    
-    bool use_vo_rot_rates=false;
-    if (use_vo_rot_rates){
-      Eigen::Vector3d body_rpy,body_rpy_prev, delta_local_to_body_rot;
-      quat_to_euler(  Eigen::Quaterniond(local_to_body_.rotation()) , body_rpy(0), body_rpy(1), body_rpy(2));
-      quat_to_euler(  Eigen::Quaterniond(local_to_body_prev_.rotation()) , body_rpy_prev(0), body_rpy_prev(1), body_rpy_prev(2));
-      delta_local_to_body_rot = body_rpy - body_rpy_prev ; 
-      local_to_body_rot_rate_ = delta_local_to_body_rot/elapsed_time; // rotation rate
-    }else{
-      // This linear() was Dehann's suggestion
-      local_to_body_rot_rate_ = local_to_body_.linear() * ( body_rot_rate_imu_ ); 
-      //std::cout << local_to_body_rot_rate_.transpose() <<" test1\n";
-    }
-    
+    Eigen::Isometry3d delta_body =  local_to_body_prev_.inverse() * local_to_body_;
+    body_lin_rate_ = delta_body.translation()/elapsed_time;
+    Eigen::Vector3d delta_body_rpy;
+    quat_to_euler(  Eigen::Quaterniond(delta_body.rotation()) , delta_body_rpy(0), delta_body_rpy(1), delta_body_rpy(2));
+    body_rot_rate_ = delta_body_rpy/elapsed_time; // rotation rate
+
+    //std::stringstream ss3;
+    //ss3 << "delta_body    : ";     print_Isometry3d(delta_body,ss3);
+    //std::cout << ss3.str() << "\n";
+    //std::cout << body_lin_rate_.transpose() << " body rate\n";
+
     /*
     cout << delta_body_to_local << "\n";
     cout << body_rpy <<" body_rpy\n";
     cout << body_rpy_prev << " body_rpy_prev\n";
     cout << delta_local_to_body_rot << " delta_local_to_body_rot\n";
-    cout << local_to_body_rot_rate_ << " local_to_body_rot_rate_\n";
-    cout << local_to_body_rot_rate_*180/M_PI << " local_to_body_rot_rate_ deg\n";
+    cout << body_rot_rate_ << " body_rot_rate_\n";
+    cout << body_rot_rate_*180/M_PI << " body_rot_rate_ deg\n";
   
     /*  {  
     std::stringstream ss3;
@@ -139,10 +127,11 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   delta_head_prev_ = delta_head;
   // Publish this to see vo-only estimates
   // however it always has delay. so will result in jerks to the POSES published
-  publishUpdate(utime_prev_, local_to_head_prev_ , local_to_body_prev_);
+  publishUpdate(utime_prev_, local_to_head_prev_ , local_to_body_prev_, "POSE_BODY_FOVIS_VELOCITY");
 }
   
-void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, Eigen::Isometry3d local_to_body){
+void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head,
+                                Eigen::Isometry3d local_to_body, std::string channel){
   if ((!pose_initialized_) || (!vo_initialized_)) {
     std::cout << (int) pose_initialized_ << " pose\n";
     std::cout << (int) vo_initialized_ << " vo\n";
@@ -150,7 +139,8 @@ void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, 
     return;
   }
 
-  
+  /*
+  // disabled  in dec 2014, not necessary
   // publish local to head pose
   Eigen::Quaterniond l2head_rot(local_to_head.rotation());
   bot_core::pose_t l2head_msg;
@@ -172,10 +162,13 @@ void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, 
   l2head_msg.accel[1]=0;
   l2head_msg.accel[2]=0;  
   lcm_->publish("POSE_HEAD" + channel_extension_, &l2head_msg);  
+  */
 
   // Send vo pose to collections:
   Isometry3dTime local_to_headT = Isometry3dTime(utime, local_to_head);
   pc_vis_->pose_to_lcm_from_list(60000, local_to_headT);
+  // std::cout << body_rot_rate_.transpose() << " body rot rate out\n";
+  // std::cout << body_lin_rate_.transpose() << " body lin rate out\n";
 
   // publish local to body pose
   Eigen::Quaterniond l2body_rot(local_to_body.rotation());
@@ -188,16 +181,16 @@ void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, 
   l2body_msg.orientation[1] = l2body_rot.x();
   l2body_msg.orientation[2] = l2body_rot.y();
   l2body_msg.orientation[3] = l2body_rot.z();
-  l2body_msg.vel[0]=local_to_body_lin_rate_(0);
-  l2body_msg.vel[1]=local_to_body_lin_rate_(1);
-  l2body_msg.vel[2]=local_to_body_lin_rate_(2);
-  l2body_msg.rotation_rate[0]=local_to_body_rot_rate_(0);
-  l2body_msg.rotation_rate[1]=local_to_body_rot_rate_(1);
-  l2body_msg.rotation_rate[2]=local_to_body_rot_rate_(2);
+  l2body_msg.vel[0]=body_lin_rate_(0);
+  l2body_msg.vel[1]=body_lin_rate_(1);
+  l2body_msg.vel[2]=body_lin_rate_(2);
+  l2body_msg.rotation_rate[0]=body_rot_rate_(0);
+  l2body_msg.rotation_rate[1]=body_rot_rate_(1);
+  l2body_msg.rotation_rate[2]=body_rot_rate_(2);
   l2body_msg.accel[0]=0; // not estimated
   l2body_msg.accel[1]=0;
   l2body_msg.accel[2]=0;  
-  lcm_->publish("POSE_BODY" + channel_extension_, &l2body_msg);  
+  lcm_->publish(channel + channel_extension_, &l2body_msg);
 }
 
 
@@ -250,6 +243,29 @@ void VoEstimator::publishPose(Eigen::Isometry3d pose, int64_t utime, std::string
   lcm_->publish( channel, &pose_msg);
 }
 
+
+void VoEstimator::publishPoseRatesOnly(Eigen::Vector3d velocity_linear, Eigen::Vector3d velocity_angular,
+                                       int64_t utime, std::string channel){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime =   utime;
+  pose_msg.pos[0] = 0;
+  pose_msg.pos[1] = 0;
+  pose_msg.pos[2] = 0;
+  pose_msg.orientation[0] =  0;
+  pose_msg.orientation[1] =  0;
+  pose_msg.orientation[2] =  0;
+  pose_msg.orientation[3] =  0;
+
+  pose_msg.vel[0] = velocity_linear(0);
+  pose_msg.vel[1] = velocity_linear(1);
+  pose_msg.vel[2] = velocity_linear(2);
+  pose_msg.rotation_rate[0] = velocity_angular(0);
+  pose_msg.rotation_rate[1] = velocity_angular(1);
+  pose_msg.rotation_rate[2] = velocity_angular(2);
+
+  lcm_->publish( channel, &pose_msg);
+}
+
 // This function is deprecated, Dec 2014:
 void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_msg){
   if ((!pose_initialized_) || (!vo_initialized_))  {
@@ -299,12 +315,12 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   origin.rotation.z = l2body_rot.z();  
   
   drc::twist_t twist;
-  twist.linear_velocity.x = local_to_body_lin_rate_(0);
-  twist.linear_velocity.y = local_to_body_lin_rate_(1);
-  twist.linear_velocity.z = local_to_body_lin_rate_(2);
-  twist.angular_velocity.x = local_to_body_rot_rate_(2);
-  twist.angular_velocity.y = local_to_body_rot_rate_(1);
-  twist.angular_velocity.z = local_to_body_rot_rate_(0);
+  twist.linear_velocity.x = body_lin_rate_(0);
+  twist.linear_velocity.y = body_lin_rate_(1);
+  twist.linear_velocity.z = body_lin_rate_(2);
+  twist.angular_velocity.x = body_rot_rate_(2);
+  twist.angular_velocity.y = body_rot_rate_(1);
+  twist.angular_velocity.z = body_rot_rate_(0);
   
   // EST is TRUE with sensor estimated position
   drc::robot_state_t msgout;
