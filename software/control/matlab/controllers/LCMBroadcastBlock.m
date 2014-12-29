@@ -222,8 +222,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
-              any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
+        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
+              any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
@@ -311,8 +311,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
-          any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
+        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
+          any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
         % pack it up
         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
         state_msg.force_torque.r_foot_force_z = fc(2)*1000;

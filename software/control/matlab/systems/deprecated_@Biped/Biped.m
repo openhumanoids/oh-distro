@@ -22,7 +22,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,dt,options);
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.foot_bodies_idx = struct('right', findLinkInd(obj, options.r_foot_name), 'left', findLinkInd(obj, options.l_foot_name));
+      obj.foot_bodies_idx = struct('right', findLinkId(obj, options.r_foot_name), 'left', findLinkId(obj, options.l_foot_name));
       obj.foot_soles_idx = struct('right', obj.findFrameId([options.r_foot_name, '_sole']),...
                                   'left', obj.findFrameId([options.l_foot_name, '_sole']));
       obj.foot_contact_offsets = obj.findContactOffsets();

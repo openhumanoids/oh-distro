@@ -63,7 +63,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         % trying new value that lines up more accurately with
         % head_to_left_eye, left_eye_to_spindle transforms
         % from multisense_sim.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446, -0.0087, 0.0880].',[0, 0, 0].','hokuyo_frame'));
+        obj = addFrame(obj,RigidBodyFrame(findLinkId(obj,'head'),[-0.0446, -0.0087, 0.0880].',[0, 0, 0].','hokuyo_frame'));
         hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
           -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate, ...
           obj.hokuyo_mirror_offset);
@@ -79,11 +79,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
       obj.foot_force_sensors = options.foot_force_sensors;
       if (options.foot_force_sensors)
-        l_foot_body = findLinkInd(obj,'l_foot');
+        l_foot_body = findLinkId(obj,'l_foot');
         l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot');
         l_foot_force_sensor = ContactForceTorqueSensor(obj, l_foot_frame);
         obj = addSensor(obj, l_foot_force_sensor);
-        r_foot_body = findLinkInd(obj,'r_foot');
+        r_foot_body = findLinkId(obj,'r_foot');
         r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot');
         r_foot_force_sensor = ContactForceTorqueSensor(obj, r_foot_frame);
         obj = addSensor(obj, r_foot_force_sensor);
@@ -256,7 +256,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     function z = getPelvisHeightAboveFeet(obj,q)
       kinsol = doKinematics(obj,q);
       foot_z = getFootHeight(obj,q);
-      pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
+      pelvis = forwardKin(obj,kinsol,findLinkId(obj,'pelvis'),[0;0;0]);
       z = pelvis(3) - foot_z;
     end
     
@@ -338,8 +338,8 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.5);
 
-      options.w_qdd(findJointIndices(obj,'back_bkx')) = 0.01;
-      options.Kp_q(findJointIndices(obj,'back_bkx')) = 50;
+      options.w_qdd(findPositionIndices(obj,'back_bkx')) = 0.01;
+      options.Kp_q(findPositionIndices(obj,'back_bkx')) = 50;
 
       acc_limit = [100;100;100;50;50;50];
       body_accel_bounds(1).body_idx = obj.foot_body_id.right;
@@ -376,8 +376,8 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.0);
 
-      options.w_qdd(findJointIndices(obj,'back_bkx')) = 0.1;
-      options.Kp_q(findJointIndices(obj,'back_bkx')) = 50;
+      options.w_qdd(findPositionIndices(obj,'back_bkx')) = 0.1;
+      options.Kp_q(findPositionIndices(obj,'back_bkx')) = 50;
 
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);

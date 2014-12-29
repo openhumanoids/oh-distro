@@ -31,9 +31,9 @@ classdef AtlasWalkingController < DRCController
         % integral gains for position controlled joints
         integral_gains = zeros(getNumPositions(r),1);
         integral_clamps = zeros(getNumPositions(r),1);
-        arm_ind = findJointIndices(r,'arm');
-        back_ind = findJointIndices(r,'back');
-        back_y_ind = findJointIndices(r,'back_bky');
+        arm_ind = findPositionIndices(r,'arm');
+        back_ind = findPositionIndices(r,'back');
+        back_y_ind = findPositionIndices(r,'back_bky');
         integral_gains(arm_ind) = 1.0; % TODO: generalize this
         integral_gains(back_ind) = 0.2;
         integral_clamps(arm_ind) = 0.3;
@@ -64,7 +64,7 @@ classdef AtlasWalkingController < DRCController
           'integral',zeros(getNumPositions(r),1),...
           'integral_gains',integral_gains,...
           'integral_clamps',integral_clamps,...
-          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back_bkz');findJointIndices(r,'back_bky')]));
+          'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'neck');findPositionIndices(r,'back_bkz');findPositionIndices(r,'back_bky')]));
       else
         ctrl_data = AtlasQPControllerData(true,struct(...
           'acceleration_input_frame',AtlasCoordinates(r),...
@@ -83,7 +83,7 @@ classdef AtlasWalkingController < DRCController
           'ignore_terrain',true,...
           'force_controlled_joints',force_controlled_joints,...
           'position_controlled_joints',position_controlled_joints,...
-          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back_bkz');findJointIndices(r,'back_bky')]));
+          'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'neck');findPositionIndices(r,'back_bkz');findPositionIndices(r,'back_bky')]));
       end
       
       if ~isfield(options,'use_mex') options.use_mex = true; end

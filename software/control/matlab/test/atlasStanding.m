@@ -101,8 +101,8 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 com0 = getCOM(r,q0);
 
-rfoot_ind = r.findLinkInd('r_foot');
-lfoot_ind = r.findLinkInd('l_foot');
+rfoot_ind = r.findLinkId('r_foot');
+lfoot_ind = r.findLinkId('l_foot');
 
 if use_random_traj
   [xposes,info,~,~,~,constraints,ikoptions] = randomPose(r_ch,x0,num_random_pose);

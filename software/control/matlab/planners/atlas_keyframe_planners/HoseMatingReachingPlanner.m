@@ -26,14 +26,14 @@ classdef HoseMatingReachingPlanner < ReachingPlanner
       
       if(obj.nozzle_hand == obj.r_hand_body)
         nozzle_farm_axis = [0;-1;0];
-        nozzle_farm = obj.r.findLinkInd('r_farm');
+        nozzle_farm = obj.r.findLinkId('r_farm');
         wye_mate_pt = [-0.009;-0.066;0.004];
         wye_mate_axis = rpy2rotmat([0;0;pi/2-1])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,pi/2-1);
         nozzle_mwx = find(strcmp(obj.r.getStateFrame.coordinates,'r_arm_mwx'));
       elseif(obj.nozzle_hand == obj.l_hand_body)
         nozzle_farm_axis = [0;1;0];
-        nozzle_farm = obj.r.findLinkInd('l_farm');
+        nozzle_farm = obj.r.findLinkId('l_farm');
         wye_mate_pt = [-0.009;0.066;0.004]; % The center of the cylinder on the wye, to be mated
         wye_mate_axis = rpy2rotmat([0;0;-(pi/2-1)])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,-(pi/2-1));

@@ -29,10 +29,10 @@ function LadderPlanner(options)
   
   nq = getNumPositions(r);
   
-  l_hand = r.findLinkInd('l_hand');
-  r_hand = r.findLinkInd('r_hand');
-  l_foot = r.findLinkInd('l_foot');
-  r_foot = r.findLinkInd('r_foot');
+  l_hand = r.findLinkId('l_hand');
+  r_hand = r.findLinkId('r_hand');
+  l_foot = r.findLinkId('l_foot');
+  r_foot = r.findLinkId('r_foot');
   
   x0 = xstar;
   qstar = xstar(1:nq);
@@ -172,8 +172,8 @@ function LadderPlanner(options)
 
       [footsteps, step_options] = approved_footstep_plan_listener.getNextMessage(10);
       if (~isempty(footsteps))
-        fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
-        fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
+        fixed_links = struct('link',r.findLinkId('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
+        fixed_links(2) = struct('link',r.findLinkId('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
         msg =['Ladder Plan: Footstep plan received']; disp(msg); send_status(status_code,0,0,msg);
         waiting = false;
       end
@@ -188,14 +188,14 @@ function LadderPlanner(options)
         end
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX)
           qnom_state = 'fix_left';
-          fixed_links = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
+          fixed_links = struct('link',r.findLinkId('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX)
           qnom_state = 'fix_right';
-          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
+          fixed_links = struct('link',r.findLinkId('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
           qnom_state = 'fix_both';
-          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
-          fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
+          fixed_links = struct('link',r.findLinkId('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
+          fixed_links(2) = struct('link',r.findLinkId('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
         else
           fixed_links = [];
         end

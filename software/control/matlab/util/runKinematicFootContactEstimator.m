@@ -15,8 +15,8 @@ contact_est.detection_method = 0;
 
 contact_threshold = 0.002; % m
 
-lfoot_idx = findLinkInd(r,'l_foot');
-rfoot_idx = findLinkInd(r,'r_foot');
+lfoot_idx = findLinkId(r,'l_foot');
+rfoot_idx = findLinkId(r,'r_foot');
 
 lc = lcm.lcm.LCM.getSingleton();
 

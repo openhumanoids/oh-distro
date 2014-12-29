@@ -52,8 +52,8 @@ R = rpy2rotmat([0;0;x0(6)]);
 zmpknots = R*zmpknots;
 zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
 
-rfoot_ind = r.findLinkInd('r_foot');
-lfoot_ind = r.findLinkInd('l_foot');
+rfoot_ind = r.findLinkId('r_foot');
+lfoot_ind = r.findLinkId('l_foot');
 foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]);
 foot_center = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 zmptraj = zmptraj + foot_center;
@@ -102,7 +102,7 @@ ctrl_data = QPControllerData(true,struct(...
   'ignore_terrain',false,...
   'comtraj',comtraj,...
   'plan_shift',[0;0;0],...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
 
 % instantiate QP controller
 options.slack_limit = 20;
