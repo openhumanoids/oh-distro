@@ -127,11 +127,15 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   delta_head_prev_ = delta_head;
   // Publish this to see vo-only estimates
   // however it always has delay. so will result in jerks to the POSES published
-  publishUpdate(utime_prev_, local_to_head_prev_ , local_to_body_prev_, "POSE_BODY_FOVIS_VELOCITY");
+
+  double alpha = 0.8;
+  body_lin_rate_alpha_ =  alpha*body_lin_rate_alpha_ + (1-alpha)*body_lin_rate_;
+  body_rot_rate_alpha_ =  alpha*body_rot_rate_alpha_ + (1-alpha)*body_rot_rate_;
+  publishUpdate(utime_prev_, local_to_head_prev_ , local_to_body_prev_, "POSE_BODY_FOVIS_VELOCITY", true);
 }
   
 void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head,
-                                Eigen::Isometry3d local_to_body, std::string channel){
+                                Eigen::Isometry3d local_to_body, std::string channel, bool output_alpha_filter){
   if ((!pose_initialized_) || (!vo_initialized_)) {
     std::cout << (int) pose_initialized_ << " pose\n";
     std::cout << (int) vo_initialized_ << " vo\n";
@@ -181,12 +185,23 @@ void VoEstimator::publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head,
   l2body_msg.orientation[1] = l2body_rot.x();
   l2body_msg.orientation[2] = l2body_rot.y();
   l2body_msg.orientation[3] = l2body_rot.z();
-  l2body_msg.vel[0]=body_lin_rate_(0);
-  l2body_msg.vel[1]=body_lin_rate_(1);
-  l2body_msg.vel[2]=body_lin_rate_(2);
-  l2body_msg.rotation_rate[0]=body_rot_rate_(0);
-  l2body_msg.rotation_rate[1]=body_rot_rate_(1);
-  l2body_msg.rotation_rate[2]=body_rot_rate_(2);
+
+  if (output_alpha_filter){
+    l2body_msg.vel[0]=body_lin_rate_alpha_(0);
+    l2body_msg.vel[1]=body_lin_rate_alpha_(1);
+    l2body_msg.vel[2]=body_lin_rate_alpha_(2);
+    l2body_msg.rotation_rate[0]=body_rot_rate_alpha_(0);
+    l2body_msg.rotation_rate[1]=body_rot_rate_alpha_(1);
+    l2body_msg.rotation_rate[2]=body_rot_rate_alpha_(2);
+  }else{
+    l2body_msg.vel[0]=body_lin_rate_(0);
+    l2body_msg.vel[1]=body_lin_rate_(1);
+    l2body_msg.vel[2]=body_lin_rate_(2);
+    l2body_msg.rotation_rate[0]=body_rot_rate_(0);
+    l2body_msg.rotation_rate[1]=body_rot_rate_(1);
+    l2body_msg.rotation_rate[2]=body_rot_rate_(2);
+  }
+
   l2body_msg.accel[0]=0; // not estimated
   l2body_msg.accel[1]=0;
   l2body_msg.accel[2]=0;  

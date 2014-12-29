@@ -55,7 +55,7 @@ struct CommandLineConfig
   int fusion_mode;
   bool feature_analysis;
   std::string output_extension;
-  bool output_signal;
+  std::string output_signal;
   bool vicon_init; // initializae off of vicon
   std::string input_channel;
   bool verbose;
@@ -239,7 +239,9 @@ void StereoOdom::updateMotion(){
     }else{
 
       // This orientation is not mathematically correct:
-      std::cout << dt << " and " << vo_velocity_linear_.transpose() << " to be extrapolated\n";
+      std::cout << dt << " sec | "
+                << vo_velocity_linear_.transpose()   << " m/s | "
+                << imu_velocity_angular_.transpose() << " r/s to be extrapolated\n";
 
       // Original Extrapolation:
       //Eigen::Quaterniond extrapolated_quat = euler_to_quat( vo_velocity_angular_[0]*dt, vo_velocity_angular_[1]*dt, vo_velocity_angular_[2]*dt);
@@ -248,7 +250,6 @@ void StereoOdom::updateMotion(){
       // since imu_velocity_angular_ is in body frame, it needs to be transformed into camera
       // x becomes z, y becomes -x, z becomes -y
       Eigen::Quaterniond extrapolated_quat = euler_to_quat( -imu_velocity_angular_[1]*dt, -imu_velocity_angular_[2]*dt, imu_velocity_angular_[0]*dt);
-
 
       delta_camera.setIdentity();
       delta_camera.translation().x() = vo_velocity_linear_[0] * dt;
@@ -391,6 +392,7 @@ Eigen::Quaterniond microstrainIMUToRobotOrientation(const microstrain::ins_t *ms
 
 void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
                               int correction_frequency, int64_t utime){
+
   if (cl_cfg_.fusion_mode==0){
     //    cout << "got IMU measurement - not incorporating them\n";
     return;
@@ -464,7 +466,7 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation,
 
       // This is the only output of POSE_BODY
       // this is not correct, but ok for now:
-      estimator_->publishUpdate(utime, revised_local_to_head, revised_local_to_head, "POSE_BODY");
+      estimator_->publishUpdate(utime, revised_local_to_head, revised_local_to_head, cl_cfg_.output_signal, false);
     }
     if (imu_counter_ > correction_frequency) { imu_counter_ =0; }
     imu_counter_++;
@@ -486,15 +488,30 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
   int correction_frequency=100;
   fuseInterial(imu_robotorientation, correction_frequency, msg->utime);
 
+
+  double rpy[3];
+  quat_to_euler(  imu_robotorientation , rpy[0], rpy[1], rpy[2]);
+  Eigen::Quaterniond imu_robotorientation_less_yaw = euler_to_quat( rpy[0], rpy[1], 0);
+  bot_core_pose_t pose_msg;
+  memset(&pose_msg, 0, sizeof(pose_msg));
+  pose_msg.utime =   msg->utime;
+  pose_msg.pos[0] = 0;
+  pose_msg.pos[1] = 0;
+  pose_msg.pos[2] = 1.65; // nominal head height
+  pose_msg.orientation[0] = imu_robotorientation_less_yaw.w();
+  pose_msg.orientation[1] = imu_robotorientation_less_yaw.x();
+  pose_msg.orientation[2] = imu_robotorientation_less_yaw.y();
+  pose_msg.orientation[3] = imu_robotorientation_less_yaw.z();
+  bot_core_pose_t_publish(lcm_->getUnderlyingLCM(), "POSE_BODY", &pose_msg);
+
   imu_velocity_linear_  = Eigen::Vector3d(0,0,0);
   imu_velocity_angular_ = Eigen::Vector3d(-msg->gyro[0], msg->gyro[1], -msg->gyro[2]);
-
   imu_velocity_angular_alpha_ = 0.8*imu_velocity_angular_alpha_ + 0.2*imu_velocity_angular_;
 
   // experimentally correct for sensor timing offset:
   int64_t temp_utime = msg->utime;// + 120000;
-  estimator_->publishPoseRatesOnly(imu_velocity_linear_, imu_velocity_angular_, temp_utime, "POSE_BODY_ALT");
-  estimator_->publishPoseRatesOnly(imu_velocity_linear_, imu_velocity_angular_alpha_, temp_utime, "POSE_VICON");
+  estimator_->publishPoseRatesOnly(imu_velocity_linear_, imu_velocity_angular_, temp_utime, "POSE_VICON");
+  //estimator_->publishPoseRatesOnly(imu_velocity_linear_, imu_velocity_angular_alpha_, temp_utime, "POSE_VICON");
 }
 
 
@@ -502,7 +519,7 @@ int main(int argc, char **argv){
   CommandLineConfig cl_cfg;
   cl_cfg.camera_config = "CAMERA";
   cl_cfg.input_channel = "CAMERA_BLACKENED";
-  cl_cfg.output_signal = FALSE;
+  cl_cfg.output_signal = "POSE_BODY";
   cl_cfg.feature_analysis = FALSE; 
   cl_cfg.vicon_init = FALSE;
   cl_cfg.fusion_mode = 0;

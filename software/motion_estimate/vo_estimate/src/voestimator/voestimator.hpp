@@ -31,7 +31,7 @@ public:
   void voUpdate(int64_t utime, Eigen::Isometry3d delta_camera);
   void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
   void publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head,
-                     Eigen::Isometry3d local_to_body, std::string channel);
+                     Eigen::Isometry3d local_to_body, std::string channel, bool output_alpha_filter);
   void publishUpdateRobotState(const drc::robot_state_t * TRUE_state_msg);
   
   void publishPoseRatesOnly(Eigen::Vector3d velocity_linear, Eigen::Vector3d velocity_angular,
@@ -76,6 +76,7 @@ private:
   // Cache of rates: All are stored as RPY
   Eigen::Vector3d local_to_head_rot_rate_, local_to_head_lin_rate_;
   Eigen::Vector3d body_rot_rate_, body_lin_rate_;
+  Eigen::Vector3d body_rot_rate_alpha_, body_lin_rate_alpha_;
   Eigen::Isometry3d extrapolateHeadRates(float d_time);
   
   // Raw sensed rates from IMU:
