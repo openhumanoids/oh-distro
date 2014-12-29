@@ -39,7 +39,6 @@ xstar(6) = 0;
 x0 = zeros(r.getNumStates, 1);
 x0(1:length(xstar)) = xstar;
 r = r.setInitialState(x0);
-true
 
 % LCM interpret in
 outs(1).system = 2;
