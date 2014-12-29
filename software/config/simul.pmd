@@ -12,12 +12,12 @@ group "0.params_and_model_pub" {
 group "1.state_mit" {
 
     cmd "joints2frames" {
-        exec = "drc-joints2frames -m -b";
+        exec = "drc-joints2frames -b";
         host = "base";
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync";
+        exec = "drc-state-sync -b";
         host = "base";
     }
     cmd "fusion" {
@@ -96,7 +96,8 @@ script "0.run_simul" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start group "1.state_mit";
+    start cmd "state-sync";
+    start cmd "joints2frames";
     start group "2.plan_and_control";
     start group "5.maps";
     start cmd "drakeAtlasSimulation";
@@ -113,7 +114,8 @@ script "2.run_all_but_simul" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start group "1.state_mit";
+    start cmd "state-sync";
+    start cmd "joints2frames";
     start cmd "CombinedPlanner";
     start group "5.maps";
 }

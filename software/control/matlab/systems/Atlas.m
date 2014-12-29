@@ -440,7 +440,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
 
     hokuyo_yaw_width = 2.0; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 200;   
+    hokuyo_num_pts = 250;   
     hokuyo_max_range = 6; % meters?
     hokuyo_spin_rate = 16; % rad/sec
     hokuyo_mirror_offset = [0.015; 0.0; -0.03]; % from multisense_sim.urdf
