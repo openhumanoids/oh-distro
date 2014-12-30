@@ -4,17 +4,38 @@
 class JointUtils
 {
 public:
-  JointUtils (){
+  JointUtils (int atlas_version){
 
     // Atlas:
     // Note: ordering here MUST match that in AtlasControlTypes.h ***********************
-    atlas_joint_names = {"back_bkz", "back_bky", "back_bkx", 
-        "neck_ay", "l_leg_hpz", "l_leg_hpx", "l_leg_hpy", 
-        "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", 
-        "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", 
-        "r_leg_akx", "l_arm_usy", "l_arm_shx", "l_arm_ely", 
-        "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "r_arm_usy", 
-        "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx"};  
+    switch (atlas_version) {
+      case 3:
+        atlas_joint_names = {"back_bkz", "back_bky", "back_bkx", 
+          "neck_ay", "l_leg_hpz", "l_leg_hpx", "l_leg_hpy", 
+          "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", 
+          "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", 
+          "r_leg_akx", "l_arm_usy", "l_arm_shx", "l_arm_ely", 
+          "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "r_arm_usy", 
+          "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx"};  
+        break;
+      case 4:
+        atlas_joint_names = {"back_bkz", "back_bky", "back_bkx", 
+          "neck_ay", "l_leg_hpz", "l_leg_hpx", "l_leg_hpy", 
+          "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", 
+          "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", 
+          "r_leg_akx", "l_arm_usz", "l_arm_shx", "l_arm_ely", 
+          "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "r_arm_usz", 
+          "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx"};  
+        break;
+      case 5:
+        fprintf(stderr, "Atlas V5 not yet supported. Exiting!\n");
+        exit(1);
+        break;
+      default:
+        fprintf(stderr, "Unsupported Atlas version. Exiting!\n");
+        exit(1);
+        break;
+    }
 
     head_joint_names = {"hokuyo_joint","pre_spindle_cal_x_joint", "pre_spindle_cal_y_joint", 
         "pre_spindle_cal_z_joint", "pre_spindle_cal_roll_joint", "pre_spindle_cal_pitch_joint", 
