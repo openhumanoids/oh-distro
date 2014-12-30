@@ -22,20 +22,20 @@ use_neck_constraint =         true;
 use_collision_constraint =    false;
 use_smoothing_constraint =    false;
 
-pelvis = r.findLinkInd('pelvis');
-utorso = r.findLinkInd('utorso');
-r_foot = r.findLinkInd('r_foot');
-l_foot = r.findLinkInd('l_foot');
-r_hand = r.findLinkInd('r_hand');
-l_hand = r.findLinkInd('l_hand');
-neck_joint = findJointIndices(r,'neck');
-%ankle_joints = [findJointIndices(r,'r_leg_aky')];
- ankle_joints = [findJointIndices(r,'l_leg_aky'); ...
-                 findJointIndices(r,'r_leg_aky')];
-% knee_joints = [findJointIndices(r,'l_leg_kny'); ...
-%                 findJointIndices(r,'r_leg_kny')];
-knee_joints = findJointIndices(r,'l_leg_kny');
-arm_joints = findJointIndices(r,'arm');
+pelvis = r.findLinkId('pelvis');
+utorso = r.findLinkId('utorso');
+r_foot = r.findLinkId('r_foot');
+l_foot = r.findLinkId('l_foot');
+r_hand = r.findLinkId('r_hand');
+l_hand = r.findLinkId('l_hand');
+neck_joint = findPositionIndices(r,'neck');
+%ankle_joints = [findPositionIndices(r,'r_leg_aky')];
+ ankle_joints = [findPositionIndices(r,'l_leg_aky'); ...
+                 findPositionIndices(r,'r_leg_aky')];
+% knee_joints = [findPositionIndices(r,'l_leg_kny'); ...
+%                 findPositionIndices(r,'r_leg_kny')];
+knee_joints = findPositionIndices(r,'l_leg_kny');
+arm_joints = findPositionIndices(r,'arm');
 
 n = 5;
 shrink_factor = 0.9;

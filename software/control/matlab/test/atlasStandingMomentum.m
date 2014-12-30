@@ -95,8 +95,8 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 com0 = getCOM(r,q0);
 
-rfoot_ind = r.findLinkInd('r_foot');
-lfoot_ind = r.findLinkInd('l_foot');
+rfoot_ind = r.findLinkId('r_foot');
+lfoot_ind = r.findLinkId('l_foot');
 
 % set up QP controller params
 foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
@@ -141,7 +141,7 @@ if use_random_traj
     'dcomz_traj',dcomz_traj,...
     'ddcomz_traj',ddcomz_traj,...
     'mu',1,...
-    'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+    'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
 
 else
   comtraj = ConstantTrajectory(com0);
@@ -247,7 +247,7 @@ else
     'comz_traj',comz_traj,...
     'dcomz_traj',dcomz_traj,...
     'ddcomz_traj',ddcomz_traj,...
-    'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+    'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
 end
 
 if 1 % visualize trajectory

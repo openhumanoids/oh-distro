@@ -46,10 +46,10 @@ classdef WrenchMeasurementHandler < handle
         function obj = WrenchMeasurementHandler(r,hardware_mode)
             obj.r = r;
             obj.hardware_mode=hardware_mode;
-            obj.r_hand_body = findLinkInd(obj.r,'r_hand');
-            obj.l_hand_body = findLinkInd(obj.r,'l_hand');
-            obj.r_foot_body = obj.r.findLinkInd('r_foot');
-            obj.l_foot_body = obj.r.findLinkInd('l_foot');
+            obj.r_hand_body = findLinkId(obj.r,'r_hand');
+            obj.l_hand_body = findLinkId(obj.r,'l_hand');
+            obj.r_foot_body = obj.r.findLinkId('r_foot');
+            obj.l_foot_body = obj.r.findLinkId('l_foot');
             
             % Goals are presented in palm frame, must be transformed to hand coordinate frame
             % Using notation similar to KDL.
@@ -110,8 +110,8 @@ classdef WrenchMeasurementHandler < handle
                 % com is defined including l_hand mass in sim.
                 obj.hand_com_offset_l_sandia = [0.0048;0.1140;0.0021];
                 obj.hand_com_offset_r_sandia = [0.0048;-0.1140;0.0021];
-                r_hand_link_mass=r.getBody(r.findLinkInd('r_hand')).mass;
-                l_hand_link_mass=r.getBody(r.findLinkInd('l_hand')).mass;
+                r_hand_link_mass=r.getBody(r.findLinkId('r_hand')).mass;
+                l_hand_link_mass=r.getBody(r.findLinkId('l_hand')).mass;
                 obj.hand_mass_r_sandia = 3.131+r_hand_link_mass;
                 obj.hand_mass_l_sandia = 3.131+l_hand_link_mass;
                 obj.hand_mass_r_irobot = 0.9+r_hand_link_mass;

@@ -55,9 +55,9 @@ classdef TorsoMotionControlBlock < DrakeSystem
       end
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
       obj.robot = r;
-      obj.body_ind = findLinkInd(r,name);
-      obj.lfoot_ind = findLinkInd(r,'l_foot');
-      obj.rfoot_ind = findLinkInd(r,'r_foot');
+      obj.body_ind = findLinkId(r,name);
+      obj.lfoot_ind = findLinkId(r,'l_foot');
+      obj.rfoot_ind = findLinkId(r,'r_foot');
     end
    
     function y=output(obj,t,~,x)

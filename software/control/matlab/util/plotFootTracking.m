@@ -17,8 +17,8 @@ N = length(t_u);
 lfoot_pos = zeros(6,N);
 rfoot_pos = zeros(6,N);
 
-lfoot_idx = findLinkInd(r,'l_foot');
-rfoot_idx = findLinkInd(r,'r_foot');
+lfoot_idx = findLinkId(r,'l_foot');
+rfoot_idx = findLinkId(r,'r_foot');
 
 for i=1:N
   [~, x_idx] = min(abs(t_u(i) - t_x));

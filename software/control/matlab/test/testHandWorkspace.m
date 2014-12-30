@@ -10,9 +10,9 @@ coords = robot.getStateFrame.coordinates;
 coords = coords(1:nq);
 l_arm_joints = cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords);
 r_arm_joints = cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords);
-l_hand = robot.findLinkInd('l_hand');
-r_hand = robot.findLinkInd('r_hand');
-utorso = robot.findLinkInd('utorso');
+l_hand = robot.findLinkId('l_hand');
+r_hand = robot.findLinkId('r_hand');
+utorso = robot.findLinkId('utorso');
 tic
 hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
 toc

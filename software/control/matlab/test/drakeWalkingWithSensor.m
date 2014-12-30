@@ -125,7 +125,7 @@ ctrl_data = QPControllerData(true,struct(...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'y0',walking_ctrl_data.zmptraj,...
   'plan_shift',zeros(3,1),...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
   
 options.dt = 0.003;
 options.use_bullet = use_bullet;
@@ -285,8 +285,8 @@ if plot_comtraj
   dtraj = fnder(PPTrajectory(spline(tts,xtraj_smooth)));
   qddtraj = dtraj(nq+(1:nq));
 
-  lfoot = findLinkInd(r,'l_foot');
-  rfoot = findLinkInd(r,'r_foot');
+  lfoot = findLinkId(r,'l_foot');
+  rfoot = findLinkId(r,'r_foot');
 
   lstep_counter = 0;
   rstep_counter = 0;

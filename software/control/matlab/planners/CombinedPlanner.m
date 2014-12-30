@@ -137,9 +137,9 @@ classdef CombinedPlanner
       [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
       % compute link_constraints for pelvis
-      pelvis_ind = findLinkInd(obj.biped,'pelvis');
-      lfoot_ind = findLinkInd(obj.biped,'l_foot');
-      rfoot_ind = findLinkInd(obj.biped,'r_foot');
+      pelvis_ind = findLinkId(obj.biped,'pelvis');
+      lfoot_ind = findLinkId(obj.biped,'l_foot');
+      rfoot_ind = findLinkId(obj.biped,'r_foot');
       pelvis_pose = zeros(6,length(ts));
       for i=1:length(ts)
         kinsol = doKinematics(obj.biped,ppval(qtraj_pp,ts(i)));

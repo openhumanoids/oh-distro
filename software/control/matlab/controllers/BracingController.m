@@ -94,7 +94,7 @@ classdef BracingController < DRCController
           
           % Get head positions by forward kinematics
           kinsol = doKinematics(obj.robot,q0);
-          head_body = obj.robot.findLinkInd('head');
+          head_body = obj.robot.findLinkId('head');
           pos_head = forwardKin(obj.robot,kinsol,head_body,[0;0;0],0);
           
           xtarget = pos_head + scale*uvec_head; % Head position + scale*unit vector
@@ -115,8 +115,8 @@ classdef BracingController < DRCController
           
           % Do inverse kinematics to figure out target joint positions
           q_nom = inverseKin(obj.robot,q0,...
-                    findLinkInd(obj.robot,'r_hand'),[0;0;0],xtarget, ...
-                    findLinkInd(obj.robot,'l_hand'),[0;0;0],xtarget, ...
+                    findLinkId(obj.robot,'r_hand'),[0;0;0],xtarget, ...
+                    findLinkId(obj.robot,'l_hand'),[0;0;0],xtarget, ...
                     head_body,[0;0;0],xtarget,options);
                   
           % q_nom = inverseKin(obj,q0,body1,bodypos1,worldpos1,body2,bodypos2,worldpos2...,options)

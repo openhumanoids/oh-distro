@@ -32,8 +32,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     else mexErrMsgIdAndTxt("Drake:footstepPlanShiftmex:PointerSize","Are you on a 32-bit machine or 64-bit machine??");
      
     pdata->t_prev = -1;
-    pdata->lfoot_body_index = pdata->r->findLinkInd("l_foot", 0);
-    pdata->rfoot_body_index = pdata->r->findLinkInd("r_foot", 0);
+    pdata->lfoot_body_index = pdata->r->findLinkId("l_foot", 0);
+    pdata->rfoot_body_index = pdata->r->findLinkId("r_foot", 0);
 
     plhs[0] = mxCreateNumericMatrix(1,1,cid,mxREAL);
     memcpy(mxGetData(plhs[0]),&pdata,sizeof(pdata));

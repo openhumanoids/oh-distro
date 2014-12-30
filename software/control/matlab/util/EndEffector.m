@@ -18,7 +18,7 @@ classdef EndEffector
       
       obj.manip = r;
       obj.body_id = body_id;
-      obj.body_index = r.findLinkInd(body_id);
+      obj.body_index = r.findLinkId(body_id);
       obj.xyz_offset = xyz_offset;
       
       coder = drc.control.EndEffectorGoalCoder(robot_name,body_id);
