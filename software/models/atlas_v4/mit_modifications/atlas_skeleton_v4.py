@@ -6,6 +6,7 @@ import sys
 sys.path.append(os.path.join(drc_base_path, "software", "models",
                              "model_transformation"))
 
+import convertCollada
 import mitUrdfUtils as mit
 from jointNameMap import jointNameMap
 import copy
@@ -13,7 +14,7 @@ from lxml import etree
 from glob import glob
 
 
-meshesDirectory = "../meshes/atlas_skeleton_v4"
+meshesDirectory = "../meshes"
 
 full_mesh_xacro_path = ("../components/osrf_original/atlas_v4.urdf")
 full_mesh_urdf_path = ("../components/atlas_v4_full_collision_geometry.urdf")
@@ -21,9 +22,14 @@ minimal_contact_urdf_path = "../components/atlas_v4_minimal_contact.urdf"
 convex_hull_urdf_path = "../components/atlas_v4_convex_hull.urdf"
 
 # Convert meshes
-for inFile in glob(os.path.join(meshesDirectory, "*.dae")):
+originalDirectory = os.getcwd()
+os.chdir(os.path.abspath(meshesDirectory))
+for inFile in glob("*.dae"):
     mit.convertMeshTo(inFile, ".obj")
     mit.convertMeshTo(inFile, ".wrl")
+    colladaFile = os.path.splitext(inFile)[0] + '.vtm'
+    convertCollada.colladaToPolyData(inFile, colladaFile)
+os.chdir(originalDirectory)
 
 for inFile in glob(os.path.join(meshesDirectory, "*.obj")):
     if "chull" not in inFile:
@@ -33,12 +39,12 @@ for inFile in glob(os.path.join(meshesDirectory, "*.wrl")):
     if "chull" not in inFile:
         mit.createConvexHullMesh(inFile)
 
-mit.xacro(full_mesh_urdf_path, full_mesh_xacro_path)
+mit.xacro(full_mesh_xacro_path, full_mesh_urdf_path)
 
 urdf = etree.parse(full_mesh_urdf_path)
 mit.renameJoints(urdf, jointNameMap)
 
-mit.replaceMeshPaths(urdf, "package://atlas_v4/meshes/atlas_skeleton_v4")
+mit.replaceMeshPaths(urdf, "package://atlas_v4/meshes")
 mit.useObjMeshes(urdf)
 
 mit.addFrame(urdf, "l_foot_sole", "l_foot", "0.0480 0 -0.081119", "0 0 0")
