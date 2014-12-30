@@ -1,0 +1,5 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atlas" >
+  <xacro:include filename="../components/atlas_transmission_v5.urdf" />
+  <xacro:include filename="../../common_components/hand_force_torque.urdf" />
+  <xacro:include filename="../../common_components/robotiq_camera/robotiq_camera.urdf.xacro" />
+</robot>
