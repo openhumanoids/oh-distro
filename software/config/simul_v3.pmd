@@ -17,7 +17,7 @@ group "1.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync";
+        exec = "drc-state-sync -v 3";
         host = "base";
     }
     cmd "fusion" {

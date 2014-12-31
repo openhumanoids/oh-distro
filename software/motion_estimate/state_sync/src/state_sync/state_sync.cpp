@@ -32,7 +32,8 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        boost::shared_ptr<CommandLineConfig> &cl_cfg_):
-                       lcm_(lcm_), cl_cfg_(cl_cfg_){
+                       lcm_(lcm_), cl_cfg_(cl_cfg_), 
+                       joint_utils_(cl_cfg_->atlas_version){
 
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
 
@@ -669,6 +670,7 @@ main(int argc, char ** argv){
   opt.add(cl_cfg->simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
+  opt.add(cl_cfg->atlas_version, "v", "atlas_version", "Atlas version to use");
   opt.parse();
   
   std::cout << "standalone_head: " << cl_cfg->standalone_head << "\n";
