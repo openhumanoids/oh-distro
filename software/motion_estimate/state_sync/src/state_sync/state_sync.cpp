@@ -670,7 +670,7 @@ main(int argc, char ** argv){
   opt.add(cl_cfg->simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
-  opt.add(cl_cfg->atlas_version, "v", "atlas_version", "Atlas version to use");
+  opt.add(cl_cfg->atlas_version, "a", "atlas_version", "Atlas version to use");
   opt.parse();
   
   std::cout << "standalone_head: " << cl_cfg->standalone_head << "\n";

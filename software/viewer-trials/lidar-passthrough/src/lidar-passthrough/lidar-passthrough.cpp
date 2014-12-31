@@ -479,7 +479,7 @@ int main( int argc, char** argv ){
   parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
   parser.add(collision_threshold, "c", "collision_threshold", "Lidar sphere radius [higher removes more points close to the robot]");
   parser.add(delta_threshold, "d", "delta_threshold", "Maximum Delta in Lidar Range allowed in workspace");
-  parser.add(atlas_version, "a", "atlas_version", "Version number of the Atlas model");
+  parser.add(atlas_version, "a", "atlas_version", "Atlas version to use");
   parser.parse();
   cout << atlas_version << " is Atlas version\n";
   cout << verbose << " is verbose\n";

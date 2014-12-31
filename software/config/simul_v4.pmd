@@ -17,7 +17,7 @@ group "1.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync -b -v 4";
+        exec = "drc-state-sync -b -a 4";
         host = "base";
     }
     cmd "fusion" {
@@ -61,7 +61,7 @@ group "5.maps" {
     }
 
     cmd "lidar-passthrough" {
-        exec = "drc-lidar-passthrough -c 0.06";
+        exec = "drc-lidar-passthrough -c 0.06 -a 4";
         host = "base";
     }
 }
