@@ -83,17 +83,17 @@ classdef KeyframePlanner < handle
             obj.r = r;
             obj.plan_cache = KeyframePlanCache(r);
             obj.hardware_mode = 1;
-            obj.r_hand_body = findLinkInd(obj.r,'r_hand');
-            obj.l_hand_body = findLinkInd(obj.r,'l_hand');
-            obj.r_foot_body = obj.r.findLinkInd('r_foot');
-            obj.l_foot_body = obj.r.findLinkInd('l_foot');
-            obj.head_body = obj.r.findLinkInd('head');
-            obj.pelvis_body = findLinkInd(obj.r,'pelvis');
-            obj.utorso_body = findLinkInd(obj.r,'utorso');
-            obj.l_uarm_body = findLinkInd(obj.r,'l_uarm');
-            obj.r_uarm_body = findLinkInd(obj.r,'r_uarm');
-            obj.l_lleg_body= findLinkInd(obj.r,'l_lleg');
-            obj.r_lleg_body= findLinkInd(obj.r,'r_lleg');
+            obj.r_hand_body = findLinkId(obj.r,'r_hand');
+            obj.l_hand_body = findLinkId(obj.r,'l_hand');
+            obj.r_foot_body = obj.r.findLinkId('r_foot');
+            obj.l_foot_body = obj.r.findLinkId('l_foot');
+            obj.head_body = obj.r.findLinkId('head');
+            obj.pelvis_body = findLinkId(obj.r,'pelvis');
+            obj.utorso_body = findLinkId(obj.r,'utorso');
+            obj.l_uarm_body = findLinkId(obj.r,'l_uarm');
+            obj.r_uarm_body = findLinkId(obj.r,'r_uarm');
+            obj.l_lleg_body= findLinkId(obj.r,'l_lleg');
+            obj.r_lleg_body= findLinkId(obj.r,'r_lleg');
 
            
            
@@ -450,15 +450,15 @@ classdef KeyframePlanner < handle
           obj.r = r;
           obj.plan_cache.updateRobot(r);
           obj.hardware_mode = 1;
-          obj.r_hand_body = findLinkInd(obj.r,'r_hand');
-          obj.l_hand_body = findLinkInd(obj.r,'l_hand');
-          obj.r_foot_body = obj.r.findLinkInd('r_foot');
-          obj.l_foot_body = obj.r.findLinkInd('l_foot');
-          obj.head_body = obj.r.findLinkInd('head');
-          obj.pelvis_body = findLinkInd(obj.r,'pelvis');
-          obj.utorso_body = findLinkInd(obj.r,'utorso');
-          obj.l_uarm_body = findLinkInd(obj.r,'l_uarm');
-          obj.r_uarm_body = findLinkInd(obj.r,'r_uarm');
+          obj.r_hand_body = findLinkId(obj.r,'r_hand');
+          obj.l_hand_body = findLinkId(obj.r,'l_hand');
+          obj.r_foot_body = obj.r.findLinkId('r_foot');
+          obj.l_foot_body = obj.r.findLinkId('l_foot');
+          obj.head_body = obj.r.findLinkId('head');
+          obj.pelvis_body = findLinkId(obj.r,'pelvis');
+          obj.utorso_body = findLinkId(obj.r,'utorso');
+          obj.l_uarm_body = findLinkId(obj.r,'l_uarm');
+          obj.r_uarm_body = findLinkId(obj.r,'r_uarm');
 
 
           obj.joint_constraint = PostureConstraint(obj.r);

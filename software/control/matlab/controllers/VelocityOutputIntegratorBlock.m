@@ -58,11 +58,11 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
       end
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
       
-			obj.r_ankle_idx = findJointIndices(r,'r_leg_ak');
-			obj.l_ankle_idx = findJointIndices(r,'l_leg_ak');
-			obj.leg_idx = findJointIndices(r,'leg');
-			obj.r_leg_idx = findJointIndices(r,'r_leg');
-			obj.l_leg_idx = findJointIndices(r,'l_leg');
+			obj.r_ankle_idx = findPositionIndices(r,'r_leg_ak');
+			obj.l_ankle_idx = findPositionIndices(r,'l_leg_ak');
+			obj.leg_idx = findPositionIndices(r,'leg');
+			obj.r_leg_idx = findPositionIndices(r,'r_leg');
+			obj.l_leg_idx = findPositionIndices(r,'l_leg');
 			obj.act_idx_map = getActuatedJoints(r);
 		end
    

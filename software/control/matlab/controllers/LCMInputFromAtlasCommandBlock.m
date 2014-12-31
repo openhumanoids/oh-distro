@@ -123,7 +123,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       com = getCOM(r,kinsol);
       
       % build TI-ZMP controller
-      footidx = [findLinkInd(r,'l_foot'), findLinkInd(r,'r_foot')];
+      footidx = [findLinkId(r,'l_foot'), findLinkId(r,'r_foot')];
       foot_pos = terrainContactPositions(r,kinsol,footidx);
       comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
       limp = LinearInvertedPendulum(com(3));
@@ -131,7 +131,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       
       foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
       
-      pelvis_idx = findLinkInd(r,'pelvis');
+      pelvis_idx = findLinkId(r,'pelvis');
       
       link_constraints(1).link_ndx = pelvis_idx;
       link_constraints(1).pt = [0;0;0];
@@ -160,7 +160,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         'mu',1.0,...
         'ignore_terrain',false,...
         'plan_shift',zeros(3,1),...
-        'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+        'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
       
       % instantiate QP controller
       options.slack_limit = 30.0;
@@ -229,8 +229,8 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(atlas_state(1:length(atlas_state)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
-              any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
+        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
+              any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
             
         % qtraj eval
         q_des_and_x = output(obj.qt,t,[],atlas_state);
@@ -243,13 +243,14 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
           efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
         end
       else
-         cmd = obj.coder.decode(data);
+        cmd = obj.coder.decode(data);
         efforts = cmd.val(obj.nu*2+1:end);
       end
       
       % And set neck pitch via simple PD controller
       dummyInput = drcFrames.AtlasInput(obj.r_control);
-      neck_in_i = dummyInput.findCoordinateIndex('neck_ay');
+      dummyState = drcFrames.AtlasState(obj.r_control);
+      neck_in_i = dummyState.findCoordinateIndex('neck_ay');
       neck_in_i = neck_in_i(1);
       neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
       error =  30*pi/180 - atlas_state(neck_in_i);

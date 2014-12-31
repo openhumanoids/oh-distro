@@ -5,10 +5,10 @@ function [xstar,info,r,ustar,x0,constraints,ikoptions] = randomPose(r,x0,n,v)
     r = Atlas([getenv('DRC_PATH') '/models/mit_gazebo_models/mit_robot_drake/model_param.urdf']);
   end
 
-  l_foot = findLinkInd(r,'l_foot');
-  r_foot = findLinkInd(r,'r_foot');
-  neck_joint = findJointIndices(r,'neck_ay');
-  back_y_joint = findJointIndices(r,'back_bky');
+  l_foot = findLinkId(r,'l_foot');
+  r_foot = findLinkId(r,'r_foot');
+  neck_joint = findPositionIndices(r,'neck_ay');
+  back_y_joint = findPositionIndices(r,'back_bky');
 
   if nargin < 2
     % set initial state to fixed point

@@ -241,7 +241,7 @@ while (1)
                 if action_options.generate_implicit_constraints_from_q0
                     if isfield(action_options,'initial_contact_groups')
                         for i = 1:length(action_options.initial_contact_groups.linknames)
-                            body_idx = findLinkInd(r,action_options.initial_contact_groups.linknames{i});
+                            body_idx = findLinkId(r,action_options.initial_contact_groups.linknames{i});
                             if body_idx ~= 0
                                 action_options.initial_contact_groups.linknames{i} = getLinkName(r,body_idx);
                             end
@@ -653,8 +653,8 @@ while (1)
                         % action_options.ref_link_str, if present.
                         if(isfield(action_options,'ref_link_str'))
                             typecheck(action_options.ref_link_str,'char');
-                            ref_link_idx = findLinkInd(r,action_options.ref_link_str);
-                            pelvis_idx = findLinkInd(r,'pelvis');
+                            ref_link_idx = findLinkId(r,action_options.ref_link_str);
+                            pelvis_idx = findLinkId(r,'pelvis');
                             for i = 1:length(t_qs_breaks)
                                 kinsol = doKinematics(r,q_qs_plan(:,i),false,false);
                                 com_i = getCOM(r,kinsol);
@@ -846,7 +846,7 @@ function kc = getConstraintFromGoal(r,goal)
 if(goal.contact_type ~= goal.SUPPORTED_WITHIN_REGION) && (goal.contact_type ~= goal.WITHIN_REGION) && (goal.contact_type ~= goal.COLLISION_AVOIDANCE)
     error('The contact type is not supported yet');
 end
-body_idx = findLinkInd(r,char(goal.object_1_name));
+body_idx = findLinkId(r,char(goal.object_1_name));
 body = getBody(r,body_idx);
 t_prec = 1e6;
 tspan = round([goal.lower_bound_completion_time goal.upper_bound_completion_time]*t_prec)/t_prec;
@@ -856,10 +856,10 @@ if(goal.contact_type == goal.COLLISION_AVOIDANCE)
     pos = struct();
     pos.max = inf(3,1);
     pos.min = -inf(3,1);
-    obstacle_idx = findLinkInd(r,char(goal.object_2_name));
+    obstacle_idx = findLinkId(r,char(goal.object_2_name));
     kc = CollisionAvoidanceConstraint(r,body_idx,tspan,kc_name,obstacle_idx);
 else
-    child_idx = findLinkInd(r,char(goal.object_2_name));
+    child_idx = findLinkId(r,char(goal.object_2_name));
     groupname = regexprep(char(goal.object_2_contact_grp),'\/.*','');
     contact_aff = {ContactShapeAffordance(r,child_idx,groupname)};
     collision_group_name = char(goal.object_1_contact_grp);

@@ -55,10 +55,10 @@ classdef StatelessWalkingPlanner
       walking_plan_data = planWalkingZMP(r, x0, footstep_plan);
 
       if request.fix_right_hand
-        walking_plan_data = walking_plan_data.fix_link(r, kinsol, r.findLinkInd('r_hand+r_hand_point_mass'), [0; 0.1; 0], 0.05, 0);
+        walking_plan_data = walking_plan_data.fix_link(r, kinsol, r.findLinkId('r_hand+r_hand_point_mass'), [0; 0.1; 0], 0.05, 0);
       end
       if request.fix_left_hand
-        walking_plan_data = walking_plan_data.fix_link(r, kinsol, r.findLinkInd('l_hand+l_hand_point_mass'), [0; 0.1; 0], 0.05, 0);
+        walking_plan_data = walking_plan_data.fix_link(r, kinsol, r.findLinkId('l_hand+l_hand_point_mass'), [0; 0.1; 0], 0.05, 0);
       end
 
       

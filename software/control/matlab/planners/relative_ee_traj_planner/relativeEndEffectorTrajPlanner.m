@@ -11,18 +11,18 @@ function X = relativeEndEffectorTrajPlanner(r,q0,ee_name,ee_pose_relative,option
   ikoptions = IKoptions(r);
   ikoptions = ikoptions.setDebug(true);
   ikoptions = ikoptions.setMajorIterationsLimit(5000);
-  ee_idx = r.findLinkInd(ee_name);
+  ee_idx = r.findLinkId(ee_name);
   switch ee_name
     case 'l_hand'
-      free_joints = findJointIndices(r,'l_arm');
+      free_joints = findPositionIndices(r,'l_arm');
     case 'r_hand'
-      free_joints = findJointIndices(r,'r_arm');
+      free_joints = findPositionIndices(r,'r_arm');
     otherwise
       error('relativeEndEffectorTrajPlanner:badEEName',...
         '%s is not a supported end-effector name',ee_name);
   end
   if options.free_back
-    free_joints = [free_joints; findJointIndices(r,'back')];
+    free_joints = [free_joints; findPositionIndices(r,'back')];
   end
   if ~isempty(options.free_joints)
     free_joints = [free_joints; options.free_joints];

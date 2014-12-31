@@ -5,10 +5,10 @@ rand('twister', 1253);
 nq = getNumPositions(robot);
 
 base_name = 'utorso';
-base_index = robot.findLinkInd(base_name);
+base_index = robot.findLinkId(base_name);
 
 end_effector_name = 'l_hand+l_hand_point_mass';
-end_effector_index = robot.findLinkInd(end_effector_name);
+end_effector_index = robot.findLinkId(end_effector_name);
 
 [~, joint_path, ~] = robot.findKinematicPath(base_index, end_effector_index);
 joint_names = robot.getJointNames();

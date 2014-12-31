@@ -9,9 +9,9 @@ r = compile(r);
 r.setInitialState(zeros(getNumStates(r),1));
 v = r.constructVisualizer;
 
-utorso_ind = findLinkInd(r,'utorso');
-pelvis_ind = findLinkInd(r,'pelvis');
-rhand_ind = findLinkInd(r,'r_hand');
+utorso_ind = findLinkId(r,'utorso');
+pelvis_ind = findLinkId(r,'pelvis');
+rhand_ind = findLinkId(r,'r_hand');
 
 x = r.getInitialState();
 x(3) = 0.0;
@@ -27,12 +27,12 @@ lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'reachability');
 
 [jlmin,jlmax] = getJointLimits(r);
 
-r_arm_usy = findJointIndices(r,'r_arm_usy');
-r_arm_shx = findJointIndices(r,'r_arm_shx');
-r_arm_elx = findJointIndices(r,'r_arm_elx');
-r_arm_ely = findJointIndices(r,'r_arm_ely');
-r_arm_uwy = findJointIndices(r,'r_arm_uwy');
-r_arm_mwx = findJointIndices(r,'r_arm_mwx');
+r_arm_usy = findPositionIndices(r,'r_arm_usy');
+r_arm_shx = findPositionIndices(r,'r_arm_shx');
+r_arm_elx = findPositionIndices(r,'r_arm_elx');
+r_arm_ely = findPositionIndices(r,'r_arm_ely');
+r_arm_uwy = findPositionIndices(r,'r_arm_uwy');
+r_arm_mwx = findPositionIndices(r,'r_arm_mwx');
 
 
 N = 12;

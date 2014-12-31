@@ -36,9 +36,9 @@ classdef AtlasBalancingController < DRCController
         integral_gains = zeros(getNumPositions(r),1);
         integral_clamps = zeros(getNumPositions(r),1);
         
-        arm_ind = findJointIndices(r,'arm');
-        back_ind = findJointIndices(r,'back');
-        back_y_ind = findJointIndices(r,'back_bky');
+        arm_ind = findPositionIndices(r,'arm');
+        back_ind = findPositionIndices(r,'back');
+        back_y_ind = findPositionIndices(r,'back_bky');
         integral_gains(arm_ind) = 1.5; % TODO: generalize this
         integral_gains(back_ind) = 0.2;
         integral_clamps(arm_ind) = 0.3;
@@ -53,7 +53,7 @@ classdef AtlasBalancingController < DRCController
       com = getCOM(r,kinsol);
       
       % build TI-ZMP controller
-      fidx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
+      fidx = [r.findLinkId('r_foot'),r.findLinkId('l_foot')];
       foot_cpos = terrainContactPositions(r,kinsol,fidx);
       comgoal = mean([mean(foot_cpos(1:2,1:4)');mean(foot_cpos(1:2,5:8)')])';
       limp = LinearInvertedPendulum(com(3));
@@ -61,7 +61,7 @@ classdef AtlasBalancingController < DRCController
       
       foot_support = RigidBodySupportState(r,fidx);
       
-      pelvis_index = findLinkInd(r,'pelvis');
+      pelvis_index = findLinkId(r,'pelvis');
       link_constraints(1).link_ndx = pelvis_index;
       link_constraints(1).pt = [0;0;0];
       link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,pelvis_index,[0;0;0],1));
@@ -96,7 +96,7 @@ classdef AtlasBalancingController < DRCController
           'integral_clamps',integral_clamps,...
           'firstplan',true,...
           'plan_shift',[0;0;0],...
-          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back_bkz');findJointIndices(r,'back_bky')]));
+          'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'neck');findPositionIndices(r,'back_bkz');findPositionIndices(r,'back_bky')]));
       else
         ctrl_data = AtlasQPControllerData(false,struct(...
           'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
@@ -118,7 +118,7 @@ classdef AtlasBalancingController < DRCController
           'firstplan',true,...
           'force_controlled_joints',force_controlled_joints,...
           'position_controlled_joints',position_controlled_joints,...
-          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back_bkz');findJointIndices(r,'back_bky')]));
+          'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'neck');findPositionIndices(r,'back_bkz');findPositionIndices(r,'back_bky')]));
       end
       
       sys = AtlasBalancingWrapper(r,ctrl_data,options);

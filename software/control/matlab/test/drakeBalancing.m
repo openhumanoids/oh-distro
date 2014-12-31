@@ -39,7 +39,7 @@ kinsol = doKinematics(r,q0);
 com = getCOM(r,kinsol);
 
 % build TI-ZMP controller 
-footidx = [findLinkInd(r,'l_foot'), findLinkInd(r,'r_foot')];
+footidx = [findLinkId(r,'l_foot'), findLinkId(r,'r_foot')];
 foot_pos = terrainContactPositions(r,kinsol,footidx);
 comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 limp = LinearInvertedPendulum(com(3));
@@ -47,7 +47,7 @@ limp = LinearInvertedPendulum(com(3));
 
 foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
 
-pelvis_idx = findLinkInd(r,'pelvis');
+pelvis_idx = findLinkId(r,'pelvis');
 
 link_constraints(1).link_ndx = pelvis_idx;
 link_constraints(1).pt = [0;0;0];
@@ -77,7 +77,7 @@ ctrl_data = QPControllerData(false,struct(...
   'mu',1.0,...
   'ignore_terrain',false,...
   'plan_shift',zeros(3,1),...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
 
 % instantiate QP controller
 options.debug = false;

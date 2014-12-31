@@ -89,8 +89,8 @@ R = rpy2rotmat([0;0;x0(6)]);
 zmpknots = R*zmpknots;
 zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
 
-rfoot_ind = r.findLinkInd('r_foot');
-lfoot_ind = r.findLinkInd('l_foot');
+rfoot_ind = r.findLinkId('r_foot');
+lfoot_ind = r.findLinkId('l_foot');
 foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]);
 foot_center = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 zmptraj = zmptraj + foot_center;
@@ -114,7 +114,7 @@ lcmgl.switchBuffers();
 
 foot_support = RigidBodySupportState(r,[rfoot_ind,lfoot_ind]);
 
-pelvis_idx = findLinkInd(r,'pelvis');
+pelvis_idx = findLinkId(r,'pelvis');
 
 link_constraints(1).link_ndx = pelvis_idx;
 link_constraints(1).pt = [0;0;0];
@@ -146,7 +146,7 @@ ctrl_data = AtlasQPControllerData(true,struct(...
   'position_controlled_joints',position_controlled_joints,...
   'integral',zeros(getNumPositions(r),1),...
   'plan_shift',[0;0;0],...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
 
 sys = AtlasBalancingWrapper(r,ctrl_data,options);
 

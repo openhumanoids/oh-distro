@@ -35,11 +35,11 @@ classdef HandWorkspace
       coords = coords(1:nq);
       l_arm_joints = cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords);
       r_arm_joints = cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords);
-      l_hand = robot.findLinkInd('l_hand');
-      r_hand = robot.findLinkInd('r_hand');
-      utorso = robot.findLinkInd('utorso');
-      l_clav = robot.findLinkInd('l_clav');
-      r_clav = robot.findLinkInd('r_clav');
+      l_hand = robot.findLinkId('l_hand');
+      r_hand = robot.findLinkId('r_hand');
+      utorso = robot.findLinkId('utorso');
+      l_clav = robot.findLinkId('l_clav');
+      r_clav = robot.findLinkId('r_clav');
       kinsol = doKinematics(robot,qstar);
       l_clav_pts = [0;0;0];
       r_clav_pts = [0;0;0];

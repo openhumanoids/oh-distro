@@ -17,8 +17,8 @@ options.floating = true;
 options.dt = 0.001;
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 nq = atlas.getNumPositions();
-l_foot = atlas.findLinkInd('l_foot');
-r_foot = atlas.findLinkInd('r_foot');
+l_foot = atlas.findLinkId('l_foot');
+r_foot = atlas.findLinkId('r_foot');
 
 atlas_state_frame = atlas.getStateFrame();
 atlas_state_frame.subscribe('EST_ROBOT_STATE');

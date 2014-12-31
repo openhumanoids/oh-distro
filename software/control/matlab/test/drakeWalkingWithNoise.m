@@ -110,7 +110,7 @@ ctrl_data = QPControllerData(true,struct(...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'y0',walking_ctrl_data.zmptraj,...
   'plan_shift',zeros(3,1),...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'neck')]));
 
 
 % ******************* BEGIN ADJUSTABLE ************************************
@@ -201,8 +201,8 @@ playback(v,traj,struct('slider',true));
 com_err = 0; % x,y error
 foot_err = 0;
 pelvis_sway = 0;
-rfoot_idx = findLinkInd(r,'r_foot');
-lfoot_idx = findLinkInd(r,'l_foot');
+rfoot_idx = findLinkId(r,'r_foot');
+lfoot_idx = findLinkId(r,'l_foot');
 rfoottraj = walking_ctrl_data.link_constraints(1).traj;
 lfoottraj = walking_ctrl_data.link_constraints(2).traj;
 for i=1:length(ts)

@@ -57,7 +57,7 @@ end
 
 bodies = cell(nb, 1);
 for i = 1 : nb
-  bodies{i} = r.findLinkInd(body_names{i});
+  bodies{i} = r.findLinkId(body_names{i});
 end
 
 [~, joint_indices] = r.findKinematicPath(bodies{1}, bodies{2});

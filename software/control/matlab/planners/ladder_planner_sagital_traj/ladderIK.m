@@ -1,12 +1,12 @@
 function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts,ikoptions)
   nq = r.getNumPositions();
 
-  pelvis = r.findLinkInd('pelvis');
-  utorso = r.findLinkInd('utorso');
-  neck_joint = findJointIndices(r,'neck');
-  knee_joints = [findJointIndices(r,'l_leg_kny'); ...
-                 findJointIndices(r,'r_leg_kny')];
-  arm_joints = findJointIndices(r,'arm');
+  pelvis = r.findLinkId('pelvis');
+  utorso = r.findLinkId('utorso');
+  neck_joint = findPositionIndices(r,'neck');
+  knee_joints = [findPositionIndices(r,'l_leg_kny'); ...
+                 findPositionIndices(r,'r_leg_kny')];
+  arm_joints = findPositionIndices(r,'arm');
 
   if ~isfield(ladder_opts,'use_quasistatic_constraint') 
     ladder_opts.use_quasistatic_constraint =  true;
@@ -231,14 +231,14 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
         if foot_supported(j)
           ankle_constraint = PostureConstraint(r);
           ankle_constraint = ankle_constraint.setJointLimits( ...
-            findJointIndices(r,r.getBody(r.getBody(ee_info.feet(j).idx).parent).jointname), ...
+            findPositionIndices(r,r.getBody(r.getBody(ee_info.feet(j).idx).parent).jointname), ...
             -ladder_opts.ankle_limit, ...
             10*ladder_opts.ankle_limit);
           constraints = [constraints, {ankle_constraint}];
         else
           ankle_constraint = PostureConstraint(r);
           ankle_constraint = ankle_constraint.setJointLimits( ...
-            findJointIndices(r,r.getBody(ee_info.feet(j).idx).jointname), ...
+            findPositionIndices(r,r.getBody(ee_info.feet(j).idx).jointname), ...
             0, ...
             0);
           constraints = [constraints, {ankle_constraint}];
@@ -386,7 +386,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 %     com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
     constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
     back_z_constraint_f = PostureConstraint(r);
-    back_z_constraint_f = back_z_constraint_f.setJointLimits([(4:6)';findJointIndices(r,'back_bkz')],[q0(4:6);0],[q0(4:6);0]);
+    back_z_constraint_f = back_z_constraint_f.setJointLimits([(4:6)';findPositionIndices(r,'back_bkz')],[q0(4:6);0],[q0(4:6);0]);
     
     [qf,info,infeasible] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
     if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;

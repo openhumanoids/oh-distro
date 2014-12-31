@@ -9,7 +9,7 @@ function displayRelativeEndEffectorMotion(ee_name,ee_pose_relative,x0,r,lcmgl)
   nt = size(ee_pose_relative,2);
   %nq = r.getNumPositions();
   %kinsol = doKinematics(r,x0(1:nq));
-  %ee_idx = r.findLinkInd(ee_name);
+  %ee_idx = r.findLinkId(ee_name);
   %ee_pose_0 = forwardKin(r,kinsol,ee_idx,[0;0;0],2);
   %xyz_0 = ee_pose_0(1:3);
   %quat_0 = ee_pose_0(4:7);

@@ -21,8 +21,8 @@ foot_indices_struct.r_foot_fz_idx = find(strcmp('r_foot_fz',force_torque_frame.c
 foot_indices_struct.r_foot_tx_idx = find(strcmp('r_foot_tx',force_torque_frame.coordinates));
 foot_indices_struct.r_foot_ty_idx = find(strcmp('r_foot_ty',force_torque_frame.coordinates));
 
-foot_indices_struct.rfoot_ind = r.findLinkInd('r_foot');
-foot_indices_struct.lfoot_ind = r.findLinkInd('l_foot');
+foot_indices_struct.rfoot_ind = r.findLinkId('r_foot');
+foot_indices_struct.lfoot_ind = r.findLinkId('l_foot');
 
 nq = getNumPositions(r);
 

@@ -99,10 +99,10 @@ robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_model
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 % if(r_hand_mode == 1)
-% right_hand_links = [robot.findLinkInd('r_hand'),robot.findLinkInd('right_f0_0'),robot.findLinkInd('right_f0_1'),...
-%   robot.findLinkInd('right_f0_2'),robot.findLinkInd('right_f1_0'),robot.findLinkInd('right_f1_1'),...
-%   robot.findLinkInd('right_f1_2'),robot.findLinkInd('right_f2_0'),robot.findLinkInd('right_f2_1'),...
-%   robot.findLinkInd('right_f2_2'),robot.findLinkInd('right_f3_0'),robot.findLinkInd('right_f3_1'),robot.findLinkInd('right_f3_2')];
+% right_hand_links = [robot.findLinkId('r_hand'),robot.findLinkId('right_f0_0'),robot.findLinkId('right_f0_1'),...
+%   robot.findLinkId('right_f0_2'),robot.findLinkId('right_f1_0'),robot.findLinkId('right_f1_1'),...
+%   robot.findLinkId('right_f1_2'),robot.findLinkId('right_f2_0'),robot.findLinkId('right_f2_1'),...
+%   robot.findLinkId('right_f2_2'),robot.findLinkId('right_f3_0'),robot.findLinkId('right_f3_1'),robot.findLinkId('right_f3_2')];
 % robot.collision_filter_groups('right_hand') = CollisionFilterGroup();
 % robot = robot.addLinksToCollisionFilterGroup(right_hand_links,'right_hand',1);
 % robot = compile(robot);
@@ -110,10 +110,10 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 % robot = compile(robot);
 % end
 % if(l_hand_mode == 1)
-% left_hand_links = [robot.findLinkInd('l_hand'),robot.findLinkInd('left_f0_0'),robot.findLinkInd('left_f0_1'),robot.findLinkInd('left_f0_2'),...
-%   robot.findLinkInd('left_f1_0'),robot.findLinkInd('left_f1_1'),robot.findLinkInd('left_f1_2'),...
-%   robot.findLinkInd('left_f2_0'),robot.findLinkInd('left_f2_1'),robot.findLinkInd('left_f2_2'),...
-%   robot.findLinkInd('left_f3_0'),robot.findLinkInd('left_f3_1'),robot.findLinkInd('left_f3_2')];
+% left_hand_links = [robot.findLinkId('l_hand'),robot.findLinkId('left_f0_0'),robot.findLinkId('left_f0_1'),robot.findLinkId('left_f0_2'),...
+%   robot.findLinkId('left_f1_0'),robot.findLinkId('left_f1_1'),robot.findLinkId('left_f1_2'),...
+%   robot.findLinkId('left_f2_0'),robot.findLinkId('left_f2_1'),robot.findLinkId('left_f2_2'),...
+%   robot.findLinkId('left_f3_0'),robot.findLinkId('left_f3_1'),robot.findLinkId('left_f3_2')];
 % robot.collision_filter_groups('left_hand') = CollisionFilterGroup();
 % robot = robot.addLinksToCollisionFilterGroup(left_hand_links,'left_hand',1);
 % robot = compile(robot);
@@ -155,8 +155,8 @@ atlas_state_frame.subscribe('EST_ROBOT_STATE');
 % individual end effector goal subscribers
 rh_ee = EndEffectorListener('RIGHT_PALM_GOAL');
 lh_ee = EndEffectorListener('LEFT_PALM_GOAL');
-rfoot = atlas.findLinkInd('r_foot');
-lfoot = atlas.findLinkInd('l_foot');
+rfoot = atlas.findLinkId('r_foot');
+lfoot = atlas.findLinkId('l_foot');
 rfoot_pts = getContactPoints(getBody(atlas,rfoot));
 lfoot_pts = getContactPoints(getBody(atlas,lfoot));
 rf_ee = EndEffectorListener('R_FOOT_GOAL');
@@ -924,7 +924,7 @@ if(ee_goal_type_flags.h == 2)
   lcmgl.glColor3f(1,0,0);
   lcmgl.sphere(h_ee_goal(1:3),0.05,20,20);
   lcmgl.text(h_ee_goal(1:3)+0.05*ones(3,1),'head camera goal');
-  head = robot.findLinkInd('head');
+  head = robot.findLinkId('head');
   head_pos = forwardKin(robot,kinsol,head,[[0;0;0] [0.5;0;0]],1);
   lcmgl.glLineWidth(3);
   lcmgl.line3(head_pos(1,1),head_pos(2,1),head_pos(3,1),head_pos(1,2),head_pos(2,2),head_pos(3,2));
@@ -935,7 +935,7 @@ if(ee_goal_type_flags.lidar == 2)
   lcmgl.glColor3f(1,0,0);
   lcmgl.sphere(lidar_ee_goal(1:3),0.05,20,20);
   lcmgl.text(lidar_ee_goal(1:3)+0.05*ones(3,1),'lidar goal');
-  head = robot.findLinkInd('head');
+  head = robot.findLinkId('head');
   head_pos = forwardKin(robot,kinsol,head,[[0;0;0] [0.5;0;0]],1);
   lcmgl.glLineWidth(3);
   lcmgl.line3(head_pos(1,1),head_pos(2,1),head_pos(3,1),head_pos(1,2),head_pos(2,2),head_pos(3,2));

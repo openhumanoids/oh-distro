@@ -31,7 +31,7 @@ classdef DRCAtlas < Atlas
         % trying new value that lines up more accurately with
         % head_to_left_eye, left_eye_to_spindle transforms
         % from multisense_sim.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446, -0.0087, 0.0880].',[0, 0, 0].','hokuyo_frame'));
+        obj = addFrame(obj,RigidBodyFrame(findLinkId(obj,'head'),[-0.0446, -0.0087, 0.0880].',[0, 0, 0].','hokuyo_frame'));
         hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
           -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate, ...
           obj.hokuyo_mirror_offset);
@@ -47,11 +47,11 @@ classdef DRCAtlas < Atlas
       end
       obj.foot_force_sensors = options.foot_force_sensors;
       if (options.foot_force_sensors)
-        l_foot_body = findLinkInd(obj,'l_foot');
+        l_foot_body = findLinkId(obj,'l_foot');
         l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot');
         l_foot_force_sensor = ContactForceTorqueSensor(obj, l_foot_frame);
         obj = addSensor(obj, l_foot_force_sensor);
-        r_foot_body = findLinkInd(obj,'r_foot');
+        r_foot_body = findLinkId(obj,'r_foot');
         r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot');
         r_foot_force_sensor = ContactForceTorqueSensor(obj, r_foot_frame);
         obj = addSensor(obj, r_foot_force_sensor);
@@ -220,7 +220,7 @@ classdef DRCAtlas < Atlas
     stateToBDIInd;
     BDIToStateInd;
     hokuyo_yaw_width = 2.0; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 200;   
+    hokuyo_num_pts = 250;   
     hokuyo_max_range = 6; % meters?
     hokuyo_spin_rate = 16; % rad/sec
     hokuyo_mirror_offset = [0.015; 0.0; -0.03]; % from multisense_sim.urdf
