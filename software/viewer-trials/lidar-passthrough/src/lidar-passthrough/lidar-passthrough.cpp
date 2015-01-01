@@ -30,6 +30,8 @@
 
 #include <model-client/model-client.hpp>
 
+#include <kinematics/kinematics_model_gfe.h>
+
 #include <collision/collision.h>
 #include <collision/collision_detector.h>
 #include <collision/collision_object_gfe.h>
@@ -66,7 +68,8 @@ class Pass{
   public:
     Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
          std::string lidar_channel_, double collision_threshold_,
-         bool simulated_data_, double delta_threshold_);
+         bool simulated_data_, double delta_threshold_, 
+         kinematics::Atlas_Version atlas_version_);
     
     ~Pass(){
     }    
@@ -124,7 +127,8 @@ class Pass{
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
          std::string lidar_channel_, double collision_threshold_,
-         bool simulated_data_, double delta_threshold_):
+         bool simulated_data_, double delta_threshold_,
+         kinematics::Atlas_Version atlas_version_):
     lcm_(lcm_), verbose_(verbose_), 
     lidar_channel_(lidar_channel_),urdf_parsed_(false),
     simulated_data_(simulated_data_), delta_threshold_(delta_threshold_){
@@ -134,7 +138,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   
   // TODO: get the urdf model from LCM:
-  collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString(), COLLISION_OBJECT_GFE_COLLISION_OBJECT_VISUAL );
+  collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString(), COLLISION_OBJECT_GFE_COLLISION_OBJECT_VISUAL, atlas_version_ );
   n_collision_points_ = 1081; // was 1000, real lidar from sensor head has about 1081 returns (varies)
   
   collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , collision_threshold_);
@@ -466,6 +470,7 @@ int main( int argc, char** argv ){
   // was 0.04 for a long time
   // using 0.06 for the simulator
   // using 0.1 for the real robot - until the new urdf arrives ... aug 2013
+  int atlas_version = 4;
   double collision_threshold = 0.06; 
   double delta_threshold = 0.03; 
   bool simulated_data = FALSE;
@@ -474,7 +479,9 @@ int main( int argc, char** argv ){
   parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
   parser.add(collision_threshold, "c", "collision_threshold", "Lidar sphere radius [higher removes more points close to the robot]");
   parser.add(delta_threshold, "d", "delta_threshold", "Maximum Delta in Lidar Range allowed in workspace");
+  parser.add(atlas_version, "a", "atlas_version", "Atlas version to use");
   parser.parse();
+  cout << atlas_version << " is Atlas version\n";
   cout << verbose << " is verbose\n";
   cout << lidar_channel << " is lidar_channel\n";
   cout << simulated_data << " is simulated_data\n";
@@ -483,9 +490,22 @@ int main( int argc, char** argv ){
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
+
+  kinematics::Atlas_Version atlas_version_;
+  switch (atlas_version) {
+    case 3:
+      atlas_version_ = kinematics::V3;
+      break;
+    case 4:
+      atlas_version_ = kinematics::V4;
+      break;
+    default:
+      atlas_version_ = kinematics::V4;
+      break;
+  }
   
   Pass app(lcm,verbose,lidar_channel, collision_threshold, 
-           simulated_data, delta_threshold);
+           simulated_data, delta_threshold, atlas_version_);
   cout << "Ready to filter lidar points" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;

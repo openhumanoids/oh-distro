@@ -10,10 +10,11 @@ try:
     import mosek.fusion
 except ImportError:
     pass
-    
+
 import os
 import sys
 import PythonQt
+import json
 from PythonQt import QtCore, QtGui
 from time import time
 import imp
@@ -142,6 +143,14 @@ usePFGrasp = True
 poseCollection = PythonQt.dd.ddSignalMap()
 costCollection = PythonQt.dd.ddSignalMap()
 
+with open(drcargs.args().directorConfigFile) as directorConfigFile:
+    directorConfig = json.load(directorConfigFile)
+    directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
+    fixedPointFile = os.path.join(directorConfigDirectory, directorConfig['fixedPointFile'])
+    urdfConfig = directorConfig['urdfConfig']
+    for key, urdf in list(urdfConfig.items()):
+        urdfConfig[key] = os.path.join(directorConfigDirectory, urdf)
+
 
 if useSpreadsheet:
     spreadsheet.init(poseCollection, costCollection)
@@ -149,12 +158,12 @@ if useSpreadsheet:
 
 if useIk:
 
-    ikRobotModel, ikJointController = roboturdf.loadRobotModel('ik model', view, parent='IK Server', color=roboturdf.getRobotOrangeColor(), visible=False)
+    ikRobotModel, ikJointController = roboturdf.loadRobotModel('ik model', view, parent='IK Server', urdfFile=urdfConfig['ik'], color=roboturdf.getRobotOrangeColor(), visible=False)
     ikJointController.addPose('q_end', ikJointController.getPose('q_nom'))
     ikJointController.addPose('q_start', ikJointController.getPose('q_nom'))
     om.removeFromObjectModel(om.findObjectByName('IK Server'))
 
-    ikServer = ik.AsyncIKCommunicator()
+    ikServer = ik.AsyncIKCommunicator(urdfConfig['ik'], fixedPointFile)
     ikServer.outputConsole = app.getOutputConsole()
     ikServer.infoFunc = app.displaySnoptInfo
 
@@ -171,7 +180,7 @@ if useAtlasDriver:
 
 
 if useRobotState:
-    robotStateModel, robotStateJointController = roboturdf.loadRobotModel('robot state model', view, parent='sensors', color=roboturdf.getRobotGrayColor(), visible=True)
+    robotStateModel, robotStateJointController = roboturdf.loadRobotModel('robot state model', view, urdfFile=urdfConfig['robotState'], parent='sensors', color=roboturdf.getRobotGrayColor(), visible=True)
     robotStateJointController.setPose('EST_ROBOT_STATE', robotStateJointController.getPose('q_nom'))
     roboturdf.startModelPublisherListener([(robotStateModel, robotStateJointController)])
     robotStateJointController.addLCMUpdater('EST_ROBOT_STATE')
@@ -235,12 +244,11 @@ if useDrakeVisualizer:
 
 if usePlanning:
 
-    playbackRobotModel, playbackJointController = roboturdf.loadRobotModel('playback model', view, parent='planning', color=roboturdf.getRobotOrangeColor(), visible=False)
-    teleopRobotModel, teleopJointController = roboturdf.loadRobotModel('teleop model', view, parent='planning', color=roboturdf.getRobotOrangeColor(), visible=False)
+    playbackRobotModel, playbackJointController = roboturdf.loadRobotModel('playback model', view, urdfFile=urdfConfig['playback'], parent='planning', color=roboturdf.getRobotOrangeColor(), visible=False)
+    teleopRobotModel, teleopJointController = roboturdf.loadRobotModel('teleop model', view, urdfFile=urdfConfig['teleop'], parent='planning', color=roboturdf.getRobotOrangeColor(), visible=False)
 
     if useAtlasConvexHull:
-        chullRobotModel, chullJointController = roboturdf.loadRobotModel('convex hull atlas', view, parent='planning',
-            urdfFile=os.path.join(ddapp.getDRCBaseDir(), 'software/models/mit_gazebo_models/mit_robot_drake/model_convex_hull_robotiq_hands.urdf'),
+        chullRobotModel, chullJointController = roboturdf.loadRobotModel('convex hull atlas', view, urdfFile=urdfConfig['chull'], parent='planning',
             color=roboturdf.getRobotOrangeColor(), visible=False)
         playbackJointController.models.append(chullRobotModel)
 
@@ -275,6 +283,40 @@ if usePlanning:
 
     def planNominal():
         ikPlanner.computeNominalPlan(robotStateJointController.q)
+
+    def addCollisionObjectToWorld(obj = None, name = None):
+        if obj is None:
+            obj = [om.getActiveObject()]
+        if type(obj) is not list:
+            obj = [obj]
+        if name is None:
+            name = [obj_i.parent().getProperty('Name') for obj_i in obj]
+        if type(name) is not list:
+            name = [name]
+
+        assert len(obj) == len(name)
+        pts = []
+        for obj_i in obj:
+            assert obj_i and obj_i.polyData
+            polyData = filterUtils.transformPolyData(obj_i.polyData, obj_i.actor.GetUserTransform())
+            pts_i = vnp.getNumpyFromVtk(polyData, 'Points')
+            pts.append(pts_i.transpose());
+
+        ikServer.addCollisionObject(pts,name)
+
+    def addCollisionObjectToLink(robotModel, linkName):
+        obj = om.getActiveObject()
+        assert obj and obj.polyData
+        pts = vnp.getNumpyFromVtk(obj.polyData, 'Points')
+        pts = pts.transpose()
+        t = vtk.vtkTransform()
+        t.PostMultiply()
+        t.Concatenate(obj.actor.GetUserTransform())
+        t.Concatenate(robotModel.getLinkFrame(linkName).GetLinearInverse())
+        ikServer.addCollisionObjectToLink(pts, linkName, t)
+
+    app.addToolbarMacro('Reset Collision Objects', ikServer.resetCollisionObjects)
+    app.addToolbarMacro('Add Collision Object', addCollisionObjectToWorld)
 
     def fitDrillMultisense():
         pd = om.findObjectByName('Multisense').model.revPolyData
@@ -573,39 +615,6 @@ def disableArmEncoders():
     lcmUtils.publish('ENABLE_ENCODERS', msg)
 
 
-def addCollisionObjectToWorld(obj = None, name = None):
-    if obj is None:
-        obj = [om.getActiveObject()]
-    if type(obj) is not list:
-        obj = [obj]
-    if name is None:
-        name = [obj_i.parent().getProperty('Name') for obj_i in obj]
-    if type(name) is not list:
-        name = [name]
-
-    assert len(obj) == len(name)
-    pts = []
-    for obj_i in obj:
-        assert obj_i and obj_i.polyData
-        polyData = filterUtils.transformPolyData(obj_i.polyData, obj_i.actor.GetUserTransform())
-        pts_i = vnp.getNumpyFromVtk(polyData, 'Points')
-        pts.append(pts_i.transpose());
-
-    ikServer.addCollisionObject(pts,name)
-
-
-def addCollisionObjectToLink(robotModel, linkName):
-    obj = om.getActiveObject()
-    assert obj and obj.polyData
-    pts = vnp.getNumpyFromVtk(obj.polyData, 'Points')
-    pts = pts.transpose()
-    t = vtk.vtkTransform()
-    t.PostMultiply()
-    t.Concatenate(obj.actor.GetUserTransform())
-    t.Concatenate(robotModel.getLinkFrame(linkName).GetLinearInverse())
-    ikServer.addCollisionObjectToLink(pts, linkName, t)
-
-
 app.setCameraTerrainModeEnabled(view, True)
 app.resetCamera(viewDirection=[-1,0,0], view=view)
 viewBehaviors = viewbehaviors.ViewBehaviors(view)
@@ -734,3 +743,4 @@ if usePFGrasp:
     showImageOverlay()
     hideImageOverlay()
     pfgrasppanel.init(pfgrasper, _prevParent, imageView, imagePicker, cameraview)
+

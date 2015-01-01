@@ -47,7 +47,7 @@ classdef AtlasBalancingController < DRCController
       end
       
       % use saved nominal pose
-      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      d = load(r.fixed_point_file);
       q0 = d.xstar(1:getNumPositions(r));
       kinsol = doKinematics(r,q0);
       com = getCOM(r,kinsol);

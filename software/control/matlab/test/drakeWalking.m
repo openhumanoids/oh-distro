@@ -10,7 +10,7 @@ if (nargin<3); use_bullet = false; end
 if (nargin<4); use_angular_momentum = false; end
 if (nargin<5); random_navgoal = false; end
 
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat'));
 if random_navgoal
   xstar(1) = randn();
   xstar(2) = randn();
@@ -29,10 +29,12 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.001;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+options.atlas_version = 4;
+r = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
+xstar(3) = xstar(3) + 0.007; % TODO REMOVE THIS ADJUSTMENT WHEN FOOT CONTACT POINT LOCATIONS ARE FIXED
 % set initial state to fixed point
 r = r.setInitialState(xstar);
 
@@ -59,6 +61,8 @@ request.params.nom_step_width = 0.24;
 request.params.max_step_width = 0.3;
 request.params.nom_forward_step = 0.5;
 request.params.max_forward_step = 0.5;
+request.params.nom_upward_step = 0.25;
+request.params.nom_downward_step = 0.25;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_mode = drc.footstep_plan_params_t.HORIZONTAL_PLANE;

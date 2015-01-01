@@ -17,7 +17,7 @@ group "1.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync -b";
+        exec = "drc-state-sync -b -a 3";
         host = "base";
     }
     cmd "fusion" {
@@ -31,13 +31,13 @@ group "2.plan_and_control" {
 
 
     cmd "AtlasController" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1); \"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 3); \"";
         host = "base";
         stop_signal = 15;
     }
 
     cmd "CombinedPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner(); p.run();\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],3); p.run();\"";
        host = "base";
        stop_signal = 15;
     }
@@ -61,7 +61,7 @@ group "5.maps" {
     }
 
     cmd "lidar-passthrough" {
-        exec = "drc-lidar-passthrough -c 0.06";
+        exec = "drc-lidar-passthrough -c 0.06 -a 3";
         host = "base";
     }
 }
@@ -72,7 +72,7 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "drake-designer -c simul_robot.cfg";
+    exec = "drake-designer -c simul_robot.cfg -v3";
     host = "base";
 }
 
@@ -87,7 +87,7 @@ cmd "base_deputy" {
 }
 
 cmd "drakeAtlasSimulation" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation;\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3);\"";
     host = "base";
 }
 

@@ -12,10 +12,20 @@ from ddapp import getDRCBaseDir
 from ddapp import lcmUtils
 from ddapp import filterUtils
 from ddapp import transformUtils
+from ddapp import drcargs
 
 import drc as lcmdrc
 import math
 import numpy as np
+import json
+
+with open(drcargs.args().directorConfigFile) as directorConfigFile:
+    directorConfig = json.load(directorConfigFile)
+    directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
+    fixedPointFile = os.path.join(directorConfigDirectory, directorConfig['fixedPointFile'])
+    urdfConfig = directorConfig['urdfConfig']
+    for key, urdf in list(urdfConfig.items()):
+        urdfConfig[key] = os.path.join(directorConfigDirectory, urdf)
 
 
 
@@ -159,7 +169,8 @@ class RobotModelItem(om.ObjectModelItem):
 def loadRobotModel(name, view=None, parent='planning', urdfFile=None, color=None, visible=True):
 
     if not urdfFile:
-        urdfFile = os.path.join(getRobotModelDir(), 'model_%s.urdf' % defaultUrdfHands)
+        #urdfFile = os.path.join(getRobotModelDir(), 'model_%s.urdf' % defaultUrdfHands)
+        urdfFile = urdfConfig['default']
 
     if isinstance(parent, str):
         parent = om.getOrCreateContainer(parent)
@@ -174,7 +185,7 @@ def loadRobotModel(name, view=None, parent='planning', urdfFile=None, color=None
     if view is not None:
         obj.addToView(view)
 
-    jointController = jointcontrol.JointController([obj])
+    jointController = jointcontrol.JointController([obj], fixedPointFile)
     jointController.setNominalPose()
 
     return obj, jointController
@@ -247,6 +258,9 @@ def setupPackagePaths():
     searchPaths = [
         'ros_workspace/mit_drcsim_scripts',
         'ros_workspace/sandia-hand/ros/sandia_hand_description',
+        'software/models/atlas_v4',
+        'software/models/common_components/robotiq_hand_description/',
+        'software/models/common_components/multisense_sl/',
         'software/models/mit_gazebo_models/mit_robot',
         'software/models/mit_gazebo_models/irobot_hand',
         'software/models/mit_gazebo_models/multisense_sl',

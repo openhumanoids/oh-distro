@@ -35,7 +35,7 @@ classdef AtlasPosTorqueRef < LCMCoordinateFrame & Singleton
           gains.ff_qd = diag(Kd);
         end
 
-        coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
+        coder = drc.control.AtlasCommandCoder(input_names,r.atlas_version,gains.k_q_p,gains.k_q_i,...
           gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
         obj = setLCMCoder(obj,JLCMCoder(coder));
       

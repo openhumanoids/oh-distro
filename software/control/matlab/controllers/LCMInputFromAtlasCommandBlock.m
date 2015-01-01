@@ -98,7 +98,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       [Kp,Kd] = getPDGains(r,'default');
       gains.k_q_p = diag(Kp);
       gains.ff_qd = diag(Kd);
-      obj.coder = drc.control.AtlasCommandCoder(obj.joint_names,gains.k_q_p*0,gains.k_q_i*0,...
+      obj.coder = drc.control.AtlasCommandCoder(obj.joint_names,r.atlas_version,gains.k_q_p*0,gains.k_q_i*0,...
         gains.k_qd_p,gains.k_f_p*0,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d*0,gains.ff_const*0);
       
       % And compute for ourselves the drake_to_atlas_joint_map

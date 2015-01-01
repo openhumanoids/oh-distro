@@ -1,0 +1,121 @@
+group "0.params_and_model_pub" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/simul_robot.cfg";
+        host = "base";
+    }
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v4/model_LR_RR.urdf";
+        host = "base";
+    }
+}
+
+group "1.state_mit" {
+
+    cmd "joints2frames" {
+        exec = "drc-joints2frames -b";
+        host = "base";
+    }
+
+    cmd "state-sync" {
+        exec = "drc-state-sync -b -a 4";
+        host = "base";
+    }
+    cmd "fusion" {
+        exec = "se-fusion";
+        host = "base";
+    }
+
+}
+
+group "2.plan_and_control" {
+
+
+    cmd "AtlasController" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 4); \"";
+        host = "base";
+        stop_signal = 15;
+    }
+
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],4); p.run();\"";
+       host = "base";
+       stop_signal = 15;
+    }
+
+    cmd "BaseBDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "base";
+    }
+}
+
+group "5.maps" {
+
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "base";
+    }
+
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "base";
+    }
+
+    cmd "lidar-passthrough" {
+        exec = "drc-lidar-passthrough -c 0.06 -a 4";
+        host = "base";
+    }
+}
+
+cmd "pose-util" {
+    exec = "drc-robot-pose-util";
+    host = "base";
+}
+
+cmd "director" {
+    exec = "drake-designer -c simul_robot.cfg -v4";
+    host = "base";
+}
+
+cmd "viewer" {
+    exec = "drc-viewer -c simul_robot.cfg";
+    host = "base";
+}
+
+cmd "base_deputy" {
+    exec = "bot-procman-deputy -n base";
+    host = "localhost";
+}
+
+cmd "drakeAtlasSimulation" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4);\"";
+    host = "base";
+}
+
+script "0.run_simul" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start group "2.plan_and_control";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation";
+}
+
+script "1.reset_simul" {
+    restart cmd "drakeAtlasSimulation";
+    wait ms 1000;
+    restart cmd "AtlasController";
+}
+
+script "2.run_all_but_simul" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+}

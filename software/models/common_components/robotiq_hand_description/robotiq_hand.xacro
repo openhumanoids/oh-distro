@@ -1,0 +1,167 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="robotiq_hand">
+  <xacro:property name="pi" value="3.1416"/>
+  <!-- ########################################### -->
+  <!-- Custom MIT XACRO For Robotiq Hand -->
+  <!-- ########################################### -->
+  <xacro:macro name="s-model_finger_articulated" params="prefix">
+    <!-- link list -->
+    <link name="${prefix}link_0">
+      <visual>
+        <origin rpy="0 0 0" xyz="0.020 0 0"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.obj"/>
+        </geometry>
+        <material name="green">
+          <color rgba="0 1 0 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.obj"/>
+        </geometry>
+        <material name="yellow">
+          <color rgba="0 1 1 1"/>
+        </material>
+      </collision>
+    </link>
+    <link name="${prefix}link_1">
+      <visual>
+        <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.obj"/>
+        </geometry>
+        <material name="green"/>
+      </visual>
+      <collision>
+        <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.obj"/>
+        </geometry>
+        <material name="yellow"/>
+      </collision>
+    </link>
+    <link name="${prefix}link_2">
+      <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+      <visual>
+        <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.obj"/>
+        </geometry>
+        <material name="green"/>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.obj"/>
+        </geometry>
+        <material name="yellow"/>
+      </collision>
+    </link>
+    <link name="${prefix}link_3">
+      <visual>
+        <origin rpy="0 0 0.52" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.obj"/>
+        </geometry>
+        <material name="green"/>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0.52" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.obj"/>
+        </geometry>
+        <material name="yellow"/>
+      </collision>
+    </link>
+    <!-- end of link list -->
+    <!-- joint list -->
+    <!-- WARNING: LIMITS NOT CORRECT -->
+    <joint name="${prefix}joint_1" type="revolute">
+      <parent link="${prefix}link_0"/>
+      <child link="${prefix}link_1"/>
+      <axis xyz="0 0 1"/>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+    </joint>
+    <!-- WARNING: LIMITS NOT CORRECT -->
+    <joint name="${prefix}joint_2" type="revolute">
+      <parent link="${prefix}link_1"/>
+      <child link="${prefix}link_2"/>
+      <axis xyz="0 0 1"/>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+    </joint>
+    <!-- WARNING: LIMITS NOT CORRECT -->
+    <joint name="${prefix}joint_3" type="revolute">
+      <parent link="${prefix}link_2"/>
+      <child link="${prefix}link_3"/>
+      <axis xyz="0 0 1"/>
+      <origin rpy="0 0 0" xyz="0.039 0 0"/>
+      <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+    </joint>
+    <!-- end of joint list -->
+  </xacro:macro>
+  <xacro:macro name="s-model_articulated" params="prefix">
+    <xacro:s-model_finger_articulated prefix="${prefix}finger_1_"/>
+    <xacro:s-model_finger_articulated prefix="${prefix}finger_2_"/>
+    <xacro:s-model_finger_articulated prefix="${prefix}finger_middle_"/>
+    <!-- link list -->
+    <link name="${prefix}palm">
+      <visual>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/palm.obj"/>
+        </geometry>
+        <material name="green">
+          <color rgba="0 1 0 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/palm.obj"/>
+        </geometry>
+        <material name="yellow">
+          <color rgba="0 1 1 1"/>
+        </material>
+      </collision>
+    </link>
+    <!-- end of link list -->
+    <!-- joint list -->
+    <!-- WARNING: LIMITS NOT CORRECT -->
+    <joint name="${prefix}palm_finger_1_joint" type="revolute">
+      <parent link="${prefix}palm"/>
+      <child link="${prefix}finger_1_link_0"/>
+      <axis xyz="0 1 0"/>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 0.036"/>
+      <limit effort="100" lower="-0.16" upper="0.25" velocity="100"/>
+    </joint>
+    <!-- WARNING: LIMITS NOT CORRECT -->
+    <joint name="${prefix}palm_finger_2_joint" type="revolute">
+      <parent link="${prefix}palm"/>
+      <child link="${prefix}finger_2_link_0"/>
+      <axis xyz="0 1 0"/>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 -0.036"/>
+      <limit effort="100" lower="-0.25" upper="0.16" velocity="100"/>
+    </joint>
+    <joint name="${prefix}palm_finger_middle_joint" type="fixed">
+      <parent link="${prefix}palm"/>
+      <child link="${prefix}finger_middle_link_0"/>
+      <axis xyz="0 0 1"/>
+      <origin rpy="0 0 1.57" xyz="0.0455 0.0214 0"/>
+    </joint>
+    <!-- end of joint list -->
+  </xacro:macro>
+  <xacro:macro name="robotiq_hand" params="side parent reflect *origin">
+    <!-- joint to irobot hand -->
+    <joint name="${side}_robotiq_hand_joint" type="fixed">
+      <insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="${side}_palm"/>
+    </joint>
+    <xacro:s-model_articulated prefix="${side}_"/>
+  </xacro:macro>
+</robot>

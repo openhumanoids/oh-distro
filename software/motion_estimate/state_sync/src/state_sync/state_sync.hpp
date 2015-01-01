@@ -51,6 +51,7 @@ class CommandLineConfig{
       simulation_mode = false;
       publish_pose_body = true;
       output_channel = "EST_ROBOT_STATE";
+      atlas_version = 4;
 
       // Defaults - not read from command line:
       use_encoder_joint_sensors = false;
@@ -66,6 +67,7 @@ class CommandLineConfig{
     bool simulation_mode;
     bool publish_pose_body;
     std::string output_channel;
+    int atlas_version;
 
     bool use_encoder_joint_sensors;
     bool use_joint_kalman_filter;

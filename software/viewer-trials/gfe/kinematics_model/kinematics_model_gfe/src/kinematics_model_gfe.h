@@ -12,10 +12,12 @@
 #include <state/state_gfe.h>
 
 namespace kinematics {
+  enum Atlas_Version { V3 = 3, V4 = 4 };
+
   class Kinematics_Model_GFE {
   public:
-    Kinematics_Model_GFE( double eps = 0.001, unsigned int maxIterations = 500 );
-    Kinematics_Model_GFE( const std::string& xmlString, double eps = 0.001, unsigned int maxIterations = 500 );
+    Kinematics_Model_GFE( Atlas_Version  atlas_version = V4, double eps = 0.001, unsigned int maxIterations = 500 );
+    Kinematics_Model_GFE( const std::string& xmlString, Atlas_Version  atlas_version=V4, double eps = 0.001, unsigned int maxIterations = 500 );
     Kinematics_Model_GFE( const Kinematics_Model_GFE& other );
     ~Kinematics_Model_GFE();
     
@@ -53,6 +55,7 @@ namespace kinematics {
     void _update_joint( std::map< std::string, double >& jointAngles, KDL::Frame& parentFrame, const KDL::SegmentMap::const_iterator jointIterator );
 
     urdf::Model _model;
+    Atlas_Version _atlas_version;
     KDL::Tree   _tree;
     KDL::TreeFkSolverPos_recursive * _fk_solver;
     KDL::ChainIkSolverPos_LMA * _iksolverpos_left_arm;

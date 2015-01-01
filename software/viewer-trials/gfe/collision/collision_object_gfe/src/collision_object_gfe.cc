@@ -21,9 +21,10 @@ using namespace collision;
  */
 Collision_Object_GFE::
 Collision_Object_GFE( string id,
+                      Atlas_Version atlas_version,
                       collision_object_gfe_collision_object_type_t collisionObjectType ) : Collision_Object( id ),
                                                                                             _collision_objects(),
-                                                                                            _kinematics_model() {
+                                                                                            _kinematics_model(atlas_version) {
   _load_collision_objects( collisionObjectType );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
@@ -43,9 +44,10 @@ Collision_Object_GFE( string id,
 Collision_Object_GFE::
 Collision_Object_GFE( string id,
                       string xmlString,
+                      Atlas_Version atlas_version,
                       collision_object_gfe_collision_object_type_t collisionObjectType ) : Collision_Object( id ),
                                                                                           _collision_objects(),
-                                                                                          _kinematics_model( xmlString ){
+                                                                                          _kinematics_model( xmlString, atlas_version ){
   _load_collision_objects( collisionObjectType );
   for( unsigned int i = 0; i < _collision_objects.size(); i++ ){
     if( _collision_objects[ i ] != NULL ){
@@ -58,6 +60,19 @@ Collision_Object_GFE( string id,
   set( state_gfe );
 } 
 
+/**
+ * Collision_Object_GFE
+ * class constructor with id and urdf filename
+ */
+Collision_Object_GFE::
+Collision_Object_GFE( string id,
+                      string xmlString,
+                      collision_object_gfe_collision_object_type_t collisionObjectType,
+                      Atlas_Version atlas_version ) : Collision_Object( id ),
+                                                      _collision_objects(),
+                                                      _kinematics_model( xmlString, atlas_version ){
+  Collision_Object_GFE(id, xmlString, atlas_version, collisionObjectType);
+}
 /**
  * Collision_Object_GFE
  * copy constructor
