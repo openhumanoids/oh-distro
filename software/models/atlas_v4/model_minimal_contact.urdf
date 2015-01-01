@@ -1322,8 +1322,8 @@
   <!-- Set the initial hand position and orientation by changing 'rpy' and 'xyz'
   to mach the values in your actual robot. -->
   <joint name="left_robotiq_hand_joint" type="fixed">
-    <origin rpy="3.14159 3.14159 3.14159" xyz="-0.00125 0.17 0.01"/>
-    <parent link="l_hand"/>
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
+    <parent link="l_hand_force_torque"/>
     <child link="left_palm"/>
   </joint>
   <link name="left_finger_1_link_0">
@@ -1549,8 +1549,8 @@
     <origin rpy="0 0 1.57" xyz="0.0455 0.0214 0"/>
   </joint>
   <joint name="right_robotiq_hand_joint" type="fixed">
-    <origin rpy="3.14159 0 0" xyz="-0.00125 -0.17 0.01"/>
-    <parent link="r_hand"/>
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
+    <parent link="r_hand_force_torque"/>
     <child link="right_palm"/>
   </joint>
   <link name="right_finger_1_link_0">
