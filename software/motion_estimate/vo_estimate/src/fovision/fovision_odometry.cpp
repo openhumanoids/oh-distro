@@ -313,6 +313,7 @@ Eigen::Quaterniond microstrainIMUToRobotOrientation(const microstrain::ins_t *ms
   // rotate coordinate frame so that look vector is +X, and up is +Z
   Eigen::Matrix3d M;
 
+  // TODO: use bot frames to do this automatically
   //convert imu  on drc rig from:
   //x+ back, z+ down, y+ left
   //to x+ forward, y+ left, z+ up (robotics)
@@ -444,14 +445,16 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
   pose_msg.orientation[3] = imu_robotorientation_less_yaw.z();
   bot_core_pose_t_publish(lcm_->getUnderlyingLCM(), "POSE_BODY", &pose_msg);
 
+  // TODO: use bot frames to transform this properly
   imu_velocity_linear_  = Eigen::Vector3d(0,0,0);
   imu_velocity_angular_ = Eigen::Vector3d(-msg->gyro[0], msg->gyro[1], -msg->gyro[2]);
-  imu_velocity_angular_alpha_ = 0.8*imu_velocity_angular_alpha_ + 0.2*imu_velocity_angular_;
+  // Didn't find this necessary:
+  //imu_velocity_angular_alpha_ = 0.8*imu_velocity_angular_alpha_ + 0.2*imu_velocity_angular_;
 
   // experimentally correct for sensor timing offset:
   int64_t temp_utime = msg->utime;// + 120000;
-  estimator_->publishPoseRatesOnly(imu_velocity_linear_, imu_velocity_angular_, temp_utime, "POSE_VICON");
-  //estimator_->publishPoseRatesOnly(imu_velocity_linear_, imu_velocity_angular_alpha_, temp_utime, "POSE_VICON");
+  estimator_->publishPose(temp_utime, "POSE_IMU_RATES", Eigen::Isometry3d::Identity(), imu_velocity_linear_, imu_velocity_angular_);
+  // estimator_->publishPose(temp_utime, "POSE_IMU_RATES", Eigen::Isometry3d::Identity(), imu_velocity_linear_, imu_velocity_angular_alpha_);
 }
 
 

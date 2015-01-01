@@ -19,6 +19,8 @@
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 
+// A simple class which maintains an estimate of a head position
+// and can publish it to LCM
 class VoEstimator
 {
 public:
@@ -26,7 +28,6 @@ public:
               std::string channel_extension_ = "");
   ~VoEstimator();
 
-  // A simple function for updating the head frame given the camera motion:
   void updatePosition(int64_t utime, int64_t utime_prev, Eigen::Isometry3d delta_camera);
 
   Eigen::Isometry3d getCameraPose(){ return local_to_head_*camera_to_head_.inverse(); }
@@ -39,11 +40,9 @@ public:
   Eigen::Vector3d getHeadLinearRate(){ return head_lin_rate_; }
   Eigen::Vector3d getHeadRotationRate(){ return head_rot_rate_; }
 
-  void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
+  void publishPose(int64_t utime, std::string channel, Eigen::Isometry3d pose,
+                   Eigen::Vector3d vel_lin, Eigen::Vector3d vel_ang);
   void publishUpdate(int64_t utime, Eigen::Isometry3d local_to_head, std::string channel, bool output_alpha_filter);
-
-  void publishPoseRatesOnly(Eigen::Vector3d velocity_linear, Eigen::Vector3d velocity_angular,
-                                       int64_t utime, std::string channel);
 
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
