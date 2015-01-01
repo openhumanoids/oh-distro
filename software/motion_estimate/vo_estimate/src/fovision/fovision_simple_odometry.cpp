@@ -1,3 +1,6 @@
+// Just do VO, not do any imu integration, dont correct for any urdf/cfg offsets
+// Output motion in x forward, z up frame
+
 #include <zlib.h>
 #include <lcm/lcm-cpp.hpp>
 #include <bot_param/param_client.h>
@@ -6,10 +9,11 @@
 
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include <lcmtypes/microstrain_comm.hpp>
 
 #include "drcvision/voconfig.hpp"
 #include "drcvision/vofeatures.hpp"
+#include "drcvision/voestimator.hpp"
 #include "fovision.hpp"
 
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
@@ -25,15 +29,20 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <opencv/cv.h> // for disparity 
+
 using namespace std;
 using namespace cv; // for disparity ops
 
 struct CommandLineConfig
 {
   std::string camera_config; // which block from the cfg to read
-  bool output_signal;
+  int fusion_mode;
   bool feature_analysis;
+  std::string output_extension;
+  bool output_signal;
   bool vicon_init; // initializae off of vicon
+  std::string input_channel;
+  bool verbose;
 };
 
 class StereoOdom{
@@ -75,40 +84,28 @@ class StereoOdom{
     Eigen::Isometry3d ref_camera_pose_; // [pose of the camera when the reference frames changed
     bool changed_ref_frames_;
 
+    VoEstimator* estimator_;
+
     void featureAnalysis();
     void updateMotion(int64_t utime);
-    
     void unpack_multisense(const multisense::images_t *msg);
     void multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
-    void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);      
-    
-    void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
-    
-    boost::shared_ptr<ModelClient> model_;
-    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
+    void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);
     
     bool pose_initialized_;
-
-    drc::robot_state_t last_robot_state_msg_;
     
     Eigen::Isometry3d world_to_camera_;
     Eigen::Isometry3d world_to_body_;    
+
 };    
 
 StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_) : 
        lcm_(lcm_), cl_cfg_(cl_cfg_), utime_cur_(0), utime_prev_(0), 
-       ref_utime_(0), changed_ref_frames_(false){
+       ref_utime_(0), changed_ref_frames_(false)
+{
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
   botframes_cpp_ = new bot::frames(botframes_);
-  
-  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
-  KDL::Tree tree;
-  if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
-    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
-    exit(-1);
-  }
-  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
   
   // Read config from file:
   config = new voconfig::KmclConfiguration(botparam_, cl_cfg_.camera_config);
@@ -122,14 +119,14 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
   rgb_buf_ = (uint8_t*) malloc(10*image_size_ * sizeof(uint8_t)); 
   decompress_disparity_buf_ = (uint8_t*) malloc( 4*image_size_*sizeof(uint8_t));  // arbitary size chosen..
   
+
   vo_ = new FoVision(lcm_ , stereo_calibration_);
   features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
+  estimator_ = new VoEstimator(lcm_ , botframes_, cl_cfg_.output_extension );
+  lcm_->subscribe( cl_cfg_.input_channel,&StereoOdom::multisenseLDHandler,this);
   
-  lcm_->subscribe("CAMERA",&StereoOdom::multisenseLDHandler,this);
-  
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_calibration_->getWidth(), 2*stereo_calibration_->getHeight()); // extra space for stereo tasks
  
-  pose_initialized_ = FALSE;
+  pose_initialized_ = false;
   if (!cl_cfg_.vicon_init){
     std::cout << "Init internal est using default\n";
     // Initialise the nominal camera frame with the head pointing horizontally
@@ -142,13 +139,14 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
     world_to_camera_.translation().x() = 0;
     world_to_camera_.translation().y() = 0;
     world_to_camera_.translation().z() = 1.65; // nominal head height
-    pose_initialized_ = TRUE;
+    pose_initialized_ = true;
   }else{
     lcm_->subscribe("VICON_BODY|VICON_FRONTPLATE",&StereoOdom::viconHandler,this);
   }
   
   
-  cout <<"StereoOdom Constructed\n";  
+  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_calibration_->getWidth(), 2*stereo_calibration_->getHeight()); // extra space for stereo tasks
+  cout <<"StereoOdom Constructed\n";
 }
 
 
@@ -195,19 +193,7 @@ void StereoOdom::featureAnalysis(){
   counter++;
 }
 
-void StereoOdom::publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel){
-  bot_core::pose_t pose_msg;
-  pose_msg.utime =   utime;
-  pose_msg.pos[0] = pose.translation().x();
-  pose_msg.pos[1] = pose.translation().y();
-  pose_msg.pos[2] = pose.translation().z();  
-  Eigen::Quaterniond r_x(pose.rotation());
-  pose_msg.orientation[0] =  r_x.w();  
-  pose_msg.orientation[1] =  r_x.x();  
-  pose_msg.orientation[2] =  r_x.y();  
-  pose_msg.orientation[3] =  r_x.z();  
-  lcm_->publish( channel, &pose_msg);
-}
+
 
 void StereoOdom::updateMotion(int64_t utime){
   
@@ -228,8 +214,8 @@ void StereoOdom::updateMotion(int64_t utime){
   Eigen::Isometry3d delta_body =  new_world_to_body * ( world_to_body_.inverse() );
 
   if (cl_cfg_.output_signal ){
-    publishPose(world_to_camera_, utime, "POSE_CAMERA_LEFT_ALT"); // equivalent to CAMERA_LEFT frame solved by state-sync
-    publishPose(new_world_to_body, utime, "POSE_BODY_ALT");
+    estimator_->publishPose(world_to_camera_, utime, "POSE_CAMERA_LEFT_ALT"); // equivalent to CAMERA_LEFT frame solved by state-sync
+    estimator_->publishPose(new_world_to_body, utime, "POSE_BODY");
   }
   
   // THIS IS NOT THE CORRECT COVARIANCE - ITS THE COVARIANCE IN THE CAMERA FRAME!!!!
@@ -370,6 +356,7 @@ void StereoOdom::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     
     pose_initialized_ = TRUE;
   }
+
 }
 
 
@@ -379,21 +366,30 @@ void StereoOdom::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
 int main(int argc, char **argv){
   CommandLineConfig cl_cfg;
   cl_cfg.camera_config = "CAMERA";
-  cl_cfg.output_signal = FALSE; 
+  cl_cfg.input_channel = "CAMERA_BLACKENED";
+  cl_cfg.output_signal = FALSE;
   cl_cfg.feature_analysis = FALSE; 
   cl_cfg.vicon_init = FALSE;
+  cl_cfg.fusion_mode = 0;
+  cl_cfg.output_extension = "";
+
   ConciseArgs parser(argc, argv, "fovision-odometry");
   parser.add(cl_cfg.camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
-  parser.add(cl_cfg.output_signal, "o", "output_signal", "Output POSE_BODY and POSE_BODY_ALT signals");
+  parser.add(cl_cfg.output_signal, "p", "output_signal", "Output POSE_BODY and POSE_BODY_ALT signals");
   parser.add(cl_cfg.feature_analysis, "f", "feature_analysis", "Publish Feature Analysis Data");
-  parser.add(cl_cfg.vicon_init, "v", "vicon_init", "Bootstrap internal estimate using VICON_FRONTPLATE");
+  parser.add(cl_cfg.vicon_init, "g", "vicon_init", "Bootstrap internal estimate using VICON_FRONTPLATE");
+  parser.add(cl_cfg.fusion_mode, "m", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
+  parser.add(cl_cfg.input_channel, "i", "input_channel", "input_channel - CAMERA or CAMERA_BLACKENED");
+  parser.add(cl_cfg.output_extension, "o", "output_extension", "Extension to pose channels (e.g. '_VO' ");
   parser.parse();
-  cout << cl_cfg.camera_config << " is camera_config\n"; 
+  cout << cl_cfg.fusion_mode << " is fusion_mode\n";
+  cout << cl_cfg.camera_config << " is camera_config\n";
+  
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
-  StereoOdom fo= StereoOdom(lcm,cl_cfg);    
+  StereoOdom fo= StereoOdom(lcm, cl_cfg);
   while(0 == lcm->handle());
 }

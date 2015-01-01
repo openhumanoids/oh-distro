@@ -303,7 +303,7 @@ void checkJointLengths(size_t previous_size , size_t incoming_size, std::string 
 void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg){
   checkJointLengths( head_joints_.position.size(),  msg->joint_position.size(), channel);
   
-  //std::cout << "got multisense\n";
+  // std::cout << "got multisense\n";
   head_joints_.name = msg->joint_name;
   head_joints_.position = msg->joint_position;
   head_joints_.velocity = msg->joint_velocity;
