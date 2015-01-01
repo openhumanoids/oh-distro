@@ -49,6 +49,7 @@ mit.useObjMeshes(urdf)
 
 mit.addFrame(urdf, "l_foot_sole", "l_foot", "0.0480 0 -0.081119", "0 0 0")
 mit.addFrame(urdf, "r_foot_sole", "r_foot", "0.0480 0 -0.081119", "0 0 0")
+mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
 
 urdf.write(full_mesh_urdf_path, pretty_print=True)
 
