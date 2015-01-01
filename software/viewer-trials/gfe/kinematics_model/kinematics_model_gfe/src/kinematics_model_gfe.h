@@ -16,8 +16,8 @@ namespace kinematics {
 
   class Kinematics_Model_GFE {
   public:
-    Kinematics_Model_GFE( Atlas_Version  atlas_version = V3, double eps = 0.001, unsigned int maxIterations = 500 );
-    Kinematics_Model_GFE( const std::string& xmlString, Atlas_Version  atlas_version=V3, double eps = 0.001, unsigned int maxIterations = 500 );
+    Kinematics_Model_GFE( Atlas_Version  atlas_version = V4, double eps = 0.001, unsigned int maxIterations = 500 );
+    Kinematics_Model_GFE( const std::string& xmlString, Atlas_Version  atlas_version=V4, double eps = 0.001, unsigned int maxIterations = 500 );
     Kinematics_Model_GFE( const Kinematics_Model_GFE& other );
     ~Kinematics_Model_GFE();
     
