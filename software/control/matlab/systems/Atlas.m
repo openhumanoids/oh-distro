@@ -26,7 +26,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
           case 4
             urdf = strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf');
           case 5
-            error('Atlas:v5', 'Atlas v5 not implemented yet');
+            urdf = strcat(getenv('DRC_PATH'),'/models/atlas_v5/model_minimal_contact.urdf');
           otherwise
             error('Atlas:badVersion','Invalid Atlas version. Valid values are 3, 4, and 5')
         end
@@ -47,7 +47,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         case 4
           % Do nothing
         case 5
-          error('Atlas:v5', 'Atlas v5 not implemented yet');
+          % Do nothing
         otherwise
           error('Atlas:badVersion','Invalid Atlas version. Valid values are 3, 4, and 5')
       end
@@ -155,6 +155,8 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
             obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
           case 4
             obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat');
+          case 5
+            obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_v5_fp.mat');
         end
       else
         % TEMP HACK to get by resolveConstraints
