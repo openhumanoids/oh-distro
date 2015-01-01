@@ -25,6 +25,11 @@ convex_hull_urdf_path = "../components/atlas_v4_convex_hull.urdf"
 originalDirectory = os.getcwd()
 os.chdir(os.path.abspath(meshesDirectory))
 for inFile in glob("*.dae"):
+    # Replace extremities_diffuse.png with extremities_diffuse_unplugged.jpg
+    dae = etree.parse(inFile)
+    for element in dae.xpath("//*[text()='../materials/textures/extremities_diffuse.png']"):
+        element.text = '../materials/textures/extremities_diffuse_unplugged.jpg'
+    dae.write(inFile)
     mit.convertMeshTo(inFile, ".obj")
     mit.convertMeshTo(inFile, ".wrl")
     colladaFile = os.path.splitext(inFile)[0] + '.vtm'
