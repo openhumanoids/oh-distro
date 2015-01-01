@@ -1,6 +1,6 @@
 function ee_pose_relative = extractRelativeEndEffectorMotion(ee_name,X,r,ref_link_name)
   if nargin < 3
-    r = Atlas();
+    r = DRCAtlas();
   end
   if nargin < 4
     ref_link_name = ee_name;

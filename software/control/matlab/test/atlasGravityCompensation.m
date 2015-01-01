@@ -6,7 +6,7 @@ jointstr = 'arm';
 % load robot model
 options.floating = true;
 options.ignore_friction = true;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_stumps.urdf'),options);
+r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_stumps.urdf'),options);
 
 % load fixed-base model
 options.floating = false;

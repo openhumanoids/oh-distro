@@ -1,6 +1,6 @@
 %NOTEST
 if ~exist('r')
-  r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
+  r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 end
 logfile = strcat(getenv('DRC_PATH'),'/../logs/lcmlog-2013-10-09-12-30_neck_vicon_calibration');
 

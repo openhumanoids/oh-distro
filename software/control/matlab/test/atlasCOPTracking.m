@@ -2,7 +2,7 @@ function atlasCOPTracking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-r = Atlas();
+r = DRCAtlas();
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));

@@ -1,7 +1,7 @@
 function atlasDataCollector
 global ts cop_knots com_knots zmp_knots pelvis_v lfoot_knots rfoot_knots
 % load robot model
-r = Atlas();
+r = DRCAtlas();
 d=load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar=d.xstar;
 r = removeCollisionGroupsExcept(r,{'toe','heel'});

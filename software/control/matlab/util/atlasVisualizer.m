@@ -4,7 +4,7 @@ function atlasVisualizer
 % a visualizer process for visualizing atlas state and relevant variables
 
 % load robot model
-r = Atlas();
+r = DRCAtlas();
 d=load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar=d.xstar;
 r = removeCollisionGroupsExcept(r,{'toe','heel'});

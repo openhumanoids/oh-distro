@@ -58,7 +58,7 @@ end
 % load robot model
 options.floating = true;
 options.ignore_friction = false;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
 % load fixed-base model
 options.floating = false;

@@ -11,7 +11,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 % must run this with encoders disabled in the state sync process
-r = Atlas();
+r = DRCAtlas();
 nq = getNumPositions(r);
 
 state_frame = getStateFrame(r);

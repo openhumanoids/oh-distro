@@ -23,7 +23,7 @@ options.visualize = visualize;
 options.hokuyo = false; % don't need sensors on control copy
 options.foot_force_sensors = false;
 options.hands = 'robotiq_weight_only';
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 % This is the one that has all of the neat important simul attributes:
 options.hokuyo = true;
 options.hokuyo_spin_rate = 4;
@@ -31,7 +31,7 @@ options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
 options.hands = 'robotiq';
-r_hands = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r_hands = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r_hands = r_hands.removeCollisionGroupsExcept({'heel','toe', 'palm', 'knuckle', 'default'});
 r = compile(r);

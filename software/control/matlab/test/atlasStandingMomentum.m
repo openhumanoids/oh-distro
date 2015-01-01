@@ -34,13 +34,13 @@ pose_move_time = 10; % sec
 
 if use_random_traj
   T = (pose_hold_time+pose_move_time)*num_random_pose;
-  r_ch = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),0.003);
+  r_ch = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),0.003);
 else
   ts = linspace(0,T,800);
 end
 
 % load robot model
-r = Atlas();
+r = DRCAtlas();
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));

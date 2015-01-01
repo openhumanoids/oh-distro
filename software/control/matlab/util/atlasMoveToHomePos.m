@@ -5,7 +5,7 @@ if nargin < 1
   desired_neck_pitch = 0;
 end
 
-r = Atlas();
+r = DRCAtlas();
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = drcFrames.AtlasPositionRef(r);

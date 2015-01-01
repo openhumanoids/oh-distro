@@ -1,7 +1,7 @@
 function [X,T] = recordRobotMotion(duration)
   S = warning();
   warning('OFF','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
-  r = Atlas();
+  r = DRCAtlas();
   warning(S);
   nq = r.getNumPositions();
   t0 = [];

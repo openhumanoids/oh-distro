@@ -1,7 +1,7 @@
 %NOTEST 
 
 options.floating = true;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options); 
+r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options); 
 seframe = drcFrames.AtlasStateAndEffort(r);
 uframe = drcFrames.AtlasPosVelTorqueRef(r);
 % [t_x,x_data,t_u,u_data] = parseAtlasLog(r,'/home/drc/r_arm_shx.log');

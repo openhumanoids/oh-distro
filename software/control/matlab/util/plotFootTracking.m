@@ -1,7 +1,7 @@
 function plotFootTracking
 
 % load robot model
-r = Atlas();
+r = DRCAtlas();
 state_frame = r.getStateFrame();
 state_frame.subscribe('EST_ROBOT_STATE');
 

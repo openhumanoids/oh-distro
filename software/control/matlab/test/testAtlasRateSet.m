@@ -2,7 +2,7 @@ function testAtlasRateSet
 %NOTEST
 
 % load robot model
-r = Atlas();
+r = DRCAtlas();
 
 % setup frames
 state_frame = r.getStateFrame;
