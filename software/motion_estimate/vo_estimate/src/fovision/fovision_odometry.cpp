@@ -429,7 +429,7 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
   imu_robotorientation =microstrainIMUToRobotOrientation(msg);
   fuseInterial(imu_robotorientation, msg->utime);
 
-
+  // Alternative Pose for the typical system to see:
   double rpy[3];
   quat_to_euler(  imu_robotorientation , rpy[0], rpy[1], rpy[2]);
   Eigen::Quaterniond imu_robotorientation_less_yaw = euler_to_quat( rpy[0], rpy[1], 0);

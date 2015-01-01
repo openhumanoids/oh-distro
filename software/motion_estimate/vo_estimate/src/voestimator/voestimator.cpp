@@ -1,7 +1,5 @@
 #include "voestimator.hpp"
 
-using namespace Eigen;
-
 VoEstimator::VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes_,
   std::string channel_extension_):
   lcm_(lcm_), botframes_(botframes_), channel_extension_(channel_extension_),
