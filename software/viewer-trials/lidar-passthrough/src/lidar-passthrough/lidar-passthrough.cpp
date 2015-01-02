@@ -499,6 +499,9 @@ int main( int argc, char** argv ){
     case 4:
       atlas_version_ = kinematics::V4;
       break;
+    case 5:
+      atlas_version_ = kinematics::V5;
+      break;
     default:
       atlas_version_ = kinematics::V4;
       break;

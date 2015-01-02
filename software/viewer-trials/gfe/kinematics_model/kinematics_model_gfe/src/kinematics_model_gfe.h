@@ -12,7 +12,7 @@
 #include <state/state_gfe.h>
 
 namespace kinematics {
-  enum Atlas_Version { V3 = 3, V4 = 4 };
+  enum Atlas_Version { V3 = 3, V4 = 4, V5 = 5};
 
   class Kinematics_Model_GFE {
   public:

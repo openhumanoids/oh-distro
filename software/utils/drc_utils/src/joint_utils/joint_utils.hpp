@@ -28,8 +28,13 @@ public:
           "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx"};  
         break;
       case 5:
-        fprintf(stderr, "Atlas V5 not yet supported. Exiting!\n");
-        exit(1);
+        atlas_joint_names = {"back_bkz", "back_bky", "back_bkx", 
+          "neck_ay", "l_leg_hpz", "l_leg_hpx", "l_leg_hpy", 
+          "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", 
+          "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", 
+          "r_leg_akx", "l_arm_usz", "l_arm_shx", "l_arm_ely", 
+          "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "l_arm_uwy2", "r_arm_usz", 
+          "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx", "r_arm_uwy2"};  
         break;
       default:
         fprintf(stderr, "Unsupported Atlas version. Exiting!\n");
