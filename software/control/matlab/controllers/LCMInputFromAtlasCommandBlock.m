@@ -112,9 +112,14 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     
     function obj=setup_init_planner(obj, options)
       r = obj.r_control;
-      xstar = getInitialState(r);
+      S = load(r.fixed_point_file);
+      x_init = Point(r.getStateFrame(),getInitialState(r));
+      xstar = Point(r.getStateFrame(),S.xstar);
+      xstar.base_x = x_init.base_x;
+      xstar.base_y = x_init.base_y;
+      xstar.base_yaw = x_init.base_yaw;
       
-      x0 = xstar;
+      x0 = double(xstar);
       obj.nq = getNumPositions(r);
       obj.nu = getNumInputs(r);
       q0 = x0(1:obj.nq);
@@ -226,7 +231,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       % If we haven't received a command make our own
       if (isempty(data))
         % foot contact
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(atlas_state(1:length(atlas_state)/2),false);
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(atlas_state(1:obj.r.getNumPositions()),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
         fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
@@ -256,7 +261,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       error =  30*pi/180 - atlas_state(neck_in_i);
       vel = atlas_state(length(atlas_state)/2 + neck_in_i);
       efforts(neck_out_i) = 50*error - vel;
-      varargout = {efforts(1:28)};
+      varargout = {efforts(1:obj.nu)};
       fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
     end
