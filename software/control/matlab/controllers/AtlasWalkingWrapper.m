@@ -26,7 +26,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       force_controlled_joints = controller_data.force_controlled_joints;
       position_controlled_joints = controller_data.position_controlled_joints;
 
-      gains = getAtlasGains();
+      gains = getAtlasGains(r.atlas_version);
       gains.k_q_p(force_controlled_joints) = 0;
       gains.k_q_i(force_controlled_joints) = 0;
       gains.k_qd_p(force_controlled_joints) = 0;
