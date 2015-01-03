@@ -620,6 +620,8 @@ switch atlas_version
     ff_qd(l_arm_uwy2) = 0.22; % UNTESTED
     ff_qd(r_arm_uwy2) = 0.22; % UNTESTED
   otherwise
+    error('getAtlasGains:BadAtlasVersion', ...
+      'Invalid Atlas version. Valid values are 3, 4, and 5');
 end
 
 
