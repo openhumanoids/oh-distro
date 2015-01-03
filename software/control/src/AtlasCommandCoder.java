@@ -73,14 +73,12 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
         atlas_joint_names[19] = "l_arm_elx";
         atlas_joint_names[20] = "l_arm_uwy";
         atlas_joint_names[21] = "l_arm_mwx";
-        atlas_joint_names[22] = "l_arm_uwy2";
-        atlas_joint_names[23] = "r_arm_usy";
-        atlas_joint_names[24] = "r_arm_shx";
-        atlas_joint_names[25] = "r_arm_ely";
-        atlas_joint_names[26] = "r_arm_elx";
-        atlas_joint_names[27] = "r_arm_uwy";
-        atlas_joint_names[28] = "r_arm_mwx";
-        atlas_joint_names[29] = "r_arm_uwy2";
+        atlas_joint_names[22] = "r_arm_usy";
+        atlas_joint_names[23] = "r_arm_shx";
+        atlas_joint_names[24] = "r_arm_ely";
+        atlas_joint_names[25] = "r_arm_elx";
+        atlas_joint_names[26] = "r_arm_uwy";
+        atlas_joint_names[27] = "r_arm_mwx";
         break;
       case 4:
         atlas_joint_names[0] = "back_bkz";
