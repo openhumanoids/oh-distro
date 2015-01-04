@@ -21,6 +21,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     r;
     r_control;
     nq;
+
+    % Structure containing the frame numbers of the different states
+    % inside the input frame.
+    frame_nums;
     
     % Whether we should publish a ground truth EST_ROBOT_STATE
     % (or if not, publish approp messages to feed state_sync state est.)
@@ -220,9 +224,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       for i=1:length(desired_joint_name_order)
         obj.reordering(i) = find(strcmp(desired_joint_name_order{i}, atlascoordnames));
       end
+      obj.foot_indices = [r.findLinkId('l_foot'), r.findLinkId('r_foot')];
       
       obj.r = r;
+      obj.nq = obj.r.getNumPositions();
       obj.r_control = r_control;
+      obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
+      obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
+      obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -234,14 +243,13 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % frames
         atlas_state = varargin{1};
       else
-        inp = obj.getInputFrame();
-        num = inp.getFrameNumByName('AtlasState');
+        num = obj.frame_nums.atlas_state;
         if length(num)~=1
           error(['No atlas state found as input for LCMBroadcastBlock!']);
         end
         atlas_state = varargin{num};
 
-        num = inp.getFrameNumByName('HandState');
+        num = obj.frame_nums.hand_state;
 
         if (length(num)>1)
           error(['Ambiguous hand state. No support for two hands yet...']);
@@ -253,7 +261,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
           hand_state(10:11) = [0;0];
         end
         
-        num = inp.getFrameNumByName('hokuyo');
+        num = obj.frame_nums.hokuyo_state;
         laser_state = [];
         if (length(num)>1)
           error(['Ambiguous hand state. No support for two hands yet...']);
