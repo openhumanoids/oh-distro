@@ -12,6 +12,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     joint_names_cache;
     r_hand_joint_names_cache;
     r_hand_joint_inds;
+    foot_indices;
     
     % FC publish period
     fc_publish_period = 0.01;
@@ -19,6 +20,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % Atlas, for usefulness
     r;
     r_control;
+    nq;
     
     % Whether we should publish a ground truth EST_ROBOT_STATE
     % (or if not, publish approp messages to feed state_sync state est.)
@@ -284,11 +286,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
         x = atlas_state;
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
-        within_thresh = phiC < 0.002;
-        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
-              any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
+        fc = obj.getFootContacts(x(1:obj.nq));
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
@@ -373,11 +371,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         % Get binary foot contact, call it force:
         x = atlas_state;
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
-        within_thresh = phiC < 0.002;
-        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
-          any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
+        fc = obj.getFootContacts(x(1:obj.nq));
+
         % pack it up
         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
         state_msg.force_torque.r_foot_force_z = fc(2)*1000;
@@ -512,6 +507,18 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
     end
     
+    function fc = getFootContacts(obj, q)
+      [phiC,~,~,~,idxA,idxB] = obj.r_control.collisionDetect(q,false);
+      within_thresh = phiC < 0.002;
+      contact_pairs = [idxA(within_thresh); idxB(within_thresh)];
+
+      % The following would be faster but would require us to have
+      % hightmaps in Bullet
+      %[~,~,idxA,idxB] = obj.r_control.allCollisions(x(1:obj.nq));
+      %contact_pairs = [idxA; idxB];
+
+      fc = any(bsxfun(@eq, contact_pairs(:), obj.foot_indices),1)';
+    end
   end
   
 end
