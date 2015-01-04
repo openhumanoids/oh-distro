@@ -20,6 +20,8 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     nu; % Atlas # of controllable DOFS
     joint_names;
     drake_to_atlas_joint_map;
+    neck_in_i;
+    neck_out_i;
   end
   
   methods
@@ -108,6 +110,13 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         in_joint_name_i = obj.joint_names(i, :);
         obj.drake_to_atlas_joint_map(i) = dummyInput.findCoordinateIndex(strtrim(in_joint_name_i));
       end
+
+      % Set up neck joint indices
+      dummyInput = AtlasInput(obj.r_control);
+      dummyState = AtlasState(obj.r_control);
+      obj.neck_in_i = dummyState.findCoordinateIndex('neck_ay');
+      obj.neck_in_i = obj.neck_in_i(1);
+      obj.neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
     end
     
     function obj=setup_init_planner(obj, options)
@@ -203,7 +212,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       outs(2).output = 2;
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       clear ins;
-      fprintf('Current time: xxx.xxx');
+      %fprintf('Current time: xxx.xxx');
     end
     
     function x=decode(obj, data)
@@ -253,16 +262,11 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       end
       
       % And set neck pitch via simple PD controller
-      dummyInput = AtlasInput(obj.r_control);
-      dummyState = AtlasState(obj.r_control);
-      neck_in_i = dummyState.findCoordinateIndex('neck_ay');
-      neck_in_i = neck_in_i(1);
-      neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
-      error =  30*pi/180 - atlas_state(neck_in_i);
-      vel = atlas_state(length(atlas_state)/2 + neck_in_i);
-      efforts(neck_out_i) = 50*error - vel;
+      error =  30*pi/180 - atlas_state(obj.neck_in_i);
+      vel = atlas_state(length(atlas_state)/2 + obj.neck_in_i);
+      efforts(obj.neck_out_i) = 50*error - vel;
       varargout = {efforts(1:obj.nu)};
-      fprintf('\b\b\b\b\b\b\b%7.3f', t);
+      %fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
     end
   end
