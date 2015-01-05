@@ -16,12 +16,12 @@
       <origin rpy="0 0 0" xyz="0.03 0.03 0.1"/>
     </visual>
 
-		<collision group="drill_box">
-			<geometry>
-				<box size="0.055 0.055 0.19"/>
-			</geometry>
-      <origin rpy="0 0 0" xyz="0.03 0.03 0.1"/>
-		</collision>
+    <collision group="drill_box">
+      <geometry>
+        <box size="0.055 0.055 0.19"/>
+      </geometry>
+     <origin rpy="0 0 0" xyz="0.03 0.03 0.1"/>
+    </collision>
 
     <collision group="drill_box">
       <origin rpy="0 0 0" xyz="0.06 0.06 0.2"/>
