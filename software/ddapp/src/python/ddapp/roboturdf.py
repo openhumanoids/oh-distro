@@ -263,6 +263,7 @@ def setupPackagePaths():
         'software/models/common_components/robotiq_hand_description/',
         'software/models/common_components/multisense_sl/',
         'software/models/mit_gazebo_models/mit_robot',
+        'software/models/mit_gazebo_models/V1',
         'software/models/mit_gazebo_models/irobot_hand',
         'software/models/mit_gazebo_models/multisense_sl',
         'software/models/mit_gazebo_models/handle_description',
@@ -344,7 +345,6 @@ class HandLoader(object):
 
         if self.handType == 'irobot':
 
-            self.robotUrdf = 'model_LI_RI.urdf'
             self.handLinkName = '%s_hand' % self.side[0]
             self.handUrdf = 'irobot_hand_%s.urdf' % self.side
             self.handJointName = '%s_irobot_hand_joint' % self.side
@@ -378,7 +378,6 @@ class HandLoader(object):
 
         elif self.handType == 'robotiq':
 
-            self.robotUrdf = 'model_LR_RR.urdf'
             self.handLinkName = '%s_hand' % self.side[0]
             self.handUrdf = 'robotiq_hand_%s.urdf' % self.side
             self.handJointName = '%s_robotiq_hand_joint' % self.side
@@ -390,7 +389,6 @@ class HandLoader(object):
 
         elif self.handType == 'pointer':
 
-            self.robotUrdf = 'model_LP_RP.urdf'
             self.handLinkName = '%s_hand' % self.side[0]
             self.handUrdf = 'pointer_hand_%s.urdf' % self.side
             self.handJointName = '%s_hook_hand_joint' % self.side
@@ -422,10 +420,6 @@ class HandLoader(object):
     def getHandUrdf(self):
         urdfBase = os.path.join(getDRCBaseDir(), 'software/models/mit_gazebo_models')
         return os.path.join(urdfBase, 'mit_robot_hands', self.handUrdf)
-
-    def getRobotUrdf(self):
-        urdfBase = os.path.join(getDRCBaseDir(), 'software/models/mit_gazebo_models')
-        return os.path.join(urdfBase, 'mit_robot', self.robotUrdf)
 
     @staticmethod
     def getLinkToLinkTransform(model, linkA, linkB):
