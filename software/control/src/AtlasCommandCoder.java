@@ -7,7 +7,7 @@ import lcm.lcm.*;
 
 public class AtlasCommandCoder implements drake.util.LCMCoder 
 {
-  final int m_num_joints = 28; // hard coded --- should match Atlas::NUM_JOINTS in BDI API
+  final int m_num_joints; // should match Atlas::NUM_JOINTS in BDI API
   int[] drake_to_atlas_joint_map;
   
   drc.atlas_command_t msg;
@@ -16,6 +16,17 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     double[] k_qd_p, double[] k_f_p, double[] ff_qd, double[] ff_qd_d, double[] ff_f_d,
     double[] ff_const) throws Exception {
 
+    switch (atlas_version_number) {
+      case 3:
+      case 4:
+        m_num_joints = 28;
+        break;
+      case 5:
+        m_num_joints = 30;
+        break;
+      default:
+        throw new Exception("Invalid atlas_version_number: " + atlas_version_number);
+    }
     if (joint_names.length != m_num_joints)
       throw new Exception("Length of joint_names must be " + m_num_joints);
     if (k_q_p.length != m_num_joints)
@@ -38,65 +49,99 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     // fixed ordering assumed by drcsim interface AND atlas api 
     // see: AtlasControlTypes.h 
     String[] atlas_joint_names = new String[m_num_joints];
-    if (atlas_version_number == 3) {
-      atlas_joint_names[0] = "back_bkz";
-      atlas_joint_names[1] = "back_bky";
-      atlas_joint_names[2] = "back_bkx";
-      atlas_joint_names[3] = "neck_ay";
-      atlas_joint_names[4] = "l_leg_hpz";
-      atlas_joint_names[5] = "l_leg_hpx";
-      atlas_joint_names[6] = "l_leg_hpy";
-      atlas_joint_names[7] = "l_leg_kny";
-      atlas_joint_names[8] = "l_leg_aky";
-      atlas_joint_names[9] = "l_leg_akx";
-      atlas_joint_names[10] = "r_leg_hpz";
-      atlas_joint_names[11] = "r_leg_hpx";
-      atlas_joint_names[12] = "r_leg_hpy";
-      atlas_joint_names[13] = "r_leg_kny";
-      atlas_joint_names[14] = "r_leg_aky";
-      atlas_joint_names[15] = "r_leg_akx";
-      atlas_joint_names[16] = "l_arm_usy";
-      atlas_joint_names[17] = "l_arm_shx";
-      atlas_joint_names[18] = "l_arm_ely";
-      atlas_joint_names[19] = "l_arm_elx";
-      atlas_joint_names[20] = "l_arm_uwy";
-      atlas_joint_names[21] = "l_arm_mwx";
-      atlas_joint_names[22] = "r_arm_usy";
-      atlas_joint_names[23] = "r_arm_shx";
-      atlas_joint_names[24] = "r_arm_ely";
-      atlas_joint_names[25] = "r_arm_elx";
-      atlas_joint_names[26] = "r_arm_uwy";
-      atlas_joint_names[27] = "r_arm_mwx";
-    }
-    else if (atlas_version_number == 4) {
-      atlas_joint_names[0] = "back_bkz";
-      atlas_joint_names[1] = "back_bky";
-      atlas_joint_names[2] = "back_bkx";
-      atlas_joint_names[3] = "neck_ay";
-      atlas_joint_names[4] = "l_leg_hpz";
-      atlas_joint_names[5] = "l_leg_hpx";
-      atlas_joint_names[6] = "l_leg_hpy";
-      atlas_joint_names[7] = "l_leg_kny";
-      atlas_joint_names[8] = "l_leg_aky";
-      atlas_joint_names[9] = "l_leg_akx";
-      atlas_joint_names[10] = "r_leg_hpz";
-      atlas_joint_names[11] = "r_leg_hpx";
-      atlas_joint_names[12] = "r_leg_hpy";
-      atlas_joint_names[13] = "r_leg_kny";
-      atlas_joint_names[14] = "r_leg_aky";
-      atlas_joint_names[15] = "r_leg_akx";
-      atlas_joint_names[16] = "l_arm_usz";
-      atlas_joint_names[17] = "l_arm_shx";
-      atlas_joint_names[18] = "l_arm_ely";
-      atlas_joint_names[19] = "l_arm_elx";
-      atlas_joint_names[20] = "l_arm_uwy";
-      atlas_joint_names[21] = "l_arm_mwx";
-      atlas_joint_names[22] = "r_arm_usz";
-      atlas_joint_names[23] = "r_arm_shx";
-      atlas_joint_names[24] = "r_arm_ely";
-      atlas_joint_names[25] = "r_arm_elx";
-      atlas_joint_names[26] = "r_arm_uwy";
-      atlas_joint_names[27] = "r_arm_mwx";
+    switch (atlas_version_number) {
+      case 3:
+        atlas_joint_names[0] = "back_bkz";
+        atlas_joint_names[1] = "back_bky";
+        atlas_joint_names[2] = "back_bkx";
+        atlas_joint_names[3] = "neck_ay";
+        atlas_joint_names[4] = "l_leg_hpz";
+        atlas_joint_names[5] = "l_leg_hpx";
+        atlas_joint_names[6] = "l_leg_hpy";
+        atlas_joint_names[7] = "l_leg_kny";
+        atlas_joint_names[8] = "l_leg_aky";
+        atlas_joint_names[9] = "l_leg_akx";
+        atlas_joint_names[10] = "r_leg_hpz";
+        atlas_joint_names[11] = "r_leg_hpx";
+        atlas_joint_names[12] = "r_leg_hpy";
+        atlas_joint_names[13] = "r_leg_kny";
+        atlas_joint_names[14] = "r_leg_aky";
+        atlas_joint_names[15] = "r_leg_akx";
+        atlas_joint_names[16] = "l_arm_usy";
+        atlas_joint_names[17] = "l_arm_shx";
+        atlas_joint_names[18] = "l_arm_ely";
+        atlas_joint_names[19] = "l_arm_elx";
+        atlas_joint_names[20] = "l_arm_uwy";
+        atlas_joint_names[21] = "l_arm_mwx";
+        atlas_joint_names[22] = "r_arm_usy";
+        atlas_joint_names[23] = "r_arm_shx";
+        atlas_joint_names[24] = "r_arm_ely";
+        atlas_joint_names[25] = "r_arm_elx";
+        atlas_joint_names[26] = "r_arm_uwy";
+        atlas_joint_names[27] = "r_arm_mwx";
+        break;
+      case 4:
+        atlas_joint_names[0] = "back_bkz";
+        atlas_joint_names[1] = "back_bky";
+        atlas_joint_names[2] = "back_bkx";
+        atlas_joint_names[3] = "neck_ay";
+        atlas_joint_names[4] = "l_leg_hpz";
+        atlas_joint_names[5] = "l_leg_hpx";
+        atlas_joint_names[6] = "l_leg_hpy";
+        atlas_joint_names[7] = "l_leg_kny";
+        atlas_joint_names[8] = "l_leg_aky";
+        atlas_joint_names[9] = "l_leg_akx";
+        atlas_joint_names[10] = "r_leg_hpz";
+        atlas_joint_names[11] = "r_leg_hpx";
+        atlas_joint_names[12] = "r_leg_hpy";
+        atlas_joint_names[13] = "r_leg_kny";
+        atlas_joint_names[14] = "r_leg_aky";
+        atlas_joint_names[15] = "r_leg_akx";
+        atlas_joint_names[16] = "l_arm_usz";
+        atlas_joint_names[17] = "l_arm_shx";
+        atlas_joint_names[18] = "l_arm_ely";
+        atlas_joint_names[19] = "l_arm_elx";
+        atlas_joint_names[20] = "l_arm_uwy";
+        atlas_joint_names[21] = "l_arm_mwx";
+        atlas_joint_names[22] = "r_arm_usz";
+        atlas_joint_names[23] = "r_arm_shx";
+        atlas_joint_names[24] = "r_arm_ely";
+        atlas_joint_names[25] = "r_arm_elx";
+        atlas_joint_names[26] = "r_arm_uwy";
+        atlas_joint_names[27] = "r_arm_mwx";
+        break;
+      case 5:
+        atlas_joint_names[0] = "back_bkz";
+        atlas_joint_names[1] = "back_bky";
+        atlas_joint_names[2] = "back_bkx";
+        atlas_joint_names[3] = "neck_ay";
+        atlas_joint_names[4] = "l_leg_hpz";
+        atlas_joint_names[5] = "l_leg_hpx";
+        atlas_joint_names[6] = "l_leg_hpy";
+        atlas_joint_names[7] = "l_leg_kny";
+        atlas_joint_names[8] = "l_leg_aky";
+        atlas_joint_names[9] = "l_leg_akx";
+        atlas_joint_names[10] = "r_leg_hpz";
+        atlas_joint_names[11] = "r_leg_hpx";
+        atlas_joint_names[12] = "r_leg_hpy";
+        atlas_joint_names[13] = "r_leg_kny";
+        atlas_joint_names[14] = "r_leg_aky";
+        atlas_joint_names[15] = "r_leg_akx";
+        atlas_joint_names[16] = "l_arm_usz";
+        atlas_joint_names[17] = "l_arm_shx";
+        atlas_joint_names[18] = "l_arm_ely";
+        atlas_joint_names[19] = "l_arm_elx";
+        atlas_joint_names[20] = "l_arm_uwy";
+        atlas_joint_names[21] = "l_arm_mwx";
+        atlas_joint_names[22] = "l_arm_uwy2";
+        atlas_joint_names[23] = "r_arm_usz";
+        atlas_joint_names[24] = "r_arm_shx";
+        atlas_joint_names[25] = "r_arm_ely";
+        atlas_joint_names[26] = "r_arm_elx";
+        atlas_joint_names[27] = "r_arm_uwy";
+        atlas_joint_names[28] = "r_arm_mwx";
+        atlas_joint_names[29] = "r_arm_uwy2";
+        break;
     }
 
     msg = new drc.atlas_command_t();

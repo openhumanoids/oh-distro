@@ -19,7 +19,7 @@ classdef AtlasPosTorqueRef < LCMCoordinateFrame & Singleton
         input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
       
         if nargin<3 % controlling robot
-          gains = getAtlasGains();
+          gains = getAtlasGains(r.atlas_version);
         else
           typecheck(gains_id,'char');
           gains = struct();

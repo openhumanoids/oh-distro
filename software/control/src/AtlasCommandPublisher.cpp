@@ -43,71 +43,101 @@ public:
     // fixed ordering assumed by drcsim interface AND atlas api 
     // see: AtlasControlTypes.h 
     vector<string> atlas_joint_names(m_num_joints);
-    if (atlas_version_number == 3) {
-      atlas_joint_names[0] = "back_bkz";
-      atlas_joint_names[1] = "back_bky";
-      atlas_joint_names[2] = "back_bkx";
-      atlas_joint_names[3] = "neck_ay";
-      atlas_joint_names[4] = "l_leg_hpz";
-      atlas_joint_names[5] = "l_leg_hpx";
-      atlas_joint_names[6] = "l_leg_hpy";
-      atlas_joint_names[7] = "l_leg_kny";
-      atlas_joint_names[8] = "l_leg_aky";
-      atlas_joint_names[9] = "l_leg_akx";
-      atlas_joint_names[10] = "r_leg_hpz";
-      atlas_joint_names[11] = "r_leg_hpx";
-      atlas_joint_names[12] = "r_leg_hpy";
-      atlas_joint_names[13] = "r_leg_kny";
-      atlas_joint_names[14] = "r_leg_aky";
-      atlas_joint_names[15] = "r_leg_akx";
-      atlas_joint_names[16] = "l_arm_usy";
-      atlas_joint_names[17] = "l_arm_shx";
-      atlas_joint_names[18] = "l_arm_ely";
-      atlas_joint_names[19] = "l_arm_elx";
-      atlas_joint_names[20] = "l_arm_uwy";
-      atlas_joint_names[21] = "l_arm_mwx";
-      atlas_joint_names[22] = "r_arm_usy";
-      atlas_joint_names[23] = "r_arm_shx";
-      atlas_joint_names[24] = "r_arm_ely";
-      atlas_joint_names[25] = "r_arm_elx";
-      atlas_joint_names[26] = "r_arm_uwy";
-      atlas_joint_names[27] = "r_arm_mwx";
-    }
-    else if (atlas_version_number == 4) {
-      atlas_joint_names[0] = "back_bkz";
-      atlas_joint_names[1] = "back_bky";
-      atlas_joint_names[2] = "back_bkx";
-      atlas_joint_names[3] = "neck_ay";
-      atlas_joint_names[4] = "l_leg_hpz";
-      atlas_joint_names[5] = "l_leg_hpx";
-      atlas_joint_names[6] = "l_leg_hpy";
-      atlas_joint_names[7] = "l_leg_kny";
-      atlas_joint_names[8] = "l_leg_aky";
-      atlas_joint_names[9] = "l_leg_akx";
-      atlas_joint_names[10] = "r_leg_hpz";
-      atlas_joint_names[11] = "r_leg_hpx";
-      atlas_joint_names[12] = "r_leg_hpy";
-      atlas_joint_names[13] = "r_leg_kny";
-      atlas_joint_names[14] = "r_leg_aky";
-      atlas_joint_names[15] = "r_leg_akx";
-      atlas_joint_names[16] = "l_arm_usz";
-      atlas_joint_names[17] = "l_arm_shx";
-      atlas_joint_names[18] = "l_arm_ely";
-      atlas_joint_names[19] = "l_arm_elx";
-      atlas_joint_names[20] = "l_arm_uwy";
-      atlas_joint_names[21] = "l_arm_mwx";
-      atlas_joint_names[22] = "r_arm_usz";
-      atlas_joint_names[23] = "r_arm_shx";
-      atlas_joint_names[24] = "r_arm_ely";
-      atlas_joint_names[25] = "r_arm_elx";
-      atlas_joint_names[26] = "r_arm_uwy";
-      atlas_joint_names[27] = "r_arm_mwx";
-    }
-    else if (atlas_version_number == 5){
-      mexErrMsgTxt("Atlas version 5 not implemented yet");
-    }
-    else {
-      mexErrMsgTxt("Unknown atlas_version_number");
+    switch (atlas_version_number) {
+      case 3:
+        atlas_joint_names[0] = "back_bkz";
+        atlas_joint_names[1] = "back_bky";
+        atlas_joint_names[2] = "back_bkx";
+        atlas_joint_names[3] = "neck_ay";
+        atlas_joint_names[4] = "l_leg_hpz";
+        atlas_joint_names[5] = "l_leg_hpx";
+        atlas_joint_names[6] = "l_leg_hpy";
+        atlas_joint_names[7] = "l_leg_kny";
+        atlas_joint_names[8] = "l_leg_aky";
+        atlas_joint_names[9] = "l_leg_akx";
+        atlas_joint_names[10] = "r_leg_hpz";
+        atlas_joint_names[11] = "r_leg_hpx";
+        atlas_joint_names[12] = "r_leg_hpy";
+        atlas_joint_names[13] = "r_leg_kny";
+        atlas_joint_names[14] = "r_leg_aky";
+        atlas_joint_names[15] = "r_leg_akx";
+        atlas_joint_names[16] = "l_arm_usy";
+        atlas_joint_names[17] = "l_arm_shx";
+        atlas_joint_names[18] = "l_arm_ely";
+        atlas_joint_names[19] = "l_arm_elx";
+        atlas_joint_names[20] = "l_arm_uwy";
+        atlas_joint_names[21] = "l_arm_mwx";
+        atlas_joint_names[22] = "r_arm_usy";
+        atlas_joint_names[23] = "r_arm_shx";
+        atlas_joint_names[24] = "r_arm_ely";
+        atlas_joint_names[25] = "r_arm_elx";
+        atlas_joint_names[26] = "r_arm_uwy";
+        atlas_joint_names[27] = "r_arm_mwx";
+        break;
+      case 4:
+        atlas_joint_names[0] = "back_bkz";
+        atlas_joint_names[1] = "back_bky";
+        atlas_joint_names[2] = "back_bkx";
+        atlas_joint_names[3] = "neck_ay";
+        atlas_joint_names[4] = "l_leg_hpz";
+        atlas_joint_names[5] = "l_leg_hpx";
+        atlas_joint_names[6] = "l_leg_hpy";
+        atlas_joint_names[7] = "l_leg_kny";
+        atlas_joint_names[8] = "l_leg_aky";
+        atlas_joint_names[9] = "l_leg_akx";
+        atlas_joint_names[10] = "r_leg_hpz";
+        atlas_joint_names[11] = "r_leg_hpx";
+        atlas_joint_names[12] = "r_leg_hpy";
+        atlas_joint_names[13] = "r_leg_kny";
+        atlas_joint_names[14] = "r_leg_aky";
+        atlas_joint_names[15] = "r_leg_akx";
+        atlas_joint_names[16] = "l_arm_usz";
+        atlas_joint_names[17] = "l_arm_shx";
+        atlas_joint_names[18] = "l_arm_ely";
+        atlas_joint_names[19] = "l_arm_elx";
+        atlas_joint_names[20] = "l_arm_uwy";
+        atlas_joint_names[21] = "l_arm_mwx";
+        atlas_joint_names[22] = "r_arm_usz";
+        atlas_joint_names[23] = "r_arm_shx";
+        atlas_joint_names[24] = "r_arm_ely";
+        atlas_joint_names[25] = "r_arm_elx";
+        atlas_joint_names[26] = "r_arm_uwy";
+        atlas_joint_names[27] = "r_arm_mwx";
+        break;
+      case 5:
+        atlas_joint_names[0] = "back_bkz";
+        atlas_joint_names[1] = "back_bky";
+        atlas_joint_names[2] = "back_bkx";
+        atlas_joint_names[3] = "neck_ay";
+        atlas_joint_names[4] = "l_leg_hpz";
+        atlas_joint_names[5] = "l_leg_hpx";
+        atlas_joint_names[6] = "l_leg_hpy";
+        atlas_joint_names[7] = "l_leg_kny";
+        atlas_joint_names[8] = "l_leg_aky";
+        atlas_joint_names[9] = "l_leg_akx";
+        atlas_joint_names[10] = "r_leg_hpz";
+        atlas_joint_names[11] = "r_leg_hpx";
+        atlas_joint_names[12] = "r_leg_hpy";
+        atlas_joint_names[13] = "r_leg_kny";
+        atlas_joint_names[14] = "r_leg_aky";
+        atlas_joint_names[15] = "r_leg_akx";
+        atlas_joint_names[16] = "l_arm_usz";
+        atlas_joint_names[17] = "l_arm_shx";
+        atlas_joint_names[18] = "l_arm_ely";
+        atlas_joint_names[19] = "l_arm_elx";
+        atlas_joint_names[20] = "l_arm_uwy";
+        atlas_joint_names[21] = "l_arm_mwx";
+        atlas_joint_names[22] = "l_arm_uwy2";
+        atlas_joint_names[23] = "r_arm_usz";
+        atlas_joint_names[24] = "r_arm_shx";
+        atlas_joint_names[25] = "r_arm_ely";
+        atlas_joint_names[26] = "r_arm_elx";
+        atlas_joint_names[27] = "r_arm_uwy";
+        atlas_joint_names[28] = "r_arm_mwx";
+        atlas_joint_names[29] = "r_arm_uwy2";
+        break;
+      default:
+        mexErrMsgTxt("Unknown atlas_version_number");
     }
     
 

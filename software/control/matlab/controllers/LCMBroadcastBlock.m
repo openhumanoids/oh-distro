@@ -12,6 +12,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     joint_names_cache;
     r_hand_joint_names_cache;
     r_hand_joint_inds;
+    foot_indices;
     
     % FC publish period
     fc_publish_period = 0.01;
@@ -19,6 +20,11 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % Atlas, for usefulness
     r;
     r_control;
+    nq;
+
+    % Structure containing the frame numbers of the different states
+    % inside the input frame.
+    frame_nums;
     
     % Whether we should publish a ground truth EST_ROBOT_STATE
     % (or if not, publish approp messages to feed state_sync state est.)
@@ -181,14 +187,51 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
                                       'r_arm_uwy',
                                       'r_arm_mwx'
                                       };
+        case 5
+          desired_joint_name_order = {'back_bkz',
+                                      'back_bky',
+                                      'back_bkx',
+                                      'neck_ay',
+                                      'l_leg_hpz',
+                                      'l_leg_hpx',
+                                      'l_leg_hpy',
+                                      'l_leg_kny',
+                                      'l_leg_aky',
+                                      'l_leg_akx',
+                                      'r_leg_hpz',
+                                      'r_leg_hpx',
+                                      'r_leg_hpy',
+                                      'r_leg_kny',
+                                      'r_leg_aky',
+                                      'r_leg_akx',
+                                      'l_arm_usz',
+                                      'l_arm_shx',
+                                      'l_arm_ely',
+                                      'l_arm_elx',
+                                      'l_arm_uwy',
+                                      'l_arm_mwx',
+                                      'l_arm_uwy2',
+                                      'r_arm_usz',
+                                      'r_arm_shx',
+                                      'r_arm_ely',
+                                      'r_arm_elx',
+                                      'r_arm_uwy',
+                                      'r_arm_mwx',
+                                      'r_arm_uwy2'
+                                      };
       end
       obj.reordering = zeros(length(desired_joint_name_order), 1);
       for i=1:length(desired_joint_name_order)
         obj.reordering(i) = find(strcmp(desired_joint_name_order{i}, atlascoordnames));
       end
+      obj.foot_indices = [r.findLinkId('l_foot'), r.findLinkId('r_foot')];
       
       obj.r = r;
+      obj.nq = obj.r.getNumPositions();
       obj.r_control = r_control;
+      obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
+      obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
+      obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -200,14 +243,13 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % frames
         atlas_state = varargin{1};
       else
-        inp = obj.getInputFrame();
-        num = inp.getFrameNumByName('AtlasState');
+        num = obj.frame_nums.atlas_state;
         if length(num)~=1
           error(['No atlas state found as input for LCMBroadcastBlock!']);
         end
         atlas_state = varargin{num};
 
-        num = inp.getFrameNumByName('HandState');
+        num = obj.frame_nums.hand_state;
 
         if (length(num)>1)
           error(['Ambiguous hand state. No support for two hands yet...']);
@@ -219,7 +261,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
           hand_state(10:11) = [0;0];
         end
         
-        num = inp.getFrameNumByName('hokuyo');
+        num = obj.frame_nums.hokuyo_state;
         laser_state = [];
         if (length(num)>1)
           error(['Ambiguous hand state. No support for two hands yet...']);
@@ -252,11 +294,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
         x = atlas_state;
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
-        within_thresh = phiC < 0.002;
-        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
-              any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
+        fc = obj.getFootContacts(x(1:obj.nq));
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
@@ -341,11 +379,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         % Get binary foot contact, call it force:
         x = atlas_state;
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
-        within_thresh = phiC < 0.002;
-        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
-          any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
+        fc = obj.getFootContacts(x(1:obj.nq));
+
         % pack it up
         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
         state_msg.force_torque.r_foot_force_z = fc(2)*1000;
@@ -480,6 +515,18 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
     end
     
+    function fc = getFootContacts(obj, q)
+      [phiC,~,~,~,idxA,idxB] = obj.r_control.collisionDetect(q,false);
+      within_thresh = phiC < 0.002;
+      contact_pairs = [idxA(within_thresh); idxB(within_thresh)];
+
+      % The following would be faster but would require us to have
+      % hightmaps in Bullet
+      %[~,~,idxA,idxB] = obj.r_control.allCollisions(x(1:obj.nq));
+      %contact_pairs = [idxA; idxB];
+
+      fc = any(bsxfun(@eq, contact_pairs(:), obj.foot_indices),1)';
+    end
   end
   
 end

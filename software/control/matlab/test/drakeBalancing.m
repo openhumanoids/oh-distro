@@ -16,15 +16,15 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.dt = 0.002;
 options.ignore_friction = 1;
-options.atlas_version = 4;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
+options.atlas_version = 5;
+r = Atlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
 nq = getNumPositions(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat'));
+load(r.fixed_point_file);
 xstar(1) = 10*randn();
 xstar(2) = 10*randn();
 xstar(6) = pi*randn();
