@@ -1,5 +1,6 @@
-function drakeAtlasSimulationWithHands
+function drakeAtlasSimulationWithHands(atlas_version)
 %NOTEST
+if nargin < 1, atlas_version = 4; end
 
 visualize = true; % should be a function arg
 
@@ -23,7 +24,8 @@ options.visualize = visualize;
 options.hokuyo = false; % don't need sensors on control copy
 options.foot_force_sensors = false;
 options.hands = 'robotiq_weight_only';
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+options.atlas_version = atlas_version;
+r = Atlas([],options);
 % This is the one that has all of the neat important simul attributes:
 options.hokuyo = true;
 options.hokuyo_spin_rate = 4;
@@ -31,7 +33,7 @@ options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
 options.hands = 'robotiq';
-r_hands = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r_hands = Atlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r_hands = r_hands.removeCollisionGroupsExcept({'heel','toe', 'palm', 'knuckle', 'default'});
 r = compile(r);
@@ -42,15 +44,16 @@ options_cyl.floating = true;
 %won't work until floating joints supported in addRobotFromURDF
 %r_hands = r_hands.addRobotFromURDF('manip_world_ex.urdf', [0; 0; 0]);
 r_hands = r_hands.addRobotFromURDF('table.urdf', [1.225; 0.0; 0.5]);
-r_hands = r_hands.addRobotFromURDF('cylinder.urdf', [0.775; -0.2; 1.07], [], options_cyl);
+r_hands = r_hands.addRobotFromURDF('drill_box.urdf', [0.775; -0.2; 1.2], [], options_cyl);
 r_hands = compile(r_hands);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+S = load(r.fixed_point_file);
+xstar = S.xstar;
 xstar(1) = 0;
 xstar(2) = 0;
 xstar(6) = 0;
-xstar(28) = xstar(28) - 0.05;
+%xstar(28) = xstar(28) - 0.05;
 %xstar(23) = xstar(23) - 0.1;
 
 % and hand state to a feasible sol
@@ -97,7 +100,7 @@ sys = mimoCascade(sys, lcmBroadcastBlock);
 % Visualize if desired
 if visualize
   v = r_hands.constructVisualizer;
-  v.display_dt = 0.1;
+  v.display_dt = 0.05;
   S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
   output_select(1).system=1;
   output_select(1).output=1;

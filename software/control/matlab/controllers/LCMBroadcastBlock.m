@@ -229,9 +229,15 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       obj.r = r;
       obj.nq = obj.r.getNumPositions();
       obj.r_control = r_control;
-      obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
-      obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
-      obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
+      if (isa(input_frame, 'MultiCoordinateFrame'))
+        obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
+        obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
+        obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
+      else
+        obj.frame_nums.atlas_state = input_frame;
+        obj.frame_nums.hand_state = '';
+        obj.frame_nums.hokuyo_state = '';
+      end
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -516,7 +522,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     end
     
     function fc = getFootContacts(obj, q)
-      [phiC,~,~,~,idxA,idxB] = obj.r_control.collisionDetect(q,false);
+      [phiC,~,~,~,idxA,idxB] = obj.r_control.collisionDetect(q(1:obj.r_control.getNumPositions()),false);
       within_thresh = phiC < 0.002;
       contact_pairs = [idxA(within_thresh); idxB(within_thresh)];
 
