@@ -20,7 +20,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % Atlas, for usefulness
     r;
     r_control;
-    nq;
+    nq_control;
 
     % Structure containing the frame numbers of the different states
     % inside the input frame.
@@ -228,7 +228,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       obj.r = r;
       obj.r_control = r_control;
-      obj.nq = obj.r_control.getNumPositions();
+      obj.nq_control = obj.r_control.getNumPositions();
       if (isa(input_frame, 'MultiCoordinateFrame'))
         obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
         obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
@@ -300,7 +300,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
         x = atlas_state;
-        fc = obj.getFootContacts(x(1:obj.nq));
+        fc = obj.getFootContacts(x(1:obj.nq_control));
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
@@ -385,7 +385,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         % Get binary foot contact, call it force:
         x = atlas_state;
-        fc = obj.getFootContacts(x(1:obj.nq));
+        fc = obj.getFootContacts(x(1:obj.nq_control));
 
         % pack it up
         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
@@ -528,7 +528,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 
       % The following would be faster but would require us to have
       % hightmaps in Bullet
-      %[~,~,idxA,idxB] = obj.r_control.allCollisions(x(1:obj.nq));
+      %[~,~,idxA,idxB] = obj.r_control.allCollisions(x(1:obj.nq_control));
       %contact_pairs = [idxA; idxB];
 
       fc = any(bsxfun(@eq, contact_pairs(:), obj.foot_indices),1)';
