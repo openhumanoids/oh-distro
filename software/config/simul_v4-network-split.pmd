@@ -1,0 +1,156 @@
+group "0.deputies" {
+      cmd "base_deputy" {
+          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_BASE bot-procman-deputy -n base'";
+          host = "localhost";
+      }
+
+      cmd "robot_deputy" {
+          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n robot'";
+          host = "localhost";
+      }
+}
+
+group "1.network" {
+    cmd "base_network_shaper" {
+        exec = "drc-network-shaper -r base -c simul_robot.cfg";
+        host = "localhost";
+    }
+
+    cmd "robot_network_shaper" {
+        exec = "drc-network-shaper -r robot -c simul_robot.cfg";
+        host = "localhost";
+    }
+}
+
+group "2.params_and_model_pub" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/simul_robot.cfg";
+        host = "robot";
+    }
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v4/model_LR_RR.urdf";
+        host = "robot";
+    }
+}
+
+group "3.state_mit" {
+
+    cmd "joints2frames" {
+        exec = "drc-joints2frames -b";
+        host = "robot";
+    }
+
+    cmd "state-sync" {
+        exec = "drc-state-sync -b -a 4";
+        host = "robot";
+    }
+    cmd "fusion" {
+        exec = "se-fusion";
+        host = "robot";
+    }
+
+}
+
+group "4.plan_and_control" {
+
+
+    cmd "AtlasController" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 4); \"";
+        host = "robot";
+        stop_signal = 15;
+    }
+
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],4); p.run();\"";
+       host = "robot";
+       stop_signal = 15;
+    }
+
+    cmd "BaseBDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "robot";
+    }
+}
+
+group "5.maps" {
+
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "robot";
+    }
+
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "robot";
+    }
+
+    cmd "lidar-passthrough" {
+        exec = "drc-lidar-passthrough -c 0.06 -a 4";
+        host = "robot";
+    }
+}
+
+cmd "pose-util" {
+    exec = "drc-robot-pose-util";
+    host = "base";
+}
+
+cmd "director" {
+    exec = "drake-designer -c simul_robot.cfg -v4";
+    host = "base";
+}
+
+cmd "viewer" {
+    exec = "drc-viewer -c simul_robot.cfg";
+    host = "base";
+}
+
+group "spy" {
+    cmd "base-spy" {
+       exec = "bot-spy";
+       host = "base";
+    }
+    cmd "base-spy" {
+       exec = "bot-spy";
+       host = "robot";
+    }
+}
+
+cmd "drakeAtlasSimulation" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4);\"";
+    host = "robot";
+}
+
+script "0.run_simul" {
+    start group "0.deputies";
+    start group "1.network";
+    wait ms 1000;
+    start group "2.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start group "4.plan_and_control";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation";
+}
+
+script "1.reset_simul" {
+    stop cmd "drakeAtlasSimulation";
+    wait ms 1000;
+    start cmd "drakeAtlasSimulation";
+    stop cmd "AtlasController";
+    wait ms 1000;
+    start cmd "AtlasController";
+}
+
+script "2.run_all_but_simul" {
+    start group "0.deputies";
+    start group "1.network";
+    wait ms 1000;
+    start group "2.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+}
