@@ -100,6 +100,11 @@ cmd "director" {
     host = "base";
 }
 
+cmd "robot-side-director" {
+    exec = "drake-designer -c simul_robot.cfg -v4";
+    host = "robot";
+}
+
 cmd "viewer" {
     exec = "drc-viewer -c simul_robot.cfg";
     host = "base";
@@ -110,7 +115,7 @@ group "spy" {
        exec = "bot-spy";
        host = "base";
     }
-    cmd "base-spy" {
+    cmd "robot-spy" {
        exec = "bot-spy";
        host = "robot";
     }
