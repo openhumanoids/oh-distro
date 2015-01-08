@@ -90,6 +90,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
       
       % And foot force sensors?
+      obj.foot_indices = [obj.findLinkId('l_foot'), obj.findLinkId('r_foot')];
       if (~isfield(options, 'foot_force_sensors'))
         options.foot_force_sensors = false;
       end
@@ -306,7 +307,20 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       lfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.left);
       foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
     end
-
+    
+    function fc = getFootContacts(obj, q)
+      [phiC,~,~,~,idxA,idxB] = obj.collisionDetect(q,false);
+      within_thresh = phiC < 0.002;
+      contact_pairs = [idxA(within_thresh); idxB(within_thresh)];
+      
+      % The following would be faster but would require us to have
+      % hightmaps in Bullet
+      %[~,~,idxA,idxB] = obj.r_control.allCollisions(x(1:obj.nq_control));
+      %contact_pairs = [idxA; idxB];
+      
+      fc = any(bsxfun(@eq, contact_pairs(:), obj.foot_indices),1)';
+    end
+    
     function [zmin,zmax] = getPelvisHeightLimits(obj,q) % for BDI manip mode
       z_above_feet = getPelvisHeightAboveFeet(obj,q);
       zmin = q(3) - (z_above_feet-obj.pelvis_min_height);
@@ -480,6 +494,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     hands = 0; % 0, none; 1, Robotiq
     
     % preconstructing these for efficiency
+    foot_indices;
     left_full_support
     left_toe_support
     right_full_support
@@ -488,5 +503,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     left_toe_right_full_support
     left_full_right_toe_support
     atlas_version=[] % model version 3, 4, 5
+    
   end
 end
