@@ -429,6 +429,7 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
   imu_robotorientation =microstrainIMUToRobotOrientation(msg);
   fuseInterial(imu_robotorientation, msg->utime);
 
+  /*
   // Alternative Pose for the typical system to see:
   double rpy[3];
   quat_to_euler(  imu_robotorientation , rpy[0], rpy[1], rpy[2]);
@@ -444,6 +445,7 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
   pose_msg.orientation[2] = imu_robotorientation_less_yaw.y();
   pose_msg.orientation[3] = imu_robotorientation_less_yaw.z();
   bot_core_pose_t_publish(lcm_->getUnderlyingLCM(), "POSE_BODY", &pose_msg);
+  */
 
   // TODO: use bot frames to transform this properly
   imu_velocity_linear_  = Eigen::Vector3d(0,0,0);
