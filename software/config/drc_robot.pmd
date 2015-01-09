@@ -156,7 +156,7 @@ cmd "atlas-off" {
 }
 
 cmd "atlas-high" {
-    exec = "drc-atlas -p high";
+    exec = "drc-atlas -p on";
     host = "robot";
 }
 
