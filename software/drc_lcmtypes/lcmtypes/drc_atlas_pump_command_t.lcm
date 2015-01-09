@@ -44,4 +44,7 @@ struct atlas_pump_command_t
   // This value may need to be lower than the default in order to avoid
   // causing the motor driver to fault. 
   float cmd_max;    
+  
+  int16_t desired_psi; // default should be 1500
+  int16_t desired_rpm; // default should be 5000
 }
