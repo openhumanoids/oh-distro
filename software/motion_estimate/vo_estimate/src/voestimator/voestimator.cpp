@@ -42,8 +42,8 @@ void VoEstimator::updatePosition(int64_t utime, int64_t utime_prev, Eigen::Isome
   head_lin_rate_alpha_ =  alpha*head_lin_rate_alpha_ + (1-alpha)*head_lin_rate_;
   head_rot_rate_alpha_ =  alpha*head_rot_rate_alpha_ + (1-alpha)*head_rot_rate_;
 
-  // 4. Output the head position update simply by VO only
-  publishUpdate(utime_prev, local_to_head_, "POSE_HEAD_FOVIS", true);
+  // 4. Output the head position update, at the rates provided by VO
+  publishUpdate(utime_prev, local_to_head_, "POSE_HEAD_ALT_FOVIS", true);
   local_to_head_prev_ = local_to_head_;
   delta_head_prev_ = delta_head;
 }
