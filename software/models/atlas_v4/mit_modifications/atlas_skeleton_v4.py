@@ -49,6 +49,10 @@ mit.xacro(full_mesh_xacro_path, full_mesh_urdf_path)
 urdf = etree.parse(full_mesh_urdf_path)
 mit.renameJoints(urdf, jointNameMap)
 
+# Weld dummy lwy joints
+mit.weldJoint(urdf, 'l_arm_lwy')
+mit.weldJoint(urdf, 'r_arm_lwy')
+
 mit.replaceMeshPaths(urdf, "package://atlas_v4/meshes")
 mit.useObjMeshes(urdf)
 
