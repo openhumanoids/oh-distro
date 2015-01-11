@@ -155,6 +155,12 @@ def renameJoints(urdf, jointNameMap):
     return urdf
 
 
+def weldJoint(urdf, jointName):
+
+    joint = urdf.xpath("//joint[@name = '%s']" % jointName)[0]
+    joint.set("type", "fixed")
+
+
 def weldAllJoints(urdf):
 
     for joint in urdf.findall("//joint"):
