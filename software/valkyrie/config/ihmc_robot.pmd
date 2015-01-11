@@ -61,7 +61,7 @@ group "5.maps" {
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -c simul_robot.cfg";
+    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot.cfg -v3";
     host = "localhost";
 }
 
