@@ -413,7 +413,7 @@
     <limit effort="99" lower="-1.5708" upper="1.5708" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="11.5708"/>
   </joint>
-  <joint name="l_arm_usz" type="revolute">
+  <joint name="l_arm_shz" type="revolute">
     <origin rpy="0 0 0" xyz="0.1406 0.2256 0.4776"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
@@ -440,7 +440,7 @@
     <limit effort="25" lower="-3.011" upper="3.011" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-13.011" soft_upper_limit="13.011"/>
   </joint>
-  <joint name="l_arm_uwy2" type="revolute">
+  <joint name="l_arm_lwy" type="revolute">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="l_lfarm"/>
@@ -539,7 +539,7 @@
     <limit effort="99" lower="-1.5708" upper="1.5708" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="11.5708"/>
   </joint>
-  <joint name="r_arm_usz" type="revolute">
+  <joint name="r_arm_shz" type="revolute">
     <origin rpy="0 0 0" xyz="0.1406 -0.2256 0.4776"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
@@ -566,7 +566,7 @@
     <limit effort="25" lower="-3.011" upper="3.011" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-13.011" soft_upper_limit="13.011"/>
   </joint>
-  <joint name="r_arm_uwy2" type="revolute">
+  <joint name="r_arm_lwy" type="revolute">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="r_lfarm"/>
