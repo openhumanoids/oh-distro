@@ -1314,14 +1314,16 @@
   <collision_filter_group name="r_arm">
     <member link="r_uarm"/>
     <member link="r_larm"/>
-    <member link="r_farm"/>
+    <member link="r_ufarm"/>
+    <member link="r_lfarm"/>
     <member link="r_hand"/>
     <ignored_collision_filter_group collision_filter_group="r_arm"/>
   </collision_filter_group>
   <collision_filter_group name="l_arm">
     <member link="l_uarm"/>
     <member link="l_larm"/>
-    <member link="l_farm"/>
+    <member link="l_ufarm"/>
+    <member link="l_lfarm"/>
     <member link="l_hand"/>
     <ignored_collision_filter_group collision_filter_group="l_arm"/>
   </collision_filter_group>
