@@ -352,7 +352,7 @@ load_xml_string( string xmlString,
   if( _atlas_version == V3 ){
     _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usy" )->limits->lower;
   } else {
-    _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usz" )->limits->lower;
+    _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_shz" )->limits->lower;
   }
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "l_arm_ely" )->limits->lower;
@@ -360,7 +360,7 @@ load_xml_string( string xmlString,
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->lower;
   if( _atlas_version == V5 ){
-    _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "l_arm_uwy2" )->limits->lower;
+    _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "l_arm_lwy" )->limits->lower;
   }
 
   _max_joint_limits_left_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->upper;
@@ -370,7 +370,7 @@ load_xml_string( string xmlString,
   if( _atlas_version == V3 ){
     _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->lower;
   } else {
-    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usz" )->limits->lower;
+    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_shz" )->limits->lower;
   }
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "l_arm_ely" )->limits->upper;
@@ -378,7 +378,7 @@ load_xml_string( string xmlString,
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->upper;  
   if( _atlas_version == V5 ){
-    _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "l_arm_uwy2" )->limits->upper;
+    _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "l_arm_lwy" )->limits->upper;
   }
 
   _min_joint_limits_right_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->lower;
@@ -388,7 +388,7 @@ load_xml_string( string xmlString,
   if( _atlas_version == V3 ){
     _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->lower;
   } else {
-    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usz" )->limits->lower;
+    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_shz" )->limits->lower;
   }
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "r_arm_ely" )->limits->lower;
@@ -396,7 +396,7 @@ load_xml_string( string xmlString,
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "r_arm_uwy" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->lower;
   if( _atlas_version == V5 ){
-    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "r_arm_uwy2" )->limits->upper;
+    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "r_arm_lwy" )->limits->upper;
   }
 
   _max_joint_limits_right_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->upper;
@@ -406,7 +406,7 @@ load_xml_string( string xmlString,
   if( _atlas_version == V3 ){
     _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->upper;
   } else {
-    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usz" )->limits->upper;
+    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_shz" )->limits->upper;
   }
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->upper;
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "r_arm_ely" )->limits->upper;
@@ -414,7 +414,7 @@ load_xml_string( string xmlString,
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "r_arm_uwy" )->limits->upper;
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->upper;
   if( _atlas_version == V5) {
-    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "r_arm_uwy2" )->limits->upper;
+    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "r_arm_lwy" )->limits->upper;
   }
 
   _min_joint_limits_left_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "l_leg_kny" )->limits->lower;

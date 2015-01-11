@@ -214,7 +214,7 @@ switch atlas_version
     l_arm_ely = 5;
     l_arm_mwx = 6;
     l_arm_shx = 7;
-    l_arm_usz = 8;
+    l_arm_shz = 8;
     l_arm_uwy = 9;
     l_leg_kny = 10;
     l_leg_akx = 11;
@@ -227,7 +227,7 @@ switch atlas_version
     r_arm_ely = 18;
     r_arm_mwx = 19;
     r_arm_shx = 20;
-    r_arm_usz = 21;
+    r_arm_shz = 21;
     r_arm_uwy = 22;
     r_leg_kny = 23;
     r_leg_akx = 24;
@@ -259,7 +259,7 @@ switch atlas_version
     k_q_p(l_leg_kny) = 30.0;
     k_q_p(l_leg_aky) = 1000.0;
     k_q_p(l_leg_akx) = 1000.0;
-    % k_q_p(l_arm_usz) = 4.0; 
+    % k_q_p(l_arm_shz) = 4.0; 
     % k_q_p(l_arm_shx) = 4.0;  
     % k_q_p(l_arm_ely) = 4.0; 
     % k_q_p(l_arm_elx) = 4.0; 
@@ -271,7 +271,7 @@ switch atlas_version
     k_q_p(r_leg_kny) = k_q_p(l_leg_kny);
     k_q_p(r_leg_aky) = k_q_p(l_leg_aky);
     k_q_p(r_leg_akx) = k_q_p(l_leg_akx);
-    % k_q_p(r_arm_usz) = 4.0; 
+    % k_q_p(r_arm_shz) = 4.0; 
     % k_q_p(r_arm_shx) = 4.0;  
     % k_q_p(r_arm_ely) = 4.0; 
     % k_q_p(r_arm_elx) = 4.0; 
@@ -290,7 +290,7 @@ switch atlas_version
     % k_q_p(l_leg_kny) = 60.0;% * 0.1;
     % k_q_p(l_leg_aky) = 1000.0;% * 0.1;
     % k_q_p(l_leg_akx) = 1000.0;% * 0.1;
-    k_q_p(l_arm_usz) = 10.5;
+    k_q_p(l_arm_shz) = 10.5;
     k_q_p(l_arm_shx) = 10.0; 
     k_q_p(l_arm_ely) = 15.0; 
     k_q_p(l_arm_elx) = 30.0;
@@ -302,7 +302,7 @@ switch atlas_version
     % k_q_p(r_leg_kny) = k_q_p(l_leg_kny);
     % k_q_p(r_leg_aky) = k_q_p(l_leg_aky);
     % k_q_p(r_leg_akx) = k_q_p(l_leg_akx);
-    k_q_p(r_arm_usz) = 19.0;
+    k_q_p(r_arm_shz) = 19.0;
     k_q_p(r_arm_shx) = 10.0;  
     k_q_p(r_arm_ely) = 12.0;
     k_q_p(r_arm_elx) = 20.0; 
@@ -327,7 +327,7 @@ switch atlas_version
     % k_qd_p(l_leg_kny) = 0.2;
     % k_qd_p(l_leg_aky) = 2.5;
     % k_qd_p(l_leg_akx) = 0.1;
-    k_qd_p(l_arm_usz) = 0.85; 
+    k_qd_p(l_arm_shz) = 0.85; 
     k_qd_p(l_arm_shx) = 1.25;  
     k_qd_p(l_arm_ely) = 0.25; 
     k_qd_p(l_arm_elx) = 1.75;
@@ -339,7 +339,7 @@ switch atlas_version
     % k_qd_p(r_leg_kny) = k_qd_p(l_leg_kny);
     % k_qd_p(r_leg_aky) = k_qd_p(l_leg_aky);
     % k_qd_p(r_leg_akx) = k_qd_p(l_leg_akx);
-    k_qd_p(r_arm_usz) = 1.5;
+    k_qd_p(r_arm_shz) = 1.5;
     k_qd_p(r_arm_shx) = 1.25;
     k_qd_p(r_arm_ely) = 0.25; 
     k_qd_p(r_arm_elx) = 0.5; 
@@ -364,13 +364,13 @@ switch atlas_version
     k_f_p(r_leg_kny) = 0.02; % 02-03-14, f+v 
     k_f_p(r_leg_aky) = 0.45; % 02-03-14, f+v
     k_f_p(r_leg_akx) = 0.75; % 02-03-14, f+v 
-    k_f_p(l_arm_usz) = 0.08; % 9-17-13
+    k_f_p(l_arm_shz) = 0.08; % 9-17-13
     k_f_p(l_arm_shx) = 0.125; % 9-17-13
     k_f_p(l_arm_ely) = 0.115; % 9-17-13
     k_f_p(l_arm_elx) = 0.135; % 9-17-13
     k_f_p(l_arm_uwy) = 0.085; % 9-17-13
     k_f_p(l_arm_mwx) = 0.125; % 9-17-13
-    k_f_p(r_arm_usz) = 0.09; % 10-09-13
+    k_f_p(r_arm_shz) = 0.09; % 10-09-13
     k_f_p(r_arm_shx) = 0.125; % 9-17-13
     k_f_p(r_arm_ely) = 0.125; % 9-17-13
     k_f_p(r_arm_elx) = 0.125; % 9-17-13
@@ -395,8 +395,8 @@ switch atlas_version
     ff_qd_d(r_leg_akx) = 100.0; 
 
     % velocity, feedforward
-    ff_qd(l_arm_usz) = 0.3; % 9-19-13, fc
-    ff_qd(r_arm_usz) = 0.3; % 9-19-13, fc
+    ff_qd(l_arm_shz) = 0.3; % 9-19-13, fc
+    ff_qd(r_arm_shz) = 0.3; % 9-19-13, fc
     ff_qd(l_arm_shx) = 0.275; % 9-19-13, fc
     ff_qd(r_arm_shx) = 0.275; % 9-18-13, fc
     ff_qd(l_arm_ely) = 0.25; % 9-19-13, fc
@@ -416,9 +416,9 @@ switch atlas_version
     l_arm_ely  = 5;
     l_arm_mwx  = 6;
     l_arm_shx  = 7;
-    l_arm_usz  = 8;
+    l_arm_shz  = 8;
     l_arm_uwy  = 9;
-    l_arm_uwy2 = 10;
+    l_arm_lwy = 10;
     l_leg_kny  = 11;
     l_leg_akx  = 12;
     l_leg_hpy  = 13;
@@ -430,9 +430,9 @@ switch atlas_version
     r_arm_ely  = 19;
     r_arm_mwx  = 20;
     r_arm_shx  = 21;
-    r_arm_usz  = 22;
+    r_arm_shz  = 22;
     r_arm_uwy  = 23;
-    r_arm_uwy2 = 24;
+    r_arm_lwy = 24;
     r_leg_kny  = 25;
     r_leg_akx  = 26;
     r_leg_hpy  = 27;
@@ -463,7 +463,7 @@ switch atlas_version
     k_q_p(l_leg_kny) = 30.0;
     k_q_p(l_leg_aky) = 1000.0;
     k_q_p(l_leg_akx) = 1000.0;
-    % k_q_p(l_arm_usz) = 4.0; 
+    % k_q_p(l_arm_shz) = 4.0; 
     % k_q_p(l_arm_shx) = 4.0;  
     % k_q_p(l_arm_ely) = 4.0; 
     % k_q_p(l_arm_elx) = 4.0; 
@@ -475,7 +475,7 @@ switch atlas_version
     k_q_p(r_leg_kny) = k_q_p(l_leg_kny);
     k_q_p(r_leg_aky) = k_q_p(l_leg_aky);
     k_q_p(r_leg_akx) = k_q_p(l_leg_akx);
-    % k_q_p(r_arm_usz) = 4.0; 
+    % k_q_p(r_arm_shz) = 4.0; 
     % k_q_p(r_arm_shx) = 4.0;  
     % k_q_p(r_arm_ely) = 4.0; 
     % k_q_p(r_arm_elx) = 4.0; 
@@ -494,26 +494,26 @@ switch atlas_version
     % k_q_p(l_leg_kny) = 60.0;% * 0.1;
     % k_q_p(l_leg_aky) = 1000.0;% * 0.1;
     % k_q_p(l_leg_akx) = 1000.0;% * 0.1;
-    k_q_p(l_arm_usz) = 10.5;
+    k_q_p(l_arm_shz) = 10.5;
     k_q_p(l_arm_shx) = 10.0; 
     k_q_p(l_arm_ely) = 15.0; 
     k_q_p(l_arm_elx) = 30.0;
     k_q_p(l_arm_uwy) = 10.0; 
     k_q_p(l_arm_mwx) = 10.0; 
-    k_q_p(l_arm_uwy2) = 10.0; % UNTESTED
+    k_q_p(l_arm_lwy) = 10.0; % UNTESTED
     % k_q_p(r_leg_hpz) = k_q_p(l_leg_hpz);
     % k_q_p(r_leg_hpx) = k_q_p(l_leg_hpx);
     % k_q_p(r_leg_hpy) = k_q_p(l_leg_hpy);
     % k_q_p(r_leg_kny) = k_q_p(l_leg_kny);
     % k_q_p(r_leg_aky) = k_q_p(l_leg_aky);
     % k_q_p(r_leg_akx) = k_q_p(l_leg_akx);
-    k_q_p(r_arm_usz) = 19.0;
+    k_q_p(r_arm_shz) = 19.0;
     k_q_p(r_arm_shx) = 10.0;  
     k_q_p(r_arm_ely) = 12.0;
     k_q_p(r_arm_elx) = 20.0; 
     k_q_p(r_arm_uwy) = 16.0;
     k_q_p(r_arm_mwx) = 14.0; 
-    k_q_p(r_arm_uwy2) = 16.0; % UNTESTED
+    k_q_p(r_arm_lwy) = 16.0; % UNTESTED
 
 
     % velocity, proportunal
@@ -533,26 +533,26 @@ switch atlas_version
     % k_qd_p(l_leg_kny) = 0.2;
     % k_qd_p(l_leg_aky) = 2.5;
     % k_qd_p(l_leg_akx) = 0.1;
-    k_qd_p(l_arm_usz) = 0.85; 
+    k_qd_p(l_arm_shz) = 0.85; 
     k_qd_p(l_arm_shx) = 1.25;  
     k_qd_p(l_arm_ely) = 0.25; 
     k_qd_p(l_arm_elx) = 1.75;
     k_qd_p(l_arm_uwy) = 0.05; 
     k_qd_p(l_arm_mwx) = 0.25; 
-    k_qd_p(l_arm_uwy2) = 0.05; % UNTESTED
+    k_qd_p(l_arm_lwy) = 0.05; % UNTESTED
     % k_qd_p(r_leg_hpz) = k_qd_p(l_leg_hpz);
     % k_qd_p(r_leg_hpx) = k_qd_p(l_leg_hpx);
     % k_qd_p(r_leg_hpy) = k_qd_p(l_leg_hpy);
     % k_qd_p(r_leg_kny) = k_qd_p(l_leg_kny);
     % k_qd_p(r_leg_aky) = k_qd_p(l_leg_aky);
     % k_qd_p(r_leg_akx) = k_qd_p(l_leg_akx);
-    k_qd_p(r_arm_usz) = 1.5;
+    k_qd_p(r_arm_shz) = 1.5;
     k_qd_p(r_arm_shx) = 1.25;
     k_qd_p(r_arm_ely) = 0.25; 
     k_qd_p(r_arm_elx) = 0.5; 
     k_qd_p(r_arm_uwy) = 0.25; 
     k_qd_p(r_arm_mwx) = 0.25;
-    k_qd_p(r_arm_uwy2) = 0.25; % UNTESTED
+    k_qd_p(r_arm_lwy) = 0.25; % UNTESTED
 
 
 
@@ -572,20 +572,20 @@ switch atlas_version
     k_f_p(r_leg_kny) = 0.02; % 02-03-14, f+v 
     k_f_p(r_leg_aky) = 0.45; % 02-03-14, f+v
     k_f_p(r_leg_akx) = 0.75; % 02-03-14, f+v 
-    k_f_p(l_arm_usz) = 0.08; % 9-17-13
+    k_f_p(l_arm_shz) = 0.08; % 9-17-13
     k_f_p(l_arm_shx) = 0.125; % 9-17-13
     k_f_p(l_arm_ely) = 0.115; % 9-17-13
     k_f_p(l_arm_elx) = 0.135; % 9-17-13
     k_f_p(l_arm_uwy) = 0.085; % 9-17-13
     k_f_p(l_arm_mwx) = 0.125; % 9-17-13
-    k_f_p(l_arm_uwy2) = 0.085; % UNTESTED
-    k_f_p(r_arm_usz) = 0.09; % 10-09-13
+    k_f_p(l_arm_lwy) = 0.085; % UNTESTED
+    k_f_p(r_arm_shz) = 0.09; % 10-09-13
     k_f_p(r_arm_shx) = 0.125; % 9-17-13
     k_f_p(r_arm_ely) = 0.125; % 9-17-13
     k_f_p(r_arm_elx) = 0.125; % 9-17-13
     k_f_p(r_arm_uwy) = 0.085; % 9-17-13
     k_f_p(r_arm_mwx) = 0.125; % 9-17-13
-    k_f_p(r_arm_uwy2) = 0.085; % UNTESTED
+    k_f_p(r_arm_lwy) = 0.085; % UNTESTED
 
     % velocity desired, feedforward
     ff_qd_d(back_bkz)  = 1.0;
@@ -605,8 +605,8 @@ switch atlas_version
     ff_qd_d(r_leg_akx) = 100.0; 
 
     % velocity, feedforward
-    ff_qd(l_arm_usz) = 0.3; % 9-19-13, fc
-    ff_qd(r_arm_usz) = 0.3; % 9-19-13, fc
+    ff_qd(l_arm_shz) = 0.3; % 9-19-13, fc
+    ff_qd(r_arm_shz) = 0.3; % 9-19-13, fc
     ff_qd(l_arm_shx) = 0.275; % 9-19-13, fc
     ff_qd(r_arm_shx) = 0.275; % 9-18-13, fc
     ff_qd(l_arm_ely) = 0.25; % 9-19-13, fc
@@ -617,8 +617,8 @@ switch atlas_version
     ff_qd(r_arm_uwy) = 0.22; % 9-18-13, fc
     ff_qd(l_arm_mwx) = 0.225; % 9-19-13, fc
     ff_qd(r_arm_mwx) = 0.225; % 9-19-13, fc
-    ff_qd(l_arm_uwy2) = 0.22; % UNTESTED
-    ff_qd(r_arm_uwy2) = 0.22; % UNTESTED
+    ff_qd(l_arm_lwy) = 0.22; % UNTESTED
+    ff_qd(r_arm_lwy) = 0.22; % UNTESTED
   otherwise
     error('getAtlasGains:BadAtlasVersion', ...
       'Invalid Atlas version. Valid values are 3, 4, and 5');
