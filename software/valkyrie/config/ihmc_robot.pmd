@@ -38,6 +38,11 @@ group "2.plan_and_control" {
        stop_signal = 15;
     }
 
+    cmd "plan-passthrough" {
+       exec = "val-plan-passthrough";
+       host = "localhost";
+    }
+
 }
 
 group "5.maps" {
