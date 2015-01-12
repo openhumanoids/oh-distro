@@ -5,7 +5,7 @@ group "0.params_and_model_pub" {
     }
 
     cmd "model_LR_RR" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v4/model_LR_RR.urdf";
         host = "base";
     }
 }
@@ -18,7 +18,7 @@ group "1.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync";
+        exec = "drc-state-sync -b";
         host = "robot";
     }
     cmd "fusion" {
@@ -32,7 +32,7 @@ group "2.plan_and_control" {
 
 
     cmd "AtlasController" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine(2,0,4);\"";
         host = "robot";
         stop_signal = 15;
     }
