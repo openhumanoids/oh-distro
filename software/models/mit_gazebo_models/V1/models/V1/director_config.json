@@ -7,29 +7,65 @@
     "playback":   "./urdf/V1_sim_mit.urdf",
     "teleop":     "./urdf/V1_sim_mit.urdf"
   },
-  "teleopJointMap": {
-     "backRoll": "back_bkx",
-     "backPitch": "back_bky",
-     "backYaw": "back_bkz",
-     "baseX": "base_x",
-     "baseY": "base_y",
-     "baseZ": "base_z",
-     "baseRoll": "base_roll",
-     "basePitch": "base_pitch",
-     "baseYaw": "base_yaw",
-     "leftShoulderX": "l_arm_usy",
-     "leftShoulderY": "l_arm_shx",
-     "leftShoulderZ": "l_arm_ely",
-     "leftElbow": "l_arm_elx",
-     "leftWristX": "l_arm_uwy",
-     "leftWristY": "l_arm_mwx",
-     "rightShoulderX": "r_arm_usy",
-     "rightShoulderY": "r_arm_shx",
-     "rightShoulderZ": "r_arm_ely",
-     "rightElbow": "r_arm_elx",
-     "rightWristX": "r_arm_uwy",
-     "rightWristY": "r_arm_mwx"
-  },
+
+  "teleopJointGroups" : [
+      { "name" : "Base",
+        "joints" : [
+          "base_x",
+          "base_y",
+          "base_z",
+          "base_roll",
+          "base_pitch",
+          "base_yaw"
+          ],
+        "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
+      },
+
+      { "name" : "Back",
+        "joints" : [
+          "back_bkx",
+          "back_bky",
+          "back_bkz"
+          ],
+        "labels" : ["roll (x)", "pitch (y)", "yaw (z)"]
+      },
+
+      { "name" : "Left Arm",
+        "joints" : [
+          "l_arm_usy",
+          "l_arm_shx",
+          "l_arm_ely",
+          "l_arm_elx",
+          "l_arm_uwy",
+          "l_arm_mwx",
+          "l_arm_lwz"
+          ],
+        "labels" : ["usy", "shx", "ely", "elx", "uwy", "mwx", "lwz"]
+      },
+
+      { "name" : "Right Arm",
+        "joints" : [
+          "r_arm_usy",
+          "r_arm_shx",
+          "r_arm_ely",
+          "r_arm_elx",
+          "r_arm_uwy",
+          "r_arm_mwx",
+          "r_arm_lwz"
+          ],
+        "labels" : ["usy", "shx", "ely", "elx", "uwy", "mwx", "lwz"]
+      },
+
+      { "name" : "Neck",
+        "joints" : [
+          "neck_ay",
+          "neck_by",
+          "neck_cy"
+          ],
+        "labels" : ["ay", "by", "cy"]
+      }
+    ],
+
   "drakeJointNames": [
     "base_x",
     "base_y",

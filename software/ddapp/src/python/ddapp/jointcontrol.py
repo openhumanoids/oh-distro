@@ -63,7 +63,7 @@ class JointController(object):
         assert os.path.splitext(filename)[1] == '.mat'
         import scipy.io
         matData = scipy.io.loadmat(filename)
-        return matData['xstar'][:self.numberOfJoints].flatten()
+        return np.array(matData['xstar'][:self.numberOfJoints].flatten(), dtype=float)
 
     def addLCMUpdater(self, channelName):
         '''
@@ -91,10 +91,6 @@ class JointController(object):
         lcmUtils.removeSubscriber(self.subscriber)
         self.subscriber = None
 
-    @staticmethod
-    def getNominalPoseMatFile():
-        #return os.path.join(getDRCBaseDir(), 'software/drake/examples/Atlas/data/atlas_fp.mat')
-        return os.path.join(getDRCBaseDir(), 'software/control/matlab/data/atlas_bdi_fp.mat')
 
 class MidiJointControl(TimerCallback):
 

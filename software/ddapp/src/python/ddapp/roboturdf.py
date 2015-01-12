@@ -169,7 +169,6 @@ class RobotModelItem(om.ObjectModelItem):
 def loadRobotModel(name, view=None, parent='planning', urdfFile=None, color=None, visible=True):
 
     if not urdfFile:
-        #urdfFile = os.path.join(getRobotModelDir(), 'model_%s.urdf' % defaultUrdfHands)
         urdfFile = urdfConfig['default']
 
     if isinstance(parent, str):
@@ -191,10 +190,6 @@ def loadRobotModel(name, view=None, parent='planning', urdfFile=None, color=None
     return obj, jointController
 
 
-def getRobotModelDir():
-    return os.path.join(getDRCBaseDir(), 'software/models/mit_gazebo_models/mit_robot')
-
-
 def loadRobotModelFromFile(filename):
     model = PythonQt.dd.ddDrakeModel()
     if not model.loadFromFile(filename):
@@ -207,6 +202,14 @@ def loadRobotModelFromString(xmlString):
     if not model.loadFromXML(xmlString):
         return None
     return model
+
+
+def openUrdf(filename, view):
+    model = loadRobotModelFromFile(filename)
+    if model:
+        model = RobotModelItem(model)
+        om.addToObjectModel(model)
+        model.addToView(view)
 
 
 def getExistingRobotModels():
@@ -260,20 +263,26 @@ def setupPackagePaths():
         'ros_workspace/sandia-hand/ros/sandia_hand_description',
         'software/models/atlas_v4',
         'software/models/atlas_v5',
-        'software/models/common_components/robotiq_hand_description/',
-        'software/models/common_components/multisense_sl/',
         'software/models/mit_gazebo_models/mit_robot',
         'software/models/mit_gazebo_models/V1',
         'software/models/mit_gazebo_models/irobot_hand',
         'software/models/mit_gazebo_models/multisense_sl',
         'software/models/mit_gazebo_models/handle_description',
         'software/models/mit_gazebo_models/hook_description',
-        'software/models/mit_gazebo_models/hook_description',
         'software/models/mit_gazebo_models/robotiq_hand_description',
                   ]
 
     for path in searchPaths:
         PythonQt.dd.ddDrakeModel.addPackageSearchPath(os.path.join(getDRCBaseDir(), path))
+
+    environmentVariables = ['ROS_PACKAGE_PATH']
+
+    for e in environmentVariables:
+        paths = os.environ.get(e, '').split(':')
+        for path in paths:
+            for root, dirnames, filenames in os.walk(path):
+                if os.path.isfile(os.path.join(root, 'package.xml')) or os.path.isfile(os.path.join(root, 'manifest.xml')):
+                    PythonQt.dd.ddDrakeModel.addPackageSearchPath(root)
 
 
 setupPackagePaths()
@@ -524,11 +533,24 @@ class HandLoader(object):
 
 def setRobotiqJointsToOpenHand(robotModel):
     for side in ['left', 'right']:
-        setRobotiqJoints(robotModel, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+        setRobotiqJoints(robotModel, side, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
 
 def setRobotiqJointsToClosedHand(robotModel):
     for side in ['left', 'right']:
-        setRobotiqJoints(robotModel, [1.0, 1.0, 1.0], [0.0, 0.0, 0.0])
+        setRobotiqJoints(robotModel, side, [1.0, 1.0, 1.0], [0.0, 0.0, 0.0])
+
+def setRobotiqJointsToPinchOpenHand(robotModel):
+    for side in ['left', 'right']:
+        setRobotiqJoints(robotModel, side, [0.25, 0.0, -0.55], [-0.15, 0.15, 0.0])
+
+def setRobotiqJointsToPinchClosedHand(robotModel):
+    for side in ['left', 'right']:
+        setRobotiqJoints(robotModel, side, [0.25, 0.0, -0.55], [-0.15, 0.15, 0.0])
+
+def setRobotiqJointsToPinchClosedHand(robotModel):
+    for side in ['left', 'right']:
+        setRobotiqJoints(robotModel, side, [0.8, 0.0, -0.55], [-0.15, 0.15, 0.0])
+
 
 def setRobotiqJoints(robotModel, side, fingers=[0.0, 0.0, 0.0], palm=[0.0, 0.0, 0.0]):
     robotModel.model.setJointPositions(np.tile(fingers, 3), ['%s_finger_%s_joint_%d' % (side, n, i+1) for n in ['1', '2', 'middle'] for i in range(3)])

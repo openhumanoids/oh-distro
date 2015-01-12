@@ -387,9 +387,12 @@ if usePlanning:
     def drillTrackerOff():
         om.findObjectByName('Multisense').model.showRevolutionCallback = None
 
-
-    handFactory = roboturdf.HandFactory(robotStateModel)
-    handModels = [handFactory.getLoader(side) for side in ['left', 'right']]
+    if 'l_hand' in robotStateModel.model.getLinkNames():
+        handFactory = roboturdf.HandFactory(robotStateModel)
+        handModels = [handFactory.getLoader(side) for side in ['left', 'right']]
+    else:
+        handFactory = None
+        handModels = []
 
     ikPlanner = ikplanner.IKPlanner(ikServer, ikRobotModel, ikJointController, handModels)
     ikPlanner.addPostureGoalListener(robotStateJointController)
@@ -402,7 +405,7 @@ if usePlanning:
     manipPlanner.connectPlanReceived(playbackPanel.setPlan)
 
     teleoppanel.init(robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController,
-                     ikPlanner, manipPlanner, handFactory.getLoader('left'), handFactory.getLoader('right'), playbackPanel.setPlan, playbackPanel.hidePlan)
+                     ikPlanner, manipPlanner, playbackPanel.setPlan, playbackPanel.hidePlan)
 
 
 
@@ -447,6 +450,11 @@ if usePlanning:
 
     for taskDescription in loadTaskDescriptions():
         taskManagerPanel.taskQueueWidget.loadTaskDescription(taskDescription[0], taskDescription[1])
+    taskManagerPanel.taskQueueWidget.setCurrentQueue('Task library')
+
+    for obj in om.getObjects():
+        obj.setProperty('Deletable', False)
+
 
 if useActionManager:
 
