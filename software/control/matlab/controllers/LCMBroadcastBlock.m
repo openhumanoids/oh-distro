@@ -12,7 +12,6 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     joint_names_cache;
     r_hand_joint_names_cache;
     r_hand_joint_inds;
-    foot_indices;
     
     % FC publish period
     fc_publish_period = 0.01;
@@ -20,7 +19,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % Atlas, for usefulness
     r;
     r_control;
-    nq;
+    nq_control;
 
     % Structure containing the frame numbers of the different states
     % inside the input frame.
@@ -224,14 +223,19 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       for i=1:length(desired_joint_name_order)
         obj.reordering(i) = find(strcmp(desired_joint_name_order{i}, atlascoordnames));
       end
-      obj.foot_indices = [r.findLinkId('l_foot'), r.findLinkId('r_foot')];
       
       obj.r = r;
-      obj.nq = obj.r.getNumPositions();
       obj.r_control = r_control;
-      obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
-      obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
-      obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
+      obj.nq_control = obj.r_control.getNumPositions();
+      if (isa(input_frame, 'MultiCoordinateFrame'))
+        obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
+        obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
+        obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
+      else
+        obj.frame_nums.atlas_state = input_frame;
+        obj.frame_nums.hand_state = '';
+        obj.frame_nums.hokuyo_state = '';
+      end
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -294,7 +298,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
         x = atlas_state;
-        fc = obj.getFootContacts(x(1:obj.nq));
+        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
@@ -379,7 +383,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         % Get binary foot contact, call it force:
         x = atlas_state;
-        fc = obj.getFootContacts(x(1:obj.nq));
+        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
 
         % pack it up
         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
@@ -513,19 +517,6 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       varargout = varargin;
       
-    end
-    
-    function fc = getFootContacts(obj, q)
-      [phiC,~,~,~,idxA,idxB] = obj.r_control.collisionDetect(q,false);
-      within_thresh = phiC < 0.002;
-      contact_pairs = [idxA(within_thresh); idxB(within_thresh)];
-
-      % The following would be faster but would require us to have
-      % hightmaps in Bullet
-      %[~,~,idxA,idxB] = obj.r_control.allCollisions(x(1:obj.nq));
-      %contact_pairs = [idxA; idxB];
-
-      fc = any(bsxfun(@eq, contact_pairs(:), obj.foot_indices),1)';
     end
   end
   
