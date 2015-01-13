@@ -85,6 +85,7 @@ function sys = constructQPFeedbackCombination(r,qp,fc,pd,qt, lfoot_controller,rf
 		ins(1).input = 1;
 		ins(2).system = 2;
 		ins(2).input = 2;
+    pd = pd.setOutputFrame(drcFrames.AtlasCoordinates(r));
 		sys = mimoFeedback(pd,sys,[],[],ins,outs);
 		clear ins;
 	end
