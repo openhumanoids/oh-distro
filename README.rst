@@ -168,6 +168,10 @@ Gurobi is a solver used in our walking controller. Install its dependencies with
 
     apt-get install curl libwww-perl libterm-readkey-perl
 
+You will also need to generate an academic licence: First make an account 
+http://www.gurobi.com/download/licenses/free-academic , then generate a feee academic lisense
+(begining grbgetkey) and place it in the suggested location (~/gurobi.lic) 
+
 Note that the tarball for Gurobi is part of our tree. The Gurobi pod uses it
 to avoid needing to download it from Gurobi.
 
