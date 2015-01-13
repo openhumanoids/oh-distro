@@ -18,12 +18,12 @@ classdef PositionRefFeedthroughBlock < DrakeSystem
  
       if isfield(options,'gains_id')
         typecheck(options.gains_id,'char');
-        posref = AtlasPositionRef(r,options.gains_id);
+        posref = drcFrames.AtlasPositionRef(r,options.gains_id);
       else
-        posref = AtlasPositionRef(r);
+        posref = drcFrames.AtlasPositionRef(r);
       end
   
-      coords = AtlasCoordinates(r);
+      coords = drcFrames.AtlasCoordinates(r);
       obj = obj@DrakeSystem(0,0,coords.dim,posref.dim,true,true);
       obj = setInputFrame(obj,coords);
       obj = setOutputFrame(obj,posref);

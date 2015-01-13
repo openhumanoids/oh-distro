@@ -11,7 +11,7 @@ classdef SilentInitController < DRCController
         options=struct();
       end
       sys = DummySys(r,options);
-      obj = obj@DRCController(name,sys,AtlasState(r));
+      obj = obj@DRCController(name,sys,drcFrames.AtlasState(r));
       obj.robot = r;
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),'manip');
       obj = addLCMTransition(obj,'ATLAS_COMMAND_UNSAFE',drc.atlas_command_t(),'manip');  

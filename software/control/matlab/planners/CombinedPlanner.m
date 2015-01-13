@@ -20,7 +20,7 @@ classdef CombinedPlanner
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-      r = Atlas([],options);
+      r = DRCAtlas([],options);
       r = removeCollisionGroupsExcept(r,{'heel','toe'});
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);

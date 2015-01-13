@@ -2,7 +2,7 @@ function runWrenchHandMassCompensationTest()
 
 options.floating = true;
 options.dt = 0.001;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 % atlas state subscriber
 state_frame = r.getStateFrame();

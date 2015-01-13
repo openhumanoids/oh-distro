@@ -6,11 +6,11 @@ if nargin < 4
   T=5.0;
 end
 
-if isa(input_frame,'AtlasPositionRef')
+if isa(input_frame,'drcFrames.AtlasPositionRef')
   input_mode = 1;
-elseif isa(input_frame,'AtlasPosTorqueRef')
+elseif isa(input_frame,'drcFrames.AtlasPosTorqueRef')
   input_mode = 2;
-elseif isa(input_frame,'AtlasPosVelTorqueRef')
+elseif isa(input_frame,'drcFrames.AtlasPosVelTorqueRef')
   input_mode = 3;
 else
   error('input frame must be of type AtlasPositionRef, AtlasPosTorqueRef, or AtlasPosVelTorqueRef')

@@ -5,7 +5,7 @@ classdef AtlasCoordinates < LCMCoordinateFrame & Singleton
       typecheck(r,'TimeSteppingRigidBodyManipulator');
 
       nq = r.getNumPositions();
-      obj = obj@LCMCoordinateFrame('AtlasCoordinates',nq,'x'); 
+      obj = obj@LCMCoordinateFrame('drcFrames.AtlasCoordinates',nq,'x'); 
       obj = obj@Singleton();
 
       if isempty(obj.lcmcoder)

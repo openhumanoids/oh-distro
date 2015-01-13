@@ -1,6 +1,6 @@
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-r = Atlas();
+r = DRCAtlas();
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 

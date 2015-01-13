@@ -87,10 +87,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
-      if (isa(obj.getInputFrame, 'AtlasState'))
+      if (isa(obj.getInputFrame, 'drcFrames.AtlasState'))
         atlascoordnames = obj.getInputFrame.getCoordinateNames;
       else
-        atlascoordnames = obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+        atlascoordnames = obj.getInputFrame.getFrameByName('drcFrames.AtlasState').getCoordinateNames;
       end
       atlascoordnames = atlascoordnames(7:length(atlascoordnames)/2); % cut off the floating base
 
@@ -228,8 +228,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       obj.r_control = r_control;
       obj.nq_control = obj.r_control.getNumPositions();
       if (isa(input_frame, 'MultiCoordinateFrame'))
-        obj.frame_nums.atlas_state = input_frame.getFrameNumByName('AtlasState');
-        obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
+        obj.frame_nums.atlas_state = input_frame.getFrameNumByName('drcFrames.AtlasState');
+        obj.frame_nums.hand_state = input_frame.getFrameNumByName('drcFrames.HandState');
         obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
       else
         obj.frame_nums.atlas_state = input_frame;
@@ -286,7 +286,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % we're publishing ground truth anyway)
       if (obj.publish_truth && mod(t, obj.fc_publish_period)  < obj.r.timestep)
         % Get foot force state
-%         num = inp.getFrameNumByName('ForceTorque');
+%         num = inp.getFrameNumByName('drcFrames.ForceTorque');
 %         hand_state = [];
 %         if (length(num)~=2)
 %           lfoot_force = [];

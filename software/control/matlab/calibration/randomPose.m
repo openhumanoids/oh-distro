@@ -2,7 +2,7 @@ function [xstar,info,r,ustar,x0,constraints,ikoptions] = randomPose(r,x0,n,v)
   if nargin < 1
     options.floating = true;
     options.dt = 0.001;
-    r = Atlas([getenv('DRC_PATH') '/models/mit_gazebo_models/mit_robot_drake/model_param.urdf']);
+    r = DRCAtlas([getenv('DRC_PATH') '/models/mit_gazebo_models/mit_robot_drake/model_param.urdf']);
   end
 
   l_foot = findLinkId(r,'l_foot');

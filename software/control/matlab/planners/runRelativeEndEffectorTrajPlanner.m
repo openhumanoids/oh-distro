@@ -6,7 +6,7 @@ function runRelativeEndEffectorTrajPlanner(channel,delim,options)
   status_code = 6;
   waiting = true;
 
-  r = Atlas();
+  r = DRCAtlas();
   nq = r.getNumPositions();
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
   qstar = xstar(1:nq);

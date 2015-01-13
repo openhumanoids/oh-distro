@@ -317,8 +317,8 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       % hightmaps in Bullet
       %[~,~,idxA,idxB] = obj.r_control.allCollisions(x(1:obj.nq_control));
       %contact_pairs = [idxA; idxB];
-      
-      fc = any(bsxfun(@eq, contact_pairs(:), obj.foot_indices),1)';
+      foot_indices = [obj.foot_body_id.right, obj.foot_body_id.left];
+      fc = any(bsxfun(@eq, contact_pairs(:), foot_indices),1)';
     end
     
     function [zmin,zmax] = getPelvisHeightLimits(obj,q) % for BDI manip mode
@@ -494,7 +494,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     hands = 0; % 0, none; 1, Robotiq
     
     % preconstructing these for efficiency
-    foot_indices;
     left_full_support
     left_toe_support
     right_full_support

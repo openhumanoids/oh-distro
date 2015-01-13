@@ -3,7 +3,7 @@ function test_stateless_planner()
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 options.visual = false; % loads faster
-r = Atlas([],options);
+r = DRCAtlas([],options);
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 

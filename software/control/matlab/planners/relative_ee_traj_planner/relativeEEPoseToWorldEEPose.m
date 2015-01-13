@@ -1,5 +1,5 @@
 function [ee_pose,ref_pose] = relativeEEPoseToWorldEEPose(ref_link_name,ee_pose_relative,x0,r)
-  if nargin < 4, r = Atlas(); end
+  if nargin < 4, r = DRCAtlas(); end
   nq = r.getNumPositions();
   kinsol = doKinematics(r,x0(1:nq));
   ref_idx = r.findLinkId(ref_link_name);

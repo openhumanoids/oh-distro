@@ -19,7 +19,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       typecheck(controller_data,'AtlasQPControllerData');
       
       input_frame = getStateFrame(r);
-      output_frame = AtlasPosVelTorqueRef(r);
+      output_frame = drcFrames.AtlasPosVelTorqueRef(r);
       
       force_controlled_joints = controller_data.force_controlled_joints;
       position_controlled_joints = controller_data.position_controlled_joints;
@@ -97,8 +97,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
         options.contact_threshold = 0.002;
         options.use_contact_logic_OR = true;
       end
-      obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
-      obj.foot_contact_block = FootContactBlock(r,controller_data,options);
+      obj.qtraj_eval_block = atlasControllers.QTrajEvalBlock(r,controller_data,options);
+      obj.foot_contact_block = atlasControllers.FootContactBlock(r,controller_data,options);
       
       obj.robot = r;
       obj.input_map = getActuatedJoints(r);

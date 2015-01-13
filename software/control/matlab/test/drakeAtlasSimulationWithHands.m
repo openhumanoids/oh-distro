@@ -25,7 +25,7 @@ options.hokuyo = false; % don't need sensors on control copy
 options.foot_force_sensors = false;
 options.hands = 'robotiq_weight_only';
 options.atlas_version = atlas_version;
-r = Atlas([],options);
+r = DRCAtlas([],options);
 % This is the one that has all of the neat important simul attributes:
 options.hokuyo = true;
 options.hokuyo_spin_rate = 4;
@@ -33,7 +33,7 @@ options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
 options.hands = 'robotiq';
-r_hands = Atlas([],options);
+r_hands = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r_hands = r_hands.removeCollisionGroupsExcept({'heel','toe', 'palm', 'knuckle', 'default'});
 r = compile(r);

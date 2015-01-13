@@ -5,6 +5,7 @@
 function drakeWalkingWithSensor(use_mex,use_ik,use_bullet,use_angular_momentum,random_navgoal)
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
+import atlasControllers.*;
 
 plot_comtraj = true;
 
@@ -106,7 +107,7 @@ if plot_comtraj
 end
 
 ctrl_data = QPControllerData(true,struct(...
-  'acceleration_input_frame',AtlasCoordinates(r),...
+  'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
   'D',-getAtlasNominalCOMHeight()/9.81*eye(2),... % assumed COM height
   'Qy',eye(2),...
   'S',walking_ctrl_data.S,... % always a constant
