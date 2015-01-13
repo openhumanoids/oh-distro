@@ -249,7 +249,7 @@ classdef DRCAtlas < Atlas
     hokuyo_num_pts = 250;   
     hokuyo_max_range = 6; % meters?
     hokuyo_spin_rate = 16; % rad/sec
-    hokuyo_mirror_offset = [0.015; 0.0; -0.03]; % from multisense_sim.urdf
+    hokuyo_mirror_offset = [0.015; 0.0; -0.015]; % from multisense_sim.urdf
                                                % with a rotation
                                                % (due to rotation of 
                                                % frame)
