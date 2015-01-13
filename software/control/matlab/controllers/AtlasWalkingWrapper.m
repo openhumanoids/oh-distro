@@ -91,6 +91,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       outs(1).output = 1;
       outs(2).system = 2;
       outs(2).output = 2;
+      pd = pd.setOutputFrame(drcFrames.AtlasCoordinates(r));
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       clear ins;
     
