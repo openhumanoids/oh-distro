@@ -1,0 +1,4 @@
+<launch>
+  <node name="lcm2ros_ihmc" pkg="drc_translators" type="lcm2ros_ihmc" /> 
+  <node name="ros2lcm_ihmc" pkg="drc_translators" type="ros2lcm_ihmc" /> 
+</launch>
