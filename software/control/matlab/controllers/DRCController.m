@@ -216,7 +216,6 @@ classdef DRCController
             % append last input data
             tmpstruct = data.(fn{1});
             for i=1:obj.n_input_frames
-              obj.controller_input_frames{i}.name_hash
               tmpstruct.(strrep(obj.controller_input_frames{i}.name,'.','_')) = input_frame_data{i};
             end
             data.(fn{1}) = tmpstruct;
