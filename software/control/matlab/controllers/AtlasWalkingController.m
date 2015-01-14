@@ -127,7 +127,7 @@ classdef AtlasWalkingController < DRCController
       obj.controller_data.x0 = ConstantTrajectory([fasteval(walk_ctrl_data.zmptraj,T);0;0]);
       obj.controller_data.y0 = walk_ctrl_data.zmptraj;
       obj.controller_data.link_constraints = walk_ctrl_data.link_constraints;
-      obj.controller_data.qtraj = walk_ctrl_data.qtraj;
+      obj.controller_data.qtraj = walk_ctrl_data.q0;
 %       obj.controller_data.mu = msg_data.mu;
       obj.controller_data.plan_shift = [0;0;0];
       obj = setDuration(obj,T,false); % set the controller timeout
