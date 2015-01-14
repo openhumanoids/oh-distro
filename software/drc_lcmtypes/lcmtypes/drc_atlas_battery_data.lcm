@@ -1,0 +1,38 @@
+package drc;
+
+// Ancillary information from the robot
+
+struct atlas_battery_data_t
+{
+  int64_t utime;
+  // Battery charging indicator (0 or 1).  A value of 1 implies charging.
+  int32_t charging;
+
+  // Last measured instantaneous load voltage (volts)
+  float voltage;
+
+  // Last measured instantaneous load current (ampers)
+  float current;
+
+  // Estimated Time before battery failure (seconds)
+  // The seconds count will be multiples of 60 seconds due to granularity
+  float remaining_time;
+
+  // Estimated charge transfer capacity of the battery (Amp-hours)
+  // Analogous to your automobile's gas gauge.  It's an indication of the
+  // capability of the battery to deliver power at the current voltage.
+  float remaining_amp_hours;
+
+  // Estimated percentage of charge remaining in the battery (percent)
+  //
+  // The battery's output power will shut off when this reaches zero, causing
+  // the robot to fall.
+  float remaining_charge_percentage;
+
+  // Battery charge/discharge cycle count (count)
+  // The battery emulator does not support this feature and will return a
+  // constant value of 1.  When running on battery power, this field 
+  // increments with the number of charge-discharge cycles that the battery
+  // has experienced.
+  int32_t cycle_count;
+}

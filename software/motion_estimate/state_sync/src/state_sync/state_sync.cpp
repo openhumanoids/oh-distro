@@ -135,7 +135,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // if q < min_angle, use q + 2*pi
   max_encoder_wrap_angle_.assign(28,100000000);
   max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_UWY] = 4; // robot software v1.9
-  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_USY] = 0; // robot software v1.9
+  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_SHZ] = 0; // robot software v1.9
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
@@ -272,14 +272,14 @@ void state_sync::enableEncoders(bool enable) {
   stat_msg.value = str;
   lcm_->publish(("SYSTEM_STATUS"), &stat_msg);   
 
-  use_encoder_[Atlas::JOINT_R_ARM_USY] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_SHZ] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELX] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_UWY] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_MWX] = enable;
 
-  use_encoder_[Atlas::JOINT_L_ARM_USY] = enable;
+  use_encoder_[Atlas::JOINT_L_ARM_SHZ] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELX] = enable;
@@ -684,4 +684,3 @@ main(int argc, char ** argv){
   while(0 == lcm->handle());
   return 0;
 }
-

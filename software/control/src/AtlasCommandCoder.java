@@ -97,13 +97,13 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
         atlas_joint_names[13] = "r_leg_kny";
         atlas_joint_names[14] = "r_leg_aky";
         atlas_joint_names[15] = "r_leg_akx";
-        atlas_joint_names[16] = "l_arm_usz";
+        atlas_joint_names[16] = "l_arm_shz";
         atlas_joint_names[17] = "l_arm_shx";
         atlas_joint_names[18] = "l_arm_ely";
         atlas_joint_names[19] = "l_arm_elx";
         atlas_joint_names[20] = "l_arm_uwy";
         atlas_joint_names[21] = "l_arm_mwx";
-        atlas_joint_names[22] = "r_arm_usz";
+        atlas_joint_names[22] = "r_arm_shz";
         atlas_joint_names[23] = "r_arm_shx";
         atlas_joint_names[24] = "r_arm_ely";
         atlas_joint_names[25] = "r_arm_elx";
@@ -127,20 +127,20 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
         atlas_joint_names[13] = "r_leg_kny";
         atlas_joint_names[14] = "r_leg_aky";
         atlas_joint_names[15] = "r_leg_akx";
-        atlas_joint_names[16] = "l_arm_usz";
+        atlas_joint_names[16] = "l_arm_shz";
         atlas_joint_names[17] = "l_arm_shx";
         atlas_joint_names[18] = "l_arm_ely";
         atlas_joint_names[19] = "l_arm_elx";
         atlas_joint_names[20] = "l_arm_uwy";
         atlas_joint_names[21] = "l_arm_mwx";
-        atlas_joint_names[22] = "l_arm_uwy2";
-        atlas_joint_names[23] = "r_arm_usz";
+        atlas_joint_names[22] = "l_arm_lwy";
+        atlas_joint_names[23] = "r_arm_shz";
         atlas_joint_names[24] = "r_arm_shx";
         atlas_joint_names[25] = "r_arm_ely";
         atlas_joint_names[26] = "r_arm_elx";
         atlas_joint_names[27] = "r_arm_uwy";
         atlas_joint_names[28] = "r_arm_mwx";
-        atlas_joint_names[29] = "r_arm_uwy2";
+        atlas_joint_names[29] = "r_arm_lwy";
         break;
     }
 

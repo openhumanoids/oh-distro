@@ -35,7 +35,7 @@ if __name__ == '__main__':
                                          'osrf_original')
 
     atlasSkeletonSourcePath = os.path.join(sourceDirectory,
-                                           'urdf/atlas_v5.urdf')
+                                           'urdf/atlas_v5_simple_shapes.urdf')
     atlasTransmissionSourcePath = os.path.join(sourceDirectory,
                                                'urdf/atlas_v5.transmission')
 

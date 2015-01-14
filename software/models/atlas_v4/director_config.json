@@ -32,26 +32,26 @@
 
       { "name" : "Left Arm",
         "joints" : [
-          "l_arm_usz",
+          "l_arm_shz",
           "l_arm_shx",
           "l_arm_ely",
           "l_arm_elx",
           "l_arm_uwy",
           "l_arm_mwx"
           ],
-        "labels" : ["usz", "shx", "ely", "elx", "uwy", "mwx"]
+        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx"]
       },
 
       { "name" : "Right Arm",
         "joints" : [
-          "r_arm_usz",
+          "r_arm_shz",
           "r_arm_shx",
           "r_arm_ely",
           "r_arm_elx",
           "r_arm_uwy",
           "r_arm_mwx"
           ],
-        "labels" : ["usz", "shx", "ely", "elx", "uwy", "mwx"]
+        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx"]
       }
     ],
 
@@ -65,7 +65,7 @@
     "back_bkz",
     "back_bky",
     "back_bkx",
-    "l_arm_usz",
+    "l_arm_shz",
     "l_arm_shx",
     "l_arm_ely",
     "l_arm_elx",
@@ -77,7 +77,7 @@
     "l_leg_aky",
     "l_leg_akx",
     "l_arm_mwx",
-    "r_arm_usz",
+    "r_arm_shz",
     "r_arm_shx",
     "r_arm_ely",
     "r_arm_elx",
@@ -108,13 +108,13 @@
     "r_leg_kny",
     "r_leg_aky",
     "r_leg_akx",
-    "l_arm_usz",
+    "l_arm_shz",
     "l_arm_shx",
     "l_arm_ely",
     "l_arm_elx",
     "l_arm_uwy",
     "l_arm_mwx",
-    "r_arm_usz",
+    "r_arm_shz",
     "r_arm_shx",
     "r_arm_ely",
     "r_arm_elx",
