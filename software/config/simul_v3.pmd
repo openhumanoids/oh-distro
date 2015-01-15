@@ -90,8 +90,16 @@ cmd "drakeAtlasSimulation" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3);\"";
     host = "base";
 }
+cmd "drakeAtlasSimulationWithHands" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulationWithHands(3);\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulationValve" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulationValve(3);\"";
+    host = "base";
+}
 
-script "0.run_simul" {
+script "0.run_all_but_simul" {
     start cmd "base_deputy";
     wait ms 1000;
     start group "0.params_and_model_pub";
@@ -100,16 +108,9 @@ script "0.run_simul" {
     start cmd "joints2frames";
     start group "2.plan_and_control";
     start group "5.maps";
-    start cmd "drakeAtlasSimulation";
 }
 
-script "1.reset_simul" {
-    restart cmd "drakeAtlasSimulation";
-    wait ms 1000;
-    restart cmd "AtlasController";
-}
-
-script "2.run_all_but_simul" {
+script "2.run_all_but_simul_and_controller" {
     start cmd "base_deputy";
     wait ms 1000;
     start group "0.params_and_model_pub";
