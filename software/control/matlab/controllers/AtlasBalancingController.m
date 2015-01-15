@@ -187,7 +187,7 @@ classdef AtlasBalancingController < DRCController
           qtraj = ppval(qtraj,min(data.t,qtraj.breaks(end)));
         end
         obj.controller_data.qtraj = qtraj;
-      elseif isfield(data,'AtlasState')
+      elseif isfield(data,'drcFrames_AtlasState')
         standAtCurrentState(obj,data.AtlasState);
       end
       obj = setDuration(obj,inf,false); % set the controller timeout

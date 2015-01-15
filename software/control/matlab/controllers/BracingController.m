@@ -51,7 +51,7 @@ classdef BracingController < DRCController
           % d = load('data/atlas_bracing.mat');
           % q_nom = d.xstar(1:getNumPositions(obj.robot));
           
-          %           if isfield(data,'AtlasState')
+          %           if isfield(data,'drcFrames_AtlasState')
 %             x0 = data.AtlasState;
 %             q0 = x0(1:getNumPositions(obj.robot));
 % 
