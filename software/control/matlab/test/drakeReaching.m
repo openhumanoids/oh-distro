@@ -226,6 +226,7 @@ clear ins;
 % feedback PD trajectory controller 
 options.use_ik = false;
 pd = IKPDBlock(rctrl,ctrl_data,options);
+pd = pd.setOutputFrame(drcFrames.AtlasCoordinates(r));
 ins(1).system = 1;
 ins(1).input = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
