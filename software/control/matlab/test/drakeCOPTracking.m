@@ -11,7 +11,8 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 options.floating = true;
 options.dt = 0.002;
-r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+options.atlas_version = 3;
+r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
@@ -141,6 +142,7 @@ clear ins;
 options.Kp = 80.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
 pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
+pd = pd.setOutputFrame(drcFrames.AtlasCoordinates(r));
 
 ins(1).system = 1;
 ins(1).input = 1;
