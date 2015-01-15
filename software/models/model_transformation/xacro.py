@@ -42,8 +42,8 @@ import xml
 
 from xml.dom.minidom import parse
 
-from roslaunch import substitution_args
-from rosgraph.names import load_mappings
+#from roslaunch import substitution_args
+#from rosgraph.names import load_mappings
 
 try:
     _basestr = basestring
@@ -63,7 +63,7 @@ def isnumber(x):
 
 
 def eval_extension(str):
-    return substitution_args.resolve_args(str, context=substitution_args_context, resolve_anon=False)
+    return str; #roslib.substitution_args.resolve_args(str, resolve_anon=False)
 
 
 # Better pretty printing of xml
@@ -607,8 +607,8 @@ def print_usage(exit_code=0):
     sys.exit(exit_code)
 
 
-def set_substitution_args_context(context={}):
-    substitution_args_context['arg'] = context
+#def set_substitution_args_context(context={}):
+    #substitution_args_context['arg'] = context
 
 
 def main():
@@ -640,7 +640,7 @@ def main():
         print_usage(2)
 
     # Process substitution args
-    set_substitution_args_context(load_mappings(sys.argv))
+    #set_substitution_args_context(load_mappings(sys.argv))
 
     f = open(args[0])
     doc = None
