@@ -80,7 +80,7 @@ switch r.atlas_version
     Kd.r_leg_akx = Kd.l_leg_akx;
   case 4
     if strcmpi(mode,'default')
-      Kp.l_arm_usz = 625.0; %%%%%
+      Kp.l_arm_shz = 625.0; %%%%%
       Kp.l_arm_shx = 3000.0; %%%%%
       Kp.l_arm_ely = 650.0; %%%%%
       Kp.l_arm_elx = 1600.0; %%%%%s
@@ -97,7 +97,7 @@ switch r.atlas_version
       Kp.back_bky = 6000.0; %
       Kp.back_bkx = 2350.0; %
 
-      Kd.l_arm_usz = 38.0; %%%%%
+      Kd.l_arm_shz = 38.0; %%%%%
       Kd.l_arm_shx = 75.0; %%%%%
       Kd.l_arm_ely = 30.0; %%%%%
       Kd.l_arm_elx = 60.0; %%%%%
@@ -118,7 +118,7 @@ switch r.atlas_version
     end
 
     % copy left gains to right side
-    Kp.r_arm_usz = Kp.l_arm_usz;
+    Kp.r_arm_shz = Kp.l_arm_shz;
     Kp.r_arm_shx = Kp.l_arm_shx;
     Kp.r_arm_ely = Kp.l_arm_ely;
     Kp.r_arm_elx = Kp.l_arm_elx;
@@ -131,7 +131,7 @@ switch r.atlas_version
     Kp.r_leg_aky = Kp.l_leg_aky;
     Kp.r_leg_akx = Kp.l_leg_akx;
 
-    Kd.r_arm_usz = Kd.l_arm_usz;
+    Kd.r_arm_shz = Kd.l_arm_shz;
     Kd.r_arm_shx = Kd.l_arm_shx;
     Kd.r_arm_ely = Kd.l_arm_ely;
     Kd.r_arm_elx = Kd.l_arm_elx;

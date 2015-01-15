@@ -229,6 +229,7 @@ class EndEffectorTeleopPanel(object):
 
         constraints = []
         constraints.append(ikPlanner.createQuasiStaticConstraint())
+        constraints.append(ikPlanner.createLockedNeckPostureConstraint(startPoseName))
 
         if self.getLFootConstraint() == 'fixed':
             constraints.extend(ikPlanner.createFixedLinkConstraints(startPoseName, 'l_foot', tspan=[0.0, 1.0]))
@@ -518,10 +519,15 @@ class JointLimitChecker(object):
         self.inflationAmount = np.radians(0.1)
         self.timer = TimerCallback(targetFps=1)
         self.timer.callback = self.update
+        self.warningButton = None
         self.action = None
 
     def update(self):
-        self.checkJointLimits()
+        limitData = self.checkJointLimits()
+        if limitData:
+            self.notifyUserStatusBar(limitData)
+        else:
+            self.clearStatusBarWarning()
 
     def start(self):
         self.action.checked = True
@@ -543,7 +549,28 @@ class JointLimitChecker(object):
         else:
             self.stop()
 
-    def notifyUser(self, limitData):
+    def clearStatusBarWarning(self):
+        if self.warningButton:
+            self.warningButton.deleteLater()
+            self.warningButton = None
+
+    def notifyUserStatusBar(self, limitData):
+
+        if self.warningButton:
+            return
+
+        def showDialog():
+            limitData = self.checkJointLimits()
+            if limitData:
+                self.notifyUserDialog(limitData)
+            self.clearStatusBarWarning()
+
+        self.warningButton = QtGui.QPushButton('Joint Limit Warning')
+        self.warningButton.setStyleSheet("background-color:red")
+        self.warningButton.connect('clicked()', showDialog)
+        app.getMainWindow().statusBar().addPermanentWidget(self.warningButton)
+
+    def notifyUserDialog(self, limitData):
 
         message = '\n'.join(['%s by %.2f degrees' % (name, np.degrees(epsilon)) for name, epsilon in limitData])
         message = 'The following joints have been detected to exceed joint limts specified by the model:\n\n' + message + '\n\n'
@@ -582,8 +609,7 @@ class JointLimitChecker(object):
                 #print 'detected joint outside limit:', jointName, ' by %.3f degrees' % np.degrees(epsilon)
                 limitData.append((jointName, epsilon))
 
-        if limitData:
-            self.notifyUser(limitData)
+        return limitData
 
     def toJointIndex(self, jointName):
         return robotstate.getDrakePoseJointNames().index(jointName)
