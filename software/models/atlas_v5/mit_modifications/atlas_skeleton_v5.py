@@ -47,8 +47,8 @@ mit.renameJoints(urdf, jointNameMap)
 mit.replaceMeshPaths(urdf, "package://atlas_v5/meshes")
 mit.useObjMeshes(urdf)
 
-mit.addFrame(urdf, "l_foot_sole", "l_foot", "0.0480 0 -0.081119", "0 0 0")
-mit.addFrame(urdf, "r_foot_sole", "r_foot", "0.0480 0 -0.081119", "0 0 0")
+mit.addFrame(urdf, "l_foot_sole", "l_foot", "0.0426  0.0017 -0.07645", "0 0 0")
+mit.addFrame(urdf, "r_foot_sole", "r_foot", "0.0426 -0.0017 -0.07645", "0 0 0")
 mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
 
 urdf.write(full_mesh_urdf_path, pretty_print=True)
@@ -57,22 +57,22 @@ urdf.write(full_mesh_urdf_path, pretty_print=True)
 convex_hull_urdf = copy.deepcopy(urdf)
 mit.useConvexHullMeshes(convex_hull_urdf)
 
-mit.addContactPoint(convex_hull_urdf, "r_foot", "-0.082 0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "r_foot", "-0.0876 0.0626 -0.07645",
                     "heel")
-mit.addContactPoint(convex_hull_urdf, "r_foot", "-0.082 -0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "r_foot", "-0.0876 -0.066 -0.07645",
                     "heel")
-mit.addContactPoint(convex_hull_urdf, "r_foot", "0.178 0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "r_foot", "0.1728 0.0626 -0.07645",
                     "toe")
-mit.addContactPoint(convex_hull_urdf, "r_foot", "0.178 -0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "r_foot", "0.1728 -0.066 -0.07645",
                     "toe")
 
-mit.addContactPoint(convex_hull_urdf, "l_foot", "-0.082 0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "l_foot", "-0.0876 0.066 -0.07645",
                     "heel")
-mit.addContactPoint(convex_hull_urdf, "l_foot", "-0.082 -0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "l_foot", "-0.0876 -0.0626 -0.07645",
                     "heel")
-mit.addContactPoint(convex_hull_urdf, "l_foot", "0.178 0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "l_foot", "0.1728 0.066 -0.07645",
                     "toe")
-mit.addContactPoint(convex_hull_urdf, "l_foot", "0.178 -0.0624435 -0.081119",
+mit.addContactPoint(convex_hull_urdf, "l_foot", "0.1728 -0.0626 -0.07645",
                     "toe")
 
 mit.addCollisionFilterGroup(convex_hull_urdf, 'feet', ['l_foot', 'r_foot'],
@@ -108,14 +108,14 @@ convex_hull_urdf.write(convex_hull_urdf_path, pretty_print=True)
 # Create minimal contact skeleton
 mit.removeAllCollisions(urdf)
 
-mit.addContactPoint(urdf, "r_foot", "-0.082 0.0624435 -0.081119",  "heel")
-mit.addContactPoint(urdf, "r_foot", "-0.082 -0.0624435 -0.081119", "heel")
-mit.addContactPoint(urdf, "r_foot", "0.178 0.0624435 -0.081119",   "toe")
-mit.addContactPoint(urdf, "r_foot", "0.178 -0.0624435 -0.081119",  "toe")
+mit.addContactPoint(urdf, "r_foot", "-0.0876 0.0626 -0.07645", "heel")
+mit.addContactPoint(urdf, "r_foot", "-0.0876 -0.066 -0.07645", "heel")
+mit.addContactPoint(urdf, "r_foot", "0.1728 0.0626 -0.07645", "toe")
+mit.addContactPoint(urdf, "r_foot", "0.1728 -0.066 -0.07645", "toe")
 
-mit.addContactPoint(urdf, "l_foot", "-0.082 0.0624435 -0.081119",  "heel")
-mit.addContactPoint(urdf, "l_foot", "-0.082 -0.0624435 -0.081119", "heel")
-mit.addContactPoint(urdf, "l_foot", "0.178 0.0624435 -0.081119",   "toe")
-mit.addContactPoint(urdf, "l_foot", "0.178 -0.0624435 -0.081119",  "toe")
+mit.addContactPoint(urdf, "l_foot", "-0.0876 0.066 -0.07645", "heel")
+mit.addContactPoint(urdf, "l_foot", "-0.0876 -0.0626 -0.07645", "heel")
+mit.addContactPoint(urdf, "l_foot", "0.1728 0.066 -0.07645", "toe")
+mit.addContactPoint(urdf, "l_foot", "0.1728 -0.0626 -0.07645", "toe")
 
 urdf.write(minimal_contact_urdf_path, pretty_print=True)
