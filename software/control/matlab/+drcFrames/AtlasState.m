@@ -4,7 +4,7 @@ classdef AtlasState < LCMCoordinateFrame & Singleton
     function obj=AtlasState(r)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
 
-      obj = obj@LCMCoordinateFrame('AtlasState',r.getNumStates(),'x');
+      obj = obj@LCMCoordinateFrame('drcFrames.AtlasState',r.getNumStates(),'x');
       obj = obj@Singleton();
       joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
       if isempty(obj.lcmcoder)  % otherwise I had a singleton

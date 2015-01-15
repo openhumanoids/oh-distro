@@ -7,7 +7,7 @@ classdef AtlasPositionRef < LCMCoordinateFrame & Singleton
       num_u = getNumInputs(r);
       dim = num_u;
       
-      obj = obj@LCMCoordinateFrame('AtlasPositionRef',dim,'x');
+      obj = obj@LCMCoordinateFrame('drcFrames.AtlasPositionRef',dim,'x');
       obj = obj@Singleton();
 
       obj.nu = num_u;

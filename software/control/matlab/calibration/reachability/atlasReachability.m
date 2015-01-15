@@ -3,7 +3,7 @@ function atlasReachability
 % a visualizer process for visualizing atlas state and relevant variables
 
 % load robot model
-r = Atlas();
+r = DRCAtlas();
 r = removeCollisionGroupsExcept(r,{});
 r = compile(r);
 r.setInitialState(zeros(getNumStates(r),1));

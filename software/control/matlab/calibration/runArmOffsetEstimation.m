@@ -3,8 +3,8 @@ show_pose_indices = getOption(options, 'show_pose_indices', false);
 show_data_synchronization = getOption(options, 'show_data_synchronization', false);
 visualize_result = getOption(options, 'visualize_result', false);
 
-% r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
-r = Atlas();
+% r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
+r = DRCAtlas();
 
 [t_x,x_data,~,~,t_vicon,vicon_data,~,~,~,~,vicon_data_struct] = parseAtlasViconLog(r,logfile);
 

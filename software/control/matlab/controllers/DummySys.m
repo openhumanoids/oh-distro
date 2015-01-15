@@ -9,7 +9,7 @@ classdef DummySys < DrakeSystem
       typecheck(r, 'Atlas');
 
       input_frame = r.getStateFrame();
-      ut = UtimeFrame();
+      ut = drcFrames.UtimeFrame();
       obj = obj@DrakeSystem(0,0,input_frame.dim,1,true,true);
       obj = setInputFrame(obj, input_frame);
       obj = setOutputFrame(obj, ut);

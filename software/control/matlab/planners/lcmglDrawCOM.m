@@ -4,7 +4,7 @@ lcmgl = drake.util.BotLCMGLClient(lc,'COM');
 ground_monitor = drake.util.MessageMonitor(bot_core.pose_t(),'utime');
 lc.subscribe('POSE_GROUND',ground_monitor);
 
-force_torque_frame = AtlasForceTorque();
+force_torque_frame = drcFrames.AtlasForceTorque();
 force_torque_frame.subscribe('EST_ROBOT_STATE');
 l_foot_fz_idx = find(strcmp('l_foot_fz',force_torque_frame.coordinates));
 l_foot_tx_idx = find(strcmp('l_foot_tx',force_torque_frame.coordinates));
@@ -15,7 +15,7 @@ r_foot_ty_idx = find(strcmp('r_foot_ty',force_torque_frame.coordinates));
 
 options.floating = true;
 options.dt = 0.001;
-atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+atlas = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 nq = atlas.getNumPositions();
 l_foot = atlas.findLinkId('l_foot');
 r_foot = atlas.findLinkId('r_foot');

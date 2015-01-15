@@ -96,7 +96,7 @@ options.dt = 0.001;
 %   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
 % end
 robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
-atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+atlas = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 % if(r_hand_mode == 1)
 % right_hand_links = [robot.findLinkId('r_hand'),robot.findLinkId('right_f0_0'),robot.findLinkId('right_f0_1'),...

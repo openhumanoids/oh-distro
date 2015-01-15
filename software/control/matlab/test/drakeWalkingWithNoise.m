@@ -6,6 +6,7 @@ function drakeWalkingWithNoise()
 use_bullet = false;
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
+import atlasControllers.*;
 
 plot_comtraj = false;
 %navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
@@ -21,7 +22,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.002;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 v = r.constructVisualizer;
@@ -33,7 +34,7 @@ options.inertia_error = 0.05; % standard deviation for inertia noise (percentage
 options.damping_error = 0.05; % standard deviation for damping noise (percentage of true joint damping)
 % ******************* END ADJUSTABLE **************************************
 
-rctrl = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+rctrl = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
@@ -90,7 +91,7 @@ ts = walking_plan.ts;
 T = ts(end);
 
 ctrl_data = QPControllerData(true,struct(...
-  'acceleration_input_frame',AtlasCoordinates(r),...
+  'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
   'D',-getAtlasNominalCOMHeight()/9.81*eye(2),... % assumed COM height
   'Qy',eye(2),...
   'S',walking_ctrl_data.S,... % always a constant

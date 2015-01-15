@@ -2,16 +2,16 @@ function atlasCOPTracking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-r = Atlas();
+r = DRCAtlas();
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
-state_frame = AtlasState(r);
+state_frame = drcFrames.AtlasState(r);
 state_frame.subscribe('EST_ROBOT_STATE');
-ref_frame = AtlasPosVelTorqueRef(r);
+ref_frame = drcFrames.AtlasPosVelTorqueRef(r);
 
 nu = getNumInputs(r);
 nq = getNumPositions(r);
@@ -127,7 +127,7 @@ link_constraints(3).pt = [0;0;0];
 link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,lfoot_ind,[0;0;0],1));
 
 ctrl_data = AtlasQPControllerData(true,struct(...
-  'acceleration_input_frame',AtlasCoordinates(r),...
+  'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
   'D',-getAtlasNominalCOMHeight()/9.81*eye(2),...
   'Qy',eye(2),...
   'S',V.S,...

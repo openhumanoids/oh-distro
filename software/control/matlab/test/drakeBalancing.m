@@ -13,11 +13,13 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
+import atlasControllers.*;
+
 options.floating = true;
 options.dt = 0.002;
 options.ignore_friction = 1;
 options.atlas_version = 5;
-r = Atlas([],options);
+r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
@@ -60,7 +62,7 @@ link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(2),[0;
 
 
 ctrl_data = QPControllerData(false,struct(...
-  'acceleration_input_frame',AtlasCoordinates(r),...
+  'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
   'D',-com(3)/9.81*eye(2),...
   'Qy',eye(2),...
   'S',V.S,...

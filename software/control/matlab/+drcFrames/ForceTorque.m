@@ -12,7 +12,7 @@ classdef ForceTorque < CoordinateFrame
       coords{5}='torque_y';
       coords{6}='torque_z';
       
-      obj = obj@CoordinateFrame('ForceTorque',6,'f',coords);
+      obj = obj@CoordinateFrame('drcFrames.ForceTorque',6,'f',coords);
     end
   end
 end

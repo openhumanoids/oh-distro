@@ -1,5 +1,5 @@
 options.floating = true;
-robot = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+robot = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 rand('twister', 1253);
 
 nq = getNumPositions(robot);

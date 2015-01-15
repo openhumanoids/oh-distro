@@ -45,7 +45,7 @@ classdef AtlasWalkingController < DRCController
       if (isfield(options, 'run_in_simul_mode') && ...
           ~options.run_in_simul_mode)
         ctrl_data = AtlasQPControllerData(true,struct(...
-          'acceleration_input_frame',AtlasCoordinates(r),...
+          'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
           'D',-getAtlasNominalCOMHeight()/9.81*eye(2),...
           'Qy',eye(2),...
           'S',zeros(4),...
@@ -67,7 +67,7 @@ classdef AtlasWalkingController < DRCController
           'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'neck');findPositionIndices(r,'back_bkz');findPositionIndices(r,'back_bky')]));
       else
         ctrl_data = AtlasQPControllerData(true,struct(...
-          'acceleration_input_frame',AtlasCoordinates(r),...
+          'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
           'D',-getAtlasNominalCOMHeight()/9.81*eye(2),...
           'Qy',eye(2),...
           'S',zeros(4),...
@@ -91,7 +91,7 @@ classdef AtlasWalkingController < DRCController
       if ~isfield(options,'lcm_foot_contacts') options.lcm_foot_contacts = true; end
 
       sys = AtlasWalkingWrapper(r,ctrl_data,options);
-      obj = obj@DRCController(name,sys,AtlasState(r));
+      obj = obj@DRCController(name,sys,drcFrames.AtlasState(r));
 
       obj.controller_state_dim = sys.velocity_int_block.getStateFrame.dim;
       obj.robot = r;
@@ -113,12 +113,12 @@ classdef AtlasWalkingController < DRCController
     function obj = initialize(obj,data)
       msg_data = data.WALKING_CONTROLLER_PLAN_RESPONSE;
       walk_ctrl_data = WalkingControllerData.from_walking_plan_t(msg_data);
-      obj.controller_data.S = walk_ctrl_data.S;
-      obj.controller_data.s1 = walk_ctrl_data.s1;
+      obj.controller_data.S = walk_ctrl_data.V.S;
+      obj.controller_data.s1 = walk_ctrl_data.V.s1;
       obj.controller_data.lqr_is_time_varying = true;
-      %obj.controller_data.s1dot = walk_ctrl_data.s1dot;
-      obj.controller_data.s2 = walk_ctrl_data.s2;
-      %obj.controller_data.s2dot = walk_ctrl_data.s2dot;
+      %obj.controller_data.s1dot = walk_ctrl_data.V.s1dot;
+      obj.controller_data.s2 = walk_ctrl_data.V.s2;
+      %obj.controller_data.s2dot = walk_ctrl_data.V.s2dot;
       support_times = msg_data.support_times;
       obj.controller_data.support_times = support_times;
       obj.controller_data.supports = walk_ctrl_data.supports;
@@ -127,7 +127,7 @@ classdef AtlasWalkingController < DRCController
       obj.controller_data.x0 = ConstantTrajectory([fasteval(walk_ctrl_data.zmptraj,T);0;0]);
       obj.controller_data.y0 = walk_ctrl_data.zmptraj;
       obj.controller_data.link_constraints = walk_ctrl_data.link_constraints;
-      obj.controller_data.qtraj = walk_ctrl_data.qtraj;
+      obj.controller_data.qtraj = walk_ctrl_data.q0;
 %       obj.controller_data.mu = msg_data.mu;
       obj.controller_data.plan_shift = [0;0;0];
       obj = setDuration(obj,T,false); % set the controller timeout

@@ -16,10 +16,10 @@ function LadderPlanner(options)
   
   % load robot model
   %urdf_filename = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_no_hands.urdf');
-  %r_collision = Atlas(urdf_filename);
+  %r_collision = DRCAtlas(urdf_filename);
   S = warning();
   warning('OFF','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
-  r = Atlas();
+  r = DRCAtlas();
   warning(S);
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
   r = removeCollisionGroupsExcept(r,{'toe','heel'});

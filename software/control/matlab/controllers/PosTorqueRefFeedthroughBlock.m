@@ -17,8 +17,8 @@ classdef PosTorqueRefFeedthroughBlock < MIMODrakeSystem
       end
  
       robot_input_frame = getInputFrame(r);
-      input_frame = MultiCoordinateFrame({AtlasCoordinates(r),robot_input_frame});
-      output_frame = AtlasPosTorqueRef(r);
+      input_frame = MultiCoordinateFrame({drcFrames.AtlasCoordinates(r),robot_input_frame});
+      output_frame = drcFrames.AtlasPosTorqueRef(r);
          
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
       obj = setInputFrame(obj,input_frame);
