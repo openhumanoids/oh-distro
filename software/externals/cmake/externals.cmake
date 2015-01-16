@@ -15,7 +15,7 @@ set(opencv-drc_revision 8298)
 set(opencv-drc_depends Eigen_pod)
 
 set(pcl_dep_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_dep)
-set(pcl_dep_revision 8330)
+set(pcl_dep_revision 8333)
 set(pcl_dep_depends)
 
 set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
