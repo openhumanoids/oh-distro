@@ -1193,8 +1193,8 @@
     <child link="rear_situational_awareness_camera_optical_frame"/>
   </joint>
   <link name="rear_situational_awareness_camera_optical_frame"/>
-  <frame link="l_foot" name="l_foot_sole" rpy="0 0 0" xyz="0.0480 0 -0.081119"/>
-  <frame link="r_foot" name="r_foot_sole" rpy="0 0 0" xyz="0.0480 0 -0.081119"/>
+  <frame link="l_foot" name="l_foot_sole" rpy="0 0 0" xyz="0.0426  0.0017 -0.07645"/>
+  <frame link="r_foot" name="r_foot_sole" rpy="0 0 0" xyz="0.0426 -0.0017 -0.07645"/>
   <link name="head">
     <inertial>
       <origin rpy="0 0 0" xyz="-0.075493 3.3383E-05 0.02774"/>
