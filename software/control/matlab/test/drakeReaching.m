@@ -14,12 +14,12 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 options.floating = true;
 options.dt = 0.002;
-r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(r.fixed_point_file);;
 r = r.setInitialState(xstar);
 
 if noisy
@@ -28,7 +28,7 @@ if noisy
   options.inertia_error = 0.15; % standard deviation for inertia noise (percentage of true inertia)
   options.damping_error = 0.1; % standard deviation for damping noise (percentage of true joint damping)
 
-  rctrl = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+  rctrl = DRCAtlas([],options);
   % set initial state to fixed point
   rctrl = rctrl.setInitialState(xstar);
 else
