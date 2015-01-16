@@ -31,7 +31,6 @@ r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
-xstar(3) = xstar(3) + 0.007; % TODO REMOVE THIS ADJUSTMENT WHEN FOOT CONTACT POINT LOCATIONS ARE FIXED
 % set initial state to fixed point
 r = r.setInitialState(xstar);
 
