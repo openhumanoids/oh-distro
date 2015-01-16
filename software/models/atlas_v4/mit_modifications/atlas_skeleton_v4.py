@@ -31,7 +31,6 @@ for inFile in glob("*.dae"):
         element.text = '../materials/textures/extremities_diffuse_unplugged.jpg'
     dae.write(inFile)
     mit.convertMeshTo(inFile, ".obj")
-    mit.convertMeshTo(inFile, ".wrl")
     colladaFile = os.path.splitext(inFile)[0] + '.vtm'
     convertCollada.colladaToPolyData(inFile, colladaFile)
 os.chdir(originalDirectory)
@@ -40,9 +39,8 @@ for inFile in glob(os.path.join(meshesDirectory, "*.obj")):
     if "chull" not in inFile:
         mit.createConvexHullMesh(inFile)
 
-for inFile in glob(os.path.join(meshesDirectory, "*.wrl")):
-    if "chull" not in inFile:
-        mit.createConvexHullMesh(inFile)
+for inFile in glob(os.path.join(meshesDirectory, "*.obj")):
+    mit.convertMeshTo(inFile, ".wrl")
 
 mit.xacro(full_mesh_xacro_path, full_mesh_urdf_path)
 
