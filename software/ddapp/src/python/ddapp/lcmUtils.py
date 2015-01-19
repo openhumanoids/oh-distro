@@ -450,21 +450,18 @@ class LCMLoggerManager(object):
 
     def __init__(self):
         self.filePatternPrefix = 'lcmlog'
-        self.baseDir = '/tmp'
+        self.baseDir = os.path.expanduser('~/logs/raw')
         self.existingLoggerProcesses = {}
 
     @staticmethod
     def getTimeTag():
-        return datetime.datetime.now().isoformat()
-        # timestamp style from drc-lcm-logger.sh:
-        # return datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
-
+        return datetime.datetime.now().strftime('%Y-%m-%d__%H-%M-%S-%f')
 
     def startNewLogger(self, tag='', baseDir=None):
         filePattern = [self.filePatternPrefix, self.getTimeTag()]
         if tag:
             filePattern.append(tag)
-        filePattern = '-'.join(filePattern)
+        filePattern = '__'.join(filePattern)
 
         if baseDir is None:
             baseDir = self.baseDir
@@ -484,7 +481,7 @@ class LCMLoggerManager(object):
             pid = int(fields[0])
             processName = fields[1].strip()
             args = fields[2:]
-            if 'lcm-logger' in processName:
+            if 'lcm-logger' in processName and len(args) == 1 and 'lcmlog__' in args[0]:
                 self.existingLoggerProcesses[pid] = (processName, args)
         return self.existingLoggerProcesses
 
