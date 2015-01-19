@@ -118,12 +118,12 @@ classdef DRCAtlas < Atlas
         return;
       end
 
-      % Sanity check if we have hands.
+      % Sanity check if we don't have hands.
       if (~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
         obj.hands = 0;
       end
       % Construct state vector itself
-      if (obj.hands == 0 && obj.foot_force_sensors == 0)
+      if (obj.hands == 0 && obj.foot_force_sensors == 0 && ~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
         atlas_state_frame = drcFrames.AtlasState(obj);
       else
         atlas_state_frame = getStateFrame(obj);

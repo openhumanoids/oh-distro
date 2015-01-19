@@ -86,16 +86,24 @@ cmd "base_deputy" {
     host = "localhost";
 }
 
-cmd "drakeAtlasSimulation" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5);\"";
+cmd "drakeAtlasSimulation Walking Two Steps" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 0, 1, 0, 'steps');\"";
     host = "base";
 }
-cmd "drakeAtlasSimulationWithHands" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulationWithHands(5);\"";
+cmd "drakeAtlasSimulation Manip Example" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulationWithHands(5, 1, 1, 1, 'manip_ex');\"";
     host = "base";
 }
-cmd "drakeAtlasSimulationValve" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulationValve(5);\"";
+cmd "drakeAtlasSimulation Valve Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, 1, 'valve_wall');\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulation Door Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, 1, 'door');\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulation Drill Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, 1, 'drill_frame');\"";
     host = "base";
 }
 
