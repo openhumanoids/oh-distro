@@ -9,7 +9,6 @@ sys.path.append(os.path.join(drc_base_path, "software", "models",
 import convertCollada
 import mitUrdfUtils as mit
 from jointNameMap import jointNameMap
-import copy
 from lxml import etree
 from glob import glob
 
@@ -27,7 +26,8 @@ os.chdir(os.path.abspath(meshesDirectory))
 for inFile in glob("*.dae"):
     # Replace extremities_diffuse.png with extremities_diffuse_unplugged.jpg
     dae = etree.parse(inFile)
-    for element in dae.xpath("//*[text()='../materials/textures/extremities_diffuse.png']"):
+    xpath_str = "//*[text()='../materials/textures/extremities_diffuse.png']"
+    for element in dae.xpath(xpath_str):
         element.text = '../materials/textures/extremities_diffuse_unplugged.jpg'
     dae.write(inFile)
     mit.convertMeshTo(inFile, ".obj")
@@ -60,56 +60,6 @@ mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
 
 urdf.write(full_mesh_urdf_path, pretty_print=True)
 
-# Create convex hull skeleton
-convex_hull_urdf = copy.deepcopy(urdf)
-mit.useConvexHullMeshes(convex_hull_urdf)
-
-mit.addContactPoint(convex_hull_urdf, "r_foot", "-0.0876 0.0626 -0.07645",
-                    "heel")
-mit.addContactPoint(convex_hull_urdf, "r_foot", "-0.0876 -0.066 -0.07645",
-                    "heel")
-mit.addContactPoint(convex_hull_urdf, "r_foot", "0.1728 0.0626 -0.07645",
-                    "toe")
-mit.addContactPoint(convex_hull_urdf, "r_foot", "0.1728 -0.066 -0.07645",
-                    "toe")
-
-mit.addContactPoint(convex_hull_urdf, "l_foot", "-0.0876 0.066 -0.07645",
-                    "heel")
-mit.addContactPoint(convex_hull_urdf, "l_foot", "-0.0876 -0.0626 -0.07645",
-                    "heel")
-mit.addContactPoint(convex_hull_urdf, "l_foot", "0.1728 0.066 -0.07645",
-                    "toe")
-mit.addContactPoint(convex_hull_urdf, "l_foot", "0.1728 -0.0626 -0.07645",
-                    "toe")
-
-mit.addCollisionFilterGroup(convex_hull_urdf, 'feet', ['l_foot', 'r_foot'],
-                            ['feet'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'core', ['utorso', 'pelvis'],
-                            ['core'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'ignore_core',
-                            ['r_scap', 'l_scap', 'r_clav', 'l_clav'],
-                            ['core'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'r_uleg',
-                            ['r_uglut', 'r_lglut', 'r_uleg'],
-                            ['core', 'r_uleg', 'l_uleg'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'l_uleg',
-                            ['l_uglut', 'l_lglut', 'l_uleg'],
-                            ['core', 'l_uleg', 'l_uleg'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'r_leg',
-                            ['r_lleg', 'r_talus', 'r_foot'],
-                            ['r_leg', 'r_uleg'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'l_leg',
-                            ['l_lleg', 'l_talus', 'l_foot'],
-                            ['l_leg', 'l_uleg'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'r_arm',
-                            ['r_uarm', 'r_larm', 'r_ufarm', 'r_lfarm', 'r_hand'],
-                            ['r_arm'])
-mit.addCollisionFilterGroup(convex_hull_urdf, 'l_arm',
-                            ['l_uarm', 'l_larm', 'l_ufarm', 'l_lfarm', 'l_hand'],
-                            ['l_arm'])
-
-convex_hull_urdf.write(convex_hull_urdf_path, pretty_print=True)
-
 # Create minimal contact skeleton
 mit.removeAllCollisions(urdf)
 
@@ -124,3 +74,29 @@ mit.addContactPoint(urdf, "l_foot", "0.1728 0.066 -0.07645", "toe")
 mit.addContactPoint(urdf, "l_foot", "0.1728 -0.0626 -0.07645", "toe")
 
 urdf.write(minimal_contact_urdf_path, pretty_print=True)
+
+# Create convex hull skeleton
+mit.useConvexHullMeshes(urdf)
+mit.addCollisionsFromVisuals(urdf)
+mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
+
+mit.addCollisionFilterGroup(urdf, 'feet', ['l_foot', 'r_foot'], ['feet'])
+mit.addCollisionFilterGroup(urdf, 'core', ['utorso', 'pelvis'], ['core'])
+mit.addCollisionFilterGroup(urdf, 'ignore_core',
+                            ['r_scap', 'l_scap', 'r_clav', 'l_clav'], ['core'])
+mit.addCollisionFilterGroup(urdf, 'r_uleg', ['r_uglut', 'r_lglut', 'r_uleg'],
+                            ['core', 'r_uleg', 'l_uleg'])
+mit.addCollisionFilterGroup(urdf, 'l_uleg', ['l_uglut', 'l_lglut', 'l_uleg'],
+                            ['core', 'l_uleg', 'l_uleg'])
+mit.addCollisionFilterGroup(urdf, 'r_leg', ['r_lleg', 'r_talus', 'r_foot'],
+                            ['r_leg', 'r_uleg'])
+mit.addCollisionFilterGroup(urdf, 'l_leg', ['l_lleg', 'l_talus', 'l_foot'],
+                            ['l_leg', 'l_uleg'])
+mit.addCollisionFilterGroup(urdf, 'r_arm',
+                            ['r_uarm', 'r_larm', 'r_ufarm', 'r_lfarm', 'r_hand'],
+                            ['r_arm'])
+mit.addCollisionFilterGroup(urdf, 'l_arm',
+                            ['l_uarm', 'l_larm', 'l_ufarm', 'l_lfarm', 'l_hand'],
+                            ['l_arm'])
+
+urdf.write(convex_hull_urdf_path, pretty_print=True)
