@@ -14,25 +14,12 @@
         <mesh filename="package://atlas_v5/meshes/l_clav_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 1.5707963267949 0" xyz="0 0.11 -0.248"/>
+    <collision>
       <geometry>
-        <cylinder length="0.1525" radius="0.0555"/>
+        <mesh filename="package://atlas_v5/meshes/l_clav_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="yet_another">
-      <origin rpy="0 0 0" xyz="0.005 0.015 -0.08"/>
-      <geometry>
-        <cylinder length="0.26" radius="0.067"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="-1.05 0 0" xyz="0.004 0.064 -0.247"/>
-      <geometry>
-        <box size="0.1 0.07 0.072"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_foot">
     <inertial>
       <mass value="2.05"/>
@@ -44,13 +31,12 @@
         <mesh filename="package://atlas_v5/meshes/l_foot_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 0 0" xyz="0.041 0 -0.049119"/>
+    <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision>
       <geometry>
-        <box size="0.2595 0.133887 0.05"/>
+        <mesh filename="package://atlas_v5/meshes/l_foot_chull.obj"/>
       </geometry>
     </collision>
-  <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual></link>
+    <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision></link>
   <link name="l_hand">
     <inertial>
       <mass value="0.5839"/>
@@ -69,43 +55,12 @@
         <mesh filename="package://atlas_v5/meshes/l_larm_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="1.5707963267949 0 0" xyz="0.00 0.075 -0.01"/>
-      <geometry>
-        <cylinder length="0.04" radius="0.051"/>
-      </geometry>
-    </collision>
     <collision>
-      <origin rpy="0 1.5707963267949 0" xyz="-0.012 0 0.0025"/>
       <geometry>
-        <cylinder length="0.147" radius="0.045"/>
+        <mesh filename="package://atlas_v5/meshes/l_larm_chull.obj"/>
       </geometry>
     </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.07 0.077 -0.015"/>
-      <geometry>
-        <box size="0.025 0.155 0.07"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.05 0.067 -0.009"/>
-      <geometry>
-        <box size="0.025 0.06 0.06"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.032 0.071 -0.06"/>
-      <geometry>
-        <box size="0.04 0.115 0.05"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.03 0.01 -0.05"/>
-      <geometry>
-        <box size="0.045 0.055 0.023"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_lfarm">
     <inertial>
       <mass value="0.648"/>
@@ -117,31 +72,12 @@
         <mesh filename="package://atlas_v5/meshes/l_hand_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="connector">
-      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.104 0.00"/>
+    <collision>
       <geometry>
-        <cylinder length="0.02" radius="0.031"/>
+        <mesh filename="package://atlas_v5/meshes/l_hand_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="connector_outer">
-      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.087 0.00"/>
-      <geometry>
-        <cylinder length="0.015" radius="0.045"/>
-      </geometry>
-    </collision>
-    <collision group="wrist_outer">
-      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.075 0.00"/>
-      <geometry>
-        <cylinder length="0.015" radius="0.052"/>
-      </geometry>
-    </collision>
-    <collision group="wrist">
-      <origin rpy="-1.5707963267949 0 0" xyz="0.00 0.052 0.00"/>
-      <geometry>
-        <cylinder length="0.027" radius="0.043"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_lglut">
     <inertial>
       <mass value="0.866"/>
@@ -153,25 +89,12 @@
         <mesh filename="package://atlas_v5/meshes/l_lglut_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="1.5707963267949 0 0" xyz="0.05 0.027488 -0.067"/>
+    <collision>
       <geometry>
-        <cylinder length="0.060306" radius="0.02009687"/>
+        <mesh filename="package://atlas_v5/meshes/l_lglut_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 1.5707963267949 0" xyz="0.0115 0 0"/>
-      <geometry>
-        <cylinder length="0.144" radius="0.02"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="0.01 0.02 0.01"/>
-      <geometry>
-        <box size="0.0975 0.069 0.103"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_lleg">
     <inertial>
       <mass value="5.479"/>
@@ -183,13 +106,12 @@
         <mesh filename="package://atlas_v5/meshes/l_lleg_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 0.10 0" xyz="0.02 0.00295 -0.182"/>
+    <collision>
       <geometry>
-        <cylinder length="0.40" radius="0.07"/>
+        <mesh filename="package://atlas_v5/meshes/l_lleg_chull.obj"/>
       </geometry>
     </collision>
-  </link>
+    </link>
   <link name="l_scap">
     <inertial>
       <mass value="3.012"/>
@@ -201,31 +123,12 @@
         <mesh filename="package://atlas_v5/meshes/l_scap_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="another">
-      <origin rpy="-1.5707963267949 0 0" xyz="-0.005 0.115 -0.014"/>
+    <collision>
       <geometry>
-        <cylinder length="0.105" radius="0.057"/>
+        <mesh filename="package://atlas_v5/meshes/l_scap_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="-0.005 0.075 -0.015"/>
-      <geometry>
-        <box size="0.16 0.17 0.08"/>
-      </geometry>
-    </collision>
-    <collision group="and_another">
-      <origin rpy="-2.25 0 0" xyz="0.076 0.0615 0.0128"/>
-      <geometry>
-        <box size="0.02 0.029 0.018"/>
-      </geometry>
-    </collision>
-    <collision group="final">
-      <origin rpy="-1 0 0" xyz="-0.075 -0.015 0.019"/>
-      <geometry>
-        <box size="0.028 0.090 0.05"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_talus">
     <inertial>
       <mass value="0.125"/>
@@ -249,19 +152,12 @@
         <mesh filename="package://atlas_v5/meshes/l_uarm_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="another">
-      <origin rpy="-1.5708 0 0" xyz="0.0 0.035 -0.005"/>
+    <collision>
       <geometry>
-        <cylinder length="0.11" radius="0.065"/>
+        <mesh filename="package://atlas_v5/meshes/l_uarm_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 1.5707963267949 0" xyz="-0.01 0.043 0.002"/>
-      <geometry>
-        <box size="0.05 0.07 0.15"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_ufarm">
     <inertial>
       <mass value="2.4798"/>
@@ -274,24 +170,11 @@
       </geometry>
     </visual>
     <collision>
-      <origin rpy="1.57 0 0" xyz="0 -0.15 0"/>
       <geometry>
-        <cylinder length="0.1" radius="0.053"/>
+        <mesh filename="package://atlas_v5/meshes/l_farm_chull.obj"/>
       </geometry>
     </collision>
-    <collision>
-      <origin rpy="0 1.5707963267949 0" xyz="-0.001 -0.07 0.0"/>
-      <geometry>
-        <box size="0.08 0.09 0.11"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 1.57 0" xyz="0 -0.005 0"/>
-      <geometry>
-        <cylinder length="0.125" radius="0.040"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_uglut">
     <inertial>
       <mass value="0.648"/>
@@ -303,19 +186,12 @@
         <mesh filename="package://atlas_v5/meshes/l_uglut_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+    <collision>
       <geometry>
-        <cylinder length="0.078396" radius="0.019096"/>
+        <mesh filename="package://atlas_v5/meshes/l_uglut_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <cylinder length="0.080842" radius="0.019841"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="l_uleg">
     <inertial>
       <mass value="9.209"/>
@@ -327,40 +203,15 @@
         <mesh filename="package://atlas_v5/meshes/l_uleg_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 0 0" xyz="-0.0199 0.00585 -0.122"/>
-      <geometry>
-        <cylinder length="0.15" radius="0.09"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="0 -0.3 0" xyz="-0.032 -0.005 -0.224"/>
-      <geometry>
-        <cylinder length="0.15" radius="0.07"/>
-      </geometry>
-    </collision>
     <!-- to cover the logo shield -->
-    <collision group="other">
-      <origin rpy="-0.15 0.13 0" xyz="0.003 0.015 -0.254"/>
-      <geometry>
-        <cylinder length="0.15" radius="0.05"/>
-      </geometry>
-    </collision>
     <!-- inside strut -->
-    <collision group="other">
-      <origin rpy="0.0 0.0 0" xyz="-0.007 -0.053 -0.052"/>
-      <geometry>
-        <box size="0.07 0.038 0.15"/>
-      </geometry>
-    </collision>
     <!-- outside strut -->
-    <collision group="other">
-      <origin rpy="0.0 0.0 0" xyz="-0.017 0.0595 -0.049"/>
+    <collision>
       <geometry>
-        <box size="0.07 0.038 0.14"/>
+        <mesh filename="package://atlas_v5/meshes/l_uleg_chull.obj"/>
       </geometry>
     </collision>
-  </link>
+    </link>
   <link name="ltorso">
     <inertial>
       <mass value="2.409"/>
@@ -396,37 +247,12 @@
         <mesh filename="package://atlas_v5/meshes/pelvis_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="1.5707963267949 0 0" xyz="0.046 0.0 0.01"/>
+    <collision>
       <geometry>
-        <cylinder length="0.06" radius="0.11"/>
+        <mesh filename="package://atlas_v5/meshes/pelvis_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="1.5707963267949 0 0" xyz="-0.03 0.0 0.01"/>
-      <geometry>
-        <cylinder length="0.06" radius="0.11"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="0.01 0.042 0.09"/>
-      <geometry>
-        <cylinder length="0.05" radius="0.16"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="0.01 -0.042 0.09"/>
-      <geometry>
-        <cylinder length="0.05" radius="0.16"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="-0.1 0 -0.02"/>
-      <geometry>
-        <box size="0.1 0.15 0.2"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_clav">
     <inertial>
       <mass value="3.45"/>
@@ -438,25 +264,12 @@
         <mesh filename="package://atlas_v5/meshes/r_clav_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 1.5707963267949 0" xyz="0 -0.11 -0.248"/>
+    <collision>
       <geometry>
-        <cylinder length="0.1525" radius="0.0555"/>
+        <mesh filename="package://atlas_v5/meshes/r_clav_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="yet_another">
-      <origin rpy="0 0 0" xyz="0.005 -0.015 -0.08"/>
-      <geometry>
-        <cylinder length="0.26" radius="0.067"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="1.05 0 0" xyz="0.004 -0.064 -0.247"/>
-      <geometry>
-        <box size="0.1 0.07 0.072"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_foot">
     <inertial>
       <mass value="2.05"/>
@@ -468,13 +281,12 @@
         <mesh filename="package://atlas_v5/meshes/r_foot_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 0 0" xyz="0.041 0 -0.049119"/>
+    <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision>
       <geometry>
-        <box size="0.2595 0.133887 0.05"/>
+        <mesh filename="package://atlas_v5/meshes/r_foot_chull.obj"/>
       </geometry>
     </collision>
-  <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual></link>
+    <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision></link>
   <link name="r_hand">
     <inertial>
       <mass value="0.5839"/>
@@ -493,43 +305,12 @@
         <mesh filename="package://atlas_v5/meshes/r_larm_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="-1.5707963267949 0 0" xyz="0.00 -0.075 -0.01"/>
-      <geometry>
-        <cylinder length="0.04" radius="0.051"/>
-      </geometry>
-    </collision>
     <collision>
-      <origin rpy="0 1.5707963267949 0" xyz="-0.012 0 0.0025"/>
       <geometry>
-        <cylinder length="0.147" radius="0.045"/>
+        <mesh filename="package://atlas_v5/meshes/r_larm_chull.obj"/>
       </geometry>
     </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.07 -0.077 -0.015"/>
-      <geometry>
-        <box size="0.025 0.155 0.07"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.05 -0.067 -0.009"/>
-      <geometry>
-        <box size="0.025 0.06 0.06"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.032 -0.071 -0.06"/>
-      <geometry>
-        <box size="0.04 0.115 0.05"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.03 0.01 -0.05"/>
-      <geometry>
-        <box size="0.045 0.055 0.023"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_lfarm">
     <inertial>
       <mass value="0.648"/>
@@ -541,31 +322,12 @@
         <mesh filename="package://atlas_v5/meshes/r_hand_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="connector">
-      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.104 0.00"/>
+    <collision>
       <geometry>
-        <cylinder length="0.02" radius="0.031"/>
+        <mesh filename="package://atlas_v5/meshes/r_hand_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="connector_outer">
-      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.087 0.00"/>
-      <geometry>
-        <cylinder length="0.015" radius="0.045"/>
-      </geometry>
-    </collision>
-    <collision group="wrist_outer">
-      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.075 0.00"/>
-      <geometry>
-        <cylinder length="0.015" radius="0.052"/>
-      </geometry>
-    </collision>
-    <collision group="wrist">
-      <origin rpy="1.5707963267949 0 0" xyz="0.00 -0.052 0.00"/>
-      <geometry>
-        <cylinder length="0.027" radius="0.043"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_lglut">
     <inertial>
       <mass value="0.866"/>
@@ -577,25 +339,12 @@
         <mesh filename="package://atlas_v5/meshes/r_lglut_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="1.5707963267949 0 0" xyz="0.05 -0.027488 -0.067"/>
+    <collision>
       <geometry>
-        <cylinder length="0.060306" radius="0.02009687"/>
+        <mesh filename="package://atlas_v5/meshes/r_lglut_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 1.5707963267949 0" xyz="0.0105 0 0"/>
-      <geometry>
-        <cylinder length="0.142" radius="0.02"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="0.01 -0.02 0.01"/>
-      <geometry>
-        <box size="0.0975 0.069 0.103"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_lleg">
     <inertial>
       <mass value="5.479"/>
@@ -607,13 +356,12 @@
         <mesh filename="package://atlas_v5/meshes/r_lleg_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 0.10 0" xyz="0.02 -0.00295 -0.182"/>
+    <collision>
       <geometry>
-        <cylinder length="0.40" radius="0.07"/>
+        <mesh filename="package://atlas_v5/meshes/r_lleg_chull.obj"/>
       </geometry>
     </collision>
-  </link>
+    </link>
   <link name="r_scap">
     <inertial>
       <mass value="3.012"/>
@@ -625,31 +373,12 @@
         <mesh filename="package://atlas_v5/meshes/r_scap_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="another">
-      <origin rpy="1.5707963267949 0 0" xyz="-0.005 -0.115 -0.014"/>
+    <collision>
       <geometry>
-        <cylinder length="0.105" radius="0.057"/>
+        <mesh filename="package://atlas_v5/meshes/r_scap_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="-0.005 -0.075 -0.015"/>
-      <geometry>
-        <box size="0.16 0.17 0.08"/>
-      </geometry>
-    </collision>
-    <collision group="and_another">
-      <origin rpy="2.25 0 0" xyz="0.076 -0.0615 0.0128"/>
-      <geometry>
-        <box size="0.02 0.029 0.018"/>
-      </geometry>
-    </collision>
-    <collision group="final">
-      <origin rpy="1 0 0" xyz="-0.075 0.015 0.019"/>
-      <geometry>
-        <box size="0.028 0.090 0.05"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_talus">
     <inertial>
       <mass value="0.125"/>
@@ -673,19 +402,12 @@
         <mesh filename="package://atlas_v5/meshes/r_uarm_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="another">
-      <origin rpy="1.5708 0 0" xyz="0.0 -0.035 -0.005"/>
+    <collision>
       <geometry>
-        <cylinder length="0.11" radius="0.065"/>
+        <mesh filename="package://atlas_v5/meshes/r_uarm_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 1.5707963267949 0" xyz="-0.01 -0.043 0.002"/>
-      <geometry>
-        <box size="0.05 0.07 0.15"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_ufarm">
     <inertial>
       <mass value="2.4798"/>
@@ -698,24 +420,11 @@
       </geometry>
     </visual>
     <collision>
-      <origin rpy="1.57 0 0" xyz="0 0.15 0"/>
       <geometry>
-        <cylinder length="0.1" radius="0.053"/>
+        <mesh filename="package://atlas_v5/meshes/r_farm_chull.obj"/>
       </geometry>
     </collision>
-    <collision>
-      <origin rpy="0 1.5707963267949 0" xyz="-0.001 0.07 0.0"/>
-      <geometry>
-        <box size="0.08 0.09 0.11"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 1.57 0" xyz="0 0.005 0"/>
-      <geometry>
-        <cylinder length="0.125" radius="0.040"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_uglut">
     <inertial>
       <mass value="0.648"/>
@@ -727,19 +436,12 @@
         <mesh filename="package://atlas_v5/meshes/r_uglut_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 1.5707963267949 0" xyz="0 0 0"/>
+    <collision>
       <geometry>
-        <cylinder length="0.078396" radius="0.019096"/>
+        <mesh filename="package://atlas_v5/meshes/r_uglut_chull.obj"/>
       </geometry>
     </collision>
-    <collision group="other">
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <cylinder length="0.080842" radius="0.019841"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <link name="r_uleg">
     <inertial>
       <mass value="9.209"/>
@@ -751,40 +453,15 @@
         <mesh filename="package://atlas_v5/meshes/r_uleg_chull.obj"/>
       </geometry>
     </visual>
-    <collision group="default">
-      <origin rpy="0 0 0" xyz="-0.0199 -0.00585 -0.122"/>
-      <geometry>
-        <cylinder length="0.15" radius="0.09"/>
-      </geometry>
-    </collision>
-    <collision group="other">
-      <origin rpy="0 -0.3 0" xyz="-0.032 0.005 -0.224"/>
-      <geometry>
-        <cylinder length="0.15" radius="0.07"/>
-      </geometry>
-    </collision>
     <!-- to cover the logo shield -->
-    <collision group="other">
-      <origin rpy="0.15 0.13 0" xyz="0.003 -0.015 -0.254"/>
-      <geometry>
-        <cylinder length="0.15" radius="0.05"/>
-      </geometry>
-    </collision>
     <!-- inside strut -->
-    <collision group="other">
-      <origin rpy="0.0 0.0 0" xyz="-0.007 0.053 -0.052"/>
-      <geometry>
-        <box size="0.07 0.038 0.15"/>
-      </geometry>
-    </collision>
     <!-- outside strut -->
-    <collision group="other">
-      <origin rpy="0.0 0.0 0" xyz="-0.017 -0.0595 -0.049"/>
+    <collision>
       <geometry>
-        <box size="0.07 0.038 0.14"/>
+        <mesh filename="package://atlas_v5/meshes/r_uleg_chull.obj"/>
       </geometry>
     </collision>
-  </link>
+    </link>
   <link name="utorso">
     <inertial>
       <mass value="63.73"/>
@@ -797,54 +474,11 @@
       </geometry>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="-0.052 0 0.25"/>
       <geometry>
-        <box size="0.500175 0.35 0.5"/>
+        <mesh filename="package://atlas_v5/meshes/utorso_chull.obj"/>
       </geometry>
     </collision>
-    <collision>
-      <origin rpy="0 1.7 0" xyz="0.2 0 0.26"/>
-      <geometry>
-        <box size="0.50175 0.35 0.10"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 0 0" xyz="-0.06 0 0.6265"/>
-      <geometry>
-        <box size="0.456306 0.341719 0.12"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="1.5707 0 0" xyz="0.208 0 0.8215"/>
-      <geometry>
-        <cylinder length="0.13" radius="0.008"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="0 -0.65 0" xyz="-0.029 0 0.731"/>
-      <geometry>
-        <box size="0.2 0.25 0.01"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="1.5707 0 0" xyz="0.063 0 0.8215"/>
-      <geometry>
-        <cylinder length="0.13" radius="0.008"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="1.5707 0 0" xyz="0.261 0.156 0.6215"/>
-      <geometry>
-        <cylinder length="0.016" radius="0.05"/>
-      </geometry>
-    </collision>
-    <collision>
-      <origin rpy="1.5707 0 0" xyz="0.261 -0.156 0.6215"/>
-      <geometry>
-        <cylinder length="0.016" radius="0.05"/>
-      </geometry>
-    </collision>
-  </link>
+    </link>
   <joint name="back_bkx" type="revolute">
     <origin rpy="0 0 0" xyz="0 0 0.05"/>
     <axis xyz="1 0 0"/>
@@ -1127,6 +761,12 @@
         <box size="0.01 0.01 0.01"/>
       </geometry>
     </visual>
+  <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
   </link>
   <joint name="r_situational_awareness_camera_joint" type="fixed">
     <parent link="utorso"/>
@@ -1153,6 +793,12 @@
         <box size="0.01 0.01 0.01"/>
       </geometry>
     </visual>
+  <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
   </link>
   <joint name="l_situational_awareness_camera_joint" type="fixed">
     <parent link="utorso"/>
@@ -1179,6 +825,12 @@
         <box size="0.01 0.01 0.01"/>
       </geometry>
     </visual>
+  <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
   </link>
   <joint name="rear_situational_awareness_camera_joint" type="fixed">
     <parent link="utorso"/>
