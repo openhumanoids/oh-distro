@@ -30,8 +30,13 @@ group "1.state_mit" {
 group "2.plan_and_control" {
 
 
-    cmd "AtlasController" {
+    cmd "AtlasControllerNoHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 3); \"";
+        host = "base";
+        stop_signal = 15;
+    }
+    cmd "AtlasControllerPlusHandWeight" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 2, 3); \"";
         host = "base";
         stop_signal = 15;
     }
@@ -86,6 +91,10 @@ cmd "base_deputy" {
     host = "localhost";
 }
 
+cmd "drakeAtlasSimulation Walking Flat" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 0, 1, 0, '');\"";
+    host = "base";
+}
 cmd "drakeAtlasSimulation Walking Two Steps" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 0, 1, 0, 'steps');\"";
     host = "base";
@@ -107,18 +116,7 @@ cmd "drakeAtlasSimulation Drill Task" {
     host = "base";
 }
 
-script "0.run_all_but_simul" {
-    start cmd "base_deputy";
-    wait ms 1000;
-    start group "0.params_and_model_pub";
-    wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
-    start group "2.plan_and_control";
-    start group "5.maps";
-}
-
-script "2.run_all_but_simul_and_controller" {
+script "0.run_all_but_simul_and_controller" {
     start cmd "base_deputy";
     wait ms 1000;
     start group "0.params_and_model_pub";
@@ -127,4 +125,82 @@ script "2.run_all_but_simul_and_controller" {
     start cmd "joints2frames";
     start cmd "CombinedPlanner";
     start group "5.maps";
+}
+
+script "1.run_walking_flat" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Walking Flat";
+    start cmd "AtlasControllerNoHands";
+}
+
+script "2.run_walking_steps" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Walking Two Steps";
+    start cmd "AtlasControllerNoHands";
+}
+
+script "3.run_manip_ex" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Manip Example";
+    start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "3.run_valve" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Valve Task";
+    start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "4.run_door" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Door Task";
+    start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "5.run_drill" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Drill Task";
+    start cmd "AtlasControllerPlusHandWeight";
 }

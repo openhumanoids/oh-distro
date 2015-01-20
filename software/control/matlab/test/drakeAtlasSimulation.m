@@ -90,7 +90,7 @@ r_pure = r_pure.setInitialState(x0);
 
 % and complete state to a feasible sol
 % so lcp has an easier time
-xstar_complete = r_complete.getInitialState();
+xstar_complete = zeros(r_complete.getNumStates(), 1);
 xstar_complete(1:length(xstar)) = xstar;
 xstar_complete = r_complete.resolveConstraints(xstar_complete);
 r_complete = r_complete.setInitialState(xstar_complete);
