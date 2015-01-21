@@ -31,12 +31,12 @@ group "2.plan_and_control" {
 
 
     cmd "AtlasControllerNoHands" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 5); \"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 4); \"";
         host = "base";
         stop_signal = 15;
     }
     cmd "AtlasControllerPlusHandWeight" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 2, 5); \"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 2, 4); \"";
         host = "base";
         stop_signal = 15;
     }
