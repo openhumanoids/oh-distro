@@ -1,4 +1,4 @@
-group "0.params_and_model_pub" {
+group "start" {
     cmd "pserver" {
         exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
         host = "localhost";
@@ -8,34 +8,25 @@ group "0.params_and_model_pub" {
         exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v4/model_LR_RR.urdf";
         host = "localhost";
     }
-}
-
-group "1.state_mit" {
 
     cmd "joints2frames" {
-        exec = "drc-joints2frames -g -b";
+        exec = "drc-joints2frames -g";
         host = "localhost";
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync -b";
-        host = "localhost";
-    }
-    cmd "fusion" {
-        exec = "se-fusion";
+        exec = "drc-state-sync";
         host = "localhost";
     }
 
 }
 
-group "5.maps" {
 
-    cmd "lidar-passthrough" {
-        exec = "drc-lidar-passthrough -c 0.06";
-        host = "localhost";
-    }
-
+cmd "fusion" {
+    exec = "se-fusion";
+    host = "localhost";
 }
+
 
 cmd "viewer" {
     exec = "drc-viewer -c drc_robot.cfg";
@@ -44,12 +35,6 @@ cmd "viewer" {
 
 
 cmd "designer" {
-    exec = "drake-designer -v4 -c ~/drc/software/config/drc_robot.cfg";
-    host = "localhost";
-}
-
-
-cmd "log" {
-    exec = "lcm-logplayer-gui /home/mfallon/logs/atlas/2015-01-13-walking/lcmlog-2015-01-13-walking-bit -p";
+    exec = "drake-designer -v4 -c $DRC_BASE/software/config/drc_robot.cfg";
     host = "localhost";
 }
