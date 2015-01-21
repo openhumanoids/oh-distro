@@ -3,7 +3,7 @@ classdef GravityCompensationBlock < DrakeSystem
   methods
   function obj = GravityCompensationBlock(r,options)
     % @param r atlas instance
-    typecheck(r,'Atlas');
+    typecheck(r,{'Atlas', 'IRB140'});
 
     if nargin > 1
       assert(isa(options,'struct'));
