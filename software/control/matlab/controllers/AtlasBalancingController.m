@@ -139,13 +139,21 @@ classdef AtlasBalancingController < DRCController
       
     end
     
-    function msg = status_message(~,t_sim,t_ctrl)
+    function msg = status_message(obj,t_sim,t_ctrl)
         msg = drc.controller_status_t();
         msg.utime = t_sim * 1000000;
-        msg.state = msg.STANDING;
         msg.controller_utime = t_ctrl * 1000000;
         msg.V = 0;
         msg.Vdot = 0;
+
+        % compare control time with qtraj tspan to decide manipulating or standing.
+        % note, qtraj can be a double, ppval, or PPTrajectory
+        qtraj = obj.controller_data.qtraj;
+        if (isa(qtraj,'struct') && (t_ctrl < qtraj.breaks(end))) || (isa(qtraj,'PPTrajectory') && (t_ctrl < qtraj.tspan(2)))
+          msg.state = msg.MANIPULATING;
+        else
+          msg.state = msg.STANDING;
+        end
     end
     
     function obj = initialize(obj,data)
