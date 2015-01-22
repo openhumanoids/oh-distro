@@ -92,7 +92,7 @@ installing packages on Ubuntu. Install with the following commands:
     sudo add-apt-repository ppa:tes/drc
     sudo apt-get update
 
-    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libgoby2-dev libgoby2 libdccl3-dev libdccl3 libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev subversion libxmu-dev libusb-1.0-0-dev python-pymodbus
+    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libgoby2-dev libgoby2 libdccl3-dev libdccl3 libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev subversion libxmu-dev libusb-1.0-0-dev python-pymodbus graphviz curl libwww-perl libterm-readkey-perl
 
     sudo pip install --upgrade scipy
 
@@ -100,12 +100,12 @@ installing packages on Ubuntu. Install with the following commands:
 LCM Dependency
 --------------
 
-LCM (v1.1.0) is a required dependency which must be installed from source. First download lcm-1.1.0.tar.gz from https://lcm.googlecode.com. Then install LCM with the
-following commands.
+LCM (v1.1.0) is a required dependency which must be installed from source. It can be retrived from http://lcm-proj.github.io/
 
 ::
 
-    tar -xzf lcm-1.1.0.tar.gz
+    wget https://github.com/lcm-proj/lcm/releases/download/v1.1.0/lcm-1.1.0.zip
+    unziip lcm-1.1.0.zip
     cd lcm-1.1.0
     ./configure
     make
@@ -158,22 +158,6 @@ Mosek is a solver used in the footstep planner. Obtain an academic licence from
 http://license.mosek.com/academic
 Check your email and place your license in ~/mosek/mosek.lic
 The Mosek code is checked out as part of the project externasl
-
-Instructions for GUROBI
------------------------
-
-Gurobi is a solver used in our walking controller. Install its dependencies with the following commands:
-
-::
-
-    apt-get install curl libwww-perl libterm-readkey-perl
-
-You will also need to generate an academic licence: First make an account 
-http://www.gurobi.com/download/licenses/free-academic , then generate a feee academic lisense
-(begining grbgetkey) and place it in the suggested location (~/gurobi.lic) 
-
-Note that the tarball for Gurobi is part of our tree. The Gurobi pod uses it
-to avoid needing to download it from Gurobi.
 
 
 Build Instructions
@@ -243,30 +227,25 @@ Run make to build externals and then the main codebase:
 
 
 
-Additional Optional Modules
-===========================
 
-Neither ROS or Gazebo are currently required. These instructions are likely to be broken
-as a result. If ROS is to be supported we will use ROS Indigo.
+Instructions for GUROBI
+-----------------------
 
-Gazebo
-------
-
-Gazebo (http://gazebosim.org/wiki/2.2/install#Install_Required_Dependencies)
-
-In addition to above packages, run:
+Gurobi is a solver used in our walking controller. Install its dependencies with the following commands:
 
 ::
 
-    sudo apt-get install libboost-all-dev libcegui-mk2-dev libopenal-dev  libswscale-dev libavformat-dev libavcodec-dev libogre-dev libgts-dev libltdl3-dev playerc++ libplayerwkb3.0-dev
+    apt-get install curl libwww-perl libterm-readkey-perl
 
-DRCSIM requires ROS dependencies listed here: http://gazebosim.org/wiki/DRC/Install#Ubuntu_and_ROS_Groovy
+Then generate an academic licence: First make an account 
+http://www.gurobi.com/download/licenses/free-academic , then use the Gurobi
+key client (grbgetkey) to store the license on your machine. Place it in the suggested 
+location (~/gurobi.lic) 
 
-After you have installed ros packages you should run these commands:::
+The grbgetkey module is built as part of the externals.
 
-    sudo rosdep init
-    rosdep update
-
+Note that the tarball for Gurobi is part of our tree and the gurobi pod uses it
+to avoid needing to download it from Gurobi.
 
 
 Data Storage Policy
@@ -299,3 +278,27 @@ This rysnc command can easily transfer logs to Virgo:
 
     rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /home/drc/logs/<logname>  <username>@virgo.csail.mit.edu:/var/www/projects/drc-logs
 
+
+Currently Unused Modules
+========================
+
+Neither ROS or Gazebo are currently required. These instructions are likely to be broken
+as a result. If ROS is to be supported we will use ROS Indigo.
+
+Gazebo
+------
+
+Gazebo (http://gazebosim.org/wiki/2.2/install#Install_Required_Dependencies)
+
+In addition to above packages, run:
+
+::
+
+    sudo apt-get install libboost-all-dev libcegui-mk2-dev libopenal-dev  libswscale-dev libavformat-dev libavcodec-dev libogre-dev libgts-dev libltdl3-dev playerc++ libplayerwkb3.0-dev
+
+DRCSIM requires ROS dependencies listed here: http://gazebosim.org/wiki/DRC/Install#Ubuntu_and_ROS_Groovy
+
+After you have installed ros packages you should run these commands:::
+
+    sudo rosdep init
+    rosdep update
