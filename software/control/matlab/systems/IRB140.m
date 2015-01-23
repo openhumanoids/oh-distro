@@ -33,12 +33,12 @@ classdef IRB140 < TimeSteppingRigidBodyManipulator
         if (strcmp(options.hands, 'robotiq'))
           options_hand.weld_to_link = 7;
           obj.hands = 1;
-          obj = obj.addRobotFromURDF(getFullPathFromRelativePath('../Atlas/urdf/robotiq.urdf'), [0.1; 0.0; 0.0], [pi; 0; pi/2], options_hand);
+          obj = obj.addRobotFromURDF(getFullPathFromRelativePath('urdf/robotiq.urdf'), [0.1; 0.0; 0.0], [pi; 0; pi/2], options_hand);
         elseif (strcmp(options.hands, 'robotiq_weight_only'))
           % Adds a box with weight roughly approximating the hands, so that
           % the controllers know what's up
           options_hand.weld_to_link = 7;
-          obj = obj.addRobotFromURDF(getFullPathFromRelativePath('../Atlas/urdf/robotiq_box.urdf'), [0.1; 0.0; 0.0], [pi; 0; pi/2], options_hand);
+          obj = obj.addRobotFromURDF(getFullPathFromRelativePath('urdf/robotiq_box.urdf'), [0.1; 0.0; 0.0], [pi; 0; pi/2], options_hand);
         elseif (strcmp(options.hands, 'block_hand'))
           % Box with collision. Good for hitting things with...
           options_hand.weld_to_link = 7;
@@ -63,7 +63,7 @@ classdef IRB140 < TimeSteppingRigidBodyManipulator
           % Sub in handstates for each hand
           % TODO: by name?
           for i=2:2
-            arm_state_frame = replaceFrameNum(arm_state_frame,i,drcFrames.HandState(obj,i,'HandState'));
+            arm_state_frame = replaceFrameNum(arm_state_frame,i,drcFrames.HandState(obj,i,'drcFrames.HandState'));
           end
         else
           arm_state_frame = getStateFrame(obj);
@@ -92,7 +92,7 @@ classdef IRB140 < TimeSteppingRigidBodyManipulator
           % Sub in handstates for each hand
           % TODO: by name?
           for i=2:obj.getInputFrame().getNumFrames
-            input_frame = replaceFrameNum(input_frame,i,drcFrames.HandInput(obj,i,'HandInput'));
+            input_frame = replaceFrameNum(input_frame,i,drcFrames.HandInput(obj,i,'drcFrames.HandInput'));
           end
         else
           input_frame = drcFrames.IRB140Input(obj);

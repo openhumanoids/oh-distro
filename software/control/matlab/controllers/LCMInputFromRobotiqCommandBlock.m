@@ -21,7 +21,7 @@ classdef LCMInputFromRobotiqCommandBlock < MIMODrakeSystem
   
   methods
     function obj = LCMInputFromRobotiqCommandBlock(r, options)
-      typecheck(r,'Atlas');
+      typecheck(r,{'Atlas', 'IRB140'});
 
       output_frame = r.getInputFrame().getFrameByName('drcFrames.HandInput');
       input_frame = r.getOutputFrame().getFrameByName('drcFrames.HandState');

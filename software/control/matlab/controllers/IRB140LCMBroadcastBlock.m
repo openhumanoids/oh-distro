@@ -3,11 +3,17 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
   properties
     lc; % LCM
     joint_names_cache;
+    r_hand_joint_names_cache;
+    r_hand_joint_inds;
     
     % robot
     r;
     r_control;
     nq_control;
+    
+    % Structure containing the frame numbers of the different states
+    % inside the input frame.
+    frame_nums;
   end
   
   methods
@@ -42,16 +48,48 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
-      if (isa(obj.getInputFrame, 'drcFrames.IRB140State'))
+      if (isa(obj.getInputFrame, 'IRB140State'))
         coordnames = obj.getInputFrame.getCoordinateNames;
       else
-        coordnames = obj.getInputFrame.getFrameByName('drcFrames.IRB140State').getCoordinateNames;
+        coordnames = obj.getInputFrame.getFrameByName('IRB140State').getCoordinateNames;
       end
-
-      obj.joint_names_cache = cell(length(coordnames), 1);
+      
+      % write down names for the hands. these differ from simul a bit
+      % (we have the fourbar explicitely), so I'm doing this by hand...
+      if (r.hands>0)
+        hand_names = {'left_finger_1_joint_1',
+                      'left_finger_1_joint_2',
+                      'left_finger_1_joint_3',
+                      'left_finger_2_joint_1',
+                      'left_finger_2_joint_2',
+                      'left_finger_2_joint_3',
+                      'left_finger_middle_joint_1',
+                      'left_finger_middle_joint_2',
+                      'left_finger_middle_joint_3',
+                      'left_palm_finger_1_joint',
+                      'left_palm_finger_2_joint'
+                      };
+        obj.r_hand_joint_names_cache = cell(11, 1);
+        for i=1:length(hand_names)
+          obj.r_hand_joint_names_cache(i) = java.lang.String(hand_names{i});
+        end
+        % not sure what the last two correspond to. for now I'm going to 
+        % zero them.
+        obj.r_hand_joint_inds = [1, 2, 3, 11, 12, 13, 21, 22, 23, 10, 20];
+      end
+      
+      obj.joint_names_cache = cell(length(coordnames)/2, 1);
       % (this is the part that we really don't want to run repeatedly...)
-      for i=1:length(coordnames)
+      for i=1:length(coordnames)/2
         obj.joint_names_cache(i) = java.lang.String(coordnames(i));
+      end
+      
+      if (isa(input_frame, 'MultiCoordinateFrame'))
+        obj.frame_nums.irb140_state = input_frame.getFrameNumByName('IRB140State');
+        obj.frame_nums.hand_state = input_frame.getFrameNumByName('drcFrames.HandState');
+      else
+        obj.frame_nums.irb140_state = 1;
+        obj.frame_nums.hand_state = '';
       end
       
       obj.r = r;
@@ -60,10 +98,20 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
-      irb140_state = varargin{1};
+      irb140_state = varargin{obj.frame_nums.irb140_state};
+      hand_state = [];
+      if (obj.frame_nums.hand_state)
+        hand_state_ours = varargin{obj.frame_nums.hand_state};
+        % Map it to the hand state the rest of the system understands
+        hand_state = [hand_state_ours(obj.r_hand_joint_inds);
+                      hand_state_ours(length(hand_state_ours)/2+obj.r_hand_joint_inds)];
+        hand_state(10:11) = [0;0];
+      end
       
       % What needs to go out:
+      num_dofs = length([irb140_state; hand_state]) / 2;
       irb140_dofs = length(irb140_state)/2;
+      hand_dofs = length(hand_state)/2;
       
       state_msg = drc.robot_state_t();
       state_msg.utime = t*1000*1000;
@@ -91,8 +139,8 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
       state_msg.twist.angular_velocity.y = 0;
       state_msg.twist.angular_velocity.z = 0;
       
-      state_msg.num_joints = irb140_dofs;
-      state_msg.joint_name = [obj.joint_names_cache];
+      state_msg.num_joints = num_dofs;
+      state_msg.joint_name = [obj.joint_names_cache; obj.r_hand_joint_names_cache];
       
       state_msg.joint_position=zeros(1,state_msg.num_joints);
       state_msg.joint_velocity=zeros(1,state_msg.num_joints);
@@ -101,8 +149,8 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
       irb140_pos = irb140_state(1:irb140_dofs);
       irb140_vel = irb140_state(irb140_dofs+1:end);
      
-      state_msg.joint_position = irb140_pos;
-      state_msg.joint_velocity = irb140_vel;
+      state_msg.joint_position = [irb140_pos; hand_state(1:hand_dofs)];
+      state_msg.joint_velocity = [irb140_vel; hand_state(hand_dofs+1:end)];
         
       state_msg.force_torque = drc.force_torque_t();
 

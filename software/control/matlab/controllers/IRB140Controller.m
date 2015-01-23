@@ -8,7 +8,7 @@ options.floating = false;
 options.base_offset = [0;0;0]; %[-0.5, 0, 1.5]'; %For now positions on ground
 options.base_rpy = [-pi/2, 0, 0]';
 options.ignore_self_collisions = true;
-options.hands = 'block_hand';
+options.hands = 'robotiq_weight_only';
 options.collision = false;
 options.hands = 'none';
 r = IRB140([getenv('DRC_PATH'),'/models/IRB140/irb_140.urdf'], options);
@@ -46,22 +46,22 @@ while (1)
   
  
   % p-d on desired state until I write this better
-  K_P = [100; 0.01; 0.01; 0.01; 0.01; 0.01];
-  K_D = [10;  0.01; 0.01; 0.01; 0.01; 0.01];
+  K_P = 0.3*[10000; 500; 250; 50; 25; 1];
+  K_D = 0.3*[1000; 500; 250;  50; 25; 1];
   if (size(traj_follow.eval(tsim), 2) == 0)
     asdf
   end
   error = traj_follow.eval(tsim) - x;
   if (tsim - last_t < 0.1)
-    inte = inte + error(1:6)*(tsim-last_t)
+    inte = inte + error(1:6)*(tsim-last_t);
   end
-  efforts = K_P.*error(1:6) + K_D.*error(1:6);
+  efforts = K_P.*error(1:6) - K_D.*x(7:12);
   
-  y = gravcomp.output(tsim, 0, x)
+  y = gravcomp.output(tsim, 0, x);
   efforts = efforts + y;
   
   robot_command = drc.atlas_command_t();
-  robot_command.utime = 0;
+  robot_command.utime = tsim*1E6;
   robot_command.position = zeros(6,1);
   robot_command.velocity = zeros(6,1);
   robot_command.k_q_p = zeros(6,1);

@@ -10,8 +10,12 @@ classdef LCMInputFromIRB140AtlasCommandBlock < MIMODrakeSystem
     timestamp_name;
     dim;
     
+    last_receive_time;
+    
     r;
     r_control;
+    
+    gravcomp;
   end
   
   methods
@@ -69,9 +73,14 @@ classdef LCMInputFromIRB140AtlasCommandBlock < MIMODrakeSystem
         end
       end
       
+      % watchdog
+      obj.last_receive_time = SharedDataHandle(-1);
+      % gravcomp control
+      obj.gravcomp = GravityCompensationBlock(r_control);
+      
     end
     
-    function x=decode(obj, data)
+    function [x,t]=decode(obj, data)
       msg = obj.lcmtype_constructor.newInstance(data);
       x=cell(obj.dim, 1);
       for i=1:obj.dim
@@ -84,18 +93,34 @@ classdef LCMInputFromIRB140AtlasCommandBlock < MIMODrakeSystem
       eval(['t = msg.', obj.timestamp_name, '/1000;']);
     end
     
-    function varargout=mimoOutput(obj,t,~,irb140_state)
+    function varargout=mimoOutput(obj,t,~,varargin)
       % What needs to go out:
       efforts = zeros(obj.getNumOutputs, 1);
+      irb140_state = varargin{1};
       
       % see if we have a new message (new command state)
       data = obj.lcmonitor.getMessage();
         
       % If we haven't received a command make our own
+      cmd = [];
       if (~isempty(data))
-        cmd = obj.decode(data);
-        efforts = cmd{5};
+        [cmd,tc] = obj.decode(data);
+        if (obj.last_receive_time.getData == -1 || (~(tc>t*1000) && (t*1000 - tc < 15)))
+          efforts = cmd{5};
+          obj.last_receive_time.setData(tc)
+        else
+          cmd = [];
+        end
       end
+      
+      if (isempty(cmd))
+        % just try to do gravity comd and derivative kill
+        K_D = 0.1*[1000; 500; 250;  10; 5; 1];
+        efforts = -irb140_state(7:end).*K_D;
+        y = obj.gravcomp.output(t, 0, irb140_state);
+        efforts = efforts + y;
+      end
+        
       varargout = {efforts};
       %fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
