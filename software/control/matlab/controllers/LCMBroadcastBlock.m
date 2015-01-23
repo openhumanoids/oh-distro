@@ -274,7 +274,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         end
       end
       if (~isempty(laser_state))
-        laser_spindle_angle = laser_state(1)+pi/2;
+        laser_spindle_angle = laser_state(1);
         laser_ranges = laser_state(2:end);
       else
         laser_spindle_angle = 0;
@@ -373,9 +373,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.joint_position =atlas_pos;
         state_msg.joint_velocity = atlas_vel;
       else
-        % need another factor of pi/2though I wouldn't mind it being earlier rather than later to get drawn multisense to agree with
-        % the "true" (functionally true, anyway) mirror position
-        state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle+pi/2];
+        state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle];
         state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end); 0];
       end
       state_msg.force_torque = drc.force_torque_t();
@@ -447,7 +445,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
           'post_spindle_cal_pitch_joint',
           'post_spindle_cal_yaw_joint'};
         
-        multisense_state.joint_position = [mod(laser_spindle_angle+pi/2, 2*pi), ...
+        multisense_state.joint_position = [mod(laser_spindle_angle+pi, 2*pi), ...
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         multisense_state.joint_velocity = [0.0, ...
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];

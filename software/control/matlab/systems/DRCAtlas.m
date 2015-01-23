@@ -48,7 +48,7 @@ classdef DRCAtlas < Atlas
         % trying new value that lines up more accurately with
         % head_to_left_eye, left_eye_to_spindle transforms
         % from multisense_sim.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkId(obj,'head'),[-0.0446, -0.0087, 0.0880].',[0, 0, 0].','hokuyo_frame'));
+        obj = addFrame(obj,RigidBodyFrame(findLinkId(obj,'head'),[-0.0446, 0, 0.0880].',[0, 0, 0].','hokuyo_frame'));
         hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
           -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate, ...
           obj.hokuyo_mirror_offset);
@@ -249,7 +249,7 @@ classdef DRCAtlas < Atlas
     hokuyo_num_pts = 250;   
     hokuyo_max_range = 6; % meters?
     hokuyo_spin_rate = 16; % rad/sec
-    hokuyo_mirror_offset = [0.015; 0.0; -0.03]; % from multisense_sim.urdf
+    hokuyo_mirror_offset = [0.03; 0.0; -0.015]; % from multisense_sim.urdf
                                                % with a rotation
                                                % (due to rotation of 
                                                % frame)
