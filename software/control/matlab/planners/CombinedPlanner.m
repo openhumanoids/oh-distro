@@ -163,7 +163,8 @@ classdef CombinedPlanner
     end
 
     function region_list = iris_region(obj, msg)
-      disp('handling iris request')
+%       profile on
+%       disp('handling iris request')
       msg = drc.iris_region_request_t(msg);
       collision_model = obj.biped.getFootstepPlanningCollisionModel();
       regions = iris.TerrainRegion.empty();
@@ -204,6 +205,7 @@ classdef CombinedPlanner
         end
       end
       region_list = IRISRegionList(regions);
+%       profile viewer
     end
   end
 end
