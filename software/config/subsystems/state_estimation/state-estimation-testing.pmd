@@ -1,0 +1,40 @@
+group "start" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
+        host = "localhost";
+    }
+
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v4/model_LR_RR.urdf";
+        host = "localhost";
+    }
+
+    cmd "joints2frames" {
+        exec = "drc-joints2frames -g";
+        host = "localhost";
+    }
+
+    cmd "state-sync" {
+        exec = "drc-state-sync";
+        host = "localhost";
+    }
+
+}
+
+
+cmd "fusion" {
+    exec = "se-fusion";
+    host = "localhost";
+}
+
+
+cmd "viewer" {
+    exec = "drc-viewer -c drc_robot.cfg";
+    host = "localhost";
+}
+
+
+cmd "designer" {
+    exec = "drake-designer -v4 -c $DRC_BASE/software/config/drc_robot.cfg";
+    host = "localhost";
+}
