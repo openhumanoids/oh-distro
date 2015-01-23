@@ -13,7 +13,7 @@ classdef IRISRegionList
       msg.num_iris_regions = length(obj.iris_regions);
       region_msgs = javaArray('drc.iris_region_t', msg.num_iris_regions);
       for j = 1:msg.num_iris_regions
-        region_msgs(j) = obj.iris_regions(j).to_iris_region_t();
+        region_msgs(j) = IRISRegion.to_iris_region_t(obj.iris_regions(j));
       end
       msg.iris_regions = region_msgs;
     end
