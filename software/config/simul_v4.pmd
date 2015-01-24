@@ -100,7 +100,7 @@ cmd "drakeAtlasSimulation Walking Two Steps" {
     host = "base";
 }
 cmd "drakeAtlasSimulation Manip Example" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulationWithHands(4, 1, 1, 1, 'manip_ex');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 1, 'manip_ex');\"";
     host = "base";
 }
 cmd "drakeAtlasSimulation Valve Task" {
