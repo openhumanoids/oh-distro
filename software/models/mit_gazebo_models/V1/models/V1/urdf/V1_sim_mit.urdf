@@ -156,93 +156,93 @@
   <gazebo reference="back_bkx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <actuator name="/pelvis/wj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/trunk/wj2" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
-  <actuator name="/trunk/wj3" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
+  <actuator name="pelvis/wj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="trunk/wj2" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
+  <actuator name="trunk/wj3" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <transmission name="WaistRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="back_bkz"/>
-      <actuator data="data" name="/pelvis/wj1"/>
+      <actuator data="data" name="pelvis/wj1"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="back_bkz"/>
-      <actuator data="positionCommand" name="/pelvis/wj1"/>
+      <actuator data="positionCommand" name="pelvis/wj1"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="back_bkz"/>
-      <actuator data="velocityCommand" name="/pelvis/wj1"/>
+      <actuator data="velocityCommand" name="pelvis/wj1"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="back_bkz"/>
-      <actuator data="effortCommand" name="/pelvis/wj1"/>
+      <actuator data="effortCommand" name="pelvis/wj1"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="back_bkz"/>
-      <actuator data="data" name="/pelvis/wj1"/>
+      <actuator data="data" name="pelvis/wj1"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="back_bkz"/>
-      <actuator data="positionCommand" name="/pelvis/wj1"/>
+      <actuator data="positionCommand" name="pelvis/wj1"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="back_bkz"/>
-      <actuator data="velocityCommand" name="/pelvis/wj1"/>
+      <actuator data="velocityCommand" name="pelvis/wj1"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="back_bkz"/>
-      <actuator data="effortCommand" name="/pelvis/wj1"/>
+      <actuator data="effortCommand" name="pelvis/wj1"/>
     </interface>
   </transmission>
   <transmission name="Waist" type="loadable_transmissions/PushrodTransmission">
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="back_bky"/>
       <joint data="data" name="back_bkx"/>
-      <actuator data="data" name="/trunk/wj2"/>
-      <actuator data="data" name="/trunk/wj3"/>
+      <actuator data="data" name="trunk/wj2"/>
+      <actuator data="data" name="trunk/wj3"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="back_bky"/>
       <joint data="positionCommand" name="back_bkx"/>
-      <actuator data="positionCommand" name="/trunk/wj2"/>
-      <actuator data="positionCommand" name="/trunk/wj3"/>
+      <actuator data="positionCommand" name="trunk/wj2"/>
+      <actuator data="positionCommand" name="trunk/wj3"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="back_bky"/>
       <joint data="velocityCommand" name="back_bkx"/>
-      <actuator data="velocityCommand" name="/trunk/wj2"/>
-      <actuator data="velocityCommand" name="/trunk/wj3"/>
+      <actuator data="velocityCommand" name="trunk/wj2"/>
+      <actuator data="velocityCommand" name="trunk/wj3"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="back_bky"/>
       <joint data="effortCommand" name="back_bkx"/>
-      <actuator data="effortCommand" name="/trunk/wj2"/>
-      <actuator data="effortCommand" name="/trunk/wj3"/>
+      <actuator data="effortCommand" name="trunk/wj2"/>
+      <actuator data="effortCommand" name="trunk/wj3"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="back_bky"/>
       <joint data="data" name="back_bkx"/>
-      <actuator data="data" name="/trunk/wj2"/>
-      <actuator data="data" name="/trunk/wj3"/>
+      <actuator data="data" name="trunk/wj2"/>
+      <actuator data="data" name="trunk/wj3"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="back_bky"/>
       <joint data="positionCommand" name="back_bkx"/>
-      <actuator data="positionCommand" name="/trunk/wj2"/>
-      <actuator data="positionCommand" name="/trunk/wj3"/>
+      <actuator data="positionCommand" name="trunk/wj2"/>
+      <actuator data="positionCommand" name="trunk/wj3"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="back_bky"/>
       <joint data="velocityCommand" name="back_bkx"/>
-      <actuator data="velocityCommand" name="/trunk/wj2"/>
-      <actuator data="velocityCommand" name="/trunk/wj3"/>
+      <actuator data="velocityCommand" name="trunk/wj2"/>
+      <actuator data="velocityCommand" name="trunk/wj3"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="back_bky"/>
       <joint data="effortCommand" name="back_bkx"/>
-      <actuator data="effortCommand" name="/trunk/wj2"/>
-      <actuator data="effortCommand" name="/trunk/wj3"/>
+      <actuator data="effortCommand" name="trunk/wj2"/>
+      <actuator data="effortCommand" name="trunk/wj3"/>
     </interface>
     <parameterNamespace name="v1_waist"/>
     <reflect data="1"/>
@@ -250,34 +250,34 @@
   <mode name="WaistRotatorMode" type="mode_plugins/ModeInterface">
     <translator name="WaistRotatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="back_bkz"/>
-      <actuator data="mode" name="/pelvis/wj1"/>
+      <actuator data="mode" name="pelvis/wj1"/>
     </translator>
     <translator name="WaistRotatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="back_bkz"/>
-      <actuator data="modeCommand" name="/pelvis/wj1"/>
+      <actuator data="modeCommand" name="pelvis/wj1"/>
     </translator>
   </mode>
   <mode name="WaistExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="WaistExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="back_bky"/>
-      <actuator data="mode" name="/trunk/wj2"/>
+      <actuator data="mode" name="trunk/wj2"/>
     </translator>
     <translator name="WaistExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="back_bky"/>
-      <actuator data="modeCommand" name="/trunk/wj2"/>
+      <actuator data="modeCommand" name="trunk/wj2"/>
     </translator>
   </mode>
   <mode name="WaistLateralExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="WaistLateralExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="back_bkx"/>
-      <actuator data="mode" name="/trunk/wj3"/>
+      <actuator data="mode" name="trunk/wj3"/>
     </translator>
     <translator name="WaistLateralExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="back_bkx"/>
-      <actuator data="modeCommand" name="/trunk/wj3"/>
+      <actuator data="modeCommand" name="trunk/wj3"/>
     </translator>
   </mode>
-  <link name="/v1/RightIMU_Frame">
+  <link name="v1/RightIMU_Frame">
     <inertial>
       <mass value="0.018"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -305,13 +305,13 @@
       <serviceName>/v1/RightIMU/imu_service</serviceName>
     </plugin>
   </gazebo>
-  <joint name="/v1/RightIMU_Offset" type="fixed">
+  <joint name="v1/RightIMU_Offset" type="fixed">
     <origin rpy="-1.57079632679 1.57079632679 0" xyz="0.363038 0.134239 -0.0468630"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
-    <child link="/v1/RightIMU_Frame"/>
+    <child link="v1/RightIMU_Frame"/>
   </joint>
-  <link name="/v1/LeftIMU_Frame">
+  <link name="v1/LeftIMU_Frame">
     <inertial>
       <mass value="0.018"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -339,13 +339,13 @@
       <serviceName>/v1/LeftIMU/imu_service</serviceName>
     </plugin>
   </gazebo>
-  <joint name="/v1/LeftIMU_Offset" type="fixed">
+  <joint name="v1/LeftIMU_Offset" type="fixed">
     <origin rpy="1.57079632679 1.57079632679 0" xyz="0.363038 -0.134239  -0.0468630"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
-    <child link="/v1/LeftIMU_Frame"/>
+    <child link="v1/LeftIMU_Frame"/>
   </joint>
-  <link name="/v1/RightHazardCamera_Frame">
+  <link name="v1/RightHazardCamera_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -353,8 +353,8 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/RightHazardCamera_Frame">
-    <sensor name="/v1/RightHazardCamera" type="camera">
+  <gazebo reference="v1/RightHazardCamera_Frame">
+    <sensor name="v1/RightHazardCamera" type="camera">
       <camera>
         <image>
           <width>1280</width>
@@ -368,20 +368,20 @@
         </clip>
       </camera>
       <update_rate>60</update_rate>
-      <plugin filename="libgazebo_ros_camera.so" name="/v1/RightHazardCamera_controller">
+      <plugin filename="libgazebo_ros_camera.so" name="v1/RightHazardCamera_controller">
         <frameName>/v1/RightHazardCamera_Frame</frameName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraName>/v1/RightHazardCamera</cameraName>
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/RightHazardCamera_Offset" type="fixed">
+  <joint name="v1/RightHazardCamera_Offset" type="fixed">
     <origin rpy="0 0 0" xyz="0.0446987 0.0406146 0.0182674"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
-    <child link="/v1/RightHazardCamera_Frame"/>
+    <child link="v1/RightHazardCamera_Frame"/>
   </joint>
-  <link name="/v1/LeftHazardCamera_Frame">
+  <link name="v1/LeftHazardCamera_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -389,8 +389,8 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/LeftHazardCamera_Frame">
-    <sensor name="/v1/LeftHazardCamera" type="camera">
+  <gazebo reference="v1/LeftHazardCamera_Frame">
+    <sensor name="v1/LeftHazardCamera" type="camera">
       <camera>
         <image>
           <width>1280</width>
@@ -404,20 +404,20 @@
         </clip>
       </camera>
       <update_rate>60</update_rate>
-      <plugin filename="libgazebo_ros_camera.so" name="/v1/LeftHazardCamera_controller">
+      <plugin filename="libgazebo_ros_camera.so" name="v1/LeftHazardCamera_controller">
         <frameName>/v1/LeftHazardCamera_Frame</frameName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraName>/v1/LeftHazardCamera</cameraName>
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/LeftHazardCamera_Offset" type="fixed">
+  <joint name="v1/LeftHazardCamera_Offset" type="fixed">
     <origin rpy="0 0 0" xyz="0.0446987 -0.0406146 0.0182674"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
-    <child link="/v1/LeftHazardCamera_Frame"/>
+    <child link="v1/LeftHazardCamera_Frame"/>
   </joint>
-  <link name="/v1/StereoHazardCamera_Frame">
+  <link name="v1/StereoHazardCamera_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -425,11 +425,11 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/StereoHazardCamera_Offset" type="fixed">
+  <joint name="v1/StereoHazardCamera_Offset" type="fixed">
     <origin rpy="0 0 1.57" xyz=".1723 -0.04535 0.0344"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
-    <child link="/v1/StereoHazardCamera_Frame"/>
+    <child link="v1/StereoHazardCamera_Frame"/>
   </joint>
   <link name="head">
     <!-- Virtual Link -->
@@ -538,43 +538,43 @@
   <gazebo reference="neck_cy">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <actuator name="/neck/j1" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
-  <actuator name="/neck/j2" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
-  <actuator name="/neck/j3" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
+  <actuator name="neck/j1" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
+  <actuator name="neck/j2" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
+  <actuator name="neck/j3" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
   <transmission name="LowerNeckExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="neck_ay"/>
-      <actuator data="data" name="/neck/j1"/>
+      <actuator data="data" name="neck/j1"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="neck_ay"/>
-      <actuator data="positionCommand" name="/neck/j1"/>
+      <actuator data="positionCommand" name="neck/j1"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="neck_ay"/>
-      <actuator data="velocityCommand" name="/neck/j1"/>
+      <actuator data="velocityCommand" name="neck/j1"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="neck_ay"/>
-      <actuator data="effortCommand" name="/neck/j1"/>
+      <actuator data="effortCommand" name="neck/j1"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="neck_ay"/>
-      <actuator data="data" name="/neck/j1"/>
+      <actuator data="data" name="neck/j1"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="neck_ay"/>
-      <actuator data="positionCommand" name="/neck/j1"/>
+      <actuator data="positionCommand" name="neck/j1"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="neck_ay"/>
-      <actuator data="velocityCommand" name="/neck/j1"/>
+      <actuator data="velocityCommand" name="neck/j1"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="neck_ay"/>
-      <actuator data="effortCommand" name="/neck/j1"/>
+      <actuator data="effortCommand" name="neck/j1"/>
     </interface>
   </transmission>
   <transmission name="NeckRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -582,35 +582,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="neck_by"/>
-      <actuator data="data" name="/neck/j2"/>
+      <actuator data="data" name="neck/j2"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="neck_by"/>
-      <actuator data="positionCommand" name="/neck/j2"/>
+      <actuator data="positionCommand" name="neck/j2"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="neck_by"/>
-      <actuator data="velocityCommand" name="/neck/j2"/>
+      <actuator data="velocityCommand" name="neck/j2"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="neck_by"/>
-      <actuator data="effortCommand" name="/neck/j2"/>
+      <actuator data="effortCommand" name="neck/j2"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="neck_by"/>
-      <actuator data="data" name="/neck/j2"/>
+      <actuator data="data" name="neck/j2"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="neck_by"/>
-      <actuator data="positionCommand" name="/neck/j2"/>
+      <actuator data="positionCommand" name="neck/j2"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="neck_by"/>
-      <actuator data="velocityCommand" name="/neck/j2"/>
+      <actuator data="velocityCommand" name="neck/j2"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="neck_by"/>
-      <actuator data="effortCommand" name="/neck/j2"/>
+      <actuator data="effortCommand" name="neck/j2"/>
     </interface>
   </transmission>
   <transmission name="UpperNeckExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -618,68 +618,68 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="neck_cy"/>
-      <actuator data="data" name="/neck/j3"/>
+      <actuator data="data" name="neck/j3"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="neck_cy"/>
-      <actuator data="positionCommand" name="/neck/j3"/>
+      <actuator data="positionCommand" name="neck/j3"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="neck_cy"/>
-      <actuator data="velocityCommand" name="/neck/j3"/>
+      <actuator data="velocityCommand" name="neck/j3"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="neck_cy"/>
-      <actuator data="effortCommand" name="/neck/j3"/>
+      <actuator data="effortCommand" name="neck/j3"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="neck_cy"/>
-      <actuator data="data" name="/neck/j3"/>
+      <actuator data="data" name="neck/j3"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="neck_cy"/>
-      <actuator data="positionCommand" name="/neck/j3"/>
+      <actuator data="positionCommand" name="neck/j3"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="neck_cy"/>
-      <actuator data="velocityCommand" name="/neck/j3"/>
+      <actuator data="velocityCommand" name="neck/j3"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="neck_cy"/>
-      <actuator data="effortCommand" name="/neck/j3"/>
+      <actuator data="effortCommand" name="neck/j3"/>
     </interface>
   </transmission>
   <mode name="LowerNeckExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LowerNeckExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="neck_ay"/>
-      <actuator data="mode" name="/neck/j1"/>
+      <actuator data="mode" name="neck/j1"/>
     </translator>
     <translator name="LowerNeckExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="neck_ay"/>
-      <actuator data="modeCommand" name="/neck/j1"/>
+      <actuator data="modeCommand" name="neck/j1"/>
     </translator>
   </mode>
   <mode name="NeckRotatorMode" type="mode_plugins/ModeInterface">
     <translator name="NeckRotatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="neck_by"/>
-      <actuator data="mode" name="/neck/j2"/>
+      <actuator data="mode" name="neck/j2"/>
     </translator>
     <translator name="NeckRotatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="neck_by"/>
-      <actuator data="modeCommand" name="/neck/j2"/>
+      <actuator data="modeCommand" name="neck/j2"/>
     </translator>
   </mode>
   <mode name="UpperNeckExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="UpperNeckExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="neck_cy"/>
-      <actuator data="mode" name="/neck/j3"/>
+      <actuator data="mode" name="neck/j3"/>
     </translator>
     <translator name="UpperNeckExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="neck_cy"/>
-      <actuator data="modeCommand" name="/neck/j3"/>
+      <actuator data="modeCommand" name="neck/j3"/>
     </translator>
   </mode>
-  <link name="/v1/HeadCamBoard_Frame">
+  <link name="v1/HeadCamBoard_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -687,7 +687,7 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/HeadCamBoard_Frame">
+  <gazebo reference="v1/HeadCamBoard_Frame">
     <sensor name="asus/ir" type="depth">
       <camera>
         <image>
@@ -702,7 +702,7 @@
         </clip>
       </camera>
       <update_rate>30</update_rate>
-      <plugin filename="libAsusXtionPluginRos.so" name="/v1/HeadCamBoard_Controller">
+      <plugin filename="libAsusXtionPluginRos.so" name="v1/HeadCamBoard_Controller">
         <updateRate>30</updateRate>
         <cameraName>/v1/HeadCamBoard</cameraName>
         <imageTopicName>rgb/image_raw</imageTopicName>
@@ -716,13 +716,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/HeadCamBoard_Offset" type="fixed">
+  <joint name="v1/HeadCamBoard_Offset" type="fixed">
     <origin rpy="1.57079632679 3.14159265359 -.61" xyz="-0.186861111 0.085358875 -0.008499998"/>
     <axis xyz="0 0 1"/>
     <parent link="uhead"/>
-    <child link="/v1/HeadCamBoard_Frame"/>
+    <child link="v1/HeadCamBoard_Frame"/>
   </joint>
-  <link name="/v1/HeadCamBoardIR_Frame">
+  <link name="v1/HeadCamBoardIR_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -730,13 +730,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/HeadCamBoardIR_Offset" type="fixed">
+  <joint name="v1/HeadCamBoardIR_Offset" type="fixed">
     <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/HeadCamBoard_Frame"/>
-    <child link="/v1/HeadCamBoardIR_Frame"/>
+    <parent link="v1/HeadCamBoard_Frame"/>
+    <child link="v1/HeadCamBoardIR_Frame"/>
   </joint>
-  <link name="/v1/Ibeo_Frame">
+  <link name="v1/Ibeo_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -744,8 +744,8 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/Ibeo_Frame">
-    <sensor name="/v1/Ibeo_sensor" type="ray">
+  <gazebo reference="v1/Ibeo_Frame">
+    <sensor name="v1/Ibeo_sensor" type="ray">
       <pose>0 0 0 0 0 0</pose>
       <visualize>false</visualize>
       <update_rate>40</update_rate>
@@ -768,7 +768,7 @@
           <resolution>0.01</resolution>
         </range>
       </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="/v1/Ibeo_controller">
+      <plugin filename="libgazebo_ros_laser.so" name="v1/Ibeo_controller">
         <gaussianNoise>0.005</gaussianNoise>
         <alwaysOn>true</alwaysOn>
         <updateRate>40</updateRate>
@@ -777,13 +777,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/Ibeo_Offset" type="fixed">
+  <joint name="v1/Ibeo_Offset" type="fixed">
     <origin rpy="-1.57079632679 0 -3.14159265359" xyz="-0.133 0.0065 -0.02325"/>
     <axis xyz="0 0 1"/>
     <parent link="uhead"/>
-    <child link="/v1/Ibeo_Frame"/>
+    <child link="v1/Ibeo_Frame"/>
   </joint>
-  <link name="/v1/Ensenso_Frame">
+  <link name="v1/Ensenso_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -791,13 +791,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/Ensenso_Offset" type="fixed">
+  <joint name="v1/Ensenso_Offset" type="fixed">
     <origin rpy="0 -1.57079632679 0" xyz="-.1836 -.0645 -.00311"/>
     <axis xyz="0 0 1"/>
     <parent link="uhead"/>
-    <child link="/v1/Ensenso_Frame"/>
+    <child link="v1/Ensenso_Frame"/>
   </joint>
-  <link name="/v1/EnsensoIR_Frame">
+  <link name="v1/EnsensoIR_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -805,13 +805,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/EnsensoIR_Offset" type="fixed">
+  <joint name="v1/EnsensoIR_Offset" type="fixed">
     <origin rpy="-0.31182 0.0562965 -0.0034575" xyz="0.0 0.006939 0.014954"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/Ensenso_Frame"/>
-    <child link="/v1/EnsensoIR_Frame"/>
+    <parent link="v1/Ensenso_Frame"/>
+    <child link="v1/EnsensoIR_Frame"/>
   </joint>
-  <link name="/v1/HeadIMU_Frame">
+  <link name="v1/HeadIMU_Frame">
     <inertial>
       <mass value="0.018"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -839,11 +839,11 @@
       <serviceName>/v1/HeadIMU/imu_service</serviceName>
     </plugin>
   </gazebo>
-  <joint name="/v1/HeadIMU_Offset" type="fixed">
+  <joint name="v1/HeadIMU_Offset" type="fixed">
     <origin rpy="-1.57079632679 0  0" xyz="-0.103 -0.05239 0.00022730"/>
     <axis xyz="0 0 1"/>
     <parent link="uhead"/>
-    <child link="/v1/HeadIMU_Frame"/>
+    <child link="v1/HeadIMU_Frame"/>
   </joint>
   <link name="r_clav">
     <inertial>
@@ -945,7 +945,7 @@
   <gazebo reference="r_larm">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="r_arm_usy" type="revolute">
+  <joint name="r_arm_shz" type="revolute">
     <origin rpy="1.57079632679 0 0" xyz="0.29842 0 -0.03157"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
@@ -954,7 +954,7 @@
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="r_arm_usy">
+  <gazebo reference="r_arm_shz">
     <provideFeedback>1</provideFeedback>
   </gazebo>
   <joint name="r_arm_shx" type="revolute">
@@ -993,7 +993,7 @@
   <gazebo reference="r_arm_elx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <link name="r_farm">
+  <link name="r_ufarm">
     <inertial>
       <mass value="2.703"/>
       <origin rpy="0 0 0" xyz="0 0.0006 -0.12"/>
@@ -1015,10 +1015,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="r_farm">
+  <gazebo reference="r_ufarm">
     <material>Gazebo/White</material>
   </gazebo>
-  <link name="r_uhand">
+  <link name="r_lfarm">
     <inertial>
       <mass value="0.1"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1067,7 +1067,7 @@
     <origin rpy="1.57079632679 0 3.14159265359" xyz="0.0254 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="r_larm"/>
-    <child link="r_farm"/>
+    <child link="r_ufarm"/>
     <limit effort="26" lower="-2.35619448885" upper="2.35619448885" velocity="5"/>
     <controller_gains Kd="0" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
@@ -1078,8 +1078,8 @@
   <joint name="r_arm_mwx" type="revolute">
     <origin rpy="-1.57079632679 0 1.57079632679" xyz="0 0 -0.287"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_farm"/>
-    <child link="r_uhand"/>
+    <parent link="r_ufarm"/>
+    <child link="r_lfarm"/>
     <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
@@ -1087,59 +1087,59 @@
   <gazebo reference="r_arm_mwx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="r_arm_lwz" type="revolute">
+  <joint name="r_arm_lwy" type="revolute">
     <origin rpy="1.57079632679 0 1.57079632679" xyz="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_uhand"/>
+    <parent link="r_lfarm"/>
     <child link="r_hand"/>
     <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="r_arm_lwz">
+  <gazebo reference="r_arm_lwy">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <actuator name="/trunk/raj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_arm/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_arm/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_arm/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
-  <actuator name="/right_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
-  <actuator name="/right_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
+  <actuator name="trunk/raj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_arm/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_arm/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_arm/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
+  <actuator name="right_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
+  <actuator name="right_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
   <transmission name="RightShoulderExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_arm_usy"/>
-      <actuator data="data" name="/trunk/raj1"/>
+      <joint data="data" name="r_arm_shz"/>
+      <actuator data="data" name="trunk/raj1"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_arm_usy"/>
-      <actuator data="positionCommand" name="/trunk/raj1"/>
+      <joint data="positionCommand" name="r_arm_shz"/>
+      <actuator data="positionCommand" name="trunk/raj1"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_usy"/>
-      <actuator data="velocityCommand" name="/trunk/raj1"/>
+      <joint data="velocityCommand" name="r_arm_shz"/>
+      <actuator data="velocityCommand" name="trunk/raj1"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_arm_usy"/>
-      <actuator data="effortCommand" name="/trunk/raj1"/>
+      <joint data="effortCommand" name="r_arm_shz"/>
+      <actuator data="effortCommand" name="trunk/raj1"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_arm_usy"/>
-      <actuator data="data" name="/trunk/raj1"/>
+      <joint data="data" name="r_arm_shz"/>
+      <actuator data="data" name="trunk/raj1"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_arm_usy"/>
-      <actuator data="positionCommand" name="/trunk/raj1"/>
+      <joint data="positionCommand" name="r_arm_shz"/>
+      <actuator data="positionCommand" name="trunk/raj1"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_usy"/>
-      <actuator data="velocityCommand" name="/trunk/raj1"/>
+      <joint data="velocityCommand" name="r_arm_shz"/>
+      <actuator data="velocityCommand" name="trunk/raj1"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_arm_usy"/>
-      <actuator data="effortCommand" name="/trunk/raj1"/>
+      <joint data="effortCommand" name="r_arm_shz"/>
+      <actuator data="effortCommand" name="trunk/raj1"/>
     </interface>
   </transmission>
   <transmission name="RightShoulderAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -1147,35 +1147,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_arm_shx"/>
-      <actuator data="data" name="/right_arm/j2"/>
+      <actuator data="data" name="right_arm/j2"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_arm_shx"/>
-      <actuator data="positionCommand" name="/right_arm/j2"/>
+      <actuator data="positionCommand" name="right_arm/j2"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_arm_shx"/>
-      <actuator data="velocityCommand" name="/right_arm/j2"/>
+      <actuator data="velocityCommand" name="right_arm/j2"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_arm_shx"/>
-      <actuator data="effortCommand" name="/right_arm/j2"/>
+      <actuator data="effortCommand" name="right_arm/j2"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_arm_shx"/>
-      <actuator data="data" name="/right_arm/j2"/>
+      <actuator data="data" name="right_arm/j2"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_arm_shx"/>
-      <actuator data="positionCommand" name="/right_arm/j2"/>
+      <actuator data="positionCommand" name="right_arm/j2"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_arm_shx"/>
-      <actuator data="velocityCommand" name="/right_arm/j2"/>
+      <actuator data="velocityCommand" name="right_arm/j2"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_arm_shx"/>
-      <actuator data="effortCommand" name="/right_arm/j2"/>
+      <actuator data="effortCommand" name="right_arm/j2"/>
     </interface>
   </transmission>
   <transmission name="RightShoulderSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -1183,35 +1183,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_arm_ely"/>
-      <actuator data="data" name="/right_arm/j3"/>
+      <actuator data="data" name="right_arm/j3"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_arm_ely"/>
-      <actuator data="positionCommand" name="/right_arm/j3"/>
+      <actuator data="positionCommand" name="right_arm/j3"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_arm_ely"/>
-      <actuator data="velocityCommand" name="/right_arm/j3"/>
+      <actuator data="velocityCommand" name="right_arm/j3"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_arm_ely"/>
-      <actuator data="effortCommand" name="/right_arm/j3"/>
+      <actuator data="effortCommand" name="right_arm/j3"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_arm_ely"/>
-      <actuator data="data" name="/right_arm/j3"/>
+      <actuator data="data" name="right_arm/j3"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_arm_ely"/>
-      <actuator data="positionCommand" name="/right_arm/j3"/>
+      <actuator data="positionCommand" name="right_arm/j3"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_arm_ely"/>
-      <actuator data="velocityCommand" name="/right_arm/j3"/>
+      <actuator data="velocityCommand" name="right_arm/j3"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_arm_ely"/>
-      <actuator data="effortCommand" name="/right_arm/j3"/>
+      <actuator data="effortCommand" name="right_arm/j3"/>
     </interface>
   </transmission>
   <transmission name="RightElbowExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -1219,35 +1219,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_arm_elx"/>
-      <actuator data="data" name="/right_arm/j4"/>
+      <actuator data="data" name="right_arm/j4"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_arm_elx"/>
-      <actuator data="positionCommand" name="/right_arm/j4"/>
+      <actuator data="positionCommand" name="right_arm/j4"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_arm_elx"/>
-      <actuator data="velocityCommand" name="/right_arm/j4"/>
+      <actuator data="velocityCommand" name="right_arm/j4"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_arm_elx"/>
-      <actuator data="effortCommand" name="/right_arm/j4"/>
+      <actuator data="effortCommand" name="right_arm/j4"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_arm_elx"/>
-      <actuator data="data" name="/right_arm/j4"/>
+      <actuator data="data" name="right_arm/j4"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_arm_elx"/>
-      <actuator data="positionCommand" name="/right_arm/j4"/>
+      <actuator data="positionCommand" name="right_arm/j4"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_arm_elx"/>
-      <actuator data="velocityCommand" name="/right_arm/j4"/>
+      <actuator data="velocityCommand" name="right_arm/j4"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_arm_elx"/>
-      <actuator data="effortCommand" name="/right_arm/j4"/>
+      <actuator data="effortCommand" name="right_arm/j4"/>
     </interface>
   </transmission>
   <transmission name="RightForearmSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -1255,160 +1255,160 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_arm_uwy"/>
-      <actuator data="data" name="/right_arm/j5"/>
+      <actuator data="data" name="right_arm/j5"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_arm_uwy"/>
-      <actuator data="positionCommand" name="/right_arm/j5"/>
+      <actuator data="positionCommand" name="right_arm/j5"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_arm_uwy"/>
-      <actuator data="velocityCommand" name="/right_arm/j5"/>
+      <actuator data="velocityCommand" name="right_arm/j5"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_arm_uwy"/>
-      <actuator data="effortCommand" name="/right_arm/j5"/>
+      <actuator data="effortCommand" name="right_arm/j5"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_arm_uwy"/>
-      <actuator data="data" name="/right_arm/j5"/>
+      <actuator data="data" name="right_arm/j5"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_arm_uwy"/>
-      <actuator data="positionCommand" name="/right_arm/j5"/>
+      <actuator data="positionCommand" name="right_arm/j5"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_arm_uwy"/>
-      <actuator data="velocityCommand" name="/right_arm/j5"/>
+      <actuator data="velocityCommand" name="right_arm/j5"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_arm_uwy"/>
-      <actuator data="effortCommand" name="/right_arm/j5"/>
+      <actuator data="effortCommand" name="right_arm/j5"/>
     </interface>
   </transmission>
   <transmission name="Right_Wrist" type="loadable_transmissions/PushrodTransmission">
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_arm_mwx"/>
-      <joint data="data" name="r_arm_lwz"/>
-      <actuator data="data" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="data" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="data" name="r_arm_lwy"/>
+      <actuator data="data" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="data" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_arm_mwx"/>
-      <joint data="positionCommand" name="r_arm_lwz"/>
-      <actuator data="positionCommand" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="positionCommand" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="positionCommand" name="r_arm_lwy"/>
+      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_arm_mwx"/>
-      <joint data="velocityCommand" name="r_arm_lwz"/>
-      <actuator data="velocityCommand" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="velocityCommand" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="velocityCommand" name="r_arm_lwy"/>
+      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_arm_mwx"/>
-      <joint data="effortCommand" name="r_arm_lwz"/>
-      <actuator data="effortCommand" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="effortCommand" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="effortCommand" name="r_arm_lwy"/>
+      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_arm_mwx"/>
-      <joint data="data" name="r_arm_lwz"/>
-      <actuator data="data" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="data" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="data" name="r_arm_lwy"/>
+      <actuator data="data" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="data" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_arm_mwx"/>
-      <joint data="positionCommand" name="r_arm_lwz"/>
-      <actuator data="positionCommand" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="positionCommand" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="positionCommand" name="r_arm_lwy"/>
+      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_arm_mwx"/>
-      <joint data="velocityCommand" name="r_arm_lwz"/>
-      <actuator data="velocityCommand" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="velocityCommand" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="velocityCommand" name="r_arm_lwy"/>
+      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_arm_mwx"/>
-      <joint data="effortCommand" name="r_arm_lwz"/>
-      <actuator data="effortCommand" name="/right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="effortCommand" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="effortCommand" name="r_arm_lwy"/>
+      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_left"/>
     </interface>
     <parameterNamespace name="v1_wrist"/>
     <reflect data="1"/>
   </transmission>
   <mode name="RightShoulderExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="RightShoulderExtensorModeData" type="SimpleActuatorToJointMode">
-      <joint data="mode" name="r_arm_usy"/>
-      <actuator data="mode" name="/trunk/raj1"/>
+      <joint data="mode" name="r_arm_shz"/>
+      <actuator data="mode" name="trunk/raj1"/>
     </translator>
     <translator name="RightShoulderExtensorModeCommand" type="SimpleJointToActuatorMode">
-      <joint data="modeCommand" name="r_arm_usy"/>
-      <actuator data="modeCommand" name="/trunk/raj1"/>
+      <joint data="modeCommand" name="r_arm_shz"/>
+      <actuator data="modeCommand" name="trunk/raj1"/>
     </translator>
   </mode>
   <mode name="RightShoulderAdductorMode" type="mode_plugins/ModeInterface">
     <translator name="RightShoulderAdductorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_arm_shx"/>
-      <actuator data="mode" name="/right_arm/j2"/>
+      <actuator data="mode" name="right_arm/j2"/>
     </translator>
     <translator name="RightShoulderAdductorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_arm_shx"/>
-      <actuator data="modeCommand" name="/right_arm/j2"/>
+      <actuator data="modeCommand" name="right_arm/j2"/>
     </translator>
   </mode>
   <mode name="RightShoulderSupinatorMode" type="mode_plugins/ModeInterface">
     <translator name="RightShoulderSupinatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_arm_ely"/>
-      <actuator data="mode" name="/right_arm/j3"/>
+      <actuator data="mode" name="right_arm/j3"/>
     </translator>
     <translator name="RightShoulderSupinatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_arm_ely"/>
-      <actuator data="modeCommand" name="/right_arm/j3"/>
+      <actuator data="modeCommand" name="right_arm/j3"/>
     </translator>
   </mode>
   <mode name="RightElbowExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="RightElbowExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_arm_elx"/>
-      <actuator data="mode" name="/right_arm/j4"/>
+      <actuator data="mode" name="right_arm/j4"/>
     </translator>
     <translator name="RightElbowExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_arm_elx"/>
-      <actuator data="modeCommand" name="/right_arm/j4"/>
+      <actuator data="modeCommand" name="right_arm/j4"/>
     </translator>
   </mode>
   <mode name="RightForearmSupinatorMode" type="mode_plugins/ModeInterface">
     <translator name="RightForearmSupinatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_arm_uwy"/>
-      <actuator data="mode" name="/right_arm/j5"/>
+      <actuator data="mode" name="right_arm/j5"/>
     </translator>
     <translator name="RightForearmSupinatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_arm_uwy"/>
-      <actuator data="modeCommand" name="/right_arm/j5"/>
+      <actuator data="modeCommand" name="right_arm/j5"/>
     </translator>
   </mode>
   <mode name="RightWristExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="RightWristExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_arm_mwx"/>
-      <actuator data="mode" name="/right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="mode" name="right_arm/forearm_driver1/wrist_right"/>
     </translator>
     <translator name="RightWristExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_arm_mwx"/>
-      <actuator data="modeCommand" name="/right_arm/forearm_driver1/wrist_right"/>
+      <actuator data="modeCommand" name="right_arm/forearm_driver1/wrist_right"/>
     </translator>
   </mode>
   <mode name="RightWristMode" type="mode_plugins/ModeInterface">
     <translator name="RightWristModeData" type="SimpleActuatorToJointMode">
-      <joint data="mode" name="r_arm_lwz"/>
-      <actuator data="mode" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="mode" name="r_arm_lwy"/>
+      <actuator data="mode" name="right_arm/forearm_driver1/wrist_left"/>
     </translator>
     <translator name="RightWristModeCommand" type="SimpleJointToActuatorMode">
-      <joint data="modeCommand" name="r_arm_lwz"/>
-      <actuator data="modeCommand" name="/right_arm/forearm_driver1/wrist_left"/>
+      <joint data="modeCommand" name="r_arm_lwy"/>
+      <actuator data="modeCommand" name="right_arm/forearm_driver1/wrist_left"/>
     </translator>
   </mode>
-  <link name="/v1/RightCamBoard_Frame">
+  <link name="v1/RightCamBoard_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -1416,7 +1416,7 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/RightCamBoard_Frame">
+  <gazebo reference="v1/RightCamBoard_Frame">
     <sensor name="asus/ir" type="depth">
       <camera>
         <image>
@@ -1431,7 +1431,7 @@
         </clip>
       </camera>
       <update_rate>30</update_rate>
-      <plugin filename="libAsusXtionPluginRos.so" name="/v1/RightCamBoard_Controller">
+      <plugin filename="libAsusXtionPluginRos.so" name="v1/RightCamBoard_Controller">
         <updateRate>30</updateRate>
         <cameraName>/v1/RightCamBoard</cameraName>
         <imageTopicName>rgb/image_raw</imageTopicName>
@@ -1445,13 +1445,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/RightCamBoard_Offset" type="fixed">
+  <joint name="v1/RightCamBoard_Offset" type="fixed">
     <origin rpy="3.14159265359 1.57079632679 3.14159265359" xyz="0.049237 0.006877 -0.250708"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_farm"/>
-    <child link="/v1/RightCamBoard_Frame"/>
+    <parent link="r_ufarm"/>
+    <child link="v1/RightCamBoard_Frame"/>
   </joint>
-  <link name="/v1/RightCamBoardIR_Frame">
+  <link name="v1/RightCamBoardIR_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -1459,13 +1459,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/RightCamBoardIR_Offset" type="fixed">
+  <joint name="v1/RightCamBoardIR_Offset" type="fixed">
     <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightCamBoard_Frame"/>
-    <child link="/v1/RightCamBoardIR_Frame"/>
+    <parent link="v1/RightCamBoard_Frame"/>
+    <child link="v1/RightCamBoardIR_Frame"/>
   </joint>
-  <link name="/v1/LeftCamBoard_Frame">
+  <link name="v1/LeftCamBoard_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -1473,7 +1473,7 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/LeftCamBoard_Frame">
+  <gazebo reference="v1/LeftCamBoard_Frame">
     <sensor name="asus/ir" type="depth">
       <camera>
         <image>
@@ -1488,7 +1488,7 @@
         </clip>
       </camera>
       <update_rate>30</update_rate>
-      <plugin filename="libAsusXtionPluginRos.so" name="/v1/LeftCamBoard_Controller">
+      <plugin filename="libAsusXtionPluginRos.so" name="v1/LeftCamBoard_Controller">
         <updateRate>30</updateRate>
         <cameraName>/v1/LeftCamBoard</cameraName>
         <imageTopicName>rgb/image_raw</imageTopicName>
@@ -1502,13 +1502,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/LeftCamBoard_Offset" type="fixed">
+  <joint name="v1/LeftCamBoard_Offset" type="fixed">
     <origin rpy="3.14159265359 -1.57079632679 0" xyz="0.045536 -0.0085 0.250708"/>
     <axis xyz="0 0 1"/>
-    <parent link="l_farm"/>
-    <child link="/v1/LeftCamBoard_Frame"/>
+    <parent link="l_ufarm"/>
+    <child link="v1/LeftCamBoard_Frame"/>
   </joint>
-  <link name="/v1/LeftCamBoardIR_Frame">
+  <link name="v1/LeftCamBoardIR_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -1516,13 +1516,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/LeftCamBoardIR_Offset" type="fixed">
+  <joint name="v1/LeftCamBoardIR_Offset" type="fixed">
     <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftCamBoard_Frame"/>
-    <child link="/v1/LeftCamBoardIR_Frame"/>
+    <parent link="v1/LeftCamBoard_Frame"/>
+    <child link="v1/LeftCamBoardIR_Frame"/>
   </joint>
-  <link name="/v1/RightThumbMetacarpal">
+  <link name="v1/RightThumbMetacarpal">
     <inertial>
       <mass value="0.017"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1544,10 +1544,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightThumbMetacarpal">
+  <gazebo reference="v1/RightThumbMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightThumbProximalPhalanx">
+  <link name="v1/RightThumbProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.017 0 0"/>
@@ -1569,10 +1569,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightThumbProximalPhalanx">
+  <gazebo reference="v1/RightThumbProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightThumbMedialPhalanx">
+  <link name="v1/RightThumbMedialPhalanx">
     <inertial>
       <mass value="0.013"/>
       <origin rpy="0 0 0" xyz="0.011 0 0"/>
@@ -1594,10 +1594,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightThumbMedialPhalanx">
+  <gazebo reference="v1/RightThumbMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightThumbDistalPhalanx">
+  <link name="v1/RightThumbDistalPhalanx">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0.0086 0 0"/>
@@ -1619,34 +1619,34 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightThumbDistalPhalanx">
+  <gazebo reference="v1/RightThumbDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="RightThumbMPYaw" type="fixed">
     <origin rpy="1.57079632679 0 -1.34390352" xyz="0.00748367180673 -0.0324153432851 0.005182"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="/v1/RightThumbMetacarpal"/>
+    <child link="v1/RightThumbMetacarpal"/>
   </joint>
   <joint name="RightThumbMPExtensor" type="fixed">
     <origin rpy="1.57079632679 0 0" xyz="0.02286 0 -0.025091"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightThumbMetacarpal"/>
-    <child link="/v1/RightThumbProximalPhalanx"/>
+    <parent link="v1/RightThumbMetacarpal"/>
+    <child link="v1/RightThumbProximalPhalanx"/>
   </joint>
   <joint name="RightThumbPIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightThumbProximalPhalanx"/>
-    <child link="/v1/RightThumbMedialPhalanx"/>
+    <parent link="v1/RightThumbProximalPhalanx"/>
+    <child link="v1/RightThumbMedialPhalanx"/>
   </joint>
   <joint name="RightThumbDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02794 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightThumbMedialPhalanx"/>
-    <child link="/v1/RightThumbDistalPhalanx"/>
+    <parent link="v1/RightThumbMedialPhalanx"/>
+    <child link="v1/RightThumbDistalPhalanx"/>
   </joint>
-  <link name="/v1/RightPrimaryMetacarpal">
+  <link name="v1/RightPrimaryMetacarpal">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="-0.0048 0 0"/>
@@ -1668,10 +1668,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightPrimaryMetacarpal">
+  <gazebo reference="v1/RightPrimaryMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightPrimaryProximalPhalanx">
+  <link name="v1/RightPrimaryProximalPhalanx">
     <inertial>
       <mass value="0.018"/>
       <origin rpy="0 0 0" xyz="0.0175 0 0"/>
@@ -1693,10 +1693,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightPrimaryProximalPhalanx">
+  <gazebo reference="v1/RightPrimaryProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightPrimaryMedialPhalanx">
+  <link name="v1/RightPrimaryMedialPhalanx">
     <inertial>
       <mass value="0.01"/>
       <origin rpy="0 0 0" xyz="0.0108 -0.0003 0"/>
@@ -1718,10 +1718,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightPrimaryMedialPhalanx">
+  <gazebo reference="v1/RightPrimaryMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightPrimaryDistalPhalanx">
+  <link name="v1/RightPrimaryDistalPhalanx">
     <inertial>
       <mass value="0.005"/>
       <origin rpy="0 0 0" xyz="0.00857 -0.000696 0"/>
@@ -1743,34 +1743,34 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightPrimaryDistalPhalanx">
+  <gazebo reference="v1/RightPrimaryDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="RightPrimaryMPYaw" type="fixed">
     <origin rpy="0.0 0 -0.366519143" xyz="0.0776738914821 -0.0298162134085 0.00254"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="/v1/RightPrimaryMetacarpal"/>
+    <child link="v1/RightPrimaryMetacarpal"/>
   </joint>
   <joint name="RightPrimaryMPExtensor" type="fixed">
     <origin rpy="-1.57079632679 0 0.0568977336" xyz="0.0169724899301 0.000966739661347 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightPrimaryMetacarpal"/>
-    <child link="/v1/RightPrimaryProximalPhalanx"/>
+    <parent link="v1/RightPrimaryMetacarpal"/>
+    <child link="v1/RightPrimaryProximalPhalanx"/>
   </joint>
   <joint name="RightPrimaryPIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightPrimaryProximalPhalanx"/>
-    <child link="/v1/RightPrimaryMedialPhalanx"/>
+    <parent link="v1/RightPrimaryProximalPhalanx"/>
+    <child link="v1/RightPrimaryMedialPhalanx"/>
   </joint>
   <joint name="RightPrimaryDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02286 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightPrimaryMedialPhalanx"/>
-    <child link="/v1/RightPrimaryDistalPhalanx"/>
+    <parent link="v1/RightPrimaryMedialPhalanx"/>
+    <child link="v1/RightPrimaryDistalPhalanx"/>
   </joint>
-  <link name="/v1/RightMiddleProximalPhalanx">
+  <link name="v1/RightMiddleProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.017 0 0"/>
@@ -1792,10 +1792,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightMiddleProximalPhalanx">
+  <gazebo reference="v1/RightMiddleProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightMiddleMedialPhalanx">
+  <link name="v1/RightMiddleMedialPhalanx">
     <inertial>
       <mass value="0.011"/>
       <origin rpy="0 0 0" xyz="0.011 0 0"/>
@@ -1817,10 +1817,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightMiddleMedialPhalanx">
+  <gazebo reference="v1/RightMiddleMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightMiddleDistalPhalanx">
+  <link name="v1/RightMiddleDistalPhalanx">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0.0086 0 0"/>
@@ -1842,28 +1842,28 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightMiddleDistalPhalanx">
+  <gazebo reference="v1/RightMiddleDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="RightMiddleMPExtensor" type="fixed">
     <origin rpy="-1.57079632679 0 0" xyz="0.09767 0 0.00254"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="/v1/RightMiddleProximalPhalanx"/>
+    <child link="v1/RightMiddleProximalPhalanx"/>
   </joint>
   <joint name="RightMiddlePIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightMiddleProximalPhalanx"/>
-    <child link="/v1/RightMiddleMedialPhalanx"/>
+    <parent link="v1/RightMiddleProximalPhalanx"/>
+    <child link="v1/RightMiddleMedialPhalanx"/>
   </joint>
   <joint name="RightMiddleDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02286 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightMiddleMedialPhalanx"/>
-    <child link="/v1/RightMiddleDistalPhalanx"/>
+    <parent link="v1/RightMiddleMedialPhalanx"/>
+    <child link="v1/RightMiddleDistalPhalanx"/>
   </joint>
-  <link name="/v1/RightMedialMetacarpal">
+  <link name="v1/RightMedialMetacarpal">
     <inertial>
       <mass value="0.047"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1885,10 +1885,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightMedialMetacarpal">
+  <gazebo reference="v1/RightMedialMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightLittleProximalPhalanx">
+  <link name="v1/RightLittleProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0 0.017 0.050169"/>
@@ -1910,10 +1910,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightLittleProximalPhalanx">
+  <gazebo reference="v1/RightLittleProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightLittleMedialPhalanx">
+  <link name="v1/RightLittleMedialPhalanx">
     <inertial>
       <mass value="0.011"/>
       <origin rpy="0 0 0" xyz="0.011 0 0"/>
@@ -1935,10 +1935,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightLittleMedialPhalanx">
+  <gazebo reference="v1/RightLittleMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/RightLittleDistalPhalanx">
+  <link name="v1/RightLittleDistalPhalanx">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0.0086 0 0"/>
@@ -1960,32 +1960,32 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/RightLittleDistalPhalanx">
+  <gazebo reference="v1/RightLittleDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="RightLittleMPYaw" type="fixed">
     <origin rpy="-1.57079632679 0 0.690626785" xyz="0.0427072303336 0.0352928446888 -0.007747"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="/v1/RightMedialMetacarpal"/>
+    <child link="v1/RightMedialMetacarpal"/>
   </joint>
   <joint name="RightLittleMPExtensor" type="fixed">
     <origin rpy="-0.690626785 0 -1.57079632679" xyz="0 -0.010287 -0.071327"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightMedialMetacarpal"/>
-    <child link="/v1/RightLittleProximalPhalanx"/>
+    <parent link="v1/RightMedialMetacarpal"/>
+    <child link="v1/RightLittleProximalPhalanx"/>
   </joint>
   <joint name="RightLittlePIPExtensor" type="fixed">
     <origin rpy="0 0 1.57079632679" xyz="0 0.0381 0.050169"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightLittleProximalPhalanx"/>
-    <child link="/v1/RightLittleMedialPhalanx"/>
+    <parent link="v1/RightLittleProximalPhalanx"/>
+    <child link="v1/RightLittleMedialPhalanx"/>
   </joint>
   <joint name="RightLittleDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02286 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightLittleMedialPhalanx"/>
-    <child link="/v1/RightLittleDistalPhalanx"/>
+    <parent link="v1/RightLittleMedialPhalanx"/>
+    <child link="v1/RightLittleDistalPhalanx"/>
   </joint>
   <link name="l_clav">
     <inertial>
@@ -2087,7 +2087,7 @@
   <gazebo reference="l_larm">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="l_arm_usy" type="revolute">
+  <joint name="l_arm_shz" type="revolute">
     <origin rpy="1.57079632679 0 0" xyz="0.29842 0 -0.03157"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
@@ -2096,7 +2096,7 @@
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="l_arm_usy">
+  <gazebo reference="l_arm_shz">
     <provideFeedback>1</provideFeedback>
   </gazebo>
   <joint name="l_arm_shx" type="revolute">
@@ -2135,7 +2135,7 @@
   <gazebo reference="l_arm_elx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <link name="l_farm">
+  <link name="l_ufarm">
     <inertial>
       <mass value="2.703"/>
       <origin rpy="0 0 0" xyz="0 -0.0006 0.12"/>
@@ -2157,10 +2157,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="l_farm">
+  <gazebo reference="l_ufarm">
     <material>Gazebo/White</material>
   </gazebo>
-  <link name="l_uhand">
+  <link name="l_lfarm">
     <inertial>
       <mass value="0.1"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2317,7 +2317,7 @@
     <origin rpy="-1.57079632679 0 3.14159265359" xyz="0.0254 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="l_larm"/>
-    <child link="l_farm"/>
+    <child link="l_ufarm"/>
     <limit effort="26" lower="-2.35619448885" upper="2.35619448885" velocity="5"/>
     <controller_gains Kd="0" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
@@ -2328,8 +2328,8 @@
   <joint name="l_arm_mwx" type="revolute">
     <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0.287"/>
     <axis xyz="0 0 1"/>
-    <parent link="l_farm"/>
-    <child link="l_uhand"/>
+    <parent link="l_ufarm"/>
+    <child link="l_lfarm"/>
     <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
@@ -2337,10 +2337,10 @@
   <gazebo reference="l_arm_mwx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="l_arm_lwz" type="revolute">
+  <joint name="l_arm_lwy" type="revolute">
     <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="l_uhand"/>
+    <parent link="l_lfarm"/>
     <child link="l_hand"/>
     <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
@@ -2350,50 +2350,50 @@
 
 
 
-  <gazebo reference="l_arm_lwz">
+  <gazebo reference="l_arm_lwy">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <actuator name="/trunk/laj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_arm/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_arm/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_arm/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
-  <actuator name="/left_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
-  <actuator name="/left_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
+  <actuator name="trunk/laj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_arm/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_arm/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_arm/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
+  <actuator name="left_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
+  <actuator name="left_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
   <transmission name="LeftShoulderExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_arm_usy"/>
-      <actuator data="data" name="/trunk/laj1"/>
+      <joint data="data" name="l_arm_shz"/>
+      <actuator data="data" name="trunk/laj1"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_arm_usy"/>
-      <actuator data="positionCommand" name="/trunk/laj1"/>
+      <joint data="positionCommand" name="l_arm_shz"/>
+      <actuator data="positionCommand" name="trunk/laj1"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_usy"/>
-      <actuator data="velocityCommand" name="/trunk/laj1"/>
+      <joint data="velocityCommand" name="l_arm_shz"/>
+      <actuator data="velocityCommand" name="trunk/laj1"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_arm_usy"/>
-      <actuator data="effortCommand" name="/trunk/laj1"/>
+      <joint data="effortCommand" name="l_arm_shz"/>
+      <actuator data="effortCommand" name="trunk/laj1"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_arm_usy"/>
-      <actuator data="data" name="/trunk/laj1"/>
+      <joint data="data" name="l_arm_shz"/>
+      <actuator data="data" name="trunk/laj1"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_arm_usy"/>
-      <actuator data="positionCommand" name="/trunk/laj1"/>
+      <joint data="positionCommand" name="l_arm_shz"/>
+      <actuator data="positionCommand" name="trunk/laj1"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_usy"/>
-      <actuator data="velocityCommand" name="/trunk/laj1"/>
+      <joint data="velocityCommand" name="l_arm_shz"/>
+      <actuator data="velocityCommand" name="trunk/laj1"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_arm_usy"/>
-      <actuator data="effortCommand" name="/trunk/laj1"/>
+      <joint data="effortCommand" name="l_arm_shz"/>
+      <actuator data="effortCommand" name="trunk/laj1"/>
     </interface>
   </transmission>
   <transmission name="LeftShoulderAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -2401,35 +2401,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_arm_shx"/>
-      <actuator data="data" name="/left_arm/j2"/>
+      <actuator data="data" name="left_arm/j2"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_arm_shx"/>
-      <actuator data="positionCommand" name="/left_arm/j2"/>
+      <actuator data="positionCommand" name="left_arm/j2"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_arm_shx"/>
-      <actuator data="velocityCommand" name="/left_arm/j2"/>
+      <actuator data="velocityCommand" name="left_arm/j2"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_arm_shx"/>
-      <actuator data="effortCommand" name="/left_arm/j2"/>
+      <actuator data="effortCommand" name="left_arm/j2"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_arm_shx"/>
-      <actuator data="data" name="/left_arm/j2"/>
+      <actuator data="data" name="left_arm/j2"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_arm_shx"/>
-      <actuator data="positionCommand" name="/left_arm/j2"/>
+      <actuator data="positionCommand" name="left_arm/j2"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_arm_shx"/>
-      <actuator data="velocityCommand" name="/left_arm/j2"/>
+      <actuator data="velocityCommand" name="left_arm/j2"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_arm_shx"/>
-      <actuator data="effortCommand" name="/left_arm/j2"/>
+      <actuator data="effortCommand" name="left_arm/j2"/>
     </interface>
   </transmission>
   <transmission name="LeftShoulderSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -2437,35 +2437,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_arm_ely"/>
-      <actuator data="data" name="/left_arm/j3"/>
+      <actuator data="data" name="left_arm/j3"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_arm_ely"/>
-      <actuator data="positionCommand" name="/left_arm/j3"/>
+      <actuator data="positionCommand" name="left_arm/j3"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_arm_ely"/>
-      <actuator data="velocityCommand" name="/left_arm/j3"/>
+      <actuator data="velocityCommand" name="left_arm/j3"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_arm_ely"/>
-      <actuator data="effortCommand" name="/left_arm/j3"/>
+      <actuator data="effortCommand" name="left_arm/j3"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_arm_ely"/>
-      <actuator data="data" name="/left_arm/j3"/>
+      <actuator data="data" name="left_arm/j3"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_arm_ely"/>
-      <actuator data="positionCommand" name="/left_arm/j3"/>
+      <actuator data="positionCommand" name="left_arm/j3"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_arm_ely"/>
-      <actuator data="velocityCommand" name="/left_arm/j3"/>
+      <actuator data="velocityCommand" name="left_arm/j3"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_arm_ely"/>
-      <actuator data="effortCommand" name="/left_arm/j3"/>
+      <actuator data="effortCommand" name="left_arm/j3"/>
     </interface>
   </transmission>
   <transmission name="LeftElbowExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -2473,35 +2473,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_arm_elx"/>
-      <actuator data="data" name="/left_arm/j4"/>
+      <actuator data="data" name="left_arm/j4"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_arm_elx"/>
-      <actuator data="positionCommand" name="/left_arm/j4"/>
+      <actuator data="positionCommand" name="left_arm/j4"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_arm_elx"/>
-      <actuator data="velocityCommand" name="/left_arm/j4"/>
+      <actuator data="velocityCommand" name="left_arm/j4"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_arm_elx"/>
-      <actuator data="effortCommand" name="/left_arm/j4"/>
+      <actuator data="effortCommand" name="left_arm/j4"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_arm_elx"/>
-      <actuator data="data" name="/left_arm/j4"/>
+      <actuator data="data" name="left_arm/j4"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_arm_elx"/>
-      <actuator data="positionCommand" name="/left_arm/j4"/>
+      <actuator data="positionCommand" name="left_arm/j4"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_arm_elx"/>
-      <actuator data="velocityCommand" name="/left_arm/j4"/>
+      <actuator data="velocityCommand" name="left_arm/j4"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_arm_elx"/>
-      <actuator data="effortCommand" name="/left_arm/j4"/>
+      <actuator data="effortCommand" name="left_arm/j4"/>
     </interface>
   </transmission>
   <transmission name="LeftForearmSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -2509,160 +2509,160 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_arm_uwy"/>
-      <actuator data="data" name="/left_arm/j5"/>
+      <actuator data="data" name="left_arm/j5"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_arm_uwy"/>
-      <actuator data="positionCommand" name="/left_arm/j5"/>
+      <actuator data="positionCommand" name="left_arm/j5"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_arm_uwy"/>
-      <actuator data="velocityCommand" name="/left_arm/j5"/>
+      <actuator data="velocityCommand" name="left_arm/j5"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_arm_uwy"/>
-      <actuator data="effortCommand" name="/left_arm/j5"/>
+      <actuator data="effortCommand" name="left_arm/j5"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_arm_uwy"/>
-      <actuator data="data" name="/left_arm/j5"/>
+      <actuator data="data" name="left_arm/j5"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_arm_uwy"/>
-      <actuator data="positionCommand" name="/left_arm/j5"/>
+      <actuator data="positionCommand" name="left_arm/j5"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_arm_uwy"/>
-      <actuator data="velocityCommand" name="/left_arm/j5"/>
+      <actuator data="velocityCommand" name="left_arm/j5"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_arm_uwy"/>
-      <actuator data="effortCommand" name="/left_arm/j5"/>
+      <actuator data="effortCommand" name="left_arm/j5"/>
     </interface>
   </transmission>
   <transmission name="Left_Wrist" type="loadable_transmissions/PushrodTransmission">
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_arm_mwx"/>
-      <joint data="data" name="l_arm_lwz"/>
-      <actuator data="data" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="data" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="data" name="l_arm_lwy"/>
+      <actuator data="data" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="data" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_arm_mwx"/>
-      <joint data="positionCommand" name="l_arm_lwz"/>
-      <actuator data="positionCommand" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="positionCommand" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="positionCommand" name="l_arm_lwy"/>
+      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_arm_mwx"/>
-      <joint data="velocityCommand" name="l_arm_lwz"/>
-      <actuator data="velocityCommand" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="velocityCommand" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="velocityCommand" name="l_arm_lwy"/>
+      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_arm_mwx"/>
-      <joint data="effortCommand" name="l_arm_lwz"/>
-      <actuator data="effortCommand" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="effortCommand" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="effortCommand" name="l_arm_lwy"/>
+      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_arm_mwx"/>
-      <joint data="data" name="l_arm_lwz"/>
-      <actuator data="data" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="data" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="data" name="l_arm_lwy"/>
+      <actuator data="data" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="data" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_arm_mwx"/>
-      <joint data="positionCommand" name="l_arm_lwz"/>
-      <actuator data="positionCommand" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="positionCommand" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="positionCommand" name="l_arm_lwy"/>
+      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_arm_mwx"/>
-      <joint data="velocityCommand" name="l_arm_lwz"/>
-      <actuator data="velocityCommand" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="velocityCommand" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="velocityCommand" name="l_arm_lwy"/>
+      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_arm_mwx"/>
-      <joint data="effortCommand" name="l_arm_lwz"/>
-      <actuator data="effortCommand" name="/left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="effortCommand" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="effortCommand" name="l_arm_lwy"/>
+      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_right"/>
     </interface>
     <parameterNamespace name="v1_wrist"/>
     <reflect data="1"/>
   </transmission>
   <mode name="LeftShoulderExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftShoulderExtensorModeData" type="SimpleActuatorToJointMode">
-      <joint data="mode" name="l_arm_usy"/>
-      <actuator data="mode" name="/trunk/laj1"/>
+      <joint data="mode" name="l_arm_shz"/>
+      <actuator data="mode" name="trunk/laj1"/>
     </translator>
     <translator name="LeftShoulderExtensorModeCommand" type="SimpleJointToActuatorMode">
-      <joint data="modeCommand" name="l_arm_usy"/>
-      <actuator data="modeCommand" name="/trunk/laj1"/>
+      <joint data="modeCommand" name="l_arm_shz"/>
+      <actuator data="modeCommand" name="trunk/laj1"/>
     </translator>
   </mode>
   <mode name="LeftShoulderAdductorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftShoulderAdductorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_arm_shx"/>
-      <actuator data="mode" name="/left_arm/j2"/>
+      <actuator data="mode" name="left_arm/j2"/>
     </translator>
     <translator name="LeftShoulderAdductorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_arm_shx"/>
-      <actuator data="modeCommand" name="/left_arm/j2"/>
+      <actuator data="modeCommand" name="left_arm/j2"/>
     </translator>
   </mode>
   <mode name="LeftShoulderSupinatorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftShoulderSupinatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_arm_ely"/>
-      <actuator data="mode" name="/left_arm/j3"/>
+      <actuator data="mode" name="left_arm/j3"/>
     </translator>
     <translator name="LeftShoulderSupinatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_arm_ely"/>
-      <actuator data="modeCommand" name="/left_arm/j3"/>
+      <actuator data="modeCommand" name="left_arm/j3"/>
     </translator>
   </mode>
   <mode name="LeftElbowExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftElbowExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_arm_elx"/>
-      <actuator data="mode" name="/left_arm/j4"/>
+      <actuator data="mode" name="left_arm/j4"/>
     </translator>
     <translator name="LeftElbowExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_arm_elx"/>
-      <actuator data="modeCommand" name="/left_arm/j4"/>
+      <actuator data="modeCommand" name="left_arm/j4"/>
     </translator>
   </mode>
   <mode name="LeftForearmSupinatorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftForearmSupinatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_arm_uwy"/>
-      <actuator data="mode" name="/left_arm/j5"/>
+      <actuator data="mode" name="left_arm/j5"/>
     </translator>
     <translator name="LeftForearmSupinatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_arm_uwy"/>
-      <actuator data="modeCommand" name="/left_arm/j5"/>
+      <actuator data="modeCommand" name="left_arm/j5"/>
     </translator>
   </mode>
   <mode name="LeftWristExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftWristExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_arm_mwx"/>
-      <actuator data="mode" name="/left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="mode" name="left_arm/forearm_driver1/wrist_left"/>
     </translator>
     <translator name="LeftWristExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_arm_mwx"/>
-      <actuator data="modeCommand" name="/left_arm/forearm_driver1/wrist_left"/>
+      <actuator data="modeCommand" name="left_arm/forearm_driver1/wrist_left"/>
     </translator>
   </mode>
   <mode name="LeftWristMode" type="mode_plugins/ModeInterface">
     <translator name="LeftWristModeData" type="SimpleActuatorToJointMode">
-      <joint data="mode" name="l_arm_lwz"/>
-      <actuator data="mode" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="mode" name="l_arm_lwy"/>
+      <actuator data="mode" name="left_arm/forearm_driver1/wrist_right"/>
     </translator>
     <translator name="LeftWristModeCommand" type="SimpleJointToActuatorMode">
-      <joint data="modeCommand" name="l_arm_lwz"/>
-      <actuator data="modeCommand" name="/left_arm/forearm_driver1/wrist_right"/>
+      <joint data="modeCommand" name="l_arm_lwy"/>
+      <actuator data="modeCommand" name="left_arm/forearm_driver1/wrist_right"/>
     </translator>
   </mode>
-  <link name="/v1/LeftThumbMetacarpal">
+  <link name="v1/LeftThumbMetacarpal">
     <inertial>
       <mass value="0.017"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2684,10 +2684,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftThumbMetacarpal">
+  <gazebo reference="v1/LeftThumbMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftThumbProximalPhalanx">
+  <link name="v1/LeftThumbProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.017 0 0"/>
@@ -2709,10 +2709,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftThumbProximalPhalanx">
+  <gazebo reference="v1/LeftThumbProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftThumbMedialPhalanx">
+  <link name="v1/LeftThumbMedialPhalanx">
     <inertial>
       <mass value="0.013"/>
       <origin rpy="0 0 0" xyz="0.011 0 0"/>
@@ -2734,10 +2734,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftThumbMedialPhalanx">
+  <gazebo reference="v1/LeftThumbMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftThumbDistalPhalanx">
+  <link name="v1/LeftThumbDistalPhalanx">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0.0086 0 0"/>
@@ -2759,34 +2759,34 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftThumbDistalPhalanx">
+  <gazebo reference="v1/LeftThumbDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="LeftThumbMPYaw" type="fixed">
     <origin rpy="-1.57079632679 0 -1.34390352" xyz="0.00748367180673 -0.0324153432851 -0.005182"/>
     <axis xyz="0 0 1"/>
     <parent link="left_palm"/>
-    <child link="/v1/LeftThumbMetacarpal"/>
+    <child link="v1/LeftThumbMetacarpal"/>
   </joint>
   <joint name="LeftThumbMPExtensor" type="fixed">
     <origin rpy="-1.57079632679 0 0" xyz="0.02286 0 0.025091"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftThumbMetacarpal"/>
-    <child link="/v1/LeftThumbProximalPhalanx"/>
+    <parent link="v1/LeftThumbMetacarpal"/>
+    <child link="v1/LeftThumbProximalPhalanx"/>
   </joint>
   <joint name="LeftThumbPIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftThumbProximalPhalanx"/>
-    <child link="/v1/LeftThumbMedialPhalanx"/>
+    <parent link="v1/LeftThumbProximalPhalanx"/>
+    <child link="v1/LeftThumbMedialPhalanx"/>
   </joint>
   <joint name="LeftThumbDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02794 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftThumbMedialPhalanx"/>
-    <child link="/v1/LeftThumbDistalPhalanx"/>
+    <parent link="v1/LeftThumbMedialPhalanx"/>
+    <child link="v1/LeftThumbDistalPhalanx"/>
   </joint>
-  <link name="/v1/LeftPrimaryMetacarpal">
+  <link name="v1/LeftPrimaryMetacarpal">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="-0.0048 0 0"/>
@@ -2808,10 +2808,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftPrimaryMetacarpal">
+  <gazebo reference="v1/LeftPrimaryMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftPrimaryProximalPhalanx">
+  <link name="v1/LeftPrimaryProximalPhalanx">
     <inertial>
       <mass value="0.018"/>
       <origin rpy="0 0 0" xyz="0.0175 0 0"/>
@@ -2833,10 +2833,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftPrimaryProximalPhalanx">
+  <gazebo reference="v1/LeftPrimaryProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftPrimaryMedialPhalanx">
+  <link name="v1/LeftPrimaryMedialPhalanx">
     <inertial>
       <mass value="0.01"/>
       <origin rpy="0 0 0" xyz="0.0108 -0.0003 0"/>
@@ -2858,10 +2858,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftPrimaryMedialPhalanx">
+  <gazebo reference="v1/LeftPrimaryMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftPrimaryDistalPhalanx">
+  <link name="v1/LeftPrimaryDistalPhalanx">
     <inertial>
       <mass value="0.005"/>
       <origin rpy="0 0 0" xyz="0.00857 -0.000696 0"/>
@@ -2883,34 +2883,34 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftPrimaryDistalPhalanx">
+  <gazebo reference="v1/LeftPrimaryDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="LeftPrimaryMPYaw" type="fixed">
     <origin rpy="-3.14159265359 0 -0.366519143" xyz="0.0776738914821 -0.0298162134085 -0.00254"/>
     <axis xyz="0 0 1"/>
     <parent link="left_palm"/>
-    <child link="/v1/LeftPrimaryMetacarpal"/>
+    <child link="v1/LeftPrimaryMetacarpal"/>
   </joint>
   <joint name="LeftPrimaryMPExtensor" type="fixed">
     <origin rpy="-1.57079632679 0 0.0568977336" xyz="0.0169724899301 0.000966739661347 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftPrimaryMetacarpal"/>
-    <child link="/v1/LeftPrimaryProximalPhalanx"/>
+    <parent link="v1/LeftPrimaryMetacarpal"/>
+    <child link="v1/LeftPrimaryProximalPhalanx"/>
   </joint>
   <joint name="LeftPrimaryPIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftPrimaryProximalPhalanx"/>
-    <child link="/v1/LeftPrimaryMedialPhalanx"/>
+    <parent link="v1/LeftPrimaryProximalPhalanx"/>
+    <child link="v1/LeftPrimaryMedialPhalanx"/>
   </joint>
   <joint name="LeftPrimaryDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02286 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftPrimaryMedialPhalanx"/>
-    <child link="/v1/LeftPrimaryDistalPhalanx"/>
+    <parent link="v1/LeftPrimaryMedialPhalanx"/>
+    <child link="v1/LeftPrimaryDistalPhalanx"/>
   </joint>
-  <link name="/v1/LeftMiddleProximalPhalanx">
+  <link name="v1/LeftMiddleProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.017 0 0"/>
@@ -2932,10 +2932,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftMiddleProximalPhalanx">
+  <gazebo reference="v1/LeftMiddleProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftMiddleMedialPhalanx">
+  <link name="v1/LeftMiddleMedialPhalanx">
     <inertial>
       <mass value="0.011"/>
       <origin rpy="0 0 0" xyz="0.011 0 0"/>
@@ -2957,10 +2957,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftMiddleMedialPhalanx">
+  <gazebo reference="v1/LeftMiddleMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftMiddleDistalPhalanx">
+  <link name="v1/LeftMiddleDistalPhalanx">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0.0086 0 0"/>
@@ -2982,28 +2982,28 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftMiddleDistalPhalanx">
+  <gazebo reference="v1/LeftMiddleDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="LeftMiddleMPExtensor" type="fixed">
     <origin rpy="1.57079632679 0 0" xyz="0.09767 0 -0.00254"/>
     <axis xyz="0 0 1"/>
     <parent link="left_palm"/>
-    <child link="/v1/LeftMiddleProximalPhalanx"/>
+    <child link="v1/LeftMiddleProximalPhalanx"/>
   </joint>
   <joint name="LeftMiddlePIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftMiddleProximalPhalanx"/>
-    <child link="/v1/LeftMiddleMedialPhalanx"/>
+    <parent link="v1/LeftMiddleProximalPhalanx"/>
+    <child link="v1/LeftMiddleMedialPhalanx"/>
   </joint>
   <joint name="LeftMiddleDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02286 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftMiddleMedialPhalanx"/>
-    <child link="/v1/LeftMiddleDistalPhalanx"/>
+    <parent link="v1/LeftMiddleMedialPhalanx"/>
+    <child link="v1/LeftMiddleDistalPhalanx"/>
   </joint>
-  <link name="/v1/LeftMedialMetacarpal">
+  <link name="v1/LeftMedialMetacarpal">
     <inertial>
       <mass value="0.047"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3025,10 +3025,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftMedialMetacarpal">
+  <gazebo reference="v1/LeftMedialMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftLittleProximalPhalanx">
+  <link name="v1/LeftLittleProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0 -0.017 -0.050169"/>
@@ -3050,10 +3050,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftLittleProximalPhalanx">
+  <gazebo reference="v1/LeftLittleProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftLittleMedialPhalanx">
+  <link name="v1/LeftLittleMedialPhalanx">
     <inertial>
       <mass value="0.011"/>
       <origin rpy="0 0 0" xyz="0.011 0 0"/>
@@ -3075,10 +3075,10 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftLittleMedialPhalanx">
+  <gazebo reference="v1/LeftLittleMedialPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <link name="/v1/LeftLittleDistalPhalanx">
+  <link name="v1/LeftLittleDistalPhalanx">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0.0086 0 0"/>
@@ -3100,32 +3100,32 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="/v1/LeftLittleDistalPhalanx">
+  <gazebo reference="v1/LeftLittleDistalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="LeftLittleMPYaw" type="fixed">
     <origin rpy="1.57079632679 0 0.690626785" xyz="0.0427072303336 0.0352928446888 0.007747"/>
     <axis xyz="0 0 1"/>
     <parent link="left_palm"/>
-    <child link="/v1/LeftMedialMetacarpal"/>
+    <child link="v1/LeftMedialMetacarpal"/>
   </joint>
   <joint name="LeftLittleMPExtensor" type="fixed">
     <origin rpy="-0.690626785 0 1.57079632679" xyz="0 -0.010287 0.071327"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftMedialMetacarpal"/>
-    <child link="/v1/LeftLittleProximalPhalanx"/>
+    <parent link="v1/LeftMedialMetacarpal"/>
+    <child link="v1/LeftLittleProximalPhalanx"/>
   </joint>
   <joint name="LeftLittlePIPExtensor" type="fixed">
     <origin rpy="0 0 -1.57079632679" xyz="0 -0.0381 -0.050169"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftLittleProximalPhalanx"/>
-    <child link="/v1/LeftLittleMedialPhalanx"/>
+    <parent link="v1/LeftLittleProximalPhalanx"/>
+    <child link="v1/LeftLittleMedialPhalanx"/>
   </joint>
   <joint name="LeftLittleDIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.02286 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftLittleMedialPhalanx"/>
-    <child link="/v1/LeftLittleDistalPhalanx"/>
+    <parent link="v1/LeftLittleMedialPhalanx"/>
+    <child link="v1/LeftLittleDistalPhalanx"/>
   </joint>
   <link name="r_uglut">
     <inertial>
@@ -3353,46 +3353,46 @@
   <gazebo reference="r_leg_akx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <actuator name="/pelvis/rj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_leg/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_leg/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_leg/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/right_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
-  <actuator name="/right_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
+  <actuator name="pelvis/rj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_leg/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_leg/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_leg/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="right_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
+  <actuator name="right_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <transmission name="RightHipRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_leg_hpz"/>
-      <actuator data="data" name="/pelvis/rj1"/>
+      <actuator data="data" name="pelvis/rj1"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_leg_hpz"/>
-      <actuator data="positionCommand" name="/pelvis/rj1"/>
+      <actuator data="positionCommand" name="pelvis/rj1"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_leg_hpz"/>
-      <actuator data="velocityCommand" name="/pelvis/rj1"/>
+      <actuator data="velocityCommand" name="pelvis/rj1"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_leg_hpz"/>
-      <actuator data="effortCommand" name="/pelvis/rj1"/>
+      <actuator data="effortCommand" name="pelvis/rj1"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_leg_hpz"/>
-      <actuator data="data" name="/pelvis/rj1"/>
+      <actuator data="data" name="pelvis/rj1"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_leg_hpz"/>
-      <actuator data="positionCommand" name="/pelvis/rj1"/>
+      <actuator data="positionCommand" name="pelvis/rj1"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_leg_hpz"/>
-      <actuator data="velocityCommand" name="/pelvis/rj1"/>
+      <actuator data="velocityCommand" name="pelvis/rj1"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_leg_hpz"/>
-      <actuator data="effortCommand" name="/pelvis/rj1"/>
+      <actuator data="effortCommand" name="pelvis/rj1"/>
     </interface>
   </transmission>
   <transmission name="RightHipAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -3400,35 +3400,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_leg_hpx"/>
-      <actuator data="data" name="/right_leg/j2"/>
+      <actuator data="data" name="right_leg/j2"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_leg_hpx"/>
-      <actuator data="positionCommand" name="/right_leg/j2"/>
+      <actuator data="positionCommand" name="right_leg/j2"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_leg_hpx"/>
-      <actuator data="velocityCommand" name="/right_leg/j2"/>
+      <actuator data="velocityCommand" name="right_leg/j2"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_leg_hpx"/>
-      <actuator data="effortCommand" name="/right_leg/j2"/>
+      <actuator data="effortCommand" name="right_leg/j2"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_leg_hpx"/>
-      <actuator data="data" name="/right_leg/j2"/>
+      <actuator data="data" name="right_leg/j2"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_leg_hpx"/>
-      <actuator data="positionCommand" name="/right_leg/j2"/>
+      <actuator data="positionCommand" name="right_leg/j2"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_leg_hpx"/>
-      <actuator data="velocityCommand" name="/right_leg/j2"/>
+      <actuator data="velocityCommand" name="right_leg/j2"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_leg_hpx"/>
-      <actuator data="effortCommand" name="/right_leg/j2"/>
+      <actuator data="effortCommand" name="right_leg/j2"/>
     </interface>
   </transmission>
   <transmission name="RightHipExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -3436,35 +3436,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_leg_hpy"/>
-      <actuator data="data" name="/right_leg/j3"/>
+      <actuator data="data" name="right_leg/j3"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_leg_hpy"/>
-      <actuator data="positionCommand" name="/right_leg/j3"/>
+      <actuator data="positionCommand" name="right_leg/j3"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_leg_hpy"/>
-      <actuator data="velocityCommand" name="/right_leg/j3"/>
+      <actuator data="velocityCommand" name="right_leg/j3"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_leg_hpy"/>
-      <actuator data="effortCommand" name="/right_leg/j3"/>
+      <actuator data="effortCommand" name="right_leg/j3"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_leg_hpy"/>
-      <actuator data="data" name="/right_leg/j3"/>
+      <actuator data="data" name="right_leg/j3"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_leg_hpy"/>
-      <actuator data="positionCommand" name="/right_leg/j3"/>
+      <actuator data="positionCommand" name="right_leg/j3"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_leg_hpy"/>
-      <actuator data="velocityCommand" name="/right_leg/j3"/>
+      <actuator data="velocityCommand" name="right_leg/j3"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_leg_hpy"/>
-      <actuator data="effortCommand" name="/right_leg/j3"/>
+      <actuator data="effortCommand" name="right_leg/j3"/>
     </interface>
   </transmission>
   <transmission name="RightKneeExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -3472,85 +3472,85 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_leg_kny"/>
-      <actuator data="data" name="/right_leg/j4"/>
+      <actuator data="data" name="right_leg/j4"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_leg_kny"/>
-      <actuator data="positionCommand" name="/right_leg/j4"/>
+      <actuator data="positionCommand" name="right_leg/j4"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_leg_kny"/>
-      <actuator data="velocityCommand" name="/right_leg/j4"/>
+      <actuator data="velocityCommand" name="right_leg/j4"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_leg_kny"/>
-      <actuator data="effortCommand" name="/right_leg/j4"/>
+      <actuator data="effortCommand" name="right_leg/j4"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_leg_kny"/>
-      <actuator data="data" name="/right_leg/j4"/>
+      <actuator data="data" name="right_leg/j4"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_leg_kny"/>
-      <actuator data="positionCommand" name="/right_leg/j4"/>
+      <actuator data="positionCommand" name="right_leg/j4"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_leg_kny"/>
-      <actuator data="velocityCommand" name="/right_leg/j4"/>
+      <actuator data="velocityCommand" name="right_leg/j4"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_leg_kny"/>
-      <actuator data="effortCommand" name="/right_leg/j4"/>
+      <actuator data="effortCommand" name="right_leg/j4"/>
     </interface>
   </transmission>
   <transmission name="Right_Ankle" type="loadable_transmissions/PushrodTransmission">
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_leg_aky"/>
       <joint data="data" name="r_leg_akx"/>
-      <actuator data="data" name="/right_leg/j5"/>
-      <actuator data="data" name="/right_leg/j6"/>
+      <actuator data="data" name="right_leg/j5"/>
+      <actuator data="data" name="right_leg/j6"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="r_leg_aky"/>
       <joint data="positionCommand" name="r_leg_akx"/>
-      <actuator data="positionCommand" name="/right_leg/j5"/>
-      <actuator data="positionCommand" name="/right_leg/j6"/>
+      <actuator data="positionCommand" name="right_leg/j5"/>
+      <actuator data="positionCommand" name="right_leg/j6"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="r_leg_aky"/>
       <joint data="velocityCommand" name="r_leg_akx"/>
-      <actuator data="velocityCommand" name="/right_leg/j5"/>
-      <actuator data="velocityCommand" name="/right_leg/j6"/>
+      <actuator data="velocityCommand" name="right_leg/j5"/>
+      <actuator data="velocityCommand" name="right_leg/j6"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="r_leg_aky"/>
       <joint data="effortCommand" name="r_leg_akx"/>
-      <actuator data="effortCommand" name="/right_leg/j5"/>
-      <actuator data="effortCommand" name="/right_leg/j6"/>
+      <actuator data="effortCommand" name="right_leg/j5"/>
+      <actuator data="effortCommand" name="right_leg/j6"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="r_leg_aky"/>
       <joint data="data" name="r_leg_akx"/>
-      <actuator data="data" name="/right_leg/j5"/>
-      <actuator data="data" name="/right_leg/j6"/>
+      <actuator data="data" name="right_leg/j5"/>
+      <actuator data="data" name="right_leg/j6"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="r_leg_aky"/>
       <joint data="positionCommand" name="r_leg_akx"/>
-      <actuator data="positionCommand" name="/right_leg/j5"/>
-      <actuator data="positionCommand" name="/right_leg/j6"/>
+      <actuator data="positionCommand" name="right_leg/j5"/>
+      <actuator data="positionCommand" name="right_leg/j6"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="r_leg_aky"/>
       <joint data="velocityCommand" name="r_leg_akx"/>
-      <actuator data="velocityCommand" name="/right_leg/j5"/>
-      <actuator data="velocityCommand" name="/right_leg/j6"/>
+      <actuator data="velocityCommand" name="right_leg/j5"/>
+      <actuator data="velocityCommand" name="right_leg/j6"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="r_leg_aky"/>
       <joint data="effortCommand" name="r_leg_akx"/>
-      <actuator data="effortCommand" name="/right_leg/j5"/>
-      <actuator data="effortCommand" name="/right_leg/j6"/>
+      <actuator data="effortCommand" name="right_leg/j5"/>
+      <actuator data="effortCommand" name="right_leg/j6"/>
     </interface>
     <parameterNamespace name="v1_ankle"/>
     <reflect data="1"/>
@@ -3558,64 +3558,64 @@
   <mode name="RightHipRotatorMode" type="mode_plugins/ModeInterface">
     <translator name="RightHipRotatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_leg_hpz"/>
-      <actuator data="mode" name="/pelvis/rj1"/>
+      <actuator data="mode" name="pelvis/rj1"/>
     </translator>
     <translator name="RightHipRotatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_leg_hpz"/>
-      <actuator data="modeCommand" name="/pelvis/rj1"/>
+      <actuator data="modeCommand" name="pelvis/rj1"/>
     </translator>
   </mode>
   <mode name="RightHipAdductorMode" type="mode_plugins/ModeInterface">
     <translator name="RightHipAdductorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_leg_hpx"/>
-      <actuator data="mode" name="/right_leg/j2"/>
+      <actuator data="mode" name="right_leg/j2"/>
     </translator>
     <translator name="RightHipAdductorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_leg_hpx"/>
-      <actuator data="modeCommand" name="/right_leg/j2"/>
+      <actuator data="modeCommand" name="right_leg/j2"/>
     </translator>
   </mode>
   <mode name="RightHipExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="RightHipExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_leg_hpy"/>
-      <actuator data="mode" name="/right_leg/j3"/>
+      <actuator data="mode" name="right_leg/j3"/>
     </translator>
     <translator name="RightHipExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_leg_hpy"/>
-      <actuator data="modeCommand" name="/right_leg/j3"/>
+      <actuator data="modeCommand" name="right_leg/j3"/>
     </translator>
   </mode>
   <mode name="RightKneeExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="RightKneeExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_leg_kny"/>
-      <actuator data="mode" name="/right_leg/j4"/>
+      <actuator data="mode" name="right_leg/j4"/>
     </translator>
     <translator name="RightKneeExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_leg_kny"/>
-      <actuator data="modeCommand" name="/right_leg/j4"/>
+      <actuator data="modeCommand" name="right_leg/j4"/>
     </translator>
   </mode>
   <mode name="RightAnkleExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="RightAnkleExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_leg_aky"/>
-      <actuator data="mode" name="/right_leg/j5"/>
+      <actuator data="mode" name="right_leg/j5"/>
     </translator>
     <translator name="RightAnkleExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_leg_aky"/>
-      <actuator data="modeCommand" name="/right_leg/j5"/>
+      <actuator data="modeCommand" name="right_leg/j5"/>
     </translator>
   </mode>
   <mode name="RightAnkleMode" type="mode_plugins/ModeInterface">
     <translator name="RightAnkleModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_leg_akx"/>
-      <actuator data="mode" name="/right_leg/j6"/>
+      <actuator data="mode" name="right_leg/j6"/>
     </translator>
     <translator name="RightAnkleModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="r_leg_akx"/>
-      <actuator data="modeCommand" name="/right_leg/j6"/>
+      <actuator data="modeCommand" name="right_leg/j6"/>
     </translator>
   </mode>
-  <link name="/v1/RightLegHokuyo_Frame">
+  <link name="v1/RightLegHokuyo_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -3623,8 +3623,8 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/RightLegHokuyo_Frame">
-    <sensor name="/v1/RightLegHokuyo" type="ray">
+  <gazebo reference="v1/RightLegHokuyo_Frame">
+    <sensor name="v1/RightLegHokuyo" type="ray">
       <pose>0 0 0 0 0 0</pose>
       <visualize>false</visualize>
       <update_rate>40.0</update_rate>
@@ -3653,7 +3653,7 @@
           <stddev>0.01</stddev>
         </noise>
       </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="/v1/RightLegHokuyo_Controller">
+      <plugin filename="libgazebo_ros_laser.so" name="v1/RightLegHokuyo_Controller">
         <gaussianNoise>0.005</gaussianNoise>
         <alwaysOn>true</alwaysOn>
         <updateRate>40.0</updateRate>
@@ -3662,13 +3662,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/RightLegHokuyo_Offset" type="fixed">
+  <joint name="v1/RightLegHokuyo_Offset" type="fixed">
     <origin rpy="1.57079632679 0 -0.38394" xyz="0.350849 -0.098349 -0.036021"/>
     <axis xyz="0 0 1"/>
     <parent link="r_uleg"/>
-    <child link="/v1/RightLegHokuyo_Frame"/>
+    <child link="v1/RightLegHokuyo_Frame"/>
   </joint>
-  <link name="/v1/RightLegCamBoard_Frame">
+  <link name="v1/RightLegCamBoard_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -3676,7 +3676,7 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/RightLegCamBoard_Frame">
+  <gazebo reference="v1/RightLegCamBoard_Frame">
     <sensor name="asus/ir" type="depth">
       <camera>
         <image>
@@ -3691,7 +3691,7 @@
         </clip>
       </camera>
       <update_rate>30</update_rate>
-      <plugin filename="libAsusXtionPluginRos.so" name="/v1/RightLegCamBoard_Controller">
+      <plugin filename="libAsusXtionPluginRos.so" name="v1/RightLegCamBoard_Controller">
         <updateRate>30</updateRate>
         <cameraName>/v1/RightLegCamBoard</cameraName>
         <imageTopicName>rgb/image_raw</imageTopicName>
@@ -3705,13 +3705,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/RightLegCamBoard_Offset" type="fixed">
+  <joint name="v1/RightLegCamBoard_Offset" type="fixed">
     <origin rpy="-1.57079632679 0 1.3" xyz="0.344887 0.069118 -0.0085"/>
     <axis xyz="0 0 1"/>
     <parent link="r_lleg"/>
-    <child link="/v1/RightLegCamBoard_Frame"/>
+    <child link="v1/RightLegCamBoard_Frame"/>
   </joint>
-  <link name="/v1/RightLegCamBoardIR_Frame">
+  <link name="v1/RightLegCamBoardIR_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -3719,13 +3719,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/RightLegCamBoardIR_Offset" type="fixed">
+  <joint name="v1/RightLegCamBoardIR_Offset" type="fixed">
     <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/RightLegCamBoard_Frame"/>
-    <child link="/v1/RightLegCamBoardIR_Frame"/>
+    <parent link="v1/RightLegCamBoard_Frame"/>
+    <child link="v1/RightLegCamBoardIR_Frame"/>
   </joint>
-  <link name="/v1/RightCOP_Frame">
+  <link name="v1/RightCOP_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -3733,13 +3733,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/RightCOP_Offset" type="fixed">
+  <joint name="v1/RightCOP_Offset" type="fixed">
     <origin rpy="0.0 -1.57079632679 0" xyz="0.0845 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="r_foot"/>
-    <child link="/v1/RightCOP_Frame"/>
+    <child link="v1/RightCOP_Frame"/>
   </joint>
-  <link name="/v1/RightLeg6Axis_Frame">
+  <link name="v1/RightLeg6Axis_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -3747,13 +3747,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/RightLeg6Axis_Offset" type="fixed">
+  <joint name="v1/RightLeg6Axis_Offset" type="fixed">
     <origin rpy="-1.42079632679 -0.518666 -1.64601" xyz="0.0551839 0 0.0291731"/>
     <axis xyz="0 0 1"/>
     <parent link="r_foot"/>
-    <child link="/v1/RightLeg6Axis_Frame"/>
+    <child link="v1/RightLeg6Axis_Frame"/>
   </joint>
-  <link name="/v1/RightLegHermes_Frame">
+  <link name="v1/RightLegHermes_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -3761,13 +3761,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/RightLegHermes_Offset" type="fixed">
+  <joint name="v1/RightLegHermes_Offset" type="fixed">
     <origin rpy="0.0 -1.57079632679 0" xyz="0.0845 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="r_foot"/>
-    <child link="/v1/RightLegHermes_Frame"/>
+    <child link="v1/RightLegHermes_Frame"/>
   </joint>
-  <link name="/v1/RightMPU6000_Frame">
+  <link name="v1/RightMPU6000_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -3775,14 +3775,14 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/RightMPU6000_Offset" type="fixed">
+  <joint name="v1/RightMPU6000_Offset" type="fixed">
     <origin rpy="0 1.44079632679 3.14159265358" xyz="0.0471 0.00722 0.0843"/>
     <axis xyz="0 0 1"/>
     <parent link="r_foot"/>
-    <child link="/v1/RightMPU6000_Frame"/>
+    <child link="v1/RightMPU6000_Frame"/>
   </joint>
-  <copSensor frame="/v1/RightValkyrieCOP_Frame" name="/v1/RightValkyrieCOP" nodePath="/right_leg/cop" type="ValkyrieCOPSensor"/>
-  <imuSensor frame="/v1/RightMPU6000_Frame" name="/v1/RightMPU6000" nodePath="/right_leg/hermes" type="IMUSensorMPU6000"/>
+  <copSensor frame="v1/RightValkyrieCOP_Frame" name="v1/RightValkyrieCOP" nodePath="right_leg/cop" type="ValkyrieCOPSensor"/>
+  <imuSensor frame="v1/RightMPU6000_Frame" name="v1/RightMPU6000" nodePath="right_leg/hermes" type="IMUSensorMPU6000"/>
   <link name="l_uglut">
     <inertial>
       <mass value="2.39"/>
@@ -4009,46 +4009,46 @@
   <gazebo reference="l_leg_akx">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <actuator name="/pelvis/lj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_leg/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_leg/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_leg/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
-  <actuator name="/left_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
-  <actuator name="/left_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
+  <actuator name="pelvis/lj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_leg/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_leg/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_leg/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
+  <actuator name="left_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
+  <actuator name="left_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <transmission name="LeftHipRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_leg_hpz"/>
-      <actuator data="data" name="/pelvis/lj1"/>
+      <actuator data="data" name="pelvis/lj1"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_leg_hpz"/>
-      <actuator data="positionCommand" name="/pelvis/lj1"/>
+      <actuator data="positionCommand" name="pelvis/lj1"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_leg_hpz"/>
-      <actuator data="velocityCommand" name="/pelvis/lj1"/>
+      <actuator data="velocityCommand" name="pelvis/lj1"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_leg_hpz"/>
-      <actuator data="effortCommand" name="/pelvis/lj1"/>
+      <actuator data="effortCommand" name="pelvis/lj1"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_leg_hpz"/>
-      <actuator data="data" name="/pelvis/lj1"/>
+      <actuator data="data" name="pelvis/lj1"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_leg_hpz"/>
-      <actuator data="positionCommand" name="/pelvis/lj1"/>
+      <actuator data="positionCommand" name="pelvis/lj1"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_leg_hpz"/>
-      <actuator data="velocityCommand" name="/pelvis/lj1"/>
+      <actuator data="velocityCommand" name="pelvis/lj1"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_leg_hpz"/>
-      <actuator data="effortCommand" name="/pelvis/lj1"/>
+      <actuator data="effortCommand" name="pelvis/lj1"/>
     </interface>
   </transmission>
   <transmission name="LeftHipAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -4056,35 +4056,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_leg_hpx"/>
-      <actuator data="data" name="/left_leg/j2"/>
+      <actuator data="data" name="left_leg/j2"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_leg_hpx"/>
-      <actuator data="positionCommand" name="/left_leg/j2"/>
+      <actuator data="positionCommand" name="left_leg/j2"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_leg_hpx"/>
-      <actuator data="velocityCommand" name="/left_leg/j2"/>
+      <actuator data="velocityCommand" name="left_leg/j2"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_leg_hpx"/>
-      <actuator data="effortCommand" name="/left_leg/j2"/>
+      <actuator data="effortCommand" name="left_leg/j2"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_leg_hpx"/>
-      <actuator data="data" name="/left_leg/j2"/>
+      <actuator data="data" name="left_leg/j2"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_leg_hpx"/>
-      <actuator data="positionCommand" name="/left_leg/j2"/>
+      <actuator data="positionCommand" name="left_leg/j2"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_leg_hpx"/>
-      <actuator data="velocityCommand" name="/left_leg/j2"/>
+      <actuator data="velocityCommand" name="left_leg/j2"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_leg_hpx"/>
-      <actuator data="effortCommand" name="/left_leg/j2"/>
+      <actuator data="effortCommand" name="left_leg/j2"/>
     </interface>
   </transmission>
   <transmission name="LeftHipExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -4092,35 +4092,35 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_leg_hpy"/>
-      <actuator data="data" name="/left_leg/j3"/>
+      <actuator data="data" name="left_leg/j3"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_leg_hpy"/>
-      <actuator data="positionCommand" name="/left_leg/j3"/>
+      <actuator data="positionCommand" name="left_leg/j3"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_leg_hpy"/>
-      <actuator data="velocityCommand" name="/left_leg/j3"/>
+      <actuator data="velocityCommand" name="left_leg/j3"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_leg_hpy"/>
-      <actuator data="effortCommand" name="/left_leg/j3"/>
+      <actuator data="effortCommand" name="left_leg/j3"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_leg_hpy"/>
-      <actuator data="data" name="/left_leg/j3"/>
+      <actuator data="data" name="left_leg/j3"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_leg_hpy"/>
-      <actuator data="positionCommand" name="/left_leg/j3"/>
+      <actuator data="positionCommand" name="left_leg/j3"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_leg_hpy"/>
-      <actuator data="velocityCommand" name="/left_leg/j3"/>
+      <actuator data="velocityCommand" name="left_leg/j3"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_leg_hpy"/>
-      <actuator data="effortCommand" name="/left_leg/j3"/>
+      <actuator data="effortCommand" name="left_leg/j3"/>
     </interface>
   </transmission>
   <transmission name="LeftKneeExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
@@ -4128,85 +4128,85 @@
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_leg_kny"/>
-      <actuator data="data" name="/left_leg/j4"/>
+      <actuator data="data" name="left_leg/j4"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_leg_kny"/>
-      <actuator data="positionCommand" name="/left_leg/j4"/>
+      <actuator data="positionCommand" name="left_leg/j4"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_leg_kny"/>
-      <actuator data="velocityCommand" name="/left_leg/j4"/>
+      <actuator data="velocityCommand" name="left_leg/j4"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_leg_kny"/>
-      <actuator data="effortCommand" name="/left_leg/j4"/>
+      <actuator data="effortCommand" name="left_leg/j4"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_leg_kny"/>
-      <actuator data="data" name="/left_leg/j4"/>
+      <actuator data="data" name="left_leg/j4"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_leg_kny"/>
-      <actuator data="positionCommand" name="/left_leg/j4"/>
+      <actuator data="positionCommand" name="left_leg/j4"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_leg_kny"/>
-      <actuator data="velocityCommand" name="/left_leg/j4"/>
+      <actuator data="velocityCommand" name="left_leg/j4"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_leg_kny"/>
-      <actuator data="effortCommand" name="/left_leg/j4"/>
+      <actuator data="effortCommand" name="left_leg/j4"/>
     </interface>
   </transmission>
   <transmission name="Left_Ankle" type="loadable_transmissions/PushrodTransmission">
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_leg_aky"/>
       <joint data="data" name="l_leg_akx"/>
-      <actuator data="data" name="/left_leg/j5"/>
-      <actuator data="data" name="/left_leg/j6"/>
+      <actuator data="data" name="left_leg/j5"/>
+      <actuator data="data" name="left_leg/j6"/>
     </interface>
     <interface type="JointToActuatorPositionInterface">
       <joint data="positionCommand" name="l_leg_aky"/>
       <joint data="positionCommand" name="l_leg_akx"/>
-      <actuator data="positionCommand" name="/left_leg/j5"/>
-      <actuator data="positionCommand" name="/left_leg/j6"/>
+      <actuator data="positionCommand" name="left_leg/j5"/>
+      <actuator data="positionCommand" name="left_leg/j6"/>
     </interface>
     <interface type="JointToActuatorVelocityInterface">
       <joint data="velocityCommand" name="l_leg_aky"/>
       <joint data="velocityCommand" name="l_leg_akx"/>
-      <actuator data="velocityCommand" name="/left_leg/j5"/>
-      <actuator data="velocityCommand" name="/left_leg/j6"/>
+      <actuator data="velocityCommand" name="left_leg/j5"/>
+      <actuator data="velocityCommand" name="left_leg/j6"/>
     </interface>
     <interface type="JointToActuatorEffortInterface">
       <joint data="effortCommand" name="l_leg_aky"/>
       <joint data="effortCommand" name="l_leg_akx"/>
-      <actuator data="effortCommand" name="/left_leg/j5"/>
-      <actuator data="effortCommand" name="/left_leg/j6"/>
+      <actuator data="effortCommand" name="left_leg/j5"/>
+      <actuator data="effortCommand" name="left_leg/j6"/>
     </interface>
     <interface type="JointToActuatorStateInterface">
       <joint data="data" name="l_leg_aky"/>
       <joint data="data" name="l_leg_akx"/>
-      <actuator data="data" name="/left_leg/j5"/>
-      <actuator data="data" name="/left_leg/j6"/>
+      <actuator data="data" name="left_leg/j5"/>
+      <actuator data="data" name="left_leg/j6"/>
     </interface>
     <interface type="ActuatorToJointPositionInterface">
       <joint data="positionCommand" name="l_leg_aky"/>
       <joint data="positionCommand" name="l_leg_akx"/>
-      <actuator data="positionCommand" name="/left_leg/j5"/>
-      <actuator data="positionCommand" name="/left_leg/j6"/>
+      <actuator data="positionCommand" name="left_leg/j5"/>
+      <actuator data="positionCommand" name="left_leg/j6"/>
     </interface>
     <interface type="ActuatorToJointVelocityInterface">
       <joint data="velocityCommand" name="l_leg_aky"/>
       <joint data="velocityCommand" name="l_leg_akx"/>
-      <actuator data="velocityCommand" name="/left_leg/j5"/>
-      <actuator data="velocityCommand" name="/left_leg/j6"/>
+      <actuator data="velocityCommand" name="left_leg/j5"/>
+      <actuator data="velocityCommand" name="left_leg/j6"/>
     </interface>
     <interface type="ActuatorToJointEffortInterface">
       <joint data="effortCommand" name="l_leg_aky"/>
       <joint data="effortCommand" name="l_leg_akx"/>
-      <actuator data="effortCommand" name="/left_leg/j5"/>
-      <actuator data="effortCommand" name="/left_leg/j6"/>
+      <actuator data="effortCommand" name="left_leg/j5"/>
+      <actuator data="effortCommand" name="left_leg/j6"/>
     </interface>
     <parameterNamespace name="v1_ankle"/>
     <reflect data="-1"/>
@@ -4214,64 +4214,64 @@
   <mode name="LeftHipRotatorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftHipRotatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_leg_hpz"/>
-      <actuator data="mode" name="/pelvis/lj1"/>
+      <actuator data="mode" name="pelvis/lj1"/>
     </translator>
     <translator name="LeftHipRotatorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_leg_hpz"/>
-      <actuator data="modeCommand" name="/pelvis/lj1"/>
+      <actuator data="modeCommand" name="pelvis/lj1"/>
     </translator>
   </mode>
   <mode name="LeftHipAdductorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftHipAdductorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_leg_hpx"/>
-      <actuator data="mode" name="/left_leg/j2"/>
+      <actuator data="mode" name="left_leg/j2"/>
     </translator>
     <translator name="LeftHipAdductorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_leg_hpx"/>
-      <actuator data="modeCommand" name="/left_leg/j2"/>
+      <actuator data="modeCommand" name="left_leg/j2"/>
     </translator>
   </mode>
   <mode name="LeftHipExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftHipExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_leg_hpy"/>
-      <actuator data="mode" name="/left_leg/j3"/>
+      <actuator data="mode" name="left_leg/j3"/>
     </translator>
     <translator name="LeftHipExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_leg_hpy"/>
-      <actuator data="modeCommand" name="/left_leg/j3"/>
+      <actuator data="modeCommand" name="left_leg/j3"/>
     </translator>
   </mode>
   <mode name="LeftKneeExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftKneeExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_leg_kny"/>
-      <actuator data="mode" name="/left_leg/j4"/>
+      <actuator data="mode" name="left_leg/j4"/>
     </translator>
     <translator name="LeftKneeExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_leg_kny"/>
-      <actuator data="modeCommand" name="/left_leg/j4"/>
+      <actuator data="modeCommand" name="left_leg/j4"/>
     </translator>
   </mode>
   <mode name="LeftAnkleExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftAnkleExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_leg_aky"/>
-      <actuator data="mode" name="/left_leg/j5"/>
+      <actuator data="mode" name="left_leg/j5"/>
     </translator>
     <translator name="LeftAnkleExtensorModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_leg_aky"/>
-      <actuator data="modeCommand" name="/left_leg/j5"/>
+      <actuator data="modeCommand" name="left_leg/j5"/>
     </translator>
   </mode>
   <mode name="LeftAnkleMode" type="mode_plugins/ModeInterface">
     <translator name="LeftAnkleModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_leg_akx"/>
-      <actuator data="mode" name="/left_leg/j6"/>
+      <actuator data="mode" name="left_leg/j6"/>
     </translator>
     <translator name="LeftAnkleModeCommand" type="SimpleJointToActuatorMode">
       <joint data="modeCommand" name="l_leg_akx"/>
-      <actuator data="modeCommand" name="/left_leg/j6"/>
+      <actuator data="modeCommand" name="left_leg/j6"/>
     </translator>
   </mode>
-  <link name="/v1/LeftLegHokuyo_Frame">
+  <link name="v1/LeftLegHokuyo_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -4279,8 +4279,8 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/LeftLegHokuyo_Frame">
-    <sensor name="/v1/LeftLegHokuyo" type="ray">
+  <gazebo reference="v1/LeftLegHokuyo_Frame">
+    <sensor name="v1/LeftLegHokuyo" type="ray">
       <pose>0 0 0 0 0 0</pose>
       <visualize>false</visualize>
       <update_rate>40.0</update_rate>
@@ -4309,7 +4309,7 @@
           <stddev>0.01</stddev>
         </noise>
       </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="/v1/LeftLegHokuyo_Controller">
+      <plugin filename="libgazebo_ros_laser.so" name="v1/LeftLegHokuyo_Controller">
         <gaussianNoise>0.005</gaussianNoise>
         <alwaysOn>true</alwaysOn>
         <updateRate>40.0</updateRate>
@@ -4318,13 +4318,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/LeftLegHokuyo_Offset" type="fixed">
+  <joint name="v1/LeftLegHokuyo_Offset" type="fixed">
     <origin rpy="1.57079632679 0 -0.38394" xyz="0.350849 -0.098349 0.036021"/>
     <axis xyz="0 0 1"/>
     <parent link="l_uleg"/>
-    <child link="/v1/LeftLegHokuyo_Frame"/>
+    <child link="v1/LeftLegHokuyo_Frame"/>
   </joint>
-  <link name="/v1/LeftLegCamBoard_Frame">
+  <link name="v1/LeftLegCamBoard_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -4332,7 +4332,7 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <gazebo reference="/v1/LeftLegCamBoard_Frame">
+  <gazebo reference="v1/LeftLegCamBoard_Frame">
     <sensor name="asus/ir" type="depth">
       <camera>
         <image>
@@ -4347,7 +4347,7 @@
         </clip>
       </camera>
       <update_rate>30</update_rate>
-      <plugin filename="libAsusXtionPluginRos.so" name="/v1/LeftLegCamBoard_Controller">
+      <plugin filename="libAsusXtionPluginRos.so" name="v1/LeftLegCamBoard_Controller">
         <updateRate>30</updateRate>
         <cameraName>/v1/LeftLegCamBoard</cameraName>
         <imageTopicName>rgb/image_raw</imageTopicName>
@@ -4361,13 +4361,13 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="/v1/LeftLegCamBoard_Offset" type="fixed">
+  <joint name="v1/LeftLegCamBoard_Offset" type="fixed">
     <origin rpy="-1.57079632679 0 1.3" xyz="0.344887 0.069118 0.0085"/>
     <axis xyz="0 0 1"/>
     <parent link="l_lleg"/>
-    <child link="/v1/LeftLegCamBoard_Frame"/>
+    <child link="v1/LeftLegCamBoard_Frame"/>
   </joint>
-  <link name="/v1/LeftLegCamBoardIR_Frame">
+  <link name="v1/LeftLegCamBoardIR_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -4375,13 +4375,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/LeftLegCamBoardIR_Offset" type="fixed">
+  <joint name="v1/LeftLegCamBoardIR_Offset" type="fixed">
     <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
     <axis xyz="0 0 1"/>
-    <parent link="/v1/LeftLegCamBoard_Frame"/>
-    <child link="/v1/LeftLegCamBoardIR_Frame"/>
+    <parent link="v1/LeftLegCamBoard_Frame"/>
+    <child link="v1/LeftLegCamBoardIR_Frame"/>
   </joint>
-  <link name="/v1/LeftCOP_Frame">
+  <link name="v1/LeftCOP_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -4389,13 +4389,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/LeftCOP_Offset" type="fixed">
+  <joint name="v1/LeftCOP_Offset" type="fixed">
     <origin rpy="3.14159265358 1.57079632679 0" xyz="0.0845 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="l_foot"/>
-    <child link="/v1/LeftCOP_Frame"/>
+    <child link="v1/LeftCOP_Frame"/>
   </joint>
-  <link name="/v1/LeftLeg6Axis_Frame">
+  <link name="v1/LeftLeg6Axis_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -4403,13 +4403,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/LeftLeg6Axis_Offset" type="fixed">
+  <joint name="v1/LeftLeg6Axis_Offset" type="fixed">
     <origin rpy="1.72079632679 0.518666 1.64601" xyz="0.0551839 0 -0.0291731"/>
     <axis xyz="0 0 1"/>
     <parent link="l_foot"/>
-    <child link="/v1/LeftLeg6Axis_Frame"/>
+    <child link="v1/LeftLeg6Axis_Frame"/>
   </joint>
-  <link name="/v1/LeftLegHermes_Frame">
+  <link name="v1/LeftLegHermes_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -4417,13 +4417,13 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/LeftLegHermes_Offset" type="fixed">
+  <joint name="v1/LeftLegHermes_Offset" type="fixed">
     <origin rpy="3.14159265358 1.57079632679 0" xyz="0.0845 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="l_foot"/>
-    <child link="/v1/LeftLegHermes_Frame"/>
+    <child link="v1/LeftLegHermes_Frame"/>
   </joint>
-  <link name="/v1/LeftMPU6000_Frame">
+  <link name="v1/LeftMPU6000_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="0.1"/>
@@ -4431,12 +4431,12 @@
       <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
     </inertial>
   </link>
-  <joint name="/v1/LeftMPU6000_Offset" type="fixed">
+  <joint name="v1/LeftMPU6000_Offset" type="fixed">
     <origin rpy="0 -1.70079632679 0.0" xyz="0.0471 -0.00722 -0.0843"/>
     <axis xyz="0 0 1"/>
     <parent link="l_foot"/>
-    <child link="/v1/LeftMPU6000_Frame"/>
+    <child link="v1/LeftMPU6000_Frame"/>
   </joint>
-  <copSensor frame="/v1/LeftValkyrieCOP_Frame" name="/v1/LeftValkyrieCOP" nodePath="/left_leg/cop" type="ValkyrieCOPSensor"/>
-  <imuSensor frame="/v1/LeftMPU6000_Frame" name="/v1/LeftMPU6000" nodePath="/left_leg/hermes" type="IMUSensorMPU6000"/>
+  <copSensor frame="v1/LeftValkyrieCOP_Frame" name="v1/LeftValkyrieCOP" nodePath="left_leg/cop" type="ValkyrieCOPSensor"/>
+  <imuSensor frame="v1/LeftMPU6000_Frame" name="v1/LeftMPU6000" nodePath="left_leg/hermes" type="IMUSensorMPU6000"/>
 </robot>
