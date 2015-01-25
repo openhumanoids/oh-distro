@@ -127,5 +127,8 @@
     "r_arm_mwx",
     "r_arm_lwy"
   ],
-  "fixedPointFile" : "../../control/matlab/data/atlas_v5_fp.mat"
+  "fixedPointFile" : "../../control/matlab/data/atlas_v5_fp.mat",
+  "handCombination" : "LR_RR",
+  "leftFootMeshFiles" : ["meshes/l_talus.obj", "meshes/l_foot.obj"],
+  "rightFootMeshFiles" : ["meshes/r_talus.obj", "meshes/r_foot.obj"]
 }

@@ -140,5 +140,8 @@
     "l_leg_aky",
     "l_leg_akx"
   ],
-  "fixedPointFile" : "../../../../../control/matlab/data/valkyrie_fp.mat"
+  "fixedPointFile" : "../../../../../control/matlab/data/valkyrie_fp.mat",
+  "handCombination" : "LV_RV",
+  "leftFootMeshFiles" : ["meshes/2013_05_16/lj6_Left.stl"],
+  "rightFootMeshFiles" : ["meshes/2013_05_16/lj6_Right.stl"]
 }
