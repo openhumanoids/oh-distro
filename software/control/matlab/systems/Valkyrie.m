@@ -15,6 +15,12 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'floating')
         options.floating = true;
       end
+      if ~isfield(options,'terrain')
+        options.terrain = RigidBodyFlatTerrain;
+      end
+      if ~isfield(options,'hands')
+        options.hands = 'none';
+      end
 
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
