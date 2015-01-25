@@ -235,18 +235,18 @@ def applyMirror(joints):
     def flipLeftRight(jointName):
           return toLeft(jointName) if jointName.startswith('r_arm') else toRight(jointName)
 
-    #signFlips = [
-    #    'l_arm_shx',
-    #    'l_arm_elx',
-    #    'l_arm_mwx',
-    #    'back_bkz'
-    #         ]
+    signFlips = [
+        'l_arm_shx',
+        'l_arm_elx',
+        'l_arm_mwx',
+        'back_bkz'
+             ]
 
     flipped = {}
     for name, position in joints.iteritems():
         name = flipLeftRight(name)
-        #if toLeft(name) in signFlips:
-        #    position = -position
+        if toLeft(name) in signFlips:
+            position = -position
 
         flipped[name] = position
     return flipped
