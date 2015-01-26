@@ -23,13 +23,10 @@ with open(drcargs.args().directorConfigFile) as directorConfigFile:
     directorConfig = json.load(directorConfigFile)
     directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
     fixedPointFile = os.path.join(directorConfigDirectory, directorConfig['fixedPointFile'])
+    handCombination = directorConfig['handCombination']
     urdfConfig = directorConfig['urdfConfig']
     for key, urdf in list(urdfConfig.items()):
         urdfConfig[key] = os.path.join(directorConfigDirectory, urdf)
-
-
-
-defaultUrdfHands = 'LR_RR'
 
 
 def getRobotGrayColor():
@@ -304,15 +301,17 @@ class HandFactory(object):
           'LR' : 'left_robotiq',
           'LP' : 'left_pointer',
           'LI' : 'left_irobot',
+          'LV' : 'left_valkyrie',
           'RR' : 'right_robotiq',
           'RP' : 'right_pointer',
           'RI' : 'right_irobot',
+          'RV' : 'left_valkyrie',
           }
 
         if not defaultLeftHandType:
-            defaultLeftHandType = handTypesMap[defaultUrdfHands.split('_')[0]]
+            defaultLeftHandType = handTypesMap[handCombination.split('_')[0]]
         if not defaultRightHandType:
-            defaultRightHandType = handTypesMap[defaultUrdfHands.split('_')[1]]
+            defaultRightHandType = handTypesMap[handCombination.split('_')[1]]
 
         self.robotModel = robotModel
         self.loaders = {}
@@ -411,6 +410,19 @@ class HandLoader(object):
             handRootLink = '%s_base_link' % self.side
             robotMountLink = '%s_hand_force_torque' % self.side[0]
             palmLink = '%s_pointer_tip' % self.side
+
+
+        elif self.handType == 'valkyrie':
+
+            self.robotUrdf = 'model_LV_RV.urdf'
+            self.handLinkName = '%s_hand' % self.side[0]
+            self.handUrdf = 'valkyrie_hand_%s.urdf' % self.side
+            self.handJointName = '%s_valkyrie_hand_joint' % self.side
+
+            handRootLink = '%s_palm' % self.side
+            robotMountLink = '%s_hand_force_torque' % self.side[0]
+            palmLink = '%s_hand_face' % self.side[0]
+
 
         else:
             raise Exception('Unexpected hand type: %s' % self.handType)

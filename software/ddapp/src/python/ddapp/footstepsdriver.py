@@ -23,9 +23,22 @@ import drc as lcmdrc
 from bot_core.pose_t import pose_t
 from drc.robot_state_t import robot_state_t
 import functools
-
+import json
 
 from PythonQt import QtGui, QtCore
+
+_footMeshes = None
+_footMeshFiles = []
+with open(drcargs.args().directorConfigFile) as directorConfigFile:
+    directorConfig = json.load(directorConfigFile)
+    directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
+
+    _footMeshFiles=[]
+    _footMeshFiles.append( directorConfig['leftFootMeshFiles'] )
+    _footMeshFiles.append( directorConfig['rightFootMeshFiles'] )
+    for j in range(0,2):
+        for i in range(len(_footMeshFiles[j])):
+            _footMeshFiles[j][i] = os.path.join(directorConfigDirectory, _footMeshFiles[j][i])
 
 
 DEFAULT_PARAM_SET = 'drake'
@@ -52,12 +65,12 @@ DEFAULT_STEP_PARAMS = {'BDI': {'Max Num Steps': 20,
 
 
 def loadFootMeshes():
-    meshDir = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/meshes')
     meshes = []
-    for foot in ['l', 'r']:
+    for i in  range(0,2):
         d = DebugData()
-        d.addPolyData(ioUtils.readPolyData(os.path.join(meshDir, '%s_talus.stl' % foot), computeNormals=True))
-        d.addPolyData(ioUtils.readPolyData(os.path.join(meshDir, '%s_foot.stl' % foot), computeNormals=True))
+
+        for footMeshFile in _footMeshFiles[i]:
+          d.addPolyData(ioUtils.readPolyData( footMeshFile , computeNormals=True))
 
         t = vtk.vtkTransform()
         t.Scale(0.98, 0.98, 0.98)
@@ -82,7 +95,6 @@ def getRightFootColor():
     return [0.33, 1.0, 0.0]
 
 
-_footMeshes = None
 
 def getFootMeshes():
     global _footMeshes

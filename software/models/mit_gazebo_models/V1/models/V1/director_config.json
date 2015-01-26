@@ -32,28 +32,28 @@
 
       { "name" : "Left Arm",
         "joints" : [
-          "l_arm_usy",
+          "l_arm_shz",
           "l_arm_shx",
           "l_arm_ely",
           "l_arm_elx",
           "l_arm_uwy",
           "l_arm_mwx",
-          "l_arm_lwz"
+          "l_arm_lwy"
           ],
-        "labels" : ["usy", "shx", "ely", "elx", "uwy", "mwx", "lwz"]
+        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx", "lwy"]
       },
 
       { "name" : "Right Arm",
         "joints" : [
-          "r_arm_usy",
+          "r_arm_shz",
           "r_arm_shx",
           "r_arm_ely",
           "r_arm_elx",
           "r_arm_uwy",
           "r_arm_mwx",
-          "r_arm_lwz"
+          "r_arm_lwy"
           ],
-        "labels" : ["usy", "shx", "ely", "elx", "uwy", "mwx", "lwz"]
+        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx", "lwy"]
       },
 
       { "name" : "Neck",
@@ -79,20 +79,20 @@
     "neck_ay",
     "neck_by",
     "neck_cy",
-    "r_arm_usy",
+    "r_arm_shz",
     "r_arm_shx",
     "r_arm_ely",
     "r_arm_elx",
     "r_arm_uwy",
     "r_arm_mwx",
-    "r_arm_lwz",
-    "l_arm_usy",
+    "r_arm_lwy",
+    "l_arm_shz",
     "l_arm_shx",
     "l_arm_ely",
     "l_arm_elx",
     "l_arm_uwy",
     "l_arm_mwx",
-    "l_arm_lwz",
+    "l_arm_lwy",
     "r_leg_hpz",
     "r_leg_hpx",
     "r_leg_hpy",
@@ -113,20 +113,20 @@
     "neck_ay",
     "neck_by",
     "neck_cy",
-    "r_arm_usy",
+    "r_arm_shz",
     "r_arm_shx",
     "r_arm_ely",
     "r_arm_elx",
     "r_arm_uwy",
     "r_arm_mwx",
-    "r_arm_lwz",
-    "l_arm_usy",
+    "r_arm_lwy",
+    "l_arm_shz",
     "l_arm_shx",
     "l_arm_ely",
     "l_arm_elx",
     "l_arm_uwy",
     "l_arm_mwx",
-    "l_arm_lwz",
+    "l_arm_lwy",
     "r_leg_hpz",
     "r_leg_hpx",
     "r_leg_hpy",
@@ -140,5 +140,8 @@
     "l_leg_aky",
     "l_leg_akx"
   ],
-  "fixedPointFile" : "../../../../../control/matlab/data/valkyrie_fp.mat"
+  "fixedPointFile" : "../../../../../control/matlab/data/valkyrie_fp.mat",
+  "handCombination" : "LV_RV",
+  "leftFootMeshFiles" : ["meshes/2013_05_16/lj6_Left.stl"],
+  "rightFootMeshFiles" : ["meshes/2013_05_16/lj6_Right.stl"]
 }
