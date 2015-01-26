@@ -4,6 +4,8 @@ classdef IRB140State < SingletonCoordinateFrame
     function obj=IRB140State(r)
       typecheck(r,{'TimeSteppingRigidBodyManipulator','RigidBodyManipulator'});
       manipStateFrame = r.getManipulator().getStateFrame();
+      % IRB140 has 12-long state vector, so we can use that to detect extra
+      % state (environment, hand attachment)
       if (r.hands > 0 || length(manipStateFrame.coordinates) > 12)
         manipStateFrame = manipStateFrame.getFrameByNum(1);
       end
