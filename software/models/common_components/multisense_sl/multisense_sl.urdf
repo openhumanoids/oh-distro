@@ -61,7 +61,7 @@
     <visual>
       <origin xyz="-.032 -.08 0.013" rpy="-1.9179632679 -1.57079632679 0" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/head_camera.dae"/>
+        <mesh filename="package://multisense_sl/meshes/head_camera.obj"/>
       </geometry>
       <material name="">
         <color rgba="0.72941 0.35686 0.023529 1" />
