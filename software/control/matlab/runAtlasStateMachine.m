@@ -4,6 +4,8 @@ if nargin < 1
   controller_type = 2; % 1: PID, 2: PID+manip params, 3: PD+gravity comp, 4: inverse dynamics
   run_in_simul_mode = 0; % Initialize to support drakeWalking-like controllers
                          % (is this redundant with controller_type?)
+                         % Use value 1 for normal, 2 to add weights to the
+                         % control model's hands
 end
 if nargin < 2
   run_in_simul_mode = 0;
@@ -21,6 +23,9 @@ options.floating = true;
 options.ignore_friction = true;
 options.run_in_simul_mode = run_in_simul_mode;
 options.atlas_version = atlas_version;
+if (run_in_simul_mode == 2)
+  options.hands = 'robotiq_weight_only';
+end
 
 r = DRCAtlas([],options);
 r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
