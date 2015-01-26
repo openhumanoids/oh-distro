@@ -431,26 +431,11 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~isempty(laser_state))
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
         multisense_state = multisense.state_t();
-        multisense_state.joint_name = {'hokuyo_joint',
-          'pre_spindle_cal_x_joint',
-          'pre_spindle_cal_y_joint',
-          'pre_spindle_cal_z_joint',
-          'pre_spindle_cal_roll_joint',
-          'pre_spindle_cal_pitch_joint',
-          'pre_spindle_cal_yaw_joint',
-          'post_spindle_cal_x_joint',
-          'post_spindle_cal_y_joint',
-          'post_spindle_cal_z_joint',
-          'post_spindle_cal_roll_joint',
-          'post_spindle_cal_pitch_joint',
-          'post_spindle_cal_yaw_joint'};
+        multisense_state.joint_name = {'hokuyo_joint'};
         
-        multisense_state.joint_position = [mod(laser_spindle_angle+pi, 2*pi), ...
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        multisense_state.joint_velocity = [0.0, ...
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        multisense_state.joint_effort = [0.0, ...
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        multisense_state.joint_position = [mod(laser_spindle_angle+pi, 2*pi)];
+        multisense_state.joint_velocity = [0.0];
+        multisense_state.joint_effort = [0.0];
         multisense_state.num_joints = length(multisense_state.joint_name);
         multisense_state.utime = t*1000*1000;
         obj.lc.publish('MULTISENSE_STATE', multisense_state);
