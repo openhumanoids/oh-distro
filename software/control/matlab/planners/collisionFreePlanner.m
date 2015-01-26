@@ -41,7 +41,15 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   if ~isfield(options,'visualize'),options.visualize = false; end;
   if ~isfield(options,'quiet'),options.quiet = true; end;
   if ~isfield(options,'min_distance'), options.min_distance = 0.05; end;
-  if ~isfield(options,'major_iterations_limit'), options.major_iterations_limit = 50; end;
+  if ~isfield(options,'MajorIterationsLimit') 
+    options.MajorIterationsLimit = 50; 
+  end;
+  if ~isfield(options,'MajorOptimalityTolerance') 
+    options.MajorOptimalityTolerance = 1e-3; 
+  end;
+  if ~isfield(options,'MajorFeasibilityTolerance') 
+    options.MajorFeasibilityTolerance = 5e-5; 
+  end;
   if ~isfield(options,'t_max'), options.t_max = 30; end;
   if ~isfield(options,'joint_v_max'), options.joint_v_max = 30*pi/180; end;
   if ~isfield(options,'xyz_v_max'), options.xyz_v_max = 0.1; end;
@@ -137,10 +145,12 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
     k_pts*r_hand_step_lengths);
   prog = prog.addCost(r_hand_arc_length_cost,prog.q_inds);
 
-  prog = prog.setSolverOptions('snopt','MajorIterationsLimit',options.major_iterations_limit);
+  prog = prog.setSolverOptions('snopt','MajorIterationsLimit',options.MajorIterationsLimit);
   prog = prog.setSolverOptions('snopt','SuperBasicsLimit',2e3);
-  prog = prog.setSolverOptions('snopt','MajorOptimalityTolerance',1e-3);
-  prog = prog.setSolverOptions('snopt','MajorFeasibilityTolerance',5e-5);
+  %prog = prog.setSolverOptions('snopt','MajorOptimalityTolerance',1e-3);
+  %prog = prog.setSolverOptions('snopt','MajorFeasibilityTolerance',5e-5);
+  prog = prog.setSolverOptions('snopt','MajorOptimalityTolerance',options.MajorOptimalityTolerance);
+  prog = prog.setSolverOptions('snopt','MajorFeasibilityTolerance',options.MajorFeasibilityTolerance);
   prog = prog.setSolverOptions('snopt','IterationsLimit',5e5);
   prog = prog.setSolverOptions('snopt','LinesearchTolerance',0.1);
   plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,r.getStateFrame.coordinates);
