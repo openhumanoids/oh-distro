@@ -1,0 +1,364 @@
+<?xml version="1.0" ?><object name="polaris_ranger_ev" xmlns:mat="http://www.mit.edu" xmlns:trans="http://www.mit.edu" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param default_value="0.0" inc="0.001" max="100" min="-100" name="x"/>
+    <param default_value="0.055" inc="0.001" max="100" min="-100" name="y"/>
+    <param default_value="0.0" inc="0.001" max="100" min="-100" name="z"/>
+    <!--Roll,Pitch,Yaw are about Body Frame-->
+
+    <param default_value="0.0" inc="0.001" max="5" min="-5" name="roll"/>
+    <param default_value="0.0" inc="0.001" max="5" min="-5" name="pitch"/>
+    <param default_value="3.1385" inc="0.001" max="5" min="-5" name="yaw"/>
+    <param default_value="0.6" inc="0.001" max="2.0" min="-2.0" name="seat_depth"/>
+    <param default_value="1.44" inc="0.001" max="2.0" min="-2.0" name="seat_width"/>
+    <param default_value="0.36" inc="0.001" max="2.0" min="-2.0" name="seat_height"/>
+    <param default_value="0.075" inc="0.001" max="2.0" min="-2.0" name="seat_x"/>
+    <param default_value="0.56" inc="0.001" max="2.0" min="-2.0" name="seat_z"/>
+    <param default_value="1.36" inc="0.001" max="2.0" min="-2.0" name="seat_cushion_width"/>
+    <param default_value="0.1" inc="0.001" max="2.0" min="-2.0" name="seat_cushion_height"/>
+    <param default_value="0.529" inc="0.001" max="2.0" min="-2.0" name="seat_cushion_depth"/>
+    <param default_value="1.28" inc="0.001" max="2.0" min="-2.0" name="seat_back_width"/>
+    <param default_value="0.384" inc="0.001" max="2.0" min="-2.0" name="seat_back_height"/>
+    <param default_value="0.06" inc="0.001" max="2.0" min="-2.0" name="seat_back_thickness"/>
+    <param default_value="1.125" inc="0.001" max="2.0" min="-2.0" name="seat_back_z"/>
+    <param default_value="0.368" inc="0.001" max="2.0" min="-2.0" name="floor_z"/>
+    <param default_value="0.06" inc="0.001" max="2.0" min="-2.0" name="floor_thickness"/>
+    <param default_value="0.553" inc="0.001" max="2.0" min="-2.0" name="hood_depth"/>
+    <param default_value="1.4" inc="0.001" max="2.0" min="-2.0" name="hood_width"/>
+    <param default_value="0.121" inc="0.001" max="2.0" min="-2.0" name="hood_height"/>
+    <param default_value="1.092" inc="0.001" max="2.0" min="-2.0" name="hood_z"/>
+    <param default_value="0.924" inc="0.001" max="2.0" min="-2.0" name="hood_x"/>
+    <param default_value="0.229" inc="0.001" max="2.0" min="-2.0" name="side_wall_depth"/>
+    <param default_value="0.108" inc="0.001" max="2.0" min="-2.0" name="side_wall_width"/>
+    <param default_value="0.8" inc="0.001" max="2.0" min="-2.0" name="side_wall_height"/>
+    <param default_value="0.798" inc="0.001" max="2.0" min="-2.0" name="side_wall_x"/>
+    <param default_value="0.704" inc="0.001" max="2.0" min="-2.0" name="side_wall_y"/>
+    <param default_value="0.728" inc="0.001" max="2.0" min="-2.0" name="side_wall_z"/>
+    <param default_value="0.45" inc="0.001" max="2.0" min="-2.0" name="transmission_length"/>
+    <param default_value="0.18" inc="0.001" max="2.0" min="-2.0" name="transmission_width"/>
+    <param default_value="0.121" inc="0.001" max="2.0" min="-2.0" name="transmission_height"/>
+    <param default_value="0.018" inc="0.001" max="2.0" min="-2.0" name="transmission_slant_height"/>
+    <param default_value="1.082" inc="0.001" max="2.0" min="-2.0" name="cargo_length"/>
+    <param default_value="1.48" inc="0.001" max="2.0" min="-2.0" name="cargo_width"/>
+    <param default_value="0.27" inc="0.001" max="2.0" min="-2.0" name="cargo_depth"/>
+    <param default_value="0.084" inc="0.001" max="2.0" min="-2.0" name="cargo_thickness"/>
+    <param default_value="-0.795" inc="0.001" max="2.0" min="-2.0" name="cargo_x"/>
+    <param default_value="0.864" inc="0.001" max="2.0" min="-2.0" name="cargo_z"/>
+    <param default_value="0.893" inc="0.001" max="2.0" min="-2.0" name="footwell_width"/>
+    <param default_value="0.256" inc="0.001" max="2.0" min="-2.0" name="footwell_height"/>
+    <param default_value="0.0013" inc="0.001" max="2.0" min="-2.0" name="footwell_x"/>
+    <param default_value="0.08" inc="0.001" max="2.0" min="-2.0" name="footwell_z"/>
+    <param default_value="1.63" inc="0.001" max="2.0" min="-2.0" name="floor_length"/>
+    <param default_value="1.49" inc="0.001" max="2.0" min="-2.0" name="floor_width"/>
+    <param default_value="0.16" inc="0.001" max="2.0" min="-2.0" name="floor_x"/>
+    <param default_value="0.359" inc="0.001" max="2.0" min="-2.0" name="front_wall_depth"/>
+    <param default_value="0.143" inc="0.001" max="2.0" min="-2.0" name="front_wall_width"/>
+    <param default_value="0.768" inc="0.001" max="2.0" min="-2.0" name="front_wall_height"/>
+    <param default_value="0.862" inc="0.001" max="2.0" min="-2.0" name="front_wall_x"/>
+    <param default_value="0.571" inc="0.001" max="2.0" min="-2.0" name="front_wall_y"/>
+    <param default_value="0.728" inc="0.001" max="2.0" min="-2.0" name="front_wall_z"/>
+    <param default_value="0.861" inc="0.001" max="2.0" min="-2.0" name="steering_column_x"/>
+    <param default_value="0.393" inc="0.001" max="2.0" min="-2.0" name="steering_column_y"/>
+    <param default_value="0.713" inc="0.001" max="2.0" min="-2.0" name="steering_column_z"/>
+    <param default_value="0.8" inc="0.001" max="2.0" min="-2.0" name="steering_column_length"/>
+    <param default_value="0.092" inc="0.001" max="2.0" min="-2.0" name="steering_column_radius"/>
+    <param default_value="-0.505" inc="0.001" max="2.0" min="-2.0" name="steering_column_angle"/>
+    <!--<param default_value="0.0" inc="0.001" max="0.1" min="-0.1" name="steering_wheel_x"/>-->
+    <!--<param default_value="0.0" inc="0.001" max="0.1" min="-0.1" name="steering_wheel_y"/>-->
+    <param default_value="0.58" inc="0.001" max="2.0" min="-2.0" name="steering_wheel_z"/>
+    <param default_value="0.184" inc="0.001" max="2.0" min="-2.0" name="steering_wheel_radius"/>
+    <param default_value="0.036" inc="0.001" max="2.0" min="-2.0" name="steering_wheel_thickness"/>
+
+    <link name="chassis">
+      
+      <collision name="chassis_bottom">
+        <origin rpy="0 -0 0" xyz="${floor_x} 0 ${floor_z-floor_thickness/2}"/>
+         <geometry>
+           <box size="${floor_length} ${floor_width} ${floor_thickness}"/>
+         </geometry>
+      </collision>
+      <visual name="chassis_bottom">
+        <origin rpy="0 -0 0" xyz="0.1 0 ${floor_z-floor_thickness/2}"/>
+         <geometry>
+           <box size="${floor_length} ${floor_width} ${floor_thickness}"/>
+         </geometry>
+      </visual>
+
+      <collision name="footwell_back">
+        <origin rpy="0 0.4 0" xyz="${floor_x+floor_length/2+footwell_x} 0 ${floor_z+footwell_z}"/>
+         <geometry>
+           <box size="0.1 ${footwell_width} ${footwell_height}"/>
+         </geometry>
+      </collision>
+      <visual name="footwell_back">
+        <origin rpy="0 0.4 0" xyz="${floor_x+floor_length/2+footwell_x} 0 ${floor_z+footwell_z}"/>
+         <geometry>
+           <box size="0.1 ${footwell_width} ${footwell_height}"/>
+         </geometry>
+      </visual>
+  
+      <collision name="cargo_bottom">
+        <origin rpy="0 -0 0" xyz="${cargo_x} 0 ${cargo_z-cargo_thickness/2}"/>
+         <geometry>
+           <box size="${cargo_length} ${cargo_width} ${cargo_thickness}"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_front">
+        <origin rpy="0 -0 0" xyz="${cargo_x+cargo_length/2-cargo_thickness/2} 0 ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_thickness} ${cargo_width} ${cargo_depth}"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_back">
+        <origin rpy="0 -0 0" xyz="${cargo_x-cargo_length/2+cargo_thickness/2} 0 ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_thickness} ${cargo_width} ${cargo_depth}"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_left">
+        <origin rpy="0 -0 0" xyz="${cargo_x} ${cargo_width/2-cargo_thickness/2} ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_length} ${cargo_thickness} ${cargo_depth}"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_left">
+        <origin rpy="0 -0 0" xyz="${cargo_x} -${cargo_width/2+cargo_thickness/2} ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_length} ${cargo_thickness} ${cargo_depth}"/>
+         </geometry>
+      </collision>
+
+      <visual name="cargo_bottom">
+        <origin rpy="0 -0 0" xyz="${cargo_x} 0 ${cargo_z-cargo_thickness/2}"/>
+         <geometry>
+           <box size="${cargo_length} ${cargo_width} ${cargo_thickness}"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_front">
+        <origin rpy="0 -0 0" xyz="${cargo_x+cargo_length/2-cargo_thickness/2} 0 ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_thickness} ${cargo_width} ${cargo_depth}"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_back">
+        <origin rpy="0 -0 0" xyz="${cargo_x-cargo_length/2+cargo_thickness/2} 0 ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_thickness} ${cargo_width} ${cargo_depth}"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_left">
+        <origin rpy="0 -0 0" xyz="${cargo_x} ${cargo_width/2-cargo_thickness/2} ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_length} ${cargo_thickness} ${cargo_depth}"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_left">
+        <origin rpy="0 -0 0" xyz="${cargo_x} ${-cargo_width/2+cargo_thickness/2} ${cargo_z+cargo_depth/2}"/>
+         <geometry>
+           <box size="${cargo_length} ${cargo_thickness} ${cargo_depth}"/>
+         </geometry>
+      </visual>
+  
+      <collision name="transmission">
+        <origin rpy="0 -0 0" xyz="${seat_x+seat_depth/2+transmission_length/2} 0 ${floor_z+transmission_height/2}"/>
+         <geometry>
+           <box size="${transmission_length} ${transmission_width} ${transmission_height}"/>
+         </geometry>
+      </collision>
+      <visual name="transmission">
+        <origin rpy="0 -0 0" xyz="${seat_x+seat_depth/2+transmission_length/2} 0 ${floor_z+transmission_height/2}"/>
+         <geometry>
+           <box size="${transmission_length} ${transmission_width} ${transmission_height}"/>
+         </geometry>
+      </visual>
+
+      <collision name="transmission_slant">
+        <origin rpy="0 0.7854 0" xyz="${seat_x+seat_depth/2+transmission_slant_height} 0 ${floor_z+transmission_height+transmission_slant_height}"/>
+         <geometry>
+           <box size="${4*2^(1/2)*transmission_slant_height} ${transmission_width} ${2*2^(1/2)*transmission_slant_height}"/>
+         </geometry>
+      </collision>
+      <visual name="transmission_slant">
+        <origin rpy="0 0.7854 0" xyz="${seat_x+seat_depth/2+transmission_slant_height} 0 ${floor_z+transmission_height+transmission_slant_height}"/>
+         <geometry>
+           <box size="${4*2^(1/2)*transmission_slant_height} ${transmission_width} ${2*2^(1/2)*transmission_slant_height}"/>
+         </geometry>
+      </visual>
+
+      <collision name="transmission_slant">
+        <origin rpy="0 -0.7854 0" xyz="${seat_x+seat_depth/2+transmission_length+0.1} 0 ${floor_z+transmission_height+0.1}"/>
+         <geometry>
+           <box size="${4*2^(1/2)*transmission_slant_height+2*2^(1/2)*0.1} ${transmission_width} ${4*2^(1/2)*transmission_slant_height}"/>
+         </geometry>
+      </collision>
+      <visual name="transmission_slant">
+        <origin rpy="0 -0.7854 0" xyz="${seat_x+seat_depth/2+transmission_length+0.1} 0 ${floor_z+transmission_height+0.1}"/>
+         <geometry>
+           <box size="${4*2^(1/2)*transmission_slant_height+2*2^(1/2)*0.1} ${transmission_width} ${4*2^(1/2)*transmission_slant_height}"/>
+         </geometry>
+      </visual>
+
+      <collision name="seat">
+        <origin rpy="0 -0 0" xyz="${seat_x} 0 ${floor_z+seat_height/2}"/>
+         <geometry>
+           <box size="${seat_depth} ${seat_width} ${seat_height}"/>
+         </geometry>
+      </collision>
+      <visual name="seat">
+        <origin rpy="0 -0 0" xyz="${seat_x} 0 ${floor_z+seat_height/2}"/>
+         <geometry>
+           <box size="${seat_depth} ${seat_width} ${seat_height}"/>
+         </geometry>
+      </visual>
+  
+      <collision name="mud_seat">
+        <origin rpy="0 -0 0" xyz="${seat_x} 0 ${floor_z+seat_height+seat_cushion_height/2}"/>
+         <geometry>
+           <box size="${seat_cushion_depth} ${seat_cushion_width} ${seat_cushion_height}"/>
+         </geometry>
+      </collision>
+      <visual name="mud_seat">
+        <origin rpy="0 -0 0" xyz="${seat_x} 0 ${floor_z+seat_height+seat_cushion_height/2}"/>
+         <geometry>
+           <box size="${seat_cushion_depth} ${seat_cushion_width} ${seat_cushion_height}"/>
+         </geometry>
+      </visual>
+  
+      <collision name="seat_back">
+        <origin rpy="0 -0.2 0" xyz="${seat_x-0.2} 0 ${seat_back_z}"/>
+         <geometry>
+           <box size="${seat_back_thickness} ${seat_back_width} ${seat_back_height}"/>
+         </geometry>
+      </collision>
+      <visual name="seat_back">
+        <origin rpy="0 -0.25 0" xyz="${seat_x-0.2} 0 ${seat_back_z}"/>
+         <geometry>
+           <box size="${seat_back_thickness} ${seat_back_width} ${seat_back_height}"/>
+         </geometry>
+      </visual>
+  
+      <collision name="hood">
+        <origin rpy="0 0.3 0" xyz="${hood_x} 0 ${hood_z}"/>
+         <geometry>
+           <box size="${hood_depth} ${hood_width} ${hood_height}"/>
+         </geometry>
+      </collision>
+      <visual name="hood">
+        <origin rpy="0 0.3 0" xyz="${hood_x} 0 ${hood_z}"/>
+         <geometry>
+           <box size="${hood_depth} ${hood_width} ${hood_height}"/>
+         </geometry>
+      </visual>
+
+      <collision name="left_side_wall">
+        <origin rpy="0 0.1 0" xyz="${side_wall_x} ${-side_wall_y} ${side_wall_z}"/>
+         <geometry>
+           <box size="${side_wall_depth} ${side_wall_width} ${side_wall_height}"/>
+         </geometry>
+      </collision>
+      <visual name="left_side_wall">
+        <origin rpy="0 0.1 0" xyz="${side_wall_x} ${-side_wall_y} ${side_wall_z}"/>
+         <geometry>
+           <box size="${side_wall_depth} ${side_wall_width} ${side_wall_height}"/>
+         </geometry>
+      </visual>
+
+      <collision name="right_side_wall">
+        <origin rpy="0 0.1 0" xyz="${side_wall_x} ${side_wall_y} ${side_wall_z}"/>
+         <geometry>
+           <box size="${side_wall_depth} ${side_wall_width} ${side_wall_height}"/>
+         </geometry>
+      </collision>
+      <visual name="right_side_wall">
+        <origin rpy="0 0.1 0" xyz="${side_wall_x} ${side_wall_y} ${side_wall_z}"/>
+         <geometry>
+           <box size="${side_wall_depth} ${side_wall_width} ${side_wall_height}"/>
+         </geometry>
+      </visual>
+
+      <collision name="left_front_wall">
+        <origin rpy="0 0 0.9" xyz="${front_wall_x} ${-front_wall_y} ${front_wall_z}"/>
+         <geometry>
+           <box size="${front_wall_depth} ${front_wall_width} ${front_wall_height}"/>
+         </geometry>
+      </collision>
+      <collision name="right_front_wall">
+        <origin rpy="0 0 -0.9" xyz="${front_wall_x} ${front_wall_y} ${front_wall_z}"/>
+         <geometry>
+           <box size="${front_wall_depth} ${front_wall_width} ${front_wall_height}"/>
+         </geometry>
+      </collision>
+
+      <visual name="left_front_wall">
+        <origin rpy="0 0 0.9" xyz="${front_wall_x} ${-front_wall_y} ${front_wall_z}"/>
+         <geometry>
+           <box size="${front_wall_depth} ${front_wall_width} ${front_wall_height}"/>
+         </geometry>
+      </visual>
+      <visual name="right_front_wall">
+        <origin rpy="0 0 -0.9" xyz="${front_wall_x} ${front_wall_y} ${front_wall_z}"/>
+         <geometry>
+           <box size="${front_wall_depth} ${front_wall_width} ${front_wall_height}"/>
+         </geometry>
+      </visual>
+
+      <collision name="steering_column">
+        <origin rpy="0 ${steering_column_angle} 0" xyz="${steering_column_x} ${steering_column_y} ${steering_column_z}"/>
+         <geometry>
+           <cylinder length="${steering_column_length}" radius="${steering_column_radius}"/>
+         </geometry>
+      </collision>
+      <visual name="steering_column">
+        <origin rpy="0 ${steering_column_angle} 0" xyz="${steering_column_x} ${steering_column_y} ${steering_column_z}"/>
+         <geometry>
+           <cylinder length="${steering_column_length}" radius="${steering_column_radius}"/>
+         </geometry>
+      </visual>
+
+     <collision>
+       <origin rpy="0 ${steering_column_angle} 0" xyz="${steering_column_x+steering_wheel_z*sin(steering_column_angle)} ${steering_column_y} ${steering_column_z+steering_wheel_z*cos(steering_column_angle)}"/>
+       <geometry>
+         <cylinder length="${steering_wheel_thickness}" radius="${steering_wheel_radius}"/>
+       </geometry>
+     </collision>
+     <visual>
+       <origin rpy="0 ${steering_column_angle} 0" xyz="${steering_column_x+steering_wheel_z*sin(steering_column_angle)} ${steering_column_y} ${steering_column_z+steering_wheel_z*cos(steering_column_angle)}"/>
+       <geometry>
+         <cylinder length="${steering_wheel_thickness}" radius="${steering_wheel_radius}"/>
+       </geometry>
+     </visual>
+   </link>
+   <!--<link name="steering_wheel">-->
+     <!--<inertial>-->
+       <!--<origin xyz="0 0 0" rpy="0 0 0"/>-->
+       <!--<mass value="1"/>-->
+       <!--<inertia ixx="1" iyy="1" izz="1"/>-->
+     <!--</inertial>-->
+     <!--<collision>-->
+       <!--<origin xyz="${steering_wheel_x} ${steering_wheel_y} ${0.5+steering_wheel_z}" rpy="0 0 0"/>-->
+       <!--<geometry>-->
+         <!--<cylinder radius="${steering_wheel_radius}" length="${steering_wheel_thickness}"/>-->
+       <!--</geometry>-->
+     <!--</collision>-->
+     <!--<visual>-->
+       <!--<origin xyz="${steering_wheel_x} ${steering_wheel_y} ${0.5+steering_wheel_z}" rpy="0 0 0"/>-->
+       <!--<geometry>-->
+         <!--<cylinder radius="${steering_wheel_radius}" length="${steering_wheel_thickness}"/>-->
+       <!--</geometry>-->
+     <!--</visual>-->
+   <!--</link>-->
+   <!--<joint name="steering_wheel_joint" type="continuous">-->
+     <!--<parent link="chassis" type="link"/>-->
+     <!--<child link="steering_wheel" type="link"/>-->
+     <!--<origin xyz="${steering_column_x} ${steering_column_y} ${steering_column_z}" rpy="0 -0.48 0"/>-->
+     <!--<axis xyz="0 0 1"/>-->
+   <!--</joint>-->
+  </object>

@@ -1,0 +1,364 @@
+<?xml version="1.0" ?><robot name="polaris_ranger_ev" xmlns:mat="http://www.mit.edu" xmlns:trans="http://www.mit.edu" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param default_value="0.0" inc="0.001" max="100" min="-100" name="x"/>
+    <param default_value="0.055" inc="0.001" max="100" min="-100" name="y"/>
+    <param default_value="0.0" inc="0.001" max="100" min="-100" name="z"/>
+    <!--Roll,Pitch,Yaw are about Body Frame-->
+
+    <param default_value="0.0" inc="0.001" max="5" min="-5" name="roll"/>
+    <param default_value="0.0" inc="0.001" max="5" min="-5" name="pitch"/>
+    <param default_value="3.1385" inc="0.001" max="5" min="-5" name="yaw"/>
+    <param default_value="0.6" inc="0.001" max="2.0" min="-2.0" name="seat_depth"/>
+    <param default_value="1.44" inc="0.001" max="2.0" min="-2.0" name="seat_width"/>
+    <param default_value="0.36" inc="0.001" max="2.0" min="-2.0" name="seat_height"/>
+    <param default_value="0.075" inc="0.001" max="2.0" min="-2.0" name="seat_x"/>
+    <param default_value="0.56" inc="0.001" max="2.0" min="-2.0" name="seat_z"/>
+    <param default_value="1.36" inc="0.001" max="2.0" min="-2.0" name="seat_cushion_width"/>
+    <param default_value="0.1" inc="0.001" max="2.0" min="-2.0" name="seat_cushion_height"/>
+    <param default_value="0.529" inc="0.001" max="2.0" min="-2.0" name="seat_cushion_depth"/>
+    <param default_value="1.28" inc="0.001" max="2.0" min="-2.0" name="seat_back_width"/>
+    <param default_value="0.384" inc="0.001" max="2.0" min="-2.0" name="seat_back_height"/>
+    <param default_value="0.06" inc="0.001" max="2.0" min="-2.0" name="seat_back_thickness"/>
+    <param default_value="1.125" inc="0.001" max="2.0" min="-2.0" name="seat_back_z"/>
+    <param default_value="0.368" inc="0.001" max="2.0" min="-2.0" name="floor_z"/>
+    <param default_value="0.06" inc="0.001" max="2.0" min="-2.0" name="floor_thickness"/>
+    <param default_value="0.553" inc="0.001" max="2.0" min="-2.0" name="hood_depth"/>
+    <param default_value="1.4" inc="0.001" max="2.0" min="-2.0" name="hood_width"/>
+    <param default_value="0.121" inc="0.001" max="2.0" min="-2.0" name="hood_height"/>
+    <param default_value="1.092" inc="0.001" max="2.0" min="-2.0" name="hood_z"/>
+    <param default_value="0.924" inc="0.001" max="2.0" min="-2.0" name="hood_x"/>
+    <param default_value="0.229" inc="0.001" max="2.0" min="-2.0" name="side_wall_depth"/>
+    <param default_value="0.108" inc="0.001" max="2.0" min="-2.0" name="side_wall_width"/>
+    <param default_value="0.8" inc="0.001" max="2.0" min="-2.0" name="side_wall_height"/>
+    <param default_value="0.798" inc="0.001" max="2.0" min="-2.0" name="side_wall_x"/>
+    <param default_value="0.704" inc="0.001" max="2.0" min="-2.0" name="side_wall_y"/>
+    <param default_value="0.728" inc="0.001" max="2.0" min="-2.0" name="side_wall_z"/>
+    <param default_value="0.45" inc="0.001" max="2.0" min="-2.0" name="transmission_length"/>
+    <param default_value="0.18" inc="0.001" max="2.0" min="-2.0" name="transmission_width"/>
+    <param default_value="0.121" inc="0.001" max="2.0" min="-2.0" name="transmission_height"/>
+    <param default_value="0.0018" inc="0.001" max="2.0" min="-2.0" name="transmission_slant_height"/>
+    <param default_value="1.082" inc="0.001" max="2.0" min="-2.0" name="cargo_length"/>
+    <param default_value="1.48" inc="0.001" max="2.0" min="-2.0" name="cargo_width"/>
+    <param default_value="0.27" inc="0.001" max="2.0" min="-2.0" name="cargo_depth"/>
+    <param default_value="0.084" inc="0.001" max="2.0" min="-2.0" name="cargo_thickness"/>
+    <param default_value="-0.795" inc="0.001" max="2.0" min="-2.0" name="cargo_x"/>
+    <param default_value="0.864" inc="0.001" max="2.0" min="-2.0" name="cargo_z"/>
+    <param default_value="0.893" inc="0.001" max="2.0" min="-2.0" name="footwell_width"/>
+    <param default_value="0.256" inc="0.001" max="2.0" min="-2.0" name="footwell_height"/>
+    <param default_value="0.0013" inc="0.001" max="2.0" min="-2.0" name="footwell_x"/>
+    <param default_value="0.08" inc="0.001" max="2.0" min="-2.0" name="footwell_z"/>
+    <param default_value="1.63" inc="0.001" max="2.0" min="-2.0" name="floor_length"/>
+    <param default_value="1.49" inc="0.001" max="2.0" min="-2.0" name="floor_width"/>
+    <param default_value="0.16" inc="0.001" max="2.0" min="-2.0" name="floor_x"/>
+    <param default_value="0.359" inc="0.001" max="2.0" min="-2.0" name="front_wall_depth"/>
+    <param default_value="0.143" inc="0.001" max="2.0" min="-2.0" name="front_wall_width"/>
+    <param default_value="0.768" inc="0.001" max="2.0" min="-2.0" name="front_wall_height"/>
+    <param default_value="0.862" inc="0.001" max="2.0" min="-2.0" name="front_wall_x"/>
+    <param default_value="0.571" inc="0.001" max="2.0" min="-2.0" name="front_wall_y"/>
+    <param default_value="0.728" inc="0.001" max="2.0" min="-2.0" name="front_wall_z"/>
+    <param default_value="0.861" inc="0.001" max="2.0" min="-2.0" name="steering_column_x"/>
+    <param default_value="0.393" inc="0.001" max="2.0" min="-2.0" name="steering_column_y"/>
+    <param default_value="0.713" inc="0.001" max="2.0" min="-2.0" name="steering_column_z"/>
+    <param default_value="0.8" inc="0.001" max="2.0" min="-2.0" name="steering_column_length"/>
+    <param default_value="0.092" inc="0.001" max="2.0" min="-2.0" name="steering_column_radius"/>
+    <param default_value="-0.505" inc="0.001" max="2.0" min="-2.0" name="steering_column_angle"/>
+    <!--<param default_value="0.0" inc="0.001" max="0.1" min="-0.1" name="steering_wheel_x"/>-->
+    <!--<param default_value="0.0" inc="0.001" max="0.1" min="-0.1" name="steering_wheel_y"/>-->
+    <param default_value="0.58" inc="0.001" max="2.0" min="-2.0" name="steering_wheel_z"/>
+    <param default_value="0.184" inc="0.001" max="2.0" min="-2.0" name="steering_wheel_radius"/>
+    <param default_value="0.036" inc="0.001" max="2.0" min="-2.0" name="steering_wheel_thickness"/>
+
+    <link name="chassis">
+      
+      <collision name="chassis_bottom">
+        <origin rpy="0 -0 0" xyz="0.16 0 0.338"/>
+         <geometry>
+           <box size="1.63 1.49 0.06"/>
+         </geometry>
+      </collision>
+      <visual name="chassis_bottom">
+        <origin rpy="0 -0 0" xyz="0.1 0 0.338"/>
+         <geometry>
+           <box size="1.63 1.49 0.06"/>
+         </geometry>
+      </visual>
+
+      <collision name="footwell_back">
+        <origin rpy="0 0.4 0" xyz="0.9763 0 0.448"/>
+         <geometry>
+           <box size="0.1 0.893 0.256"/>
+         </geometry>
+      </collision>
+      <visual name="footwell_back">
+        <origin rpy="0 0.4 0" xyz="0.9763 0 0.448"/>
+         <geometry>
+           <box size="0.1 0.893 0.256"/>
+         </geometry>
+      </visual>
+  
+      <collision name="cargo_bottom">
+        <origin rpy="0 -0 0" xyz="-0.795 0 0.822"/>
+         <geometry>
+           <box size="1.082 1.48 0.084"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_front">
+        <origin rpy="0 -0 0" xyz="-0.296 0 0.999"/>
+         <geometry>
+           <box size="0.084 1.48 0.27"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_back">
+        <origin rpy="0 -0 0" xyz="-1.294 0 0.999"/>
+         <geometry>
+           <box size="0.084 1.48 0.27"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_left">
+        <origin rpy="0 -0 0" xyz="-0.795 0.698 0.999"/>
+         <geometry>
+           <box size="1.082 0.084 0.27"/>
+         </geometry>
+      </collision>
+  
+      <collision name="cargo_left">
+        <origin rpy="0 -0 0" xyz="-0.795 -0.782 0.999"/>
+         <geometry>
+           <box size="1.082 0.084 0.27"/>
+         </geometry>
+      </collision>
+
+      <visual name="cargo_bottom">
+        <origin rpy="0 -0 0" xyz="-0.795 0 0.822"/>
+         <geometry>
+           <box size="1.082 1.48 0.084"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_front">
+        <origin rpy="0 -0 0" xyz="-0.296 0 0.999"/>
+         <geometry>
+           <box size="0.084 1.48 0.27"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_back">
+        <origin rpy="0 -0 0" xyz="-1.294 0 0.999"/>
+         <geometry>
+           <box size="0.084 1.48 0.27"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_left">
+        <origin rpy="0 -0 0" xyz="-0.795 0.698 0.999"/>
+         <geometry>
+           <box size="1.082 0.084 0.27"/>
+         </geometry>
+      </visual>
+  
+      <visual name="cargo_left">
+        <origin rpy="0 -0 0" xyz="-0.795 -0.698 0.999"/>
+         <geometry>
+           <box size="1.082 0.084 0.27"/>
+         </geometry>
+      </visual>
+  
+      <collision name="transmission">
+        <origin rpy="0 -0 0" xyz="0.6 0 0.4285"/>
+         <geometry>
+           <box size="0.45 0.18 0.121"/>
+         </geometry>
+      </collision>
+      <visual name="transmission">
+        <origin rpy="0 -0 0" xyz="0.6 0 0.4285"/>
+         <geometry>
+           <box size="0.45 0.18 0.121"/>
+         </geometry>
+      </visual>
+
+      <collision name="transmission_slant">
+        <origin rpy="0 0.7854 0" xyz="0.393 0 0.507"/>
+         <geometry>
+           <box size="0.101823376491 0.18 0.0509116882454"/>
+         </geometry>
+      </collision>
+      <visual name="transmission_slant">
+        <origin rpy="0 0.7854 0" xyz="0.393 0 0.507"/>
+         <geometry>
+           <box size="0.101823376491 0.18 0.0509116882454"/>
+         </geometry>
+      </visual>
+
+      <collision name="transmission_slant">
+        <origin rpy="0 -0.7854 0" xyz="0.925 0 0.589"/>
+         <geometry>
+           <box size="0.384666088965 0.18 0.101823376491"/>
+         </geometry>
+      </collision>
+      <visual name="transmission_slant">
+        <origin rpy="0 -0.7854 0" xyz="0.925 0 0.589"/>
+         <geometry>
+           <box size="0.384666088965 0.18 0.101823376491"/>
+         </geometry>
+      </visual>
+
+      <collision name="seat">
+        <origin rpy="0 -0 0" xyz="0.075 0 0.548"/>
+         <geometry>
+           <box size="0.6 1.44 0.36"/>
+         </geometry>
+      </collision>
+      <visual name="seat">
+        <origin rpy="0 -0 0" xyz="0.075 0 0.548"/>
+         <geometry>
+           <box size="0.6 1.44 0.36"/>
+         </geometry>
+      </visual>
+  
+      <collision name="mud_seat">
+        <origin rpy="0 -0 0" xyz="0.075 0 0.778"/>
+         <geometry>
+           <box size="0.529 1.36 0.1"/>
+         </geometry>
+      </collision>
+      <visual name="mud_seat">
+        <origin rpy="0 -0 0" xyz="0.075 0 0.778"/>
+         <geometry>
+           <box size="0.529 1.36 0.1"/>
+         </geometry>
+      </visual>
+  
+      <collision name="seat_back">
+        <origin rpy="0 -0.2 0" xyz="-0.125 0 1.125"/>
+         <geometry>
+           <box size="0.06 1.28 0.384"/>
+         </geometry>
+      </collision>
+      <visual name="seat_back">
+        <origin rpy="0 -0.25 0" xyz="-0.125 0 1.125"/>
+         <geometry>
+           <box size="0.06 1.28 0.384"/>
+         </geometry>
+      </visual>
+  
+      <collision name="hood">
+        <origin rpy="0 0.3 0" xyz="0.924 0 1.092"/>
+         <geometry>
+           <box size="0.553 1.4 0.121"/>
+         </geometry>
+      </collision>
+      <visual name="hood">
+        <origin rpy="0 0.3 0" xyz="0.924 0 1.092"/>
+         <geometry>
+           <box size="0.553 1.4 0.121"/>
+         </geometry>
+      </visual>
+
+      <collision name="left_side_wall">
+        <origin rpy="0 0.1 0" xyz="0.798 -0.704 0.728"/>
+         <geometry>
+           <box size="0.229 0.108 0.8"/>
+         </geometry>
+      </collision>
+      <visual name="left_side_wall">
+        <origin rpy="0 0.1 0" xyz="0.798 -0.704 0.728"/>
+         <geometry>
+           <box size="0.229 0.108 0.8"/>
+         </geometry>
+      </visual>
+
+      <collision name="right_side_wall">
+        <origin rpy="0 0.1 0" xyz="0.798 0.704 0.728"/>
+         <geometry>
+           <box size="0.229 0.108 0.8"/>
+         </geometry>
+      </collision>
+      <visual name="right_side_wall">
+        <origin rpy="0 0.1 0" xyz="0.798 0.704 0.728"/>
+         <geometry>
+           <box size="0.229 0.108 0.8"/>
+         </geometry>
+      </visual>
+
+      <collision name="left_front_wall">
+        <origin rpy="0 0 0.9" xyz="0.862 -0.571 0.728"/>
+         <geometry>
+           <box size="0.359 0.143 0.768"/>
+         </geometry>
+      </collision>
+      <collision name="right_front_wall">
+        <origin rpy="0 0 -0.9" xyz="0.862 0.571 0.728"/>
+         <geometry>
+           <box size="0.359 0.143 0.768"/>
+         </geometry>
+      </collision>
+
+      <visual name="left_front_wall">
+        <origin rpy="0 0 0.9" xyz="0.862 -0.571 0.728"/>
+         <geometry>
+           <box size="0.359 0.143 0.768"/>
+         </geometry>
+      </visual>
+      <visual name="right_front_wall">
+        <origin rpy="0 0 -0.9" xyz="0.862 0.571 0.728"/>
+         <geometry>
+           <box size="0.359 0.143 0.768"/>
+         </geometry>
+      </visual>
+
+      <collision name="steering_column">
+        <origin rpy="0 -0.505 0" xyz="0.861 0.393 0.713"/>
+         <geometry>
+           <cylinder length="0.8" radius="0.092"/>
+         </geometry>
+      </collision>
+      <visual name="steering_column">
+        <origin rpy="0 -0.505 0" xyz="0.861 0.393 0.713"/>
+         <geometry>
+           <cylinder length="0.8" radius="0.092"/>
+         </geometry>
+      </visual>
+
+     <collision>
+       <origin rpy="0 -0.505 0" xyz="0.580391684612 0.393 1.22060119517"/>
+       <geometry>
+         <cylinder length="0.036" radius="0.184"/>
+       </geometry>
+     </collision>
+     <visual>
+       <origin rpy="0 -0.505 0" xyz="0.580391684612 0.393 1.22060119517"/>
+       <geometry>
+         <cylinder length="0.036" radius="0.184"/>
+       </geometry>
+     </visual>
+   </link>
+   <!--<link name="steering_wheel">-->
+     <!--<inertial>-->
+       <!--<origin xyz="0 0 0" rpy="0 0 0"/>-->
+       <!--<mass value="1"/>-->
+       <!--<inertia ixx="1" iyy="1" izz="1"/>-->
+     <!--</inertial>-->
+     <!--<collision>-->
+       <!--<origin xyz="${steering_wheel_x} ${steering_wheel_y} ${0.5+steering_wheel_z}" rpy="0 0 0"/>-->
+       <!--<geometry>-->
+         <!--<cylinder radius="${steering_wheel_radius}" length="${steering_wheel_thickness}"/>-->
+       <!--</geometry>-->
+     <!--</collision>-->
+     <!--<visual>-->
+       <!--<origin xyz="${steering_wheel_x} ${steering_wheel_y} ${0.5+steering_wheel_z}" rpy="0 0 0"/>-->
+       <!--<geometry>-->
+         <!--<cylinder radius="${steering_wheel_radius}" length="${steering_wheel_thickness}"/>-->
+       <!--</geometry>-->
+     <!--</visual>-->
+   <!--</link>-->
+   <!--<joint name="steering_wheel_joint" type="continuous">-->
+     <!--<parent link="chassis" type="link"/>-->
+     <!--<child link="steering_wheel" type="link"/>-->
+     <!--<origin xyz="${steering_column_x} ${steering_column_y} ${steering_column_z}" rpy="0 -0.48 0"/>-->
+     <!--<axis xyz="0 0 1"/>-->
+   <!--</joint>-->
+  </robot>
