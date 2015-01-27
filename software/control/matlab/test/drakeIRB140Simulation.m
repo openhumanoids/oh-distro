@@ -7,7 +7,7 @@ end
 fprintf('Setup...\n');
 path_handle = addpathTemporary(fullfile(getDrakePath, 'examples', 'IRB140'));
 
-dt = 0.005;
+dt = 0.00333;
 options.dt = dt;
 options.floating = false;
 options.base_offset = [0;0;0]; %[-0.5, 0, 1.5]'; %For now positions on ground
@@ -63,7 +63,7 @@ sys = mimoCascade(sys, broadcast);
 %% simulate
 if (visualize)
   v=r_hand.constructVisualizer();
-  v.display_dt = 0.001;
+  v.display_dt = 0.01;
   S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
   clear output_select;
   output_select(1).system=1;
