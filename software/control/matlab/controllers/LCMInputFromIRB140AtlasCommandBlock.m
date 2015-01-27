@@ -32,8 +32,8 @@ classdef LCMInputFromIRB140AtlasCommandBlock < MIMODrakeSystem
       end
 
       % Generate AtlasInput as out (we'll do translation manually)
-      output_frame = drcFrames.IRB140Input(r);
-      input_frame = drcFrames.IRB140State(r_control);
+      output_frame = IRB140Input(r);
+      input_frame = IRB140State(r_control);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);

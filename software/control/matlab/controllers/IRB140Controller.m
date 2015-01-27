@@ -1,17 +1,16 @@
 %% Listens for commited plans, and enacts them
-
-%% load in
 fprintf('Setup...\n');
-dt = 0.001;
+path_handle = addpathTemporary(fullfile(getDrakePath, 'examples', 'IRB140'));
+
+dt = 0.005;
 options.dt = dt;
 options.floating = false;
 options.base_offset = [0;0;0]; %[-0.5, 0, 1.5]'; %For now positions on ground
 options.base_rpy = [-pi/2, 0, 0]';
 options.ignore_self_collisions = true;
-options.hands = 'robotiq_weight_only';
 options.collision = false;
-options.hands = 'none';
-r = IRB140([getenv('DRC_PATH'),'/models/IRB140/irb_140.urdf'], options);
+options.hands = 'robotiq_weight_only';
+r = DRCIRB140(fullfile(getDrakePath, 'examples', 'IRB140', 'irb_140.urdf'), options);
 
 gravcomp = GravityCompensationBlock(r);
 

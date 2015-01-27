@@ -86,7 +86,7 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
       
       if (isa(input_frame, 'MultiCoordinateFrame'))
         obj.frame_nums.irb140_state = input_frame.getFrameNumByName('IRB140State');
-        obj.frame_nums.hand_state = input_frame.getFrameNumByName('drcFrames.HandState');
+        obj.frame_nums.hand_state = input_frame.getFrameNumByName('HandState');
       else
         obj.frame_nums.irb140_state = 1;
         obj.frame_nums.hand_state = '';

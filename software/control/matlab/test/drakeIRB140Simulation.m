@@ -1,5 +1,12 @@
+function drakeIRB140Simulation(visualize)
+if nargin < 1
+  visualize = 1;
+end
+
 %% load in
 fprintf('Setup...\n');
+path_handle = addpathTemporary(fullfile(getDrakePath, 'examples', 'IRB140'));
+
 dt = 0.005;
 options.dt = dt;
 options.floating = false;
@@ -8,12 +15,12 @@ options.base_rpy = [-pi/2, 0, 0]';
 options.ignore_self_collisions = true;
 options.collision = false;
 options.hands = 'robotiq_weight_only';
-r = IRB140([getenv('DRC_PATH'),'/models/IRB140/irb_140.urdf'], options);
+r = DRCIRB140(fullfile(getDrakePath, 'examples', 'IRB140', 'irb_140.urdf'), options);
 options_hand = options;
 options_hand.hands = 'robotiq';
 options_hand.terrain = RigidBodyFlatTerrain();
 options_hand.collision = false;
-r_hand = IRB140([getenv('DRC_PATH'),'/models/IRB140/irb_140.urdf'], options_hand);
+r_hand = IRB140(fullfile(getDrakePath, 'examples', 'IRB140', 'irb_140.urdf'), options_hand);
 
 
 
@@ -54,18 +61,20 @@ broadcast = IRB140LCMBroadcastBlock(r_hand, r, broadcast_opts);
 sys = mimoCascade(sys, broadcast);
 
 %% simulate
-v=r_hand.constructVisualizer();
-v.display_dt = 0.001;
-S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
-clear output_select;
-output_select(1).system=1;
-output_select(1).output=1;
-output_select(2).system=1;
-output_select(2).output=2;
-output_select(3).system=1;
-output_select(3).output=3;
-sys = mimoCascade(sys,v,[],[],output_select);
-warning(S);
+if (visualize)
+  v=r_hand.constructVisualizer();
+  v.display_dt = 0.001;
+  S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
+  clear output_select;
+  output_select(1).system=1;
+  output_select(1).output=1;
+  output_select(2).system=1;
+  output_select(2).output=2;
+  output_select(3).system=1;
+  output_select(3).output=3;
+  sys = mimoCascade(sys,v,[],[],output_select);
+  warning(S);
+end
 
 traj = simulate(sys,[0 Inf],x0_hand);
 
