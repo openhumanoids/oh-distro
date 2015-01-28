@@ -1,5 +1,5 @@
 % load robot model
-r = Atlas();
+r = DRCAtlas();
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 
 % setup frames

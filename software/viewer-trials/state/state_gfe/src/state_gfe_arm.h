@@ -30,6 +30,7 @@ namespace state {
     STATE_GFE_ARM_ELX_JOINT,
     STATE_GFE_ARM_UWY_JOINT,
     STATE_GFE_ARM_MWX_JOINT,
+    STATE_GFE_ARM_UWY2_JOINT,
     NUM_STATE_GFE_ARM_JOINTS
   } state_gfe_arm_joint_t;
 

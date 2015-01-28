@@ -13,7 +13,7 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
       typecheck(r,'Atlas');
       typecheck(controller_data,'QPControllerData');
             
-      input_frame = MultiCoordinateFrame({getStateFrame(r),FootContactState});
+      input_frame = MultiCoordinateFrame({getStateFrame(r),drcFrames.FootContactState});
       output_frame = getStateFrame(r);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);

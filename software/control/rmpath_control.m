@@ -31,15 +31,13 @@ rmpath(fullfile(pwd,'matlab','planners','drill_planner'));
 rmpath(fullfile(pwd,'matlab','planners','ladder_planner'));
 rmpath(fullfile(pwd,'matlab','planners','driving_planner'));
 rmpath(fullfile(pwd,'matlab','planners','footstep_planner'));
-rmpath(fullfile(pwd,'matlab','planners','footstep_planner','terrain'));
 rmpath(fullfile(pwd,'matlab','planners','walking_planner'));
 rmpath(fullfile(pwd,'matlab','planners','atlas_keyframe_planners'));
 rmpath(fullfile(pwd,'matlab','util'));
-rmpath(fullfile(pwd,'matlab','frames'));
 rmpath(fullfile(pwd,'matlab','test'));
 rmpath(fullfile(pwd,'matlab','systems'));
 rmpath(fullfile(pwd,'collections_utils'));
 rmpath(fullfile(pwd,'..','drake','examples','ZMP'));
-rmpath(fullfile(pwd,'..','drake','examples','Atlas','controllers'));
+rmpath(fullfile(pwd,'..','drake','examples','Atlas'));
 
 end

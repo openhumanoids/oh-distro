@@ -1,5 +1,5 @@
 function displayRelativeEndEffectorMotion(ee_name,ee_pose_relative,x0,r,lcmgl)
-  if nargin < 4, r = Atlas(); end;
+  if nargin < 4, r = DRCAtlas(); end;
   if nargin < 5 
     lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'disp_rel_ee_motion');
     local_lcmgl = true;

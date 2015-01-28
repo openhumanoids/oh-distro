@@ -4,6 +4,7 @@ import re
 import ddapp.objectmodel as om
 import ddapp.visualization as vis
 from ddapp.timercallback import TimerCallback
+from ddapp import affordanceitems
 from ddapp import lcmUtils
 from ddapp import callbacks
 from ddapp import cameracontrol
@@ -32,7 +33,7 @@ robotModel = None
 handFactory = None
 neckDriver = None
 footstepsDriver = None
-
+robotLinkSelector = None
 
 class MidiBehaviorControl(object):
 
@@ -230,44 +231,61 @@ def placeHandModel(displayPoint, view, side='left'):
         handFrame.frameSync.addFrame(syncFrame)
 
 
-selectedLink = None
+class RobotLinkSelector(object):
 
-def highlightSelectedLink(displayPoint, view):
+    def __init__(self):
+        self.selectedLink = None
+        self.setupMenuAction()
 
-    if robotModel is None:
-        return False
+    def setupMenuAction(self):
+        self.action = app.addMenuAction('Tools', 'Robot Link Selector')
+        self.action.setCheckable(True)
+        self.action.checked = False
 
-    model = robotModel.model
+    def enabled(self):
+        return self.action.checked == True
 
-    pickedPoint, _, polyData = vis.pickProp(displayPoint, view)
+    def selectLink(self, displayPoint, view):
 
-    linkName = model.getLinkNameForMesh(polyData)
-    if not linkName:
-        return False
+        if not self.enabled():
+            return False
 
-    global selectedLink
+        robotModel, _ = vis.findPickedObject(displayPoint, view)
 
-    fadeValue = 1.0 if linkName == selectedLink else 0.05
+        try:
+            robotModel.model.getLinkNameForMesh
+        except AttributeError:
+            return False
 
-    for name in model.getLinkNames():
-        linkColor = model.getLinkColor(name)
-        linkColor.setAlphaF(fadeValue)
-        model.setLinkColor(name, linkColor)
+        model = robotModel.model
 
-    if linkName == selectedLink:
-        selectedLink = None
-        vis.hideCaptionWidget()
-        om.removeFromObjectModel(om.findObjectByName('selected link frame'))
+        pickedPoint, _, polyData = vis.pickProp(displayPoint, view)
 
-    else:
-        selectedLink = linkName
-        linkColor = model.getLinkColor(selectedLink)
-        linkColor.setAlphaF(1.0)
-        model.setLinkColor(selectedLink, linkColor)
-        vis.showCaptionWidget(robotModel.getLinkFrame(selectedLink).GetPosition(), selectedLink, view=view)
-        vis.updateFrame(robotModel.getLinkFrame(selectedLink), 'selected link frame', scale=0.2, parent=robotModel)
+        linkName = model.getLinkNameForMesh(polyData)
+        if not linkName:
+            return False
 
-    return True
+        fadeValue = 1.0 if linkName == self.selectedLink else 0.05
+
+        for name in model.getLinkNames():
+            linkColor = model.getLinkColor(name)
+            linkColor.setAlphaF(fadeValue)
+            model.setLinkColor(name, linkColor)
+
+        if linkName == self.selectedLink:
+            self.selectedLink = None
+            vis.hideCaptionWidget()
+            om.removeFromObjectModel(om.findObjectByName('selected link frame'))
+
+        else:
+            self.selectedLink = linkName
+            linkColor = model.getLinkColor(self.selectedLink)
+            linkColor.setAlphaF(1.0)
+            model.setLinkColor(self.selectedLink, linkColor)
+            vis.showCaptionWidget(robotModel.getLinkFrame(self.selectedLink).GetPosition(), self.selectedLink, view=view)
+            vis.updateFrame(robotModel.getLinkFrame(self.selectedLink), 'selected link frame', scale=0.2, parent=robotModel)
+
+        return True
 
 
 def toggleFrameWidget(displayPoint, view):
@@ -460,9 +478,9 @@ def showRightClickMenu(displayPoint, view):
                 continue
             side = 'right' if obj.side == 'left' else 'left'
             obj.side = side
-            color = QtGui.QColor(255, 255, 0)
+            color = [1.0, 1.0, 0.0]
             if side == 'right':
-                color = QtGui.QColor(0.33*255, 255, 0)
+                color = [0.33, 1.0, 0.0]
             obj.setProperty('Color', color)
 
     def flipHandThumb():
@@ -471,6 +489,7 @@ def showRightClickMenu(displayPoint, view):
         t.PreMultiply()
         t.RotateY(180)
         handFrame.copyFrame(t)
+        pickedObj._renderAllViews()
 
     def onSplineLeft():
         splinewidget.planner.newSpline(pickedObj, 'left')
@@ -540,12 +559,19 @@ def showRightClickMenu(displayPoint, view):
         om.setActiveObject(obj)
         pickedObj.setProperty('Visible', False)
 
+    def onArrowGlyph():
+        result = segmentation.applyArrowGlyphs(pointCloudObj.polyData)
+        obj = vis.showPolyData(result, 'disks')
+
     def onSegmentationEditor():
         segmentationpanel.activateSegmentationMode(pointCloudObj.polyData)
 
     def addMovableFrame():
         segmentation.makeMovable(pickedObj)
 
+    def onPromoteToAffordance():
+        affObj = affordanceitems.MeshAffordanceItem.promotePolyDataItem(pickedObj)
+        robotSystem.affordanceManager.registerAffordance(affObj)
 
     actions = [
       (None, None),
@@ -553,6 +579,11 @@ def showRightClickMenu(displayPoint, view):
       ('Delete', onDelete),
       ('Select', onSelect)
       ]
+
+    if type(pickedObj) == vis.PolyDataItem:
+        actions.extend([
+            ('Promote to Affordance', onPromoteToAffordance),
+        ])
 
     if isinstance(pickedObj, vis.PolyDataItem) and not pickedObj.getChildFrame():
         actions.extend([
@@ -584,6 +615,7 @@ def showRightClickMenu(displayPoint, view):
             ('Segment Drill Aligned', onSegmentDrillAlignedWithTable),
             ('Local Plane Fit', onLocalPlaneFit),
             ('Orient with Horizontal', onOrientToMajorPlane),
+            ('Arrow Glyph', onArrowGlyph),
             ('Disk Glyph', onDiskGlyph),
             ('Cache Pick Point', onCachePickedPoint),
             (None, None),
@@ -654,8 +686,8 @@ class ViewEventFilter(object):
         if toggleFrameWidget(displayPoint, self.view):
             return
 
-        #if highlightSelectedLink(displayPoint, self.view):
-        #    return
+        if robotLinkSelector and robotLinkSelector.selectLink(displayPoint, self.view):
+            return
 
     def onRightClick(self, event):
         displayPoint = vis.mapMousePosition(self.view, event)
@@ -779,9 +811,12 @@ class ViewBehaviors(object):
         self.keyEventFilter = KeyEventFilter(view)
 
     @staticmethod
-    def addRobotBehaviors(_robotModel=None, _handFactory=None, _footstepsDriver=None, _neckDriver=None):
-        global robotModel, handFactory, footstepsDriver, neckDriver
-        robotModel = _robotModel
-        handFactory = _handFactory
-        footstepsDriver = _footstepsDriver
-        neckDriver = _neckDriver
+    def addRobotBehaviors(_robotSystem):
+        global robotSystem, robotModel, handFactory, footstepsDriver, neckDriver, robotLinkSelector
+        robotSystem = _robotSystem
+        robotModel = robotSystem.robotStateModel
+        handFactory = robotSystem.handFactory
+        footstepsDriver = robotSystem.footstepsDriver
+        neckDriver = robotSystem.neckDriver
+        if app.getMainWindow() is not None:
+            robotLinkSelector = RobotLinkSelector()

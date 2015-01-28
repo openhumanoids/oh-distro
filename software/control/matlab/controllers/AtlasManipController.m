@@ -42,7 +42,7 @@ classdef AtlasManipController < DRCController
       ctrl_data = AtlasManipControllerData(data);
 
       options.use_error_integrator = true;
-      qt = QTrajEvalBlock(r,ctrl_data,options);
+      qt = atlasControllers.QTrajEvalBlock(r,ctrl_data,options);
 
       if options.controller_type == 1 % PID control
         
@@ -96,7 +96,7 @@ classdef AtlasManipController < DRCController
       elseif options.controller_type == 4 % use inverse dynamics
 
         % cascade eval block with signal duplicator
-        dupl = SignalDuplicator(AtlasCoordinates(r),2);
+        dupl = SignalDuplicator(drcFrames.AtlasCoordinates(r),2);
         ins(1).system = 1;
         ins(1).input = 1;
         outs(1).system = 2;
@@ -113,7 +113,7 @@ classdef AtlasManipController < DRCController
         options.Kd = 12.0*ones(getNumPositions(r),1);
         options.use_qddtraj = true;
         options.use_ik = false;
-        pd = IKPDBlock(r,ctrl_data,options);
+        pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
         ins(1).system = 1;
         ins(1).input = 1;
         outs(1).system = 1;
@@ -155,7 +155,7 @@ classdef AtlasManipController < DRCController
         
       end
       
-      obj = obj@DRCController(name,sys,AtlasState(r));
+      obj = obj@DRCController(name,sys,drcFrames.AtlasState(r));
  
       obj.robot = r;
       obj.controller_data = ctrl_data;
@@ -165,7 +165,7 @@ classdef AtlasManipController < DRCController
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumPositions(obj.robot));
-      obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
+      obj.controller_data.qtraj = q0;
       obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumPositions(r),1));
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
@@ -178,10 +178,18 @@ classdef AtlasManipController < DRCController
     function msg = status_message(obj,t_sim,t_ctrl)
         msg = drc.controller_status_t();
         msg.utime = t_sim * 1000000;
-        msg.state = msg.STANDING;
         msg.controller_utime = t_ctrl * 1000000;
         msg.V = 0;
         msg.Vdot = 0;
+
+        % compare control time with qtraj tspan to decide manipulating or standing.
+        % note, qtraj can be a double, ppval, or PPTrajectory
+        qtraj = obj.controller_data.qtraj;
+        if (isa(qtraj,'struct') && (t_ctrl < qtraj.breaks(end))) || (isa(qtraj,'PPTrajectory') && (t_ctrl < qtraj.tspan(2)))
+          msg.state = msg.MANIPULATING;
+        else
+          msg.state = msg.STANDING;
+        end
     end
     
     function obj = initialize(obj,data)

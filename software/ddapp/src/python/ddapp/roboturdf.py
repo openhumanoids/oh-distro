@@ -23,13 +23,10 @@ with open(drcargs.args().directorConfigFile) as directorConfigFile:
     directorConfig = json.load(directorConfigFile)
     directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
     fixedPointFile = os.path.join(directorConfigDirectory, directorConfig['fixedPointFile'])
+    handCombination = directorConfig.get('handCombination')
     urdfConfig = directorConfig['urdfConfig']
     for key, urdf in list(urdfConfig.items()):
         urdfConfig[key] = os.path.join(directorConfigDirectory, urdf)
-
-
-
-defaultUrdfHands = 'LR_RR'
 
 
 def getRobotGrayColor():
@@ -49,19 +46,21 @@ class RobotModelItem(om.ObjectModelItem):
         modelName = os.path.basename(model.filename())
         om.ObjectModelItem.__init__(self, modelName, om.Icons.Robot)
 
-        self.model = model
-        model.connect('modelChanged()', self.onModelChanged)
-        model.connect('displayChanged()', self.onDisplayChanged)
-        self.callbacks = callbacks.CallbackRegistry([self.MODEL_CHANGED_SIGNAL])
+        self.views = []
+        self.model = None
+        self.callbacks.addSignal(self.MODEL_CHANGED_SIGNAL)
         self.useUrdfColors = False
 
         self.addProperty('Filename', model.filename())
         self.addProperty('Visible', model.visible())
         self.addProperty('Alpha', model.alpha(),
                          attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=1.0, singleStep=0.1, hidden=False))
-        self.addProperty('Textures', False)
+        self.addProperty('Textures', True)
         self.addProperty('Color', model.color())
-        self.views = []
+
+
+
+        self.setModel(model)
 
     def _onPropertyChanged(self, propertySet, propertyName):
         om.ObjectModelItem._onPropertyChanged(self, propertySet, propertyName)
@@ -113,8 +112,11 @@ class RobotModelItem(om.ObjectModelItem):
         if model == self.model:
             return
 
+        model.disconnect('modelChanged()', self.onModelChanged)
+        model.disconnect('displayChanged()', self.onDisplayChanged)
         views = list(self.views)
         self.removeFromAllViews()
+
         self.model = model
         self.model.setAlpha(self.getProperty('Alpha'))
         self.model.setVisible(self.getProperty('Visible'))
@@ -123,6 +125,7 @@ class RobotModelItem(om.ObjectModelItem):
 
         self.setProperty('Filename', model.filename())
         model.connect('modelChanged()', self.onModelChanged)
+        model.connect('displayChanged()', self.onDisplayChanged)
 
         for view in views:
             self.addToView(view)
@@ -132,7 +135,8 @@ class RobotModelItem(om.ObjectModelItem):
         if self.getProperty('Textures'):
             self._setupTextureColors()
         elif not self.useUrdfColors:
-            self.model.setColor(self.getProperty('Color'))
+            color = QtGui.QColor([c*255 for c in self.getProperty('Color')])
+            self.model.setColor(color)
 
     def _setupTextureColors(self):
 
@@ -152,6 +156,7 @@ class RobotModelItem(om.ObjectModelItem):
         view.render()
 
     def onRemoveFromObjectModel(self):
+        om.ObjectModelItem.onRemoveFromObjectModel(self)
         self.removeFromAllViews()
 
     def removeFromAllViews(self):
@@ -169,7 +174,6 @@ class RobotModelItem(om.ObjectModelItem):
 def loadRobotModel(name, view=None, parent='planning', urdfFile=None, color=None, visible=True):
 
     if not urdfFile:
-        #urdfFile = os.path.join(getRobotModelDir(), 'model_%s.urdf' % defaultUrdfHands)
         urdfFile = urdfConfig['default']
 
     if isinstance(parent, str):
@@ -191,10 +195,6 @@ def loadRobotModel(name, view=None, parent='planning', urdfFile=None, color=None
     return obj, jointController
 
 
-def getRobotModelDir():
-    return os.path.join(getDRCBaseDir(), 'software/models/mit_gazebo_models/mit_robot')
-
-
 def loadRobotModelFromFile(filename):
     model = PythonQt.dd.ddDrakeModel()
     if not model.loadFromFile(filename):
@@ -207,6 +207,15 @@ def loadRobotModelFromString(xmlString):
     if not model.loadFromXML(xmlString):
         return None
     return model
+
+
+def openUrdf(filename, view):
+    model = loadRobotModelFromFile(filename)
+    if model:
+        model = RobotModelItem(model)
+        om.addToObjectModel(model)
+        model.addToView(view)
+        return model
 
 
 def getExistingRobotModels():
@@ -259,19 +268,28 @@ def setupPackagePaths():
         'ros_workspace/mit_drcsim_scripts',
         'ros_workspace/sandia-hand/ros/sandia_hand_description',
         'software/models/atlas_v4',
-        'software/models/common_components/robotiq_hand_description/',
-        'software/models/common_components/multisense_sl/',
+        'software/models/atlas_v5',
         'software/models/mit_gazebo_models/mit_robot',
+        'software/models/mit_gazebo_models/V1',
         'software/models/mit_gazebo_models/irobot_hand',
         'software/models/mit_gazebo_models/multisense_sl',
         'software/models/mit_gazebo_models/handle_description',
         'software/models/mit_gazebo_models/hook_description',
-        'software/models/mit_gazebo_models/hook_description',
         'software/models/mit_gazebo_models/robotiq_hand_description',
+        'software/models/otdf',
                   ]
 
     for path in searchPaths:
         PythonQt.dd.ddDrakeModel.addPackageSearchPath(os.path.join(getDRCBaseDir(), path))
+
+    environmentVariables = ['ROS_PACKAGE_PATH']
+
+    for e in environmentVariables:
+        paths = os.environ.get(e, '').split(':')
+        for path in paths:
+            for root, dirnames, filenames in os.walk(path):
+                if os.path.isfile(os.path.join(root, 'package.xml')) or os.path.isfile(os.path.join(root, 'manifest.xml')):
+                    PythonQt.dd.ddDrakeModel.addPackageSearchPath(root)
 
 
 setupPackagePaths()
@@ -287,15 +305,17 @@ class HandFactory(object):
           'LR' : 'left_robotiq',
           'LP' : 'left_pointer',
           'LI' : 'left_irobot',
+          'LV' : 'left_valkyrie',
           'RR' : 'right_robotiq',
           'RP' : 'right_pointer',
           'RI' : 'right_irobot',
+          'RV' : 'left_valkyrie',
           }
 
         if not defaultLeftHandType:
-            defaultLeftHandType = handTypesMap[defaultUrdfHands.split('_')[0]]
+            defaultLeftHandType = handTypesMap[handCombination.split('_')[0]]
         if not defaultRightHandType:
-            defaultRightHandType = handTypesMap[defaultUrdfHands.split('_')[1]]
+            defaultRightHandType = handTypesMap[handCombination.split('_')[1]]
 
         self.robotModel = robotModel
         self.loaders = {}
@@ -343,7 +363,6 @@ class HandLoader(object):
 
         if self.handType == 'irobot':
 
-            self.robotUrdf = 'model_LI_RI.urdf'
             self.handLinkName = '%s_hand' % self.side[0]
             self.handUrdf = 'irobot_hand_%s.urdf' % self.side
             self.handJointName = '%s_irobot_hand_joint' % self.side
@@ -377,7 +396,6 @@ class HandLoader(object):
 
         elif self.handType == 'robotiq':
 
-            self.robotUrdf = 'model_LR_RR.urdf'
             self.handLinkName = '%s_hand' % self.side[0]
             self.handUrdf = 'robotiq_hand_%s.urdf' % self.side
             self.handJointName = '%s_robotiq_hand_joint' % self.side
@@ -389,7 +407,6 @@ class HandLoader(object):
 
         elif self.handType == 'pointer':
 
-            self.robotUrdf = 'model_LP_RP.urdf'
             self.handLinkName = '%s_hand' % self.side[0]
             self.handUrdf = 'pointer_hand_%s.urdf' % self.side
             self.handJointName = '%s_hook_hand_joint' % self.side
@@ -397,6 +414,19 @@ class HandLoader(object):
             handRootLink = '%s_base_link' % self.side
             robotMountLink = '%s_hand_force_torque' % self.side[0]
             palmLink = '%s_pointer_tip' % self.side
+
+
+        elif self.handType == 'valkyrie':
+
+            self.robotUrdf = 'model_LV_RV.urdf'
+            self.handLinkName = '%s_hand' % self.side[0]
+            self.handUrdf = 'valkyrie_hand_%s.urdf' % self.side
+            self.handJointName = '%s_valkyrie_hand_joint' % self.side
+
+            handRootLink = '%s_palm' % self.side
+            robotMountLink = '%s_hand_force_torque' % self.side[0]
+            palmLink = '%s_hand_face' % self.side[0]
+
 
         else:
             raise Exception('Unexpected hand type: %s' % self.handType)
@@ -421,10 +451,6 @@ class HandLoader(object):
     def getHandUrdf(self):
         urdfBase = os.path.join(getDRCBaseDir(), 'software/models/mit_gazebo_models')
         return os.path.join(urdfBase, 'mit_robot_hands', self.handUrdf)
-
-    def getRobotUrdf(self):
-        urdfBase = os.path.join(getDRCBaseDir(), 'software/models/mit_gazebo_models')
-        return os.path.join(urdfBase, 'mit_robot', self.robotUrdf)
 
     @staticmethod
     def getLinkToLinkTransform(model, linkA, linkB):
@@ -529,11 +555,24 @@ class HandLoader(object):
 
 def setRobotiqJointsToOpenHand(robotModel):
     for side in ['left', 'right']:
-        setRobotiqJoints(robotModel, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+        setRobotiqJoints(robotModel, side, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
 
 def setRobotiqJointsToClosedHand(robotModel):
     for side in ['left', 'right']:
-        setRobotiqJoints(robotModel, [1.0, 1.0, 1.0], [0.0, 0.0, 0.0])
+        setRobotiqJoints(robotModel, side, [1.0, 1.0, 1.0], [0.0, 0.0, 0.0])
+
+def setRobotiqJointsToPinchOpenHand(robotModel):
+    for side in ['left', 'right']:
+        setRobotiqJoints(robotModel, side, [0.25, 0.0, -0.55], [-0.15, 0.15, 0.0])
+
+def setRobotiqJointsToPinchClosedHand(robotModel):
+    for side in ['left', 'right']:
+        setRobotiqJoints(robotModel, side, [0.25, 0.0, -0.55], [-0.15, 0.15, 0.0])
+
+def setRobotiqJointsToPinchClosedHand(robotModel):
+    for side in ['left', 'right']:
+        setRobotiqJoints(robotModel, side, [0.8, 0.0, -0.55], [-0.15, 0.15, 0.0])
+
 
 def setRobotiqJoints(robotModel, side, fingers=[0.0, 0.0, 0.0], palm=[0.0, 0.0, 0.0]):
     robotModel.model.setJointPositions(np.tile(fingers, 3), ['%s_finger_%s_joint_%d' % (side, n, i+1) for n in ['1', '2', 'middle'] for i in range(3)])

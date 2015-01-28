@@ -1,14 +1,20 @@
 classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
   
   properties
-    lc; % LCM
-    lcmonitor; %LCM monitor
-    lcmtype_constructor;
-    coder;
-    lcmtype;
-    coordinate_names;
+    lc;
+    lcmonitor_cmd; %LCM monitors
+    lcmonitor_neck;
+    
+    lcmtype_cmd_constructor;
+    lcmtype_neck_constructor;
+    coder_cmd;
+    lcmtype_cmd;
+    lcmtype_neck;
+    
+    lcmtype_cmd_coordinate_names;
+    lcmtype_cmd_dim;
     timestamp_name;
-    dim;
+    
     % Atlas and various controllers:
     r;
     r_control;
@@ -20,6 +26,9 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     nu; % Atlas # of controllable DOFS
     joint_names;
     drake_to_atlas_joint_map;
+    neck_in_i;
+    neck_out_i;
+    neck_desired_angle;
   end
   
   methods
@@ -38,10 +47,10 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       end
 
       % Generate AtlasInput as out (we'll do translation manually)
-      output_frame = AtlasInput(r);
+      output_frame = drcFrames.AtlasInput(r);
       
       % We'll need atlas state as input
-      input_frame = AtlasState(r_control);
+      input_frame = drcFrames.AtlasState(r_control);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
@@ -51,13 +60,16 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       obj.r_control = r_control;
       
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.lcmonitor = drake.util.MessageMonitor(drc.atlas_command_t,'utime');
-      obj.lc.subscribe('ATLAS_COMMAND',obj.lcmonitor);
+      obj.lcmonitor_cmd = drake.util.MessageMonitor(drc.atlas_command_t,'utime');
+      obj.lcmonitor_neck = drake.util.MessageMonitor(drc.neck_pitch_t,'utime');
+      obj.lc.subscribe('ATLAS_COMMAND',obj.lcmonitor_cmd);
+      obj.lc.subscribe('DESIRED_NECK_PITCH',obj.lcmonitor_neck);
       
-      lcmtype = drc.atlas_command_t;
-      lcmtype = lcmtype.getClass();
+      % Setup ATLAS_COMMAND_T lcm type
+      lcmtype_cmd = drc.atlas_command_t;
+      lcmtype_cmd = lcmtype_cmd.getClass();
       names={};
-      f = lcmtype.getFields;
+      f = lcmtype_cmd.getFields;
       for i=1:length(f)
         fname = char(f(i).getName());
         if strncmp(fname,'LCM_FINGERPRINT',15), continue; end
@@ -70,14 +82,25 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         end
         names{end+1}=fname;
       end
-      obj.lcmtype = lcmtype;
-      obj.coordinate_names = names;
-      obj.dim = length(names);
-      constructors = lcmtype.getConstructors();
-      for i=1:length(constructors)
-        f = constructors(i).getParameterTypes;
+      obj.lcmtype_cmd = lcmtype_cmd;
+      obj.lcmtype_cmd_coordinate_names = names;
+      obj.lcmtype_cmd_dim = length(names);
+      constructors_cmd = lcmtype_cmd.getConstructors();
+      for i=1:length(constructors_cmd)
+        f = constructors_cmd(i).getParameterTypes;
         if ~isempty(f) && strncmp('[B',char(f(1).getName),2)
-          obj.lcmtype_constructor = constructors(i);
+          obj.lcmtype_cmd_constructor = constructors_cmd(i);
+        end
+      end
+      
+      % Setup NECK_PITCH_T lcm type
+      lcmtype_neck = drc.neck_pitch_t;
+      lcmtype_neck = lcmtype_neck.getClass();
+      constructors_neck = lcmtype_neck.getConstructors();
+      for i=1:length(constructors_neck)
+        f = constructors_neck(i).getParameterTypes;
+        if ~isempty(f) && strncmp('[B',char(f(1).getName),2)
+          obj.lcmtype_neck_constructor = constructors_neck(i);
         end
       end
       
@@ -98,23 +121,37 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       [Kp,Kd] = getPDGains(r,'default');
       gains.k_q_p = diag(Kp);
       gains.ff_qd = diag(Kd);
-      obj.coder = drc.control.AtlasCommandCoder(obj.joint_names,r.atlas_version,gains.k_q_p*0,gains.k_q_i*0,...
+      obj.coder_cmd = drc.control.AtlasCommandCoder(obj.joint_names,r.atlas_version,gains.k_q_p*0,gains.k_q_i*0,...
         gains.k_qd_p,gains.k_f_p*0,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d*0,gains.ff_const*0);
       
       % And compute for ourselves the drake_to_atlas_joint_map
       obj.drake_to_atlas_joint_map = zeros(length(obj.joint_names), 1);
-      dummyInput = AtlasInput(obj.r);
+      dummyInput = drcFrames.AtlasInput(obj.r);
       for i=1:length(obj.joint_names)
         in_joint_name_i = obj.joint_names(i, :);
         obj.drake_to_atlas_joint_map(i) = dummyInput.findCoordinateIndex(strtrim(in_joint_name_i));
       end
+
+      % Set up neck joint indices
+      dummyInput = drcFrames.AtlasInput(obj.r_control);
+      dummyState = drcFrames.AtlasState(obj.r_control);
+      obj.neck_in_i = dummyState.findCoordinateIndex('neck_ay');
+      obj.neck_in_i = obj.neck_in_i(1);
+      obj.neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
+      obj.neck_desired_angle = SharedDataHandle(0);
+      
     end
     
     function obj=setup_init_planner(obj, options)
       r = obj.r_control;
-      xstar = getInitialState(r);
+      S = load(r.fixed_point_file);
+      x_init = Point(r.getStateFrame(),getInitialState(r));
+      xstar = Point(r.getStateFrame(),S.xstar);
+      xstar.base_x = x_init.base_x;
+      xstar.base_y = x_init.base_y;
+      xstar.base_yaw = x_init.base_yaw;
       
-      x0 = xstar;
+      x0 = double(xstar);
       obj.nq = getNumPositions(r);
       obj.nu = getNumInputs(r);
       q0 = x0(1:obj.nq);
@@ -144,7 +181,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(2),[0;0;0],1));
       
       ctrl_data = QPControllerData(false,struct(...
-        'acceleration_input_frame',AtlasCoordinates(r),...
+        'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
         'D',-com(3)/9.81*eye(2),...
         'Qy',eye(2),...
         'S',V.S,...
@@ -179,8 +216,8 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       obj.pelvis_controller = pelvis_controller;
       options.use_lcm=false;
       options.contact_threshold = 0.002;
-      obj.fc = FootContactBlock(r,ctrl_data,options);
-      obj.qt = QTrajEvalBlock(r,ctrl_data,options);
+      obj.fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
+      obj.qt = atlasControllers.QTrajEvalBlock(r,ctrl_data,options);
       
       ins(1).system = 1;
       ins(1).input = 1;
@@ -196,16 +233,17 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       outs(1).output = 1;
       outs(2).system = 2;
       outs(2).output = 2;
+      pd = pd.setOutputFrame(drcFrames.AtlasCoordinates(r));
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       clear ins;
-      fprintf('Current time: xxx.xxx');
+      %fprintf('Current time: xxx.xxx');
     end
     
-    function x=decode(obj, data)
-      msg = obj.lcmtype_constructor.newInstance(data);
+    function x=decode_cmd(obj, data)
+      msg = obj.lcmtype_cmd_constructor.newInstance(data);
       x=cell(obj.dim, 1);
       for i=1:obj.dim
-        eval(['x{',num2str(i),'} = msg.',CoordinateFrame.stripSpecialChars(obj.coordinate_names{i}),';']);
+        eval(['x{',num2str(i),'} = msg.',CoordinateFrame.stripSpecialChars(obj.lcmtype_cmd_coordinate_names{i}),';']);
         % fix string type
         if (isa(x{i}, 'java.lang.String[]'))
           x{i} = char(x{i});
@@ -220,13 +258,20 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       %atlas_state_names = obj.getInputFrame.getCoordinateNames();
       efforts = zeros(obj.getNumOutputs, 1);
       
+      % check for new neck cmd
+      data_neck = obj.lcmonitor_neck.getMessage();
+      if (~isempty(data_neck))
+       neck_cmd = obj.lcmtype_neck_constructor.newInstance(data_neck);
+       obj.neck_desired_angle.setData(neck_cmd.pitch);
+      end
+      
       % see if we have a new message (new command state)
-      data = obj.lcmonitor.getMessage();
+      data = obj.lcmonitor_cmd.getMessage();
         
       % If we haven't received a command make our own
       if (isempty(data))
         % foot contact
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(atlas_state(1:length(atlas_state)/2),false);
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(atlas_state(1:obj.r_control.getNumPositions()),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
         fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
@@ -243,21 +288,17 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
           efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
         end
       else
-        cmd = obj.coder.decode(data);
+        cmd = obj.coder_cmd.decode(data);
         efforts = cmd.val(obj.nu*2+1:end);
       end
       
       % And set neck pitch via simple PD controller
-      dummyInput = AtlasInput(obj.r_control);
-      dummyState = AtlasState(obj.r_control);
-      neck_in_i = dummyState.findCoordinateIndex('neck_ay');
-      neck_in_i = neck_in_i(1);
-      neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
-      error =  30*pi/180 - atlas_state(neck_in_i);
-      vel = atlas_state(length(atlas_state)/2 + neck_in_i);
-      efforts(neck_out_i) = 50*error - vel;
-      varargout = {efforts(1:28)};
-      fprintf('\b\b\b\b\b\b\b%7.3f', t);
+      
+      error =  obj.neck_desired_angle.getData - atlas_state(obj.neck_in_i);
+      vel = atlas_state(length(atlas_state)/2 + obj.neck_in_i);
+      efforts(obj.neck_out_i) = 50*error - vel;
+      varargout = {efforts(1:obj.nu)};
+      %fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
     end
   end

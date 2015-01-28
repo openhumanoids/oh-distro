@@ -135,7 +135,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // if q < min_angle, use q + 2*pi
   max_encoder_wrap_angle_.assign(28,100000000);
   max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_UWY] = 4; // robot software v1.9
-  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_USY] = 0; // robot software v1.9
+  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_SHZ] = 0; // robot software v1.9
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
@@ -143,9 +143,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
 
   /// 4. Joint Filtering
-  cl_cfg_->use_torque_adjustment = bot_param_get_boolean_or_fail(botparam_, "control.filtering.joints.torque_adjustment" );
+  cl_cfg_->use_torque_adjustment = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.torque_adjustment" );
   if (cl_cfg_->use_torque_adjustment){
     std::cout << "Torque-based joint angle adjustment: Using\n";
+
+    int n_gains = bot_param_get_array_len (botparam_, "state_estimator.legodo.adjustment_gain");
+    double gains_in[n_gains];
+    bot_param_get_double_array_or_fail(botparam_, "state_estimator.legodo.adjustment_gain", &gains_in[0], n_gains);
+    std::vector<float> k;
+    for (int i =0; i < n_gains;i++){
+      k.push_back( (float) gains_in[i] );
+    }
+    torque_adjustment_ = new EstimateTools::TorqueAdjustment(k);
+
   }else{
     std::cout << "Torque-based joint angle adjustment: Not Using\n";
   }
@@ -272,14 +282,14 @@ void state_sync::enableEncoders(bool enable) {
   stat_msg.value = str;
   lcm_->publish(("SYSTEM_STATUS"), &stat_msg);   
 
-  use_encoder_[Atlas::JOINT_R_ARM_USY] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_SHZ] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELX] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_UWY] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_MWX] = enable;
 
-  use_encoder_[Atlas::JOINT_L_ARM_USY] = enable;
+  use_encoder_[Atlas::JOINT_L_ARM_SHZ] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELX] = enable;
@@ -441,7 +451,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   }
 
   if (cl_cfg_->use_torque_adjustment){
-    torque_adjustment_.processSample(atlas_joints_.position, atlas_joints_.effort );
+    torque_adjustment_->processSample(atlas_joints_.position, atlas_joints_.effort );
   }
 
   publishRobotState(msg->utime, msg->force_torque);
@@ -684,4 +694,3 @@ main(int argc, char ** argv){
   while(0 == lcm->handle());
   return 0;
 }
-

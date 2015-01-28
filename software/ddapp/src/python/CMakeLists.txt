@@ -5,7 +5,9 @@ set(python_files
   ddapp/affordance.py
   ddapp/affordancegraspupdater.py
   ddapp/affordanceitems.py
-  ddapp/affordancelistener.py
+  ddapp/affordancemanager.py
+  ddapp/affordancepanel.py
+  ddapp/affordanceurdf.py
   ddapp/applogic.py
   ddapp/asynctaskqueue.py
   ddapp/atlasdriver.py
@@ -30,6 +32,7 @@ set(python_files
   ddapp/footstepsdriver.py
   ddapp/footstepsdriverpanel.py
   ddapp/framevisualization.py
+  ddapp/geometryencoder.py
   ddapp/handcontrolpanel.py
   ddapp/handdriver.py
   ddapp/takktilevis.py
@@ -38,17 +41,22 @@ set(python_files
   ddapp/ikplanner.py
   ddapp/__init__.py
   ddapp/ioUtils.py
+  ddapp/irisUtils.py
+  ddapp/irisdriver.py
   ddapp/jointcontrol.py
   ddapp/lcmloggerwidget.py
   ddapp/lcmgl.py
+  ddapp/lcmobjectcollection.py
   ddapp/lcmspy.py
   ddapp/lcmUtils.py
   ddapp/mapsregistrar.py
   ddapp/matlab.py
+  ddapp/meshmanager.py
   ddapp/midi.py
   ddapp/multisensepanel.py
   ddapp/navigationpanel.py
   ddapp/objectmodel.py
+  ddapp/otdfmodel.py
   ddapp/perception.py
   ddapp/pfgrasp.py
   ddapp/pfgrasppanel.py
@@ -81,6 +89,7 @@ set(python_files
   ddapp/transformUtils.py
   ddapp/trackers.py
   ddapp/utime.py
+  ddapp/uuidutil.py
   ddapp/valvedemo.py
   ddapp/viewbehaviors.py
   ddapp/visualization.py
@@ -100,6 +109,7 @@ set(python_files
   ddapp/tasks/taskmanagerwidget.py
   ddapp/tasks/descriptions/__init__.py
   ddapp/tasks/descriptions/drillTask.py
+  ddapp/tasks/descriptions/taskLibrary.py
 
   actionmanager/__init__.py
   actionmanager/actions.py
@@ -110,6 +120,15 @@ set(python_files
   ddapp/thirdparty/__init__.py
   ddapp/thirdparty/qhull_2d.py
   ddapp/thirdparty/min_bounding_rect.py
+  ddapp/thirdparty/NumericStringParser.py
+  ddapp/thirdparty/numpyjsoncoder.py
+
+  urdf_parser_py/__init__.py
+  urdf_parser_py/sdf.py
+  urdf_parser_py/urdf.py
+  urdf_parser_py/xml_reflection/__init__.py
+  urdf_parser_py/xml_reflection/basics.py
+  urdf_parser_py/xml_reflection/core.py
   )
 
 

@@ -15,6 +15,12 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'floating')
         options.floating = true;
       end
+      if ~isfield(options,'terrain')
+        options.terrain = RigidBodyFlatTerrain;
+      end
+      if ~isfield(options,'hands')
+        options.hands = 'none';
+      end
 
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
@@ -24,7 +30,7 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
 
       if options.floating
         % could also do fixed point search here
-        obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
+        %obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
       end
       warning(S);
     end
@@ -34,7 +40,7 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
 
-      state_frame = ValkyrieState(obj);
+      state_frame = drcFrames.ValkyrieState(obj);
       obj = obj.setStateFrame(state_frame);
       obj = obj.setOutputFrame(state_frame);
 

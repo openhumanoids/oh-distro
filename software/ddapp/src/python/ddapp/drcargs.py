@@ -34,7 +34,7 @@ class DRCArgParser(object):
 
 
     def getDefaultBotConfigFile(self):
-        return os.path.join(ddapp.getDRCBaseDir(), 'software/config/drc_robot_02_mit.cfg')
+        return os.path.join(ddapp.getDRCBaseDir(), 'software/config/drc_robot.cfg')
 
     def getDefaultDirectorConfigFile(self):
         return self.getDefaultAtlasV4DirectorConfigFile();
@@ -46,6 +46,14 @@ class DRCArgParser(object):
     def getDefaultAtlasV4DirectorConfigFile(self):
         return os.path.join(ddapp.getDRCBaseDir(),
                             'software/models/atlas_v4/director_config.json')
+
+    def getDefaultAtlasV5DirectorConfigFile(self):
+        return os.path.join(ddapp.getDRCBaseDir(),
+                            'software/models/atlas_v5/director_config.json')
+
+    def getDefaultValkyrieDirectorConfigFile(self):
+        return os.path.join(ddapp.getDRCBaseDir(),
+                            'software/models/mit_gazebo_models/V1/models/V1/director_config.json')
 
 
     def addDefaultArgs(self, parser):
@@ -65,6 +73,16 @@ class DRCArgParser(object):
                             action='store_const',
                             const=self.getDefaultAtlasV4DirectorConfigFile(),
                             help='Use Atlas V4')
+
+        directorConfig.add_argument('-v5', '--atlas_v5', dest='directorConfigFile',
+                            action='store_const',
+                            const=self.getDefaultAtlasV5DirectorConfigFile(),
+                            help='Use Atlas V5')
+
+        directorConfig.add_argument('-val', '--valkyrie', dest='directorConfigFile',
+                            action='store_const',
+                            const=self.getDefaultValkyrieDirectorConfigFile(),
+                            help='Use Valkyrie')
 
         directorConfig.add_argument('--director_config', dest='directorConfigFile',
                             type=str,

@@ -7,29 +7,54 @@
     "playback":   "./model_LR_RR.urdf",
     "teleop":     "./model_LR_RR.urdf"
   },
-  "teleopJointMap": {
-     "backRoll": "back_bkx",
-     "backPitch": "back_bky",
-     "backYaw": "back_bkz",
-     "baseX": "base_x",
-     "baseY": "base_y",
-     "baseZ": "base_z",
-     "baseRoll": "base_roll",
-     "basePitch": "base_pitch",
-     "baseYaw": "base_yaw",
-     "leftShoulderX": "l_arm_usy",
-     "leftShoulderY": "l_arm_shx",
-     "leftShoulderZ": "l_arm_ely",
-     "leftElbow": "l_arm_elx",
-     "leftWristX": "l_arm_uwy",
-     "leftWristY": "l_arm_mwx",
-     "rightShoulderX": "r_arm_usy",
-     "rightShoulderY": "r_arm_shx",
-     "rightShoulderZ": "r_arm_ely",
-     "rightElbow": "r_arm_elx",
-     "rightWristX": "r_arm_uwy",
-     "rightWristY": "r_arm_mwx"
-  },
+
+  "teleopJointGroups" : [
+      { "name" : "Base",
+        "joints" : [
+          "base_x",
+          "base_y",
+          "base_z",
+          "base_roll",
+          "base_pitch",
+          "base_yaw"
+          ],
+        "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
+      },
+
+      { "name" : "Back",
+        "joints" : [
+          "back_bkx",
+          "back_bky",
+          "back_bkz"
+          ],
+        "labels" : ["roll (x)", "pitch (y)", "yaw (z)"]
+      },
+
+      { "name" : "Left Arm",
+        "joints" : [
+          "l_arm_usy",
+          "l_arm_shx",
+          "l_arm_ely",
+          "l_arm_elx",
+          "l_arm_uwy",
+          "l_arm_mwx"
+          ],
+        "labels" : ["usy", "shx", "ely", "elx", "uwy", "mwx"]
+      },
+
+      { "name" : "Right Arm",
+        "joints" : [
+          "r_arm_usy",
+          "r_arm_shx",
+          "r_arm_ely",
+          "r_arm_elx",
+          "r_arm_uwy",
+          "r_arm_mwx"
+          ],
+        "labels" : ["usy", "shx", "ely", "elx", "uwy", "mwx"]
+      }
+    ],
+
   "drakeJointNames": [
     "base_x",
     "base_y",
@@ -96,6 +121,19 @@
     "r_arm_uwy",
     "r_arm_mwx"
   ],
-  "fixedPointFile" : "../../../control/matlab/data/atlas_bdi_fp.mat"
+  "fixedPointFile" : "../../../control/matlab/data/atlas_bdi_fp.mat",
+  "handCombination" : "LR_RR",
+  "leftFootMeshFiles" : ["meshes/l_talus.obj", "meshes/l_foot.obj"],
+  "rightFootMeshFiles" : ["meshes/r_talus.obj", "meshes/r_foot.obj"],
+  "postureDatabaseFile" : "stored_poses_v3.json",
+  "mirrorJointSignFlips" : [
+    "l_arm_shx",
+    "l_arm_elx",
+    "l_arm_mwx",
+    "r_arm_shx",
+    "r_arm_elx",
+    "r_arm_mwx",
+    "back_bkz"
+  ]
 }
 

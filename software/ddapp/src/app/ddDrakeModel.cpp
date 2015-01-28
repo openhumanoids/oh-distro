@@ -894,7 +894,7 @@ public:
 
   QString FileName;
   bool Visible;
-  bool TexturesEnabled = false;
+  bool TexturesEnabled;
   double Alpha;
   QColor Color;
   QVector<double> JointPositions;
@@ -1334,7 +1334,11 @@ bool ddDrakeModel::visible() const
 //-----------------------------------------------------------------------------
 void ddDrakeModel::addPackageSearchPath(const QString& searchPath)
 {
-  PackageSearchPaths[QDir(searchPath).dirName()] = searchPath;
+  QString packageName = QDir(searchPath).dirName();
+  if (!PackageSearchPaths.contains(packageName))
+  {
+    PackageSearchPaths[packageName] = searchPath;
+  }
 }
 
 //-----------------------------------------------------------------------------

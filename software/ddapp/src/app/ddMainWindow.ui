@@ -33,6 +33,7 @@
     </property>
     <addaction name="ActionOpen"/>
     <addaction name="ActionSaveData"/>
+    <addaction name="ActionExportUrdf"/>
     <addaction name="separator"/>
     <addaction name="ActionQuit"/>
    </widget>
@@ -331,6 +332,11 @@
     <string>Ctrl+S</string>
    </property>
   </action>
+  <action name="ActionExportUrdf">
+   <property name="text">
+    <string>&amp;Export to URDF...</string>
+   </property>
+  </action>
   <action name="ActionBotSpy">
    <property name="text">
     <string>&amp;Bot Spy</string>
@@ -349,9 +355,6 @@
    </property>
    <property name="text">
     <string>&amp;Colorize Lidar</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+C</string>
    </property>
   </action>
   <action name="ActionMultisensePanel">

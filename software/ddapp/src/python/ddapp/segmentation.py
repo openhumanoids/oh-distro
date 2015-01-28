@@ -466,7 +466,9 @@ def applyPlaneFit(polyData, distanceThreshold=0.02, expectedNormal=None, perpend
         return polyData, normal
 
 
-
+def flipNormalsWithViewDirection(polyData, viewDirection):
+    normals = vnp.getNumpyFromVtk(polyData, 'normals')
+    normals[np.dot(normals, viewDirection) > 0] *= -1
 
 
 def normalEstimation(dataObj, searchCloud=None, searchRadius=0.05, useVoxelGrid=False, voxelGridLeafSize=0.05):
@@ -481,6 +483,7 @@ def normalEstimation(dataObj, searchCloud=None, searchRadius=0.05, useVoxelGrid=
     f.Update()
     dataObj = shallowCopy(f.GetOutput())
     dataObj.GetPointData().SetNormals(dataObj.GetPointData().GetArray('normals'))
+
     return dataObj
 
 
@@ -1126,6 +1129,8 @@ def segmentValveByWallPlane(expectedValveRadius, point1, point2):
     inputObj = om.findObjectByName('pointcloud snapshot')
     polyData = inputObj.polyData
 
+    _ , polyData =  removeGround(polyData)
+
     viewDirection = SegmentationContext.getGlobalInstance().getViewDirection()
     polyData, origin, normal = applyPlaneFit(polyData, expectedNormal=-viewDirection, returnOrigin=True)
 
@@ -1203,7 +1208,7 @@ def segmentValveByWallPlane(expectedValveRadius, point1, point2):
 
 
     # Spoke angle fitting:
-    if (1==1):
+    if (1==0): # disabled jan 2015
         # extract the relative positon of the points to the valve axis:
         searchRegionSpokes = labelDistanceToLine(searchRegionSpokes, origin, [origin + circleNormal])
         searchRegionSpokes = thresholdPoints(searchRegionSpokes, 'distance_to_line', [0.05, radius-0.04])
@@ -1212,19 +1217,21 @@ def segmentValveByWallPlane(expectedValveRadius, point1, point2):
         points = vtkNumpy.getNumpyFromVtk(searchRegionSpokesLocal , 'Points')
 
         spoke_angle = findValveSpokeAngle(points)
-        spokeAngleTransform = transformUtils.frameFromPositionAndRPY([0,0,0], [0,0,spoke_angle])
+    else:
+        spoke_angle = 0
 
-        spokeTransform = transformUtils.copyFrame(t)
-        spokeAngleTransform.Concatenate(spokeTransform)
-        spokeObj = showFrame(spokeAngleTransform, 'spoke frame', parent=getDebugFolder(), visible=False, scale=radius)
-        spokeObj.addToView(app.getDRCView())
-        t = spokeAngleTransform
+    spokeAngleTransform = transformUtils.frameFromPositionAndRPY([0,0,0], [0,0,spoke_angle])
+    spokeTransform = transformUtils.copyFrame(t)
+    spokeAngleTransform.Concatenate(spokeTransform)
+    spokeObj = showFrame(spokeAngleTransform, 'spoke frame', parent=getDebugFolder(), visible=False, scale=radius)
+    spokeObj.addToView(app.getDRCView())
+    t = spokeAngleTransform
 
     zwidth = 0.0175
 
     d = DebugData()
     #d.addLine(np.array([0,0,-zwidth/2.0]), np.array([0,0,zwidth/2.0]), radius=radius)
-    d.addTorus(radius, 0.1)
+    d.addTorus(radius, 0.127)
     d.addLine(np.array([0,0,0]), np.array([radius-zwidth,0,0]), radius=zwidth) # main bar
 
     name = 'valve'
@@ -1245,8 +1252,18 @@ def segmentValveByWallPlane(expectedValveRadius, point1, point2):
 
 
 
+def showHistogram(polyData, arrayName, numberOfBins=100):
 
+    import matplotlib.pyplot as plt
 
+    x = vnp.getNumpyFromVtk(polyData, arrayName)
+    hist, bins = np.histogram(x, bins=numberOfBins)
+    width = 0.7 * (bins[1] - bins[0])
+    center = (bins[:-1] + bins[1:]) / 2
+    plt.bar(center, hist, align='center', width=width)
+    plt.show()
+
+    return bins[np.argmax(hist)] + (bins[1] - bins[0])/2.0
 
 
 
@@ -1535,6 +1552,31 @@ def applyDiskGlyphs(polyData):
     glyph.OrientOn()
     glyph.SetSource(disk)
     glyph.SetInput(pd)
+    glyph.SetVectorModeToUseNormal()
+    glyph.Update()
+
+    return shallowCopy(glyph.GetOutput())
+
+
+def applyArrowGlyphs(polyData, computeNormals=True, voxelGridLeafSize=0.03, normalEstimationSearchRadius=0.05, arrowSize=0.02):
+
+    polyData = applyVoxelGrid(polyData, leafSize=0.02)
+
+    if computeNormals:
+        voxelData = applyVoxelGrid(polyData, leafSize=voxelGridLeafSize)
+        polyData = normalEstimation(polyData, searchRadius=normalEstimationSearchRadius, searchCloud=voxelData)
+        polyData = removeNonFinitePoints(polyData, 'normals')
+        flipNormalsWithViewDirection(polyData, SegmentationContext.getGlobalInstance().getViewDirection())
+
+    assert polyData.GetPointData().GetNormals()
+
+    arrow = vtk.vtkArrowSource()
+    arrow.Update()
+
+    glyph = vtk.vtkGlyph3D()
+    glyph.SetScaleFactor(arrowSize)
+    glyph.SetSource(arrow.GetOutput())
+    glyph.SetInput(polyData)
     glyph.SetVectorModeToUseNormal()
     glyph.Update()
 
@@ -3139,10 +3181,6 @@ def computeEdge(polyData, edgeAxis, perpAxis, binWidth=0.03):
             edgePoints.append(binPoints[binDists.argmax()])
 
     return np.array(edgePoints)
-
-
-def computeCentroid(polyData):
-    return np.average(vtkNumpy.getNumpyFromVtk(polyData, 'Points'), axis=0)
 
 
 def computeCentroids(polyData, axis, binWidth=0.025):

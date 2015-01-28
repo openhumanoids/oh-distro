@@ -19,6 +19,11 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % Atlas, for usefulness
     r;
     r_control;
+    nq_control;
+
+    % Structure containing the frame numbers of the different states
+    % inside the input frame.
+    frame_nums;
     
     % Whether we should publish a ground truth EST_ROBOT_STATE
     % (or if not, publish approp messages to feed state_sync state est.)
@@ -82,10 +87,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
-      if (isa(obj.getInputFrame, 'AtlasState'))
+      if (isa(obj.getInputFrame, 'drcFrames.AtlasState'))
         atlascoordnames = obj.getInputFrame.getCoordinateNames;
       else
-        atlascoordnames = obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+        atlascoordnames = obj.getInputFrame.getFrameByName('drcFrames.AtlasState').getCoordinateNames;
       end
       atlascoordnames = atlascoordnames(7:length(atlascoordnames)/2); % cut off the floating base
 
@@ -168,18 +173,50 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
                                       'r_leg_kny',
                                       'r_leg_aky',
                                       'r_leg_akx',
-                                      'l_arm_usz',
+                                      'l_arm_shz',
                                       'l_arm_shx',
                                       'l_arm_ely',
                                       'l_arm_elx',
                                       'l_arm_uwy',
                                       'l_arm_mwx',
-                                      'r_arm_usz',
+                                      'r_arm_shz',
                                       'r_arm_shx',
                                       'r_arm_ely',
                                       'r_arm_elx',
                                       'r_arm_uwy',
                                       'r_arm_mwx'
+                                      };
+        case 5
+          desired_joint_name_order = {'back_bkz',
+                                      'back_bky',
+                                      'back_bkx',
+                                      'neck_ay',
+                                      'l_leg_hpz',
+                                      'l_leg_hpx',
+                                      'l_leg_hpy',
+                                      'l_leg_kny',
+                                      'l_leg_aky',
+                                      'l_leg_akx',
+                                      'r_leg_hpz',
+                                      'r_leg_hpx',
+                                      'r_leg_hpy',
+                                      'r_leg_kny',
+                                      'r_leg_aky',
+                                      'r_leg_akx',
+                                      'l_arm_shz',
+                                      'l_arm_shx',
+                                      'l_arm_ely',
+                                      'l_arm_elx',
+                                      'l_arm_uwy',
+                                      'l_arm_mwx',
+                                      'l_arm_lwy',
+                                      'r_arm_shz',
+                                      'r_arm_shx',
+                                      'r_arm_ely',
+                                      'r_arm_elx',
+                                      'r_arm_uwy',
+                                      'r_arm_mwx',
+                                      'r_arm_lwy'
                                       };
       end
       obj.reordering = zeros(length(desired_joint_name_order), 1);
@@ -189,6 +226,16 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       obj.r = r;
       obj.r_control = r_control;
+      obj.nq_control = obj.r_control.getNumPositions();
+      if (isa(input_frame, 'MultiCoordinateFrame'))
+        obj.frame_nums.atlas_state = input_frame.getFrameNumByName('drcFrames.AtlasState');
+        obj.frame_nums.hand_state = input_frame.getFrameNumByName('drcFrames.HandState');
+        obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
+      else
+        obj.frame_nums.atlas_state = input_frame;
+        obj.frame_nums.hand_state = '';
+        obj.frame_nums.hokuyo_state = '';
+      end
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -200,14 +247,13 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % frames
         atlas_state = varargin{1};
       else
-        inp = obj.getInputFrame();
-        num = inp.getFrameNumByName('AtlasState');
+        num = obj.frame_nums.atlas_state;
         if length(num)~=1
           error(['No atlas state found as input for LCMBroadcastBlock!']);
         end
         atlas_state = varargin{num};
 
-        num = inp.getFrameNumByName('HandState');
+        num = obj.frame_nums.hand_state;
 
         if (length(num)>1)
           error(['Ambiguous hand state. No support for two hands yet...']);
@@ -219,7 +265,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
           hand_state(10:11) = [0;0];
         end
         
-        num = inp.getFrameNumByName('hokuyo');
+        num = obj.frame_nums.hokuyo_state;
         laser_state = [];
         if (length(num)>1)
           error(['Ambiguous hand state. No support for two hands yet...']);
@@ -228,7 +274,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         end
       end
       if (~isempty(laser_state))
-        laser_spindle_angle = laser_state(1)+pi/2;
+        laser_spindle_angle = laser_state(1);
         laser_ranges = laser_state(2:end);
       else
         laser_spindle_angle = 0;
@@ -240,7 +286,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % we're publishing ground truth anyway)
       if (obj.publish_truth && mod(t, obj.fc_publish_period)  < obj.r.timestep)
         % Get foot force state
-%         num = inp.getFrameNumByName('ForceTorque');
+%         num = inp.getFrameNumByName('drcFrames.ForceTorque');
 %         hand_state = [];
 %         if (length(num)~=2)
 %           lfoot_force = [];
@@ -252,11 +298,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
         x = atlas_state;
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
-        within_thresh = phiC < 0.002;
-        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
-              any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
+        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
@@ -331,9 +373,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.joint_position =atlas_pos;
         state_msg.joint_velocity = atlas_vel;
       else
-        % need another factor of pi/2though I wouldn't mind it being earlier rather than later to get drawn multisense to agree with
-        % the "true" (functionally true, anyway) mirror position
-        state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle+pi/2];
+        state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle];
         state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end); 0];
       end
       state_msg.force_torque = drc.force_torque_t();
@@ -341,11 +381,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         % Get binary foot contact, call it force:
         x = atlas_state;
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
-        within_thresh = phiC < 0.002;
-        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
-          any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
+        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
+
         % pack it up
         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
         state_msg.force_torque.r_foot_force_z = fc(2)*1000;
@@ -394,26 +431,11 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~isempty(laser_state))
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
         multisense_state = multisense.state_t();
-        multisense_state.joint_name = {'hokuyo_joint',
-          'pre_spindle_cal_x_joint',
-          'pre_spindle_cal_y_joint',
-          'pre_spindle_cal_z_joint',
-          'pre_spindle_cal_roll_joint',
-          'pre_spindle_cal_pitch_joint',
-          'pre_spindle_cal_yaw_joint',
-          'post_spindle_cal_x_joint',
-          'post_spindle_cal_y_joint',
-          'post_spindle_cal_z_joint',
-          'post_spindle_cal_roll_joint',
-          'post_spindle_cal_pitch_joint',
-          'post_spindle_cal_yaw_joint'};
+        multisense_state.joint_name = {'hokuyo_joint'};
         
-        multisense_state.joint_position = [mod(laser_spindle_angle+pi/2, 2*pi), ...
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        multisense_state.joint_velocity = [0.0, ...
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        multisense_state.joint_effort = [0.0, ...
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        multisense_state.joint_position = [mod(laser_spindle_angle+pi, 2*pi)];
+        multisense_state.joint_velocity = [0.0];
+        multisense_state.joint_effort = [0.0];
         multisense_state.num_joints = length(multisense_state.joint_name);
         multisense_state.utime = t*1000*1000;
         obj.lc.publish('MULTISENSE_STATE', multisense_state);
@@ -479,7 +501,6 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       varargout = varargin;
       
     end
-    
   end
   
 end

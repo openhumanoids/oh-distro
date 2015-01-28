@@ -1,0 +1,332 @@
+{
+  "General": [
+    {
+      "allow_mirror": true, 
+      "description": "crane", 
+      "joints": {
+        "l_arm_elx": 1.6182986497879028, 
+        "l_arm_ely": 2.5643422603607178, 
+        "l_arm_lwy": 1, 
+        "l_arm_mwx": 0.8601630926132202, 
+        "l_arm_shx": 0.7965372800827026, 
+        "l_arm_shz": -0.773799479007721, 
+        "l_arm_uwy": 0.7271268367767334
+      }, 
+      "name": "crane", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "arm down thumb in", 
+      "joints": {
+        "l_arm_elx": 0.5717237591743469, 
+        "l_arm_ely": 2.388169050216675, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.08584332466125488, 
+        "l_arm_shx": -1.072134256362915, 
+        "l_arm_shz": 0.15671302378177643, 
+        "l_arm_uwy": 0.8696688413619995
+      }, 
+      "name": "arm down thumb in", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "handsdown both", 
+      "joints": {
+        "l_arm_elx": 0.5006033182144165, 
+        "l_arm_ely": 2.100071907043457, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.006528913974761963, 
+        "l_arm_shx": -1.3302499055862427, 
+        "l_arm_shz": 0.2700333595275879, 
+        "l_arm_uwy": 0.024209260940551758, 
+        "r_arm_elx": -0.5008605718612671, 
+        "r_arm_ely": 2.0998172760009766, 
+        "r_arm_mwx": 0.0005802512168884277, 
+        "r_arm_shx": 1.3302150964736938, 
+        "r_arm_shz": 0.27055978775024414, 
+        "r_arm_uwy": 0.02374020218849182
+      }, 
+      "name": "handsdown both", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "handdown", 
+      "joints": {
+        "l_arm_elx": 0.5006033182144165, 
+        "l_arm_ely": 2.100167989730835, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.006528913974761963, 
+        "l_arm_shx": -1.3301540613174438, 
+        "l_arm_shz": 0.2700333595275879, 
+        "l_arm_uwy": 0.024209260940551758
+      }, 
+      "name": "handdown", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "handsdown incl back", 
+      "joints": {
+        "back_bkx": 0.0002659455349203199, 
+        "back_bky": 0.0007907520630396903, 
+        "back_bkz": 0.0039426530711352825, 
+        "l_arm_elx": 0.4996761083602905, 
+        "l_arm_ely": 2.1026859283447266, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.014013349078595638, 
+        "l_arm_shx": -1.3297230005264282, 
+        "l_arm_shz": 0.2692919969558716, 
+        "l_arm_uwy": 0.01859891414642334, 
+        "r_arm_elx": -0.494953453540802, 
+        "r_arm_ely": 2.1011929512023926, 
+        "r_arm_mwx": -0.00019657611846923828, 
+        "r_arm_shx": 1.3310223817825317, 
+        "r_arm_shz": 0.2759742736816406, 
+        "r_arm_uwy": 0.01871834695339203
+      }, 
+      "name": "handsdown incl back", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris - prereach", 
+      "joints": {
+        "l_arm_elx": 1.572343349456787, 
+        "l_arm_ely": 1.7639384269714355, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.8167610764503479, 
+        "l_arm_shx": -1.001606822013855, 
+        "l_arm_shz": 0.7853426933288574, 
+        "l_arm_uwy": 0.7702436447143555
+      }, 
+      "name": "debris - prereach", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris - extract", 
+      "joints": {
+        "back_bkx": 0.007136213593184948, 
+        "back_bky": 0.007643775083124638, 
+        "back_bkz": 0.035616662353277206, 
+        "l_arm_elx": 1.5721516609191895, 
+        "l_arm_ely": 1.7639384269714355, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.8167610764503479, 
+        "l_arm_shx": -1.0015109777450562, 
+        "l_arm_shz": 0.7853426933288574, 
+        "l_arm_uwy": 0.7702436447143555
+      }, 
+      "name": "debris - extract", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris - drop pose", 
+      "joints": {
+        "back_bkx": 0.007176973856985569, 
+        "back_bky": 0.006824231240898371, 
+        "back_bkz": 0.2622271776199341, 
+        "l_arm_elx": 0.37440019845962524, 
+        "l_arm_ely": 1.2284832000732422, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.14343935251235962, 
+        "l_arm_shx": -0.1664501428604126, 
+        "l_arm_shz": 0.7568683624267578, 
+        "l_arm_uwy": 0.025208234786987305
+      }, 
+      "name": "debris - drop pose", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "handdown thumb in", 
+      "joints": {
+        "l_arm_elx": 0.31513822078704834, 
+        "l_arm_ely": 3.1058847904205322, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": -0.012162923812866211, 
+        "l_arm_shx": -1.2109779119491577, 
+        "l_arm_shz": -0.12205731868743896, 
+        "l_arm_uwy": 0.0289762020111084
+      }, 
+      "name": "handdown thumb in", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "arm up pregrasp", 
+      "joints": {
+        "l_arm_elx": 1.5715787410736084, 
+        "l_arm_ely": 1.5707950592041016, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.7862088084220886, 
+        "l_arm_shx": 0.0, 
+        "l_arm_shz": 0.76794487087750496, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "arm up pregrasp", 
+      "nominal_handedness": "left"
+    }
+  ], 
+  "drill": [
+    {
+      "allow_mirror": true, 
+      "description": "drill down", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 0.5, 
+        "l_arm_ely": 2.0999999046325684, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 1.1102230246251565e-16, 
+        "l_arm_shx": -1.1027015447616577, 
+        "l_arm_shz": 0.27000001072883606, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "drill down", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill raise for cutting", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 1.6365846395492554, 
+        "l_arm_ely": 2.546053647994995, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.8582467436790466, 
+        "l_arm_shx": -1.2967355251312256, 
+        "l_arm_shz": 0.5850000381469727, 
+        "l_arm_uwy": 0.10304810106754303
+      }, 
+      "name": "drill raise for cutting", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pointer down", 
+      "joints": {
+        "l_arm_lwy": 0, 
+        "r_arm_elx": -0.5, 
+        "r_arm_ely": 2.0999999046325684, 
+        "r_arm_mwx": -1.1102230246251565e-16, 
+        "r_arm_shx": 1.3300000429153442, 
+        "r_arm_shz": 0.27000001072883606, 
+        "r_arm_uwy": 0.0
+      }, 
+      "name": "pointer down", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill raise power on", 
+      "joints": {
+        "l_arm_elx": 1.9557924270629883, 
+        "l_arm_ely": 1.7382441759109497, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.22407197952270508, 
+        "l_arm_shx": 0.009102821350097656, 
+        "l_arm_shz": -0.26963281631469727, 
+        "l_arm_uwy": 0.024385511875152588
+      }, 
+      "name": "drill raise power on", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pointer raise power on", 
+      "joints": {
+        "l_arm_lwy": 0, 
+        "r_arm_elx": -1.979742169380188, 
+        "r_arm_ely": 1.8336384296417236, 
+        "r_arm_mwx": -0.5188412666320801, 
+        "r_arm_shx": 1.2585715055465698, 
+        "r_arm_shz": -0.5391398668289185, 
+        "r_arm_uwy": 2.5829949378967285
+      }, 
+      "name": "pointer raise power on", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "both raise power on [old]", 
+      "joints": {
+        "l_arm_elx": 1.9557924270629883, 
+        "l_arm_ely": 1.7382441759109497, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_shx": 0.009102821350097656, 
+        "l_arm_shz": -0.26963281631469727, 
+        "l_arm_uwy": 0.024385511875152588, 
+        "r_arm_elx": -1.979742169380188, 
+        "r_arm_ely": 1.8336384296417236, 
+        "r_arm_mwx": -0.5188412666320801, 
+        "r_arm_shx": 1.2585715055465698, 
+        "r_arm_shz": -0.5391398668289185, 
+        "r_arm_uwy": 2.5829949378967285
+      }, 
+      "name": "both raise power on [old]", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "both raise power on", 
+      "joints": {
+        "l_arm_elx": 1.9557924270629883, 
+        "l_arm_ely": 1.7382441759109497, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_shx": 0.009102821350097656, 
+        "l_arm_shz": -0.26963281631469727, 
+        "l_arm_uwy": 0.024385511875152588, 
+        "r_arm_elx": -1.774211049079895, 
+        "r_arm_ely": 1.9917680025100708, 
+        "r_arm_mwx": -0.1625777930021286, 
+        "r_arm_shx": 0.9204887747764587, 
+        "r_arm_shz": -0.7084315419197083, 
+        "r_arm_uwy": 2.54154634475708
+      }, 
+      "name": "both raise power on", 
+      "nominal_handedness": "none"
+    }
+  ], 
+  "table clearing": [
+    {
+      "allow_mirror": true, 
+      "description": "pre drop 1", 
+      "joints": {
+        "l_arm_elx": 0.7594979405403137, 
+        "l_arm_ely": 2.635584831237793, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": -0.22554022073745728, 
+        "l_arm_shz": -1.5707999467849731, 
+        "l_arm_uwy": 0.35651132464408875
+      }, 
+      "name": "pre drop 1", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pre drop 2", 
+      "joints": {
+        "l_arm_elx": 1.047195553779602, 
+        "l_arm_ely": 2.348259210586548, 
+        "l_arm_lwy": 0, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": -0.6505333185195923, 
+        "l_arm_shz": -1.4518001079559326, 
+        "l_arm_uwy": 1.5549284219741821
+      }, 
+      "name": "pre drop 2", 
+      "nominal_handedness": "left"
+    }
+  ]
+}

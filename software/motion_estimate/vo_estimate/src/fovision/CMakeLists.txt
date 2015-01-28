@@ -1,3 +1,6 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+
+
 add_definitions(-Wall )
 #add_definitions(-Wall -std=gnu99) # .... compiler warning
 

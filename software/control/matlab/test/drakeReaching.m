@@ -5,6 +5,7 @@ if nargin < 1
 end
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
+import atlasControllers.*;
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -13,12 +14,12 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 options.floating = true;
 options.dt = 0.002;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(r.fixed_point_file);;
 r = r.setInitialState(xstar);
 
 if noisy
@@ -27,7 +28,7 @@ if noisy
   options.inertia_error = 0.15; % standard deviation for inertia noise (percentage of true inertia)
   options.damping_error = 0.1; % standard deviation for damping noise (percentage of true joint damping)
 
-  rctrl = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+  rctrl = DRCAtlas([],options);
   % set initial state to fixed point
   rctrl = rctrl.setInitialState(xstar);
 else
@@ -121,7 +122,7 @@ end
 qtraj = PPTrajectory(spline(ts,q));
 
 ctrl_data = QPControllerData(false,struct(...
-  'acceleration_input_frame',AtlasCoordinates(r),...
+  'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
   'D',-com(3)/9.81*eye(2),...
   'Qy',eye(2),...
   'S',V.S,...
@@ -225,6 +226,7 @@ clear ins;
 % feedback PD trajectory controller 
 options.use_ik = false;
 pd = IKPDBlock(rctrl,ctrl_data,options);
+pd = pd.setOutputFrame(drcFrames.AtlasCoordinates(r));
 ins(1).system = 1;
 ins(1).input = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);

@@ -41,10 +41,10 @@ Kinematics_Model_GFE( Atlas_Version atlas_version, double eps,
                           _right_arm_chain(),
                           _left_leg_chain(),
                           _right_leg_chain(),
-                          _min_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
-                          _max_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
-                          _min_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
-                          _max_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
+                          _min_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
+                          _max_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
+                          _min_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
+                          _max_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
                           _min_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
                           _max_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
                           _min_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ),
@@ -76,10 +76,10 @@ Kinematics_Model_GFE( const string& xmlString,
                                             _right_arm_chain(),
                                             _left_leg_chain(),
                                             _right_leg_chain(),
-                                            _min_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
-                                            _max_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
-                                            _min_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
-                                            _max_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS ),
+                                            _min_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
+                                            _max_joint_limits_left_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
+                                            _min_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
+                                            _max_joint_limits_right_arm( 3 + NUM_STATE_GFE_ARM_JOINTS - (atlas_version != V5 ? 1 : 0) ),
                                             _min_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
                                             _max_joint_limits_left_leg( NUM_STATE_GFE_LEG_JOINTS ),
                                             _min_joint_limits_right_leg( NUM_STATE_GFE_LEG_JOINTS ),
@@ -351,14 +351,17 @@ load_xml_string( string xmlString,
 
   if( _atlas_version == V3 ){
     _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usy" )->limits->lower;
-  } else if( _atlas_version == V4 ){
-    _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_usz" )->limits->lower;
+  } else {
+    _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "l_arm_shz" )->limits->lower;
   }
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "l_arm_ely" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "l_arm_elx" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->lower;
   _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->lower;
+  if( _atlas_version == V5 ){
+    _min_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "l_arm_lwy" )->limits->lower;
+  }
 
   _max_joint_limits_left_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->upper;
   _max_joint_limits_left_arm( 1 ) = _model.getJoint( "back_bky" )->limits->upper;
@@ -366,14 +369,17 @@ load_xml_string( string xmlString,
 
   if( _atlas_version == V3 ){
     _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->lower;
-  } else if( _atlas_version == V4 ){
-    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usz" )->limits->lower;
+  } else {
+    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_shz" )->limits->lower;
   }
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "l_arm_shx" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "l_arm_ely" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "l_arm_elx" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "l_arm_uwy" )->limits->upper;
   _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "l_arm_mwx" )->limits->upper;  
+  if( _atlas_version == V5 ){
+    _max_joint_limits_left_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "l_arm_lwy" )->limits->upper;
+  }
 
   _min_joint_limits_right_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->lower;
   _min_joint_limits_right_arm( 1 ) = _model.getJoint( "back_bky" )->limits->lower;
@@ -381,14 +387,17 @@ load_xml_string( string xmlString,
 
   if( _atlas_version == V3 ){
     _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->lower;
-  } else if( _atlas_version == V4 ){
-    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usz" )->limits->lower;
+  } else {
+    _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_shz" )->limits->lower;
   }
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "r_arm_ely" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "r_arm_elx" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "r_arm_uwy" )->limits->lower;
   _min_joint_limits_right_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->lower;
+  if( _atlas_version == V5 ){
+    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "r_arm_lwy" )->limits->upper;
+  }
 
   _max_joint_limits_right_arm( 0 ) = _model.getJoint( "back_bkz" )->limits->upper;
   _max_joint_limits_right_arm( 1 ) = _model.getJoint( "back_bky" )->limits->upper;
@@ -396,14 +405,17 @@ load_xml_string( string xmlString,
 
   if( _atlas_version == V3 ){
     _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usy" )->limits->upper;
-  } else if( _atlas_version == V4 ){
-    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_usz" )->limits->upper;
+  } else {
+    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_USY_JOINT ) = _model.getJoint( "r_arm_shz" )->limits->upper;
   }
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_SHX_JOINT ) = _model.getJoint( "r_arm_shx" )->limits->upper;
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_ELY_JOINT ) = _model.getJoint( "r_arm_ely" )->limits->upper;
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_ELX_JOINT ) = _model.getJoint( "r_arm_elx" )->limits->upper;
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY_JOINT ) = _model.getJoint( "r_arm_uwy" )->limits->upper;
   _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_MWX_JOINT ) = _model.getJoint( "r_arm_mwx" )->limits->upper;
+  if( _atlas_version == V5) {
+    _max_joint_limits_right_arm( 3 + STATE_GFE_ARM_UWY2_JOINT ) = _model.getJoint( "r_arm_lwy" )->limits->upper;
+  }
 
   _min_joint_limits_left_leg( STATE_GFE_LEG_KNY_JOINT ) = _model.getJoint( "l_leg_kny" )->limits->lower;
   _min_joint_limits_left_leg( STATE_GFE_LEG_LAX_JOINT ) = _model.getJoint( "l_leg_akx" )->limits->lower;

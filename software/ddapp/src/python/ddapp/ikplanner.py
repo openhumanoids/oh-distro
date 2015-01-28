@@ -22,6 +22,7 @@ from ddapp.utime import getUtime
 from ddapp import robotstate
 from ddapp import planplayback
 from ddapp import segmentation
+from ddapp import drcargs
 
 from ddapp import ik
 
@@ -105,6 +106,8 @@ class IkOptionsItem(om.ObjectModelItem):
         self.addProperty('Nominal pose', 1, attributes=om.PropertyAttributes(enumNames=['q_start', 'q_nom', 'q_end', 'q_zero']))
         self.addProperty('Seed pose', 0, attributes=om.PropertyAttributes(enumNames=['q_start', 'q_nom', 'q_end', 'q_zero']))
         self.addProperty('Major iterations limit', ikServer.majorIterationsLimit)
+        self.addProperty('Major feasibility tolerance', ikServer.majorFeasibilityTolerance, attributes=om.PropertyAttributes(decimals=6, minimum=1e-6, maximum=1.0, singleStep=1e-5))
+        self.addProperty('Major optimality tolerance', ikServer.majorOptimalityTolerance, attributes=om.PropertyAttributes(decimals=6, minimum=1e-6, maximum=1.0, singleStep=1e-4))
         self.addProperty('Goal planning mode', 0, attributes=om.PropertyAttributes(enumNames=['fix end pose', 'fix goal joints']))
         #self.addProperty('Additional time samples', ikPlanner.additionalTimeSamples)
 
@@ -121,12 +124,24 @@ class IkOptionsItem(om.ObjectModelItem):
                 self.setProperty('Use pointwise', False)
                 self.setProperty('Add knots', 2)
                 self.setProperty('Quasistatic shrink factor', 0.2)
+                self.setProperty('Major iterations limit', 100)
+                self.setProperty('Major optimality tolerance', 1e-3)
+                self.setProperty('Major feasibility tolerance', 5e-5)
             else:
                 self.setProperty('Add knots', 0)
                 self.setProperty('Quasistatic shrink factor', 0.5)
+                self.setProperty('Major iterations limit', 500)
+                self.setProperty('Major optimality tolerance', 1e-4)
+                self.setProperty('Major feasibility tolerance', 1e-6)
 
         if propertyName == 'Major iterations limit':
             self.ikServer.majorIterationsLimit = self.getProperty(propertyName)
+
+        if propertyName == 'Major feasibility tolerance':
+            self.ikServer.majorFeasibilityTolerance = self.getProperty(propertyName)
+
+        if propertyName == 'Major optimality tolerance':
+            self.ikServer.majorOptimalityTolerance = self.getProperty(propertyName)
 
         if propertyName == 'Collision min distance':
             self.ikServer.collisionMinDistance = self.getProperty(propertyName)
@@ -253,13 +268,6 @@ class IKPlanner(object):
 
         return constraints
 
-
-    def createFixedNeckConstraint(self):
-        p = ik.PostureConstraint()
-        p.joints = ['neck_ay']
-        p.jointsLowerBound = [0.0]
-        p.jointsUpperBound = [0.0]
-        return p
 
     def createKneePostureConstraint(self, bounds):
         '''
@@ -619,6 +627,11 @@ class IKPlanner(object):
         return p
 
 
+    def createLockedNeckPostureConstraint(self, startPostureName):
+        joints = robotstate.matchJoints('neck_.*')
+        return self.createPostureConstraint(startPostureName, joints)
+
+
     def createLockedTorsoPostureConstraint(self, startPostureName):
         joints = []
         joints += robotstate.matchJoints('base_.*')
@@ -947,6 +960,7 @@ class RobotPoseGUIWrapper(object):
         if cls.initialized:
             return True
 
+        rpg.setDirectorConfigFile(drcargs.args().directorConfigFile)
         rpg.lcmWrapper = rpg.LCMWrapper()
         cls.main = rpg.MainWindow()
         cls.initialized = True

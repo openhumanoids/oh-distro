@@ -130,7 +130,7 @@ class state_sync{
     EstimateTools::AlphaFilter* rotation_rate_alpha_filter_;
     
     // Torque Adjustment:
-    EstimateTools::TorqueAdjustment torque_adjustment_;
+    EstimateTools::TorqueAdjustment* torque_adjustment_;
     
     // Upper Body Encoder Calibrations:
     std::vector<float> encoder_joint_offsets_;

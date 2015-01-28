@@ -20,7 +20,7 @@ classdef CombinedPlanner
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-      r = Atlas([],options);
+      r = DRCAtlas([],options);
       r = removeCollisionGroupsExcept(r,{'heel','toe'});
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
@@ -56,6 +56,7 @@ classdef CombinedPlanner
       obj.biped = biped;
       obj.footstep_planner = StatelessFootstepPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
+      obj.iris_planner = iris.terrain_grid.Server();
       obj.monitors = {};
       obj.request_channels = {};
       obj.handlers = {};
@@ -91,6 +92,11 @@ classdef CombinedPlanner
       obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN';
       obj.handlers{end+1} = @obj.configuration_traj;
       obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.iris_region_request_t, 'utime');
+      obj.request_channels{end+1} = 'IRIS_REGION_REQUEST';
+      obj.handlers{end+1} = @obj.iris_region;
+      obj.response_channels{end+1} = 'IRIS_REGION_RESPONSE';
 
     end
 
@@ -155,7 +161,53 @@ classdef CombinedPlanner
 %       link_constraints.ddtraj = fnder(link_constraints.dtraj);
       plan = ConfigurationTraj(qtraj_pp,link_constraints);
     end
-end
+
+    function region_list = iris_region(obj, msg)
+%       profile on
+%       disp('handling iris request')
+      msg = drc.iris_region_request_t(msg);
+      collision_model = obj.biped.getFootstepPlanningCollisionModel();
+      regions = iris.TerrainRegion.empty();
+
+      if ~obj.iris_planner.hasHeightmap(msg.map_id);
+        [heights, px2world] = obj.biped.getTerrain().map_handle.getHeightData();
+
+        px2world(1,end) = px2world(1,end) - sum(px2world(1,1:3)); % stupid matlab 1-indexing...
+        px2world(2,end) = px2world(2,end) - sum(px2world(2,1:3));
+        px2world_2x3 = px2world(1:2, [1,2,4]);
+
+        [M, N] = meshgrid(1:size(heights, 1), 1:size(heights,2));
+        sz = size(M);
+        XY = px2world_2x3 * [reshape(M, 1, []); reshape(N, 1, []); ones(1, numel(M))];
+        [Z, normals] = obj.biped.getTerrain().getHeight(XY);
+        X = reshape(XY(1,:), sz);
+        Y = reshape(XY(2,:), sz);
+        Z = reshape(Z, sz);
+        heightmap = iris.terrain_grid.Heightmap(X, Y, Z, normals);
+        obj.iris_planner.addHeightmap(msg.map_id, heightmap);
+      end
+
+      for j = 1:msg.num_seed_poses
+        seed_pose = decodePosition3d(msg.seed_poses(j));
+
+        xy_bounds = decodeLinCon(msg.xy_bounds(j));
+        if isempty(obj.iris_planner.getHeightmap(msg.map_id).Z)
+          if size(xy_bounds.A, 2) == 2
+            xy_bounds.A(:,end+1:3) = 0;
+          end
+          regions(end+1) = iris.TerrainRegion(xy_bounds.A, xy_bounds.b, [], [], seed_pose(1:3), [0;0;1]);
+        else
+          i0 = obj.iris_planner.xy2ind(msg.map_id, seed_pose(1:2));
+          yaw = seed_pose(6);
+          
+          regions(end+1) = obj.iris_planner.getCSpaceRegionAtIndex(i0, yaw, collision_model,...
+            'xy_bounds', xy_bounds, 'error_on_infeas_start', false);
+        end
+      end
+      region_list = IRISRegionList(regions);
+%       profile viewer
+    end
+  end
 end
 
 

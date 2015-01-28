@@ -15,7 +15,7 @@ set(opencv-drc_revision 8298)
 set(opencv-drc_depends Eigen_pod)
 
 set(pcl_dep_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_dep)
-set(pcl_dep_revision 8330)
+set(pcl_dep_revision 8333)
 set(pcl_dep_depends)
 
 set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
@@ -73,7 +73,7 @@ set(microstrain_comm_revision 853)
 set(microstrain_comm_depends common_utils)
 
 set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
-set(bullet_revision 8570175)
+set(bullet_revision fd4a647)
 set(bullet_depends)
 
 set(fovis-git_url https://svn.csail.mit.edu/drc/trunk/software/externals/fovis-git)
@@ -118,7 +118,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/guro
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 0b34b9e4beac1cf0d319cb72c809b087b02bef53)
+set(iris_revision 6f29caf9453375dce3cfe8021d0a10f63630a611)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
@@ -148,7 +148,7 @@ set(libmultisense_external_args
   )
 
 set(multisense-lcm_url http://github.com/mitdrc/multisense-lcm.git)
-set(multisense-lcm_revision 70738692bfdc598a0452ae3dd831465c26e7299e)
+set(multisense-lcm_revision f203addf0901130fdc63132828ae8265fd8ebe1c)
 set(multisense-lcm_depends libmultisense)
 
 

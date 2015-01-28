@@ -103,7 +103,7 @@ classdef StatelessFootstepPlanner
         [corr_A, corr_b] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
         corr_A = [corr_A, zeros(size(corr_A, 1), 1)]; % convert to polytope in x y yaw
         [orig_z, orig_normal] = biped.getTerrainHeight(feet_centers.right);
-        safe_regions = [IRISRegion(corr_A, corr_b, [feet_centers.right(1:2); orig_z], orig_normal)];
+        safe_regions = [IRISRegion(corr_A, corr_b, [], [], [feet_centers.right(1:2); orig_z], orig_normal)];
       end
     end
 

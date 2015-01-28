@@ -214,8 +214,8 @@ void StereoOdom::updateMotion(int64_t utime){
   Eigen::Isometry3d delta_body =  new_world_to_body * ( world_to_body_.inverse() );
 
   if (cl_cfg_.output_signal ){
-    estimator_->publishPose(world_to_camera_, utime, "POSE_CAMERA_LEFT_ALT"); // equivalent to CAMERA_LEFT frame solved by state-sync
-    estimator_->publishPose(new_world_to_body, utime, "POSE_BODY");
+    estimator_->publishPose(utime, "POSE_CAMERA_LEFT_ALT", world_to_camera_, Eigen::Vector3d::Identity(), Eigen::Vector3d::Identity());
+    estimator_->publishPose(utime, "POSE_BODY", new_world_to_body, Eigen::Vector3d::Identity(), Eigen::Vector3d::Identity());
   }
   
   // THIS IS NOT THE CORRECT COVARIANCE - ITS THE COVARIANCE IN THE CAMERA FRAME!!!!

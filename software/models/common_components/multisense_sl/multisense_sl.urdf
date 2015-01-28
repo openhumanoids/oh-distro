@@ -29,148 +29,29 @@
       </geometry>
     </collision>
   </link>
-  <link name="pre_spindle"/>
-  <joint name="pre_spindle_joint" type="fixed">
-    <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="-0.0446 0 0.0880"/>
-    <parent link="head"/>
-    <child link="pre_spindle"/>
+
+
+  <joint name="left_camera_optical_joint" type="continuous">
+      <origin xyz="0.037817599268810 -0.091862694985753 -0.008823379197658" rpy="-0.00903666 -0.00460568 -0.00953286" />
+    <parent link="left_camera_optical_frame" />
+    <child link="motor" />
   </joint>
-  <!-- Pre-Spindle Calibration -->
-  <link name="pre_spindle_cal_x"/>
-  <link name="pre_spindle_cal_y"/>
-  <link name="pre_spindle_cal_z"/>
-  <link name="pre_spindle_cal_roll"/>
-  <link name="pre_spindle_cal_pitch"/>
-  <link name="pre_spindle_cal_yaw"/>
-  <joint name="pre_spindle_cal_x_joint" type="prismatic">
-    <parent link="pre_spindle"/>
-    <child link="pre_spindle_cal_x"/>
-    <axis xyz="1 0 0"/>
-    <limit effort="0.0" lower="-0.5" upper="0.5" velocity="0.0"/>
-  </joint>
-  <joint name="pre_spindle_cal_y_joint" type="prismatic">
-    <parent link="pre_spindle_cal_x"/>
-    <child link="pre_spindle_cal_y"/>
-    <axis xyz="0 1 0"/>
-    <limit effort="0.0" lower="-0.5" upper="0.5" velocity="0.0"/>
-  </joint>
-  <joint name="pre_spindle_cal_z_joint" type="prismatic">
-    <parent link="pre_spindle_cal_y"/>
-    <child link="pre_spindle_cal_z"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="0.0" lower="-0.5" upper="0.5" velocity="0.0"/>
-  </joint>
-  <joint name="pre_spindle_cal_roll_joint" type="continuous">
-    <parent link="pre_spindle_cal_z"/>
-    <child link="pre_spindle_cal_roll"/>
-    <axis xyz="1 0 0"/>
-  </joint>
-  <joint name="pre_spindle_cal_pitch_joint" type="continuous">
-    <parent link="pre_spindle_cal_roll"/>
-    <child link="pre_spindle_cal_pitch"/>
-    <axis xyz="0 1 0"/>
-  </joint>
-  <joint name="pre_spindle_cal_yaw_joint" type="continuous">
-    <parent link="pre_spindle_cal_pitch"/>
-    <child link="pre_spindle_cal_yaw"/>
-    <axis xyz="0 0 1"/>
-  </joint>
-  <!-- End of pre-spindle calibration -->
+
+  <link name="motor"/>
+  <link name="spindle"/>
+
   <joint name="hokuyo_joint" type="continuous">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="pre_spindle_cal_yaw"/>
-    <child link="post_spindle"/>
-    <axis xyz="1 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 3.14159265" />
+    <parent link="motor" />
+    <child link="spindle" />
+    <axis xyz="0 0 1" />
   </joint>
-  <link name="post_spindle"/>
-  <!-- Post-Spindle Calibration -->
-  <link name="post_spindle_cal_x"/>
-  <link name="post_spindle_cal_y"/>
-  <link name="post_spindle_cal_z"/>
-  <link name="post_spindle_cal_roll"/>
-  <link name="post_spindle_cal_pitch"/>
-  <!-- link name="post_spindle_cal_yaw" / -->
-  <!-- Not needed, since last cal joint goes direction to hokuyo link -->
-  <joint name="post_spindle_cal_x_joint" type="prismatic">
-    <parent link="post_spindle"/>
-    <child link="post_spindle_cal_x"/>
-    <axis xyz="1 0 0"/>
-    <limit effort="0.0" lower="-0.5" upper="0.5" velocity="0.0"/>
+
+  <joint name="spindle_joint" type="continuous">
+    <parent link="spindle" />
+    <child link="hokuyo_link" />
   </joint>
-  <joint name="post_spindle_cal_y_joint" type="prismatic">
-    <parent link="post_spindle_cal_x"/>
-    <child link="post_spindle_cal_y"/>
-    <axis xyz="0 1 0"/>
-    <limit effort="0.0" lower="-0.5" upper="0.5" velocity="0.0"/>
-  </joint>
-  <joint name="post_spindle_cal_z_joint" type="prismatic">
-    <parent link="post_spindle_cal_y"/>
-    <child link="post_spindle_cal_z"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="0.0" lower="-0.5" upper="0.5" velocity="0.0"/>
-  </joint>
-  <joint name="post_spindle_cal_roll_joint" type="continuous">
-    <parent link="post_spindle_cal_z"/>
-    <child link="post_spindle_cal_roll"/>
-    <axis xyz="1 0 0"/>
-  </joint>
-  <joint name="post_spindle_cal_pitch_joint" type="continuous">
-    <parent link="post_spindle_cal_roll"/>
-    <child link="post_spindle_cal_pitch"/>
-    <axis xyz="0 1 0"/>
-  </joint>
-  <joint name="post_spindle_cal_yaw_joint" type="continuous">
-    <parent link="post_spindle_cal_pitch"/>
-    <child link="hokuyo_link"/>
-    <axis xyz="0 0 1"/>
-  </joint>
-  <!-- End of post-spindle calibration -->
-  <link name="hokuyo_link">
-    <inertial>
-      <origin rpy="0 0 0" xyz="0.012428 0.0004084 -0.0041835"/>
-      <mass value="0.057664"/>
-      <inertia ixx="3.7174E-05" ixy="4.9927E-08" ixz="1.1015E-05" iyy="4.2412E-05" iyz="-9.8165E-09" izz="4.167E-05"/>
-    </inertial>
-    <visual>
-      <origin rpy="-0.314 0 0" xyz="0.045 -0.0261018277 -0.08342369"/>
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/head_camera.obj"/>
-      </geometry>
-      <material name="">
-        <color rgba="0.72941 0.35686 0.023529 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.03 0 0.0235"/>
-      <geometry>
-        <cylinder length="0.047" radius="0.024425"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Head Link Full Mesh as Collision
-  <link name="head">
-    <inertial>
-      <origin xyz="-0.075493 3.3383E-05 0.02774" rpy="0 0 0" />
-      <mass value="1.4199" />
-      <inertia iyy="0.0041178" ixy="-1.5797E-06" iyz="-6.8415E-07" ixx="0.0039688" ixz="-0.00089293" izz="0.0035243" />
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/head.dae"/>
-      </geometry>
-      <material name="">
-        <color rgba="0.9098 0.44314 0.031373 1" />
-      </material>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/head.dae"/>
-      </geometry>
-    </collision>
-  </link>
+
   <link name="hokuyo_link">
     <inertial>
       <origin xyz="0.012428 0.0004084 -0.0041835" rpy="0 0 0" />
@@ -178,26 +59,25 @@
       <inertia iyy="4.2412E-05" ixy="4.9927E-08" iyz="-9.8165E-09" ixx="3.7174E-05" ixz="1.1015E-05" izz="4.167E-05" />
     </inertial>
     <visual>
-      <origin rpy="-0.314 0 0" xyz="0.045 -0.0261018277 -0.08342369"/>
+      <origin xyz="-.032 -.08 0.013" rpy="-1.9179632679 -1.57079632679 0" />
       <geometry>
-        <mesh filename="package://multisense_sl/meshes/head_camera.dae"/>
+        <mesh filename="package://multisense_sl/meshes/head_camera.obj"/>
       </geometry>
       <material name="">
         <color rgba="0.72941 0.35686 0.023529 1" />
       </material>
     </visual>
-    <collision>
-      <origin rpy="-0.314 0 0" xyz="0.045 -0.0261018277 -0.08342369"/>
-      <geometry>
-        <mesh filename="package://multisense_sl/meshes/head_camera.dae"/>
-      </geometry>
-    </collision>
+  <collision>
+    <geometry>
+      <cylinder radius="0.024425" length="0.047"/>
+    </geometry>
+  </collision>
   </link>
-  -->
+
   <!-- Hokuyo Laser -->
   <joint name="head_hokuyo_fixed_joint" type="fixed">
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="0.03 0 0.015"/>
+    <origin xyz="-0.000160855024446 0.024008705700733 -0.000009006827089" rpy="1.57935 -1.5462 3.13304" />
     <parent link="hokuyo_link"/>
     <child link="head_hokuyo_frame"/>
   </joint>
@@ -252,8 +132,8 @@
     </inertial>
   </link>
   <joint name="left_camera_optical_frame_joint" type="fixed">
-    <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
-    <parent link="left_camera_frame"/>
+    <origin xyz="0 0 0" rpy="-1.57079632679 0.0 -1.57079632679" />
+    <parent link="left_camera_frame" />
     <child link="left_camera_optical_frame"/>
   </joint>
   <link name="left_camera_optical_frame"/>
@@ -395,26 +275,31 @@
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
   </link>
-  <gazebo reference="r_foot">
-    <!-- contact sensor -->
-    <sensor name="r_foot_contact_sensor" type="contact">
-      <update_rate>1000.0</update_rate>
-      <always_on>1</always_on>
-      <contact>
-        <collision>r_foot_collision</collision>
-        <topic>/r_foot_contact</topic>
-      </contact>
-    </sensor>
-  </gazebo>
-  <gazebo reference="l_foot">
-    <!-- contact sensor -->
-    <sensor name="l_foot_contact_sensor" type="contact">
-      <update_rate>1000.0</update_rate>
-      <always_on>1</always_on>
-      <contact>
-        <collision>l_foot_collision</collision>
-        <topic>/l_foot_contact</topic>
-      </contact>
-    </sensor>
-  </gazebo>
+
+  <!-- IMU Frames, Mag/Accel and Gyro -->
+  <!-- Include transfrom to the left_camera_frame (shift in -.035mm in X and -.002mm in Z) -->
+  <link name="accel"/>
+  <joint name="accel_joint" type="fixed">
+    <origin xyz="-.0475 .0302 -.00275" rpy="0 1.5707 0"/>
+    <!-- parent_link was head_root, mfallon changed -->
+    <parent link="head"/>
+    <child link="accel"/>
+  </joint>
+
+  <link name="mag"/>
+  <joint name="mag_joint" type="fixed">
+    <origin xyz="-.0475 .0302 -.00275" rpy="0 1.5707 0"/>
+    <!-- parent_link was head_root, mfallon changed -->
+    <parent link="head"/>
+    <child link="mag"/>
+  </joint>
+
+  <link name="gyro"/>
+  <joint name="gyro_joint" type="fixed">
+    <origin xyz="-.0476 .0388 -.00075" rpy="1.5707 3.14159 1.5707 "/>
+    <!-- parent_link was head_root, mfallon changed -->
+    <parent link="head"/>
+    <child link="gyro"/>
+  </joint>
+
 </robot>

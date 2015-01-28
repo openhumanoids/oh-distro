@@ -16,9 +16,6 @@ import math
 import numpy as np
 
 
-with open(drcargs.args().directorConfigFile) as directorConfigFile:
-    jointMap = json.load(directorConfigFile)['teleopJointMap']
-
 def addWidgetsToDict(widgets, d):
 
     for widget in widgets:
@@ -232,6 +229,7 @@ class EndEffectorTeleopPanel(object):
 
         constraints = []
         constraints.append(ikPlanner.createQuasiStaticConstraint())
+        constraints.append(ikPlanner.createLockedNeckPostureConstraint(startPoseName))
 
         if self.getLFootConstraint() == 'fixed':
             constraints.extend(ikPlanner.createFixedLinkConstraints(startPoseName, 'l_foot', tspan=[0.0, 1.0]))
@@ -433,8 +431,6 @@ class EndEffectorTeleopPanel(object):
         frameSync.addFrame(handFrame)
         goalFrame.sync = frameSync
 
-        #handModels = {'left':self.panel.lhandModel, 'right':self.panel.rhandModel}
-
 
     def removePlanFolder(self):
         om.removeFromObjectModel(om.findObjectByName('teleop plan'))
@@ -523,10 +519,15 @@ class JointLimitChecker(object):
         self.inflationAmount = np.radians(0.1)
         self.timer = TimerCallback(targetFps=1)
         self.timer.callback = self.update
+        self.warningButton = None
         self.action = None
 
     def update(self):
-        self.checkJointLimits()
+        limitData = self.checkJointLimits()
+        if limitData:
+            self.notifyUserStatusBar(limitData)
+        else:
+            self.clearStatusBarWarning()
 
     def start(self):
         self.action.checked = True
@@ -548,7 +549,28 @@ class JointLimitChecker(object):
         else:
             self.stop()
 
-    def notifyUser(self, limitData):
+    def clearStatusBarWarning(self):
+        if self.warningButton:
+            self.warningButton.deleteLater()
+            self.warningButton = None
+
+    def notifyUserStatusBar(self, limitData):
+
+        if self.warningButton:
+            return
+
+        def showDialog():
+            limitData = self.checkJointLimits()
+            if limitData:
+                self.notifyUserDialog(limitData)
+            self.clearStatusBarWarning()
+
+        self.warningButton = QtGui.QPushButton('Joint Limit Warning')
+        self.warningButton.setStyleSheet("background-color:red")
+        self.warningButton.connect('clicked()', showDialog)
+        app.getMainWindow().statusBar().addWidget(self.warningButton)
+
+    def notifyUserDialog(self, limitData):
 
         message = '\n'.join(['%s by %.2f degrees' % (name, np.degrees(epsilon)) for name, epsilon in limitData])
         message = 'The following joints have been detected to exceed joint limts specified by the model:\n\n' + message + '\n\n'
@@ -587,8 +609,7 @@ class JointLimitChecker(object):
                 #print 'detected joint outside limit:', jointName, ' by %.3f degrees' % np.degrees(epsilon)
                 limitData.append((jointName, epsilon))
 
-        if limitData:
-            self.notifyUser(limitData)
+        return limitData
 
     def toJointIndex(self, jointName):
         return robotstate.getDrakePoseJointNames().index(jointName)
@@ -597,7 +618,7 @@ class JointLimitChecker(object):
 
 class JointTeleopPanel(object):
 
-    def __init__(self, panel):
+    def __init__(self, panel, jointGroups=None):
         self.panel = panel
         self.ui = panel.ui
         self.ui.jointTeleopButton.connect('clicked()', self.teleopButtonClicked)
@@ -613,61 +634,49 @@ class JointTeleopPanel(object):
         self.jointLimitsMin[0:6] = [-0.25, -0.25, 0.61, -math.radians(20),  -math.radians(20),  -math.radians(20)]
         self.jointLimitsMax[0:6] = [0.25, 0.25, 0.92, math.radians(20),  math.radians(20),  math.radians(20)]
 
-        self.slidersMap = {
-            jointMap['backRoll'] : self.ui.backRollSlider,
-            jointMap['backPitch'] : self.ui.backPitchSlider,
-            jointMap['backYaw'] : self.ui.backYawSlider,
+        if jointGroups is None:
+            with open(drcargs.args().directorConfigFile) as directorConfigFile:
+                jointGroups = json.load(directorConfigFile)['teleopJointGroups']
 
-            jointMap['baseX'] : self.ui.baseXSlider,
-            jointMap['baseY'] : self.ui.baseYSlider,
-            jointMap['baseZ'] : self.ui.baseZSlider,
+        self.buildTabWidget(jointGroups)
 
-            jointMap['baseRoll'] : self.ui.baseRollSlider,
-            jointMap['basePitch'] : self.ui.basePitchSlider,
-            jointMap['baseYaw'] : self.ui.baseYawSlider,
+        self.startPose = None
+        self.endPose = None
+        self.userJoints = {}
 
-            jointMap['leftShoulderX'] : self.ui.leftShoulderXSlider,
-            jointMap['leftShoulderY'] : self.ui.leftShoulderYSlider,
-            jointMap['leftShoulderZ'] : self.ui.leftShoulderZSlider,
-            jointMap['leftElbow'] : self.ui.leftElbowSlider,
-            jointMap['leftWristX'] : self.ui.leftWristXSlider,
-            jointMap['leftWristY'] : self.ui.leftWristYSlider,
+        self.updateWidgetState()
 
-            jointMap['rightShoulderX'] : self.ui.rightShoulderXSlider,
-            jointMap['rightShoulderY'] : self.ui.rightShoulderYSlider,
-            jointMap['rightShoulderZ'] : self.ui.rightShoulderZSlider,
-            jointMap['rightElbow'] : self.ui.rightElbowSlider,
-            jointMap['rightWristX'] : self.ui.rightWristXSlider,
-            jointMap['rightWristY'] : self.ui.rightWristYSlider,
-        }
 
-        self.labelMap = {
-            self.ui.backRollSlider : self.ui.backRollLabel,
-            self.ui.backPitchSlider : self.ui.backPitchLabel,
-            self.ui.backYawSlider : self.ui.backYawLabel,
+    def buildTabWidget(self, jointGroups):
 
-            self.ui.baseXSlider : self.ui.baseXLabel,
-            self.ui.baseYSlider : self.ui.baseYLabel,
-            self.ui.baseZSlider : self.ui.baseZLabel,
+        self.slidersMap = {}
+        self.labelMap = {}
 
-            self.ui.baseRollSlider : self.ui.baseRollLabel,
-            self.ui.basePitchSlider : self.ui.basePitchLabel,
-            self.ui.baseYawSlider : self.ui.baseYawLabel,
+        for group in jointGroups:
+            groupName = group['name']
+            joints = group['joints']
+            labels = group['labels']
+            if len(labels) != len(joints):
+                print 'error, joints/labels mismatch for joint group:', name
+                continue
 
-            self.ui.leftShoulderXSlider : self.ui.leftShoulderXLabel,
-            self.ui.leftShoulderYSlider : self.ui.leftShoulderYLabel,
-            self.ui.leftShoulderZSlider : self.ui.leftShoulderZLabel,
-            self.ui.leftElbowSlider : self.ui.leftElbowLabel,
-            self.ui.leftWristXSlider : self.ui.leftWristXLabel,
-            self.ui.leftWristYSlider : self.ui.leftWristYLabel,
+            jointGroupWidget = QtGui.QWidget()
+            gridLayout = QtGui.QGridLayout(jointGroupWidget)
+            gridLayout.setColumnStretch(0, 1)
 
-            self.ui.rightShoulderXSlider : self.ui.rightShoulderXLabel,
-            self.ui.rightShoulderYSlider : self.ui.rightShoulderYLabel,
-            self.ui.rightShoulderZSlider : self.ui.rightShoulderZLabel,
-            self.ui.rightElbowSlider : self.ui.rightElbowLabel,
-            self.ui.rightWristXSlider : self.ui.rightWristXLabel,
-            self.ui.rightWristYSlider : self.ui.rightWristYLabel,
-            }
+            for jointName, labelText in zip(joints, labels):
+                label = QtGui.QLabel(labelText)
+                numericLabel = QtGui.QLabel('0.0')
+                slider = QtGui.QSlider(QtCore.Qt.Vertical)
+                column = gridLayout.columnCount()
+                gridLayout.addWidget(label, 0, column)
+                gridLayout.addWidget(slider, 1, column)
+                gridLayout.addWidget(numericLabel, 2, column)
+                self.slidersMap[jointName] = slider
+                self.labelMap[slider] = numericLabel
+
+            gridLayout.setColumnStretch(gridLayout.columnCount(), 1)
+            self.ui.tabWidget.addTab(jointGroupWidget, groupName)
 
         self.signalMapper = QtCore.QSignalMapper()
 
@@ -679,12 +688,6 @@ class JointTeleopPanel(object):
 
         self.signalMapper.connect('mapped(const QString&)', self.sliderChanged)
 
-        self.startPose = None
-        self.endPose = None
-        self.userJoints = {}
-
-        self.updateWidgetState()
-
 
     def planClicked(self):
         if not self.ui.jointTeleopButton.checked:
@@ -695,7 +698,13 @@ class JointTeleopPanel(object):
 
 
     def generatePlan(self):
-        plan = self.panel.ikPlanner.computePostureGoal(self.startPose, self.endPose)
+
+        hasBase = False
+        for jointIndex, jointValue in self.userJoints.iteritems():
+            if self.toJointName(jointIndex).startswith('base_'):
+                hasBase = True
+
+        plan = self.panel.ikPlanner.computePostureGoal(self.startPose, self.endPose, feetOnGround=hasBase)
         self.panel.showPlan(plan)
 
 
@@ -793,7 +802,7 @@ class JointTeleopPanel(object):
         for jointIndex, jointValue in self.userJoints.iteritems():
             jointName = self.toJointName(jointIndex)
             self.endPose[jointIndex] = jointValue
-            if 'base' in jointName:
+            if jointName.startswith('base_'):
                 hasBase = True
 
         if hasBase:
@@ -830,9 +839,9 @@ class JointTeleopPanel(object):
         slider = self.slidersMap[jointName]
         jointIndex = self.toJointIndex(jointName)
         jointValue = self.toJointValue(jointIndex, slider.value / float(self.sliderMax))
-
         self.userJoints[jointIndex] = jointValue
-        if 'base' in jointName:
+
+        if jointName.startswith('base_'):
             self.computeBaseJointOffsets()
             self.userJoints[jointIndex] += self.baseJointOffsets.get(jointName, 0.0)
 
@@ -853,11 +862,16 @@ class JointTeleopPanel(object):
 
     def updateSliders(self):
 
-        self.computeBaseJointOffsets()
+        baseJointOffsets = None
+
 
         for jointName, slider in self.slidersMap.iteritems():
             jointIndex = self.toJointIndex(jointName)
-            jointValue = self.getJointValue(jointIndex) - self.baseJointOffsets.get(jointName, 0.0)
+            jointValue = self.getJointValue(jointIndex)
+            if jointName.startswith('base_'):
+                if baseJointOffsets is None:
+                    baseJointOffsets = self.computeBaseJointOffsets()
+                jointValue -= self.baseJointOffsets.get(jointName, 0.0)
 
             slider.blockSignals(True)
             slider.setValue(self.toSliderValue(jointIndex, jointValue)*self.sliderMax)
@@ -867,14 +881,12 @@ class JointTeleopPanel(object):
 
 class TeleopPanel(object):
 
-    def __init__(self, robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController, ikPlanner, manipPlanner, lhandModel, rhandModel, showPlanFunction, hidePlanFunction):
+    def __init__(self, robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController, ikPlanner, manipPlanner, showPlanFunction, hidePlanFunction):
 
         self.robotStateModel = robotStateModel
         self.robotStateJointController = robotStateJointController
         self.teleopRobotModel = teleopRobotModel
         self.teleopJointController = teleopJointController
-        self.lhandModel = lhandModel
-        self.rhandModel = rhandModel
         self.ikPlanner = ikPlanner
         self.manipPlanner = manipPlanner
         self.showPlanFunction = showPlanFunction
@@ -949,12 +961,12 @@ def _getAction():
     return app.getToolBarActions()['ActionTeleopPanel']
 
 
-def init(robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController, debrisPlanner, manipPlanner, lhandModel, rhandModel, showPlanFunction, hidePlanFunction):
+def init(robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController, debrisPlanner, manipPlanner, showPlanFunction, hidePlanFunction):
 
     global panel
     global dock
 
-    panel = TeleopPanel(robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController, debrisPlanner, manipPlanner, lhandModel, rhandModel, showPlanFunction, hidePlanFunction)
+    panel = TeleopPanel(robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController, debrisPlanner, manipPlanner, showPlanFunction, hidePlanFunction)
     dock = app.addWidgetToDock(panel.widget, action=_getAction())
     dock.hide()
 

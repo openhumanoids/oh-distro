@@ -1,0 +1,206 @@
+group "0.params_and_model_pub" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/simul_robot.cfg";
+        host = "base";
+    }
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v5/model_LR_RR.urdf";
+        host = "base";
+    }
+}
+
+group "1.state_mit" {
+
+    cmd "joints2frames" {
+        exec = "drc-joints2frames -b";
+        host = "base";
+    }
+
+    cmd "state-sync" {
+        exec = "drc-state-sync -b -a 5";
+        host = "base";
+    }
+    cmd "fusion" {
+        exec = "se-fusion";
+        host = "base";
+    }
+
+}
+
+group "2.plan_and_control" {
+
+
+cmd "AtlasControllerNoHands" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 5); \"";
+        host = "base";
+        stop_signal = 15;
+    }
+    cmd "AtlasControllerPlusHandWeight" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 2, 5); \"";
+        host = "base";
+        stop_signal = 15;
+    }
+
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],5); p.run();\"";
+       host = "base";
+       stop_signal = 15;
+    }
+
+    cmd "BaseBDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "base";
+    }
+}
+
+group "5.maps" {
+
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "base";
+    }
+
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "base";
+    }
+
+    cmd "lidar-passthrough" {
+        exec = "drc-lidar-passthrough -c 0.06 -a 5";
+        host = "base";
+    }
+}
+
+cmd "pose-util" {
+    exec = "drc-robot-pose-util";
+    host = "base";
+}
+
+cmd "director" {
+    exec = "drake-designer -c simul_robot.cfg -v5";
+    host = "base";
+}
+
+cmd "viewer" {
+    exec = "drc-viewer -c simul_robot.cfg";
+    host = "base";
+}
+
+cmd "base_deputy" {
+    exec = "bot-procman-deputy -n base";
+    host = "localhost";
+}
+
+cmd "drakeAtlasSimulation Walking Flat" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 0, 1, 0, '');\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulation Walking Two Steps" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 0, 1, 0, 'steps');\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulation Manip Example" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, 1, 'manip_ex');\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulation Valve Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, 1, 'valve_wall');\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulation Door Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, 1, 'door');\"";
+    host = "base";
+}
+cmd "drakeAtlasSimulation Drill Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, 1, 'drill_frame');\"";
+    host = "base";
+}
+
+script "0.run_all_but_simul_and_controller" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+}
+
+script "1.run_walking_flat" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Walking Flat";
+    start cmd "AtlasControllerNoHands";
+}
+
+script "2.run_walking_steps" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Walking Two Steps";
+    start cmd "AtlasControllerNoHands";
+}
+
+script "3.run_manip_ex" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Manip Example";
+    start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "3.run_valve" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Valve Task";
+    start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "4.run_door" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Door Task";
+    start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "5.run_drill" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Drill Task";
+    start cmd "AtlasControllerPlusHandWeight";
+}

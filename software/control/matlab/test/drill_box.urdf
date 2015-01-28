@@ -1,0 +1,76 @@
+<?xml version="1.0" ?>
+<robot name="drill_box" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <link name="drill_box">
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0.03 0.03 0.1"/>
+      <inertia ixx="0.002" ixy="0.0" ixz="0.0" iyy="0.002" iyz="0.0" izz="0.002"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.06 0.06 0.2"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.5 0.5 .5 1"/>
+      </material>
+      <origin rpy="0 0 0" xyz="0.03 0.03 0.1"/>
+    </visual>
+
+    <collision group="drill_box">
+      <geometry>
+        <box size="0.0599 0.0599 0.19"/>
+      </geometry>
+     <origin rpy="0 0 0" xyz="0.03 0.03 0.1"/>
+    </collision>
+
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0.06 0.06 0.2"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0.06 0.06 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0.06 0 0.2"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0.06 0 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0 0.06 0.2"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0 0.06 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0 0 0.2"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <collision group="drill_box">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+
+  </link>
+</robot>

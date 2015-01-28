@@ -13,18 +13,20 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
+import atlasControllers.*;
+
 options.floating = true;
 options.dt = 0.002;
 options.ignore_friction = 1;
-options.atlas_version = 4;
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
+options.atlas_version = 5;
+r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
 nq = getNumPositions(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat'));
+load(r.fixed_point_file);
 xstar(1) = 10*randn();
 xstar(2) = 10*randn();
 xstar(6) = pi*randn();
@@ -60,7 +62,7 @@ link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(2),[0;
 
 
 ctrl_data = QPControllerData(false,struct(...
-  'acceleration_input_frame',AtlasCoordinates(r),...
+  'acceleration_input_frame',drcFrames.AtlasCoordinates(r),...
   'D',-com(3)/9.81*eye(2),...
   'Qy',eye(2),...
   'S',V.S,...

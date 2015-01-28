@@ -23,9 +23,22 @@ import drc as lcmdrc
 from bot_core.pose_t import pose_t
 from drc.robot_state_t import robot_state_t
 import functools
-
+import json
 
 from PythonQt import QtGui, QtCore
+
+_footMeshes = None
+_footMeshFiles = []
+with open(drcargs.args().directorConfigFile) as directorConfigFile:
+    directorConfig = json.load(directorConfigFile)
+    directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
+
+    if 'leftFootMeshFiles' in directorConfig:
+        _footMeshFiles.append( directorConfig['leftFootMeshFiles'] )
+        _footMeshFiles.append( directorConfig['rightFootMeshFiles'] )
+        for j in range(0,2):
+            for i in range(len(_footMeshFiles[j])):
+                _footMeshFiles[j][i] = os.path.join(directorConfigDirectory, _footMeshFiles[j][i])
 
 
 DEFAULT_PARAM_SET = 'drake'
@@ -50,14 +63,24 @@ DEFAULT_STEP_PARAMS = {'BDI': {'Max Num Steps': 20,
                                  'Drake Instep Shift': 0.014,
                                  'Drake Min Hold Time': 0.9}}
 
+DEFAULT_CONTACT_SLICES = {(0.05, 0.3): np.array([[-0.13, -0.13, 0.13, 0.13],
+                                          [0.0562, -0.0562, 0.0562, -0.0562]]),
+                          (0.3, .75): np.array([[-0.13, -0.13, 0.25, 0.25],
+                                          [.25, -.25, .25, -.25]]),
+                          (0.75, 1.05): np.array([[-0.2, -0.2, 0.25, 0.25],
+                                          [.4, -.4, .4, -.4]]),
+                          (1.05, 1.85): np.array([[-0.35, -0.35, 0.28, 0.28],
+                                          [.4, -.4, .4, -.4]])
+                          }
+
 
 def loadFootMeshes():
-    meshDir = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/meshes')
     meshes = []
-    for foot in ['l', 'r']:
+    for i in  range(0,2):
         d = DebugData()
-        d.addPolyData(ioUtils.readPolyData(os.path.join(meshDir, '%s_talus.stl' % foot), computeNormals=True))
-        d.addPolyData(ioUtils.readPolyData(os.path.join(meshDir, '%s_foot.stl' % foot), computeNormals=True))
+
+        for footMeshFile in _footMeshFiles[i]:
+          d.addPolyData(ioUtils.readPolyData( footMeshFile , computeNormals=True))
 
         t = vtk.vtkTransform()
         t.Scale(0.98, 0.98, 0.98)
@@ -82,7 +105,6 @@ def getRightFootColor():
     return [0.33, 1.0, 0.0]
 
 
-_footMeshes = None
 
 def getFootMeshes():
     global _footMeshes
@@ -141,7 +163,7 @@ class FootstepsDriver(object):
         self.lastWalkingPlan = None
         self.walkingPlanCallback = None
         self.default_step_params = DEFAULT_STEP_PARAMS
-        self.contact_slices = {}
+        self.contact_slices = DEFAULT_CONTACT_SLICES
         self.show_contact_slices = False
         self.toolbarWidget = None
 
@@ -259,13 +281,15 @@ class FootstepsDriver(object):
         planFolder = getFootstepsFolder()
         self.drawFootstepPlan( self.lastFootstepPlan , planFolder)
         self.transformPlanToBDIFrame( self.lastFootstepPlan )
-
         self.showToolbarWidget()
-        self.execButton.show()
-
 
     def showToolbarWidget(self):
+
+        if app.getMainWindow() is None:
+            return
+
         if self.toolbarWidget:
+            self.execButton.show()
             return
 
         w = QtGui.QWidget()
@@ -294,7 +318,7 @@ class FootstepsDriver(object):
         self.execButton = execButton
         self.stopButton = stopButton
         self.toolbarWidget = app.getMainWindow().toolBar().addWidget(w)
-
+        self.execButton.show()
 
     def onExecClicked(self):
         self.commitFootstepPlan(self.lastFootstepPlan)
@@ -684,7 +708,7 @@ class FootstepsDriver(object):
 
     def transformPlanToBDIFrame(self, plan):
         if (self.pose_bdi is None):
-            print "haven't received POSE_BDI"
+            # print "haven't received POSE_BDI"
             return
 
         # TODO: This transformation should be rewritten using the LOCAL_TO_LOCAL_BDI frame
