@@ -56,6 +56,8 @@ classdef CombinedPlanner
       obj.biped = biped;
       obj.footstep_planner = StatelessFootstepPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
+
+      checkDependency('iris');
       obj.iris_planner = iris.terrain_grid.Server();
       obj.monitors = {};
       obj.request_channels = {};
