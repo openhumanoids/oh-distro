@@ -79,34 +79,42 @@ def getUtime():
     return int(time.time() * 1e6)
 
 
+directorConfigFile = None
+directorConfig = None
+
+def setDirectorConfigFile(filename):
+    global directorConfig, directorConfigFile
+    directorConfigFile = filename
+    directorConfig = None
+
+def getDefaultDirectorConfigFile():
+    return os.path.join(os.environ['DRC_BASE'], 'software/models/atlas_v4/director_config.json')
+
+def getDirectorConfig():
+    global directorConfig, directorConfigFile
+    if directorConfig is None:
+
+        if directorConfigFile is None:
+            directorConfigFile = getDefaultDirectorConfigFile()
+
+        with open(directorConfigFile) as directorConfigFile:
+            directorConfig = json.load(directorConfigFile)
+    return directorConfig
+
+
 def getJointSets():
     '''
     Returns a dictionary of joint sets.
     '''
 
-    leftArm = ['l_arm_usy',
-              'l_arm_shx',
-              'l_arm_ely',
-              'l_arm_elx',
-              'l_arm_uwy',
-              'l_arm_mwx']
+    config = getDirectorConfig()
+    jointGroups = config['teleopJointGroups']
 
-    rightArm = ['r_arm_usy',
-              'r_arm_shx',
-              'r_arm_ely',
-              'r_arm_elx',
-              'r_arm_uwy',
-              'r_arm_mwx']
-
-    back = [
-              'back_bkz',
-              'back_bky',
-              'back_bkx']
 
     jointSets = {
-                  'left arm' : leftArm,
-                  'right arm' : rightArm,
-                  'back' : back
+                  'left arm' : jointGroups['Left Arm'],
+                  'right arm' : jointGroups['Right Arm'],
+                  'back' : jointGroups['Back']
                 }
 
     return jointSets
@@ -235,12 +243,7 @@ def applyMirror(joints):
     def flipLeftRight(jointName):
           return toLeft(jointName) if jointName.startswith('r_arm') else toRight(jointName)
 
-    signFlips = [
-        'l_arm_shx',
-        'l_arm_elx',
-        'l_arm_mwx',
-        'back_bkz'
-             ]
+    signFlips = getDirectorConfig()['mirrorJointSignFlips']
 
     flipped = {}
     for name, position in joints.iteritems():
@@ -577,6 +580,11 @@ class MainWindow(QtGui.QWidget):
         QtGui.QWidget.__init__(self)
         uic.loadUi(os.path.join(os.path.dirname(__file__), 'RobotPoseGUI.ui'), self)
         self.setWindowTitle('Robot Pose Utility')
+
+        if not self.checkEnvironment():
+            return
+
+        self.configFile = os.path.join(os.environ['DRC_BASE'], 'software/config', getDirectorConfig()['postureDatabaseFile'])
         if not self.checkConfigFile():
             return
 
@@ -612,12 +620,14 @@ class MainWindow(QtGui.QWidget):
     def closeEvent(self, event):
         self.saveSettings()
 
-
-    def checkConfigFile(self):
+    def checkEnvironment(self):
         if not os.path.isdir(os.environ['DRC_BASE']):
-            self.showWarning('Environment not set', 'Error loading configuration.  DRC_BASE environment variable is not define to a valid directory.')
+            self.showWarning('Environment not set', 'Error loading configuration.  DRC_BASE environment variable is not set to a valid directory.')
             self.setEnabled(False)
             return False
+        return True
+
+    def checkConfigFile(self):
 
         configFile = self.getPoseConfigFile()
         if not os.path.isfile(configFile):
@@ -635,7 +645,7 @@ class MainWindow(QtGui.QWidget):
         return True
 
     def getPoseConfigFile(self):
-        return os.path.join(os.environ['DRC_BASE'], 'software/config/stored_poses.json')
+        return self.configFile
 
     def loadConfigFile(self):
         if not self.checkConfigFile():
@@ -698,6 +708,12 @@ def main():
     # create a global instance of the LCMWrapper
     global lcmWrapper
     lcmWrapper = LCMWrapper()
+
+    try:
+        configFile = os.path.abspath(sys.argv[1])
+        setDirectorConfigFile(configFile)
+    except IndexError:
+        configFile = None
 
     # start the application
     app = QtGui.QApplication(sys.argv)
