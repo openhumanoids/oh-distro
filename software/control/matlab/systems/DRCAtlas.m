@@ -133,7 +133,7 @@ classdef DRCAtlas < Atlas
         % Sub in handstates for the hand (curently assuming just 1)
         % TODO: by name?
         for i=2:2
-          atlas_state_frame = replaceFrameNum(atlas_state_frame,i,drcFrames.HandState(obj,i,'drcFrames.HandState'));
+          atlas_state_frame = replaceFrameNum(atlas_state_frame,i,atlasFrames.HandState(obj,i,'HandState'));
         end
       end
 %       if (obj.foot_force_sensors)
@@ -165,7 +165,7 @@ classdef DRCAtlas < Atlas
         % Sub in handstates for each hand
         % TODO: by name?
         for i=2:2
-          input_frame = replaceFrameNum(input_frame,i,drcFrames.HandInput(obj,i,'drcFrames.HandInput'));
+          input_frame = replaceFrameNum(input_frame,i,atlasFrames.HandInput(obj,i,'HandInput'));
         end
       else
         input_frame = drcFrames.AtlasInput(obj);
