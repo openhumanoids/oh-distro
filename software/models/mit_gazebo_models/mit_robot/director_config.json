@@ -124,6 +124,16 @@
   "fixedPointFile" : "../../../control/matlab/data/atlas_bdi_fp.mat",
   "handCombination" : "LR_RR",
   "leftFootMeshFiles" : ["meshes/l_talus.obj", "meshes/l_foot.obj"],
-  "rightFootMeshFiles" : ["meshes/r_talus.obj", "meshes/r_foot.obj"]
+  "rightFootMeshFiles" : ["meshes/r_talus.obj", "meshes/r_foot.obj"],
+  "postureDatabaseFile" : "stored_poses_v3.json",
+  "mirrorJointSignFlips" : [
+    "l_arm_shx",
+    "l_arm_elx",
+    "l_arm_mwx",
+    "r_arm_shx",
+    "r_arm_elx",
+    "r_arm_mwx",
+    "back_bkz"
+  ]
 }
 
