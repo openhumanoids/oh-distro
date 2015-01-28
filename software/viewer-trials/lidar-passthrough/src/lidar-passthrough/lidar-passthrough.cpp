@@ -207,7 +207,7 @@ void Pass::DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_c
       }
     }
   }else if (which ==1){
-    for( unsigned int i = 0; i < 500; i++ ){
+    for( unsigned int i = 0; i < 1000; i++ ){
       Vector3f point(rstate.pose.translation.x +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
                     rstate.pose.translation.y + -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
                     rstate.pose.translation.z +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0 );
