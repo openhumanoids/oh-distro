@@ -48,6 +48,7 @@ from ddapp.fieldcontainer import FieldContainer
 from ddapp import robotstate
 from ddapp import roboturdf
 from ddapp import robotsystem
+from ddapp import affordancepanel
 from ddapp import filterUtils
 from ddapp import footstepsdriver
 from ddapp import footstepsdriverpanel
@@ -115,9 +116,8 @@ updatePolyData = segmentation.updatePolyData
 ###############################################################################
 
 
-robotSystem = {}
-robotsystem.create(view, robotSystem)
-globals().update(robotSystem)
+robotSystem = robotsystem.create(view)
+globals().update(dict(robotSystem))
 
 
 useIk = True
@@ -348,20 +348,6 @@ if usePlanning:
 
     splinewidget.init(view, handFactory, robotStateModel)
 
-    robotSystem = FieldContainer(
-        robotStateModel=robotStateModel,
-        robotStateJointController=robotStateJointController,
-        playbackRobotModel=playbackRobotModel,
-        ikPlanner=ikPlanner,
-        manipPlanner=manipPlanner,
-        footstepsDriver=footstepsDriver,
-        atlasDriver=atlasDriver,
-        lHandDriver=lHandDriver,
-        rHandDriver=rHandDriver,
-        multisenseDriver=multisenseDriver,
-        drillDemo=drillDemo,
-        view=view)
-
 
     rt.robotSystem = robotSystem
     taskManagerPanel = taskmanagerwidget.init()
@@ -518,6 +504,7 @@ if useImageViewDemo:
 
 screengrabberpanel.init(view)
 framevisualization.init(view)
+affordancepanel.init(view, affordanceManager, ikServer, robotStateJointController)
 camerabookmarks.init(view)
 
 
@@ -679,4 +666,3 @@ if usePFGrasp:
     showImageOverlay()
     hideImageOverlay()
     pfgrasppanel.init(pfgrasper, _prevParent, imageView, imagePicker, cameraview)
-

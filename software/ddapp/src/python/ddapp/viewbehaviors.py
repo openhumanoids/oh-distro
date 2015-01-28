@@ -4,6 +4,7 @@ import re
 import ddapp.objectmodel as om
 import ddapp.visualization as vis
 from ddapp.timercallback import TimerCallback
+from ddapp import affordanceitems
 from ddapp import lcmUtils
 from ddapp import callbacks
 from ddapp import cameracontrol
@@ -477,9 +478,9 @@ def showRightClickMenu(displayPoint, view):
                 continue
             side = 'right' if obj.side == 'left' else 'left'
             obj.side = side
-            color = QtGui.QColor(255, 255, 0)
+            color = [1.0, 1.0, 0.0]
             if side == 'right':
-                color = QtGui.QColor(0.33*255, 255, 0)
+                color = [0.33, 1.0, 0.0]
             obj.setProperty('Color', color)
 
     def flipHandThumb():
@@ -488,6 +489,7 @@ def showRightClickMenu(displayPoint, view):
         t.PreMultiply()
         t.RotateY(180)
         handFrame.copyFrame(t)
+        pickedObj._renderAllViews()
 
     def onSplineLeft():
         splinewidget.planner.newSpline(pickedObj, 'left')
@@ -567,6 +569,9 @@ def showRightClickMenu(displayPoint, view):
     def addMovableFrame():
         segmentation.makeMovable(pickedObj)
 
+    def onPromoteToAffordance():
+        affObj = affordanceitems.MeshAffordanceItem.promotePolyDataItem(pickedObj)
+        robotSystem.affordanceManager.registerAffordance(affObj)
 
     actions = [
       (None, None),
@@ -574,6 +579,11 @@ def showRightClickMenu(displayPoint, view):
       ('Delete', onDelete),
       ('Select', onSelect)
       ]
+
+    if type(pickedObj) == vis.PolyDataItem:
+        actions.extend([
+            ('Promote to Affordance', onPromoteToAffordance),
+        ])
 
     if isinstance(pickedObj, vis.PolyDataItem) and not pickedObj.getChildFrame():
         actions.extend([
@@ -801,11 +811,12 @@ class ViewBehaviors(object):
         self.keyEventFilter = KeyEventFilter(view)
 
     @staticmethod
-    def addRobotBehaviors(_robotModel=None, _handFactory=None, _footstepsDriver=None, _neckDriver=None):
-        global robotModel, handFactory, footstepsDriver, neckDriver, robotLinkSelector
-        robotModel = _robotModel
-        handFactory = _handFactory
-        footstepsDriver = _footstepsDriver
-        neckDriver = _neckDriver
+    def addRobotBehaviors(_robotSystem):
+        global robotSystem, robotModel, handFactory, footstepsDriver, neckDriver, robotLinkSelector
+        robotSystem = _robotSystem
+        robotModel = robotSystem.robotStateModel
+        handFactory = robotSystem.handFactory
+        footstepsDriver = robotSystem.footstepsDriver
+        neckDriver = robotSystem.neckDriver
         if app.getMainWindow() is not None:
             robotLinkSelector = RobotLinkSelector()

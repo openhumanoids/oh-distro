@@ -48,7 +48,7 @@ class RobotModelItem(om.ObjectModelItem):
 
         self.views = []
         self.model = None
-        self.callbacks = callbacks.CallbackRegistry([self.MODEL_CHANGED_SIGNAL])
+        self.callbacks.addSignal(self.MODEL_CHANGED_SIGNAL)
         self.useUrdfColors = False
 
         self.addProperty('Filename', model.filename())
@@ -135,7 +135,8 @@ class RobotModelItem(om.ObjectModelItem):
         if self.getProperty('Textures'):
             self._setupTextureColors()
         elif not self.useUrdfColors:
-            self.model.setColor(self.getProperty('Color'))
+            color = QtGui.QColor([c*255 for c in self.getProperty('Color')])
+            self.model.setColor(color)
 
     def _setupTextureColors(self):
 
@@ -155,6 +156,7 @@ class RobotModelItem(om.ObjectModelItem):
         view.render()
 
     def onRemoveFromObjectModel(self):
+        om.ObjectModelItem.onRemoveFromObjectModel(self)
         self.removeFromAllViews()
 
     def removeFromAllViews(self):
