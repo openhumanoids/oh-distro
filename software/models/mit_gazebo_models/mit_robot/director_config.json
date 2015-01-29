@@ -125,7 +125,7 @@
   "handCombination" : "LR_RR",
   "leftFootMeshFiles" : ["meshes/l_talus.obj", "meshes/l_foot.obj"],
   "rightFootMeshFiles" : ["meshes/r_talus.obj", "meshes/r_foot.obj"],
-  "postureDatabaseFile" : "stored_poses_v3.json",
+  "postureDatabaseFile" : "./stored_poses.json",
   "mirrorJointSignFlips" : [
     "l_arm_shx",
     "l_arm_elx",
