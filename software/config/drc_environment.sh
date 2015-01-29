@@ -29,7 +29,7 @@ setup_drcsim()
 {
   drcsim_setup_file=/usr/local/share/drcsim/setup.sh
   if [ -f $drcsim_setup_file ]; then
-    source $drcsim_setup_file # this will also source setup.sh for ROS and Gazebo
+   source $drcsim_setup_file # this will also source setup.sh for ROS and Gazebo
   fi
 
   export ROS_PACKAGE_PATH=$DRC_BASE/ros_workspace:$ROS_PACKAGE_PATH
@@ -77,7 +77,7 @@ setup_robot_computers()
 
 
 set_drc_base
-setup_drcsim
+#setup_drcsim
 setup_drc
 setup_robot_computers
 
