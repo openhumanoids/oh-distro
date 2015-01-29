@@ -180,7 +180,8 @@ request.goal_steps = goal_steps;
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
 assert(all([footsteps(1:2:end-1).frame_id] ~= [footsteps(2:2:end).frame_id]))
-valuecheck(footsteps(end).pos(3), 0.2 - 0.0811, 1e-3);
+offset = r.getBody(r.getFrame(r.foot_frame_id.right).body_ind).collision_geometry{1}.T * [0;0;0;1];
+valuecheck(footsteps(end).pos(3), 0.2 + offset(3), 1e-3);
 
 request.num_goal_steps = 3;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);

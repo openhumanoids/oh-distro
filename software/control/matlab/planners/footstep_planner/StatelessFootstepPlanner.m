@@ -89,6 +89,7 @@ classdef StatelessFootstepPlanner
     end
 
     function safe_regions = decodeSafeRegions(biped, request, feet_centers, goal_pos)
+      checkDependency('iris');
       if request.num_iris_regions > 0
         safe_regions = IRISRegion.empty();
         for j = 1:request.num_iris_regions
