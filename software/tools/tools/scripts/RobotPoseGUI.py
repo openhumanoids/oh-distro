@@ -97,8 +97,8 @@ def getDirectorConfig():
         if directorConfigFile is None:
             directorConfigFile = getDefaultDirectorConfigFile()
 
-        with open(directorConfigFile) as directorConfigFile:
-            directorConfig = json.load(directorConfigFile)
+        with open(directorConfigFile) as configFile:
+            directorConfig = json.load(configFile)
     return directorConfig
 
 
@@ -584,10 +584,8 @@ class MainWindow(QtGui.QWidget):
         if not self.checkEnvironment():
             return
 
-        getDirectorConfig()['postureDatabaseFile']
-        global directorConfigFile
-        directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
-        self.configFile = os.path.join(directorConfigDirectory, getDirectorConfig()['postureDatabaseFile'])
+        assert directorConfigFile is not None
+        self.configFile = os.path.join(os.path.dirname(directorConfigFile), getDirectorConfig()['postureDatabaseFile'])
         if not self.checkConfigFile():
             return
 
@@ -716,7 +714,7 @@ def main():
         configFile = os.path.abspath(sys.argv[1])
         setDirectorConfigFile(configFile)
     except IndexError:
-        configFile = None
+        setDirectorConfigFile(getDefaultDirectorConfigFile())
 
     # start the application
     app = QtGui.QApplication(sys.argv)
