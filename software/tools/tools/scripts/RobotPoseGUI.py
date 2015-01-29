@@ -584,7 +584,10 @@ class MainWindow(QtGui.QWidget):
         if not self.checkEnvironment():
             return
 
-        self.configFile = os.path.join(os.environ['DRC_BASE'], 'software/config', getDirectorConfig()['postureDatabaseFile'])
+        getDirectorConfig()['postureDatabaseFile']
+        global directorConfigFile
+        directorConfigDirectory = os.path.dirname(os.path.abspath(directorConfigFile.name))
+        self.configFile = os.path.join(directorConfigDirectory, getDirectorConfig()['postureDatabaseFile'])
         if not self.checkConfigFile():
             return
 
