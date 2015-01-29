@@ -1,5 +1,4 @@
 function drakeWalking(use_mex,use_ik,use_bullet,use_angular_momentum,random_navgoal)
-%NOTEST
 
 if (nargin<1); use_mex = true; end
 if (nargin<2); use_ik = false; end
