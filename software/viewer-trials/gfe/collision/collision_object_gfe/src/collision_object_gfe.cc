@@ -68,11 +68,8 @@ Collision_Object_GFE::
 Collision_Object_GFE( string id,
                       string xmlString,
                       collision_object_gfe_collision_object_type_t collisionObjectType,
-                      Atlas_Version atlas_version ) : Collision_Object( id ),
-                                                      _collision_objects(),
-                                                      _kinematics_model( xmlString, atlas_version ){
-  Collision_Object_GFE(id, xmlString, atlas_version, collisionObjectType);
-}
+                      Atlas_Version atlas_version ) : Collision_Object_GFE(id, xmlString, atlas_version, collisionObjectType) {}
+
 /**
  * Collision_Object_GFE
  * copy constructor

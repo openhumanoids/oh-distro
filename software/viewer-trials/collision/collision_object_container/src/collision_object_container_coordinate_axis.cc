@@ -172,9 +172,9 @@ Collision_Object_Container_Coordinate_Axis::
 set_transform( const Vector3f position,
                 const Vector4f orientation ){
   // shift into correct place
-  assert(_collision_ptx && _collision_pty && collision_ptz &&
-         _collision_mtx && _collision_mty && collision_mtz &&
-         _collision_rr && _collision_rp && collision_ry );
+  assert(_collision_ptx && _collision_pty && _collision_ptz &&
+         _collision_mtx && _collision_mty && _collision_mtz &&
+         _collision_rr && _collision_rp && _collision_ry );
 
   Quaternion <float, AutoAlign> ori(orientation[1], -orientation[2], orientation[3], orientation[0]);
   ori = ori.inverse();
