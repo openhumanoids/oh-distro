@@ -216,7 +216,7 @@ classdef DRCController
             % append last input data
             tmpstruct = data.(fn{1});
             for i=1:obj.n_input_frames
-              names = strsplit(obj.controller_input_frames{i}.name, '.');
+              names = regexp(obj.controller_input_frames{i}.name, '\.', 'split');
               tmpstruct.(names{end}) = input_frame_data{i};
             end
             data.(fn{1}) = tmpstruct;
@@ -258,7 +258,7 @@ classdef DRCController
           
           input_data = struct();
           for i=1:obj.n_input_frames
-            names = strsplit(obj.controller_input_frames{i}.name, '.');
+            names = regexp(obj.controller_input_frames{i}.name, '\.', 'split');
             input_data.(names{end}) = input_frame_data{i};
           end
           data.(obj.timed_transition) = input_data;
