@@ -220,6 +220,7 @@ classdef CombinedPlanner
     end
 
     function map_img = terrain_raycast(obj, msg)
+      disp('raycast')
       msg = drc.terrain_raycast_request_t(msg);
       model = RigidBodyManipulator();
       model = model.addRobotFromURDFString(char(msg.urdf.urdf_xml_string));
@@ -230,14 +231,17 @@ classdef CombinedPlanner
 %       obj.biped.constructVisualizer();
       map_img = drc.map_image_t();
       
+      MAXINT = 126; % even though we're using a uint8, values above 127 don't result in correct maps. 
+                 % I'm currently assuming that something is going wrong in the conversion to java
+                 % bytes for the LCM message. 
       Z = heightmap.Z;
       Z(isinf(Z)) = 0;
       zmin = min(min(Z));
       zmax = max(max(Z));
       zrange = zmax - zmin;
-      map_img.data_scale = zrange / 2;
+      map_img.data_scale = zrange / MAXINT;
       map_img.data_shift = zmin;
-      Z_scaled = (Z - map_img.data_shift) * (2 / zrange);
+      Z_scaled = (Z - map_img.data_shift) * (MAXINT / zrange);
       Z_scaled = uint8(Z_scaled);
       max(max(Z_scaled))
       
@@ -246,7 +250,7 @@ classdef CombinedPlanner
       map_img.view_id = drc.data_request_t.HEIGHT_MAP_SCENE;
       map_img.map_id = 12345;
       map_img.transform = eye(4);
-      tform = makehgtform('translate',[-heightmap.x(1)/msg.x_step, -heightmap.y(1)/msg.y_step, 0], 'scale', [1/msg.x_step, 1/msg.y_step, 1])
+      tform = makehgtform('translate',[-heightmap.x(1)/msg.x_step, -heightmap.y(1)/msg.y_step, 0], 'scale', [1/msg.x_step, 1/msg.y_step, 1]);
       map_img.transform = tform;
       blob = drc.map_blob_t();
       blob.num_dims = 2;
