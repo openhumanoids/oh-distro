@@ -17,7 +17,7 @@ classdef DRCAtlas < Atlas
       if nargin < 1 || isempty(urdf)
         switch options.atlas_version
           case 3
-            urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf');
+            urdf = strcat(getenv('DRC_PATH'),'/models/atlas_v3/model_minimal_contact_point_hands.urdf');
           case 4
             urdf = strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf');
           case 5
