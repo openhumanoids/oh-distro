@@ -1,11 +1,11 @@
 {
   "urdfConfig": {
-    "default": "./urdf/V1_sim_mit.urdf",
-    "robotState": "./urdf/V1_sim_mit.urdf",
-    "ik":         "./urdf/V1_sim_mit_drake.urdf",
-    "chull":      "./urdf/V1_sim_mit_drake.urdf",
-    "playback":   "./urdf/V1_sim_mit.urdf",
-    "teleop":     "./urdf/V1_sim_mit.urdf"
+    "default": "./V1_sim_mit.urdf",
+    "robotState": "./V1_sim_mit.urdf",
+    "ik":         "./V1_sim_mit_drake.urdf",
+    "chull":      "./V1_sim_mit_drake.urdf",
+    "playback":   "./V1_sim_mit.urdf",
+    "teleop":     "./V1_sim_mit.urdf"
   },
 
   "teleopJointGroups" : [
@@ -140,10 +140,10 @@
     "l_leg_aky",
     "l_leg_akx"
   ],
-  "fixedPointFile" : "../../../../../control/matlab/data/valkyrie_fp.mat",
+  "fixedPointFile" : "../../control/matlab/data/valkyrie_fp.mat",
   "handCombination" : "LV_RV",
-  "leftFootMeshFiles" : ["meshes/2013_05_16/lj6_Left.stl"],
-  "rightFootMeshFiles" : ["meshes/2013_05_16/lj6_Right.stl"],
+  "leftFootMeshFiles" : ["meshes/lj6_Left.stl"],
+  "rightFootMeshFiles" : ["meshes/lj6_Right.stl"],
   "postureDatabaseFile" : "./stored_poses.json",
   "mirrorJointSignFlips" : ["back_bkz"]
 }

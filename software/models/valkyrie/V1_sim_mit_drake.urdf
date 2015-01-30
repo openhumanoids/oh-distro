@@ -62,7 +62,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pelvis.stl"/>
+        <mesh filename="package://valkyrie/meshes/pelvis.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -71,7 +71,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pelvis.stl"/>
+        <mesh filename="package://valkyrie/meshes/pelvis.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -87,7 +87,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/wj3.stl"/>
+        <mesh filename="package://valkyrie/meshes/wj3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -96,7 +96,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/wj3.stl"/>
+        <mesh filename="package://valkyrie/meshes/wj3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -159,94 +159,6 @@
   <actuator name="pelvis/wj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
   <actuator name="trunk/wj2" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <actuator name="trunk/wj3" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
-  <transmission name="WaistRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="back_bkz"/>
-      <actuator data="data" name="pelvis/wj1"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="back_bkz"/>
-      <actuator data="positionCommand" name="pelvis/wj1"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="back_bkz"/>
-      <actuator data="velocityCommand" name="pelvis/wj1"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="back_bkz"/>
-      <actuator data="effortCommand" name="pelvis/wj1"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="back_bkz"/>
-      <actuator data="data" name="pelvis/wj1"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="back_bkz"/>
-      <actuator data="positionCommand" name="pelvis/wj1"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="back_bkz"/>
-      <actuator data="velocityCommand" name="pelvis/wj1"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="back_bkz"/>
-      <actuator data="effortCommand" name="pelvis/wj1"/>
-    </interface>
-  </transmission>
-  <transmission name="Waist" type="loadable_transmissions/PushrodTransmission">
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="back_bky"/>
-      <joint data="data" name="back_bkx"/>
-      <actuator data="data" name="trunk/wj2"/>
-      <actuator data="data" name="trunk/wj3"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="back_bky"/>
-      <joint data="positionCommand" name="back_bkx"/>
-      <actuator data="positionCommand" name="trunk/wj2"/>
-      <actuator data="positionCommand" name="trunk/wj3"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="back_bky"/>
-      <joint data="velocityCommand" name="back_bkx"/>
-      <actuator data="velocityCommand" name="trunk/wj2"/>
-      <actuator data="velocityCommand" name="trunk/wj3"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="back_bky"/>
-      <joint data="effortCommand" name="back_bkx"/>
-      <actuator data="effortCommand" name="trunk/wj2"/>
-      <actuator data="effortCommand" name="trunk/wj3"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="back_bky"/>
-      <joint data="data" name="back_bkx"/>
-      <actuator data="data" name="trunk/wj2"/>
-      <actuator data="data" name="trunk/wj3"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="back_bky"/>
-      <joint data="positionCommand" name="back_bkx"/>
-      <actuator data="positionCommand" name="trunk/wj2"/>
-      <actuator data="positionCommand" name="trunk/wj3"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="back_bky"/>
-      <joint data="velocityCommand" name="back_bkx"/>
-      <actuator data="velocityCommand" name="trunk/wj2"/>
-      <actuator data="velocityCommand" name="trunk/wj3"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="back_bky"/>
-      <joint data="effortCommand" name="back_bkx"/>
-      <actuator data="effortCommand" name="trunk/wj2"/>
-      <actuator data="effortCommand" name="trunk/wj3"/>
-    </interface>
-    <parameterNamespace name="v1_waist"/>
-    <reflect data="1"/>
-  </transmission>
   <mode name="WaistRotatorMode" type="mode_plugins/ModeInterface">
     <translator name="WaistRotatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="back_bkz"/>
@@ -441,7 +353,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj1.stl"/>
+        <mesh filename="package://valkyrie/meshes/nj1.wrl"/>
       </geometry>
       <material name="gold">
         <color rgba="1 0.67 0 1"/>
@@ -450,7 +362,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj1.stl"/>
+        <mesh filename="package://valkyrie/meshes/nj1.wrl"/>
       </geometry>
     </collision>
   </link>
@@ -464,7 +376,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/nj2.wrl"/>
       </geometry>
       <material name="gold">
         <color rgba="1 0.67 0 1"/>
@@ -473,7 +385,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/nj2.wrl"/>
       </geometry>
     </collision>
   </link>
@@ -487,7 +399,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!-- <origin rpy="${origin_rpy}" xyz="${origin_xyz}"/> -->
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/head.stl"/>
+        <mesh filename="package://valkyrie/meshes/head.wrl"/>
         <!-- <sphere radius="${radius}"/> -->
       </geometry>
       <material name="White"/>
@@ -495,7 +407,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/head.stl"/>
+        <mesh filename="package://valkyrie/meshes/head.wrl"/>
       </geometry>
     </collision>
   </link>
@@ -541,114 +453,6 @@
   <actuator name="neck/j1" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
   <actuator name="neck/j2" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
   <actuator name="neck/j3" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
-  <transmission name="LowerNeckExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="neck_ay"/>
-      <actuator data="data" name="neck/j1"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="neck_ay"/>
-      <actuator data="positionCommand" name="neck/j1"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="neck_ay"/>
-      <actuator data="velocityCommand" name="neck/j1"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="neck_ay"/>
-      <actuator data="effortCommand" name="neck/j1"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="neck_ay"/>
-      <actuator data="data" name="neck/j1"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="neck_ay"/>
-      <actuator data="positionCommand" name="neck/j1"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="neck_ay"/>
-      <actuator data="velocityCommand" name="neck/j1"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="neck_ay"/>
-      <actuator data="effortCommand" name="neck/j1"/>
-    </interface>
-  </transmission>
-  <transmission name="NeckRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="neck_by"/>
-      <actuator data="data" name="neck/j2"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="neck_by"/>
-      <actuator data="positionCommand" name="neck/j2"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="neck_by"/>
-      <actuator data="velocityCommand" name="neck/j2"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="neck_by"/>
-      <actuator data="effortCommand" name="neck/j2"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="neck_by"/>
-      <actuator data="data" name="neck/j2"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="neck_by"/>
-      <actuator data="positionCommand" name="neck/j2"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="neck_by"/>
-      <actuator data="velocityCommand" name="neck/j2"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="neck_by"/>
-      <actuator data="effortCommand" name="neck/j2"/>
-    </interface>
-  </transmission>
-  <transmission name="UpperNeckExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="neck_cy"/>
-      <actuator data="data" name="neck/j3"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="neck_cy"/>
-      <actuator data="positionCommand" name="neck/j3"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="neck_cy"/>
-      <actuator data="velocityCommand" name="neck/j3"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="neck_cy"/>
-      <actuator data="effortCommand" name="neck/j3"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="neck_cy"/>
-      <actuator data="data" name="neck/j3"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="neck_cy"/>
-      <actuator data="positionCommand" name="neck/j3"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="neck_cy"/>
-      <actuator data="velocityCommand" name="neck/j3"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="neck_cy"/>
-      <actuator data="effortCommand" name="neck/j3"/>
-    </interface>
-  </transmission>
   <mode name="LowerNeckExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LowerNeckExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="neck_ay"/>
@@ -853,7 +657,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -862,7 +666,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -878,7 +682,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -887,7 +691,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -903,7 +707,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj3_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -912,7 +716,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj3_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -928,7 +732,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -937,7 +741,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1001,7 +805,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj5_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1010,7 +814,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj5_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1046,7 +850,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/palm_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1055,7 +859,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/palm_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1106,238 +910,6 @@
   <actuator name="right_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
   <actuator name="right_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
   <actuator name="right_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
-  <transmission name="RightShoulderExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_arm_shz"/>
-      <actuator data="data" name="trunk/raj1"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_arm_shz"/>
-      <actuator data="positionCommand" name="trunk/raj1"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_shz"/>
-      <actuator data="velocityCommand" name="trunk/raj1"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_arm_shz"/>
-      <actuator data="effortCommand" name="trunk/raj1"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_arm_shz"/>
-      <actuator data="data" name="trunk/raj1"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_arm_shz"/>
-      <actuator data="positionCommand" name="trunk/raj1"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_shz"/>
-      <actuator data="velocityCommand" name="trunk/raj1"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_arm_shz"/>
-      <actuator data="effortCommand" name="trunk/raj1"/>
-    </interface>
-  </transmission>
-  <transmission name="RightShoulderAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_arm_shx"/>
-      <actuator data="data" name="right_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_arm_shx"/>
-      <actuator data="positionCommand" name="right_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_shx"/>
-      <actuator data="velocityCommand" name="right_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_arm_shx"/>
-      <actuator data="effortCommand" name="right_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_arm_shx"/>
-      <actuator data="data" name="right_arm/j2"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_arm_shx"/>
-      <actuator data="positionCommand" name="right_arm/j2"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_shx"/>
-      <actuator data="velocityCommand" name="right_arm/j2"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_arm_shx"/>
-      <actuator data="effortCommand" name="right_arm/j2"/>
-    </interface>
-  </transmission>
-  <transmission name="RightShoulderSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_arm_ely"/>
-      <actuator data="data" name="right_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_arm_ely"/>
-      <actuator data="positionCommand" name="right_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_ely"/>
-      <actuator data="velocityCommand" name="right_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_arm_ely"/>
-      <actuator data="effortCommand" name="right_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_arm_ely"/>
-      <actuator data="data" name="right_arm/j3"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_arm_ely"/>
-      <actuator data="positionCommand" name="right_arm/j3"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_ely"/>
-      <actuator data="velocityCommand" name="right_arm/j3"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_arm_ely"/>
-      <actuator data="effortCommand" name="right_arm/j3"/>
-    </interface>
-  </transmission>
-  <transmission name="RightElbowExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_arm_elx"/>
-      <actuator data="data" name="right_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_arm_elx"/>
-      <actuator data="positionCommand" name="right_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_elx"/>
-      <actuator data="velocityCommand" name="right_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_arm_elx"/>
-      <actuator data="effortCommand" name="right_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_arm_elx"/>
-      <actuator data="data" name="right_arm/j4"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_arm_elx"/>
-      <actuator data="positionCommand" name="right_arm/j4"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_elx"/>
-      <actuator data="velocityCommand" name="right_arm/j4"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_arm_elx"/>
-      <actuator data="effortCommand" name="right_arm/j4"/>
-    </interface>
-  </transmission>
-  <transmission name="RightForearmSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_arm_uwy"/>
-      <actuator data="data" name="right_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_arm_uwy"/>
-      <actuator data="positionCommand" name="right_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_uwy"/>
-      <actuator data="velocityCommand" name="right_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_arm_uwy"/>
-      <actuator data="effortCommand" name="right_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_arm_uwy"/>
-      <actuator data="data" name="right_arm/j5"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_arm_uwy"/>
-      <actuator data="positionCommand" name="right_arm/j5"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_uwy"/>
-      <actuator data="velocityCommand" name="right_arm/j5"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_arm_uwy"/>
-      <actuator data="effortCommand" name="right_arm/j5"/>
-    </interface>
-  </transmission>
-  <transmission name="Right_Wrist" type="loadable_transmissions/PushrodTransmission">
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_arm_mwx"/>
-      <joint data="data" name="r_arm_lwy"/>
-      <actuator data="data" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="data" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_arm_mwx"/>
-      <joint data="positionCommand" name="r_arm_lwy"/>
-      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_mwx"/>
-      <joint data="velocityCommand" name="r_arm_lwy"/>
-      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_arm_mwx"/>
-      <joint data="effortCommand" name="r_arm_lwy"/>
-      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_arm_mwx"/>
-      <joint data="data" name="r_arm_lwy"/>
-      <actuator data="data" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="data" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_arm_mwx"/>
-      <joint data="positionCommand" name="r_arm_lwy"/>
-      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="positionCommand" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_arm_mwx"/>
-      <joint data="velocityCommand" name="r_arm_lwy"/>
-      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="velocityCommand" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_arm_mwx"/>
-      <joint data="effortCommand" name="r_arm_lwy"/>
-      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_right"/>
-      <actuator data="effortCommand" name="right_arm/forearm_driver1/wrist_left"/>
-    </interface>
-    <parameterNamespace name="v1_wrist"/>
-    <reflect data="1"/>
-  </transmission>
   <mode name="RightShoulderExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="RightShoulderExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_arm_shz"/>
@@ -1530,7 +1102,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1539,7 +1111,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1555,7 +1127,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1564,7 +1136,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1580,7 +1152,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1589,7 +1161,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1605,7 +1177,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1614,7 +1186,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1654,7 +1226,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1663,7 +1235,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1679,7 +1251,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1688,7 +1260,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1704,7 +1276,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1713,7 +1285,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1729,7 +1301,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1738,7 +1310,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1778,7 +1350,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1787,7 +1359,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1803,7 +1375,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1812,7 +1384,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1828,7 +1400,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1837,7 +1409,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1871,7 +1443,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1880,7 +1452,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1896,7 +1468,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf2_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1905,7 +1477,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf2_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1921,7 +1493,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1930,7 +1502,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1946,7 +1518,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1955,7 +1527,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1995,7 +1567,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2004,7 +1576,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2020,7 +1592,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2029,7 +1601,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2045,7 +1617,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj3_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2054,7 +1626,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj3_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2070,7 +1642,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2079,7 +1651,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2143,7 +1715,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj5_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2152,7 +1724,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/aj5_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2188,7 +1760,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/palm_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2197,7 +1769,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/palm_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2360,238 +1932,6 @@
   <actuator name="left_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
   <actuator name="left_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
   <actuator name="left_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
-  <transmission name="LeftShoulderExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_arm_shz"/>
-      <actuator data="data" name="trunk/laj1"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_arm_shz"/>
-      <actuator data="positionCommand" name="trunk/laj1"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_shz"/>
-      <actuator data="velocityCommand" name="trunk/laj1"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_arm_shz"/>
-      <actuator data="effortCommand" name="trunk/laj1"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_arm_shz"/>
-      <actuator data="data" name="trunk/laj1"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_arm_shz"/>
-      <actuator data="positionCommand" name="trunk/laj1"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_shz"/>
-      <actuator data="velocityCommand" name="trunk/laj1"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_arm_shz"/>
-      <actuator data="effortCommand" name="trunk/laj1"/>
-    </interface>
-  </transmission>
-  <transmission name="LeftShoulderAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_arm_shx"/>
-      <actuator data="data" name="left_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_arm_shx"/>
-      <actuator data="positionCommand" name="left_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_shx"/>
-      <actuator data="velocityCommand" name="left_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_arm_shx"/>
-      <actuator data="effortCommand" name="left_arm/j2"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_arm_shx"/>
-      <actuator data="data" name="left_arm/j2"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_arm_shx"/>
-      <actuator data="positionCommand" name="left_arm/j2"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_shx"/>
-      <actuator data="velocityCommand" name="left_arm/j2"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_arm_shx"/>
-      <actuator data="effortCommand" name="left_arm/j2"/>
-    </interface>
-  </transmission>
-  <transmission name="LeftShoulderSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_arm_ely"/>
-      <actuator data="data" name="left_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_arm_ely"/>
-      <actuator data="positionCommand" name="left_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_ely"/>
-      <actuator data="velocityCommand" name="left_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_arm_ely"/>
-      <actuator data="effortCommand" name="left_arm/j3"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_arm_ely"/>
-      <actuator data="data" name="left_arm/j3"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_arm_ely"/>
-      <actuator data="positionCommand" name="left_arm/j3"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_ely"/>
-      <actuator data="velocityCommand" name="left_arm/j3"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_arm_ely"/>
-      <actuator data="effortCommand" name="left_arm/j3"/>
-    </interface>
-  </transmission>
-  <transmission name="LeftElbowExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_arm_elx"/>
-      <actuator data="data" name="left_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_arm_elx"/>
-      <actuator data="positionCommand" name="left_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_elx"/>
-      <actuator data="velocityCommand" name="left_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_arm_elx"/>
-      <actuator data="effortCommand" name="left_arm/j4"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_arm_elx"/>
-      <actuator data="data" name="left_arm/j4"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_arm_elx"/>
-      <actuator data="positionCommand" name="left_arm/j4"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_elx"/>
-      <actuator data="velocityCommand" name="left_arm/j4"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_arm_elx"/>
-      <actuator data="effortCommand" name="left_arm/j4"/>
-    </interface>
-  </transmission>
-  <transmission name="LeftForearmSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_arm_uwy"/>
-      <actuator data="data" name="left_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_arm_uwy"/>
-      <actuator data="positionCommand" name="left_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_uwy"/>
-      <actuator data="velocityCommand" name="left_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_arm_uwy"/>
-      <actuator data="effortCommand" name="left_arm/j5"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_arm_uwy"/>
-      <actuator data="data" name="left_arm/j5"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_arm_uwy"/>
-      <actuator data="positionCommand" name="left_arm/j5"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_uwy"/>
-      <actuator data="velocityCommand" name="left_arm/j5"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_arm_uwy"/>
-      <actuator data="effortCommand" name="left_arm/j5"/>
-    </interface>
-  </transmission>
-  <transmission name="Left_Wrist" type="loadable_transmissions/PushrodTransmission">
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_arm_mwx"/>
-      <joint data="data" name="l_arm_lwy"/>
-      <actuator data="data" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="data" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_arm_mwx"/>
-      <joint data="positionCommand" name="l_arm_lwy"/>
-      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_mwx"/>
-      <joint data="velocityCommand" name="l_arm_lwy"/>
-      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_arm_mwx"/>
-      <joint data="effortCommand" name="l_arm_lwy"/>
-      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_arm_mwx"/>
-      <joint data="data" name="l_arm_lwy"/>
-      <actuator data="data" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="data" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_arm_mwx"/>
-      <joint data="positionCommand" name="l_arm_lwy"/>
-      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="positionCommand" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_arm_mwx"/>
-      <joint data="velocityCommand" name="l_arm_lwy"/>
-      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="velocityCommand" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_arm_mwx"/>
-      <joint data="effortCommand" name="l_arm_lwy"/>
-      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_left"/>
-      <actuator data="effortCommand" name="left_arm/forearm_driver1/wrist_right"/>
-    </interface>
-    <parameterNamespace name="v1_wrist"/>
-    <reflect data="1"/>
-  </transmission>
   <mode name="LeftShoulderExtensorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftShoulderExtensorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_arm_shz"/>
@@ -2670,7 +2010,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2679,7 +2019,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2695,7 +2035,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2704,7 +2044,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2720,7 +2060,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2729,7 +2069,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2745,7 +2085,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2754,7 +2094,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2794,7 +2134,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2803,7 +2143,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2819,7 +2159,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2828,7 +2168,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2844,7 +2184,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2853,7 +2193,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2869,7 +2209,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2878,7 +2218,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2918,7 +2258,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2927,7 +2267,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2943,7 +2283,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2952,7 +2292,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2968,7 +2308,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2977,7 +2317,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3011,7 +2351,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3020,7 +2360,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3036,7 +2376,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf2_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3045,7 +2385,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf2_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3061,7 +2401,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3070,7 +2410,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3086,7 +2426,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3095,7 +2435,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3135,7 +2475,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3144,7 +2484,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3160,7 +2500,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3169,7 +2509,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3185,7 +2525,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj3_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3194,7 +2534,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj3_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3210,7 +2550,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj4_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3219,7 +2559,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj4_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3255,20 +2595,63 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj6_Right.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj6_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!-- <origin rpy="${origin_rpy}" xyz="${origin_xyz}"/> -->
       <material name="White"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.048263578 -3.1591183e-05 0.077849126"/>
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 -0.07"/>
       <geometry>
-        <box size="0.082 0.128 0.3"/>
+        <sphere radius="0"/>
       </geometry>
     </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 -0.07"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 -0.07"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 -0.07"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 0.21"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 0.21"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 0.21"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 0.21"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
   </link>
+  <frame name="r_foot_sole" xyz="0.082 0 0.14" rpy="0 -1.5708 0" link="r_foot"/>
   <gazebo reference="r_foot">
     <material>Gazebo/White</material>
   </gazebo>
@@ -3359,202 +2742,6 @@
   <actuator name="right_leg/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
   <actuator name="right_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <actuator name="right_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
-  <transmission name="RightHipRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_leg_hpz"/>
-      <actuator data="data" name="pelvis/rj1"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_leg_hpz"/>
-      <actuator data="positionCommand" name="pelvis/rj1"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_hpz"/>
-      <actuator data="velocityCommand" name="pelvis/rj1"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_leg_hpz"/>
-      <actuator data="effortCommand" name="pelvis/rj1"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_leg_hpz"/>
-      <actuator data="data" name="pelvis/rj1"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_leg_hpz"/>
-      <actuator data="positionCommand" name="pelvis/rj1"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_hpz"/>
-      <actuator data="velocityCommand" name="pelvis/rj1"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_leg_hpz"/>
-      <actuator data="effortCommand" name="pelvis/rj1"/>
-    </interface>
-  </transmission>
-  <transmission name="RightHipAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_leg_hpx"/>
-      <actuator data="data" name="right_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_leg_hpx"/>
-      <actuator data="positionCommand" name="right_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_hpx"/>
-      <actuator data="velocityCommand" name="right_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_leg_hpx"/>
-      <actuator data="effortCommand" name="right_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_leg_hpx"/>
-      <actuator data="data" name="right_leg/j2"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_leg_hpx"/>
-      <actuator data="positionCommand" name="right_leg/j2"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_hpx"/>
-      <actuator data="velocityCommand" name="right_leg/j2"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_leg_hpx"/>
-      <actuator data="effortCommand" name="right_leg/j2"/>
-    </interface>
-  </transmission>
-  <transmission name="RightHipExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_leg_hpy"/>
-      <actuator data="data" name="right_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_leg_hpy"/>
-      <actuator data="positionCommand" name="right_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_hpy"/>
-      <actuator data="velocityCommand" name="right_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_leg_hpy"/>
-      <actuator data="effortCommand" name="right_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_leg_hpy"/>
-      <actuator data="data" name="right_leg/j3"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_leg_hpy"/>
-      <actuator data="positionCommand" name="right_leg/j3"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_hpy"/>
-      <actuator data="velocityCommand" name="right_leg/j3"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_leg_hpy"/>
-      <actuator data="effortCommand" name="right_leg/j3"/>
-    </interface>
-  </transmission>
-  <transmission name="RightKneeExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_leg_kny"/>
-      <actuator data="data" name="right_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_leg_kny"/>
-      <actuator data="positionCommand" name="right_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_kny"/>
-      <actuator data="velocityCommand" name="right_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_leg_kny"/>
-      <actuator data="effortCommand" name="right_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_leg_kny"/>
-      <actuator data="data" name="right_leg/j4"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_leg_kny"/>
-      <actuator data="positionCommand" name="right_leg/j4"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_kny"/>
-      <actuator data="velocityCommand" name="right_leg/j4"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_leg_kny"/>
-      <actuator data="effortCommand" name="right_leg/j4"/>
-    </interface>
-  </transmission>
-  <transmission name="Right_Ankle" type="loadable_transmissions/PushrodTransmission">
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="r_leg_aky"/>
-      <joint data="data" name="r_leg_akx"/>
-      <actuator data="data" name="right_leg/j5"/>
-      <actuator data="data" name="right_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="r_leg_aky"/>
-      <joint data="positionCommand" name="r_leg_akx"/>
-      <actuator data="positionCommand" name="right_leg/j5"/>
-      <actuator data="positionCommand" name="right_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_aky"/>
-      <joint data="velocityCommand" name="r_leg_akx"/>
-      <actuator data="velocityCommand" name="right_leg/j5"/>
-      <actuator data="velocityCommand" name="right_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="r_leg_aky"/>
-      <joint data="effortCommand" name="r_leg_akx"/>
-      <actuator data="effortCommand" name="right_leg/j5"/>
-      <actuator data="effortCommand" name="right_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="r_leg_aky"/>
-      <joint data="data" name="r_leg_akx"/>
-      <actuator data="data" name="right_leg/j5"/>
-      <actuator data="data" name="right_leg/j6"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="r_leg_aky"/>
-      <joint data="positionCommand" name="r_leg_akx"/>
-      <actuator data="positionCommand" name="right_leg/j5"/>
-      <actuator data="positionCommand" name="right_leg/j6"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="r_leg_aky"/>
-      <joint data="velocityCommand" name="r_leg_akx"/>
-      <actuator data="velocityCommand" name="right_leg/j5"/>
-      <actuator data="velocityCommand" name="right_leg/j6"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="r_leg_aky"/>
-      <joint data="effortCommand" name="r_leg_akx"/>
-      <actuator data="effortCommand" name="right_leg/j5"/>
-      <actuator data="effortCommand" name="right_leg/j6"/>
-    </interface>
-    <parameterNamespace name="v1_ankle"/>
-    <reflect data="1"/>
-  </transmission>
   <mode name="RightHipRotatorMode" type="mode_plugins/ModeInterface">
     <translator name="RightHipRotatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="r_leg_hpz"/>
@@ -3791,7 +2978,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3800,7 +2987,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3816,7 +3003,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3825,7 +3012,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3841,7 +3028,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj3_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3850,7 +3037,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj3_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3866,7 +3053,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj4_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3875,7 +3062,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj4_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3911,20 +3098,63 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj6_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/lj6_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!-- <origin rpy="${origin_rpy}" xyz="${origin_xyz}"/> -->
       <material name="White"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0.048263578 -3.1591183e-05 -0.077849126"/>
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 0.07"/>
       <geometry>
-        <box size="0.082 0.128 0.3"/>
+        <sphere radius="0"/>
       </geometry>
     </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 0.07"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 0.07"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 0.07"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 -0.21"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 -0.21"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 -0.21"/>
+      <geometry>
+        <sphere radius="0"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 -0.21"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
   </link>
+  <frame name="l_foot_sole" xyz="0.082 0 -0.14" rpy="3.1416 1.5708 0" link="l_foot"/>
   <gazebo reference="l_foot">
     <material>Gazebo/White</material>
   </gazebo>
@@ -4015,202 +3245,6 @@
   <actuator name="left_leg/j4" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
   <actuator name="left_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <actuator name="left_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
-  <transmission name="LeftHipRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_leg_hpz"/>
-      <actuator data="data" name="pelvis/lj1"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_leg_hpz"/>
-      <actuator data="positionCommand" name="pelvis/lj1"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_hpz"/>
-      <actuator data="velocityCommand" name="pelvis/lj1"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_leg_hpz"/>
-      <actuator data="effortCommand" name="pelvis/lj1"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_leg_hpz"/>
-      <actuator data="data" name="pelvis/lj1"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_leg_hpz"/>
-      <actuator data="positionCommand" name="pelvis/lj1"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_hpz"/>
-      <actuator data="velocityCommand" name="pelvis/lj1"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_leg_hpz"/>
-      <actuator data="effortCommand" name="pelvis/lj1"/>
-    </interface>
-  </transmission>
-  <transmission name="LeftHipAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_leg_hpx"/>
-      <actuator data="data" name="left_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_leg_hpx"/>
-      <actuator data="positionCommand" name="left_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_hpx"/>
-      <actuator data="velocityCommand" name="left_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_leg_hpx"/>
-      <actuator data="effortCommand" name="left_leg/j2"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_leg_hpx"/>
-      <actuator data="data" name="left_leg/j2"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_leg_hpx"/>
-      <actuator data="positionCommand" name="left_leg/j2"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_hpx"/>
-      <actuator data="velocityCommand" name="left_leg/j2"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_leg_hpx"/>
-      <actuator data="effortCommand" name="left_leg/j2"/>
-    </interface>
-  </transmission>
-  <transmission name="LeftHipExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_leg_hpy"/>
-      <actuator data="data" name="left_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_leg_hpy"/>
-      <actuator data="positionCommand" name="left_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_hpy"/>
-      <actuator data="velocityCommand" name="left_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_leg_hpy"/>
-      <actuator data="effortCommand" name="left_leg/j3"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_leg_hpy"/>
-      <actuator data="data" name="left_leg/j3"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_leg_hpy"/>
-      <actuator data="positionCommand" name="left_leg/j3"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_hpy"/>
-      <actuator data="velocityCommand" name="left_leg/j3"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_leg_hpy"/>
-      <actuator data="effortCommand" name="left_leg/j3"/>
-    </interface>
-  </transmission>
-  <transmission name="LeftKneeExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
-    <mechanicalReduction>1</mechanicalReduction>
-    <jointOffset>0</jointOffset>
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_leg_kny"/>
-      <actuator data="data" name="left_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_leg_kny"/>
-      <actuator data="positionCommand" name="left_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_kny"/>
-      <actuator data="velocityCommand" name="left_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_leg_kny"/>
-      <actuator data="effortCommand" name="left_leg/j4"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_leg_kny"/>
-      <actuator data="data" name="left_leg/j4"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_leg_kny"/>
-      <actuator data="positionCommand" name="left_leg/j4"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_kny"/>
-      <actuator data="velocityCommand" name="left_leg/j4"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_leg_kny"/>
-      <actuator data="effortCommand" name="left_leg/j4"/>
-    </interface>
-  </transmission>
-  <transmission name="Left_Ankle" type="loadable_transmissions/PushrodTransmission">
-    <interface type="ActuatorToJointStateInterface">
-      <joint data="data" name="l_leg_aky"/>
-      <joint data="data" name="l_leg_akx"/>
-      <actuator data="data" name="left_leg/j5"/>
-      <actuator data="data" name="left_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorPositionInterface">
-      <joint data="positionCommand" name="l_leg_aky"/>
-      <joint data="positionCommand" name="l_leg_akx"/>
-      <actuator data="positionCommand" name="left_leg/j5"/>
-      <actuator data="positionCommand" name="left_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_aky"/>
-      <joint data="velocityCommand" name="l_leg_akx"/>
-      <actuator data="velocityCommand" name="left_leg/j5"/>
-      <actuator data="velocityCommand" name="left_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorEffortInterface">
-      <joint data="effortCommand" name="l_leg_aky"/>
-      <joint data="effortCommand" name="l_leg_akx"/>
-      <actuator data="effortCommand" name="left_leg/j5"/>
-      <actuator data="effortCommand" name="left_leg/j6"/>
-    </interface>
-    <interface type="JointToActuatorStateInterface">
-      <joint data="data" name="l_leg_aky"/>
-      <joint data="data" name="l_leg_akx"/>
-      <actuator data="data" name="left_leg/j5"/>
-      <actuator data="data" name="left_leg/j6"/>
-    </interface>
-    <interface type="ActuatorToJointPositionInterface">
-      <joint data="positionCommand" name="l_leg_aky"/>
-      <joint data="positionCommand" name="l_leg_akx"/>
-      <actuator data="positionCommand" name="left_leg/j5"/>
-      <actuator data="positionCommand" name="left_leg/j6"/>
-    </interface>
-    <interface type="ActuatorToJointVelocityInterface">
-      <joint data="velocityCommand" name="l_leg_aky"/>
-      <joint data="velocityCommand" name="l_leg_akx"/>
-      <actuator data="velocityCommand" name="left_leg/j5"/>
-      <actuator data="velocityCommand" name="left_leg/j6"/>
-    </interface>
-    <interface type="ActuatorToJointEffortInterface">
-      <joint data="effortCommand" name="l_leg_aky"/>
-      <joint data="effortCommand" name="l_leg_akx"/>
-      <actuator data="effortCommand" name="left_leg/j5"/>
-      <actuator data="effortCommand" name="left_leg/j6"/>
-    </interface>
-    <parameterNamespace name="v1_ankle"/>
-    <reflect data="-1"/>
-  </transmission>
   <mode name="LeftHipRotatorMode" type="mode_plugins/ModeInterface">
     <translator name="LeftHipRotatorModeData" type="SimpleActuatorToJointMode">
       <joint data="mode" name="l_leg_hpz"/>
@@ -4439,4 +3473,144 @@
   </joint>
   <copSensor frame="v1/LeftValkyrieCOP_Frame" name="v1/LeftValkyrieCOP" nodePath="left_leg/cop" type="ValkyrieCOPSensor"/>
   <imuSensor frame="v1/LeftMPU6000_Frame" name="v1/LeftMPU6000" nodePath="left_leg/hermes" type="IMUSensorMPU6000"/>
+  <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="back_bkz"/>
+    <actuator name="back_bkz_motor"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="back_bky_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="back_bky_motor"/>
+    <joint name="back_bky"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="back_bkx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="back_bkx_motor"/>
+    <joint name="back_bkx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_arm_elx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_arm_elx_motor"/>
+    <joint name="l_arm_elx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_arm_ely_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_arm_ely_motor"/>
+    <joint name="l_arm_ely"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_arm_mwx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_arm_mwx_motor"/>
+    <joint name="l_arm_mwx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_arm_shx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_arm_shx_motor"/>
+    <joint name="l_arm_shx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_arm_shz_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_arm_shz_motor"/>
+    <joint name="l_arm_shz"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_arm_uwy_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_arm_uwy_motor"/>
+    <joint name="l_arm_uwy"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_leg_kny_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_leg_kny_motor"/>
+    <joint name="l_leg_kny"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_leg_akx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_leg_akx_motor"/>
+    <joint name="l_leg_akx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_leg_hpy_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_leg_hpy_motor"/>
+    <joint name="l_leg_hpy"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_leg_hpx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_leg_hpx_motor"/>
+    <joint name="l_leg_hpx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_leg_aky_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_leg_aky_motor"/>
+    <joint name="l_leg_aky"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="l_leg_hpz_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="l_leg_hpz_motor"/>
+    <joint name="l_leg_hpz"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="neck_ay_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="neck_ay_motor"/>
+    <joint name="neck_ay"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_arm_elx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_arm_elx_motor"/>
+    <joint name="r_arm_elx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_arm_ely_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_arm_ely_motor"/>
+    <joint name="r_arm_ely"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_arm_mwx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_arm_mwx_motor"/>
+    <joint name="r_arm_mwx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_arm_shx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_arm_shx_motor"/>
+    <joint name="r_arm_shx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_arm_shz_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_arm_shz_motor"/>
+    <joint name="r_arm_shz"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_arm_uwy_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_arm_uwy_motor"/>
+    <joint name="r_arm_uwy"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_leg_kny_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_leg_kny_motor"/>
+    <joint name="r_leg_kny"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_leg_akx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_leg_akx_motor"/>
+    <joint name="r_leg_akx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_leg_hpy_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_leg_hpy_motor"/>
+    <joint name="r_leg_hpy"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_leg_hpx_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_leg_hpx_motor"/>
+    <joint name="r_leg_hpx"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_leg_aky_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_leg_aky_motor"/>
+    <joint name="r_leg_aky"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="r_leg_hpz_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <actuator name="r_leg_hpz_motor"/>
+    <joint name="r_leg_hpz"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
 </robot>

@@ -4,7 +4,7 @@ group "0.params_and_model_pub" {
         host = "base";
     }
     cmd "model_LR_RR" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v3/model_LR_RR.urdf";
         host = "base";
     }
 }
