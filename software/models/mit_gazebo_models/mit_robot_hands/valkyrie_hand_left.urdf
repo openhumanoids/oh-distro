@@ -24,7 +24,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/palm_Left.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -32,7 +32,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/palm_Left.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -357,7 +357,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf1_Left.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -365,7 +365,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf1_Left.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -381,7 +381,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf2.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -389,7 +389,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf2.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -405,7 +405,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf3.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -413,7 +413,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf3.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -429,7 +429,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf4.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -437,7 +437,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/tf4.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -477,7 +477,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf1.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -485,7 +485,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf1.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -501,7 +501,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf2.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -509,7 +509,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf2.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -525,7 +525,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf3.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -533,7 +533,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf3.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -549,7 +549,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf4.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -557,7 +557,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/pf4.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -597,7 +597,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf1.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -605,7 +605,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf1.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -621,7 +621,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -629,7 +629,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -645,7 +645,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -653,7 +653,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -687,7 +687,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf1_Left.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -695,7 +695,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf1_Left.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -711,7 +711,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf2_Left.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -719,7 +719,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Left.stl"/>
+        <mesh filename="package://valkyrie/meshes/ssf2_Left.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -735,7 +735,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -743,7 +743,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf2_ssf3.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -759,7 +759,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.stl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -767,7 +767,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.stl"/>
+        <mesh filename="package://valkyrie/meshes/sf3_ssf4.stl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
