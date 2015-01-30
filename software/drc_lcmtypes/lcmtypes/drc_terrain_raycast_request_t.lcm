@@ -1,0 +1,17 @@
+package drc;
+
+struct terrain_raycast_request_t
+{
+	int64_t utime;
+	robot_urdf_t urdf;
+
+	double x_min;
+	double x_step;
+	double x_max;
+
+	double y_min;
+	double y_step;
+	double y_max;
+
+	double scanner_height;
+}
