@@ -8,13 +8,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_clav.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_clav.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_clav.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_clav.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -27,13 +27,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_farm.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_farm.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_farm.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_farm.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -46,13 +46,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_foot.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_foot.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_foot.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_foot.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -65,13 +65,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_hand.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_hand.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_hand.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_hand.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -84,13 +84,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_elbow_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_elbow_rx.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_elbow_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_elbow_rx.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -103,13 +103,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_lglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_lglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_lglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_lglut.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -122,13 +122,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_lleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_lleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_lleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_lleg.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -141,13 +141,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_sh_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_sh_rx.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_sh_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_sh_rx.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -160,13 +160,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_talus.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_talus.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_talus.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_talus.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -179,13 +179,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_elbow_ry.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_elbow_ry.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_elbow_ry.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_elbow_ry.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -198,13 +198,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_uglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_uglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_uglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_uglut.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -217,13 +217,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_uleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_uleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/l_uleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/l_uleg.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -236,13 +236,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/ltorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/ltorso.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/ltorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/ltorso.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -255,13 +255,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/mtorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/mtorso.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/mtorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/mtorso.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -274,13 +274,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/pelvis.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/pelvis.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/pelvis.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -293,13 +293,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_clav.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_clav.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_clav.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_clav.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -312,13 +312,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_farm.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_farm.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_farm.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_farm.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -331,13 +331,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_foot.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_foot.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_foot.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_foot.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -350,13 +350,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 3.14159 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_hand.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_hand.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_hand.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_hand.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -369,13 +369,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_elbow_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_elbow_rx.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_elbow_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_elbow_rx.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -388,13 +388,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_lglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_lglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_lglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_lglut.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -407,13 +407,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_lleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_lleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_lleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_lleg.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -426,13 +426,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_sh_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_sh_rx.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_sh_rx.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_sh_rx.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -445,13 +445,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_talus.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_talus.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_talus.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_talus.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -464,13 +464,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_elbow_ry.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_elbow_ry.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_elbow_ry.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_elbow_ry.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -483,13 +483,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_uglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_uglut.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_uglut.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_uglut.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -502,13 +502,13 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_uleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_uleg.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/r_uleg.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/r_uleg.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -522,25 +522,25 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso.dae" scale="1 1 1" />
             </geometry>
         </collision>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso_pack.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso_pack.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso_pack.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso_pack.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
@@ -554,25 +554,25 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso.dae" scale="1 1 1" />
             </geometry>
         </collision>
         <visual>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso_pack.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso_pack.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 -0 0" />
             <geometry>
-                <mesh filename="package://mit_robot/meshes/utorso_pack.dae" scale="1 1 1" />
+                <mesh filename="package://atlas_v3/meshes/utorso_pack.dae" scale="1 1 1" />
             </geometry>
         </collision>
     </link>
