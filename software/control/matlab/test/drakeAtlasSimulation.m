@@ -40,6 +40,8 @@ end
 options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
+sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
+terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 if (add_hands)
   options.hands = 'robotiq';
 end
@@ -49,8 +51,8 @@ if (strcmp(world_name,'steps'))
   options.terrain = RigidBodyStepTerrain(boxes);
 elseif (strcmp(world_name, 'terrain'))
   clear gazeboModelPath;
-  setenv('GAZEBO_MODEL_PATH',fullfile(getDrakePath,'examples','Atlas','sdf')); 
-  height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(RigidBodyManipulator('terrain.sdf'),[],-3:.015:10,-2:.015:2,10);
+  setenv('GAZEBO_MODEL_PATH',sdfDir); 
+  height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(RigidBodyManipulator(terrainSDF),[],-3:.015:10,-2:.015:2,10);
   options.terrain = height_map;
   options.use_bullet = false;
 else
@@ -79,9 +81,8 @@ elseif (strcmp(world_name, 'manip_ex'))
   options_cyl.floating = true;
   r_complete = r_complete.addRobotFromURDF('table.urdf', [1.225; 0.0; 0.5]);
   r_complete = r_complete.addRobotFromURDF('drill_box.urdf', [0.775; -0.2; 1.2], [], options_cyl);
-
 elseif(strcmp(world_name, 'terrain'))
-  r_complete = r_complete.addRobotFromSDF('terrain.sdf')
+  r_complete = r_complete.addRobotFromSDF(terrainSDF);
 end
 r_complete = compile(r_complete);
   
