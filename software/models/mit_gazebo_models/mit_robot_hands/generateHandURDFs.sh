@@ -2,9 +2,9 @@
  
 echo "Generate Robot Model Configurations:"
 
-echo "sandia_hand_left"
-rosrun xacro xacro.py xacro/sandia_hand_left.urdf.xacro > sandia_hand_left.urdf
-rosrun xacro xacro.py xacro/sandia_hand_right.urdf.xacro > sandia_hand_right.urdf
+#echo "sandia_hand_left"
+#rosrun xacro xacro.py xacro/sandia_hand_left.urdf.xacro > sandia_hand_left.urdf
+#rosrun xacro xacro.py xacro/sandia_hand_right.urdf.xacro > sandia_hand_right.urdf
 
 echo "irobot hands"
 rosrun xacro xacro.py xacro/irobot_hand_left.urdf.xacro > irobot_hand_left.urdf
