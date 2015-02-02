@@ -225,17 +225,14 @@ classdef CombinedPlanner
       model = model.addRobotFromURDFString(char(msg.urdf.urdf_xml_string));
       heightmap = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(model,[],msg.x_min:msg.x_step:msg.x_max, msg.y_min:msg.y_step:msg.y_max, msg.scanner_height);
 
-      map_img = CombinedPlanner.getDRCMapImage(heightmap, 12345);
+      map_img = CombinedPlanner.getDRCMapImage(heightmap, 12345, msg.x_step, msg.y_step, msg.utime);
 
     end
   end
 
   methods(Static)
-    function map_img = getDRCMapImage(heightmap, map_id)
+    function map_img = getDRCMapImage(heightmap, map_id, x_step, y_step, utime)
       % Convert a Drake heightmap into a DRC map image suitable for LCM broadcast
-      if nargin < 2
-        map_id = 1;
-      end
       typecheck(heightmap, 'RigidBodyHeightMapTerrain');
       map_img = drc.map_image_t();
       
@@ -257,10 +254,10 @@ classdef CombinedPlanner
       Z_scaled = uint8(Z_scaled);
       max(max(Z_scaled))
       
-      map_img.utime = msg.utime();
+      map_img.utime = utime;
       map_img.view_id = drc.data_request_t.HEIGHT_MAP_SCENE;
       map_img.map_id = map_id;
-      tform = makehgtform('translate',[-heightmap.x(1)/msg.x_step, -heightmap.y(1)/msg.y_step, 0], 'scale', [1/msg.x_step, 1/msg.y_step, 1]);
+      tform = makehgtform('translate',[-heightmap.x(1)/x_step, -heightmap.y(1)/y_step, 0], 'scale', [1/x_step, 1/y_step, 1]);
       map_img.transform = tform;
 
       blob = drc.map_blob_t();
@@ -273,6 +270,7 @@ classdef CombinedPlanner
       blob.data = reshape(Z_scaled, 1, []);
       map_img.blob = blob;
     end
+  end
 end
 
 
