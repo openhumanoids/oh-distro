@@ -220,20 +220,32 @@ classdef CombinedPlanner
     end
 
     function map_img = terrain_raycast(obj, msg)
-      disp('raycast')
       msg = drc.terrain_raycast_request_t(msg);
       model = RigidBodyManipulator();
       model = model.addRobotFromURDFString(char(msg.urdf.urdf_xml_string));
       heightmap = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(model,[],msg.x_min:msg.x_step:msg.x_max, msg.y_min:msg.y_step:msg.y_max, msg.scanner_height);
 
-%       obj.biped = obj.biped.setTerrain(heightmap);
-%       obj.biped = obj.biped.compile();
-%       obj.biped.constructVisualizer();
+      map_img = CombinedPlanner.getDRCMapImage(heightmap, 12345);
+
+    end
+  end
+
+  methods(Static)
+    function map_img = getDRCMapImage(heightmap, map_id)
+      % Convert a Drake heightmap into a DRC map image suitable for LCM broadcast
+      if nargin < 2
+        map_id = 1;
+      end
+      typecheck(heightmap, 'RigidBodyHeightMapTerrain');
       map_img = drc.map_image_t();
       
-      MAXINT = 126; % even though we're using a uint8, values above 127 don't result in correct maps. 
-                 % I'm currently assuming that something is going wrong in the conversion to java
-                 % bytes for the LCM message. 
+      % The maps interface typically uses unsigned 8-bit integers to store the height data,
+      % but Java does not appear to support unsigned values, so rather than the expected max
+      % value of 255, we have to limit ourselves to 127 (actually 126 to ensure that rounding
+      % does not result in an overflow). If resolution becomes a problem, we can upgrade to 
+      % an int16 or float32.
+      MAXINT = 126; 
+      % Scale the Z values appropriately
       Z = heightmap.Z;
       Z(isinf(Z)) = 0;
       zmin = min(min(Z));
@@ -245,27 +257,22 @@ classdef CombinedPlanner
       Z_scaled = uint8(Z_scaled);
       max(max(Z_scaled))
       
-      
       map_img.utime = msg.utime();
       map_img.view_id = drc.data_request_t.HEIGHT_MAP_SCENE;
-      map_img.map_id = 12345;
-      map_img.transform = eye(4);
+      map_img.map_id = map_id;
       tform = makehgtform('translate',[-heightmap.x(1)/msg.x_step, -heightmap.y(1)/msg.y_step, 0], 'scale', [1/msg.x_step, 1/msg.y_step, 1]);
       map_img.transform = tform;
+
       blob = drc.map_blob_t();
       blob.num_dims = 2;
       blob.dimensions = [length(heightmap.x), length(heightmap.y)];
       blob.stride_bytes = [1, blob.dimensions(1)];
-      blob.compression = drc.map_blob_t.UNCOMPRESSED;
+      blob.compression = drc.map_blob_t.UNCOMPRESSED; % no built-in zlib support in Matlab
       blob.data_type = drc.map_blob_t.UINT8;
-      
-      
       blob.num_bytes = numel(Z_scaled);
       blob.data = reshape(Z_scaled, 1, []);
-      
       map_img.blob = blob;
     end
-  end
 end
 
 
