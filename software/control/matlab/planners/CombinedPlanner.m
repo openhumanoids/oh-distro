@@ -100,6 +100,12 @@ classdef CombinedPlanner
       obj.handlers{end+1} = @obj.iris_region;
       obj.response_channels{end+1} = 'IRIS_REGION_RESPONSE';
 
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.terrain_raycast_request_t, 'utime');
+      obj.request_channels{end+1} = 'TERRAIN_RAYCAST_REQUEST';
+      obj.handlers{end+1} = @obj.terrain_raycast;
+      obj.response_channels{end+1} = 'MAP_DEPTH';
+
+
     end
 
     function run(obj)
@@ -114,7 +120,10 @@ classdef CombinedPlanner
             continue
           end
           plan = obj.handlers{j}(msg);
-          obj.lc.publish(obj.response_channels{j}, plan.toLCM());
+          if ismethod(plan, 'toLCM')
+            plan = plan.toLCM();
+          end
+          obj.lc.publish(obj.response_channels{j}, plan);
         end
       end
     end
@@ -208,6 +217,58 @@ classdef CombinedPlanner
       end
       region_list = IRISRegionList(regions);
 %       profile viewer
+    end
+
+    function map_img = terrain_raycast(obj, msg)
+      msg = drc.terrain_raycast_request_t(msg);
+      model = RigidBodyManipulator();
+      model = model.addRobotFromURDFString(char(msg.urdf.urdf_xml_string));
+      heightmap = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(model,[],msg.x_min:msg.x_step:msg.x_max, msg.y_min:msg.y_step:msg.y_max, msg.scanner_height);
+
+      map_img = CombinedPlanner.getDRCMapImage(heightmap, 12345, msg.x_step, msg.y_step, msg.utime);
+
+    end
+  end
+
+  methods(Static)
+    function map_img = getDRCMapImage(heightmap, map_id, x_step, y_step, utime)
+      % Convert a Drake heightmap into a DRC map image suitable for LCM broadcast
+      typecheck(heightmap, 'RigidBodyHeightMapTerrain');
+      map_img = drc.map_image_t();
+      
+      % The maps interface typically uses unsigned 8-bit integers to store the height data,
+      % but Java does not appear to support unsigned values, so rather than the expected max
+      % value of 255, we have to limit ourselves to 127 (actually 126 to ensure that rounding
+      % does not result in an overflow). If resolution becomes a problem, we can upgrade to 
+      % an int16 or float32.
+      MAXINT = 126; 
+      % Scale the Z values appropriately
+      Z = heightmap.Z;
+      Z(isinf(Z)) = 0;
+      zmin = min(min(Z));
+      zmax = max(max(Z));
+      zrange = zmax - zmin;
+      map_img.data_scale = zrange / MAXINT;
+      map_img.data_shift = zmin;
+      Z_scaled = (Z - map_img.data_shift) * (MAXINT / zrange);
+      Z_scaled = uint8(Z_scaled);
+      max(max(Z_scaled))
+      
+      map_img.utime = utime;
+      map_img.view_id = drc.data_request_t.HEIGHT_MAP_SCENE;
+      map_img.map_id = map_id;
+      tform = makehgtform('translate',[-heightmap.x(1)/x_step, -heightmap.y(1)/y_step, 0], 'scale', [1/x_step, 1/y_step, 1]);
+      map_img.transform = tform;
+
+      blob = drc.map_blob_t();
+      blob.num_dims = 2;
+      blob.dimensions = [length(heightmap.x), length(heightmap.y)];
+      blob.stride_bytes = [1, blob.dimensions(1)];
+      blob.compression = drc.map_blob_t.UNCOMPRESSED; % no built-in zlib support in Matlab
+      blob.data_type = drc.map_blob_t.UINT8;
+      blob.num_bytes = numel(Z_scaled);
+      blob.data = reshape(Z_scaled, 1, []);
+      map_img.blob = blob;
     end
   end
 end
