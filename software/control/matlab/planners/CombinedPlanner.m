@@ -105,6 +105,10 @@ classdef CombinedPlanner
       obj.handlers{end+1} = @obj.terrain_raycast;
       obj.response_channels{end+1} = 'MAP_DEPTH';
 
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.auto_iris_segmentation_request_t, 'utime');
+      obj.request_channels{end+1} = 'AUTO_IRIS_SEGMENTATION_REQUEST';
+      obj.handlers{end+1} = @obj.auto_iris_segmentation;
+      obj.response_channels{end+1} = 'IRIS_SEGMENTATION_RESPONSE';
 
     end
 
@@ -184,15 +188,9 @@ classdef CombinedPlanner
 %       link_constraints.ddtraj = fnder(link_constraints.dtraj);
       plan = ConfigurationTraj(qtraj_pp,link_constraints);
     end
-
-    function region_list = iris_region(obj, msg)
-%       profile on
-%       disp('handling iris request')
-      msg = drc.iris_region_request_t(msg);
-      collision_model = obj.biped.getFootstepPlanningCollisionModel();
-      regions = iris.TerrainRegion.empty();
-
-      if ~obj.iris_planner.hasHeightmap(msg.map_id);
+    
+    function setup_IRIS_heightmap(obj, map_id)
+      if ~obj.iris_planner.hasHeightmap(map_id);
         [heights, px2world] = obj.biped.getTerrain().map_handle.getHeightData();
 
         px2world(1,end) = px2world(1,end) - sum(px2world(1,1:3)); % stupid matlab 1-indexing...
@@ -207,8 +205,19 @@ classdef CombinedPlanner
         Y = reshape(XY(2,:), sz);
         Z = reshape(Z, sz);
         heightmap = iris.terrain_grid.Heightmap(X, Y, Z, normals);
-        obj.iris_planner.addHeightmap(msg.map_id, heightmap);
+        obj.iris_planner.addHeightmap(map_id, heightmap);
       end
+    end
+      
+
+    function region_list = iris_region(obj, msg)
+%       profile on
+%       disp('handling iris request')
+      msg = drc.iris_region_request_t(msg);
+      collision_model = obj.biped.getFootstepPlanningCollisionModel();
+      regions = iris.TerrainRegion.empty();
+      
+      obj.setup_IRIS_heightmap(msg.map_id);
 
       for j = 1:msg.num_seed_poses
         seed_pose = decodePosition3d(msg.seed_poses(j));
@@ -239,6 +248,26 @@ classdef CombinedPlanner
 
       map_img = CombinedPlanner.getDRCMapImage(heightmap, 12345, msg.x_step, msg.y_step, msg.utime);
 
+    end
+
+    function region_list = auto_iris_segmentation(obj, msg)
+      msg = drc.auto_iris_segmentation_request_t(msg);
+      map_id = msg.map_id;
+      obj.setup_IRIS_heightmap(map_id);
+      options = struct();
+      collision_model = obj.biped.getFootstepPlanningCollisionModel();
+      options.seeds = zeros(6,msg.num_seed_poses);
+      for j = 1:msg.num_seed_poses
+        options.seeds(:,j) = decodePosition3d(msg.seed_poses(j));
+      end
+      if ~isnan(msg.default_yaw), options.default_yaw = msg.default_yaw; end
+      if ~isnan(msg.max_slope_angle), options.max_slope_angle = msg.max_slope_angle; end
+      if ~isnan(msg.max_height_variation), options.max_height_variation = msg.max_height_variation; end
+      if ~isnan(msg.plane_distance_tolerance), options.plane_distance_tolerance = msg.plane_distance_tolerance; end
+      if ~isnan(msg.plane_angle_tolerance), options.plane_angle_tolerance = msg.plane_angle_tolerance; end
+
+      regions = obj.iris_planner.findSafeTerrainRegions(map_id, collision_model, options);
+      region_list = IRISRegionList(regions);
     end
   end
 
