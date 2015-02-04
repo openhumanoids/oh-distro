@@ -121,6 +121,11 @@ cmd "drakeAtlasSimulation Terrain Task" {
     host = "base";
 }
 
+cmd "systemwide-tests" {
+    exec = "drc-systemwide-tests";
+    host = "localhost";
+}
+
 script "0.run_all_but_simul_and_controller" {
     start cmd "base_deputy";
     wait ms 1000;
@@ -221,4 +226,11 @@ script "6.run_terrain" {
     start group "5.maps";
     start cmd "drakeAtlasSimulation Terrain Task";
     start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "3.run_valve_test" {
+    start cmd "systemwide-tests";
+    start cmd "director";
+    run_script "3.run_valve";
+    wait cmd "systemwide-tests" status "stopped";
 }
