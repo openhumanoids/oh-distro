@@ -69,7 +69,7 @@ r_pure = compile(r_pure);
 % Add world if relevant
 if (strcmp(world_name, 'valve_wall'))
   % Add valve DRC environment
-  r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/valve_wall.urdf'], [1.0; 0.0; 0.0], [0;0;pi]);
+  r_complete = r_complete.addRobotFromURDF('single_valve_wall.urdf', [1.0; 0.0; 0.0], [0;0;pi]);
   r_complete = compile(r_complete);
 elseif (strcmp(world_name, 'drill_frame'))
   r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/drill_frame.urdf'], [1.0; 0.0; 0], [0;0;pi]);
