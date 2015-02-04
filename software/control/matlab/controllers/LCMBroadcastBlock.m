@@ -231,10 +231,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.frame_nums.atlas_state = input_frame.getFrameNumByName('drcFrames.AtlasState');
         obj.frame_nums.hand_state = input_frame.getFrameNumByName('drcFrames.HandState');
         obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
+        obj.frame_nums.left_foot_ft_state = input_frame.getFrameNumByName('l_footForceTorque');
+        obj.frame_nums.right_foot_ft_state = input_frame.getFrameNumByName('r_footForceTorque');
       else
         obj.frame_nums.atlas_state = input_frame;
         obj.frame_nums.hand_state = '';
         obj.frame_nums.hokuyo_state = '';
+        obj.frame_nums.left_foot_ft_state = '';
+        obj.frame_nums.right_foot_ft_state = '';
       end
     end
     
@@ -242,6 +246,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       atlas_state = [];
       hand_state = [];
       laser_state = [];
+      left_ankle_ft_state = zeros(6, 1);
+      right_ankle_ft_state = zeros(6, 1);
       if (length(varargin) == 1)
         % Only atlas state coming in, no need for lots of logic to extract
         % frames
@@ -281,35 +287,37 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         laser_ranges = [];
       end
       
+      % Generate forces in ankle
+      if (obj.frame_nums.left_foot_ft_state)
+        left_ankle_ft_state = varargin{obj.frame_nums.left_foot_ft_state};
+        right_ankle_ft_state = varargin{obj.frame_nums.right_foot_ft_state};
+      else
+        % Get binary foot contact, call it force:
+        x = atlas_state;
+        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
+        % Scale foot up for the foot that the com is more over
+        com = obj.r.getCOM(atlas_state(1:34));
+        kinsol = doKinematics(obj.r,atlas_state(1:34));
+        lfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('l_foot'),[0,0,0].');
+        rfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('r_foot'),[0,0,0].');
+        ldist = lfootpos(1:2)-com(1:2); ldist = ldist.'*ldist;
+        rdist = rfootpos(1:2)-com(1:2); rdist = rdist.'*rdist;
+        interdist = lfootpos(1:2)-rfootpos(1:2); interdist = interdist.'*interdist;
+        left_ankle_ft_state(3) = fc(2)*(800 + 500*rdist/interdist);
+        right_ankle_ft_state(3) = fc(1)*(800 + 500*ldist/interdist);
+      end
+      
       % See if we just passed our publish-timestep for 
       % the foot contact state message, publish if so (and if
       % we're publishing ground truth anyway)
       if (obj.publish_truth && mod(t, obj.fc_publish_period)  < obj.r.timestep)
-        % Get foot force state
-%         num = inp.getFrameNumByName('drcFrames.ForceTorque');
-%         hand_state = [];
-%         if (length(num)~=2)
-%           lfoot_force = [];
-%           rfoot_force = [];
-%         else
-%           lfoot_force = varargin{num(1)};
-%           rfoot_force = varargin{num(2)};
-%         end;
-%         fc = [norm(lfoot_force); norm(rfoot_force)];
-        % Get binary foot contact, call it force:
-        x = atlas_state;
-        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
-        
-        % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
         foot_contact_est.utime = t*1000*1000;
-        foot_contact_est.left_contact = fc(2);
-        foot_contact_est.right_contact = fc(1);
+        foot_contact_est.left_contact = left_ankle_ft_state(3) > 500;
+        foot_contact_est.right_contact = right_ankle_ft_state(3) > 500;
         foot_contact_est.detection_method = 0;
         obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
       end
-      
-
       
       % What needs to go out:
       num_dofs = length([atlas_state; hand_state]) / 2;
@@ -334,7 +342,12 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.pose.translation.y = atlas_state(2);
         state_msg.pose.translation.z = atlas_state(3);
 
-        q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
+        yaw = atlas_state(6);
+        yaw = mod(yaw, 2*pi);
+        if (yaw > pi)
+          yaw = yaw - 2*pi;
+        end
+        q = rpy2quat([atlas_state(4) atlas_state(5) yaw]);
         state_msg.pose.rotation.w = q(1);
         state_msg.pose.rotation.x = q(2);
         state_msg.pose.rotation.y = q(3);
@@ -379,20 +392,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       state_msg.force_torque = drc.force_torque_t();
 
-      % Get binary foot contact, call it force:
-      x = atlas_state;
-      fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
-      % Scale foot up for the foot that the com is more over
-      com = obj.r.getCOM(atlas_state(1:34));
-      kinsol = doKinematics(obj.r,atlas_state(1:34));
-      lfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('l_foot'),[0,0,0].');
-      rfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('r_foot'),[0,0,0].');
-      ldist = lfootpos(1:2)-com(1:2); ldist = ldist.'*ldist;
-      rdist = rfootpos(1:2)-com(1:2); rdist = rdist.'*rdist;
-      interdist = lfootpos(1:2)-rfootpos(1:2); interdist = interdist.'*interdist;
-      % pack it up
-      state_msg.force_torque.l_foot_force_z = fc(2)*(800 + 500*rdist/interdist);
-      state_msg.force_torque.r_foot_force_z = fc(1)*(800 + 500*ldist/interdist);
+      % pack in any foot contact info that we have
+      state_msg.force_torque.l_foot_force_z = left_ankle_ft_state(3);
+      state_msg.force_torque.r_foot_force_z = right_ankle_ft_state(3);
       
       if (~obj.publish_truth)
         obj.lc.publish('ATLAS_STATE', state_msg);
@@ -407,6 +409,12 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       pose_body_frame.utime = t*1000*1000;
       pose_body_frame.pos = [atlas_state(1), atlas_state(2), atlas_state(3)];
       pose_body_frame.vel = [atlas_state(1+atlas_dofs), atlas_state(2+atlas_dofs), atlas_state(3+atlas_dofs)];
+      for i=1:3
+        atlas_state(3+i) = mod(atlas_state(3+i), 2*pi);
+        if (atlas_state(3+i) > pi)
+          atlas_state(3+i) = atlas_state(3+i) - 2*pi;
+        end
+      end
       q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
       pose_body_frame.vel = quatRotateVec(quatConjugate(q), pose_body_frame.vel);
       pose_body_frame.orientation = [q(1) q(2) q(3) q(4)]; % Rotation
