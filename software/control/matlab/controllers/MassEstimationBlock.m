@@ -12,6 +12,10 @@ classdef MassEstimationBlock < MIMODrakeSystem
     % frame of ft sensor
     ft_frame;
     
+    % Old A's, force/torques
+    ft_hist;
+    A_hist;
+    
   end
   
   methods
@@ -45,6 +49,10 @@ classdef MassEstimationBlock < MIMODrakeSystem
       obj.r = r;
       obj.r_control = r_control;
       obj.ft_frame = ft_frame;
+      
+      obj.ft_hist = SharedDataHandle([]);
+      obj.A_hist = SharedDataHandle([]);
+      
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -56,8 +64,17 @@ classdef MassEstimationBlock < MIMODrakeSystem
       z = tsmanip.LCP_cache.data.z;
       if (~isempty(z))
         z = z/tsmanip.timestep;
+        x = tsmanip.LCP_cache.data.x;
+        u = tsmanip.LCP_cache.data.u;
         
-        kinsol = doKinematics(manip,tsmanip.LCP_cache.data.x(1:tsmanip.getNumPositions));
+        % extract the robot state used (Todo: this should come in
+        % by appropriate wiring...)
+        numdof = getNumPositions(manip);
+        q = x(1:numdof);
+        qd = x(numdof+1:end);
+        qdd = tsmanip.LCP_cache.data.Mqdn*z + tsmanip.LCP_cache.data.wqdn;
+        
+        kinsol = manip.doKinematics(q, false, true, qd);
         % Generate simulated readings from the force-torque sensor
         % if simulation is running
         
@@ -72,7 +89,7 @@ classdef MassEstimationBlock < MIMODrakeSystem
           end
         end
         xdn_masses = zeros(6, 1);
-        sensor_posquat = forwardKin(manip,kinsol,findFrameId(manip,obj.ft_frame.name),zeros(3,1), 2);
+        [sensor_posquat, J] = forwardKin(manip,kinsol,findFrameId(manip,obj.ft_frame.name),zeros(3,1), 2);
         sensor_pos = sensor_posquat(1:3);
         sensor_quat = sensor_posquat(4:7);
         g_rotated = quatrotate(sensor_quat.', [0 0 -9.8]).';
@@ -205,6 +222,37 @@ classdef MassEstimationBlock < MIMODrakeSystem
         % (in the Atkeson '86 sense)
         % We need to generate A
         % We need the acceleration of our target link first
+        %
+        Jdot = forwardJacDot(manip,kinsol,findFrameId(manip,obj.ft_frame.name),zeros(3,1),0,0);
+        accel_base = Jdot*qd + J(1:3,:)*qdd;
+        acc_g = [0;0;-9.8] - accel_base;
+        acc_g_cross = [0 -acc_g(3) acc_g(2); 
+                       acc_g(3) 0 -acc_g(1);
+                       -acc_g(2) acc_g(1) 0];
+        
+        rpy = quat2rpy(sensor_quat);
+        rpydot = J(4:6,:)*qd;
+        omega_base = rpydot2angularvel(rpy, rpydot);
+        wx = omega_base(1); wy = omega_base(2); wz = omega_base(3);
+        wcross = [0 -wz wy; wz 0 -wx; -wy wx 0];
+        wdot = [wx wy wz 0 0 0; 0 wx 0 wy wz 0; 0 0 wx 0 wy wz];
+        A_current = [ -acc_g         wcross+wcross*wcross        zeros(3, 6);
+              zeros(3, 1)    acc_g_cross                 wdot+wcross*wdot];
+        
+        % And solve!
+        ft_hist = obj.ft_hist.getData();
+        A_hist = obj.A_hist.getData();
+        f_all = [ft_hist; ft_total];
+        A_all = [A_hist; A_current];
+        obj.ft_hist.setData(f_all);
+        obj.A_hist.setData(A_all);
+        
+        sol = (A_all.'*A_all)^(-1)*A_all.'*f_all;
+        mass = sol(1)
+        com = sol(2:4)/mass;
+        I = zeros(3, 3);
+        I(1,1) = sol(5); I(1,2) = sol(6); I(2, 1) = sol(6); I(3, 1) = sol(7); I(1, 3) = sol(7); 
+        I(2,2) = sol(8); I(2,3) = sol(9); I(3,2) = sol(9); I(3,3) = sol(10);
         
       end
       
