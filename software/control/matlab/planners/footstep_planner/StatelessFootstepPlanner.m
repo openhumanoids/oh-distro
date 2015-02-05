@@ -28,7 +28,13 @@ classdef StatelessFootstepPlanner
 
         safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, feet_centers, goal_pos);
 
-        plan = biped.planFootsteps(feet_centers, goal_pos, safe_regions, struct('step_params', params));
+        if params.planning_mode == 1
+          planner = @footstepPlanner.humanoids2014;
+        else
+          planner = @footstepPlanner.alternatingMIQP;
+        end
+        plan = biped.planFootsteps(feet_centers, goal_pos, safe_regions, struct('step_params', params, 'method_handle', planner));
+
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
@@ -103,8 +109,8 @@ classdef StatelessFootstepPlanner
         corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, feet_centers, goal_pos, params);
         [corr_A, corr_b] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
         corr_A = [corr_A, zeros(size(corr_A, 1), 1)]; % convert to polytope in x y yaw
-        [orig_z, orig_normal] = biped.getTerrainHeight(feet_centers.right);
-        safe_regions = [IRISRegion(corr_A, corr_b, [], [], [feet_centers.right(1:2); orig_z], orig_normal)];
+        orig_normal = rpy2rotmat(feet_centers.right(4:6)) * [0;0;1];
+        safe_regions = IRISRegion(corr_A, corr_b, [], [], feet_centers.right(1:3), orig_normal);
       end
     end
 
