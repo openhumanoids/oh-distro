@@ -189,24 +189,25 @@ classdef CombinedPlanner
       plan = ConfigurationTraj(qtraj_pp,link_constraints);
     end
     
-    function setup_IRIS_heightmap(obj, map_id)
-      if ~obj.iris_planner.hasHeightmap(map_id);
-        [heights, px2world] = obj.biped.getTerrain().map_handle.getHeightData();
+    function setup_IRIS_heightmap(obj, request)
+      x0 = obj.biped.getStateFrame().lcmcoder.decode(request.initial_state);
+      q0 = x0(1:obj.biped.getNumPositions());
+      obj.biped = configureDRCTerrain(obj.biped, request.map_mode, q0);
+      [heights, px2world] = obj.biped.getTerrain().map_handle.getHeightData();
 
-        px2world(1,end) = px2world(1,end) - sum(px2world(1,1:3)); % stupid matlab 1-indexing...
-        px2world(2,end) = px2world(2,end) - sum(px2world(2,1:3));
-        px2world_2x3 = px2world(1:2, [1,2,4]);
+      px2world(1,end) = px2world(1,end) - sum(px2world(1,1:3)); % stupid matlab 1-indexing...
+      px2world(2,end) = px2world(2,end) - sum(px2world(2,1:3));
+      px2world_2x3 = px2world(1:2, [1,2,4]);
 
-        [M, N] = meshgrid(1:size(heights, 1), 1:size(heights,2));
-        sz = size(M);
-        XY = px2world_2x3 * [reshape(M, 1, []); reshape(N, 1, []); ones(1, numel(M))];
-        [Z, normals] = obj.biped.getTerrain().getHeight(XY);
-        X = reshape(XY(1,:), sz);
-        Y = reshape(XY(2,:), sz);
-        Z = reshape(Z, sz);
-        heightmap = iris.terrain_grid.Heightmap(X, Y, Z, normals);
-        obj.iris_planner.addHeightmap(map_id, heightmap);
-      end
+      [M, N] = meshgrid(1:size(heights, 1), 1:size(heights,2));
+      sz = size(M);
+      XY = px2world_2x3 * [reshape(M, 1, []); reshape(N, 1, []); ones(1, numel(M))];
+      [Z, normals] = obj.biped.getTerrain().getHeight(XY);
+      X = reshape(XY(1,:), sz);
+      Y = reshape(XY(2,:), sz);
+      Z = reshape(Z, sz);
+      heightmap = iris.terrain_grid.Heightmap(X, Y, Z, normals);
+      obj.iris_planner.addHeightmap(0, heightmap);
     end
       
 
@@ -215,28 +216,30 @@ classdef CombinedPlanner
 %       disp('handling iris request')
       msg = drc.iris_region_request_t(msg);
       collision_model = obj.biped.getFootstepPlanningCollisionModel();
+      obj.setup_IRIS_heightmap(msg);
+
       regions = iris.TerrainRegion.empty();
-      
-      obj.setup_IRIS_heightmap(msg.map_id);
 
       for j = 1:msg.num_seed_poses
         seed_pose = decodePosition3d(msg.seed_poses(j));
 
         xy_bounds = decodeLinCon(msg.xy_bounds(j));
-        if isempty(obj.iris_planner.getHeightmap(msg.map_id).Z)
+        if isempty(obj.iris_planner.getHeightmap(0).Z)
           if size(xy_bounds.A, 2) == 2
             xy_bounds.A(:,end+1:3) = 0;
+            xy_bounds.A(end+(1:2),:) = [zeros(2), [-1;1]];
+            xy_bounds.b(end+(1:2)) = [4*pi;4*pi];
           end
           regions(end+1) = iris.TerrainRegion(xy_bounds.A, xy_bounds.b, [], [], seed_pose(1:3), [0;0;1]);
         else
-          i0 = obj.iris_planner.xy2ind(msg.map_id, seed_pose(1:2));
+          i0 = obj.iris_planner.xy2ind(0, seed_pose(1:2));
           yaw = seed_pose(6);
           
           regions(end+1) = obj.iris_planner.getCSpaceRegionAtIndex(i0, yaw, collision_model,...
             'xy_bounds', xy_bounds, 'error_on_infeas_start', false);
         end
       end
-      region_list = IRISRegionList(regions);
+      region_list = IRISRegionList(regions, msg.region_id);
 %       profile viewer
     end
 
@@ -246,14 +249,13 @@ classdef CombinedPlanner
       model = model.addRobotFromURDFString(char(msg.urdf.urdf_xml_string));
       heightmap = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(model,[],msg.x_min:msg.x_step:msg.x_max, msg.y_min:msg.y_step:msg.y_max, msg.scanner_height);
 
-      map_img = CombinedPlanner.getDRCMapImage(heightmap, 12345, msg.x_step, msg.y_step, msg.utime);
+      map_img = CombinedPlanner.getDRCMapImage(heightmap, 0, msg.x_step, msg.y_step, msg.utime);
 
     end
 
     function region_list = auto_iris_segmentation(obj, msg)
       msg = drc.auto_iris_segmentation_request_t(msg);
-      map_id = msg.map_id;
-      obj.setup_IRIS_heightmap(map_id);
+      obj.setup_IRIS_heightmap(msg);
       options = struct();
       collision_model = obj.biped.getFootstepPlanningCollisionModel();
       options.seeds = zeros(6,msg.num_seed_poses);
@@ -266,8 +268,8 @@ classdef CombinedPlanner
       if ~isnan(msg.plane_distance_tolerance), options.plane_distance_tolerance = msg.plane_distance_tolerance; end
       if ~isnan(msg.plane_angle_tolerance), options.plane_angle_tolerance = msg.plane_angle_tolerance; end
 
-      regions = obj.iris_planner.findSafeTerrainRegions(map_id, collision_model, options);
-      region_list = IRISRegionList(regions);
+      regions = obj.iris_planner.findSafeTerrainRegions(0, collision_model, options);
+      region_list = IRISRegionList(regions, msg.region_id(1:length(regions)));
     end
   end
 

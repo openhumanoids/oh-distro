@@ -4,9 +4,12 @@ struct auto_iris_segmentation_request_t
 {
 	int64_t utime;
 
-	int64_t map_id;
+	// Robot state to use for map fill
+	robot_state_t initial_state;
 
-	int64_t view_id;
+	// Method to use when filling map data
+	// See drc_footstep_plan_params_t for enum values
+	int8_t map_mode;
 
 	lin_con_t xy_bounds;
 
@@ -14,6 +17,7 @@ struct auto_iris_segmentation_request_t
 	position_3d_t seed_poses[num_seed_poses];
 
 	int8_t max_num_regions;
+	int32_t region_id[max_num_regions];
 
 	double default_yaw;
 	double max_slope_angle;

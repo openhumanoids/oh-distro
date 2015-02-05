@@ -1,11 +1,13 @@
 classdef IRISRegionList
   properties
     iris_regions
+    region_id
   end
 
   methods
-    function obj = IRISRegionList(iris_regions)
+    function obj = IRISRegionList(iris_regions, ids)
       obj.iris_regions = iris_regions;
+      obj.region_id = ids;
     end
 
     function msg = to_iris_region_response_t(obj)
@@ -16,6 +18,7 @@ classdef IRISRegionList
         region_msgs(j) = IRISRegion.to_iris_region_t(obj.iris_regions(j));
       end
       msg.iris_regions = region_msgs;
+      msg.region_id = obj.region_id;
     end
 
     function msg = toLCM(obj)
