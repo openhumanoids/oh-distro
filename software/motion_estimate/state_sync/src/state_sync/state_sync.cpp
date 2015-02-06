@@ -139,7 +139,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
-  enableEncoders(true);
+  enableEncoders(false); // disable for now
 
 
   /// 4. Joint Filtering

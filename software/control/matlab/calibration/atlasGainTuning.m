@@ -24,22 +24,22 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_arm_usy';% <---- joint name 
+joint = 'l_leg_kny';% <---- joint name 
 input_mode = 'position';% <---- force, position
-control_mode = 'position';% <---- force, force+velocity, position
+control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 20;% <--- signal duration (sec)
+T = 25;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.5;% <----  Nm or radians
+amp = 0.7;% <----  Nm or radians
 chirp_f0 = 0.1;% <--- chirp starting frequency
 chirp_fT = 0.4;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
-vals = 15*[0 1];% <----  Nm or radians
+vals = -[0 10 0.5];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 110;
@@ -58,11 +58,11 @@ end
 % load robot model
 options.floating = true;
 options.ignore_friction = false;
-r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
 
 % load fixed-base model
 options.floating = false;
-r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
+r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'));
 
 % setup frames
 state_frame = getStateFrame(r);
@@ -118,7 +118,7 @@ ref_frame.updateGains(gains);
 [qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,1);
 
 % move to desired pos
-atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,1);
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,5);
 
 gains2 = getAtlasGains();
 if any(strcmp(control_mode,{'force','force+velocity'}))
