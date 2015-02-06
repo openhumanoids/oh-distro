@@ -255,5 +255,6 @@ classdef DRCAtlas < Atlas
                                                % frame)
 
     foot_force_sensors = false;
+    floating = true; % for backwards compatibility (floating is always true now)
   end
 end
