@@ -165,6 +165,11 @@ cmd "pose-util" {
     host = "base";
 }
 
+cmd "atlas control panel" {
+    exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/scripts/atlasControlPanel.py";
+    host = "base";
+}
+
 cmd "viewer" {
     exec = "drc-viewer -c drc_robot_02.cfg";
     host = "base";
