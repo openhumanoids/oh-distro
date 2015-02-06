@@ -1,6 +1,7 @@
 classdef CombinedPlanner
   properties
     biped
+    biped_with_collision
     footstep_planner
     iris_planner
     walking_planner
@@ -21,7 +22,7 @@ classdef CombinedPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       r = DRCAtlas([],options);
-      r = removeCollisionGroupsExcept(r,{'heel','toe'});
+      r = r.removeCollisionGroupsExcept({'heel','toe'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
@@ -37,7 +38,7 @@ classdef CombinedPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       options.visual = false; % loads faster
       r = Valkyrie([], options);
-      r = removeCollisionGroupsExcept(r,{'heel','toe'});
+      r = r.removeCollisionGroupsExcept({'heel','toe'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
@@ -54,6 +55,7 @@ classdef CombinedPlanner
       end
 
       obj.biped = biped;
+      obj.biped_with_collision = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 4)); 
       obj.footstep_planner = StatelessFootstepPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
 
@@ -189,10 +191,8 @@ classdef CombinedPlanner
       plan = ConfigurationTraj(qtraj_pp,link_constraints);
     end
     
-    function setup_IRIS_heightmap(obj, request)
-      x0 = obj.biped.getStateFrame().lcmcoder.decode(request.initial_state);
-      q0 = x0(1:obj.biped.getNumPositions());
-      obj.biped = configureDRCTerrain(obj.biped, request.map_mode, q0);
+    function setup_IRIS_heightmap(obj, q0, map_mode)
+      obj.biped = configureDRCTerrain(obj.biped, map_mode, q0);
       [heights, px2world] = obj.biped.getTerrain().map_handle.getHeightData();
 
       px2world(1,end) = px2world(1,end) - sum(px2world(1,1:3)); % stupid matlab 1-indexing...
@@ -215,8 +215,10 @@ classdef CombinedPlanner
 %       profile on
 %       disp('handling iris request')
       msg = drc.iris_region_request_t(msg);
-      collision_model = obj.biped.getFootstepPlanningCollisionModel();
-      obj.setup_IRIS_heightmap(msg);
+      x0 = obj.biped.getStateFrame().lcmcoder.decode(msg.initial_state);
+      q0 = x0(1:obj.biped.getNumPositions());
+      obj.setup_IRIS_heightmap(q0, msg.map_mode);
+      collision_model = obj.biped_with_collision.getFootstepPlanningCollisionModel(q0);
 
       regions = iris.TerrainRegion.empty();
 
@@ -255,9 +257,12 @@ classdef CombinedPlanner
 
     function region_list = auto_iris_segmentation(obj, msg)
       msg = drc.auto_iris_segmentation_request_t(msg);
-      obj.setup_IRIS_heightmap(msg);
+      x0 = obj.biped.getStateFrame().lcmcoder.decode(msg.initial_state);
+      q0 = x0(1:obj.biped.getNumPositions());
+      obj.setup_IRIS_heightmap(q0, msg.map_mode);
+      collision_model = obj.biped_with_collision.getFootstepPlanningCollisionModel(q0);
+
       options = struct();
-      collision_model = obj.biped.getFootstepPlanningCollisionModel();
       options.seeds = zeros(6,msg.num_seed_poses);
       for j = 1:msg.num_seed_poses
         options.seeds(:,j) = decodePosition3d(msg.seed_poses(j));
