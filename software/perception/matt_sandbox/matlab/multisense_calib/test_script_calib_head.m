@@ -4,7 +4,8 @@
 %logfile1 = '/home/antone/data/2013-11-15-multisense-02-calib/lcmlog-2013-11-15-15-39-robot';
 %logfile1 = '/home/antone/data/2013-11-15-multisense-02-calib/lcmlog-2013-11-15-15-32-robot';
 %logfile1 = '/home/antone/data/2014-03-28_multisense-02-calib/lcmlog-2014-03-28.03';
-logfile1 = '/home/antone/data/2014-07-09_multisense-05-calib/lcmlog-2014-07-09.02';
+%logfile1 = '/home/antone/data/2014-07-09_multisense-05-calib/lcmlog-2014-07-09.02';
+logfile1 = '/home/antone/data/2015-01-29_multisense-47-calib/lcmlog-2015-01-29.01';
 addpath('/home/antone/matlab/common');
 setup_lcm;
 
@@ -35,6 +36,25 @@ R = eye(3);
 T = [0;0;0];
 P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
 R = [0,0,1;1,0,0;0,1,0];
+T = [0;0;0];
+P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
+
+
+%% stereo calib data and initial transforms (this is for sensor 47)
+fx = 590.715;
+fy = fx;
+cx = 512;
+cy = 512;
+baseline = 0.0704776;
+K = [fx,0,cx;0,fy,cy;0,0,1];
+
+R = eye(3);
+T = [0;0;0];
+P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
+R = [0,0,1;1,0,0;0,1,0];
+shifts = 1;
+R2 = rpy2rot([pi/2+2*shifts*pi/3,0,0]);
+R = R2*R;
 T = [0;0;0];
 P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
 
@@ -240,7 +260,7 @@ for i = 1:numel(scans)
     pix = p*K';
     pix = pix(:,1:2)./pix(:,[3,3]);
 
-    if (true)
+    if (false)
         imshow(imgs(1).img);
         hold on;
         myplot(pix,'r.');
@@ -259,6 +279,13 @@ figure, plot3k(all_pts(:,1:3),'Marker',{'.',1}); axis equal; view3d
 rgb = impixel(imgs(1).img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
 savepcd('/home/antone/xyzrgb_orig.pcd',xyzrgb');
+
+%% output camera + lidar as cloud
+rgb = impixel(imgs(1).img,pix(:,1),pix(:,2));
+xyzrgb = [all_pts(:,1:3),rgb/255];
+all_pts2 = accum_scans(scans,poses,res.P_post_spindle_to_lidar,res.P_camera_to_pre_spindle,[1,10],[-3*pi,3*pi]);
+xyzrgb = [all_pts2(:,1:3), ones(size(all_pts2,1),3);xyzrgb];
+savepcd('/home/antone/xyzrgb_all.pcd',xyzrgb');
 
 %% show all lidar points superimposed on image
 plot_points_on_image(all_pts(:,1:3),K,imgs(1).img);
@@ -313,14 +340,14 @@ P_camera_to_pre_spindle = inv([pose.R,pose.T(:);0,0,0,1]);
 
 
 %% export
-P_lidar_to_post_spindle = inv(res.P_post_spindle_to_lidar);
-q = rot2quat(P_lidar_to_post_spindle(1:3,1:3));
-fprintf('lidar to post spindle:\n');
-fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_lidar_to_post_spindle(1:3,4));
-fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);
-
 P_pre_spindle_to_camera = inv(res.P_camera_to_pre_spindle);
 q = rot2quat(P_pre_spindle_to_camera(1:3,1:3));
 fprintf('\npre spindle to camera:\n');
 fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_pre_spindle_to_camera(1:3,4));
+fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);
+
+P_lidar_to_post_spindle = inv(res.P_post_spindle_to_lidar);
+q = rot2quat(P_lidar_to_post_spindle(1:3,1:3));
+fprintf('lidar to post spindle:\n');
+fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_lidar_to_post_spindle(1:3,4));
 fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);
