@@ -484,7 +484,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (obj.publish_imu)
         this_state = [atlas_state(1:6); atlas_state(atlas_dofs+1:atlas_dofs+6)];
         last_state = obj.last_floating_state.getData();
-        obj.last_floating_state.setData((this_state+last_state)*0.5);
+        obj.last_floating_state.setData(this_state);
         
         % Gyro 
         gyro = this_state(10:12); %rpydot2angularvel(this_state(4:6),this_state(10:12));
