@@ -66,6 +66,12 @@ r_pure = r_pure.removeCollisionGroupsExcept({'heel','toe'});
 r_complete = r_complete.removeCollisionGroupsExcept({'heel','toe', 'palm', 'knuckle', 'default'});
 r_pure = compile(r_pure);
 
+% we need to add a FT sensor frame
+ft_link_ind = r_complete.getManipulator.findLinkId('r_hand');
+ftframe = RigidBodyFrame(ft_link_ind,[0;0;0],[0;0;0],'force_torque_sensor');
+r_complete = r_complete.addFrame(ftframe);
+r_complete = r_complete.compile();
+
 % Add world if relevant
 if (strcmp(world_name, 'valve_wall'))
   % Add valve DRC environment
@@ -104,8 +110,11 @@ xstar_complete(1:length(xstar)) = xstar;
 xstar_complete = r_complete.resolveConstraints(xstar_complete);
 r_complete = r_complete.setInitialState(xstar_complete);
 
-done = 0
+done = 0;
 while(~done)
+  % mass est
+  sys = mimoCascade(r_complete, MassEstimationBlock(r_complete, r_pure, ftframe));
+  
   % Pass through outputs from robot
   for i=1:r_complete.getOutputFrame.getNumFrames
     outs(i).system = 2;
@@ -113,7 +122,7 @@ while(~done)
   end
   % LCM intrepret Atlas commands
   lcmInputBlock = LCMInputFromAtlasCommandBlock(r_complete,r_pure,options);
-  sys = mimoFeedback(lcmInputBlock, r_complete, [], [], [], outs);
+  sys = mimoFeedback(lcmInputBlock, sys, [], [], [], outs);
   % LCM interpret in for hand
   if (add_hands)
     lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlock(r_complete, options);

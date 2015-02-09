@@ -64,7 +64,6 @@ classdef MassEstimationBlock < MIMODrakeSystem
         % And contact stuff
         z = tsmanip.LCP_cache.data.z;
         if (~isempty(z))
-          z = z/tsmanip.timestep;
           x = tsmanip.LCP_cache.data.x;
           u = tsmanip.LCP_cache.data.u;
 
@@ -125,6 +124,7 @@ classdef MassEstimationBlock < MIMODrakeSystem
 
           % borrowed from ContactForceTorqueSensor, except I look at all
           % contact everywhere
+          z = z/tsmanip.timestep;
           contact_link_idxA = tsmanip.LCP_cache.data.contact_data.idxA;
           contact_link_idxB = tsmanip.LCP_cache.data.contact_data.idxB;
           % prune out those relating to bodies we want to ignore
@@ -220,7 +220,7 @@ classdef MassEstimationBlock < MIMODrakeSystem
           else
             xdn = zeros(6,1);
           end
-          ft_total = xdn_masses; %xdn+xdn_masses;
+          ft_total = xdn_masses - xdn;
           % and now that we finally have FT info...
           % We have forces and torques at what we'll call a final link
           % (in the Atkeson '86 sense)
@@ -255,9 +255,9 @@ classdef MassEstimationBlock < MIMODrakeSystem
           % And solve!
           ft_hist = obj.ft_hist.getData();
           A_hist = obj.A_hist.getData();
-          if size(ft_hist, 1) >= 6*20
-            ft_hist = ft_hist(end-6*20+1:end, :);
-            A_hist = A_hist(end-6*20+1:end, :);
+          if size(ft_hist, 1) >= 6*10
+            ft_hist = ft_hist(end-6*10+1:end, :);
+            A_hist = A_hist(end-6*10+1:end, :);
           end
           f_all = [ft_hist; ft_total];
           A_all = [A_hist; A_current];
