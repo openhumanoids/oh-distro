@@ -2,7 +2,7 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
   methods
     function obj = Valkyrie(urdf, options)
       if nargin < 1 || isempty(urdf)
-        urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/V1/models/V1/urdf/V1_sim_mit_drake.urdf');
+        urdf = strcat(getenv('DRC_PATH'),'/models/valkyrie/V1_sim_mit_drake.urdf');
       else
         typecheck(urdf,'char');
       end

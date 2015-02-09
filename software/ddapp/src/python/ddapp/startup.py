@@ -41,6 +41,7 @@ from ddapp import robotstate
 from ddapp import roboturdf
 from ddapp import robotsystem
 from ddapp import affordancepanel
+from ddapp import raycastdriver
 from ddapp import filterUtils
 from ddapp import footstepsdriver
 from ddapp import footstepsdriverpanel
@@ -150,14 +151,23 @@ if useSpreadsheet:
 
 
 if useIk:
+
+    def onIkStartup(ikServer, startSuccess):
+        if startSuccess:
+            app.getMainWindow().statusBar().showMessage('Planning server started.', 2000)
+        else:
+            app.showErrorMessage('Error detected while starting the matlab planning server. '
+                                 'Please check the output console for more information.', title='Error starting matlab')
+
     ikServer.outputConsole = app.getOutputConsole()
     ikServer.infoFunc = app.displaySnoptInfo
+    ikServer.connectStartupCompleted(onIkStartup)
     startIkServer()
+
 
 if useAtlasDriver:
     atlasdriver.systemStatus.outputConsole = app.getOutputConsole()
     atlasdriverpanel.init(atlasDriver)
-
 
 
 if usePerception:
@@ -197,11 +207,12 @@ if useFootsteps:
 
 
 if useLCMGL:
-    lcmgl.init(view)
-
+    lcmglManager = lcmgl.init(view)
+    app.MenuActionToggleHelper('Tools', 'Renderer - LCM GL', lcmglManager.isEnabled, lcmglManager.setEnabled)
 
 if useDrakeVisualizer:
-    drakeVis = drakevisualizer.DrakeVisualizer(view)
+    drakeVisualizer = drakevisualizer.DrakeVisualizer(view)
+    app.MenuActionToggleHelper('Tools', 'Renderer - Drake', drakeVisualizer.isEnabled, drakeVisualizer.setEnabled)
 
 
 if usePlanning:
@@ -333,7 +344,7 @@ if usePlanning:
                     playPlans, showPose, cameraview, segmentationpanel)
 
     valveDemo = valvedemo.ValvePlannerDemo(robotStateModel, footstepsDriver, manipPlanner, ikPlanner,
-                                      lHandDriver, atlasdriver.driver, perception.multisenseDriver,
+                                      lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
                                       segmentation.segmentValveWallAuto, robotStateJointController,
                                       playPlans, showPose)
 
@@ -496,7 +507,10 @@ if useImageViewDemo:
 
 screengrabberpanel.init(view)
 framevisualization.init(view)
-affordancepanel.init(view, affordanceManager, ikServer, robotStateJointController)
+raycastDriver = raycastdriver.RaycastDriver()
+affordancePanel = affordancepanel.init(view, affordanceManager, ikServer, robotStateJointController, raycastDriver)
+
+
 camerabookmarks.init(view)
 
 
@@ -529,6 +543,37 @@ def disableArmEncoders():
     msg = lcmdrc.utime_t()
     msg.utime = -1
     lcmUtils.publish('ENABLE_ENCODERS', msg)
+
+
+def sendDesiredPumpPsi(desiredPsi):
+    msg = lcmdrc.atlas_pump_command_t()
+    msg.utime = getUtime()
+
+    msg.k_psi_p = 0.0  # Gain on pressure error (A/psi)
+    msg.k_psi_i = 0.0  # Gain on the integral of the pressure error (A/(psi/s)
+    msg.k_psi_d = 0.0  # Gain on the derivative of the pressure error (A/(psi s)
+
+    msg.k_rpm_p = 0.0  # Gain on rpm error (A / rpm)
+    msg.k_rpm_i = 0.0  # Gain on the integral of the rpm error (A / (rpm s))
+    msg.k_rpm_d = 0.0  # Gain on the derivative of the rpm error (A / (rpm/s)
+
+    msg.ff_rpm_d = 0.0  # Feed-forward gain on the desired rpm (A / rpm)
+    msg.ff_psi_d = 0.0  # Feed-forward gain on the desired pressure (A / psi)
+    msg.ff_const = 0.0  # Constant current term (Amps)
+
+    msg.psi_i_max = 0.0  # Max. abs. value to which the integral psi error is clamped (psi s)
+    msg.rpm_i_max = 0.0  # Max. abs. value to which the integral rpm error is clamped (rpm s)
+
+    # Max. command output (A). Default is 60 Amps. 
+    # This value may need to be lower than the default in order to avoid
+    # causing the motor driver to fault.
+    msg.cmd_max = 60
+
+    msg.desired_psi = desiredPsi # default should be 1500
+    msg.desired_rpm = 5000  # default should be 5000
+
+    lcmUtils.publish('ATLAS_PUMP_COMMAND', msg)
+
 
 
 app.setCameraTerrainModeEnabled(view, True)
@@ -658,3 +703,4 @@ if usePFGrasp:
     showImageOverlay()
     hideImageOverlay()
     pfgrasppanel.init(pfgrasper, _prevParent, imageView, imagePicker, cameraview)
+

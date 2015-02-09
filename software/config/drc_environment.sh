@@ -29,7 +29,7 @@ setup_drcsim()
 {
   drcsim_setup_file=/usr/local/share/drcsim/setup.sh
   if [ -f $drcsim_setup_file ]; then
-    source $drcsim_setup_file # this will also source setup.sh for ROS and Gazebo
+   source $drcsim_setup_file # this will also source setup.sh for ROS and Gazebo
   fi
 
   export ROS_PACKAGE_PATH=$DRC_BASE/ros_workspace:$ROS_PACKAGE_PATH
@@ -63,8 +63,8 @@ setup_drc()
   export CXXFLAGS="$CXXFLAGS -Wreturn-type -Wuninitialized"
   export CFLAGS="$CFLAGS -Wreturn-type -Wuninitialized"
 
-  # required by Atlas API v2.11.0
-  export ATLAS_ROBOT_INTERFACE=$DRC_BASE/software/drivers/atlas/AtlasRobotInterface_3.0.0-b2
+  # required by Atlas API runtime
+  export ATLAS_ROBOT_INTERFACE=$DRC_BASE/software/drivers/atlas/AtlasRobotInterface_3.0.0
 }
 
 setup_robot_computers()
@@ -83,7 +83,7 @@ setup_network_sim()
 }
 
 set_drc_base
-setup_drcsim
+#setup_drcsim
 setup_drc
 setup_network_sim
 setup_robot_computers

@@ -116,6 +116,16 @@ cmd "drakeAtlasSimulation Drill Task" {
     host = "base";
 }
 
+cmd "drakeAtlasSimulation Terrain Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 1, 'terrain');\"";
+    host = "base";
+}
+
+cmd "systemwide-tests" {
+    exec = "drc-systemwide-tests";
+    host = "localhost";
+}
+
 script "0.run_all_but_simul_and_controller" {
     start cmd "base_deputy";
     wait ms 1000;
@@ -203,4 +213,24 @@ script "5.run_drill" {
     start group "5.maps";
     start cmd "drakeAtlasSimulation Drill Task";
     start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "6.run_terrain" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Terrain Task";
+    start cmd "AtlasControllerPlusHandWeight";
+}
+
+script "3.run_valve_test" {
+    start cmd "systemwide-tests";
+    start cmd "director";
+    run_script "3.run_valve";
+    wait cmd "systemwide-tests" status "stopped";
 }

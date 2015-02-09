@@ -1,0 +1,23 @@
+<robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="atlas" >
+  
+  <xacro:include filename="atlas_skeleton.urdf" />
+  <xacro:include filename="atlas.transmission" />
+  <xacro:include filename="../../common_components/multisense_sl/multisense_sl.urdf" />
+  <xacro:include filename="hand_force_torque.urdf" />
+
+  <xacro:include filename="../../common_components/robotiq_hand_description/robotiq_hand.xacro" />
+  <xacro:include filename="../../common_components/robotiq_camera/robotiq_camera.urdf.xacro" />
+  <xacro:include filename="../../mit_gazebo_models/hook_description/src/hook_hand_simple.urdf.xacro" />
+
+  <xacro:hook_hand side="left" parent="l_hand_force_torque">
+    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.0 0.0"/>
+  </xacro:hook_hand>
+
+  <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="1">
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
+  </xacro:robotiq_hand>
+  <xacro:robotiq_camera  side_letter="r" reflect="-1" parent="r_hand_force_torque" >
+    <origin xyz="0.0  0.0 0.0" rpy="0.0 0  0.0"/>
+  </xacro:robotiq_camera>
+
+</robot>

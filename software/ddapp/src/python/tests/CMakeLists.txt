@@ -5,6 +5,7 @@ endif()
 include(python-coverage/setup.cmake)
 
 set(python_tests
+  testActionSequence.py
   testAffordanceItems.py
   testAtlasDriver.py
   testCameraView.py
@@ -21,6 +22,7 @@ set(python_tests
   testTableFit.py
   testTableFitStereo.py
   testTaskQueue.py
+  testTeleopPanel.py
   testValveFit.py
   testValveFitStereo.py
   testAmazonPod.py

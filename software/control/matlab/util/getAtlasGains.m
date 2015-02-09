@@ -247,24 +247,25 @@ switch atlas_version
     ff_const = zeros(nu,1);
     ff_qd_d  = zeros(nu,1);
 
+
     % position, proportunal
     % BDI DEFAULT -----------
-    % k_q_p(back_bkz)  = 20.0;
-    % k_q_p(back_bky)  = 60.0;
-    % k_q_p(back_bkx)  = 60.0;
-    % k_q_p(neck_ay)   = 8.0;
-    k_q_p(l_leg_hpz) = 45.0;
-    k_q_p(l_leg_hpx) = 30.0;
+    % k_q_p(back_bkz)  = 10.0;
+    % k_q_p(back_bky)  = 70.0;
+    % k_q_p(back_bkx)  = 70.0;
+    % k_q_p(neck_ay)   = 1000.0;
+    k_q_p(l_leg_hpz) = 60.0;
+    k_q_p(l_leg_hpx) = 78.0;
     k_q_p(l_leg_hpy) = 50.0;
-    k_q_p(l_leg_kny) = 30.0;
-    k_q_p(l_leg_aky) = 1000.0;
-    k_q_p(l_leg_akx) = 1000.0;
+    k_q_p(l_leg_kny) = 140.0;
+    k_q_p(l_leg_aky) = 2000.0;
+    k_q_p(l_leg_akx) = 2000.0;
     % k_q_p(l_arm_shz) = 4.0; 
     % k_q_p(l_arm_shx) = 4.0;  
     % k_q_p(l_arm_ely) = 4.0; 
     % k_q_p(l_arm_elx) = 4.0; 
-    % k_q_p(l_arm_uwy) = 4.0; 
-    % k_q_p(l_arm_mwx) = 4.0; 
+    % k_q_p(l_arm_uwy) = 8.0; 
+    % k_q_p(l_arm_mwx) = 8.0; 
     k_q_p(r_leg_hpz) = k_q_p(l_leg_hpz);
     k_q_p(r_leg_hpx) = k_q_p(l_leg_hpx);
     k_q_p(r_leg_hpy) = k_q_p(l_leg_hpy);
@@ -275,8 +276,8 @@ switch atlas_version
     % k_q_p(r_arm_shx) = 4.0;  
     % k_q_p(r_arm_ely) = 4.0; 
     % k_q_p(r_arm_elx) = 4.0; 
-    % k_q_p(r_arm_uwy) = 4.0; 
-    % k_q_p(r_arm_mwx) = 4.0; 
+    % k_q_p(r_arm_uwy) = 8.0; 
+    % k_q_p(r_arm_mwx) = 8.0; 
 
     % Trials values -----------
     % arm gains are meant to be slightly overdamped
@@ -394,19 +395,19 @@ switch atlas_version
     ff_qd_d(r_leg_aky) = 100.0; 
     ff_qd_d(r_leg_akx) = 100.0; 
 
-    % velocity, feedforward
-    ff_qd(l_arm_shz) = 0.3; % 9-19-13, fc
-    ff_qd(r_arm_shz) = 0.3; % 9-19-13, fc
-    ff_qd(l_arm_shx) = 0.275; % 9-19-13, fc
-    ff_qd(r_arm_shx) = 0.275; % 9-18-13, fc
-    ff_qd(l_arm_ely) = 0.25; % 9-19-13, fc
-    ff_qd(r_arm_ely) = 0.25; % 9-18-13, fc
-    ff_qd(l_arm_elx) = 0.3; % 9-19-13, fc
-    ff_qd(r_arm_elx) = 0.25; % 9-18-13, fc
-    ff_qd(l_arm_uwy) = 0.22; % 9-19-13, fc
-    ff_qd(r_arm_uwy) = 0.22; % 9-18-13, fc
-    ff_qd(l_arm_mwx) = 0.225; % 9-19-13, fc
-    ff_qd(r_arm_mwx) = 0.225; % 9-19-13, fc
+    % % velocity, feedforward
+    % ff_qd(l_arm_shz) = 0.3; % 9-19-13, fc
+    % ff_qd(r_arm_shz) = 0.3; % 9-19-13, fc
+    % ff_qd(l_arm_shx) = 0.275; % 9-19-13, fc
+    % ff_qd(r_arm_shx) = 0.275; % 9-18-13, fc
+    % ff_qd(l_arm_ely) = 0.25; % 9-19-13, fc
+    % ff_qd(r_arm_ely) = 0.25; % 9-18-13, fc
+    % ff_qd(l_arm_elx) = 0.3; % 9-19-13, fc
+    % ff_qd(r_arm_elx) = 0.25; % 9-18-13, fc
+    % ff_qd(l_arm_uwy) = 0.22; % 9-19-13, fc
+    % ff_qd(r_arm_uwy) = 0.22; % 9-18-13, fc
+    % ff_qd(l_arm_mwx) = 0.225; % 9-19-13, fc
+    % ff_qd(r_arm_mwx) = 0.225; % 9-19-13, fc
   case 5
     % fixed input frame ordering
     back_bkz   = 1;

@@ -40,6 +40,8 @@ end
 options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
+sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
+terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 if (add_hands)
   options.hands = 'robotiq';
 end
@@ -47,6 +49,12 @@ if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
            1.2, 0.0, 0.8, 1, 0.30;];
   options.terrain = RigidBodyStepTerrain(boxes);
+elseif (strcmp(world_name, 'terrain'))
+  clear gazeboModelPath;
+  setenv('GAZEBO_MODEL_PATH',sdfDir); 
+  height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(RigidBodyManipulator(terrainSDF),[],-3:.015:10,-2:.015:2,10);
+  options.terrain = height_map;
+  options.use_bullet = false;
 else
   options.terrain = RigidBodyFlatTerrain();
 end
@@ -57,12 +65,11 @@ r_complete = DRCAtlas([],options);
 r_pure = r_pure.removeCollisionGroupsExcept({'heel','toe'});
 r_complete = r_complete.removeCollisionGroupsExcept({'heel','toe', 'palm', 'knuckle', 'default'});
 r_pure = compile(r_pure);
-r_complete = compile(r_complete);
 
 % Add world if relevant
 if (strcmp(world_name, 'valve_wall'))
   % Add valve DRC environment
-  r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/valve_wall.urdf'], [1.0; 0.0; 0.0], [0;0;pi]);
+  r_complete = r_complete.addRobotFromURDF('single_valve_wall.urdf', [1.0; 0.0; 0.0], [0;0;pi]);
   r_complete = compile(r_complete);
 elseif (strcmp(world_name, 'drill_frame'))
   r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/drill_frame.urdf'], [1.0; 0.0; 0], [0;0;pi]);
@@ -74,8 +81,10 @@ elseif (strcmp(world_name, 'manip_ex'))
   options_cyl.floating = true;
   r_complete = r_complete.addRobotFromURDF('table.urdf', [1.225; 0.0; 0.5]);
   r_complete = r_complete.addRobotFromURDF('drill_box.urdf', [0.775; -0.2; 1.2], [], options_cyl);
-  r_complete = compile(r_complete);
+elseif(strcmp(world_name, 'terrain'))
+  r_complete = r_complete.addRobotFromSDF(terrainSDF);
 end
+r_complete = compile(r_complete);
   
 % set initial state to fixed point
 S = load(r_pure.fixed_point_file);

@@ -1,0 +1,7 @@
+<robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="atlas" >
+
+  <xacro:include filename="atlas_skeleton.urdf" />
+  <xacro:include filename="atlas.transmission" />
+  <xacro:include filename="../../common_components/multisense_sl/multisense_sl.urdf" />
+  <xacro:include filename="hand_force_torque.urdf" />
+</robot>
