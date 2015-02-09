@@ -5,9 +5,9 @@ import time
 from lcm import LCM
 from math import *
 import numpy  as np
-home_dir =os.getenv("HOME")
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
+base_dir = os.getenv("DRC_BASE")
+sys.path.append(base_dir + "/software/build/lib/python2.7/site-packages")
+sys.path.append(base_dir + "/software/build/lib/python2.7/dist-packages")
 from drc.robot_state_t import robot_state_t
 from drc.utime_t import utime_t
 from drc.neck_pitch_t import neck_pitch_t
