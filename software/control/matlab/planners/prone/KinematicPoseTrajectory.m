@@ -49,7 +49,7 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
   methods
     
     
-    function obj = KinematicPoseTrajectory(robot,data_struct,is_time_stepping_rigid_body_manipulator)
+    function obj = KinematicPoseTrajectory(robot,data_struct)
       
       % want to be able to handle empty data_struct object
       
@@ -74,7 +74,9 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
       obj = obj@KinematicTrajectoryOptimization(robot,0);
       
       
-      if ~is_time_stepping_rigid_body_manipulator
+      % these methods only applicable to RigidBodyManipulator, won't work
+      % on a TimeSteppingRigidBodyManipulator
+      if isa(robot,'RigidBodyManipulator')
         obj.robot.collision_filter_groups('ignores_ground') = CollisionFilterGroup();
         obj.robot.collision_filter_groups('ground') = CollisionFilterGroup();
         obj.robot = obj.robot.addLinksToCollisionFilterGroup('world','ground',0);
