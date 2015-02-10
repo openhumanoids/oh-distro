@@ -48,6 +48,7 @@ struct CommandLineConfig
     bool verbose;
     bool file_log;
     std::string log_path;
+    std::string id;
 };
 
 

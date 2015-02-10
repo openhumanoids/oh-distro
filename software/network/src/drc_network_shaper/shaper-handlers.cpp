@@ -20,6 +20,7 @@
 #include "footstep-plan-codecs.h"
 #include "manip-plan-codecs.h"
 #include "grasp-codecs.h"
+#include "lzma-codec.h"
 
 using namespace boost; 
 using namespace std;
@@ -104,9 +105,9 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
         // debug log
         using namespace boost::posix_time;
 
-        std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
+        std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + app.cl_cfg.id + "-" + to_iso_string(second_clock::universal_time()) + ".txt";
 
-        std::string goby_debug_latest_symlink = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + "latest.txt";
+        std::string goby_debug_latest_symlink = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + app.cl_cfg.id + "-latest.txt";
         remove(goby_debug_latest_symlink.c_str());
         
         flog_.open(goby_debug_file_name.c_str());        
@@ -154,6 +155,11 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<float> >("presence_bit");
     goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<double> >("presence_bit");
     goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitEnumFieldCodec>("presence_bit");
+
+    std::string config_prefix = "network.";
+    if(!app.cl_cfg.id.empty())
+        config_prefix += std::string(app.cl_cfg.id + ".");
+    
     
     // mfallon, sept 2013
     bool disable_custom_codecs = true;
@@ -161,22 +167,24 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
         load_custom_codecs();
     }
 
-    bool disable_pmd_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, "network.disable_pmd_custom_codecs");
+    bool disable_pmd_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, std::string(config_prefix + "disable_pmd_custom_codecs").c_str());
     if (!disable_pmd_custom_codecs){    
         load_pmd_custom_codecs();
     }
 
     
-    bool disable_ers_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, "network.disable_ers_custom_codecs");
+    bool disable_ers_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, std::string(config_prefix + "disable_ers_custom_codecs").c_str());
     if (!disable_ers_custom_codecs){    
         load_ers_custom_codecs();
     }
 
     
-    bool disable_robot_plan_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, "network.disable_robot_plan_custom_codecs");
+    bool disable_robot_plan_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, std::string(config_prefix + "disable_robot_plan_custom_codecs").c_str());
     if (!disable_robot_plan_custom_codecs){    
         load_robot_plan_custom_codecs();
     }
+
+    load_lzma_custom_codecs();
     
     dccl_->validate<drc::ShaperHeader>();
     
@@ -246,15 +254,19 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     glog.is(VERBOSE) && glog << "subscribed to: [" << subscription << "]" << std::endl;
     udp_driver_.reset(new DRCUDPDriver(&udp_service_));
     
-    max_frame_size_ = bot_param_get_int_or_fail(app.bot_param, "network.udp_frame_size_bytes");
+    max_frame_size_ = bot_param_get_int_or_fail(app.bot_param, std::string(config_prefix + "udp_frame_size_bytes").c_str());
     {
         goby::acomms::protobuf::DriverConfig cfg;
         cfg.set_modem_id(node_);
 
-        char* robot_host = bot_param_get_str_or_fail(app.bot_param, "network.robot.udp_host");
-        char* base_host = bot_param_get_str_or_fail(app.bot_param, "network.base.udp_host");
-        int robot_port = bot_param_get_int_or_fail(app.bot_param, "network.robot.udp_port");
-        int base_port = bot_param_get_int_or_fail(app.bot_param, "network.base.udp_port");
+        char* robot_host = bot_param_get_str_or_fail(app.bot_param,
+                                                     std::string(config_prefix + "robot.udp_host").c_str());
+        char* base_host = bot_param_get_str_or_fail(app.bot_param,
+                                                    std::string(config_prefix + "base.udp_host").c_str());
+        int robot_port = bot_param_get_int_or_fail(app.bot_param,
+                                                   std::string(config_prefix + "robot.udp_port").c_str());
+        int base_port = bot_param_get_int_or_fail(app.bot_param,
+                                                  std::string(config_prefix + "base.udp_port").c_str());
         
         cfg.SetExtension(UDPDriverConfig::max_frame_size, max_frame_size_);
         
@@ -277,11 +289,14 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
         free(base_host);
     }
 
-    fallback_target_rate_bps_ = bot_param_get_int_or_fail(app.bot_param, "network.target_rate_bps");
+    fallback_target_rate_bps_ = bot_param_get_int_or_fail(app.bot_param, std::string(config_prefix + "target_rate_bps").c_str());
     target_rate_bps_ = fallback_target_rate_bps_;
     
-    fallback_seconds_ = bot_param_get_int_or_fail(app.bot_param, "network.fallback_seconds");
-    disallow_rate_change_seconds_ = bot_param_get_int_or_fail(app.bot_param, "network.disallow_rate_change_seconds");
+    fallback_seconds_ = 60;
+    bot_param_get_int(app.bot_param, std::string(config_prefix + "fallback_seconds").c_str(), &fallback_seconds_);
+
+    disallow_rate_change_seconds_ = 10;
+    bot_param_get_int(app.bot_param, std::string(config_prefix +"disallow_rate_change_seconds").c_str(), &disallow_rate_change_seconds_);
     
     bool use_new_timer = true;
     if(!use_new_timer)
@@ -306,20 +321,20 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     {
         timer_.expires_at(next_slot_t_);
         timer_.async_wait(boost::bind(&DRCShaper::begin_slot, this, _1));
-//        std::cout << "timer expires at: " << next_slot_t_ << std::endl;
+        // std::cout << "timer expires at: " << next_slot_t_ << std::endl;
         
     }
 
 
     const int latency_map_size = 2;
     int latency_keys[latency_map_size];
-    int latency_keys_size = bot_param_get_int_array(app.bot_param, "network.latency", latency_keys, latency_map_size);
+    int latency_keys_size = bot_param_get_int_array(app.bot_param, std::string(config_prefix + "latency").c_str(), latency_keys, latency_map_size);
     int throughput[latency_map_size];
-    int throughput_values_size = bot_param_get_int_array(app.bot_param, "network.throughput_bps", throughput, latency_map_size);
+    int throughput_values_size = bot_param_get_int_array(app.bot_param, std::string(config_prefix + "throughput_bps").c_str(), throughput, latency_map_size);
     
     if(latency_keys_size != throughput_values_size)
     {
-        std::cerr << "network.latency/network.throughput_bps pairs improperly configured" << std::endl;
+        std::cerr << config_prefix << "latency/throughput_bps pairs improperly configured" << std::endl;
         exit(EXIT_FAILURE);
     }
     glog.is(VERBOSE) && glog << "Read in latency/throughput pairs: " << std::endl;
@@ -332,7 +347,7 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     
 
     
-    expected_packet_loss_percent_ = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
+    expected_packet_loss_percent_ = bot_param_get_int_or_fail(app.bot_param, std::string(config_prefix + "expected_packet_loss_percent").c_str());
     fec_ = 1/(1-(double)expected_packet_loss_percent_/100);
     glog.is(VERBOSE) && glog << "Forward error correction: " << fec_ << std::endl;
 }
@@ -493,7 +508,9 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     glog.is(VERBOSE) && glog << group("tx") << "Encoded size: " << encoded_size << std::endl;
 
     const int UDP_HEADER_BYTES = 20;
-    next_slot_t_ += boost::posix_time::microseconds(((encoded_size+UDP_HEADER_BYTES)*8.0)/target_rate_bps_*1e6);
+    const int ETHERNET_HEADER_BYTES = 14;
+    
+    next_slot_t_ += boost::posix_time::microseconds(((encoded_size+UDP_HEADER_BYTES+ETHERNET_HEADER_BYTES)*8.0)/target_rate_bps_*1e6);
     timer_.expires_at(next_slot_t_);
     timer_.async_wait(boost::bind(&DRCShaper::begin_slot, this, _1));
     
@@ -945,6 +962,15 @@ int64_t DRCShaperApp::get_current_utime()
 {
     return goby::common::goby_time<goby::uint64>();
 }
+
+void DRCShaper::load_lzma_custom_codecs()
+{
+    custom_codecs_.insert(std::make_pair("FOOTSTEP_PLAN_RESPONSE", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
+    custom_codecs_.insert(std::make_pair("FOOTSTEP_PLAN_REQUEST", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
+    custom_codecs_.insert(std::make_pair("WALKING_CONTROLLER_PLAN_REQUEST", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
+}
+
+
 
 void DRCShaper::load_pmd_custom_codecs()
 {

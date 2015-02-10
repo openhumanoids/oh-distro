@@ -16,8 +16,10 @@ message ProcManWrapper
   enum Host
   {
     BASE = 0;
-    ROBOT = 1;
-    EXTRA = 2;
+    ROBOT_CPU0 = 1;
+    ROBOT_CPU1 = 2;
+    ROBOT_CPU2 = 3;
+    FC = 4;
   }
   required Host host = 2;
   optional bool request_full = 3 [default = false];

@@ -140,6 +140,7 @@ class DRCShaper
     void load_pmd_custom_codecs();
     void load_ers_custom_codecs();    
     void load_robot_plan_custom_codecs();
+    void load_lzma_custom_codecs();
 
     void begin_slot(const boost::system::error_code& e);
 
