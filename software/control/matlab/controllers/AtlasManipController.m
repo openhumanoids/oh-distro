@@ -163,7 +163,7 @@ classdef AtlasManipController < DRCController
       obj.back_joints = back_ind;
       
       % use saved nominal pose 
-      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      d = load(r.fixed_point_file);
       q0 = d.xstar(1:getNumPositions(obj.robot));
       obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
       obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumPositions(r),1));
