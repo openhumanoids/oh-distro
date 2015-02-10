@@ -296,8 +296,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         x = atlas_state;
         fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
         % Scale foot up for the foot that the com is more over
-        com = obj.r.getCOM(atlas_state(1:34));
-        kinsol = doKinematics(obj.r,atlas_state(1:34));
+        com = obj.r.getCOM(atlas_state(1:obj.r.getNumPositions));
+        kinsol = doKinematics(obj.r,atlas_state(1:obj.r.getNumPositions));
         lfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('l_foot'),[0,0,0].');
         rfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('r_foot'),[0,0,0].');
         ldist = lfootpos(1:2)-com(1:2); ldist = ldist.'*ldist;
