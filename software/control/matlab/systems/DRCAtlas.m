@@ -123,10 +123,10 @@ classdef DRCAtlas < Atlas
         obj.hands = 0;
       end
       % Construct state vector itself
-      if (obj.hands == 0 && obj.foot_force_sensors == 0 && ~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
+      if (obj.hands == 0 && ~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
         atlas_state_frame = drcFrames.AtlasState(obj);
       else
-        atlas_state_frame = getStateFrame(obj);
+        atlas_state_frame = obj.manip.getStateFrame();
         atlas_state_frame = replaceFrameNum(atlas_state_frame,1,drcFrames.AtlasState(obj));
       end
       if (obj.hands > 0)
@@ -136,16 +136,18 @@ classdef DRCAtlas < Atlas
           atlas_state_frame = replaceFrameNum(atlas_state_frame,i,drcFrames.HandState(obj,i,'drcFrames.HandState'));
         end
       end
-      if (obj.foot_force_sensors)
-        startind = 1;
-        if (obj.hands > 0)
-          startind = startind + 2;
-        end
-        for i=startind:startind+1
-          atlas_state_frame = replaceFrameNum(atlas_state_frame, i, drcFrames.ForceTorque());
-        end
-      end
+%       if (obj.foot_force_sensors)
+%         lind = obj.getStateFrame.getFrameNumByName('l_footForceTorque_state');
+%         rind = obj.getStateFrame.getFrameNumByName('r_footForceTorque_state');
+%         atlas_state_frame = replaceFrameNum(atlas_state_frame, lind, drcFrames.ForceTorque());
+%         atlas_state_frame = replaceFrameNum(atlas_state_frame, rind, drcFrames.ForceTorque());
+%       end
       tsmanip_state_frame = obj.getStateFrame();
+      if (~isa(tsmanip_state_frame.getFrameByNum(1), 'MultiCoordinateFrame'))
+        tsmanip_state_frame = drcFrames.AtlasState(obj);
+      else
+        tsmanip_state_frame = replaceFrameNum(tsmanip_state_frame,1,drcFrames.AtlasState(obj));
+      end
       if tsmanip_state_frame.dim>atlas_state_frame.dim
         id = findSubFrameEquivalentModuloTransforms(tsmanip_state_frame,atlas_state_frame);
         tsmanip_state_frame.frame{id} = atlas_state_frame;

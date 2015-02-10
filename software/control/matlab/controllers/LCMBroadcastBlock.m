@@ -231,10 +231,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.frame_nums.atlas_state = input_frame.getFrameNumByName('drcFrames.AtlasState');
         obj.frame_nums.hand_state = input_frame.getFrameNumByName('drcFrames.HandState');
         obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
+        obj.frame_nums.left_foot_ft_state = input_frame.getFrameNumByName('l_footForceTorque');
+        obj.frame_nums.right_foot_ft_state = input_frame.getFrameNumByName('r_footForceTorque');
       else
         obj.frame_nums.atlas_state = input_frame;
         obj.frame_nums.hand_state = '';
         obj.frame_nums.hokuyo_state = '';
+        obj.frame_nums.left_foot_ft_state = '';
+        obj.frame_nums.right_foot_ft_state = '';
       end
     end
     
@@ -242,6 +246,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       atlas_state = [];
       hand_state = [];
       laser_state = [];
+      left_ankle_ft_state = zeros(6, 1);
+      right_ankle_ft_state = zeros(6, 1);
       if (length(varargin) == 1)
         % Only atlas state coming in, no need for lots of logic to extract
         % frames
@@ -281,35 +287,37 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         laser_ranges = [];
       end
       
+      % Generate forces in ankle
+      if (obj.frame_nums.left_foot_ft_state)
+        left_ankle_ft_state = varargin{obj.frame_nums.left_foot_ft_state};
+        right_ankle_ft_state = varargin{obj.frame_nums.right_foot_ft_state};
+      else
+        % Get binary foot contact, call it force:
+        x = atlas_state;
+        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
+        % Scale foot up for the foot that the com is more over
+        com = obj.r.getCOM(atlas_state(1:obj.r.getNumPositions));
+        kinsol = doKinematics(obj.r,atlas_state(1:obj.r.getNumPositions));
+        lfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('l_foot'),[0,0,0].');
+        rfootpos = obj.r.forwardKin(kinsol,obj.r.findLinkId('r_foot'),[0,0,0].');
+        ldist = lfootpos(1:2)-com(1:2); ldist = ldist.'*ldist;
+        rdist = rfootpos(1:2)-com(1:2); rdist = rdist.'*rdist;
+        interdist = lfootpos(1:2)-rfootpos(1:2); interdist = interdist.'*interdist;
+        left_ankle_ft_state(3) = fc(2)*(800 + 500*rdist/interdist);
+        right_ankle_ft_state(3) = fc(1)*(800 + 500*ldist/interdist);
+      end
+      
       % See if we just passed our publish-timestep for 
       % the foot contact state message, publish if so (and if
       % we're publishing ground truth anyway)
       if (obj.publish_truth && mod(t, obj.fc_publish_period)  < obj.r.timestep)
-        % Get foot force state
-%         num = inp.getFrameNumByName('drcFrames.ForceTorque');
-%         hand_state = [];
-%         if (length(num)~=2)
-%           lfoot_force = [];
-%           rfoot_force = [];
-%         else
-%           lfoot_force = varargin{num(1)};
-%           rfoot_force = varargin{num(2)};
-%         end;
-%         fc = [norm(lfoot_force); norm(rfoot_force)];
-        % Get binary foot contact, call it force:
-        x = atlas_state;
-        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
-       
-        % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
         foot_contact_est.utime = t*1000*1000;
-        foot_contact_est.left_contact = fc(1);
-        foot_contact_est.right_contact = fc(2);
+        foot_contact_est.left_contact = left_ankle_ft_state(3) > 500;
+        foot_contact_est.right_contact = right_ankle_ft_state(3) > 500;
         foot_contact_est.detection_method = 0;
         obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
       end
-      
-
       
       % What needs to go out:
       num_dofs = length([atlas_state; hand_state]) / 2;
@@ -334,7 +342,12 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.pose.translation.y = atlas_state(2);
         state_msg.pose.translation.z = atlas_state(3);
 
-        q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
+        yaw = atlas_state(6);
+        yaw = mod(yaw, 2*pi);
+        if (yaw > pi)
+          yaw = yaw - 2*pi;
+        end
+        q = rpy2quat([atlas_state(4) atlas_state(5) yaw]);
         state_msg.pose.rotation.w = q(1);
         state_msg.pose.rotation.x = q(2);
         state_msg.pose.rotation.y = q(3);
@@ -346,9 +359,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.twist.linear_velocity.x = atlas_state(atlas_dofs+1);
         state_msg.twist.linear_velocity.y = atlas_state(atlas_dofs+2);
         state_msg.twist.linear_velocity.z = atlas_state(atlas_dofs+3);
-        state_msg.twist.angular_velocity.x = atlas_state(atlas_dofs+4);
-        state_msg.twist.angular_velocity.y = atlas_state(atlas_dofs+5);
-        state_msg.twist.angular_velocity.z = atlas_state(atlas_dofs+6);
+        avel = rpydot2angularvel(atlas_state(4:6), atlas_state(atlas_dofs+4:atlas_dofs+6));
+        state_msg.twist.angular_velocity.x = avel(1);
+        state_msg.twist.angular_velocity.y = avel(2);
+        state_msg.twist.angular_velocity.z = avel(3);
       end
       
       if (obj.publish_truth)
@@ -377,16 +391,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end); 0];
       end
       state_msg.force_torque = drc.force_torque_t();
-      % if we're publishing to satisfy state est we need force sensing from feet
-      if (~obj.publish_truth)
-        % Get binary foot contact, call it force:
-        x = atlas_state;
-        fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
 
-        % pack it up
-        state_msg.force_torque.l_foot_force_z = fc(1)*1000;
-        state_msg.force_torque.r_foot_force_z = fc(2)*1000;
-      end
+      % pack in any foot contact info that we have
+      state_msg.force_torque.l_foot_force_z = left_ankle_ft_state(3);
+      state_msg.force_torque.r_foot_force_z = right_ankle_ft_state(3);
       
       if (~obj.publish_truth)
         obj.lc.publish('ATLAS_STATE', state_msg);
@@ -395,15 +403,24 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       
       % force an update of the body pose too
-      % (shouldn't this be being inferred from EST_ROBOT_STATE?)
+      % which needs to have velocity transformed into the 
+      % body frame
       pose_body_frame = bot_core.pose_t();
       pose_body_frame.utime = t*1000*1000;
       pose_body_frame.pos = [atlas_state(1), atlas_state(2), atlas_state(3)];
       pose_body_frame.vel = [atlas_state(1+atlas_dofs), atlas_state(2+atlas_dofs), atlas_state(3+atlas_dofs)];
+      for i=1:3
+        atlas_state(3+i) = mod(atlas_state(3+i), 2*pi);
+        if (atlas_state(3+i) > pi)
+          atlas_state(3+i) = atlas_state(3+i) - 2*pi;
+        end
+      end
       q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
-      pose_body_frame.vel = quatRotateVec(q, pose_body_frame.vel);
+      pose_body_frame.vel = quatRotateVec(quatConjugate(q), pose_body_frame.vel);
       pose_body_frame.orientation = [q(1) q(2) q(3) q(4)]; % Rotation
-      pose_body_frame.rotation_rate = [atlas_state(4+atlas_dofs) atlas_state(5+atlas_dofs) atlas_state(6+atlas_dofs)];
+      avel = rpydot2angularvel(atlas_state(4:6), atlas_state(atlas_dofs+4:atlas_dofs+6));
+      pose_body_frame.rotation_rate = avel;
+      pose_body_frame.rotation_rate = quatRotateVec(quatConjugate(q), pose_body_frame.rotation_rate);
       pose_body_frame.accel = [0 0 0];
       if (obj.publish_truth)
         obj.lc.publish('POSE_BODY', pose_body_frame);
@@ -470,7 +487,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.last_floating_state.setData(this_state);
         
         % Gyro 
-        gyro = rpydot2angularvel(this_state(4:6),this_state(10:12));
+        gyro = this_state(10:12); %rpydot2angularvel(this_state(4:6),this_state(10:12));
         
         % Get acc by time difference velocities
         dt = obj.getSampleTime;
@@ -478,10 +495,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         acc = acc + [0;0;9.80665];
         
         % Get them in local frame of pelvis plus BODY_TO_IMU rotation
-        quat_body_to_world = rpy2quat(this_state(4:6) + [0; 180; -45+180]*pi/180.);
-        quat_world_to_body = quatConjugate(quat_body_to_world);
-        gyro = quatRotateVec(quat_body_to_world, gyro);
-        acc = quatRotateVec(quat_body_to_world, acc);
+        quat_world_to_imu = rpy2quat(this_state(4:6) + [0;180;-45]*pi/180);
+        %quat_world_to_body = rpy2quat(-this_state(4:6));
+        gyro = quatRotateVec(quat_world_to_imu, gyro);
+        acc = quatRotateVec(quat_world_to_imu, acc);
         
         % This isn't perfectly accurate as the imu is offset from the
         % very core of the body frame by a small amount (BODY_TO_IMU
@@ -492,7 +509,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         imu_msg.gyro = gyro;
         imu_msg.mag = zeros(3, 1);
         imu_msg.accel = acc;
-        imu_msg.quat = quat_body_to_world;
+        imu_msg.quat = [0;0;0;0]; %quat_world_to_imu; % not used? 
         imu_msg.pressure = 0;
         imu_msg.rel_alt = 0;
         obj.lc.publish('MICROSTRAIN_INS', imu_msg);

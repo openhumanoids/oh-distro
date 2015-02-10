@@ -21,3 +21,4 @@ add_subdirectory(src/pseudo_pose_publisher)
 add_subdirectory(src/frames_changer)
 
 add_subdirectory(src/test_tools)
+add_subdirectory(src/accel_from_position)
