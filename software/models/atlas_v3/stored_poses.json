@@ -165,31 +165,37 @@
   "bihanded": [
     {
       "allow_mirror": true, 
-      "description": "Pose before approaching the board", 
+      "description": "board pregrasp", 
       "joints": {
-        "l_arm_elx": 2.3137786388397217, 
-        "l_arm_ely": 2.095440626144409, 
-        "l_arm_mwx": -0.13430340588092804, 
-        "l_arm_shx": -0.845090389251709, 
-        "l_arm_usy": 0.785398006439209, 
-        "l_arm_uwy": 2.742608070373535
+        "r_arm_elx": -1.5795105695724487, 
+        "r_arm_ely": 2.230776309967041, 
+        "r_arm_mwx": 0.7648744583129883, 
+        "r_arm_shx": 0.5976978540420532, 
+        "r_arm_usy": 0.5292156338691711, 
+        "r_arm_uwy": 2.354386329650879
       }, 
-      "name": "Board Pregrasp", 
-      "nominal_handedness": "left"
+      "name": "board pregrasp", 
+      "nominal_handedness": "right"
     }, 
     {
       "allow_mirror": true, 
-      "description": "arm up before approaching the board", 
+      "description": "board pregrasp both", 
       "joints": {
-        "l_arm_elx": 2.210106134414673, 
-        "l_arm_ely": 1.6556549072265625, 
-        "l_arm_mwx": 0.002356200013309717, 
-        "l_arm_shx": -0.3675672113895416, 
-        "l_arm_usy": 0.6605194807052612, 
-        "l_arm_uwy": 1.9509273767471313
+        "l_arm_elx": 1.5795105695724487, 
+        "l_arm_ely": 2.230776309967041, 
+        "l_arm_mwx": -0.7648744583129883, 
+        "l_arm_shx": -0.5976978540420532, 
+        "l_arm_usy": 0.5292156338691711, 
+        "l_arm_uwy": 2.354386329650879, 
+        "r_arm_elx": -1.5795105695724487, 
+        "r_arm_ely": 2.230776309967041, 
+        "r_arm_mwx": 0.7648744583129883, 
+        "r_arm_shx": 0.5976978540420532, 
+        "r_arm_usy": 0.5292156338691711, 
+        "r_arm_uwy": 2.354386329650879
       }, 
-      "name": "board pregrasp", 
-      "nominal_handedness": "left"
+      "name": "board pregrasp both", 
+      "nominal_handedness": "none"
     }
   ], 
   "drill": [
