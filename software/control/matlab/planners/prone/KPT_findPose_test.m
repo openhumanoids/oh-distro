@@ -19,7 +19,6 @@ atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v5/model_convex_hull.ur
 options.floating = true;
 
 robot = RigidBodyManipulator(atlas_urdf,options);
-robot = PoseKinematics.addVisualContactPts(robot);
 robot = robot.setTerrain(RigidBodyFlatTerrain());
 
 % tell it not to ignore collisions between the upper legs, this can
@@ -83,13 +82,14 @@ v.draw(0,q)
 
 
 %% Nice robot and visualizer
-% atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v5/model_minimal_contact.urdf'];
-% 
-% options.floating = true;
-% robot = RigidBodyManipulator(atlas_urdf,options);
-% robot = compile(robot);
-% v = robot.constructVisualizer;
-% v.inspector
-% 
+
+atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v5/model_minimal_contact.urdf'];
+options.floating = true;
+robot = RigidBodyManipulator(atlas_urdf,options);
+robot = kpt.addVisualContactPoints(robot);
+robot = compile(robot);
+v = robot.constructVisualizer;
+v.draw(0,q)
+
 
 

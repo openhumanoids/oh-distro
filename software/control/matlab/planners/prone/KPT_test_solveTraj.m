@@ -7,7 +7,6 @@ data = load('data_KPT_one_knee.mat');
 atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v5/model_convex_hull.urdf'];
 options.floating = true;
 robot = RigidBodyManipulator(atlas_urdf,options);
-robot = PoseKinematics.addVisualContactPts(robot);
 robot = robot.setTerrain(RigidBodyFlatTerrain());
 
 % tell it not to ignore collisions between the upper legs, this can
@@ -81,7 +80,7 @@ atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v5/model_minimal_contac
 
 options.floating = true;
 robot = RigidBodyManipulator(atlas_urdf,options);
-robot = PoseKinematics.addVisualContactPts(robot);
+robot = kpt.addVisualContactPoints(robot);
 robot = compile(robot);
 v = robot.constructVisualizer;
 qtraj = qtraj.setOutputFrame(robot.getPositionFrame);
