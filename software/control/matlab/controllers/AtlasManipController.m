@@ -96,7 +96,7 @@ classdef AtlasManipController < DRCController
       elseif options.controller_type == 4 % use inverse dynamics
 
         % cascade eval block with signal duplicator
-        dupl = SignalDuplicator(drcFrames.AtlasCoordinates(r),2);
+        dupl = SignalDuplicator(atlasFrames.AtlasCoordinates(r),2);
         ins(1).system = 1;
         ins(1).input = 1;
         outs(1).system = 2;
@@ -165,7 +165,7 @@ classdef AtlasManipController < DRCController
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumPositions(obj.robot));
-      obj.controller_data.qtraj = q0;
+      obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
       obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumPositions(r),1));
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
