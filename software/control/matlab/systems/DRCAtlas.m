@@ -121,12 +121,14 @@ classdef DRCAtlas < Atlas
       end
 
       % Sanity check if we don't have hands.
-      if (~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
+      if (strcmp(obj.manip.getStateFrame().getFrameByNum(1).name, 'atlasPosition'))
         obj.hand_right = 0;
         obj.hand_left = 0;
       end
-      % Construct state vector itself
-      if (obj.hand_right == 0 && obj.hand_left == 0 && ~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
+      % Construct state vector itself -- start by replacing the
+      % atlasPosition and atlasVelocity frames with a single
+      % larger state frame
+      if (obj.hand_right == 0 && obj.hand_left == 0 && strcmp(obj.manip.getStateFrame().getFrameByNum(1).name, 'atlasPosition'))
         atlas_state_frame = drcFrames.AtlasState(obj);
       else
         atlas_state_frame = obj.manip.getStateFrame();
@@ -149,21 +151,24 @@ classdef DRCAtlas < Atlas
         end
         atlas_state_frame = replaceFrameNum(atlas_state_frame,id,atlasFrames.HandState(obj,id,'left_atlasFrames.HandState'));
       end
-%       if (obj.foot_force_sensors)
-%         lind = obj.getStateFrame.getFrameNumByName('l_footForceTorque_state');
-%         rind = obj.getStateFrame.getFrameNumByName('r_footForceTorque_state');
-%         atlas_state_frame = replaceFrameNum(atlas_state_frame, lind, drcFrames.ForceTorque());
-%         atlas_state_frame = replaceFrameNum(atlas_state_frame, rind, drcFrames.ForceTorque());
-%       end
+      
       tsmanip_state_frame = obj.getStateFrame();
-      if (~isa(tsmanip_state_frame.getFrameByNum(1), 'MultiCoordinateFrame'))
-        tsmanip_state_frame = drcFrames.AtlasState(obj);
-      else
-        tsmanip_state_frame = replaceFrameNum(tsmanip_state_frame,1,drcFrames.AtlasState(obj));
+      % flatten -- if the state from the manipulator is more than just
+      % atlas state we have to separate them out
+      flatten = {};
+      if (isa(tsmanip_state_frame.getFrameByNum(1), 'MultiCoordinateFrame'))
+        for i=1:length(tsmanip_state_frame.getFrameByNum(1).frame)
+          flatten = [flatten tsmanip_state_frame.getFrameByNum(1).frame(i)];
+        end
+        flatten = [flatten tsmanip_state_frame.frame(2:end)];
+        tsmanip_state_frame = MultiCoordinateFrame(flatten);
       end
       if tsmanip_state_frame.dim>atlas_state_frame.dim
-        id = findSubFrameEquivalentModuloTransforms(tsmanip_state_frame,atlas_state_frame);
-        tsmanip_state_frame.frame{id} = atlas_state_frame;
+        for i=1:length(atlas_state_frame.frame)
+          this_subframe = atlas_state_frame.frame{i};
+          id = findSubFrameEquivalentModuloTransforms(tsmanip_state_frame,this_subframe);
+          tsmanip_state_frame.frame{id} = this_subframe;
+        end
         state_frame = tsmanip_state_frame;
       else
         state_frame = atlas_state_frame;

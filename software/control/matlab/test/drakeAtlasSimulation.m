@@ -5,6 +5,7 @@ if nargin < 2, visualize = false; end
 if nargin < 3, add_hokuyo = true; end
 if nargin < 4, right_hand = 0; end
 if nargin < 5, left_hand = 0; end
+if nargin < 4, add_hands = false; end
 if nargin < 6, world_name = ''; end
 if nargin < 7, box_height = 1.10; end
 
@@ -26,9 +27,7 @@ options.atlas_version = atlas_version;
 options.floating = true;
 options.dt = 0.00333;
 options.hokuyo = false;
-options.foot_force_sensors = false; % This works (you'll have to change
-% LCMBroadcastBlock to broadcast them)
-% but is slow right now.
+options.foot_force_sensors = true; % warning: slow
 options.obstacles = false; % Replaced by step terrain, though the option still works...
 if (right_hand)
   options.hand_right = 'robotiq_weight_only';
@@ -49,9 +48,7 @@ if (add_hokuyo)
   options.hokuyo = true;
   options.hokuyo_spin_rate = 4;
 end
-options.foot_force_sensors = false; % This works (you'll have to change
-% LCMBroadcastBlock to broadcast them)
-% but is slow right now.
+options.foot_force_sensors = foot_force_sensors;
 sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
 terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 
@@ -242,15 +239,15 @@ end
 end
 
 function handDriver = getHandDriver(hand_id, r_complete, handedness, options)
-switch hand_id
-  case 1
-    handDriver = LCMInputFromRobotiqCommandBlock(r_complete, handedness, options);
-  case 2
-    handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, handedness, options);
-  case 3
-    handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, handedness, options);
-  otherwise
-    handDriver = [];
-    disp('unexpected hand type, should be {1, 2, 3}')
-end
+  switch hand_id
+    case 1
+      handDriver = LCMInputFromRobotiqCommandBlock(r_complete, handedness, options);
+    case 2
+      handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, handedness, options);
+    case 3
+      handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, handedness, options);
+    otherwise
+      handDriver = [];
+      disp('unexpected hand type, should be {1, 2, 3}')
+  end
 end
