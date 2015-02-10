@@ -8,6 +8,7 @@ import json
 import time
 import os
 import drc as lcmdrc
+import functools
 
 # allow control-c to kill the program
 import signal
@@ -60,19 +61,12 @@ def capturePostureGoal():
     return lcmWrapper.captureMessage('POSTURE_GOAL', lcmdrc.joint_angles_t)
 
 
-def capturePoseMessage(captureChannel):
-    '''
-    A convenience function that aalls the appropriate capture function for the
-    given captureChannel.  captureChannel should be EST_ROBOT_STATE or POSTURE_GOAL.
-    '''
-
-    captureFunctions = {
-      'EST_ROBOT_STATE' : captureRobotState,
-      'POSTURE_GOAL' : capturePostureGoal
-      }
-
-    assert captureChannel in captureFunctions
-    return captureFunctions[captureChannel]()
+def capturePoseFromMessage(messageCaptureFunction):
+    msg = messageCaptureFunction()
+    joints = dict()
+    for joint, position in zip(msg.joint_name, msg.joint_position):
+        joints[joint] = position
+    return joints
 
 
 def getUtime():
@@ -110,12 +104,12 @@ def getJointSets():
     config = getDirectorConfig()
     jointGroups = config['teleopJointGroups']
 
-
-    jointSets = {
-                  'left arm' : jointGroups['Left Arm'],
-                  'right arm' : jointGroups['Right Arm'],
-                  'back' : jointGroups['Back']
-                }
+    jointSets = {}
+    groups = ['left arm', 'right arm', 'back']
+    for group in jointGroups:
+        groupName = group['name'].lower()
+        if groupName in groups:
+            jointSets[groupName] = group['joints']
 
     return jointSets
 
@@ -188,16 +182,15 @@ def saveConfig(config, filename):
         json.dump(config, outfile, indent=2, sort_keys=True)
 
 
-def storePose(poseType, captureChannel, group, name, description, outFile):
-
+def storePose(poseType, captureMethod, group, name, description, outFile):
 
     jointSet = getJointNamesForPoseType(poseType)
     assert len(jointSet)
 
-    msg = capturePoseMessage(captureChannel)
+    poseJoints = captureMethod['function']()
 
     joints = dict()
-    for joint, position in zip(msg.joint_name, msg.joint_position):
+    for joint, position in poseJoints.iteritems():
         if joint in jointSet:
             joints[joint] = position
 
@@ -490,6 +483,7 @@ class CapturePanel(object):
 
     def __init__(self, ui):
         self.ui = ui
+        self.captureMethods = []
         self.setup()
 
 
@@ -497,6 +491,7 @@ class CapturePanel(object):
         self.ui.connect(self.ui.captureButton, QtCore.SIGNAL('clicked()'), self.onCaptureClicked)
         self.ui.connect(self.ui.groupCombo, QtCore.SIGNAL('currentIndexChanged(const QString&)'), self.onGroupComboChanged)
         self.updateGroupCombo()
+        self.initCaptureMethods()
 
 
     def updateGroupCombo(self):
@@ -544,9 +539,26 @@ class CapturePanel(object):
     def restoreSettings(self, settings):
         self.setSelectedGroup(settings.value('capturePanel/currentGroup', 'General').toString())
 
+
+    def initCaptureMethods(self):
+        self.addCaptureMethod('EST_ROBOT_STATE lcm channel', functools.partial(capturePoseFromMessage, captureRobotState))
+
+    def getCaptureMethod(self, name):
+        for method in self.captureMethods:
+            if method['name'] == name:
+                return method
+
+    def addCaptureMethod(self, name, function):
+        if self.getCaptureMethod(name):
+            raise Exception('Refusing to re-add capture method: %s' % name)
+
+        self.captureMethods.append(dict(name=name, function=function))
+        captureNames = [method['name'] for method in self.captureMethods]
+        updateComboStrings(self.ui.captureChannelCombo, captureNames, self.captureMethods[0]['name'])
+
     def onCaptureClicked(self):
 
-        captureChannel = str(self.ui.captureChannelCombo.currentText())
+        captureMethod = self.getCaptureMethod(self.ui.captureChannelCombo.currentText())
         group = str(self.ui.groupCombo.currentText())
         name = str(self.ui.nameEdit.text())
         description = str(self.ui.descriptionEdit.text())
@@ -570,7 +582,7 @@ class CapturePanel(object):
                 if reply == QtGui.QMessageBox.No:
                     return
 
-        storePose(poseType, captureChannel, group, name, description, outFile)
+        storePose(poseType, captureMethod, group, name, description, outFile)
         self.ui.onPostureAdded()
 
 
