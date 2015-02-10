@@ -49,15 +49,19 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
   methods
     
     
-    function obj = KinematicPoseTrajectory(robot,data_struct)
+    function obj = KinematicPoseTrajectory(robot,data_struct,is_time_stepping_rigid_body_manipulator)
       
       % want to be able to handle empty data_struct object
       
-      if nargin < 2
+      if (nargin < 2 || isempty(data_struct))
         data_struct = struct('contacts',{},'seed',{});
         data_struct(1).contacts = {};
         nq = robot.getNumPositions();
         data_struct(1).seed = zeros(nq,1);
+      end
+      
+      if nargin < 3
+        is_time_stepping_rigid_body_manipulator = 0;
       end
       
       % include something to handle an empty data_struct;
@@ -69,11 +73,15 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
       % which has yet to be properly set
       obj = obj@KinematicTrajectoryOptimization(robot,0);
       
-      obj.robot.collision_filter_groups('ignores_ground') = CollisionFilterGroup();
-      obj.robot.collision_filter_groups('ground') = CollisionFilterGroup();
-      obj.robot = obj.robot.addLinksToCollisionFilterGroup('world','ground',0);
-      obj.robot = obj.robot.addToIgnoredListOfCollisionFilterGroup('ignores_ground','ground');
-      obj.robot = obj.robot.addToIgnoredListOfCollisionFilterGroup('ground','ignores_ground');
+      
+      if ~is_time_stepping_rigid_body_manipulator
+        obj.robot.collision_filter_groups('ignores_ground') = CollisionFilterGroup();
+        obj.robot.collision_filter_groups('ground') = CollisionFilterGroup();
+        obj.robot = obj.robot.addLinksToCollisionFilterGroup('world','ground',0);
+        obj.robot = obj.robot.addToIgnoredListOfCollisionFilterGroup('ignores_ground','ground');
+        obj.robot = obj.robot.addToIgnoredListOfCollisionFilterGroup('ground','ignores_ground');
+      end
+      
       obj.robot = compile(obj.robot);
       
       
@@ -126,7 +134,7 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
     function [obj,constraints] = addSingleContactConstraint(obj,contacts,time_index, add_to_obj)
       
       if nargin < 3
-        warning('Added a QS constraint without specifying a time_index, setting it to 1 by default')
+        warning('Added a contact constraint without specifying a time_index, setting it to 1 by default')
         time_index = 1;
       end
       
@@ -595,7 +603,7 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
         
         % need to figure out which are the variable inds
         % corresponding to q in the InverseKinematics object
-        ik = ik.addCost(cost,[1:obj.nq]);
+        ik = ik.addCost(cost,ik.q_idx);
         
       end
     end
@@ -718,8 +726,7 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
     
     
     % add spheres representing all the contact points on the robot
-    function robot = addVisualContactPts(obj,robot)
-      
+    function robot = addVisualContactPoints(obj,robot)
       if nargin < 2
         robot = obj.robot;
       end
@@ -738,6 +745,8 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
       robot = compile(robot);
     end
     
+    
+    % helper method to add all the collision geometries to the robot
     function robot = addCollisionGeometryToRobot(obj,robot)
       if nargin < 2
         robot = obj.robot;
@@ -757,27 +766,58 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
       robot = compile(robot);
     end
     
-    
-    
-    % add RigidBodySpheres where we have contact points, just for
-    % visualization
-    
-    function robot = addVisualContactPoints(obj,robot)
-      keySet = keys(obj.c);
-      
-      for j=1:length(keySet)
-        name = keySet{j};
+    % this is a helper method for use in the QPControllerContacts stuff
+    function robot = addSpecifiedCollisionGeometryToRobot(obj,contacts)
+      robot = obj.robot;
+      for j = 1:numel(contacts)
+        name = contacts{j};
         link = obj.linkId(name);
         pts = obj.c(name);
         
-        for k=1:size(pts,2)
-          sphere =  RigidBodySphere(0.01,pts(:,k),[0;0;0]);
-          robot = robot.addVisualGeometryToBody(link,sphere);
+        for k = 1:size(pts,2)
+          sphere = RigidBodySphere(0,pts(:,k),[0;0;0]);
+          robot = robot.addCollisionGeometryToBody(link,sphere,name);
         end
+        robot = compile(robot);
+        obj.robot = robot;
       end
-      robot = compile(robot);
     end
-
+    
+    % helper function to generate the supports for a QPControllerData
+    % structure
+    function supports = genControllerDataSupport(obj,robot,q_sol)
+      pose_struct = obj.pose_struct;
+      supports = RigidBodySupportState.empty(0,0);;
+      for j = 1:length(pose_struct)
+        
+        % construct the bodies array
+        bodies = [];
+        contact_groups = {};
+        for k = 1:numel(pose_struct(j).qs_contacts)
+          name = pose_struct(j).qs_contacts{k};
+          bodies(k) = obj.linkId(name);
+          
+          % in my setup name is the same as the contact group
+          contact_groups{k} = {name};
+        end
+        
+        % construct a RBSS object and add it to the supports array
+        supports(j) = RigidBodySupportState(robot,bodies,contact_groups);
+      end
+    end
+    
+    
+    % generates a trajectory with the appropriate spacing
+    function qtraj = genTrajectory(obj,q_sol,dt)
+      if nargin < 3
+        dt = 1;
+      end
+      t_span = [0:dt:dt*(obj.N-1)];
+      qtraj = PPTrajectory(foh(t_span,q_sol));
+    end
+    
+    
+    
   end
   
   
@@ -891,48 +931,7 @@ classdef KinematicPoseTrajectory < KinematicTrajectoryOptimization & ...
       pose_struct(j).seed = data_struct(idx).seed;
       
     end
+    
   end
   
-  
-  
-  
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
