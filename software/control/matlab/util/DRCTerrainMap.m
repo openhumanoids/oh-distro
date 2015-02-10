@@ -124,6 +124,25 @@ classdef DRCTerrainMap < RigidBodyTerrain
       error('not implemented yet, but could be done using the getAsMesh() interface');
     end
 
+    function obj = configureFillAndOverride(obj, biped, map_mode, q0)
+      if map_mode == drc.footstep_plan_params_t.HORIZONTAL_PLANE
+        obj = obj.setFillPlaneFromConfiguration(biped, q0, true);
+        obj = obj.overrideNormals(true);
+        obj = obj.overrideHeights(true);
+      elseif map_mode == drc.footstep_plan_params_t.FOOT_PLANE
+        obj = obj.setFillPlaneFromConfiguration(biped, q0, false);
+        obj = obj.overrideNormals(true);
+        obj = obj.overrideHeights(true);
+      elseif map_mode == drc.footstep_plan_params_t.TERRAIN_HEIGHTS_Z_NORMALS
+        obj = obj.setFillPlaneFromConfiguration(biped, q0, true);
+        obj = obj.overrideNormals(true);
+        obj = obj.overrideHeights(false);
+      elseif map_mode == drc.footstep_plan_params_t.TERRAIN_HEIGHTS_AND_NORMALS
+        obj = obj.setFillPlaneFromConfiguration(biped, q0, false);
+        obj = obj.overrideNormals(false);
+        obj = obj.overrideHeights(false);
+      end
+    end
   end
 
   properties

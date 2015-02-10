@@ -1,9 +1,10 @@
 classdef CombinedPlanner
   properties
     biped
-    biped_with_collision
+    collision_volume_model = []; % used only for IRIS region segmentation
     footstep_planner
     iris_planner
+    iris_terrain_map
     walking_planner
     monitors
     request_channels
@@ -46,6 +47,23 @@ classdef CombinedPlanner
     function obj = withValkyrie()
       obj = CombinedPlanner(CombinedPlanner.constructValkyrie());
     end
+    
+    function r = constructAtlasForCollisionVolumes()
+      % Construct a model of Atlas using the convex hull collision
+      % geometry, and with all collision geometry on the left leg removed.
+      % This is the model we'll use to compute an approximate volume
+      % occupied by the robot when planning footsteps. 
+      r = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 4)); 
+      % Remove collision groups for the left leg (which will presumably be
+      % swinging).
+      leg_link_names = {'l_foot', 'l_talus', 'l_lleg', 'l_uleg', 'l_lglut', 'l_uglut'};
+      leg_body_ids = zeros(1, length(leg_link_names));
+      for j = 1:length(leg_link_names)
+        leg_body_ids(j) = r.findLinkId(leg_link_names{j});
+      end
+      r = r.removeCollisionGroupsExcept({},1,leg_body_ids);
+      r = r.compile();
+    end
   end
 
   methods
@@ -55,12 +73,16 @@ classdef CombinedPlanner
       end
 
       obj.biped = biped;
-      obj.biped_with_collision = Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 4)); 
+      
+      if isa(obj.biped, 'Atlas');
+        obj.collision_volume_model = obj.constructAtlasForCollisionVolumes();
+      end
       obj.footstep_planner = StatelessFootstepPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
 
       checkDependency('iris');
       obj.iris_planner = iris.terrain_grid.Server();
+      obj.iris_terrain_map = DRCTerrainMap(false,struct('name','IRIS Plan','status_code',6,'listen_for_foot_pose',false));
       obj.monitors = {};
       obj.request_channels = {};
       obj.handlers = {};
@@ -192,8 +214,8 @@ classdef CombinedPlanner
     end
     
     function setup_IRIS_heightmap(obj, q0, map_mode)
-      obj.biped = configureDRCTerrain(obj.biped, map_mode, q0);
-      [heights, px2world] = obj.biped.getTerrain().map_handle.getHeightData();
+      obj.iris_terrain_map = obj.iris_terrain_map.configureFillAndOverride(obj.biped, map_mode, q0);
+      [heights, px2world] = obj.iris_terrain_map.map_handle.getHeightData();
 
       px2world(1,end) = px2world(1,end) - sum(px2world(1,1:3)); % stupid matlab 1-indexing...
       px2world(2,end) = px2world(2,end) - sum(px2world(2,1:3));
@@ -202,7 +224,7 @@ classdef CombinedPlanner
       [M, N] = meshgrid(1:size(heights, 1), 1:size(heights,2));
       sz = size(M);
       XY = px2world_2x3 * [reshape(M, 1, []); reshape(N, 1, []); ones(1, numel(M))];
-      [Z, normals] = obj.biped.getTerrain().getHeight(XY);
+      [Z, normals] = obj.iris_terrain_map.getHeight(XY);
       X = reshape(XY(1,:), sz);
       Y = reshape(XY(2,:), sz);
       Z = reshape(Z, sz);
@@ -212,13 +234,16 @@ classdef CombinedPlanner
       
 
     function region_list = iris_region(obj, msg)
-%       profile on
-%       disp('handling iris request')
+      disp('handling iris request')
+      profile on
+      if isempty(obj.collision_volume_model)
+        error('DRC:CombinedPlanner:NoCollisionVolumeModel', 'No collision volume model was constructed. Currently, this is only supported for Atlas');
+      end
       msg = drc.iris_region_request_t(msg);
       x0 = obj.biped.getStateFrame().lcmcoder.decode(msg.initial_state);
       q0 = x0(1:obj.biped.getNumPositions());
       obj.setup_IRIS_heightmap(q0, msg.map_mode);
-      collision_model = obj.biped_with_collision.getFootstepPlanningCollisionModel(q0);
+      collision_model = obj.collision_volume_model.getFootstepPlanningCollisionModel(q0);
 
       regions = iris.TerrainRegion.empty();
 
@@ -242,7 +267,7 @@ classdef CombinedPlanner
         end
       end
       region_list = IRISRegionList(regions, msg.region_id);
-%       profile viewer
+      profile viewer
     end
 
     function map_img = terrain_raycast(obj, msg)
@@ -257,10 +282,13 @@ classdef CombinedPlanner
 
     function region_list = auto_iris_segmentation(obj, msg)
       msg = drc.auto_iris_segmentation_request_t(msg);
+      if isempty(obj.collision_volume_model)
+        error('DRC:CombinedPlanner:NoCollisionVolumeModel', 'No collision volume model was constructed. Currently, this is only supported for Atlas');
+      end
       x0 = obj.biped.getStateFrame().lcmcoder.decode(msg.initial_state);
       q0 = x0(1:obj.biped.getNumPositions());
       obj.setup_IRIS_heightmap(q0, msg.map_mode);
-      collision_model = obj.biped_with_collision.getFootstepPlanningCollisionModel(q0);
+      collision_model = obj.collision_volume_model.getFootstepPlanningCollisionModel(q0);
 
       options = struct();
       options.seeds = zeros(6,msg.num_seed_poses);
@@ -300,7 +328,6 @@ classdef CombinedPlanner
       map_img.data_shift = zmin;
       Z_scaled = (Z - map_img.data_shift) * (MAXINT / zrange);
       Z_scaled = uint8(Z_scaled);
-      max(max(Z_scaled))
       
       map_img.utime = utime;
       map_img.view_id = drc.data_request_t.HEIGHT_MAP_SCENE;
