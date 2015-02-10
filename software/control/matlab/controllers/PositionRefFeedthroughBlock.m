@@ -23,7 +23,7 @@ classdef PositionRefFeedthroughBlock < DrakeSystem
         posref = drcFrames.AtlasPositionRef(r);
       end
   
-      coords = drcFrames.AtlasCoordinates(r);
+      coords = atlasFrames.AtlasCoordinates(r);
       obj = obj@DrakeSystem(0,0,coords.dim,posref.dim,true,true);
       obj = setInputFrame(obj,coords);
       obj = setOutputFrame(obj,posref);

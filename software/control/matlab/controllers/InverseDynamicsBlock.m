@@ -26,7 +26,7 @@ classdef InverseDynamicsBlock < MIMODrakeSystem
       typecheck(options.output_qdd,'logical');
     end
     
-    qddframe = drcFrames.AtlasCoordinates(r);
+    qddframe = atlasFrames.AtlasCoordinates(r);
     input_frame = MultiCoordinateFrame({qddframe,getStateFrame(r)});
 
     if options.output_qdd
