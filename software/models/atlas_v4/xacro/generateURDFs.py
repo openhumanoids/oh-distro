@@ -14,5 +14,7 @@ mit.xacro("atlas_v4_minimal_contact.xacro", "../model_minimal_contact.urdf",
           verbose=True)
 mit.xacro("atlas_v4_convex_hull_open_hands.xacro", "../model_convex_hull.urdf",
           verbose=True)
+mit.xacro("atlas_v4_convex_hull_fingers.xacro", "../model_convex_hull_fingers.urdf",
+          verbose=True)
 mit.xacro("atlas_v4_convex_hull_closed_hands.xacro",
           "../model_convex_hull_closed_hands.urdf", verbose=True)
