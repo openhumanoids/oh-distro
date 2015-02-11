@@ -6,6 +6,11 @@ if nargin < 3, add_hokuyo = true; end
 if nargin < 4, add_hands = false; end
 if nargin < 5, world_name = ''; end
 
+% IF YOU WANT MASS EST LOOK HERE
+% (when this is more fleshed out this will become
+% an argument)
+use_mass_est = false;
+
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
@@ -113,7 +118,11 @@ r_complete = r_complete.setInitialState(xstar_complete);
 done = 0;
 while(~done)
   % mass est
-  sys = mimoCascade(r_complete, MassEstimationBlock(r_complete, r_pure, ftframe));
+  if (use_mass_est)
+    sys = mimoCascade(r_complete, MassEstimationBlock(r_complete, r_pure, ftframe));
+  else
+    sys = r_complete;
+  end
   
   % Pass through outputs from robot
   for i=1:r_complete.getOutputFrame.getNumFrames

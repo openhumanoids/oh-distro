@@ -273,15 +273,16 @@ classdef MassEstimationBlock < MIMODrakeSystem
 
 
           % compose as an LCM message and broadcast
-          % we'll just overload the DRC force_torque message type for now...
-          force_torque_msg = drc.force_torque_t();
-
+          force_torque_msg = drc.six_axis_force_torque_t();
+          force_torque_msg.force = ft_total(1:3); 
+          force_torque_msg.moment = ft_total(4:6);
+          obj.lc.publish('MASS_EST_FORCE_TORQUE', force_torque_msg);
+          
           % pack it up
-          force_torque_msg.r_hand_force = ft_total(1:3); 
-          force_torque_msg.r_hand_torque = ft_total(4:6);
-          force_torque_msg.l_hand_force = com;
-          force_torque_msg.l_foot_force_z = mass;
-          obj.lc.publish('GIZATT_FORCE_TORQUE_MASS_EST_NSTC', force_torque_msg);
+          mass_est_msg = drc.six_axis_force_torque_t();
+          mass_est_msg.force = [mass; 0; 0];
+          mass_est_msg.moment = com;
+          obj.lc.publish('MASS_EST_MASS_COM', mass_est_msg);
 
         end
       end
