@@ -139,7 +139,6 @@ while(~done)
   end
   try
     simulate(sys,[0.0,Inf], xstar_complete, options);
-    done = 1;
   catch err
     disp('caught error in simulate(): restarting sim');
   end
