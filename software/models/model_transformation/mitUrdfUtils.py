@@ -136,7 +136,7 @@ def useObjMeshes(urdf):
 
 
 def useConvexHullMeshes(urdf):
-    for mesh in urdf.findall(".//mesh"):
+    for mesh in urdf.findall(".//collision/geometry/mesh"):
         filename = mesh.get("filename")
         filename_base, filename_ext = os.path.splitext(filename)
         convexHullFilename = filename_base + "_chull" + filename_ext
