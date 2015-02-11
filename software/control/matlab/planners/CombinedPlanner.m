@@ -1,10 +1,8 @@
 classdef CombinedPlanner
   properties
     biped
-    collision_volume_model = []; % used only for IRIS region segmentation
     footstep_planner
     iris_planner
-    iris_terrain_map
     walking_planner
     monitors
     request_channels
