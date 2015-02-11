@@ -65,8 +65,6 @@ classdef IRISPlanner
     end
 
     function region_list = iris_region(obj, msg)
-      disp('handling iris request')
-      profile on
       x0 = obj.biped.getStateFrame().lcmcoder.decode(msg.initial_state);
       q0 = x0(1:obj.biped.getNumPositions());
       obj.setupTerrainMap(q0, msg.map_mode);
@@ -74,6 +72,7 @@ classdef IRISPlanner
 
       regions = iris.TerrainRegion.empty();
 
+      yaws = zeros(size(msg.num_seed_poses));
       for j = 1:msg.num_seed_poses
         seed_pose = decodePosition3d(msg.seed_poses(j));
 
@@ -85,37 +84,55 @@ classdef IRISPlanner
             xy_bounds.b(end+(1:2)) = [4*pi;4*pi];
           end
           regions(end+1) = iris.TerrainRegion(xy_bounds.A, xy_bounds.b, [], [], seed_pose(1:3), [0;0;1]);
+          yaws(j) = seed_pose(6);
         else
           i0 = obj.iris_server.xy2ind(0, seed_pose(1:2));
-          yaw = seed_pose(6);
+          yaws(j) = seed_pose(6);
           
-          regions(end+1) = obj.iris_server.getCSpaceRegionAtIndex(i0, yaw, collision_model,...
+          regions(end+1) = obj.iris_server.getCSpaceRegionAtIndex(i0, yaws(j), collision_model,...
             'xy_bounds', xy_bounds, 'error_on_infeas_start', false);
         end
       end
-      region_list = IRISRegionList(regions, msg.region_id);
-      profile viewer
+      region_list = IRISRegionList(regions, msg.region_id, yaws);
     end
 
     function region_list = auto_iris_segmentation(obj, msg)
       x0 = obj.biped.getStateFrame().lcmcoder.decode(msg.initial_state);
       q0 = x0(1:obj.biped.getNumPositions());
       obj.setupTerrainMap(q0, msg.map_mode);
-      collision_model = obj.collision_model_biped.getFootstepPlanningCollisionModel(q0);
+      if isempty(obj.iris_server.getHeightmap(0).Z)
+        xy_bounds = decodeLinCon(msg.xy_bounds);
+        if size(xy_bounds.A, 2) == 2
+          xy_bounds.A(:,end+1:3) = 0;
+          xy_bounds.A(end+(1:2),:) = [zeros(2), [-1;1]];
+          xy_bounds.b(end+(1:2)) = [4*pi;4*pi];
+        end
+        rsole = obj.biped.feetPosition(q0).right;
+        regions = iris.TerrainRegion(xy_bounds.A, xy_bounds.b, [], [], rsole(1:3), [0;0;1]);
+        yaws = 0;
+      else
+        collision_model = obj.collision_model_biped.getFootstepPlanningCollisionModel(q0);
 
-      options = struct();
-      options.seeds = zeros(6,msg.num_seed_poses);
-      for j = 1:msg.num_seed_poses
-        options.seeds(:,j) = decodePosition3d(msg.seed_poses(j));
+        options = struct();
+        options.seeds = zeros(6,msg.num_seed_poses);
+        for j = 1:msg.num_seed_poses
+          options.seeds(:,j) = decodePosition3d(msg.seed_poses(j));
+        end
+        if ~isnan(msg.default_yaw)
+          options.default_yaw = msg.default_yaw;
+        else
+          options.default_yaw = 0;
+        end
+        if ~isnan(msg.max_slope_angle), options.max_slope_angle = msg.max_slope_angle; end
+        if ~isnan(msg.max_height_variation), options.max_height_variation = msg.max_height_variation; end
+        if ~isnan(msg.plane_distance_tolerance), options.plane_distance_tolerance = msg.plane_distance_tolerance; end
+        if ~isnan(msg.plane_angle_tolerance), options.plane_angle_tolerance = msg.plane_angle_tolerance; end
+        options.max_num_regions = msg.max_num_regions;
+
+        regions = obj.iris_server.findSafeTerrainRegions(0, collision_model, options);
+        yaws = options.default_yaw + zeros(1, length(regions));
       end
-      if ~isnan(msg.default_yaw), options.default_yaw = msg.default_yaw; end
-      if ~isnan(msg.max_slope_angle), options.max_slope_angle = msg.max_slope_angle; end
-      if ~isnan(msg.max_height_variation), options.max_height_variation = msg.max_height_variation; end
-      if ~isnan(msg.plane_distance_tolerance), options.plane_distance_tolerance = msg.plane_distance_tolerance; end
-      if ~isnan(msg.plane_angle_tolerance), options.plane_angle_tolerance = msg.plane_angle_tolerance; end
-
-      regions = obj.iris_server.findSafeTerrainRegions(0, collision_model, options);
-      region_list = IRISRegionList(regions, msg.region_id(1:length(regions)));
+      region_list = IRISRegionList(regions, msg.region_id(1:length(regions)), yaws);
     end
   end
 end
