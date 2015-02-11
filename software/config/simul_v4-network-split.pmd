@@ -4,16 +4,21 @@ group "0.deputies" {
           host = "localhost";
       }
 
-      cmd "robot_cpu0_deputy" {
-          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n robot_cpu0'";
+      cmd "atlas0_deputy" {
+          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n atlas0'";
           host = "localhost";
       }
-      cmd "robot_cpu1_deputy" {
-          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n robot_cpu1'";
+      cmd "atlas1_deputy" {
+          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n atlas1'";
           host = "localhost";
       }
-      cmd "robot_cpu2_deputy" {
-          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n robot_cpu2'";
+      cmd "atlas2_deputy" {
+          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n atlas2'";
+          host = "localhost";
+      }
+
+      cmd "field_deputy" {
+          exec = "bash -c 'LCM_DEFAULT_URL=$LCM_URL_DRC_ROBOT bot-procman-deputy -n field'";
           host = "localhost";
       }
 
@@ -44,11 +49,11 @@ group "1.network" {
 group "2.params_and_model_pub" {
     cmd "pserver" {
         exec = "bot-param-server $DRC_BASE/software/config/simul_robot.cfg";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
     cmd "model_LR_RR" {
         exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v4/model_LR_RR.urdf";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
 }
 
@@ -56,16 +61,16 @@ group "3.state_mit" {
 
     cmd "joints2frames" {
         exec = "drc-joints2frames -b";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
 
     cmd "state-sync" {
         exec = "drc-state-sync -b -a 4";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
     cmd "fusion" {
         exec = "se-fusion";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
 
 }
@@ -75,24 +80,24 @@ group "4.plan_and_control" {
 
     cmd "AtlasControllerNoHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 4); \"";
-        host = "robot_cpu1";
+        host = "atlas1";
         stop_signal = 15;
     }
     cmd "AtlasControllerPlusHandWeight" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 2, 4); \"";
-        host = "robot_cpu1";
+        host = "atlas1";
         stop_signal = 15;
     }
 
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],4); p.run();\"";
-       host = "robot_cpu1";
+       host = "atlas1";
        stop_signal = 15;
     }
 
     cmd "BaseBDIStepTranslator" {
         exec = "drc-bdi-step-translator";
-        host = "robot_cpu0";
+        host = "field";
     }
 }
 
@@ -100,17 +105,17 @@ group "5.maps" {
 
     cmd "data-request-server" {
         exec = "data-request-server";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
 
     cmd "maps-server" {
         exec = "maps-server";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
 
     cmd "lidar-passthrough" {
         exec = "drc-lidar-passthrough -c 0.06 -a 4";
-        host = "robot_cpu0";
+        host = "atlas0";
     }
 }
 
@@ -126,7 +131,7 @@ cmd "director" {
 
 cmd "robot-side-director" {
     exec = "drake-designer -c simul_robot.cfg -v4";
-    host = "robot_cpu0";
+    host = "atlas0";
 }
 
 cmd "viewer" {
@@ -141,41 +146,41 @@ group "spy" {
     }
     cmd "robot-spy" {
        exec = "bot-spy";
-       host = "robot_cpu0";
+       host = "atlas0";
     }
 }
 
 cmd "drakeAtlasSimulation Walking Flat" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 0, 1, 0, '');\"";
-    host = "robot_cpu2";
+    host = "atlas2";
     stop_signal = 15;
 
 }
 cmd "drakeAtlasSimulation Walking Two Steps" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 0, 1, 0, 'steps');\"";
-    host = "robot_cpu2";
+    host = "atlas2";
     stop_signal = 15;
 
 }
 cmd "drakeAtlasSimulation Manip Example" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 1, 'manip_ex');\"";
-    host = "robot_cpu2";
+    host = "atlas2";
     stop_signal = 15;
 
 }
 cmd "drakeAtlasSimulation Valve Task" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 1, 'valve_wall');\"";
-    host = "robot_cpu2";
+    host = "atlas2";
     stop_signal = 15;
 }
 cmd "drakeAtlasSimulation Door Task" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 1, 'door');\"";
-    host = "robot_cpu2";
+    host = "atlas2";
     stop_signal = 15;
 }
 cmd "drakeAtlasSimulation Drill Task" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 1, 'drill_frame');\"";
-    host = "robot_cpu2";
+    host = "atlas2";
     stop_signal = 15;
 }
 
