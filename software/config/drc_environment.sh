@@ -71,16 +71,21 @@ setup_robot_computers()
 {
   if [[ "paladin-04|paladin-05|paladin-06|paladin-10|paladin-12" =~ $(hostname) ]]
   then
-    export LCM_DEFAULT_URL='udpm://239.255.76.67:7667?ttl=1'
+    export LCM_DEFAULT_URL='udpm://239.255.76.68:7668?ttl=1'
   fi
 }
 
+setup_network_sim()
+{
+    export LCM_URL_DRC_ROBOT="udpm://239.255.76.68:7668?ttl=0"
+    export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=0" 
+}
 
 set_drc_base
 #setup_drcsim
 setup_drc
+setup_network_sim
 setup_robot_computers
-
 
 # aliases
 alias cddrc='cd $DRC_BASE/software'

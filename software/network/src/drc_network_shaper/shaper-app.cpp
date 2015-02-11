@@ -86,13 +86,19 @@ std::string DRCShaperApp::parse_direction(string direction, bool direction_bool)
     std::vector<int> buffer_sizes;
     std::vector<int> prioritys;
 
+    
+    std::string config_prefix = "network.";
+    if(!cl_cfg.id.empty())
+        config_prefix += std::string(cl_cfg.id + ".");
+
+
     // currently allow three groups "a", "b", "c", "d" increase
     // end to increase number of groups
     for(char c = 'a', end = 'd'; c <= end; ++c)
     {
         char channels_key[10000], frequency_key[10000];
-        std::string channel_key_name = std::string("network.%s.channels_") + std::string(1, c);
-        std::string frequency_key_name = std::string("network.%s.frequency_") + std::string(1,c);
+        std::string channel_key_name = config_prefix + std::string("%s.channels_") + std::string(1, c);
+        std::string frequency_key_name = config_prefix + std::string("%s.frequency_") + std::string(1,c);
         
         sprintf(channels_key, channel_key_name.c_str(), direction.c_str() );
         sprintf(frequency_key, frequency_key_name.c_str(), direction.c_str() );
@@ -104,7 +110,8 @@ std::string DRCShaperApp::parse_direction(string direction, bool direction_bool)
         } 
 
         std::vector<double> frequencys_local;
-        double frequency_value_a= bot_param_get_double_or_fail(bot_param, frequency_key);
+        double frequency_value_a = 0;
+        bot_param_get_double(bot_param, frequency_key, &frequency_value_a);
         frequencys_local.assign (channels_local.size(),frequency_value_a);
 //std::cout << frequency_value_a << " A===================================\n";
         channels.insert(channels.end(), channels_local.begin(), channels_local.end());
@@ -112,19 +119,21 @@ std::string DRCShaperApp::parse_direction(string direction, bool direction_bool)
 
         // buffer size
         char buffer_key[10000];
-        std::string buffer_key_name =  std::string("network.%s.buffer_size_") + std::string(1,c);
+        std::string buffer_key_name =  config_prefix + std::string("%s.buffer_size_") + std::string(1,c);
         sprintf(buffer_key, buffer_key_name.c_str(), direction.c_str() );
         std::vector<int> buffer_sizes_local;
-        int buffer_size= bot_param_get_int_or_fail(bot_param, buffer_key);
+        int buffer_size = 1;
+        bot_param_get_int(bot_param, buffer_key, &buffer_size);
         buffer_sizes_local.assign (channels_local.size(), buffer_size);
         buffer_sizes.insert(buffer_sizes.end(), buffer_sizes_local.begin(), buffer_sizes_local.end());
 
         // priority
         char priority_key[10000];
-        std::string priority_key_name =  std::string("network.%s.priority_") + std::string(1,c);
+        std::string priority_key_name =  config_prefix + std::string("%s.priority_") + std::string(1,c);
         sprintf(priority_key, priority_key_name.c_str(), direction.c_str() );
         std::vector<int> priority_local;
-        int priority= bot_param_get_double_or_fail(bot_param, priority_key);
+        double priority = 0;
+        bot_param_get_double(bot_param, priority_key, &priority);
         priority_local.assign (channels_local.size(), priority);
         prioritys.insert(prioritys.end(), priority_local.begin(), priority_local.end());
     }    
@@ -237,10 +246,12 @@ int main (int argc, char ** argv) {
     cl_cfg.verbose = false;
     cl_cfg.file_log = false;
     cl_cfg.log_path = ".";
-  
+    cl_cfg.id = "";
+    
     ConciseArgs opt(argc, (char**)argv);
     opt.add(cl_cfg.config_file, "c", "config_file", "Config Filename");
     opt.add(cl_cfg.role, "r", "role", "Role: robot, base or both (local system mode)");
+    opt.add(cl_cfg.id, "i", "id", "Unique ID of drc-network-shaper (for running multiple shapers)");
     opt.add(cl_cfg.enable_gui, "g", "gui", "Enable NCurses GUI (for debugging)");
     opt.add(cl_cfg.verbose, "v", "verbose", "Enable verbose terminal output");
     opt.add(cl_cfg.file_log, "l", "log", "Log verbose output to file");
