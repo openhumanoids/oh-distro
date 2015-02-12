@@ -18,15 +18,15 @@ options.floating = true;
 options.dt = 0.00333;
 options.hokuyo = false;
 options.foot_force_sensors = false; % This works (you'll have to change
-                                    % LCMBroadcastBlock to broadcast them)
-                                    % but is slow right now.
+% LCMBroadcastBlock to broadcast them)
+% but is slow right now.
 options.obstacles = false; % Replaced by step terrain, though the option still works...
 if (add_hands)
   options.hands = 'robotiq_weight_only';
 end
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
-           1.2, 0.0, 0.8, 1, 0.30;];
+    1.2, 0.0, 0.8, 1, 0.30;];
   options.terrain = RigidBodyStepTerrain(boxes);
 else
   options.terrain = RigidBodyFlatTerrain();
@@ -38,8 +38,8 @@ if (add_hokuyo)
   options.hokuyo_spin_rate = 4;
 end
 options.foot_force_sensors = false; % This works (you'll have to change
-                                    % LCMBroadcastBlock to broadcast them)
-                                    % but is slow right now.
+% LCMBroadcastBlock to broadcast them)
+% but is slow right now.
 sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
 terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 if (add_hands)
@@ -47,11 +47,11 @@ if (add_hands)
 end
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
-           1.2, 0.0, 0.8, 1, 0.30;];
+    1.2, 0.0, 0.8, 1, 0.30;];
   options.terrain = RigidBodyStepTerrain(boxes);
 elseif (strcmp(world_name, 'terrain'))
   clear gazeboModelPath;
-  setenv('GAZEBO_MODEL_PATH',sdfDir); 
+  setenv('GAZEBO_MODEL_PATH',sdfDir);
   height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(RigidBodyManipulator(terrainSDF),[],-3:.015:10,-2:.015:2,10);
   options.terrain = height_map;
   options.use_bullet = false;
@@ -85,7 +85,7 @@ elseif(strcmp(world_name, 'terrain'))
   r_complete = r_complete.addRobotFromSDF(terrainSDF);
 end
 r_complete = compile(r_complete);
-  
+
 % set initial state to fixed point
 S = load(r_pure.fixed_point_file);
 xstar = S.xstar;
@@ -104,36 +104,42 @@ xstar_complete(1:length(xstar)) = xstar;
 xstar_complete = r_complete.resolveConstraints(xstar_complete);
 r_complete = r_complete.setInitialState(xstar_complete);
 
-% Pass through outputs from robot
-for i=1:r_complete.getOutputFrame.getNumFrames
-  outs(i).system = 2;
-  outs(i).output = i;
+done = 0
+while(~done)
+  % Pass through outputs from robot
+  for i=1:r_complete.getOutputFrame.getNumFrames
+    outs(i).system = 2;
+    outs(i).output = i;
+  end
+  % LCM intrepret Atlas commands
+  lcmInputBlock = LCMInputFromAtlasCommandBlock(r_complete,r_pure,options);
+  sys = mimoFeedback(lcmInputBlock, r_complete, [], [], [], outs);
+  % LCM interpret in for hand
+  if (add_hands)
+    lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlock(r_complete, options);
+    sys = mimoFeedback(lcmRobotiqInputBlock, sys, [], [], [], outs);
+  end
+  
+  % LCM broadcast out
+  broadcast_opts = options;
+  broadcast_opts.publish_truth = 0;
+  broadcast_opts.publish_imu = 1;
+  lcmBroadcastBlock = LCMBroadcastBlock(r_complete,r_pure, broadcast_opts);
+  sys = mimoCascade(sys, lcmBroadcastBlock);
+  
+  % Visualize if desired
+  if visualize
+    v = r_complete.constructVisualizer;
+    v.display_dt = 0.01;
+    S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
+    output_select(1).system=1;
+    output_select(1).output=1;
+    sys = mimoCascade(sys,v,[],[],output_select);
+    warning(S);
+  end
+  try
+    simulate(sys,[0.0,Inf], xstar_complete, options);
+  catch err
+    disp('caught error in simulate(): restarting sim');
+  end
 end
-% LCM intrepret Atlas commands
-lcmInputBlock = LCMInputFromAtlasCommandBlock(r_complete,r_pure,options);
-sys = mimoFeedback(lcmInputBlock, r_complete, [], [], [], outs);
-% LCM interpret in for hand
-if (add_hands)
-  lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlock(r_complete, options);
-  sys = mimoFeedback(lcmRobotiqInputBlock, sys, [], [], [], outs);
-end
-
-% LCM broadcast out
-broadcast_opts = options;
-broadcast_opts.publish_truth = 0;
-broadcast_opts.publish_imu = 1;
-lcmBroadcastBlock = LCMBroadcastBlock(r_complete,r_pure, broadcast_opts);
-sys = mimoCascade(sys, lcmBroadcastBlock);
-
-% Visualize if desired
-if visualize
-  v = r_complete.constructVisualizer;
-  v.display_dt = 0.01;
-  S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
-  output_select(1).system=1;
-  output_select(1).output=1;
-  sys = mimoCascade(sys,v,[],[],output_select);
-  warning(S);
-end
-
-simulate(sys,[0.0,Inf], xstar_complete, options);
