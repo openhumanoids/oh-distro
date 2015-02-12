@@ -40,7 +40,7 @@ add_executable(drc-network-shaper
   ${ldpc_sources}
   ${PROTO_SRCS} ${PROTO_HDRS})
 
-target_link_libraries (drc-network-shaper boost_system boost_thread boost_date_time goby_acomms goby_common dccl_arithmetic protobuf boost_signals)
+target_link_libraries (drc-network-shaper boost_system boost_thread boost_date_time goby_acomms goby_common dccl_arithmetic protobuf boost_signals lzma)
 pods_use_pkg_config_packages(drc-network-shaper lcm 
              bot2-param-client path-util
 	     lcmtypes_drc_lcmtypes eigen3)

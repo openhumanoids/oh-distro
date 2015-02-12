@@ -24,7 +24,7 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_kny';% <---- joint name 
+joint = 'l_leg_aky';% <---- joint name 
 input_mode = 'position';% <---- force, position
 control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
@@ -33,9 +33,9 @@ signal = 'chirp';% <----  zoh, foh, chirp
 T = 25;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.7;% <----  Nm or radians
+amp = 0.25;% <----  Nm or radians
 chirp_f0 = 0.1;% <--- chirp starting frequency
-chirp_fT = 0.4;% <--- chirp ending frequency
+chirp_fT = 0.5;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
@@ -57,7 +57,7 @@ end
 
 % load robot model
 options.floating = true;
-options.ignore_friction = false;
+options.ignore_friction = true;
 r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
 
 % load fixed-base model

@@ -16,8 +16,10 @@ message ProcManWrapper
   enum Host
   {
     BASE = 0;
-    ROBOT = 1;
-    EXTRA = 2;
+    ATLAS0 = 1;
+    ATLAS1 = 2;
+    ATLAS2 = 3;
+    FIELD = 4;
   }
   required Host host = 2;
   optional bool request_full = 3 [default = false];

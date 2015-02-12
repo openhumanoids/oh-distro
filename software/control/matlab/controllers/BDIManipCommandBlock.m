@@ -22,7 +22,7 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
         typecheck(options,'struct');
       end
 
-      coords = drcFrames.AtlasCoordinates(r);
+      coords = atlasFrames.AtlasCoordinates(r);
       input_frame = MultiCoordinateFrame({coords,r.getStateFrame});
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,coords,true,true);

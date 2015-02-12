@@ -119,11 +119,23 @@ classdef CombinedPlanner
           if isempty(msg)
             continue
           end
-          plan = obj.handlers{j}(msg);
-          if ismethod(plan, 'toLCM')
-            plan = plan.toLCM();
+          try
+            plan = obj.handlers{j}(msg);
+            if ismethod(plan, 'toLCM')
+              plan = plan.toLCM();
+            end
+            obj.lc.publish(obj.response_channels{j}, plan);
+          catch e
+            report = e.getReport();
+            disp(report)
+            msg = drc.system_status_t();
+            msg.utime = get_timestamp_now();
+            msg.system = drc.system_status_t.PLANNING_BASE;
+            msg.importance = drc.system_status_t.VERY_IMPORTANT;
+            msg.frequency = drc.system_status_t.LOW_FREQUENCY;
+            msg.value = report;
+            obj.lc.publish('SYSTEM_STATUS', msg);
           end
-          obj.lc.publish(obj.response_channels{j}, plan);
         end
       end
     end

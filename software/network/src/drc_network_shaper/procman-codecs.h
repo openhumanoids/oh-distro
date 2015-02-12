@@ -10,9 +10,12 @@
 
 #include "goby/common/time.h"
 
+#include "lzma-string.h"
+
 enum { RESEND_SECONDS = 5 };
 enum { NO_CHANGE_PERIOD = 5 }; // seconds between no-change messages
-    
+enum { FULL_RESEND_SECONDS = 10 };
+
 
 
 template<typename LCMType, typename DiffType>
@@ -21,7 +24,8 @@ struct State
 State() : has_last_full_(false),
         need_to_send_ack_(false),
         has_last_diff_(false),
-        last_no_change_time_(0)
+        last_no_change_time_(0),
+        last_full_time_(0)
         { }
     
     LCMType last_full_;
@@ -32,6 +36,7 @@ State() : has_last_full_(false),
     bool has_last_diff_;
     DiffType diff_waiting_ack_;
     double last_no_change_time_;
+    double last_full_time_;
 };
 
 
@@ -86,21 +91,36 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             // send a FULL
             else if(!host_info.has_last_full_ || !OtherCodec::host_info_[lcm_object.host].has_last_full_)
             {
-                if(!OtherCodec::host_info_[lcm_object.host].has_last_full_)
-                    wrapper.set_request_full(true);
-                
-                // don't count empty messages as a proper "full"
-                if(lcm_object.ncmds > 0)
+                double now = goby::common::goby_time<double>();
+                if(now > FULL_RESEND_SECONDS + host_info.last_full_time_)
                 {
-                    host_info.last_full_ = lcm_object;
-                    host_info.has_last_full_ = true;
+                    glog.is(VERBOSE) && glog << "Sending full message" << std::endl;
+                    host_info.last_full_time_ = now;
+                    
+                    if(!OtherCodec::host_info_[lcm_object.host].has_last_full_)
+                        wrapper.set_request_full(true);
+                
+                    // don't count empty messages as a proper "full"
+                    if(lcm_object.ncmds > 0)
+                    {
+                        host_info.last_full_ = lcm_object;
+                        host_info.has_last_full_ = true;
+                    }
+                
+                    wrapper.set_type(drc::ProcManWrapper::FULL);
+                    
+                    std::vector<char> lcm_encoded;
+                    lcm_encoded.resize(lcm_object.getEncodedSize());
+                    lcm_object.encode(&lcm_encoded[0], 0, lcm_encoded.size());
+                    
+                    wrapper.set_data(CompressWithLzma(std::string(lcm_encoded.begin(), lcm_encoded.end()),
+                                                      6));
                 }
-                
-                wrapper.set_type(drc::ProcManWrapper::FULL);
-                
-                wrapper.mutable_data()->resize(lcm_object.getEncodedSize());
-                lcm_object.encode(&(*wrapper.mutable_data())[0], 0, wrapper.data().size());
-
+                else
+                {
+                    glog.is(VERBOSE) && glog << "Waiting to resend full message" << std::endl;
+                    return false;
+                }
             }
             // send a DIFF
             else
@@ -190,8 +210,10 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             State<LCMType, DiffType>& host_info = Codec::host_info_[host];
 
             if(wrapper.type() == drc::ProcManWrapper::FULL)
-            {    
-                lcm_object.decode(&wrapper.data()[0], 0, wrapper.data().size());        
+            {
+    
+                std::string lcm_encoded = DecompressWithLzma(wrapper.data());
+                lcm_object.decode(lcm_encoded.data(), 0, lcm_encoded.size());        
 
                 // if we already have a full message,
                 // assume this is a signal to reset the full messages

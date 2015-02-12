@@ -24,6 +24,7 @@ from ddapp import drilldemo
 from ddapp import tabledemo
 from ddapp import valvedemo
 from ddapp import continuouswalkingdemo
+from ddapp import walkingtestdemo
 from ddapp import ik
 from ddapp import ikplanner
 from ddapp import objectmodel as om
@@ -136,7 +137,6 @@ useControllerRate = True
 useForceDisplay = False
 useSkybox = False
 useDataFiles = True
-useContinuousWalking = False
 usePFGrasp = True
 
 
@@ -297,7 +297,7 @@ if usePlanning:
     def sendFusedHeightRequest(repeatTime=0.0):
         sendDataRequest(lcmdrc.data_request_t.FUSED_HEIGHT, repeatTime)
 
-    app.addToolbarMacro('scene height', sendSceneHeightRequest)
+    #app.addToolbarMacro('scene height', sendSceneHeightRequest)
     #app.addToolbarMacro('scene depth', sendSceneDepthRequest)
     #app.addToolbarMacro('stereo height', sendFusedHeightRequest)
     #app.addToolbarMacro('stereo depth', sendFusedDepthRequest)
@@ -314,7 +314,9 @@ if usePlanning:
     def drillTrackerOff():
         om.findObjectByName('Multisense').model.showRevolutionCallback = None
 
-
+    def fitPosts():
+        segmentation.fitVerticalPosts(segmentation.getCurrentRevolutionData())
+        affordancePanel.onGetRaycastTerrain()
 
     ikPlanner.addPostureGoalListener(robotStateJointController)
 
@@ -344,10 +346,14 @@ if usePlanning:
                     playPlans, showPose, cameraview, segmentationpanel)
 
     valveDemo = valvedemo.ValvePlannerDemo(robotStateModel, footstepsDriver, manipPlanner, ikPlanner,
-                                      lHandDriver, atlasdriver.driver, perception.multisenseDriver,
+                                      lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
                                       segmentation.segmentValveWallAuto, robotStateJointController,
                                       playPlans, showPose)
 
+    walkingDemo = walkingtestdemo.walkingTestDemo(robotStateModel, playbackRobotModel, teleopRobotModel, footstepsDriver, manipPlanner, ikPlanner,
+                    lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
+                    robotStateJointController,
+                    playPlans, showPose)
 
     splinewidget.init(view, handFactory, robotStateModel)
 
@@ -703,4 +709,3 @@ if usePFGrasp:
     showImageOverlay()
     hideImageOverlay()
     pfgrasppanel.init(pfgrasper, _prevParent, imageView, imagePicker, cameraview)
-
