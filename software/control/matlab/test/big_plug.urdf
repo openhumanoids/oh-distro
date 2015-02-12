@@ -1,0 +1,78 @@
+<robot
+  name="big_plug">
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass value="0.138" />
+      <inertia
+        ixx="0.000063"
+        ixy="0"
+        ixz="0"
+        iyy="0.000243"
+        iyz="0"
+        izz="0.000243" />
+    </inertial>
+    <visual>
+      <origin xyz=".02375 0 0"
+        rpy="0 1.57079633 0" />
+      <geometry>
+        <cylinder length="0.06075" radius=".027" />
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+    </visual>
+<collision>   
+ <origin xyz=".02375 0 0"
+        rpy="0 1.57079633 0" />
+      <geometry>
+        <cylinder length="0.06075" radius=".027" />
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+</collision> 
+<visual>
+      <origin xyz="-.029125 0 0"
+        rpy="0 1.57079633 0" />
+      <geometry>
+        <cylinder length="0.045" radius=".02415" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual> 
+<collision>   
+  <origin xyz="-0.029125 0 0"
+        rpy="0 1.57079633 0" />
+      <geometry>
+        <cylinder length="0.045" radius=".02415" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+</collision> 
+<visual>
+      <origin xyz="-.0528750 0 0"
+        rpy="0 1.57079633 0" />
+      <geometry>
+        <cylinder length="0.0025" radius=".0215" />
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+    </visual> 
+<collision>   
+  <origin xyz="-.0528750 0 0"
+        rpy="0 1.57079633 0" />
+      <geometry>
+        <cylinder length="0.0025" radius=".0215" />
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+</collision> 
+  </link>
+ 
+</robot>

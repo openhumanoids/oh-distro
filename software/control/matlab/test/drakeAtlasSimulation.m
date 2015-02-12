@@ -94,6 +94,12 @@ elseif (strcmp(world_name, 'manip_ex'))
   r_complete = r_complete.addRobotFromURDF('drill_box.urdf', [0.775; -0.2; 1.2], [], options_cyl);
 elseif(strcmp(world_name, 'terrain'))
   r_complete = r_complete.addRobotFromSDF(terrainSDF);
+elseif(strcmp(world_name, 'plug'))  
+  options_cyl.floating = true;
+  r_complete = r_complete.addRobotFromURDF('plug_frame.urdf', [1.0 ; 0.0 ; 0.0]);
+  r_complete = r_complete.addRobotFromURDF('table.urdf', [0; -1.5; 0.5]);
+  r_complete = r_complete.addRobotFromURDF('big_plug.urdf', [-0.2; -1.2; 1.2], [], options_cyl);
+  r_complete = r_complete.addRobotFromURDF('small_plug.urdf', [0.2; -1.2; 1.2], [], options_cyl);
 end
 r_complete = compile(r_complete);
 
