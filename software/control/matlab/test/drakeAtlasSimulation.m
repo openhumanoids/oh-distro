@@ -84,6 +84,9 @@ if (strcmp(world_name, 'valve_wall'))
   r_complete = compile(r_complete);
 elseif (strcmp(world_name, 'drill_frame'))
   r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/drill_frame.urdf'], [1.0; 0.0; 0], [0;0;pi]);
+  options_cyl.floating = true;
+  r_complete = r_complete.addRobotFromURDF('table.urdf', [0.225; -1.5; 0.5]);
+  r_complete = r_complete.addRobotFromURDF('drill_box.urdf', [0.225; -1.2; 1.2], [], options_cyl);
   r_complete = compile(r_complete);
 elseif (strcmp(world_name, 'door'))
   r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/door.urdf'], [1.0; 0.0; 0], [0;0;pi]);
