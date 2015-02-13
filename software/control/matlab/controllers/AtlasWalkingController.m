@@ -31,14 +31,15 @@ classdef AtlasWalkingController < DRCController
         % integral gains for position controlled joints
         integral_gains = zeros(getNumPositions(r),1);
         integral_clamps = zeros(getNumPositions(r),1);
+        
         arm_ind = findPositionIndices(r,'arm');
         back_ind = findPositionIndices(r,'back');
-        back_y_ind = findPositionIndices(r,'back_bky');
-        integral_gains(arm_ind) = 1.0; % TODO: generalize this
-        integral_gains(back_ind) = 0.2;
+%         back_y_ind = findPositionIndices(r,'back_bky');
+        integral_gains(arm_ind) = 1.75; % TODO: generalize this
+        integral_gains(back_ind) = 0.3;
         integral_clamps(arm_ind) = 0.3;
         integral_clamps(back_ind) = 0.2;
-        integral_clamps(back_y_ind) = 0.1;
+%         integral_clamps(back_y_ind) = 0.2;
       end
       
       % initialize with junk, populate when recieving first plan

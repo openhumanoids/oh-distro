@@ -21,16 +21,15 @@ classdef AtlasManipController < DRCController
       
       arm_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumPositions(r)),'arm'));
       back_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumPositions(r)),'back'));
-      back_y_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumPositions(r)),'back_bky'));
+%       back_y_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumPositions(r)),'back_bky'));
   
       integral_gains = zeros(getNumPositions(r),1);
       integral_clamps = zeros(getNumPositions(r),1);
       if options.controller_type == 1 || options.controller_type == 2 % use PID control
-        integral_gains(arm_ind) = 1.5;
-        integral_gains(back_ind) = 0.2;
+        integral_gains(arm_ind) = 1.75; % TODO: generalize this
+        integral_gains(back_ind) = 0.3;
         integral_clamps(arm_ind) = 0.3;
         integral_clamps(back_ind) = 0.2;
-        integral_clamps(back_y_ind) = 0.1;
       end
       
       data = struct('qtraj',zeros(getNumPositions(r),1),...
