@@ -49,6 +49,7 @@ classdef CombinedPlanner
 
   methods
     function obj = CombinedPlanner(biped, varargin)
+      checkDependency('iris');
       if nargin < 1 || isempty(biped)
         biped = CombinedPlanner.constructAtlas(varargin{:});
       end
@@ -58,7 +59,6 @@ classdef CombinedPlanner
       obj.footstep_planner = StatelessFootstepPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
 
-      checkDependency('iris');
       if isa(obj.biped, 'Atlas')
         obj.iris_planner = IRISPlanner(obj.biped,...
          Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 4)));
