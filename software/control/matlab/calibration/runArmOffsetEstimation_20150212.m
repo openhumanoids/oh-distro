@@ -8,6 +8,7 @@ options.visualize_result = true;
 options.v_norm_limit = 0.5; %0.05;
 options.num_poses = 20;
 options.use_extra_data = true;
+% options.just_visualize_vicon = true;
 
 marker_data = measuredViconMarkerPositions();
 

@@ -7,6 +7,7 @@ calibration_type = getOption(options, 'calibration_type');
 v_norm_limit = getOption(options, 'v_norm_limit');
 num_poses = getOption(options, 'num_poses');
 use_extra_data = getOption(options, 'use_extra_data', false);
+just_visualize_vicon = getOption(options, 'just_visualize_vicon', false);
 
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 r = DRCAtlas();
@@ -33,11 +34,13 @@ nb = length(body_names);
 
 marker_functions = cell(nb, 1);
 marker_function_num_params = cell(nb, 1);
+num_markers = cell(nb, 1);
 scales = cell(nb, 1);
 for i = 1 : length(body_names)
   body_name = body_names{i};
   marker_functions{i} = marker_info_struct.(body_name).marker_positions;
   marker_function_num_params{i} = marker_info_struct.(body_name).num_params;
+  num_markers{i} = marker_info_struct.(body_name).num_markers;
   scales{i} = marker_info_struct.(body_name).scale;
 end
 
@@ -73,6 +76,11 @@ end
 q_indices = [r.getBody(joint_indices).position_num];
 
 [q_data, motion_capture_data, u_data] = selectPoseData(t_x, t_vicon, t_u, q_data_full, vicon_data_struct, vicon_object_names, u_data_full, pose_indices);
+
+if just_visualize_vicon
+  visualizeCalibrationResult(r, bodies, q_data, [], [], [], motion_capture_data, num_markers);
+  return;
+end
 
 options.search_floating = 'full';
 
@@ -116,7 +124,7 @@ for i = 1 : length(joint_indices)
 end
 
 if visualize_result
-  visualizeCalibrationResult(r, bodies, q_data, q_data_after, marker_functions, marker_params, motion_capture_data);
+  visualizeCalibrationResult(r, bodies, q_data, q_data_after, marker_functions, marker_params, motion_capture_data, num_markers);
 end
 end
 
@@ -197,7 +205,7 @@ legend({'v norm (normalized)', 'udot norm (normalized)', 'vicondot norm (normali
 hold off;
 end
 
-function visualizeCalibrationResult(r, bodies, q_data_before, q_data_after, marker_functions, marker_params, motion_capture_data)
+function visualizeCalibrationResult(r, bodies, q_data_before, q_data_after, marker_functions, marker_params, motion_capture_data, num_markers)
 num_poses = size(q_data_before, 2);
 nb = length(bodies);
 show_before = false;
@@ -231,7 +239,7 @@ while true
   
   v = r.constructVisualizer;
   lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'calibration_result_visualization');
-  if show_before
+  if show_before || isempty(q_data_after)
     q_data = q_data_before;
   else
     q_data = q_data_after;
@@ -242,27 +250,30 @@ while true
   kinsol = r.doKinematics(q);
   
   for j = 1 : nb
-    pts = r.forwardKin(kinsol, bodies{j}, marker_functions{j}(marker_params{j}));
-    measured_coordinates_mask = isnan(marker_functions{j}(nan(numel(marker_params{j}), 1)));
+    if ~isempty(marker_functions)
+      pts = r.forwardKin(kinsol, bodies{j}, marker_functions{j}(marker_params{j}));
+      measured_coordinates_mask = isnan(marker_functions{j}(nan(numel(marker_params{j}), 1)));
+    end
     pts_vicon = motion_capture_data{j};
     
-    for i=1:size(pts, 2),
+    for i = 1 : num_markers{j}
+      marker_label = num2str(i); %[r.getBody(bodies{j}).linkname ' ' num2str(i)];
       % marker positions in body frame, transformed to world frame
-      if all(measured_coordinates_mask(:, i))
-        % none of the coordinates in body frame measured: color red
-        lcmgl.glColor3f(1,0,0);
-      else
-        % some of the coordinates in body frame measured: color green
-        % the brighter the color, the more coordinates are known in body
-        % frame
-        green_value = sum(~measured_coordinates_mask(:, i)) / size(measured_coordinates_mask, 1);
-        lcmgl.glColor3f(0,green_value,0);
+      if ~isempty(marker_functions)
+        if all(measured_coordinates_mask(:, i))
+          % none of the coordinates in body frame measured: color red
+          lcmgl.glColor3f(1,0,0);
+        else
+          % some of the coordinates in body frame measured: color green
+          % the brighter the color, the more coordinates are known in body
+          % frame
+          green_value = sum(~measured_coordinates_mask(:, i)) / size(measured_coordinates_mask, 1);
+          lcmgl.glColor3f(0,green_value,0);
+        end
+        lcmgl.sphere(pts(:,i),.01,20,20);
+        lcmgl.glColor3f(1,1,1);
+        lcmgl.text(pts(:, i), marker_label);
       end
-      
-      marker_label = [r.getBody(bodies{j}).linkname ' ' num2str(i)];
-      lcmgl.sphere(pts(:,i),.01,20,20);
-      lcmgl.glColor3f(1,1,1);
-      lcmgl.text(pts(:, i), marker_label);
       
       % vicon marker position
       % blue
