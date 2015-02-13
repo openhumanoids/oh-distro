@@ -6,10 +6,18 @@ vicon_lag = getOption(options, 'vicon_lag', 0);
 calibration_type = getOption(options, 'calibration_type');
 v_norm_limit = getOption(options, 'v_norm_limit');
 num_poses = getOption(options, 'num_poses');
+use_extra_data = getOption(options, 'use_extra_data', false);
 
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
-r = Atlas();
-[t_x,x_data,t_u,u_data_full,t_vicon,vicon_data_full,~,~,~,~,vicon_data_struct] = parseAtlasViconLog(r,logfile);
+r = DRCAtlas();
+
+if exist([logfile '.mat'], 'file')
+  load([logfile '.mat']);
+else
+  [t_x,x_data,t_u,u_data_full,t_vicon,vicon_data_full,~,~,t_extra,extra_data,vicon_data_struct] = parseAtlasViconLog(r,logfile);
+  save([logfile '.mat'], 't_x', 'x_data', 't_u', 'u_data_full', 't_vicon', 'vicon_data_full', 't_extra', 'extra_data', 'vicon_data_struct');
+end
+
 u_data_full = u_data_full(end - r.getNumInputs + 1 : end, :); % the last num_u rows of u_data are the actual torques
 
 % time synchronization
@@ -17,6 +25,7 @@ t_u = t_u - t_x(1);
 t_offset = min(t_x) - min(t_vicon) - vicon_lag;
 t_vicon = t_vicon - t_x(1) + t_offset;
 t_x = t_x - t_x(1);
+t_extra = t_extra - t_extra(1);
 
 nq = r.getNumPositions();
 nv = r.getNumVelocities();
@@ -34,6 +43,17 @@ end
 
 q_data_full = x_data(1:nq, :);
 v_data_full = x_data(nq + (1 : nv), :);
+
+nrevolute_joints = length([r.getManipulator.body(3:end).position_num]);
+q_data_extra = extra_data(1 : nrevolute_joints, :);
+v_data_extra = extra_data(nrevolute_joints + (1 : nrevolute_joints), :);
+extra_data_valid_indices = ~all(q_data_extra == 0, 2);
+
+if use_extra_data
+  q_data_full(r.stateToBDIInd(extra_data_valid_indices), :) = interp1(t_extra, q_data_extra(extra_data_valid_indices, :)', t_x)';
+  v_data_full(r.stateToBDIInd(extra_data_valid_indices), :) = interp1(t_extra, v_data_extra(extra_data_valid_indices, :)', t_x)';
+end
+
 pose_indices = findCalibrationPoseIndices(v_data_full, num_poses, v_norm_limit);
 if show_pose_indices
   showPoseIndices(t_x, t_u, t_vicon, v_data_full, u_data_full, vicon_data_full, pose_indices);
@@ -42,7 +62,7 @@ num_poses = length(pose_indices);
 
 bodies = cell(nb, 1);
 for i = 1 : nb
-  bodies{i} = r.findLinkInd(body_names{i});
+  bodies{i} = r.findLinkId(body_names{i});
 end
 
 joint_indices = [];
@@ -173,7 +193,7 @@ plot(t_vicon(1:end - 1), vicon_data_dot_norm / max(vicon_data_dot_norm), 'c')
 
 plot(t_x(pose_indices), zeros(size(pose_indices)), 'r*');
 
-legend({'vdot norm (normalized)', 'udot norm (normalized)', 'vicondot norm (normalized)', 'selected pose indices'});
+legend({'v norm (normalized)', 'udot norm (normalized)', 'vicondot norm (normalized)', 'selected pose indices'});
 hold off;
 end
 
