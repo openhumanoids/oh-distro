@@ -139,7 +139,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
-  enableEncoders(false); // disable for now
+  enableEncoders(true); // disable for now
 
 
   /// 4. Joint Filtering
@@ -296,7 +296,7 @@ void state_sync::enableEncoders(bool enable) {
   use_encoder_[Atlas::JOINT_L_ARM_UWY] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_MWX] = enable;
   
-  use_encoder_[Atlas::JOINT_NECK_AY] = enable;
+  use_encoder_[Atlas::JOINT_NECK_AY] = false; // neck encoder is only position sensor now
 }
 
 
@@ -445,6 +445,9 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
       }
     }
   }
+
+  atlas_joints_.position[Atlas::JOINT_BACK_BKX] = atlas_joints_.position[Atlas::JOINT_BACK_BKX] + 1.2*M_PI/180.0;
+  atlas_joints_.position[Atlas::JOINT_BACK_BKY] = atlas_joints_.position[Atlas::JOINT_BACK_BKY] - 1.2*M_PI/180.0;
 
   if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
