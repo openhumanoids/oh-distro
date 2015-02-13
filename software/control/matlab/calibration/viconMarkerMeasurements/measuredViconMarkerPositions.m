@@ -38,10 +38,10 @@ marker_data.l_hand.num_params = sum(sum(isnan(l_markers)));
 marker_data.l_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, l_markers);
 
 % Torso:
-torso_reference = [0.215498; -0.076292; 0.295373]; % obtained from meshlab
-torso_reference_to_marker = [10e-3; 30e-3; 0];
+torso_reference = ([0.286645; -0.118863; 0.607658] + [0.286462; -0.102694; 0.641651]) / 2; % obtained from meshlab
+torso_reference_to_marker = [13-3; 0; 0];
 torso_marker = torso_reference + torso_reference_to_marker;
-marker_data.utorso.num_markers = 3;
+marker_data.utorso.num_markers = 6;
 torso_markers = nan(3, marker_data.utorso.num_markers);
 torso_markers(:, 2) = torso_marker;
 torso_markers(1, :) = torso_marker(1); % same x
