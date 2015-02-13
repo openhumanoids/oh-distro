@@ -20,7 +20,8 @@ R_visual_to_body = rpy2rotmat([0; pi; 0]);
 r_marker = R_visual_to_body * r_marker;
 marker_data.r_hand.num_markers = 5;
 r_markers = nan(3, marker_data.r_hand.num_markers);
-r_markers(:, 4) = r_marker;
+% r_markers(:, 4) = r_marker;
+r_markers(:, 2) = r_marker;
 marker_data.r_hand.num_params = sum(sum(isnan(r_markers)));
 marker_data.r_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, r_markers);
 
@@ -33,7 +34,8 @@ l_base_to_marker = [0; 0; -(standoff_offset + standoff_length + ball_diameter / 
 l_marker = l_base + l_base_to_marker;
 marker_data.l_hand.num_markers = 5;
 l_markers = nan(3, marker_data.l_hand.num_markers);
-l_markers(:, 3) = l_marker;
+% l_markers(:, 3) = l_marker;
+l_markers(:, 5) = l_marker;
 marker_data.l_hand.num_params = sum(sum(isnan(l_markers)));
 marker_data.l_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, l_markers);
 
