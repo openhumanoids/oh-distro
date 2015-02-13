@@ -11,7 +11,7 @@ if nargin < 2
   run_in_simul_mode = 0;
 end
 if nargin < 3
-  atlas_version = 4
+  atlas_version = 4;
 end
 
 % silence some warnings
