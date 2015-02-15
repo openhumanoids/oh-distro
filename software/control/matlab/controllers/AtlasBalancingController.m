@@ -38,12 +38,12 @@ classdef AtlasBalancingController < DRCController
         
         arm_ind = findPositionIndices(r,'arm');
         back_ind = findPositionIndices(r,'back');
-        back_y_ind = findPositionIndices(r,'back_bky');
-        integral_gains(arm_ind) = 1.5; % TODO: generalize this
-        integral_gains(back_ind) = 0.2;
+%         back_y_ind = findPositionIndices(r,'back_bky');
+        integral_gains(arm_ind) = 1.75; % TODO: generalize this
+        integral_gains(back_ind) = 0.3;
         integral_clamps(arm_ind) = 0.3;
         integral_clamps(back_ind) = 0.2;
-        integral_clamps(back_y_ind) = 0.1;
+%         integral_clamps(back_y_ind) = 0.2;
       end
       
       % use saved nominal pose

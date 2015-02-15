@@ -44,13 +44,13 @@ q0 = x0(1:nq);
 
 % calibration configuration: drive arm joints to limits
 x_calib = Point(state_frame);
-x_calib.r_arm_usy = jlmax(joint_index_map.r_arm_usy) + delta;
+x_calib.r_arm_shz = jlmin(joint_index_map.r_arm_shz) - delta;
 x_calib.r_arm_shx = jlmax(joint_index_map.r_arm_shx) + delta;
 x_calib.r_arm_ely = jlmin(joint_index_map.r_arm_ely) - delta;
 x_calib.r_arm_elx = jlmax(joint_index_map.r_arm_elx) + delta;
 x_calib.r_arm_uwy = jlmin(joint_index_map.r_arm_uwy) - delta;
 x_calib.r_arm_mwx = jlmin(joint_index_map.r_arm_mwx) - delta;
-x_calib.l_arm_usy = jlmax(joint_index_map.l_arm_usy) + delta;
+x_calib.l_arm_shz = jlmax(joint_index_map.l_arm_shz) + delta;
 x_calib.l_arm_shx = jlmin(joint_index_map.l_arm_shx) - delta;
 x_calib.l_arm_ely = jlmin(joint_index_map.l_arm_ely) - delta;
 x_calib.l_arm_elx = jlmin(joint_index_map.l_arm_elx) - delta;
@@ -61,18 +61,36 @@ q_calib = x_calib(1:nq);
 
 % "correct" encoder readings at joint limits
 calib_val = Point(state_frame);
-calib_val.r_arm_usy = 0.79804;
-calib_val.r_arm_shx = 1.57022;
-calib_val.r_arm_ely = -0.01648;
-calib_val.r_arm_elx = -0.00297;
-calib_val.r_arm_uwy = 0.02374;
-calib_val.r_arm_mwx = -1.22977;
-calib_val.l_arm_usy = 0.79858;
+
+% old values for atlas v3
+% calib_val.r_arm_usy = 0.79804;
+% calib_val.r_arm_shx = 1.57022;
+% calib_val.r_arm_ely = -0.01648;
+% calib_val.r_arm_elx = -0.00297;
+% calib_val.r_arm_uwy = 0.02374;
+% calib_val.r_arm_mwx = -1.22977;
+
+calib_val.r_arm_shz = 0.02314   -0.776993;
+calib_val.r_arm_shx =  1.58;%0.4482   +1.14736;
+calib_val.r_arm_ely = -0.01648;%-0.671    +0.69366;
+calib_val.r_arm_elx = -0.00297;%-0.5263   +0.534128;
+calib_val.r_arm_uwy = -0.8335   +0.832932;
+calib_val.r_arm_mwx = -1.22977;%-1.036    -0.333815;
+
+
+
+calib_val.l_arm_shz = -calib_val.r_arm_shz;
 calib_val.l_arm_shx = -1.58616;
 calib_val.l_arm_ely = -0.04079;
 calib_val.l_arm_elx = 0.00481;
 calib_val.l_arm_uwy = 0.02515;
 calib_val.l_arm_mwx = 1.16325;
+% calib_val.l_arm_shz = 0.79858;
+% calib_val.l_arm_shx = -1.58616;
+% calib_val.l_arm_ely = -0.04079;
+% calib_val.l_arm_elx = 0.00481;
+% calib_val.l_arm_uwy = 0.02515;
+% calib_val.l_arm_mwx = 1.16325;
 calib_val = double(calib_val);
 
 behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
@@ -138,13 +156,13 @@ end
     enc_diff = calib_val(r.stateToBDIInd) - ex;
 
     % note: using BDI's order, same as in common_components.cfg
-    JOINT_L_ARM_USY   = 17;
+    JOINT_L_ARM_SHZ   = 17;
     JOINT_L_ARM_SHX   = 18;
     JOINT_L_ARM_ELY   = 19;
     JOINT_L_ARM_ELX   = 20;
     JOINT_L_ARM_UWY   = 21;
     JOINT_L_ARM_MWX   = 22;
-    JOINT_R_ARM_USY   = 23;
+    JOINT_R_ARM_SHZ   = 23;
     JOINT_R_ARM_SHX   = 24;
     JOINT_R_ARM_ELY   = 25;
     JOINT_R_ARM_ELX   = 26;
@@ -160,13 +178,13 @@ end
     joint_ind.is_array = true;
     joint_ind.key = 'control.encoder_offsets.index';
     joint_ind.value = ['3,' ...
-                       num2str(JOINT_R_ARM_USY-1) ',' ...
+                       num2str(JOINT_R_ARM_SHZ-1) ',' ...
                        num2str(JOINT_R_ARM_SHX-1) ',' ...
                        num2str(JOINT_R_ARM_ELY-1) ',' ...
                        num2str(JOINT_R_ARM_ELX-1) ',' ...
                        num2str(JOINT_R_ARM_UWY-1) ',' ...
                        num2str(JOINT_R_ARM_MWX-1) ',' ...
-                       num2str(JOINT_L_ARM_USY-1) ',' ...
+                       num2str(JOINT_L_ARM_SHZ-1) ',' ...
                        num2str(JOINT_L_ARM_SHX-1) ',' ...
                        num2str(JOINT_L_ARM_ELY-1) ',' ...
                        num2str(JOINT_L_ARM_ELX-1) ',' ...
@@ -177,13 +195,13 @@ end
     offsets.is_array = true;
     offsets.key = 'control.encoder_offsets.value';
     offsets.value = ['4.24,' ...
-                       num2str(enc_diff(JOINT_R_ARM_USY)) ',' ...
+                       num2str(enc_diff(JOINT_R_ARM_SHZ)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_SHX)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_ELY)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_ELX)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_UWY)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_MWX)) ',' ...
-                       num2str(enc_diff(JOINT_L_ARM_USY)) ',' ...
+                       num2str(enc_diff(JOINT_L_ARM_SHZ)) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_SHX)) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_ELY)) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_ELX)) ',' ...
