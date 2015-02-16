@@ -84,10 +84,10 @@ classdef IRISPlanner
             xy_bounds.b(end+(1:2)) = [4*pi;4*pi];
           end
           regions(end+1) = iris.TerrainRegion(xy_bounds.A, xy_bounds.b, [], [], seed_pose(1:3), [0;0;1]);
-          yaws(j) = seed_pose(6);
+          yaws(j) = q0(6) + angleDiff(q0(6), seed_pose(6));
         else
           i0 = obj.iris_server.xy2ind(0, seed_pose(1:2));
-          yaws(j) = seed_pose(6);
+          yaws(j) = q0(6) + angleDiff(q0(6), seed_pose(6));
           
           regions(end+1) = obj.iris_server.getCSpaceRegionAtIndex(i0, yaws(j), collision_model,...
             'xy_bounds', xy_bounds, 'error_on_infeas_start', false);
@@ -119,9 +119,9 @@ classdef IRISPlanner
           options.seeds(:,j) = decodePosition3d(msg.seed_poses(j));
         end
         if ~isnan(msg.default_yaw)
-          options.default_yaw = msg.default_yaw;
+          options.default_yaw = q0(6) + angleDiff(q0(6), msg.default_yaw);
         else
-          options.default_yaw = 0;
+          options.default_yaw = q0(6);
         end
         if ~isnan(msg.max_slope_angle), options.max_slope_angle = msg.max_slope_angle; end
         if ~isnan(msg.max_height_variation), options.max_height_variation = msg.max_height_variation; end

@@ -28,27 +28,6 @@ classdef StatelessFootstepPlanner
 
         safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, feet_centers, goal_pos);
 
-        % Sometimes our safe regions are at an angle which is on the other
-        % side of the -pi/pi wraparound from the robot's current pose. If
-        % we detect that, we can shift them by +/- 2pi to try to fix it. 
-        for j = 1:length(safe_regions)
-          verts = iris.thirdParty.polytopes.lcon2vert(safe_regions(j).A, safe_regions(j).b)';
-          min_yaw = min(verts(3,:));
-          max_yaw = max(verts(3,:));
-          center_yaw = mean([min_yaw, max_yaw]);
-          shift = round((q0(6) - center_yaw) / (2 * pi));
-          
-          if shift ~= 0
-            % we need to shift the region in yaw
-            % we had:
-            % Ax <= b
-            % we want:
-            % A(x-[0;0;shift*2pi])<=b
-            % so we actually have:
-            % Ax <= b + A *[0;0;shift*2pi]
-            safe_regions(j).b = safe_regions(j).b + safe_regions(j).A * [0;0;shift*2*pi];
-          end
-        end
         goal_shift = round((q0(6) - goal_pos.center(6)) / (2*pi));
         if goal_shift ~= 0
           for field = {'center', 'right', 'left'}
