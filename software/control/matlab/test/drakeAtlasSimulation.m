@@ -17,7 +17,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 % construct a pure atlas model for control
-options.visualize = visualize;
+options.visualize = false; %don't use lcmgl lidar visualization... it's very slow
 options.atlas_version = atlas_version;
 options.floating = true;
 options.dt = 0.00333;
