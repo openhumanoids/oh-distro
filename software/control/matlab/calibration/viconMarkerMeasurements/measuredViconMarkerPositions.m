@@ -11,7 +11,7 @@ plate_thickness = 2.5e-3;
 r_reference = [-0.068628; -0.093738; -0.020245]; % obtained from meshlab
 r_reference_to_base = [0.017; 0.015; 0.0]; % measured offset of base w.r.t. reference
 r_base = r_reference + r_reference_to_base;
-r_base_to_marker = [0; 0; -(standoff_offset + standoff_length + ball_diameter / 2)];
+r_base_to_marker = [0; 0; -(standoff_offset + 2 * standoff_length + ball_diameter / 2)];
 r_marker = r_base + r_base_to_marker;
 % marker was measured in visual frame. The visual is rotated by pi about the
 % y-axis w.r.t. the body frame in the urdf, so need to rotate back to body
@@ -35,19 +35,20 @@ l_marker = l_base + l_base_to_marker;
 marker_data.l_hand.num_markers = 5;
 l_markers = nan(3, marker_data.l_hand.num_markers);
 % l_markers(:, 3) = l_marker;
-l_markers(:, 5) = l_marker;
+l_markers(:, 5) = l_marker; % not sure!
 marker_data.l_hand.num_params = sum(sum(isnan(l_markers)));
 marker_data.l_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, l_markers);
 
 % Torso:
 marker_data.utorso.num_markers = 6;
 torso_markers = nan(3, marker_data.utorso.num_markers);
+% #1 (middle of chest) can't be measured accurately due to the presumed
+% inaccuracy of the chest shell mesh
 torso_markers(:, 2) = ([0.286645; -0.118863; 0.607658] + [0.286462; -0.102694; 0.641651]) / 2 + [13e-3; 0; 0]; % highest one
 torso_markers(:, 3) = [0.217791; (-0.091985 + -0.133388) / 2; 0.536918] + [13e-3; 0; 24e-3]; % right vertical neck bar
 torso_markers(:, 4) = [0.148685; -0.255472; 0.526073] + [-10e-3; 10e-3; 10e-3]; % right shoulder
 torso_markers(:, 5) = [0.21796; (0.091728 + 0.133132) / 2; 0.536918] + [13e-3; 0; 24e-3]; % left vertical neck bar
 torso_markers(:, 6) = [0.148685; 0.255472; 0.526073] + [-10e-3; -10e-3; 10e-3]; % left shoulder
-% torso_markers(1, :) = torso_marker(1); % same x
 marker_data.utorso.num_params = sum(sum(isnan(torso_markers)));
 marker_data.utorso.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, torso_markers);
 
