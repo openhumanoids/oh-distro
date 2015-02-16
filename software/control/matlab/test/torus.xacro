@@ -1,0 +1,58 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="torus">
+  <xacro:property name="pi" value="3.1416"/>
+  <!-- ########################################### -->
+  <!-- Custom MIT XACRO defining visual and collision geometry for a torus -->
+  <!-- ########################################### -->
+  <xacro:macro name="torus-segment-geometry" params="major_radius minor_radius num_segments">
+    <origin xyz="${major_radius} 0 0" rpy="${pi/2} 0 0"/>
+    <geometry>
+      <cylinder length="${2*pi*major_radius/num_segments}" radius="${minor_radius}"/>
+    </geometry>
+  </xacro:macro>
+
+  <xacro:macro name="torus-segment" params="parent_link major_radius minor_radius num_segments which_segment">
+    <link name="${parent_link}_torus_segment_${which_segment}">
+      <visual>
+        <xacro:torus-segment-geometry 
+          major_radius="${major_radius}" 
+          minor_radius="${minor_radius}" 
+          num_segments="${num_segments}" 
+          />
+        <material name="">
+          <color rgba="0 1 0 1" />
+        </material>
+      </visual>
+      <collision>
+        <xacro:torus-segment-geometry 
+          major_radius="${major_radius}" 
+          minor_radius="${minor_radius}" 
+          num_segments="${num_segments}" 
+          />
+      </collision>
+    </link>
+    <joint name="${parent_link}_torus_segment_${which_segment}_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 ${which_segment*2*pi/num_segments}"/>
+      <parent link="${parent_link}_torus"/>
+      <child link="${parent_link}_torus_segment_${which_segment}"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="torus" params="parent_link  xyz rpy major_radius minor_radius">
+    <link name="${parent_link}_torus"/>
+    <joint name="${parent_link}_torus_fixed_joint" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <parent link="${parent_link}"/>
+      <child link="${parent_link}_torus"/>
+    </joint>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="0"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="1"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="2"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="3"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="4"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="5"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="6"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="7"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="8"/>
+    <xacro:torus-segment parent_link="${parent_link}" major_radius="${major_radius}" minor_radius="${minor_radius}" num_segments="10" which_segment="9"/>
+  </xacro:macro>
+</robot>
