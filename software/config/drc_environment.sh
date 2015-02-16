@@ -1,7 +1,7 @@
-# This awkward line exists to support zsh (instead of bash).
+# This awkward line exists to support zsh (instead of bash). 
 # Due to limitations of zsh, it must be the first line in the file. Sorry.
 thisFile=$_
-if [ $BASH ]
+if [ $BASH ] 
 then
   # may be a relative or absolute path
   thisFile=${BASH_SOURCE[0]}
@@ -51,7 +51,7 @@ setup_drc()
   export PKG_CONFIG_PATH=$DRC_BASE/software/build/lib/pkgconfig:$DRC_BASE/software/build/lib64/pkgconfig:$PKG_CONFIG_PATH
 
   # gurobi
-  export GUROBI_HOME=$DRC_BASE/software/externals/gurobi/gurobi600/linux64
+  export GUROBI_HOME=$DRC_BASE/software/externals/gurobi/gurobi562/linux64
   export PATH=$PATH:$GUROBI_HOME/bin
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GUROBI_HOME/lib
   export GRB_LICENSE_FILE=$HOME/gurobi.lic
@@ -78,7 +78,7 @@ setup_robot_computers()
 setup_network_sim()
 {
     export LCM_URL_DRC_ROBOT="udpm://239.255.76.68:7668?ttl=0"
-    export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=0"
+    export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=0" 
 }
 
 set_drc_base
