@@ -13,14 +13,10 @@ options.use_extra_data = true;
 marker_data = measuredViconMarkerPositions();
 
 % logfile_left = strcat(getenv('DRC_PATH'),'/../../logs/useful/arm-offset-calibration-20150212/lcmlog-2015-02-12.left');
-% dq_left = runArmOffsetEstimation('l', logfile_left, marker_data, options);
-% disp('left offsets:')
-% disp(dq_left);
+% runArmOffsetEstimation('l', logfile_left, marker_data, options);
 
 logfile_right = strcat(getenv('DRC_PATH'),'/../../../logs/useful/arm-offset-calibration-20150212/lcmlog-2015-02-12.right');
-dq_right = runArmOffsetEstimation('r', logfile_right, marker_data, options);
-disp('right offsets:')
-disp(dq_right)
+runArmOffsetEstimation('r', logfile_right, marker_data, options);
 
 rmpath(measurements_dir);
 end
