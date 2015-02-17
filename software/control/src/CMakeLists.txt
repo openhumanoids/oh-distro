@@ -16,7 +16,7 @@ add_mex(AtlasCommandPublisher AtlasCommandPublisher.cpp)
 pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 add_mex(footstepPlanShiftmex footstepPlanShiftmex.cpp)
-pods_use_pkg_config_packages(footstepPlanShiftmex eigen3 drake-control-util drake-rbm)
+pods_use_pkg_config_packages(footstepPlanShiftmex eigen3 drake-control-util drake-rbm drake-util)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher footstepPlanShiftmex DESTINATION matlab)
 
@@ -27,7 +27,7 @@ pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)
 
 add_mex(linearIKmex linearIKmex.cpp)
-pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm)
+pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm drake-util)
 install(TARGETS linearIKmex DESTINATION matlab)
 
 add_mex(BotParamClient BotParamClient.cpp)
