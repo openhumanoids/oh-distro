@@ -6,4 +6,5 @@ struct iris_region_response_t
 
 	int32_t num_iris_regions;
 	iris_region_t iris_regions[num_iris_regions];
+	int32_t region_id[num_iris_regions];
 }

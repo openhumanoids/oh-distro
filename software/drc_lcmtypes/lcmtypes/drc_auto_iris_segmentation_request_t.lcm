@@ -1,6 +1,6 @@
 package drc;
 
-struct iris_region_request_t
+struct auto_iris_segmentation_request_t
 {
 	int64_t utime;
 
@@ -11,10 +11,17 @@ struct iris_region_request_t
 	// See drc_footstep_plan_params_t for enum values
 	int8_t map_mode;
 
+	lin_con_t xy_bounds;
 
 	int32_t num_seed_poses;
 	position_3d_t seed_poses[num_seed_poses];
-	lin_con_t xy_bounds[num_seed_poses];
-	// A unique ID number for keeping track of multiple regions
-	int32_t region_id[num_seed_poses];
+
+	int8_t max_num_regions;
+	int32_t region_id[max_num_regions];
+
+	double default_yaw;
+	double max_slope_angle;
+	double max_height_variation;
+	double plane_distance_tolerance;
+	double plane_angle_tolerance;
 }
