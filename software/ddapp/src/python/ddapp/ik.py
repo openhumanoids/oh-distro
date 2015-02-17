@@ -28,7 +28,7 @@ class AsyncIKCommunicator():
         self.infoFunc = None
 
         self.maxDegreesPerSecond = 30.0
-        self.maxBaseMetersPerSecond = 0.1
+        self.maxBaseMetersPerSecond = 0.05
         self.maxPlanDuration = 30.0
         self.usePointwise = True
         self.useCollision = False
@@ -38,11 +38,11 @@ class AsyncIKCommunicator():
         self.majorIterationsLimit = 500
         self.majorOptimalityTolerance = 1e-4
         self.majorFeasibilityTolerance = 1e-6
-        self.rrtMaxEdgeLength = 0.1
+        self.rrtMaxEdgeLength = 0.05
         self.rrtOrientationWeight = 1.0
         self.rrtGoalBias = 1.0
         self.rrtMaxNumVertices = 5000
-        self.rrtNSmoothingPasses = 5;
+        self.rrtNSmoothingPasses = 10;
 
         self.callbacks = callbacks.CallbackRegistry([self.STARTUP_COMPLETED])
 
@@ -330,7 +330,7 @@ class AsyncIKCommunicator():
             commands.append('\n')
             commands.append('if (info > 10) display(infeasibleConstraintMsg(infeasible_constraint)); end;')
 
-        commands.append('qtraj = xtraj(1:r.getNumPositions());')
+        commands.append('if ~isempty(xtraj), qtraj = xtraj(1:r.getNumPositions()); end;')
         if self.useCollision:
             commands.append('plan_time = 1;')
         else:
@@ -356,7 +356,7 @@ class AsyncIKCommunicator():
 
         publish = True
         if publish:
-            commands.append('s.publishTraj(%s, info, plan_time);' % ('xtraj_pw' if self.usePointwise else 'xtraj'))
+            commands.append('if ~isempty(xtraj), s.publishTraj(%s, info, plan_time); end;' % ('xtraj_pw' if self.usePointwise else 'xtraj'))
 
         commands.append('\n%--- runIKTraj end --------\n')
         #self.taskQueue.addTask(functools.partial(self.comm.sendCommandsAsync, commands))
@@ -366,7 +366,6 @@ class AsyncIKCommunicator():
         info = self.comm.getFloatArray('info')[0]
         if self.infoFunc:
             self.infoFunc(info)
-        info = -1
 
         return info
 
