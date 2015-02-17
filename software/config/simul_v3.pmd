@@ -12,7 +12,7 @@ group "0.params_and_model_pub" {
 group "1.state_mit" {
 
     cmd "joints2frames" {
-        exec = "drc-joints2frames -b";
+        exec = "drc-joints2frames";
         host = "base";
     }
 
