@@ -93,7 +93,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       sizecheck(q, [biped.getNumPositions, 1]);
       fid = biped.findFrameId(frame_name);
       kinsol = doKinematics(biped, q);
-      fpos = forwardKin(biped, kinsol, fid, [0;0;0], true);
+      fpos = forwardKin(biped, kinsol, fid, [0;0;0], 1);
       if force_z_normal
         v = [0;0;1];
       else
