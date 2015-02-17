@@ -3,13 +3,19 @@ function atlasVisualizer
 
 % a visualizer process for visualizing atlas state and relevant variables
 
-% load robot model
-r = DRCAtlas();
-d=load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar=d.xstar;
+% silence some warnings
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+options.visual = false; % loads faster
+options.floating = true;
+options.ignore_friction = true;
+options.atlas_version = 4;
+
+r = DRCAtlas([],options);
+r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
-r = r.setInitialState(xstar);
 
 % setup frames
 state_plus_effort_frame = drcFrames.AtlasStateAndEffort(r);
@@ -96,7 +102,7 @@ while true
     [com,J] = getCOM(r,kinsol);
     J = J(1:2,:); 
 
-    drawZMP(kinsol,qd_kf,qdd,com,J,cpos,lcmgl_zmp);
+    drawZMP(r,kinsol,qd_kf,qdd,com,J,cpos,lcmgl_zmp);
     
     drawCOM(com,ground_z,lcmgl_com);
   
@@ -145,7 +151,7 @@ lcmgl.sphere([com(1:2)', ground_z], 0.015, 20, 20);
 lcmgl.switchBuffers();
 end
 
-function drawZMP(kinsol,qd,qdd,com,J,cpos,lcmgl)
+function drawZMP(r,kinsol,qd,qdd,com,J,cpos,lcmgl)
 Jdot = forwardJacDot(r,kinsol,0);
 Jdot = Jdot(1:2,:);
 

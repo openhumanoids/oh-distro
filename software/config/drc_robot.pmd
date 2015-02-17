@@ -47,11 +47,6 @@ group "2.plan_and_control" {
         host = "robot";
     }
 
-    cmd "contact_monitor_slow" {
-    	exec = "drc-contact-monitor 150 FOOT_CONTACT_ESTIMATE_SLOW 0.5";
-        host = "robot";
-    }
-
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
        host = "base";
