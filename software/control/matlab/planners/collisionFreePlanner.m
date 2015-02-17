@@ -58,7 +58,6 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   if ~isfield(options,'display_after_every'),options.display_after_every = 10; end;
   if ~isfield(options,'verbose'),options.verbose = true; end;
   if ~isfield(options,'min_distance'), options.min_distance = 0.05; end;
-  if ~isfield(options,'min_distance'), options.min_distance = 0.05; end;
   if ~isfield(options,'MajorIterationsLimit') 
     options.MajorIterationsLimit = 500; 
   end;
@@ -71,7 +70,7 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   end;
   if ~isfield(options,'t_max'), options.t_max = 30; end;
   if ~isfield(options,'joint_v_max'), options.joint_v_max = 30*pi/180; end;
-  if ~isfield(options,'xyz_v_max'), options.xyz_v_max = 0.1; end;
+  if ~isfield(options,'xyz_v_max'), options.xyz_v_max = 0.05; end;
   if isscalar(options.joint_v_max)
     options.joint_v_max = repmat(options.joint_v_max,r.getNumVelocities()-3,1);
   end
@@ -152,7 +151,7 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
       TA.position_tol = 1e-3;
 
       % Set up collision options
-      TA  = TA.setMinDistance(options.min_distance);
+      TA  = TA.setMinDistance(0.9*options.min_distance);
       TA.trees{TA.cspace_idx}.active_collision_options = active_collision_options;
 
       % Set up IK options
