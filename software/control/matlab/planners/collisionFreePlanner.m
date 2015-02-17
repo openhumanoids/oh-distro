@@ -270,10 +270,11 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
 
       % Determine max joint velocity at midpoint of  each segment
       t_mid = mean([t(2:end); t(1:end-1)],1);
-      v_mid = max(abs(q_traj.fnder().eval(t_mid)), [], 1);
+      v_mid = q_traj.fnder().eval(t_mid);
+      scale_factor = max(abs(bsxfun(@rdivide, v_mid, options.v_max)), [], 1);
 
       % Adjust durations to keep velocity below max
-      t_scaled = [0, cumsum(diff(t).*v_mid/mean(options.joint_v_max))];
+      t_scaled = [0, cumsum(diff(t).*scale_factor)];
       tf = t_scaled(end);
 
       % Warp time to give gradual acceleration/deceleration
