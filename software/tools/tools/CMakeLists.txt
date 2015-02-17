@@ -41,5 +41,7 @@ pods_install_python_script(drc-projectile-leap scripts/send_a_projectile_leap.py
 pods_install_python_script(drc-power-hands scripts/power_hands.py)
 pods_install_python_script(drc-send-a-message scripts/send_a_status_msg.py)
 pods_install_python_script(drc_latency scripts/drc_latency.py)
+pods_install_python_script(drc-measure-orientation-drift scripts/measure_orientation_drift.py)
+
 pods_install_python_script(drc-systemwide-tests python/system_test.py)
 
