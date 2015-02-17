@@ -72,7 +72,7 @@ group "4.perception_drivers" {
     }
 
     cmd "spin-lidar" {
-        exec = "spin-lidar-command";
+        exec = "drc-spin-lidar";
         host = "atlas0";
     }
 
