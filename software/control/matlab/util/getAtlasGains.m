@@ -352,7 +352,7 @@ switch atlas_version
     % force, proportunal
     k_f_p(back_bkz)  = 0.005;
     k_f_p(back_bky)  = 0.02;
-    k_f_p(back_bkx)  = 0.02;
+    k_f_p(back_bkx)  = 0.0075;
     k_f_p(l_leg_hpz) = 0.02; % 02-03-14, f+v 
     k_f_p(l_leg_hpx) = 0.02; % 02-03-14, f+v 
     k_f_p(l_leg_hpy) = 0.02; % 02-03-14, f+v
@@ -381,7 +381,7 @@ switch atlas_version
     % velocity desired, feedforward
     ff_qd_d(back_bkz)  = 1.0;
     ff_qd_d(back_bky)  = 3.0;
-    ff_qd_d(back_bkx)  = 3.0;
+    ff_qd_d(back_bkx)  = 1.0;
     ff_qd_d(l_leg_hpz) = 1.0; % 03-24-14, f+v 
     ff_qd_d(l_leg_hpx) = 4.0; % 03-24-14, f+v 
     ff_qd_d(l_leg_hpy) = 4.0; % 03-24-14, f+v
