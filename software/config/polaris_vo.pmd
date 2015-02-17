@@ -31,7 +31,7 @@ group "start" {
         host = "localhost";
     }
     cmd "drc-joints2frames" {
-        exec = "drc-joints2frames -b";
+        exec = "drc-joints2frames";
         host = "localhost";
     }
 
