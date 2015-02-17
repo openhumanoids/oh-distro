@@ -207,11 +207,15 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
         rrt_timer = tic;
       end
 
-      switch options.planning_mode
-        case 'rrt'
-          [TA, path_ids_A, info] = TA.rrt(x_start, x_goal, options);
-        case 'rrt_connect'
-          [TA, path_ids_A, info, TB] = TA.rrtConnect(x_start, x_goal, TB, options);
+      try
+        switch options.planning_mode
+          case 'rrt'
+            [TA, path_ids_A, info] = TA.rrt(x_start, x_goal, options);
+          case 'rrt_connect'
+            [TA, path_ids_A, info, TB] = TA.rrtConnect(x_start, x_goal, TB, options);
+        end
+      catch
+        info = 2;
       end
 
       if options.verbose
@@ -219,68 +223,73 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
         fprintf('  RRT:       %5.2f s\n', rrt_time);
       end
 
-      switch options.smoothing_type
-        case 'joint'
-          T_smooth = TA.trees{TA.cspace_idx};
-          T_smooth.max_edge_length = 15*pi/180;
-          T_smooth.max_length_between_constraint_checks = 15*pi/180;
-          q_idx = 1:nq;
-        case 'end_effector'
-          T_smooth = TA;
-          % interp_weight determines how much consideration is given to joint
-          % space distance during smoothing:
-          %  * 0 - end-effector distance only
-          %  * 1 - joint-space distance only
-          T_smooth.interp_weight = 0.5;
-          q_idx = TA.idx{TA.cspace_idx};
+      if (info == 1) 
+        switch options.smoothing_type
+          case 'joint'
+            T_smooth = TA.trees{TA.cspace_idx};
+            T_smooth.max_edge_length = 15*pi/180;
+            T_smooth.max_length_between_constraint_checks = 15*pi/180;
+            q_idx = 1:nq;
+          case 'end_effector'
+            T_smooth = TA;
+            % interp_weight determines how much consideration is given to joint
+            % space distance during smoothing:
+            %  * 0 - end-effector distance only
+            %  * 1 - joint-space distance only
+            T_smooth.interp_weight = 0.9;
+            q_idx = TA.idx{TA.cspace_idx};
+        end
+
+        if (options.n_smoothing_passes > 0)
+          if options.verbose
+            smoothing_timer = tic;
+          end
+          if options.visualize
+            T_smooth = T_smooth.setLCMGL('T_smooth', TA.line_color);
+          end
+
+          [T_smooth, id_last] = T_smooth.recursiveConnectSmoothing(path_ids_A, options.n_smoothing_passes,true);
+          path_ids_smooth = T_smooth.getPathToVertex(id_last);
+
+          if options.verbose
+            smoothing_time = toc(smoothing_timer);
+            fprintf('  Smoothing: %5.2f s\n', smoothing_time);
+            fprintf('  Total:     %5.2f s\n', setup_time+rrt_time+smoothing_time);
+          end
+          if options.visualize
+            drawTree(TA);
+            drawTree(TB);
+            drawPath(T_smooth, path_ids_smooth);
+          end
+        end
+
+        q_path = extractPath(T_smooth, path_ids_smooth);
+        path_length = size(q_path,2);
+
+        % Scale timing to obey joint velocity limits
+        % Create initial spline
+        q_traj = PPTrajectory(pchip(linspace(0, 1, path_length), q_path(q_idx,:)));
+        t = linspace(0, 1, 10*path_length);
+        q_path = eval(q_traj, t);
+
+        % Determine max joint velocity at midpoint of  each segment
+        t_mid = mean([t(2:end); t(1:end-1)],1);
+        v_mid = q_traj.fnder().eval(t_mid);
+        scale_factor = max(abs(bsxfun(@rdivide, v_mid, options.v_max)), [], 1);
+
+        % Adjust durations to keep velocity below max
+        t_scaled = [0, cumsum(diff(t).*scale_factor)];
+        tf = t_scaled(end);
+
+        % Warp time to give gradual acceleration/deceleration
+        t_scaled = tf*(-real(acos(2*t_scaled/tf-1)+pi)/2);
+        [t_scaled, idx_unique] = unique(t_scaled,'stable');
+
+        xtraj = PPTrajectory(pchip(t_scaled,[q_path(:,idx_unique); zeros(r.getNumVelocities(),numel(t_scaled))]));
+      else
+        xtraj = [];
+        info = 13;
       end
-
-      if (info == 1) && (options.n_smoothing_passes > 0)
-        if options.verbose
-          smoothing_timer = tic;
-        end
-        if options.visualize
-          T_smooth = T_smooth.setLCMGL('T_smooth', TA.line_color);
-        end
-
-        [T_smooth, id_last] = T_smooth.recursiveConnectSmoothing(path_ids_A, options.n_smoothing_passes,true);
-        path_ids_smooth = T_smooth.getPathToVertex(id_last);
-
-        if options.verbose
-          smoothing_time = toc(smoothing_timer);
-          fprintf('  Smoothing: %5.2f s\n', smoothing_time);
-          fprintf('  Total:     %5.2f s\n', setup_time+rrt_time+smoothing_time);
-        end
-        if options.visualize
-          drawTree(TA);
-          drawTree(TB);
-          drawPath(T_smooth, path_ids_smooth);
-        end
-      end
-        
-      q_path = extractPath(T_smooth, path_ids_smooth);
-      path_length = size(q_path,2);
-        
-      % Scale timing to obey joint velocity limits
-      % Create initial spline
-      q_traj = PPTrajectory(pchip(linspace(0, 1, path_length), q_path(q_idx,:)));
-      t = linspace(0, 1, 10*path_length);
-      q_path = eval(q_traj, t);
-
-      % Determine max joint velocity at midpoint of  each segment
-      t_mid = mean([t(2:end); t(1:end-1)],1);
-      v_mid = q_traj.fnder().eval(t_mid);
-      scale_factor = max(abs(bsxfun(@rdivide, v_mid, options.v_max)), [], 1);
-
-      % Adjust durations to keep velocity below max
-      t_scaled = [0, cumsum(diff(t).*scale_factor)];
-      tf = t_scaled(end);
-
-      % Warp time to give gradual acceleration/deceleration
-      t_scaled = tf*(-real(acos(2*t_scaled/tf-1)+pi)/2);
-      [t_scaled, idx_unique] = unique(t_scaled,'stable');
-
-      xtraj = PPTrajectory(pchip(t_scaled,[q_path(:,idx_unique); zeros(r.getNumVelocities(),numel(t_scaled))]));
     case 'optimization'
       for i = 1:numel(constraints)
         if ~isa(constraints{i},'PostureConstraint')
@@ -334,8 +343,9 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
       t_fine = linspace(xtraj.tspan(1),xtraj.tspan(2));
       xtraj = PPTrajectory(foh(t_fine,xtraj.eval(t_fine)));
   end
-  xtraj = xtraj.setOutputFrame(r.getStateFrame());
-
+  if (info < 10)
+    xtraj = xtraj.setOutputFrame(r.getStateFrame());
+  end
 end
 
 function displayCallback(publisher,N,x)
