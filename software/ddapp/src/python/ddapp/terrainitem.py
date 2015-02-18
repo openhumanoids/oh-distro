@@ -13,10 +13,11 @@ from ddapp.pointpicker import PlacerWidget
 from PythonQt import QtGui
 
 class TerrainRegionItem(vis.PolyDataItem):
-    def __init__(self, name, view, seed_pose, irisDriver):
+    def __init__(self, uid, view, seed_pose, irisDriver, existing_region=None):
 
         d = DebugData()
-        vis.PolyDataItem.__init__(self, name, d.getPolyData(), view)
+        self.uid = uid
+        vis.PolyDataItem.__init__(self, "IRIS region {:d}".format(uid), d.getPolyData(), view)
         self.transform = seed_pose
         d.addSphere((0,0,0), radius=0.02)
         self.seedObj = vis.showPolyData(d.getPolyData(), 'region seed', parent=om.getOrCreateContainer('IRIS region seeds'))
@@ -60,12 +61,15 @@ class TerrainRegionItem(vis.PolyDataItem):
         self.addProperty('Color', QtGui.QColor(200,200,20))
 
         self.frameObj.connectFrameModified(self.onFrameModified)
-        self.onFrameModified(self.frameObj)
+        if existing_region is None:
+            self.onFrameModified(self.frameObj)
+        else:
+            self.setRegion(existing_region)
 
         self.setProperty('Alpha', 0.5)
         self.setProperty('Color', QtGui.QColor(220,220,220))
 
-    def onNewRegion(self, safe_region):
+    def setRegion(self, safe_region):
         debug = DebugData()
         pos = safe_region.point
         try:
@@ -94,7 +98,7 @@ class TerrainRegionItem(vis.PolyDataItem):
 
 
     def onFrameModified(self, frame):
-        self.driver.requestIRISRegion(frame.transform, self.onNewRegion)
+        self.driver.requestIRISRegion(frame.transform, self.uid)
 
     def _onPropertyChanged(self, propertySet, propertyName):
         vis.PolyDataItem._onPropertyChanged(self, propertySet, propertyName)
@@ -110,4 +114,5 @@ class TerrainRegionItem(vis.PolyDataItem):
     def onRemoveFromObjectModel(self):
         om.removeFromObjectModel(self.frameObj)
         om.removeFromObjectModel(self.seedObj)
+        self.driver.regions.pop(self.uid)
         vis.PolyDataItem.onRemoveFromObjectModel(self)

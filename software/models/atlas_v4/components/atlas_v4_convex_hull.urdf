@@ -11,7 +11,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_clav_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_clav.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -28,7 +28,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_farm_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_farm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -45,7 +45,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_foot_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_foot.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision>
@@ -63,7 +63,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_hand_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_hand.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -89,7 +89,7 @@
     <visual>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_larm_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_larm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -107,7 +107,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_lglut_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_lglut.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -124,7 +124,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_lleg_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_lleg.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -141,7 +141,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_scap_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_scap.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -158,7 +158,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_talus_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_talus.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     </link>
@@ -170,7 +170,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_uarm_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_uarm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -187,7 +187,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_uglut_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_uglut.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -204,7 +204,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_uleg_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/l_uleg.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <!-- to cover the logo shield -->
@@ -224,7 +224,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/ltorso_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/ltorso.obj" scale="1 1 1"/>
       </geometry>
     </visual>
   </link>
@@ -236,7 +236,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/mtorso_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/mtorso.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     </link>
@@ -248,7 +248,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/pelvis_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/pelvis.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -265,7 +265,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_clav_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_clav.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -282,7 +282,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_farm_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_farm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -299,7 +299,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_foot_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_foot.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision>
@@ -316,7 +316,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_hand_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_hand.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -340,7 +340,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_larm_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_larm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -357,7 +357,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_lglut_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_lglut.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -374,7 +374,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_lleg_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_lleg.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -391,7 +391,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_scap_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_scap.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -408,7 +408,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_talus_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_talus.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     </link>
@@ -420,7 +420,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_uarm_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_uarm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -437,7 +437,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_uglut_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_uglut.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
@@ -454,7 +454,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/r_uleg_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_uleg.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <!-- to cover the logo shield -->
@@ -475,7 +475,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/utorso_chull.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/utorso.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>

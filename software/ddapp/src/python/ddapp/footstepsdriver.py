@@ -42,7 +42,7 @@ with open(drcargs.args().directorConfigFile) as directorConfigFile:
 
 
 DEFAULT_PARAM_SET = 'drake'
-DEFAULT_STEP_PARAMS = {'BDI': {'Max Num Steps': 20,
+DEFAULT_STEP_PARAMS = {'BDI': {'Max Num Steps': 12,
                                'Nominal Step Width': 0.26,
                                'Nominal Forward Step': 0.15,
                                'Max Forward Step': 0.40,
@@ -52,15 +52,15 @@ DEFAULT_STEP_PARAMS = {'BDI': {'Max Num Steps': 20,
                                'Drake Swing Speed': 0.2,
                                'Drake Instep Shift': 0.0275,
                                'Drake Min Hold Time': 2.0},
-                       'drake': {'Max Num Steps': 20,
+                       'drake': {'Max Num Steps': 12,
                                  'Nominal Step Width': 0.26,
-                                 'Nominal Forward Step': 0.25,
+                                 'Nominal Forward Step': 0.24,
                                  'Max Forward Step': 0.30,
                                  'Max Step Width': 0.32,
                                  'Behavior': 2,
                                  'Leading Foot': 0,
-                                 'Drake Swing Speed': 0.4,
-                                 'Drake Instep Shift': 0.014,
+                                 'Drake Swing Speed': 0.3,
+                                 'Drake Instep Shift': 0.005,
                                  'Drake Min Hold Time': 0.9}}
 
 DEFAULT_CONTACT_SLICES = {(0.05, 0.3): np.array([[-0.13, -0.13, 0.13, 0.13],
@@ -193,7 +193,7 @@ class FootstepsDriver(object):
                                  lcmdrc.footstep_plan_params_t.LEAD_LEFT,
                                  lcmdrc.footstep_plan_params_t.LEAD_RIGHT]
         # self.params.addProperty('Map Command', 0, attributes=om.PropertyAttributes(enumNames=['Full Heightmap', 'Flat Ground', 'Z Normals']))
-        self.params.addProperty('Map Mode', 0, attributes=om.PropertyAttributes(enumNames=['Foot Plane', 'Terrain Heights & Normals', 'Terrain Heights, Z Normals', 'Horizontal Plane']))
+        self.params.addProperty('Map Mode', 1, attributes=om.PropertyAttributes(enumNames=['Foot Plane', 'Terrain Heights & Normals', 'Terrain Heights, Z Normals', 'Horizontal Plane']))
         self.map_mode_map = [
                              lcmdrc.footstep_plan_params_t.FOOT_PLANE,
                              lcmdrc.footstep_plan_params_t.TERRAIN_HEIGHTS_AND_NORMALS,
@@ -215,6 +215,7 @@ class FootstepsDriver(object):
                               0: lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING,
                               1: lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_WALKING,
                               2: lcmdrc.footstep_plan_params_t.BEHAVIOR_WALKING}
+        self.params.addProperty('Planner Mode', 0, attributes=om.PropertyAttributes(enumNames=['Fast MIQP', 'Slow MISOCP']))
 
     def applyDefaults(self, set_name):
         defaults = self.default_step_params[set_name]
@@ -587,7 +588,7 @@ class FootstepsDriver(object):
         msg.params.max_forward_step = self.params.properties.max_forward_step
         msg.params.nom_upward_step = 0.25;
         msg.params.nom_downward_step = 0.15;
-        msg.params.planning_mode = msg.params.MODE_AUTO
+        msg.params.planning_mode = self.params.properties.planner_mode
         msg.params.behavior = self.behavior_lcm_map[self.params.properties.behavior]
         # msg.params.use_map_heights = self.params.properties.heights_source == 0
         # msg.params.use_map_normals = self.params.properties.normals_source == 0

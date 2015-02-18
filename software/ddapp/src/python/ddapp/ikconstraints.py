@@ -116,6 +116,52 @@ class PostureConstraint(ConstraintBase):
             ''.format(**formatArgs))
 
 
+class FixedLinkFromRobotPoseConstraint (ConstraintBase):
+    def __init__(self, **kwargs):
+
+        self._add_fields(
+            poseName = '',
+            linkName    = '',
+            lowerBound  = np.zeros(3),
+            upperBound  = np.zeros(3),
+            angleToleranceInDegrees = 0.0,
+            )
+
+        ConstraintBase.__init__(self, **kwargs)
+
+    def _getCommands(self, commands, constraintNames, suffix):
+
+        assert self.linkName
+        assert self.poseName
+        positionVarName = 'position_constraint%s' % suffix
+        quaternionVarName = 'quaternion_constraint%s' % suffix
+        constraintNames.append(positionVarName)
+        constraintNames.append(quaternionVarName)
+
+        formatArgs = dict(positionVarName=positionVarName,
+                          quaternionVarName=quaternionVarName,
+                          robotArg=self.robotArg,
+                          tspan=self.getTSpanString(),
+                          linkName=self.linkName,
+                          poseName=self.poseName,
+                          lowerBound=self.toColumnVectorString(self.lowerBound),
+                          upperBound=self.toColumnVectorString(self.upperBound),
+                          tolerance=repr(math.radians(self.angleToleranceInDegrees)))
+
+        commands.append(
+            'point_in_link_frame = [0; 0; 0];\n'
+            'kinsol = {robotArg}.doKinematics({poseName});\n'
+            'xyz_quat = {robotArg}.forwardKin(kinsol, links.{linkName}, point_in_link_frame, 2);\n'
+            'lower_bounds = xyz_quat(1:3) + {lowerBound};\n'
+            'upper_bounds = xyz_quat(1:3) + {upperBound};\n'
+            '{positionVarName} = WorldPositionConstraint({robotArg}, links.{linkName}, '
+            'point_in_link_frame, lower_bounds, upper_bounds, {tspan});'
+            '{quaternionVarName} = WorldQuatConstraint({robotArg}, links.{linkName}, '
+            'xyz_quat(4:7), {tolerance}, {tspan});'
+            ''.format(**formatArgs))
+
+
+
 class PositionConstraint(ConstraintBase):
 
     def __init__(self, **kwargs):
@@ -557,6 +603,7 @@ class MinDistanceConstraint(ConstraintBase):
             '{varName} = MinDistanceConstraint({robotArg}, {minDistance}, {tspan});\n'
             ''.format(**formatArgs))
 
+
 class ExcludeCollisionGroupConstraint(ConstraintBase):
 
     def __init__(self, **kwargs):
@@ -576,3 +623,20 @@ class ExcludeCollisionGroupConstraint(ConstraintBase):
         commands.append(
             'excluded_collision_groups = struct(\'name\',\'{name}\',\'tspan\',{tspan});\n'
             ''.format(**formatArgs))
+
+
+class ActiveEndEffectorConstraint(ConstraintBase):
+
+    def __init__(self, **kwargs):
+
+        self._add_fields(
+            endEffectorName = '',
+            endEffectorPoint = np.zeros(3)
+            )
+
+        ConstraintBase.__init__(self, **kwargs)
+
+    def _getCommands(self, commands, constraintNames, suffix):
+
+        commands.append("end_effector_name = '%s';" % self.endEffectorName)
+        commands.append("end_effector_pt = %s;" % self.toColumnVectorString(self.endEffectorPoint))

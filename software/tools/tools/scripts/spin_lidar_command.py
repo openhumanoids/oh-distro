@@ -22,9 +22,3 @@ msg.agc = -1
 lc = lcm.LCM()
 lc.publish("MULTISENSE_COMMAND", msg.encode())
 print "Publishing Multisense command to spin at 3rpm"
-
-
-
-
-  
-

@@ -14,16 +14,11 @@ using namespace boost::assign;
 // false usually, set true to disable the limiting:
 #define DONT_LIMIT_FREQUENCY FALSE
 
-/////////////////////////////////////
-
-
-
-
 joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, bool show_triads_,
-  bool standalone_head_, bool ground_height_, bool bdi_motion_estimate_, bool multisense_sim_):
+  bool standalone_head_, bool multisense_sim_):
           lcm_(lcm_), show_labels_(show_labels_), show_triads_(show_triads_),
-          standalone_head_(standalone_head_), ground_height_(ground_height_),
-          bdi_motion_estimate_(bdi_motion_estimate_), multisense_sim_(multisense_sim_){
+          standalone_head_(standalone_head_),
+          multisense_sim_(multisense_sim_){
             
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
             
@@ -42,15 +37,6 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
 
-  // Draw the Foot positions, as understood by BDI (Disabled Oct 2013)
-  // these points are just below the footpad, in the middle of the foot 
-  //pc_vis_->obj_cfg_list.push_back( obj_cfg(6003,"BDI Feet",5,1) );
-  //lcm_->subscribe("ATLAS_FOOT_POS_EST",&joints2frames::foot_pos_est_handler,this);  
-  
-  
-  /// Limit the output frequency of the following messages:
-  // Currently 100Hz, actually ~80Hz:
-  
   #if DONT_LIMIT_FREQUENCY
     std::cout << "Output signals will not limited in rate\n";  
   #else
@@ -58,11 +44,10 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     pub_frequency_["BODY_TO_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
     pub_frequency_["BODY_TO_RHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "r_hand_force_torque" ) );
     pub_frequency_["BODY_TO_LHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "l_hand_force_torque" ) );
-    // Is was used for gazebo-based simulation:
-    //pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") );
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
+  #endif
 
-  #endif  
+  send_ground_height_ = true;
 }
 
 
@@ -164,8 +149,6 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
                                                msg->pose.rotation.y, msg->pose.rotation.z);
   world_to_body.rotate(quat);    
-  // Removed and will now be published by State Sync:
-  //publishPose(world_to_body, msg->utime, "POSE_BODY" );
     
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.
@@ -215,10 +198,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
   bool body_to_head_found =false;
   bool body_to_hokuyo_link_found = false;
-
   for( map<string, KDL::Frame >::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
     std::string link = (*ii).first;
-    //std::cout << link << " is link\n";
     if (   (*ii).first.compare( "head" ) == 0 ){
       body_to_head = KDLToEigen( (*ii).second );
       body_to_head_found=true;
@@ -229,38 +210,20 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
     }else if(  (*ii).first.compare( "l_hand_force_torque" ) == 0 ){ // ft sensor
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND_FORCE_TORQUE" );
-    //}else if(  (*ii).first.compare( "r_hand_camera_optical_frame" ) == 0 ){ // robotiq r
-    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND" );
-    //}else if(  (*ii).first.compare( "l_hand_camera_optical_frame" ) == 0 ){ // robotiq l
-    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND" );
-    //}else if(  (*ii).first.compare( "l_hand_face" ) == 0 ){
-    //  publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_LHAND_FACE" );
-    //}else if(  (*ii).first.compare( "r_hand_face" ) == 0 ){
-    //  publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_RHAND_FACE" );
     }
-    
   }
 
-
-  
   // 2b. Republish the required BOT_FRAMES transforms:
   if (body_to_head_found){
-    /*
-     * DONT PUBLISH THIS FOR SIMULATOR - CURRENTLY PUBLISHED BY LEGODO PROCESS
-     */
-    
-    if (bdi_motion_estimate_){
-      publishRigidTransform(body_to_head, msg->utime, "BODY_TO_HEAD");
-    }
-    
+    publishRigidTransform(body_to_head, msg->utime, "BODY_TO_HEAD");
   }
-  
   if (standalone_head_){
     // If publishing from the head alone, then the head is also the body link:
-      publishRigidTransform(body_to_hokuyo_link, msg->utime, "HEAD_TO_HOKUYO_LINK" ); 
+    publishRigidTransform(body_to_hokuyo_link, msg->utime, "HEAD_TO_HOKUYO_LINK" );
   }
   
-  if (ground_height_){ 
+
+  if (send_ground_height_){ 
     // Publish a pose at the lower of the feet - assumed to be on the ground
     // TODO: This doesnt need to be published at 1000Hz
     Eigen::Isometry3d body_to_l_foot = KDLToEigen(cartpos_out.find("l_foot")->second);
@@ -283,12 +246,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       publishPose(world_to_r_sole, msg->utime,"POSE_GROUND");
     }
   }
-  
-  //Eigen::Isometry3d body_to_utorso = KDLToEigen(cartpos_out.find("utorso")->second);
-  //publishRigidTransform(body_to_utorso, msg->utime, "BODY_TO_UTORSO");
-  
 
-  // 4. Loop through joints and extract world positions:
+  // 3. Loop through joints and extract world positions:
   if (show_triads_){
     int counter =msg->utime;  
     std::vector<Isometry3dTime> body_to_jointTs, world_to_jointsT;
@@ -311,27 +270,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     
     pc_vis_->pose_collection_to_lcm_from_list(6001, world_to_jointsT); // all joints in world frame
     if (show_labels_)
-      pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );    
-  
+      pc_vis_->text_collection_to_lcm(6002, 6001, "Frames [Labels]", joint_names, body_to_joint_utimes );
   }
-}
-
-
-// Visualize the foot positions from BDI:
-// This can be turnned off if necessary - its not important
-void joints2frames::foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_foot_pos_est_t* msg){
-  Eigen::Isometry3d left_pos;
-  left_pos.setIdentity();
-  left_pos.translation()  << msg->left_position[0], msg->left_position[1], msg->left_position[2];
-      
-  Eigen::Isometry3d right_pos;
-  right_pos.setIdentity();
-  right_pos.translation()  << msg->right_position[0], msg->right_position[1], msg->right_position[2];
-    
-  std::vector<Isometry3dTime> feet_posT;
-  feet_posT.push_back( Isometry3dTime(msg->utime , left_pos  )  );
-  feet_posT.push_back( Isometry3dTime(msg->utime+1 , right_pos  )  );
-  pc_vis_->pose_collection_to_lcm_from_list(6003, feet_posT); 
 }
 
 
@@ -340,15 +280,11 @@ main(int argc, char ** argv){
   bool labels = false;
   bool triads = false;
   bool standalone_head = false;
-  bool ground_height = false;
-  bool bdi_motion_estimate = false;
   bool multisense_sim = false;
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(triads, "t", "triads","Frame Triads - show no not");
-  opt.add(labels, "l", "labels","Frame Labels - show no not");
-  opt.add(ground_height, "g", "ground", "Publish the grounded foot pose");
+  opt.add(triads, "t", "triads","Publish Frame Triads");
+  opt.add(labels, "l", "labels","Publish Frame Labels");
   opt.add(standalone_head, "s", "standalone_head","Standalone Sensor Head");
-  opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make frames [Temporary!]");
   opt.add(multisense_sim, "m", "multisense_sim","In sim, publish PRE_SPINDLE_TO_POST_SPINDLE");
   opt.parse();
   if (labels){ // require triads if labels is to be published
@@ -358,12 +294,11 @@ main(int argc, char ** argv){
   std::cout << "triads: " << triads << "\n";
   std::cout << "labels: " << labels << "\n";
 
-  
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM("") );
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm,labels,triads, standalone_head, ground_height, bdi_motion_estimate, multisense_sim);
+  joints2frames app(lcm,labels,triads, standalone_head, multisense_sim);
   while(0 == lcm->handle());
   return 0;
 }

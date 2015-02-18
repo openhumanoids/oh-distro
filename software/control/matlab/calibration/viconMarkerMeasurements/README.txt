@@ -1,3 +1,2 @@
-Measurements are recorded in vicon_marker_measurements.m, which also computes the marker positions from the measured data.
-The .jpgs show which marker positions are being measured/computed using red circles. The photo for the left hand doesn't actually show the marker, but the circle shows where it should be (on right side as viewed from the front, hole farthest away from the camera, single standoff).
-The .pp files can be imported into Meshlab using the Point Picker tool after opening the .obj file for the hand (e.g. software/models/mit_gazebo_models/mit_robot/meshes/r_hand.obj). After importing the file, the positions of the measurement reference, marker standoff base, and the marker itself will be visualized.
+Measurements are recorded in drc/software/control/matlab/calibration/viconMarkerMeasurements/measuredViconMarkerPositions.m, which also computes the marker positions from the measured data and reference points obtained from the meshes.
+The images show which marker positions are being measured/computed using red circles.

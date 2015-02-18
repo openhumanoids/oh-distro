@@ -21,7 +21,7 @@ classdef CombinedPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       r = DRCAtlas([],options);
-      r = removeCollisionGroupsExcept(r,{'heel','toe'});
+      r = r.removeCollisionGroupsExcept({'heel','toe'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
@@ -37,7 +37,7 @@ classdef CombinedPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       options.visual = false; % loads faster
       r = Valkyrie([], options);
-      r = removeCollisionGroupsExcept(r,{'heel','toe'});
+      r = r.removeCollisionGroupsExcept({'heel','toe'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
@@ -49,16 +49,26 @@ classdef CombinedPlanner
 
   methods
     function obj = CombinedPlanner(biped, varargin)
+      checkDependency('iris');
       if nargin < 1 || isempty(biped)
         biped = CombinedPlanner.constructAtlas(varargin{:});
       end
 
       obj.biped = biped;
+      
       obj.footstep_planner = StatelessFootstepPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
 
-      checkDependency('iris');
-      obj.iris_planner = iris.terrain_grid.Server();
+      if isa(obj.biped, 'Atlas')
+        obj.iris_planner = IRISPlanner(obj.biped,...
+         Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 4)));
+      elseif isa(obj.biped, 'Valkyrie')
+        obj.iris_planner = IRISPlanner(Valkyrie([], struct('floating', true)));
+      else
+        warning('DRC:CombinedPlanner:NoFootstepCollisionModel', 'This robot may not support upper body collision planning. Footstep plans may cause the upper body to collide with the terrain');
+        obj.iris_planner = IRISPlanner(obj.biped);
+      end
+
       obj.monitors = {};
       obj.request_channels = {};
       obj.handlers = {};
@@ -105,6 +115,10 @@ classdef CombinedPlanner
       obj.handlers{end+1} = @obj.terrain_raycast;
       obj.response_channels{end+1} = 'MAP_DEPTH';
 
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.auto_iris_segmentation_request_t, 'utime');
+      obj.request_channels{end+1} = 'AUTO_IRIS_SEGMENTATION_REQUEST';
+      obj.handlers{end+1} = @obj.auto_iris_segmentation;
+      obj.response_channels{end+1} = 'IRIS_SEGMENTATION_RESPONSE';
 
     end
 
@@ -170,8 +184,6 @@ classdef CombinedPlanner
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
       % compute link_constraints for pelvis
       pelvis_ind = findLinkId(obj.biped,'pelvis');
-      lfoot_ind = findLinkId(obj.biped,'l_foot');
-      rfoot_ind = findLinkId(obj.biped,'r_foot');
       pelvis_pose = zeros(6,length(ts));
       for i=1:length(ts)
         kinsol = doKinematics(obj.biped,ppval(qtraj_pp,ts(i)));
@@ -185,50 +197,14 @@ classdef CombinedPlanner
       plan = ConfigurationTraj(qtraj_pp,link_constraints);
     end
 
-    function region_list = iris_region(obj, msg)
-%       profile on
-%       disp('handling iris request')
+    function region = iris_region(obj, msg)
       msg = drc.iris_region_request_t(msg);
-      collision_model = obj.biped.getFootstepPlanningCollisionModel();
-      regions = iris.TerrainRegion.empty();
+      region = obj.iris_planner.iris_region(msg);
+    end
 
-      if ~obj.iris_planner.hasHeightmap(msg.map_id);
-        [heights, px2world] = obj.biped.getTerrain().map_handle.getHeightData();
-
-        px2world(1,end) = px2world(1,end) - sum(px2world(1,1:3)); % stupid matlab 1-indexing...
-        px2world(2,end) = px2world(2,end) - sum(px2world(2,1:3));
-        px2world_2x3 = px2world(1:2, [1,2,4]);
-
-        [M, N] = meshgrid(1:size(heights, 1), 1:size(heights,2));
-        sz = size(M);
-        XY = px2world_2x3 * [reshape(M, 1, []); reshape(N, 1, []); ones(1, numel(M))];
-        [Z, normals] = obj.biped.getTerrain().getHeight(XY);
-        X = reshape(XY(1,:), sz);
-        Y = reshape(XY(2,:), sz);
-        Z = reshape(Z, sz);
-        heightmap = iris.terrain_grid.Heightmap(X, Y, Z, normals);
-        obj.iris_planner.addHeightmap(msg.map_id, heightmap);
-      end
-
-      for j = 1:msg.num_seed_poses
-        seed_pose = decodePosition3d(msg.seed_poses(j));
-
-        xy_bounds = decodeLinCon(msg.xy_bounds(j));
-        if isempty(obj.iris_planner.getHeightmap(msg.map_id).Z)
-          if size(xy_bounds.A, 2) == 2
-            xy_bounds.A(:,end+1:3) = 0;
-          end
-          regions(end+1) = iris.TerrainRegion(xy_bounds.A, xy_bounds.b, [], [], seed_pose(1:3), [0;0;1]);
-        else
-          i0 = obj.iris_planner.xy2ind(msg.map_id, seed_pose(1:2));
-          yaw = seed_pose(6);
-          
-          regions(end+1) = obj.iris_planner.getCSpaceRegionAtIndex(i0, yaw, collision_model,...
-            'xy_bounds', xy_bounds, 'error_on_infeas_start', false);
-        end
-      end
-      region_list = IRISRegionList(regions);
-%       profile viewer
+    function region_list = auto_iris_segmentation(obj, msg)
+      msg = drc.auto_iris_segmentation_request_t(msg);
+      region_list = obj.iris_planner.auto_iris_segmentation(msg);
     end
 
     function map_img = terrain_raycast(obj, msg)
@@ -237,8 +213,7 @@ classdef CombinedPlanner
       model = model.addRobotFromURDFString(char(msg.urdf.urdf_xml_string));
       heightmap = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(model,[],msg.x_min:msg.x_step:msg.x_max, msg.y_min:msg.y_step:msg.y_max, msg.scanner_height);
 
-      map_img = CombinedPlanner.getDRCMapImage(heightmap, 12345, msg.x_step, msg.y_step, msg.utime);
-
+      map_img = CombinedPlanner.getDRCMapImage(heightmap, 0, msg.x_step, msg.y_step, msg.utime);
     end
   end
 
@@ -264,7 +239,6 @@ classdef CombinedPlanner
       map_img.data_shift = zmin;
       Z_scaled = (Z - map_img.data_shift) * (MAXINT / zrange);
       Z_scaled = uint8(Z_scaled);
-      max(max(Z_scaled))
       
       map_img.utime = utime;
       map_img.view_id = drc.data_request_t.HEIGHT_MAP_SCENE;

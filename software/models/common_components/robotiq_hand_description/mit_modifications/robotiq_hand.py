@@ -54,8 +54,6 @@ mit.xacro(original_urdf_path, tmp.name, includes_only=True,
 # Load urdf
 urdf = etree.parse(tmp.name)
 
-# Replace package:// syntax
-#mit.replacePackageWithPathInMeshPaths(urdf, "../common_components/")
 # Use .obj meshes
 mit.useObjMeshes(urdf)
 
@@ -65,6 +63,9 @@ urdf.write(urdf_path, pretty_print=True)
 # Generate no-joint urdf
 for joint in urdf.findall("//joint"):
     joint.set("type", "fixed")
+
+# Use convex hull meshes for collisions
+mit.useConvexHullMeshes(urdf)
 
 urdf.write(no_joint_urdf_path, pretty_print=True)
 

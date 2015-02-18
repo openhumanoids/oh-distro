@@ -2,8 +2,8 @@
   "urdfConfig": {
     "default": "./model_LR_RR.urdf",
     "robotState": "./model_LR_RR.urdf",
-    "ik":         "./model_convex_hull.urdf",
-    "chull":      "./model_convex_hull.urdf",
+    "ik":         "./model_convex_hull_fingers.urdf",
+    "chull":      "./model_convex_hull_fingers.urdf",
     "playback":   "./model_LR_RR.urdf",
     "teleop":     "./model_LR_RR.urdf"
   },

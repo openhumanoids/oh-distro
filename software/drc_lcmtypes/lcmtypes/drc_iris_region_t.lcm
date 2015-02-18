@@ -6,6 +6,5 @@ struct iris_region_t
 
 	lin_con_t lin_con;
 
-	double point[3];
-	double normal[3];
+	position_3d_t seed_pose;
 }

@@ -1,0 +1,117 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+  name="valve_wall">
+  <xacro:property name="inches" value="0.0254"/>
+  <xacro:include filename="torus.xacro"/>
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0.9525"
+        rpy="0 0 0" />
+      <mass value="17.8262" />
+      <inertia
+        ixx="5.3996"
+        ixy="0"
+        ixz="0"
+        iyy="2.5014"
+        iyz="0"
+        izz="7.8838" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0.9525"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".0762 1.2954 1.905" />
+      </geometry>
+      <material name="">
+        <color rgba="0 1 1 1" />
+      </material>
+    </visual>
+<collision>   
+  <origin xyz="0 0 0.9525"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".0762 1.2954 1.905" />
+      </geometry>
+      <material name="">
+        <color rgba="0 1 1 1" />
+      </material>
+</collision> 
+<visual>
+      <origin xyz="0.150815 0 1.12078"
+        rpy="0 1.57079633 0" />
+      <geometry>
+        <cylinder length=".22543" radius=".0508"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 0 1 1" />
+      </material>
+    </visual> 
+  </link>
+  
+  <link name="Valve_18">
+    <inertial>
+      <origin xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass value="12.9" />
+      <inertia
+        ixx="0.342175"
+        ixy="0"
+        ixz="0"
+        iyy="0.200005"
+        iyz="0"
+        izz="0.200005" />
+    </inertial>
+    <visual>
+      <origin xyz="${0.6*inches} 0 0.1016"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".0254 .0254 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+    </visual>   
+    <visual>
+      <origin xyz=".01524 0 -0.1016"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".0254 .0254 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+    </visual>  
+    <visual>
+      <origin xyz=".0124 0.1016 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".0254 .1778 .0254"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+    </visual>   
+    <visual>
+      <origin xyz=".01524 -0.1016 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".0254 .1778 .0254"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 0" />
+      </material>
+    </visual> 
+  </link>
+  <xacro:torus parent_link="Valve_18" xyz="0 0 0" rpy="0 ${pi/2} 0" major_radius="${8.25*inches}" minor_radius="${0.75*inches}"/>
+
+  <joint
+    name="Big_Valve"
+    type="continuous">
+    <parent link="base_link" />
+    <child link="Valve_18" />
+    <origin xyz=".28258 0 1.12078" />
+    <axis xyz="1 0 0" />
+    <dynamics damping="5" friction="5"/>
+  </joint>
+
+
+</robot>

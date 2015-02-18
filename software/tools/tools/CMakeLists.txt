@@ -36,10 +36,12 @@ pods_install_python_script(drc-scope-bandwidth scripts/bandwidth_scope.py)
 pods_install_python_script(drc-scope-jointrate scripts/jointrate_scope.py)
 pods_install_python_script(drc-set-sim-rate scripts/send_a_rateset.py)
 pods_install_python_script(drc-set-hose scripts/send_a_poseset.py)
-pods_install_python_script(drc-init-laser scripts/init_laser.py)
+pods_install_python_script(drc-spin-lidar scripts/spin_lidar_command.py)
 pods_install_python_script(drc-projectile-leap scripts/send_a_projectile_leap.py)
 pods_install_python_script(drc-power-hands scripts/power_hands.py)
 pods_install_python_script(drc-send-a-message scripts/send_a_status_msg.py)
 pods_install_python_script(drc_latency scripts/drc_latency.py)
+pods_install_python_script(drc-measure-orientation-drift scripts/measure_orientation_drift.py)
+
 pods_install_python_script(drc-systemwide-tests python/system_test.py)
 

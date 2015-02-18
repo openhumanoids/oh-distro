@@ -13,7 +13,7 @@ group "0.params_and_model_pub" {
 group "1.state_mit" {
 
     cmd "joints2frames" {
-        exec = "drc-joints2frames -g -b";
+        exec = "drc-joints2frames";
         host = "base";
     }
 
@@ -25,7 +25,10 @@ group "1.state_mit" {
         exec = "se-fusion";
         host = "robot";
     }
-
+    cmd "yaw-lock" {
+        exec = "se-yaw-lock";
+        host = "robot";
+    }
 }
 
 group "2.plan_and_control" {
@@ -44,11 +47,6 @@ group "2.plan_and_control" {
 
     cmd "contact_monitor" {        
     	exec = "drc-contact-monitor";
-        host = "robot";
-    }
-
-    cmd "contact_monitor_slow" {
-    	exec = "drc-contact-monitor 150 FOOT_CONTACT_ESTIMATE_SLOW 0.5";
         host = "robot";
     }
 
@@ -77,7 +75,7 @@ group "4.perception_drivers" {
     }
 
     cmd "spin-lidar" {
-        exec = "spin-lidar-command";
+        exec = "drc-spin-lidar";
         host = "atlas0";
     }
 
