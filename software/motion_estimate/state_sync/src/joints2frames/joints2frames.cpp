@@ -15,10 +15,10 @@ using namespace boost::assign;
 #define DONT_LIMIT_FREQUENCY FALSE
 
 joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, bool show_triads_,
-  bool standalone_head_, bool bdi_motion_estimate_, bool multisense_sim_):
+  bool standalone_head_, bool multisense_sim_):
           lcm_(lcm_), show_labels_(show_labels_), show_triads_(show_triads_),
           standalone_head_(standalone_head_),
-          bdi_motion_estimate_(bdi_motion_estimate_), multisense_sim_(multisense_sim_){
+          multisense_sim_(multisense_sim_){
             
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
             
@@ -252,13 +252,11 @@ main(int argc, char ** argv){
   bool labels = false;
   bool triads = false;
   bool standalone_head = false;
-  bool bdi_motion_estimate = false;
   bool multisense_sim = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(triads, "t", "triads","Frame Triads - show no not");
   opt.add(labels, "l", "labels","Frame Labels - show no not");
   opt.add(standalone_head, "s", "standalone_head","Standalone Sensor Head");
-  opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make frames [Temporary!]");
   opt.add(multisense_sim, "m", "multisense_sim","In sim, publish PRE_SPINDLE_TO_POST_SPINDLE");
   opt.parse();
   if (labels){ // require triads if labels is to be published
@@ -272,7 +270,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm,labels,triads, standalone_head, bdi_motion_estimate, multisense_sim);
+  joints2frames app(lcm,labels,triads, standalone_head, multisense_sim);
   while(0 == lcm->handle());
   return 0;
 }
