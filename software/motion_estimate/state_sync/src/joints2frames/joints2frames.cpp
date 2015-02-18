@@ -254,8 +254,8 @@ main(int argc, char ** argv){
   bool standalone_head = false;
   bool multisense_sim = false;
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(triads, "t", "triads","Frame Triads - show no not");
-  opt.add(labels, "l", "labels","Frame Labels - show no not");
+  opt.add(triads, "t", "triads","Publish Frame Triads");
+  opt.add(labels, "l", "labels","Publish Frame Labels");
   opt.add(standalone_head, "s", "standalone_head","Standalone Sensor Head");
   opt.add(multisense_sim, "m", "multisense_sim","In sim, publish PRE_SPINDLE_TO_POST_SPINDLE");
   opt.parse();
