@@ -43,7 +43,7 @@ class joints2frames{
   public:
     joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, 
                   bool show_triads_, bool standalone_head_,
-                  bool bdi_motion_estimate_, bool multisense_sim_);
+                  bool multisense_sim_);
     
     ~joints2frames(){
     }
@@ -58,7 +58,7 @@ class joints2frames{
     
     std::map<std::string, FrequencyLimit > pub_frequency_;
     bool show_labels_, show_triads_;
-    bool standalone_head_, bdi_motion_estimate_;
+    bool standalone_head_;
     bool multisense_sim_;
 
     void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
