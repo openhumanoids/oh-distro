@@ -44,7 +44,10 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     pub_frequency_["BODY_TO_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
     pub_frequency_["BODY_TO_RHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "r_hand_force_torque" ) );
     pub_frequency_["BODY_TO_LHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "l_hand_force_torque" ) );
+    pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
   #endif
+
+  send_ground_height_ = true;
 }
 
 
@@ -219,6 +222,31 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     publishRigidTransform(body_to_hokuyo_link, msg->utime, "HEAD_TO_HOKUYO_LINK" );
   }
   
+
+  if (send_ground_height_){ 
+    // Publish a pose at the lower of the feet - assumed to be on the ground
+    // TODO: This doesnt need to be published at 1000Hz
+    Eigen::Isometry3d body_to_l_foot = KDLToEigen(cartpos_out.find("l_foot")->second);
+    Eigen::Isometry3d body_to_r_foot = KDLToEigen(cartpos_out.find("r_foot")->second);
+
+    Eigen::Isometry3d foot_to_sole;
+    foot_to_sole.setIdentity();
+    foot_to_sole.translation()  << 0.0,0.,-0.0811; //distance between foot link and sole of foot
+    
+    Eigen::Isometry3d world_to_l_sole = world_to_body * body_to_l_foot * foot_to_sole;
+    Eigen::Isometry3d world_to_r_sole = world_to_body * body_to_r_foot * foot_to_sole;
+
+    //publishPose(world_to_l_sole, msg->utime,"POSE_LEFT_FOOT");
+    //publishPose(world_to_r_sole, msg->utime,"POSE_RIGHT_FOOT");
+    
+    // Publish lower of the soles at the ground occasionally
+    if ( world_to_l_sole.translation().z() < world_to_r_sole.translation().z() ){
+      publishPose(world_to_l_sole, msg->utime,"POSE_GROUND");
+    }else{
+      publishPose(world_to_r_sole, msg->utime,"POSE_GROUND");
+    }
+  }
+
   // 3. Loop through joints and extract world positions:
   if (show_triads_){
     int counter =msg->utime;  

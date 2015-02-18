@@ -57,7 +57,7 @@ class joints2frames{
     pronto_vis* pc_vis_;
     
     std::map<std::string, FrequencyLimit > pub_frequency_;
-    bool show_labels_, show_triads_;
+    bool show_labels_, show_triads_, send_ground_height_;
     bool standalone_head_;
     bool multisense_sim_;
 
