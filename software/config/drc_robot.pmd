@@ -22,7 +22,7 @@ group "1.state_mit" {
         host = "robot";
     }
     cmd "fusion" {
-        exec = "se-fusion";
+        exec = "se-fusion -v";
         host = "robot";
     }
     cmd "yaw-lock" {
