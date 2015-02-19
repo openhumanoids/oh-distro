@@ -93,7 +93,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (isa(obj.getInputFrame, 'drcFrames.AtlasState'))
         atlascoordnames = obj.getInputFrame.getCoordinateNames;
       else
-        atlascoordnames = obj.getInputFrame.getFrameByName('drcFrames.AtlasState').getCoordinateNames;
+        atlascoordnames = obj.getInputFrame.getFrameByNameRecursive('drcFrames.AtlasState').getCoordinateNames;
       end
       atlascoordnames = atlascoordnames(7:length(atlascoordnames)/2); % cut off the floating base
 
@@ -266,14 +266,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       obj.r_foot_id = obj.r_control.findLinkId('r_foot');
       obj.nq_control = obj.r_control.getNumPositions();
       if (isa(input_frame, 'MultiCoordinateFrame'))
-        obj.frame_nums.atlas_state = input_frame.getFrameNumByName('drcFrames.AtlasState');
-        obj.frame_nums.right_hand_state = input_frame.getFrameNumByName('right_atlasFrames.HandState');
-        obj.frame_nums.left_hand_state = input_frame.getFrameNumByName('left_atlasFrames.HandState');
-        obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
-        obj.frame_nums.left_foot_ft_state = input_frame.getFrameNumByName('l_footForceTorque');
-        obj.frame_nums.right_foot_ft_state = input_frame.getFrameNumByName('r_footForceTorque');
+        obj.frame_nums.atlas_state = input_frame.getFrameNumByNameRecursive('drcFrames.AtlasState');
+        obj.frame_nums.right_hand_state = input_frame.getFrameNumByNameRecursive('right_atlasFrames.HandState');
+        obj.frame_nums.left_hand_state = input_frame.getFrameNumByNameRecursive('left_atlasFrames.HandState');
+        obj.frame_nums.hokuyo_state = input_frame.getFrameNumByNameRecursive('hokuyo');
+        obj.frame_nums.left_foot_ft_state = input_frame.getFrameNumByNameRecursive('l_footForceTorque');
+        obj.frame_nums.right_foot_ft_state = input_frame.getFrameNumByNameRecursive('r_footForceTorque');
       else
-        obj.frame_nums.atlas_state = input_frame;
+        obj.frame_nums.atlas_state = 1;
         obj.frame_nums.right_hand_state = '';
         obj.frame_nums.left_hand_state = '';
         obj.frame_nums.hokuyo_state = '';
@@ -289,41 +289,61 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       laser_state = [];
       left_ankle_ft_state = zeros(6, 1);
       right_ankle_ft_state = zeros(6, 1);
-      if (length(varargin) == 1)
-        % Only atlas state coming in, no need for lots of logic to extract
-        % frames
-        atlas_state = varargin{1};
-      else
-        num = obj.frame_nums.atlas_state;
-        if length(num)~=1
-          error(['No atlas state found as input for LCMBroadcastBlock!']);
-        end
+      
+      % Extract particular frame data
+      num = obj.frame_nums.atlas_state;
+      if isempty(num)
+        error(['No atlas state found as input for LCMBroadcastBlock!']);
+      elseif length(num)==1
         atlas_state = varargin{num};
-
-        num = obj.frame_nums.right_hand_state;
-        if (length(num)==1)
-          hand_state_tmp = varargin{num};
-          % Map it to the hand state the rest of the system understands
-          right_hand_state = [hand_state_tmp(obj.r_hand_joint_inds);
-                        hand_state_tmp(length(hand_state_tmp)/2+obj.r_hand_joint_inds)];
-          right_hand_state(10:11) = [0;0];
-        end
-        
-        num = obj.frame_nums.left_hand_state;
-        if (length(num)==1)
-          hand_state_tmp = varargin{num};
-          % Map it to the hand state the rest of the system understands
-          left_hand_state = [hand_state_tmp(obj.l_hand_joint_inds);
-                        hand_state_tmp(length(hand_state_tmp)/2+obj.l_hand_joint_inds)];
-          left_hand_state(10:11) = [0;0];
-        end
-
-        num = obj.frame_nums.hokuyo_state;
-        laser_state = [];
-        if (length(num)==1)
-          laser_state = varargin{num};
-        end
+      elseif length(num)==2
+        atlas_state = varargin{num(1)};
+        combined_frame = obj.getInputFrame.getFrameByNum(num(1));
+        atlas_state = atlas_state(combined_frame.frame_id==num(2));
+      else
+        error(['I need to write a general case']);
       end
+
+      num = obj.frame_nums.right_hand_state;
+      if (length(num)==1)
+        hand_state_tmp = varargin{num};
+      elseif (length(num)==2)
+        hand_state_tmp = varargin{num(1)};
+        combined_frame = obj.getInputFrame.getFrameByNum(num(1));
+        hand_state_tmp = hand_state_tmp(combined_frame.frame_id==num(2));
+      else
+        error(['I need to write a general case']);
+      end
+      if (~isempty(num))
+        right_hand_state = [hand_state_tmp(obj.r_hand_joint_inds);
+                      hand_state_tmp(length(hand_state_tmp)/2+obj.r_hand_joint_inds)];
+        right_hand_state(10:11) = [0;0];
+      end
+
+      num = obj.frame_nums.left_hand_state;
+      if (length(num)==1)
+        hand_state_tmp = varargin{num};
+      elseif (length(num)==2)
+        hand_state_tmp = varargin{num(1)};
+        combined_frame = obj.getInputFrame.getFrameByNum(num(1));
+        hand_state_tmp = hand_state_tmp(combined_frame.frame_id==num(2));
+      else
+        error(['I need to write a general case']);
+      end
+      if (~isempty(num))
+        left_hand_state = [hand_state_tmp(obj.l_hand_joint_inds);
+                      hand_state_tmp(length(hand_state_tmp)/2+obj.l_hand_joint_inds)];
+        left_hand_state(10:11) = [0;0];
+      end
+
+      num = obj.frame_nums.hokuyo_state;
+      laser_state = [];
+      if (length(num)>1)
+        error(['This shouldnt happen']);
+      elseif (length(num)==1)
+        laser_state = varargin{num};
+      end
+
       if (~isempty(laser_state))
         laser_spindle_angle = laser_state(1);
         laser_ranges = laser_state(2:end);

@@ -60,7 +60,7 @@ if (strcmp(world_name,'steps'))
     1.2, 0.0, 0.8, 1, 0.30;];
   options.terrain = RigidBodyStepTerrain(boxes);
 elseif (strcmp(world_name, 'terrain'))
-  clear gazeboModelPath;
+  clear gazeboModelPath;false
   setenv('GAZEBO_MODEL_PATH',sdfDir);
   height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(RigidBodyManipulator(terrainSDF),[],-3:.015:10,-2:.015:2,10);
   options.terrain = height_map;
@@ -202,7 +202,11 @@ while(~done)
   broadcast_opts.publish_truth = 0;
   broadcast_opts.publish_imu = 1;
   lcmBroadcastBlock = LCMBroadcastBlock(r_complete,r_pure, broadcast_opts);
-  sys = mimoCascade(sys, lcmBroadcastBlock);
+  for i=1:r_complete.getOutputFrame.getNumFrames
+     connection(i).from_output = i;
+     connection(i).to_input = i;
+  end
+  sys = mimoCascade(sys, lcmBroadcastBlock, connection);
   
   % Visualize if desired
   if visualize
@@ -211,7 +215,20 @@ while(~done)
     S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
     output_select(1).system=1;
     output_select(1).output=1;
-    sys = mimoCascade(sys,v,[],[],output_select);
+    
+    % Foot force/torque state is confusing the piping, so specify manually
+    if (foot_force_sensors)
+      clear connection;
+      connection(1).from_output = 1;
+      connection(1).to_input = 1;
+      connection(2).from_output = 2;
+      connection(2).to_input = 2;
+      connection(3).from_output = 3;
+      connection(3).to_input = 3;
+      sys = mimoCascade(sys,v,connection,[],output_select);
+    else
+      sys = mimoCascade(sys,v,[],[],output_select);
+    end
     warning(S);
   end
   try
