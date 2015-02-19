@@ -1,0 +1,58 @@
+{
+  "urdfConfig": {
+    "default": "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
+    "robotState": "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
+    "ik":         "../../drake/examples/IRB140/urdf/irb_140_convhull.urdf",
+    "chull":      "../../drake/examples/IRB140/urdf/irb_140_convhull.urdf",
+    "playback":   "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
+    "teleop":     "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf"
+  },
+
+  "teleopJointGroups" : [
+
+      { "name" : "Arm",
+        "joints" : [
+          "joint1",
+          "joint2",
+          "joint3",
+          "joint4",
+          "joint5",
+          "joint6"
+          ],
+        "labels" : ["1", "2", "3", "4", "5", "6"]
+      }
+
+    ],
+
+  "endEffectorConfig" : {
+    "endEffectorLinkNames" : ["link_6"],
+    "graspOffsetFrame" : [[0.15, 0.0, 0.0], [0.0, 0.0, 0.0]],
+    "fixedJoints" : ["base_.*"]
+  },
+
+  "drakeJointNames": [
+    "base_x",
+    "base_y",
+    "base_z",
+    "base_roll",
+    "base_pitch",
+    "base_yaw",
+    "joint1",
+    "joint2",
+    "joint3",
+    "joint4",
+    "joint5",
+    "joint6"
+  ],
+  "robotStateJointNames": [
+    "joint1",
+    "joint2",
+    "joint3",
+    "joint4",
+    "joint5",
+    "joint6"
+  ],
+  "fixedPointFile" : "../../control/matlab/data/abb_irb140_fp.mat",
+  "postureDatabaseFile" : "stored_poses.json",
+  "mirrorJointSignFlips" : []
+}
