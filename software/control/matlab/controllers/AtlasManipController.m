@@ -28,7 +28,7 @@ classdef AtlasManipController < DRCController
       if options.controller_type == 1 || options.controller_type == 2 % use PID control
         integral_gains(arm_ind) = 1.75; % TODO: generalize this
         integral_gains(back_ind) = 0.3;
-        integral_clamps(arm_ind) = 0.3;
+        integral_clamps(arm_ind) = 0.2;
         integral_clamps(back_ind) = 0.2;
       end
       
