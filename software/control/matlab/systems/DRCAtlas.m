@@ -202,6 +202,8 @@ classdef DRCAtlas < Atlas
           end
         end
       end
+      % The output function of a TSRBM appends the TS sensors to the
+      % output of the RBM. So get ready for that:
       output_frame = atlas_output_frame;
       if (~isempty(obj.sensor))
         for i=1:length(obj.sensor)
