@@ -15,12 +15,12 @@ options.base_rpy = [-pi/2, 0, 0]';
 options.ignore_self_collisions = true;
 options.collision = false;
 options.hands = 'robotiq_weight_only';
-r = DRCIRB140(fullfile(getDrakePath, 'examples', 'IRB140', 'irb_140.urdf'), options);
+r = IRB140(fullfile(getDrakePath, 'examples', 'IRB140', 'urdf', 'irb_140.urdf'), options);
 options_hand = options;
 options_hand.hands = 'robotiq';
 options_hand.terrain = RigidBodyFlatTerrain();
 options_hand.collision = false;
-r_hand = IRB140(fullfile(getDrakePath, 'examples', 'IRB140', 'irb_140.urdf'), options_hand);
+r_hand = IRB140(fullfile(getDrakePath, 'examples', 'IRB140', 'urdf', 'irb_140.urdf'), options_hand);
 
 
 

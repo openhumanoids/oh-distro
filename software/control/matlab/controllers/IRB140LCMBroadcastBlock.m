@@ -4,7 +4,6 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
     lc; % LCM
     joint_names_cache;
     r_hand_joint_names_cache;
-    r_hand_joint_inds;
     
     % robot
     r;
@@ -54,28 +53,13 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
         coordnames = obj.getInputFrame.getFrameByName('IRB140State').getCoordinateNames;
       end
       
-      % write down names for the hands. these differ from simul a bit
-      % (we have the fourbar explicitely), so I'm doing this by hand...
+      % write down names for the hands
       if (r.hands>0)
-        hand_names = {'left_finger_1_joint_1',
-                      'left_finger_1_joint_2',
-                      'left_finger_1_joint_3',
-                      'left_finger_2_joint_1',
-                      'left_finger_2_joint_2',
-                      'left_finger_2_joint_3',
-                      'left_finger_middle_joint_1',
-                      'left_finger_middle_joint_2',
-                      'left_finger_middle_joint_3',
-                      'left_palm_finger_1_joint',
-                      'left_palm_finger_2_joint'
-                      };
-        obj.r_hand_joint_names_cache = cell(11, 1);
+        hand_names = r.getOutputFrame.getFrameByName('HandState').coordinates;
+        obj.r_hand_joint_names_cache = cell(length(hand_names), 1);
         for i=1:length(hand_names)
           obj.r_hand_joint_names_cache(i) = java.lang.String(hand_names{i});
         end
-        % not sure what the last two correspond to. for now I'm going to 
-        % zero them.
-        obj.r_hand_joint_inds = [1, 2, 3, 11, 12, 13, 21, 22, 23, 10, 20];
       end
       
       obj.joint_names_cache = cell(length(coordnames)/2, 1);
@@ -99,14 +83,7 @@ classdef IRB140LCMBroadcastBlock < MIMODrakeSystem
     
     function varargout=mimoOutput(obj,t,~,varargin)
       irb140_state = varargin{obj.frame_nums.irb140_state};
-      hand_state = [];
-      if (obj.frame_nums.hand_state)
-        hand_state_ours = varargin{obj.frame_nums.hand_state};
-        % Map it to the hand state the rest of the system understands
-        hand_state = [hand_state_ours(obj.r_hand_joint_inds);
-                      hand_state_ours(length(hand_state_ours)/2+obj.r_hand_joint_inds)];
-        hand_state(10:11) = [0;0];
-      end
+      hand_state = varargin{obj.frame_nums.hand_state};
       
       % What needs to go out:
       num_dofs = length([irb140_state; hand_state]) / 2;
