@@ -1,7 +1,7 @@
 function matches = match_points(camera_pts,lidar_data,poses_start,poses_end,...
-    P_camera_to_pre_spindle, P_post_spindle_to_lidar,tol)
+    P_pre_spindle_to_camera, P_lidar_to_post_spindle,tol)
 
-lidar_pts = accum_lidar(lidar_data,poses_start,poses_end,P_camera_to_pre_spindle, P_post_spindle_to_lidar);
+lidar_pts = accum_lidar(lidar_data,poses_start,poses_end,P_pre_spindle_to_camera, P_lidar_to_post_spindle);
 lidar_pts = [lidar_pts,(1:size(lidar_pts,1))'];
 camera_pts = camera_pts(:,1:3);
 

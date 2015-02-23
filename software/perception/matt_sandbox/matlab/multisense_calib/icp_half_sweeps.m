@@ -13,9 +13,9 @@ range_range = [2,10];
 theta_range = [-360,360];
 range_filter_thresh = 40;
 
-[~,data1] = accum_scans(scans1,res_in.P_camera_to_pre_spindle,res_in.P_post_spindle_to_lidar,...
+[~,data1] = accum_scans(scans1,res_in.P_pre_spindle_to_camera,res_in.P_lidar_to_post_spindle,...
     range_range, theta_range, range_filter_thresh);
-[~,data2] = accum_scans(scans2,res_in.P_camera_to_pre_spindle,res_in.P_post_spindle_to_lidar,...
+[~,data2] = accum_scans(scans2,res_in.P_pre_spindle_to_camera,res_in.P_lidar_to_post_spindle,...
     range_range, theta_range, range_filter_thresh);
 data1 = sortrows(data1,5);
 data2 = sortrows(data2,5);
@@ -26,9 +26,9 @@ for iter = 1:iters
 
     % accumulate current points
     pts1 = accum_lidar(data1,poses_start1,poses_end1,...
-        res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,true);
+        res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,true);
     pts2 = accum_lidar(data2,poses_start2,poses_end2,...
-        res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,true);
+        res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,true);
 
     % create index and map points into it
     index1 = build_spatial_index(pts1(:,1:3),index_cell_size,1);
@@ -72,7 +72,7 @@ for iter = 1:iters
 
     res_new = optimize_spindle_pose(data1(matches(:,1),:),data2_good(matches(:,2),:),...
         poses_start1, poses_end1, poses_start2, poses_end2, ...
-        res.P_camera_to_pre_spindle, res.P_post_spindle_to_lidar,false);
+        res.P_pre_spindle_to_camera, res.P_lidar_to_post_spindle,false);
     res = res_new;
 end
 result = res;

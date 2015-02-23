@@ -1,13 +1,13 @@
 function result = optimize_poses(data,poses_start,poses_end,planes,...
-    P_camera_to_pre_spindle,P_post_spindle_to_lidar,do_full)
+    P_pre_spindle_to_camera,P_lidar_to_post_spindle,do_full)
 
 % data row format: range, theta, x, y, scan id, point percent, face
 
-if (~exist('P_camera_to_pre_spindle','var'))
-    P_camera_to_pre_spindle = eye(4);
+if (~exist('P_pre_spindle_to_camera','var'))
+    P_pre_spindle_to_camera = eye(4);
 end
-if (~exist('P_post_spindle_to_lidar','var'))
-    P_post_spindle_to_lidar = eye(4);
+if (~exist('P_lidar_to_post_spindle','var'))
+    P_lidar_to_post_spindle = eye(4);
 end
 if (~exist('do_full','var'))
     do_full = false;
@@ -29,14 +29,14 @@ prob.poses_end = poses_end;
 prob.planes = planes;
 prob.do_full = do_full;
 
-x_init = poses_to_vector(P_camera_to_pre_spindle, P_post_spindle_to_lidar, do_full);
+x_init = poses_to_vector(P_pre_spindle_to_camera, P_lidar_to_post_spindle, do_full);
 opts = optimset('display','iter','maxfunevals',1e6);
 
 prob.draw = false;
 [x,~,~,~,~,~,jacobian] = lsqnonlin(@error_func,x_init,[],[],opts,prob);
 result.jacobian = jacobian;
 
-[result.P_camera_to_pre_spindle, result.P_post_spindle_to_lidar] = vector_to_poses(x,do_full);
+[result.P_pre_spindle_to_camera, result.P_lidar_to_post_spindle] = vector_to_poses(x,do_full);
 
 prob.draw = true;
 result.errors = error_func(x,prob);
@@ -44,7 +44,7 @@ result.errors = error_func(x,prob);
 
 function e = error_func(x, prob)
 
-[P_camera_to_pre_spindle, P_post_spindle_to_lidar] = vector_to_poses(x,prob.do_full);
+[P_pre_spindle_to_camera, P_lidar_to_post_spindle] = vector_to_poses(x,prob.do_full);
 
 if (prob.draw)
     figure(23);
@@ -54,7 +54,7 @@ if (prob.draw)
 end
 
 all_pts = accum_lidar(prob.data, prob.poses_start, prob.poses_end,...
-    P_camera_to_pre_spindle,P_post_spindle_to_lidar,true);
+    P_pre_spindle_to_camera,P_lidar_to_post_spindle,true);
 all_pts = [all_pts,ones(size(all_pts,1),1)];
 
 e = zeros(size(prob.data,1),1);

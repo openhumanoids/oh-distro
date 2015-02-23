@@ -1,5 +1,5 @@
 function pts = accum_lidar(data, poses_start, poses_end,...
-    P_camera_to_pre_spindle,P_post_spindle_to_lidar,is_sorted)
+    P_pre_spindle_to_camera,P_lidar_to_post_spindle,is_sorted)
 
 % data row format: range, theta, x, y, scan id, point percent, extra....
 
@@ -24,11 +24,11 @@ for i = 1:numel(starts)
 
     % compute poses
     if (do_interp)
-        P_pre_spindle_to_post_spindle_start = [poses_start(scan_ind).R,poses_start(scan_ind).T(:);0,0,0,1];
-        P_start = inv(P_post_spindle_to_lidar*P_pre_spindle_to_post_spindle_start*P_camera_to_pre_spindle);
+        P_post_spindle_to_pre_spindle_start = [poses_start(scan_ind).R,poses_start(scan_ind).T(:);0,0,0,1];
+        P_start = P_pre_spindle_to_camera*P_post_spindle_to_pre_spindle_start*P_lidar_to_post_spindle;
     end
-    P_pre_spindle_to_post_spindle_end = [poses_end(scan_ind).R,poses_end(scan_ind).T(:);0,0,0,1];
-    P_end = inv(P_post_spindle_to_lidar*P_pre_spindle_to_post_spindle_end*P_camera_to_pre_spindle);
+    P_post_spindle_to_pre_spindle_end = [poses_end(scan_ind).R,poses_end(scan_ind).T(:);0,0,0,1];
+    P_end = P_pre_spindle_to_camera*P_post_spindle_to_pre_spindle_end*P_lidar_to_post_spindle;
 
     if (do_interp)
         % interpolate poses

@@ -1,4 +1,4 @@
-function [all_pts,data] = accum_scans(scans,P_camera_to_pre_spindle,P_post_spindle_to_lidar,range_range, theta_range, range_filter_thresh, do_interp)
+function [all_pts,data] = accum_scans(scans,P_pre_spindle_to_camera,P_lidar_to_post_spindle,range_range, theta_range, range_filter_thresh, do_interp)
 
 if (~exist('range_filter_thresh','var'))
     range_filter_thresh = 0;
@@ -46,6 +46,6 @@ else
 end
 poses_end = cat(1,scans.pose_end);
 
-all_pts = accum_lidar(data_blocks,poses_start,poses_end,P_camera_to_pre_spindle,P_post_spindle_to_lidar);
+all_pts = accum_lidar(data_blocks,poses_start,poses_end,P_pre_spindle_to_camera,P_lidar_to_post_spindle);
 all_pts = [all_pts,data_blocks(:,7)];
 data = data_blocks(:,1:6);

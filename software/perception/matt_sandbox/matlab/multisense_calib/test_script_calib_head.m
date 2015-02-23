@@ -40,7 +40,6 @@ if (sensor_id == 2)
     R = [[0;0;1],[-1;0;0],[0;-1;0]];
     T = [0;0;0];
     P_lidar_to_post_spindle = [R,T(:);0,0,0,1];
-    P_post_spindle_to_lidar = inv(P_lidar_to_post_spindle);
 
 elseif (sensor_id == 5)
     fx = 555.223083496093750;
@@ -60,7 +59,6 @@ elseif (sensor_id == 5)
     R = [[0;0;1],[-1;0;0],[0;-1;0]];
     T = [0;0;0];
     P_lidar_to_post_spindle = [R,T(:);0,0,0,1];
-    P_post_spindle_to_lidar = inv(P_lidar_to_post_spindle);
 
 elseif (sensor_id == 47)
     fx = 590.715;
@@ -73,15 +71,19 @@ elseif (sensor_id == 47)
     R = eye(3);
     T = [0;0;0];
     P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
-    R = [0,0,1;1,0,0;0,1,0];
-    shifts = 0;
-    R2 = rpy2rot([-pi/2+2*shifts*pi/3,0,0]);
-    R = R2*R;
+    shift = 0;
+    R = axisangle2rot([0;0;1],pi/2 + shift*2*pi/3);
+    P_camera_to_pre_spindle(1:3,1:3) = R*P_camera_to_pre_spindle(1:3,1:3);
+    
+    R = [[0;0;1],[-1;0;0],[0;-1;0]];
     T = [0;0;0];
-    P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
+    P_lidar_to_post_spindle = [R,T(:);0,0,0,1];
 else
     error('invalid sensor id');
 end
+
+P_pre_spindle_to_camera = inv(P_camera_to_pre_spindle);
+clear P_camera_to_pre_spindle P_post_spindle_to_lidar
 
 %% read data
 log_data = read_log_data(logfile1);
@@ -175,7 +177,7 @@ lidar_data = cell2mat(lidar_data);
 % accumulate 3d points using current approximate transform
 poses_start = cat(1,scans.pose_start);
 poses_end = cat(1,scans.pose_end);
-lidar_pts = accum_lidar(lidar_data,poses_start,poses_end,P_camera_to_pre_spindle,P_post_spindle_to_lidar);
+lidar_pts = accum_lidar(lidar_data,poses_start,poses_end,P_pre_spindle_to_camera,P_lidar_to_post_spindle);
 
 % fit planes using ransac
 pts_cur = lidar_pts;
@@ -234,11 +236,11 @@ zlabel('z');
 
 
 %% optimize
-result = optimize_poses(lidar_data,poses_start,poses_end,cat(2,camera_planes.plane),P_camera_to_pre_spindle,P_post_spindle_to_lidar,false);
+result = optimize_poses(lidar_data,poses_start,poses_end,cat(2,camera_planes.plane),P_pre_spindle_to_camera,P_lidar_to_post_spindle,false);
 
 %% re-assign points
 lidar_pts = accum_lidar(lidar_data,poses_start,poses_end,...
-    result.P_camera_to_pre_spindle,result.P_post_spindle_to_lidar);
+    result.P_pre_spindle_to_camera,result.P_lidar_to_post_spindle);
 d = [lidar_pts,ones(size(lidar_pts,1),1)]*cat(2,camera_planes.plane);
 [minval,minidx] = min(d.^2,[],2);
 lidar_data2 = lidar_data;
@@ -263,7 +265,7 @@ ylabel('y');
 zlabel('z');
 
 %% re-optimize
-result2 = optimize_poses(lidar_data2,poses_start,poses_end,cat(2,camera_planes.plane),result.P_camera_to_pre_spindle,result.P_post_spindle_to_lidar,false);
+result2 = optimize_poses(lidar_data2,poses_start,poses_end,cat(2,camera_planes.plane),result.P_pre_spindle_to_camera,result.P_lidar_to_post_spindle,false);
 
 %% iterative refinement loop using direct matches
 res = result2;
@@ -271,17 +273,20 @@ max_iters = 5;
 for iter = 1:max_iters
     fprintf('starting iter %d...\n', iter);
     matches = match_points(camera_pts_decimated,lidar_data2,poses_start,poses_end,...
-        res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,0.03);
+        res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,0.03);
     lidar_match_data = lidar_data2(matches(:,1),1:3);
     camera_match_data = camera_pts_decimated(matches(:,2),1:3);
     data = [lidar_match_data,camera_match_data,lidar_data2(matches(:,1),4)];
-    res = optimize_poses_using_matches(lidar_data2(matches(:,1),:),camera_pts_decimated(matches(:,2),1:3),poses_start,poses_end,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,false);
+    res = optimize_poses_using_matches(lidar_data2(matches(:,1),:),camera_pts_decimated(matches(:,2),1:3),...
+        poses_start,poses_end,res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,false);
 end
 result3 = res;
 
+return
+
 %% get pixel data
 %res = result3;
-all_pts = accum_scans(scans,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,...
+all_pts = accum_scans(scans,res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,...
     [0.25,3],[-45,45], 30);
 img = log_data.imgs(1).img;
 pix = all_pts(:,1:3)*K';
@@ -296,7 +301,7 @@ savepcd('/home/antone/xyzrgb_orig.pcd',xyzrgb');
 %% output camera + lidar as cloud
 rgb = impixel(img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
-all_pts2 = accum_scans(scans,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,[1,10],[-1000,1000],30);
+all_pts2 = accum_scans(scans,res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,[1,10],[-1000,1000],30);
 xyzrgb = [all_pts2(:,1:3), ones(size(all_pts2,1),3);xyzrgb];
 savepcd('/home/antone/xyzrgb_all.pcd',xyzrgb');
 
@@ -308,13 +313,11 @@ plot_points_on_image(camera_cloud,K,img);
 
 
 %% export
-P_pre_spindle_to_camera = inv(res.P_camera_to_pre_spindle);
 q = rot2quat(P_pre_spindle_to_camera(1:3,1:3));
 fprintf('\npre spindle to camera:\n');
 fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_pre_spindle_to_camera(1:3,4));
 fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);
 
-P_lidar_to_post_spindle = inv(res.P_post_spindle_to_lidar);
 q = rot2quat(P_lidar_to_post_spindle(1:3,1:3));
 fprintf('lidar to post spindle:\n');
 fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_lidar_to_post_spindle(1:3,4));
