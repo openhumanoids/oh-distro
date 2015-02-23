@@ -6,5 +6,5 @@ sin_angle = sin(angle);
 if (sin_angle==0)
     out = in1;
 else
-    out = sin((1-t)*angle)/sin(angle)*in1 + sin(t*angle)/sin(angle)*in2;
+    out = (sin((1-t)*angle)*in1 + sin(t*angle)*in2)/sin_angle;
 end

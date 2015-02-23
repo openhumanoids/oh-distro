@@ -12,6 +12,6 @@ figure, imshow(img);
 hold on;
 for i = numel(starts):-1:1
     pix_sub = dat(starts(i):ends(i),1:2);
-    myplot(pix_sub,'.','color',cmap(i,:));
+    myplot(pix_sub,'.','color',cmap(i,:),'markersize',1);
 end
 hold off;

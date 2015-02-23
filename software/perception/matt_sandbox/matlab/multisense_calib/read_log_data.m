@@ -36,7 +36,7 @@ while (true)
         imgs{end+1} = decode_lcm_image(obj.images(ind));
     elseif (strcmp(channel,'PRE_SPINDLE_TO_POST_SPINDLE'))
         obj = bot_core.rigid_transform_t(event.data);
-        P = inv([quat2rot(obj.quat), obj.trans(:);0,0,0,1]);
+        P = [quat2rot(obj.quat), obj.trans(:);0,0,0,1];
         pose.R = P(1:3,1:3);
         pose.T = P(1:3,4);
         rpy = rot2rpy(pose.R);
