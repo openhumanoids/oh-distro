@@ -1,5 +1,7 @@
-function result = optimize_poses(data,poses,planes,...
-    P_camera_to_pre_spindle,P_post_spindle_to_lidar)
+function result = optimize_poses(data,poses_start,poses_end,planes,...
+    P_camera_to_pre_spindle,P_post_spindle_to_lidar,do_full)
+
+% data row format: range, theta, x, y, scan id, point percent, face
 
 if (~exist('P_camera_to_pre_spindle','var'))
     P_camera_to_pre_spindle = eye(4);
@@ -7,42 +9,38 @@ end
 if (~exist('P_post_spindle_to_lidar','var'))
     P_post_spindle_to_lidar = eye(4);
 end
-
-data = sortrows(data,[4,5]);
-d = diff(data(:,4));
-starts = [1;find(d>0)+1];
-ends = [starts(2:end)-1;numel(d)+1];
-
-u = unique(data(:,5));
-which_face = false(size(data,1),max(u));
-for i = 1:numel(u)
-    which_face(:,u(i)) = data(:,5)==u(i);
+if (~exist('do_full','var'))
+    do_full = false;
+end
+if (~exist('do_interp','var'))
+    do_interp = false;
 end
 
-prob.starts = starts;
-prob.ends = ends;
+data = sortrows(data,5);
+
+u = unique(data(:,7));
+which_face = false(size(data,1),max(u));
+for i = 1:numel(u)
+    which_face(:,u(i)) = data(:,7)==u(i);
+end
+
 prob.faces = u;
 prob.which_face = which_face;
 prob.data = data;
-prob.poses = poses;
+prob.poses_start = poses_start;
+prob.poses_end = poses_end;
 prob.planes = planes;
+prob.do_full = do_full;
+prob.do_interp = do_interp;
 
-rpy2 = rot2rpy(P_post_spindle_to_lidar(1:3,1:3));
-x_init = [rot2rpy(P_camera_to_pre_spindle(1:3,1:3));P_camera_to_pre_spindle(1:3,4);
-    rpy2([1,3]);P_post_spindle_to_lidar(2:3,4)];
+x_init = poses_to_vector(P_camera_to_pre_spindle, P_post_spindle_to_lidar, do_full);
 opts = optimset('display','iter','maxfunevals',1e6);
 
 prob.draw = false;
 [x,~,~,~,~,~,jacobian] = lsqnonlin(@error_func,x_init,[],[],opts,prob);
 result.jacobian = jacobian;
 
-R = rpy2rot(x(1:3));
-T = x(4:6);
-result.P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
-
-R = rpy2rot([x(7);0;x(8)]);
-T = [0;x(9);x(10)];
-result.P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
+[result.P_camera_to_pre_spindle, result.P_post_spindle_to_lidar] = vector_to_poses(x,do_full);
 
 prob.draw = true;
 result.errors = error_func(x,prob);
@@ -50,13 +48,7 @@ result.errors = error_func(x,prob);
 
 function e = error_func(x, prob)
 
-R = rpy2rot(x(1:3));
-T = x(4:6);
-P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
-
-R = rpy2rot([x(7);0;x(8)]);
-T = [0;x(9);x(10)];
-P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
+[P_camera_to_pre_spindle, P_post_spindle_to_lidar] = vector_to_poses(x,prob.do_full);
 
 if (prob.draw)
     figure(23);
@@ -65,19 +57,14 @@ if (prob.draw)
     colorset = [1,0,0;0,1,0;0,0,1;1,1,0;1,0,1;0,1,1];
 end
 
-counter = 1;
-all_pts = zeros(size(prob.data,1),4);
-for i = 1:numel(prob.starts)
-    data_sub = prob.data(prob.starts(i):prob.ends(i),:);
-    scan_ind = data_sub(1,4);
-    P_pre_spindle_to_post_spindle = [prob.poses(scan_ind).R,prob.poses(scan_ind).T(:);0,0,0,1];
-    P = P_post_spindle_to_lidar*P_pre_spindle_to_post_spindle*P_camera_to_pre_spindle;
-    P(1:3,1:3) = P(1:3,1:3)';
-    P(1:3,4) = -P(1:3,1:3)*P(1:3,4);
-    sz = size(data_sub,1);
-    all_pts(counter:counter+sz-1,:) = [data_sub(:,1:3),ones(size(data_sub,1),1)]*P';
-    counter = counter+sz;
+if (prob.do_interp)
+    all_pts = accum_lidar(prob.data, prob.poses_start, prob.poses_end,...
+        P_camera_to_pre_spindle,P_post_spindle_to_lidar,true);
+else
+    all_pts = accum_lidar(prob.data, [], prob.poses_end,...
+        P_camera_to_pre_spindle,P_post_spindle_to_lidar,true);
 end
+all_pts = [all_pts,ones(size(all_pts,1),1)];
 
 e = zeros(size(prob.data,1),1);
 for i = 1:numel(prob.faces)
