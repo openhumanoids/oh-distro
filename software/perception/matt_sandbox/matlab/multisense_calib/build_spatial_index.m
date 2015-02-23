@@ -4,6 +4,7 @@ minpt = min(pts,[],1);
 p = [pts(:,1)-minpt(1),pts(:,2)-minpt(2),pts(:,3)-minpt(3)]/res + 1;
 p = round(p);
 sz = max(p,[],1);
+%index.vox = containers.Map('KeyType','double','ValueType','any');
 index.vox = cell(sz(2),sz(1),sz(3));
 
 [xx,yy,zz] = meshgrid(-r:r,-r:r,-r:r);
@@ -31,7 +32,8 @@ ends = [starts(2:end)-1;numel(d)+1];
 for i = 1:numel(starts)
     dest = all_pairs(starts(i),1);
     indices = all_pairs(starts(i):ends(i),2);
-    index.vox{dest} = indices;
+    %index.vox(dest) = indices;
+    index.vox{dest} = uint32(indices);
 end
 
 xform_to_vox = make_translation([1,1,1])*diag(1/res*[1,1,1,res])*make_translation(-minpt);

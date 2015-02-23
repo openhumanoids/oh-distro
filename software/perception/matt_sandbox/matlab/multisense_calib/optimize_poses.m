@@ -12,9 +12,6 @@ end
 if (~exist('do_full','var'))
     do_full = false;
 end
-if (~exist('do_interp','var'))
-    do_interp = false;
-end
 
 data = sortrows(data,5);
 
@@ -31,7 +28,6 @@ prob.poses_start = poses_start;
 prob.poses_end = poses_end;
 prob.planes = planes;
 prob.do_full = do_full;
-prob.do_interp = do_interp;
 
 x_init = poses_to_vector(P_camera_to_pre_spindle, P_post_spindle_to_lidar, do_full);
 opts = optimset('display','iter','maxfunevals',1e6);
@@ -57,13 +53,8 @@ if (prob.draw)
     colorset = [1,0,0;0,1,0;0,0,1;1,1,0;1,0,1;0,1,1];
 end
 
-if (prob.do_interp)
-    all_pts = accum_lidar(prob.data, prob.poses_start, prob.poses_end,...
-        P_camera_to_pre_spindle,P_post_spindle_to_lidar,true);
-else
-    all_pts = accum_lidar(prob.data, [], prob.poses_end,...
-        P_camera_to_pre_spindle,P_post_spindle_to_lidar,true);
-end
+all_pts = accum_lidar(prob.data, prob.poses_start, prob.poses_end,...
+    P_camera_to_pre_spindle,P_post_spindle_to_lidar,true);
 all_pts = [all_pts,ones(size(all_pts,1),1)];
 
 e = zeros(size(prob.data,1),1);

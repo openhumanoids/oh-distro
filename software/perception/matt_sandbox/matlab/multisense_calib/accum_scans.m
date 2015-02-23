@@ -1,7 +1,10 @@
-function all_pts = accum_scans(scans,P_camera_to_pre_spindle,P_post_spindle_to_lidar,range_range, theta_range, range_filter_thresh)
+function [all_pts,data] = accum_scans(scans,P_camera_to_pre_spindle,P_post_spindle_to_lidar,range_range, theta_range, range_filter_thresh, do_interp)
 
 if (~exist('range_filter_thresh','var'))
     range_filter_thresh = 0;
+end
+if (~exist('do_interp','var'))
+    do_interp = true;
 end
 
 theta_range = theta_range*pi/180;
@@ -36,8 +39,13 @@ for i = 1:numel(scans)
 end
 data_blocks = cell2mat(data_blocks);
 
-poses_start = cat(1,scans.pose_start);
+if (do_interp)
+    poses_start = cat(1,scans.pose_start);
+else
+    poses_start = [];
+end
 poses_end = cat(1,scans.pose_end);
 
 all_pts = accum_lidar(data_blocks,poses_start,poses_end,P_camera_to_pre_spindle,P_post_spindle_to_lidar);
-all_pts = [all_pts,data_blocks(:,[7,5])];
+all_pts = [all_pts,data_blocks(:,7)];
+data = data_blocks(:,1:6);

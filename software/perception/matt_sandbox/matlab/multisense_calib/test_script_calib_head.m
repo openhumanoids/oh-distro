@@ -283,28 +283,28 @@ result3 = res;
 %res = result3;
 all_pts = accum_scans(scans,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,...
     [0.25,3],[-45,45], 30);
-imgs = log_data.imgs;
+img = log_data.imgs(1).img;
 pix = all_pts(:,1:3)*K';
 pix = pix(:,1:2)./pix(:,[3,3]);
 figure, plot3k(all_pts(:,1:3),'Marker',{'.',1}); axis equal; view3d
 
 %% output as pcl cloud
-rgb = impixel(imgs(1).img,pix(:,1),pix(:,2));
+rgb = impixel(img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
 savepcd('/home/antone/xyzrgb_orig.pcd',xyzrgb');
 
 %% output camera + lidar as cloud
-rgb = impixel(imgs(1).img,pix(:,1),pix(:,2));
+rgb = impixel(img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
 all_pts2 = accum_scans(scans,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,[1,10],[-1000,1000],30);
 xyzrgb = [all_pts2(:,1:3), ones(size(all_pts2,1),3);xyzrgb];
 savepcd('/home/antone/xyzrgb_all.pcd',xyzrgb');
 
 %% show all lidar points superimposed on image
-plot_points_on_image(all_pts(:,1:3),K,imgs(1).img);
+plot_points_on_image(all_pts(:,1:3),K,img);
 
 %% show all camera points superimposed on image
-plot_points_on_image(camera_cloud,K,imgs(1).img);
+plot_points_on_image(camera_cloud,K,img);
 
 
 %% export
