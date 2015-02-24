@@ -60,6 +60,8 @@ elseif (strcmp(world_name, 'terrain'))
   height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(RigidBodyManipulator(terrainSDF),[],-3:.015:10,-2:.015:2,10);
   options.terrain = height_map;
   options.use_bullet = false;
+elseif (strcmp(world_name, 'stairs'))
+  %TODO: might need to do the same trick as in the terrain task here
 else
   options.terrain = RigidBodyFlatTerrain();
 end
@@ -81,16 +83,13 @@ r_complete = r_complete.compile();
 if (strcmp(world_name, 'valve_wall'))
   % Add valve DRC environment
   r_complete = r_complete.addRobotFromURDF('single_valve_wall.urdf', [1.0; 0.0; 0.0], [0;0;pi]);
-  r_complete = compile(r_complete);
 elseif (strcmp(world_name, 'drill_frame'))
   r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/drill_frame.urdf'], [1.0; 0.0; 0], [0;0;pi]);
   options_cyl.floating = true;
   r_complete = r_complete.addRobotFromURDF('table.urdf', [0.225; -1.5; 0.5]);
   r_complete = r_complete.addRobotFromURDF('drill_box.urdf', [0.225; -1.2; 1.2], [], options_cyl);
-  r_complete = compile(r_complete);
 elseif (strcmp(world_name, 'door'))
   r_complete = r_complete.addRobotFromURDF([getDrakePath(), '/examples/Atlas/urdf/door.urdf'], [1.0; 0.0; 0], [0;0;pi]);
-  r_complete = compile(r_complete);
 elseif (strcmp(world_name, 'manip_ex'))
   options_cyl.floating = true;
   r_complete = r_complete.addRobotFromURDF('table.urdf', [1.225; 0.0; 0.5]);
@@ -103,6 +102,8 @@ elseif(strcmp(world_name, 'plug'))
   r_complete = r_complete.addRobotFromURDF('table.urdf', [0; -1.5; 0.5]);
   r_complete = r_complete.addRobotFromURDF('big_plug.urdf', [-0.2; -1.2; 1.2], [], options_cyl);
   r_complete = r_complete.addRobotFromURDF('small_plug.urdf', [0.2; -1.2; 1.2], [], options_cyl);
+elseif(strcmp(world_name, 'stairs'))  
+  r_complete = r_complete.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0], [0;0;pi]);  
 end
 r_complete = compile(r_complete);
 

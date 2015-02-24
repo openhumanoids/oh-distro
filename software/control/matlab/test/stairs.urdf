@@ -1,0 +1,78 @@
+<robot
+  name="stairs">
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass value="23.5" />
+      <inertia
+        ixx="2.662714"
+        ixy="-0.001741"
+        ixz="-0.446500"
+        iyy="1.766451"
+        iyz="0.000057"
+        izz="3.344618" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 .0889"
+        rpy="0 0 0" />
+      <geometry>
+       <box size=".762 .9144 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+<collision>   
+<origin xyz="0 0 .0889"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".762 .9144 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 1 0 1" />
+      </material>
+</collision> 
+    <visual>
+      <origin xyz="-.127 0 .2667"
+        rpy="0 0 0" />
+      <geometry>
+       <box size=".508 .9144 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+<collision>   
+<origin xyz="-.127 0 .2667"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".508 .9144 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 1 0 1" />
+      </material>
+</collision> 
+
+<visual>
+      <origin xyz="-.254 0 .4445"
+        rpy="0 0 0" />
+      <geometry>
+       <box size=".254 .9144 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+<collision>   
+<origin xyz="-.254 0 .4445"
+        rpy="0 0 0" />
+      <geometry>
+        <box size=".254 .9144 .1778"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 1 0 1" />
+      </material>
+</collision> 
+  </link>
+</robot>
