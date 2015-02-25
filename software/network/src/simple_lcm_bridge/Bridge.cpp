@@ -30,6 +30,7 @@ struct Bridge::Imp {
 
     std::string mName;
     std::string mUrl;
+    bool mIsSource;
     drc::LcmWrapper::Ptr mLcmWrapper;
     std::unordered_map<std::string, BindingList> mBindingLists;
     std::unordered_map<std::string, lcm::Subscription*> mSubscriptions;
@@ -41,7 +42,8 @@ struct Bridge::Imp {
           mLcmWrapper->get()->subscribe(iter.first, &BindingList::handler,
                                         &iter.second);
       }
-      return mLcmWrapper->startHandleThread();
+      if (mIsSource) return mLcmWrapper->startHandleThread();
+      return true;
     }
 
     bool stop() {
@@ -49,7 +51,8 @@ struct Bridge::Imp {
       for (auto iter : mSubscriptions) {
         mLcmWrapper->get()->unsubscribe(iter.second);
       }
-      return mLcmWrapper->stopHandleThread();
+      if (mIsSource) return mLcmWrapper->stopHandleThread();
+      return true;
     }
   };
 
@@ -110,6 +113,8 @@ addBinding(const BindingSpec& iSpec) {
   
   inputCommunity->mBindingLists[iSpec.mInputChannel].mBindings.
     push_back(binding);
+
+  inputCommunity->mIsSource = true;
   
   return true;
 }
