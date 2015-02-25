@@ -98,8 +98,8 @@ setup_lcm_communities()
     export LCM_URL_DRC_RADIO="udpm://239.255.76.70:7670?ttl=1"
     export LCM_URL_DRC_CONTROL="udpm://239.255.76.80:7680?ttl=1"
     export LCM_URL_DRC_PERCEPTION="udpm://239.255.76.81:7681?ttl=1"
-    export LCM_URL_DRC_ATLAS_20="udpm://239.255.76.82:7682?ttl=1"
-    export LCM_URL_DRC_ATLAS_21="udpm://239.255.76.83:7683?ttl=1"
+    export LCM_URL_DRC_ATLAS_0_2="udpm://239.255.76.82:7682?ttl=1"
+    export LCM_URL_DRC_ATLAS_1_2="udpm://239.255.76.83:7683?ttl=1"
 }
 
 set_drc_base
