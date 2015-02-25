@@ -25,10 +25,6 @@ group "1.state_mit" {
         exec = "se-fusion -v";
         host = "robot";
     }
-    cmd "yaw-lock" {
-        exec = "se-yaw-lock";
-        host = "robot";
-    }
 }
 
 group "2.plan_and_control" {
