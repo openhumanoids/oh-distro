@@ -17,6 +17,7 @@ public:
   Bridge();
   ~Bridge();
 
+  void setVerbose(const bool iVal);
   bool addCommunity(const std::string& iName, const std::string& iUrl);
   bool addBinding(const BindingSpec& iSpec);
 

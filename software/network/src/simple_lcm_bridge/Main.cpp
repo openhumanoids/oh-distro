@@ -75,12 +75,15 @@ bool configure(const std::string& iConfigFile, const std::string& iName,
 int main(const int iArgc, const char** iArgv) {
   std::string configFile;
   std::string name;
+  bool verbose = false;
 
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(name, "n", "name",
           "name identifier of this bridge", true);
   opt.add(configFile, "c", "config-file",
           "config file (use param server if empty)");
+  opt.add(verbose, "v", "verbose",
+          "turn on verbosity");
   opt.parse();
 
   std::cout << "setting up bridge \"" << name << "\"" << std::endl;
@@ -96,6 +99,7 @@ int main(const int iArgc, const char** iArgv) {
     std::cout << "error: cannot configure bridge" << std::endl;
     return -1;
   }
+  bridge.setVerbose(verbose);
 
   if (!bridge.start()) {
     std::cout << "error: cannot start bridge" << std::endl;

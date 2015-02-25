@@ -9,18 +9,27 @@
 struct Bridge::Imp {
   struct Binding {
     drc::LcmWrapper::Ptr mDestLcmWrapper;
-    std::string mDestChannel;
+    BindingSpec mSpec;
   };
 
   struct BindingList {
+    typedef std::shared_ptr<BindingList> Ptr;
+
     lcm::Subscription* mSubscription;
     std::vector<Binding> mBindings;
+    Imp* mImp;
 
     void handler(const lcm::ReceiveBuffer* iBuffer,
                  const std::string& iChannel) {
       for (auto binding : mBindings) {
+        auto& spec = binding.mSpec;
         binding.mDestLcmWrapper->get()->
-          publish(binding.mDestChannel, iBuffer->data, iBuffer->data_size);
+          publish(spec.mOutputChannel, iBuffer->data, iBuffer->data_size);
+        if (mImp->mVerbose) {
+          std::cout << "transferred (" << spec.mInputCommunity << "," <<
+            spec.mInputChannel << ") to (" << spec.mOutputCommunity << "," <<
+            spec.mOutputChannel << ")" << std::endl;
+        }
       }
     }
   };
@@ -32,15 +41,15 @@ struct Bridge::Imp {
     std::string mUrl;
     bool mIsSource;
     drc::LcmWrapper::Ptr mLcmWrapper;
-    std::unordered_map<std::string, BindingList> mBindingLists;
+    std::unordered_map<std::string, BindingList::Ptr> mBindingLists;
     std::unordered_map<std::string, lcm::Subscription*> mSubscriptions;
 
     bool start() {
       if (mLcmWrapper->isThreadRunning()) return false;
       for (auto iter : mBindingLists) {
-        iter.second.mSubscription =
+        iter.second->mSubscription =
           mLcmWrapper->get()->subscribe(iter.first, &BindingList::handler,
-                                        &iter.second);
+                                        iter.second.get());
       }
       if (mIsSource) return mLcmWrapper->startHandleThread();
       return true;
@@ -57,17 +66,24 @@ struct Bridge::Imp {
   };
 
   std::unordered_map<std::string, std::shared_ptr<Community>> mCommunities;
+  bool mVerbose;
 };
 
 
 Bridge::
 Bridge() {
   mImp.reset(new Imp());
+  setVerbose(false);
 }
 
 Bridge::
 ~Bridge() {
   stop();
+}
+
+void Bridge::
+setVerbose(const bool iVal) {
+  mImp->mVerbose = iVal;
 }
 
 bool Bridge::
@@ -108,11 +124,17 @@ addBinding(const BindingSpec& iSpec) {
 
   Imp::Binding binding;
   binding.mDestLcmWrapper = outputCommunity->mLcmWrapper;
-  binding.mDestChannel = iSpec.mOutputChannel.length() > 0 ?
+  binding.mSpec = iSpec;
+  binding.mSpec.mOutputChannel = iSpec.mOutputChannel.length() > 0 ?
     iSpec.mOutputChannel : iSpec.mInputChannel;
   
-  inputCommunity->mBindingLists[iSpec.mInputChannel].mBindings.
+  if (inputCommunity->mBindingLists[iSpec.mInputChannel] == NULL) {
+    inputCommunity->mBindingLists[iSpec.mInputChannel].reset
+      (new Imp::BindingList());
+  }
+  inputCommunity->mBindingLists[iSpec.mInputChannel]->mBindings.
     push_back(binding);
+  inputCommunity->mBindingLists[iSpec.mInputChannel]->mImp = mImp.get();
 
   inputCommunity->mIsSource = true;
   
