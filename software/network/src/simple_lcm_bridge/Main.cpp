@@ -9,7 +9,8 @@
 
 #include "Bridge.hpp"
 
-bool configure(const std::string& iConfigFile, Bridge& oBridge) {
+bool configure(const std::string& iConfigFile, const std::string& iName,
+               Bridge& oBridge) {
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
   BotParam* param;
   if (iConfigFile.length() == 0) {
@@ -17,6 +18,10 @@ bool configure(const std::string& iConfigFile, Bridge& oBridge) {
   }
   else {
     param = bot_param_new_from_file(iConfigFile.c_str());
+    if (param == NULL) {
+      std::cout << "error: could not read config file " <<
+        iConfigFile << std::endl;
+    }
   }
   drc::BotWrapper botWrapper(lcm, param);
   std::string keyBase = "network.lcm_bridge";
@@ -37,8 +42,9 @@ bool configure(const std::string& iConfigFile, Bridge& oBridge) {
   }
 
   // bindings
+  std::string bindingsKey = keyBase + ".bindings." + iName;
   std::vector<std::string> bindingStrings;
-  if (!botWrapper.get(keyBase + ".bindings", bindingStrings)) {
+  if (!botWrapper.get(bindingsKey, bindingStrings)) {
     std::cout << "error: cannot find bindings in config" << std::endl;
     return false;
   }
@@ -68,20 +74,31 @@ bool configure(const std::string& iConfigFile, Bridge& oBridge) {
 
 int main(const int iArgc, const char** iArgv) {
   std::string configFile;
+  std::string name;
 
   ConciseArgs opt(iArgc, (char**)iArgv);
+  opt.add(name, "n", "name",
+          "name identifier of this bridge", true);
   opt.add(configFile, "c", "config-file",
           "config file (use param server if empty)");
   opt.parse();
 
+  std::cout << "setting up bridge \"" << name << "\"" << std::endl;
+  if (configFile.length() == 0) {
+    std::cout << "using config from server" << std::endl;
+  }
+  else {
+    std::cout << "using config file " << configFile << std::endl;
+  }
+
   Bridge bridge;
-  if (!configure(configFile, bridge)) {
-    std::cout << "cannot configure bridge" << std::endl;
+  if (!configure(configFile, name, bridge)) {
+    std::cout << "error: cannot configure bridge" << std::endl;
     return -1;
   }
 
   if (!bridge.start()) {
-    std::cout << "cannot start bridge" << std::endl;
+    std::cout << "error: cannot start bridge" << std::endl;
     return -1;
   }
   std::cout << "bridge started" << std::endl;
