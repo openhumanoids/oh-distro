@@ -32,7 +32,7 @@ group "2.plan_and_control" {
 
     cmd "AtlasController" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine(2,0,4);\"";
-        host = "robot";
+        host = "atlas2";
         stop_signal = 15;
     }
     cmd "EncoderCalibration" {
@@ -146,12 +146,12 @@ group "7.other_drivers" {
 
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
-    host = "robot";
+    host = "atlas2";
 }
 
 cmd "atlas-high" {
     exec = "drc-atlas -p on";
-    host = "robot";
+    host = "atlas2";
 }
 
 cmd "pose-util" {
