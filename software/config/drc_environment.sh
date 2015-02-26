@@ -1,7 +1,7 @@
-# This awkward line exists to support zsh (instead of bash). 
+# This awkward line exists to support zsh (instead of bash).
 # Due to limitations of zsh, it must be the first line in the file. Sorry.
 thisFile=$_
-if [ $BASH ] 
+if [ $BASH ]
 then
   # may be a relative or absolute path
   thisFile=${BASH_SOURCE[0]}
@@ -42,9 +42,17 @@ setup_drcsim()
 
 export LCM_REVIEW_DEFAULT_URL="udpm://239.255.74.52:7452?ttl=0"
 
+use_review_lcm_url()
+{
+  export LCM_URL_PREVIOUS="$LCM_DEFAULT_URL"
+  export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
+  echo "Using default LCM url for review mode: $LCM_DEFAULT_URL".
+}
+
 use_default_lcm_url()
 {
-  export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
+  echo "Restoring previous default LCM url: $LCM_URL_PREVIOUS"
+  export LCM_DEFAULT_URL="$LCM_URL_PREVIOUS"
 }
 
 
@@ -85,7 +93,7 @@ setup_robot_computers()
 setup_network_sim()
 {
     export LCM_URL_DRC_ROBOT="udpm://239.255.76.68:7668?ttl=0"
-    export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=0" 
+    export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=0"
 }
 
 set_drc_base
