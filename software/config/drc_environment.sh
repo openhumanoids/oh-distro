@@ -111,6 +111,7 @@ setup_lcm_communities()
     fi
 }
 
+# remove this flag to run with isolated lcm communities
 export DEBUG_NETWORK="true"
 
 set_drc_base
