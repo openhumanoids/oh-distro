@@ -24,7 +24,7 @@ classdef IRISRegion < iris.TerrainRegion
       else
         ang = asin(norm(ax) / norm(obj.normal));
       end
-      T = makehgtform('zrotate', yaw, 'axisrotate', ax, ang, 'translate', obj.point);
+      T = makehgtform('translate', obj.point, 'axisrotate', ax, ang, 'zrotate', yaw);
       msg.seed_pose = encodePosition3d([T(1:3,4); rotmat2rpy(T(1:3,1:3))]);
     end
 
