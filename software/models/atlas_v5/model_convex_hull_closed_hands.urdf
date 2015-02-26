@@ -17,7 +17,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_clav.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_clav_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -82,7 +82,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_foot.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_foot_chull.obj"/>
       </geometry>
     </collision>
     <collision group="heel">
@@ -130,7 +130,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_larm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_larm_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -147,7 +147,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_hand.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_hand_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -164,7 +164,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_lglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_lglut_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -181,7 +181,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_lleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_lleg_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -198,7 +198,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_scap.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_scap_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -227,7 +227,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uarm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_uarm_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -244,7 +244,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_farm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_farm_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -261,7 +261,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_uglut_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -281,7 +281,7 @@
     <!-- outside strut -->
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_uleg_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -322,7 +322,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/pelvis.obj"/>
+        <mesh filename="package://atlas_v5/meshes/pelvis_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -339,7 +339,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_clav.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_clav_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -404,7 +404,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_foot.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_foot_chull.obj"/>
       </geometry>
     </collision>
     <collision group="heel">
@@ -452,7 +452,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_larm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_larm_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -469,7 +469,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_hand.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_hand_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -486,7 +486,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_lglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_lglut_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -503,7 +503,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_lleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_lleg_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -520,7 +520,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_scap.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_scap_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -549,7 +549,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_uarm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uarm_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -566,7 +566,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_farm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_farm_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -583,7 +583,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_uglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uglut_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -603,7 +603,7 @@
     <!-- outside strut -->
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_uleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uleg_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -620,7 +620,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/utorso.obj"/>
+        <mesh filename="package://atlas_v5/meshes/utorso_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -1039,6 +1039,8 @@
     <ignored_collision_filter_group collision_filter_group="l_uleg"/>
   </collision_filter_group>
   <collision_filter_group name="r_arm">
+    <member link="r_clav"/>
+    <member link="r_scap"/>
     <member link="r_uarm"/>
     <member link="r_larm"/>
     <member link="r_ufarm"/>
@@ -1047,6 +1049,8 @@
     <ignored_collision_filter_group collision_filter_group="r_arm"/>
   </collision_filter_group>
   <collision_filter_group name="l_arm">
+    <member link="l_clav"/>
+    <member link="l_scap"/>
     <member link="l_uarm"/>
     <member link="l_larm"/>
     <member link="l_ufarm"/>

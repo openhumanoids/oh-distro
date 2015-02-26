@@ -16,7 +16,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_clav.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_clav_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -33,7 +33,7 @@
     </visual>
     <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_foot.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_foot_chull.obj"/>
       </geometry>
     </collision>
     <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision></link>
@@ -57,7 +57,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_larm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_larm_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -74,7 +74,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_hand.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_hand_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -91,7 +91,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_lglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_lglut_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -108,7 +108,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_lleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_lleg_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -125,7 +125,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_scap.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_scap_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -154,7 +154,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uarm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_uarm_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -171,7 +171,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_farm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_farm_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -188,7 +188,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_uglut_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -208,7 +208,7 @@
     <!-- outside strut -->
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/l_uleg_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -249,7 +249,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/pelvis.obj"/>
+        <mesh filename="package://atlas_v5/meshes/pelvis_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -266,7 +266,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_clav.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_clav_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -283,7 +283,7 @@
     </visual>
     <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.0"/></geometry></collision><visual group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></visual><collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_foot.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_foot_chull.obj"/>
       </geometry>
     </collision>
     <collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="heel"><origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision><collision group="toe"><origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/><geometry><sphere radius="0.01"/></geometry></collision></link>
@@ -307,7 +307,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_larm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_larm_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -324,7 +324,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_hand.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_hand_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -341,7 +341,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_lglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_lglut_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -358,7 +358,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_lleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_lleg_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -375,7 +375,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_scap.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_scap_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -404,7 +404,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_uarm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uarm_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -421,7 +421,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_farm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_farm_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -438,7 +438,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_uglut.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uglut_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -458,7 +458,7 @@
     <!-- outside strut -->
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/r_uleg.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uleg_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -475,7 +475,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/utorso.obj"/>
+        <mesh filename="package://atlas_v5/meshes/utorso_chull.obj"/>
       </geometry>
     </collision>
     </link>
@@ -844,4 +844,4 @@
     <child link="rear_situational_awareness_camera_optical_frame"/>
   </joint>
   <link name="rear_situational_awareness_camera_optical_frame"/>
-<frame name="l_foot_sole" link="l_foot" xyz="0.0426  0.0017 -0.07645" rpy="0 0 0"/><frame name="r_foot_sole" link="r_foot" xyz="0.0426 -0.0017 -0.07645" rpy="0 0 0"/><collision_filter_group name="feet"><member link="l_foot"/><member link="r_foot"/><ignored_collision_filter_group collision_filter_group="feet"/></collision_filter_group><collision_filter_group name="core"><member link="utorso"/><member link="pelvis"/><ignored_collision_filter_group collision_filter_group="core"/></collision_filter_group><collision_filter_group name="ignore_core"><member link="r_scap"/><member link="l_scap"/><member link="r_clav"/><member link="l_clav"/><ignored_collision_filter_group collision_filter_group="core"/></collision_filter_group><collision_filter_group name="r_uleg"><member link="r_uglut"/><member link="r_lglut"/><member link="r_uleg"/><ignored_collision_filter_group collision_filter_group="core"/><ignored_collision_filter_group collision_filter_group="r_uleg"/><ignored_collision_filter_group collision_filter_group="l_uleg"/></collision_filter_group><collision_filter_group name="l_uleg"><member link="l_uglut"/><member link="l_lglut"/><member link="l_uleg"/><ignored_collision_filter_group collision_filter_group="core"/><ignored_collision_filter_group collision_filter_group="l_uleg"/><ignored_collision_filter_group collision_filter_group="l_uleg"/></collision_filter_group><collision_filter_group name="r_leg"><member link="r_lleg"/><member link="r_talus"/><member link="r_foot"/><ignored_collision_filter_group collision_filter_group="r_leg"/><ignored_collision_filter_group collision_filter_group="r_uleg"/></collision_filter_group><collision_filter_group name="l_leg"><member link="l_lleg"/><member link="l_talus"/><member link="l_foot"/><ignored_collision_filter_group collision_filter_group="l_leg"/><ignored_collision_filter_group collision_filter_group="l_uleg"/></collision_filter_group><collision_filter_group name="r_arm"><member link="r_uarm"/><member link="r_larm"/><member link="r_ufarm"/><member link="r_lfarm"/><member link="r_hand"/><ignored_collision_filter_group collision_filter_group="r_arm"/></collision_filter_group><collision_filter_group name="l_arm"><member link="l_uarm"/><member link="l_larm"/><member link="l_ufarm"/><member link="l_lfarm"/><member link="l_hand"/><ignored_collision_filter_group collision_filter_group="l_arm"/></collision_filter_group></robot>
+<frame name="l_foot_sole" link="l_foot" xyz="0.0426  0.0017 -0.07645" rpy="0 0 0"/><frame name="r_foot_sole" link="r_foot" xyz="0.0426 -0.0017 -0.07645" rpy="0 0 0"/><collision_filter_group name="feet"><member link="l_foot"/><member link="r_foot"/><ignored_collision_filter_group collision_filter_group="feet"/></collision_filter_group><collision_filter_group name="core"><member link="utorso"/><member link="pelvis"/><ignored_collision_filter_group collision_filter_group="core"/></collision_filter_group><collision_filter_group name="ignore_core"><member link="r_scap"/><member link="l_scap"/><member link="r_clav"/><member link="l_clav"/><ignored_collision_filter_group collision_filter_group="core"/></collision_filter_group><collision_filter_group name="r_uleg"><member link="r_uglut"/><member link="r_lglut"/><member link="r_uleg"/><ignored_collision_filter_group collision_filter_group="core"/><ignored_collision_filter_group collision_filter_group="r_uleg"/><ignored_collision_filter_group collision_filter_group="l_uleg"/></collision_filter_group><collision_filter_group name="l_uleg"><member link="l_uglut"/><member link="l_lglut"/><member link="l_uleg"/><ignored_collision_filter_group collision_filter_group="core"/><ignored_collision_filter_group collision_filter_group="l_uleg"/><ignored_collision_filter_group collision_filter_group="l_uleg"/></collision_filter_group><collision_filter_group name="r_leg"><member link="r_lleg"/><member link="r_talus"/><member link="r_foot"/><ignored_collision_filter_group collision_filter_group="r_leg"/><ignored_collision_filter_group collision_filter_group="r_uleg"/></collision_filter_group><collision_filter_group name="l_leg"><member link="l_lleg"/><member link="l_talus"/><member link="l_foot"/><ignored_collision_filter_group collision_filter_group="l_leg"/><ignored_collision_filter_group collision_filter_group="l_uleg"/></collision_filter_group><collision_filter_group name="r_arm"><member link="r_clav"/><member link="r_scap"/><member link="r_uarm"/><member link="r_larm"/><member link="r_ufarm"/><member link="r_lfarm"/><member link="r_hand"/><ignored_collision_filter_group collision_filter_group="r_arm"/></collision_filter_group><collision_filter_group name="l_arm"><member link="l_clav"/><member link="l_scap"/><member link="l_uarm"/><member link="l_larm"/><member link="l_ufarm"/><member link="l_lfarm"/><member link="l_hand"/><ignored_collision_filter_group collision_filter_group="l_arm"/></collision_filter_group></robot>

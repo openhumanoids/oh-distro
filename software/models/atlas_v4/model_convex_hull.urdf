@@ -1044,6 +1044,8 @@
     <ignored_collision_filter_group collision_filter_group="l_uleg"/>
   </collision_filter_group>
   <collision_filter_group name="r_arm">
+    <member link="r_clav"/>
+    <member link="r_scap"/>
     <member link="r_uarm"/>
     <member link="r_larm"/>
     <member link="r_ufarm"/>
@@ -1052,6 +1054,8 @@
     <ignored_collision_filter_group collision_filter_group="r_arm"/>
   </collision_filter_group>
   <collision_filter_group name="l_arm">
+    <member link="l_clav"/>
+    <member link="l_scap"/>
     <member link="l_uarm"/>
     <member link="l_larm"/>
     <member link="l_ufarm"/>
