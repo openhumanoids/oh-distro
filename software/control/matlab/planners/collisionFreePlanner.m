@@ -145,7 +145,6 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
       aabb_pts = bsxfun(@minus, aabb_pts, TA.end_effector_pt);
       max_radius = max(sqrt(sum(aabb_pts.^2,1)));
       TA  = TA.setOrientationWeight(2*pi*max_radius);
-      display(2*pi*max_radius);
       TA.max_edge_length = options.RRTMaxEdgeLength;
       TA.max_length_between_constraint_checks = options.RRTMaxEdgeLength;
 
