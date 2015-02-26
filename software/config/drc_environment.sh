@@ -95,12 +95,23 @@ setup_network_sim()
 setup_lcm_communities()
 {
     export LCM_URL_DRC_DEFAULT="udpm://239.255.76.67:7667?ttl=1"
-    export LCM_URL_DRC_RADIO="udpm://239.255.76.70:7670?ttl=1"
-    export LCM_URL_DRC_CONTROL="udpm://239.255.76.80:7680?ttl=1"
-    export LCM_URL_DRC_PERCEPTION="udpm://239.255.76.81:7681?ttl=1"
-    export LCM_URL_DRC_ATLAS_0_2="udpm://239.255.76.82:7682?ttl=1"
-    export LCM_URL_DRC_ATLAS_1_2="udpm://239.255.76.83:7683?ttl=1"
+    if [ "true" = ${DEBUG_NETWORK} ]
+    then
+	export LCM_URL_DRC_RADIO=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_CONTROL=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_PERCEPTION=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_ATLAS_0_2=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_ATLAS_1_2=${LCM_URL_DRC_DEFAULT}
+    else
+	export LCM_URL_DRC_RADIO="udpm://239.255.76.70:7670?ttl=1"
+	export LCM_URL_DRC_CONTROL="udpm://239.255.76.80:7680?ttl=1"
+	export LCM_URL_DRC_PERCEPTION="udpm://239.255.76.81:7681?ttl=1"
+	export LCM_URL_DRC_ATLAS_0_2="udpm://239.255.76.82:7682?ttl=1"
+	export LCM_URL_DRC_ATLAS_1_2="udpm://239.255.76.83:7683?ttl=1"
+    fi
 }
+
+export DEBUG_NETWORK="true"
 
 set_drc_base
 #setup_drcsim

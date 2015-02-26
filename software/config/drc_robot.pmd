@@ -9,20 +9,6 @@ group "0.params_and_model_pub" {
         host = "atlas2";
     }
 
-    cmd "bridge0" {
-        exec = "drc-lcm-bridge -n atlas0 -c $DRC_BASE/software/config/drc_robot.cfg";
-        host = "atlas0";
-    }
-
-    cmd "bridge1" {
-        exec = "drc-lcm-bridge -n atlas1 -c $DRC_BASE/software/config/drc_robot.cfg";
-        host = "atlas1";
-    }
-
-    cmd "bridge2" {
-        exec = "drc-lcm-bridge -n atlas2 -c $DRC_BASE/software/config/drc_robot.cfg";
-        host = "atlas2";
-    }
 }
 
 group "1.state_mit" {
