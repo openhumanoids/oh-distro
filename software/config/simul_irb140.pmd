@@ -1,0 +1,27 @@
+cmd "director" {
+    exec = "drake-designer --director_config $DRC_BASE/software/models/IRB140/director_config.json";
+    host = "base";
+}
+
+cmd "base_deputy" {
+    exec = "bot-procman-deputy -n base";
+    host = "localhost";
+}
+
+cmd "simulator" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeIRB140Simulation();\"";
+    host = "base";
+}
+
+cmd "controller" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; IRB140Controller()\"";
+    host = "base";
+}
+
+script "5.run_simul" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start cmd "controller";
+    start cmd "simulator";
+    start cmd "director";
+}
