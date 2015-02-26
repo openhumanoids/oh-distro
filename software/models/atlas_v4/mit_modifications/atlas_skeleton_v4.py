@@ -93,10 +93,12 @@ mit.addCollisionFilterGroup(urdf, 'r_leg', ['r_lleg', 'r_talus', 'r_foot'],
 mit.addCollisionFilterGroup(urdf, 'l_leg', ['l_lleg', 'l_talus', 'l_foot'],
                             ['l_leg', 'l_uleg'])
 mit.addCollisionFilterGroup(urdf, 'r_arm',
-                            ['r_uarm', 'r_larm', 'r_ufarm', 'r_lfarm', 'r_hand'],
+                            ['r_clav', 'r_scap', 'r_uarm', 'r_larm', 'r_ufarm',
+                             'r_lfarm', 'r_hand'],
                             ['r_arm'])
 mit.addCollisionFilterGroup(urdf, 'l_arm',
-                            ['l_uarm', 'l_larm', 'l_ufarm', 'l_lfarm', 'l_hand'],
+                            ['l_clav', 'l_scap', 'l_uarm', 'l_larm', 'l_ufarm',
+                             'l_lfarm', 'l_hand'],
                             ['l_arm'])
 
 urdf.write(convex_hull_urdf_path, pretty_print=True)

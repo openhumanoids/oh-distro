@@ -50,7 +50,6 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   if ~isfield(options,'goal_bias'),options.goal_bias = 0.1; end;
   if ~isfield(options,'n_smoothing_passes'),options.n_smoothing_passes = 5; end;
   if ~isfield(options,'smoothing_type'),options.smoothing_type = 'end_effector'; end;
-  if ~isfield(options,'RRTOrientationWeight'),options.RRTOrientationWeight = 1; end;
   if ~isfield(options,'RRTMaxEdgeLength'),options.RRTMaxEdgeLength = 0.1; end;
   if ~isfield(options,'RRTBaseXYZCost'), options.RRTBaseXYZCost = 1e5; end;
   if ~isfield(options,'frozen_groups'),options.frozen_groups = {}; end;
@@ -142,7 +141,10 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
       % Create task-space planning tree
       TA = TaskSpaceMotionPlanningTree(r, options.end_effector_name, ...
                                           options.end_effector_pt);
-      TA  = TA.setOrientationWeight(options.RRTOrientationWeight);
+      aabb_pts = r.getBody(TA.end_effector_id).getAxisAlignedBoundingBoxPoints();
+      aabb_pts = bsxfun(@minus, aabb_pts, TA.end_effector_pt);
+      max_radius = max(sqrt(sum(aabb_pts.^2,1)));
+      TA  = TA.setOrientationWeight(2*pi*max_radius);
       TA.max_edge_length = options.RRTMaxEdgeLength;
       TA.max_length_between_constraint_checks = options.RRTMaxEdgeLength;
 
