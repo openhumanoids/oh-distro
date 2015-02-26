@@ -69,7 +69,7 @@ group "2.plan_and_control" {
 
 
     cmd "CombinedPlanner" {
-       exec = "LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
+       exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"'";
        host = "atlas1";
        stop_signal = 15;
     }
@@ -121,12 +121,12 @@ group "5.maps" {
 group "6.hands_robotiq" {
 
     cmd "robotiq-left" {
-        exec = "LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} robotiq_tcp_node LEFT 192.168.120.101";
+        exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} robotiq_tcp_node LEFT 192.168.120.101'";
         host = "atlas2";
     }
 
     cmd "robotiq-right" {
-        exec = "LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} robotiq_tcp_node RIGHT 192.168.121.101";
+        exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} robotiq_tcp_node RIGHT 192.168.121.101'";
         host = "atlas2";
     }
 
