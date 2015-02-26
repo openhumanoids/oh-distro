@@ -61,7 +61,13 @@ elseif (strcmp(world_name, 'terrain'))
   options.terrain = height_map;
   options.use_bullet = false;
 elseif (strcmp(world_name, 'stairs'))
-  %TODO: might need to do the same trick as in the terrain task here
+  stairsRBM = RigidBodyManipulator();
+  stairsRBM = stairsRBM.setTerrain(RigidBodyFlatTerrain());
+  stairsRBM = stairsRBM.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0], [0 ; 0 ; pi]);
+  stairsRBM = stairsRBM.compile();
+  height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(stairsRBM,[],-3:.015:3, -3:.015:3, 10);
+  options.terrain = height_map;
+  options.use_bullet = false;
 else
   options.terrain = RigidBodyFlatTerrain();
 end
@@ -103,7 +109,7 @@ elseif(strcmp(world_name, 'plug'))
   r_complete = r_complete.addRobotFromURDF('big_plug.urdf', [-0.2; -1.2; 1.2], [], options_cyl);
   r_complete = r_complete.addRobotFromURDF('small_plug.urdf', [0.2; -1.2; 1.2], [], options_cyl);
 elseif(strcmp(world_name, 'stairs'))  
-  r_complete = r_complete.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0], [0;0;pi]);  
+  r_complete = r_complete.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0], [0 ; 0 ; pi]);  
 end
 r_complete = compile(r_complete);
 

@@ -122,7 +122,7 @@ cmd "drakeAtlasSimulation Terrain Task" {
 }
 
 cmd "drakeAtlasSimulation Stairs Task" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 1, 'stairs');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 0, 'stairs');\"";
     host = "base";
 }
 
@@ -280,5 +280,5 @@ script "8.run_stairs" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Stairs Task";
-    start cmd "AtlasControllerNoHands";
+    start cmd "AtlasControllerPlusHandWeight";
 }
