@@ -60,7 +60,7 @@ if (strcmp(world_name,'steps'))
     1.2, 0.0, 0.8, 1, 0.30;];
   options.terrain = RigidBodyStepTerrain(boxes);
 elseif (strcmp(world_name, 'terrain'))
-  clear gazeboModelPath;false
+  clear gazeboModelPath;
   setenv('GAZEBO_MODEL_PATH',sdfDir);
   height_map = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(RigidBodyManipulator(terrainSDF),[],-3:.015:10,-2:.015:2,10);
   options.terrain = height_map;
