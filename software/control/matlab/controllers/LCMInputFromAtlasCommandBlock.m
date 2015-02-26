@@ -165,7 +165,6 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       plan_eval = atlasControllers.AtlasPlanEval(r, standing_plan);
       control = atlasControllers.InstantaneousQPController(r);
       obj.plan_eval_and_control = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, plan_eval);
-
     end
     
     function x=decode_cmd(obj, data)
