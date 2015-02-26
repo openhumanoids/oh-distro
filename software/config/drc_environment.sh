@@ -40,6 +40,13 @@ setup_drcsim()
   export VRC_CHEATS_ENABLED=1
 }
 
+export LCM_REVIEW_DEFAULT_URL="udpm://239.255.74.52:7452?ttl=0"
+
+use_default_lcm_url()
+{
+  export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
+}
+
 
 setup_drc()
 {
