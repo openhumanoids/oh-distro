@@ -86,7 +86,18 @@ setup_robot_computers()
 {
   if [[ "paladin-04|paladin-05|paladin-06|paladin-10|paladin-12" =~ $(hostname) ]]
   then
-    export LCM_DEFAULT_URL='udpm://239.255.76.68:7668?ttl=1'
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_RADIO}
+  fi
+
+  if [ "atlas0" = $(hostname) ]
+  then
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_PERCEPTION}
+  elif [ "atlas1" = $(hostname) ]
+  then
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_PERCEPTION}
+  elif [ "atlas2" = $(hostname) ]
+  then
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_CONTROL}
   fi
 }
 
@@ -96,10 +107,33 @@ setup_network_sim()
     export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=0"
 }
 
+setup_lcm_communities()
+{
+    export LCM_URL_DRC_DEFAULT="udpm://239.255.76.67:7667?ttl=1"
+    if [ "true" = ${DEBUG_NETWORK} ]
+    then
+	export LCM_URL_DRC_RADIO=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_CONTROL=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_PERCEPTION=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_ATLAS_0_2=${LCM_URL_DRC_DEFAULT}
+	export LCM_URL_DRC_ATLAS_1_2=${LCM_URL_DRC_DEFAULT}
+    else
+	export LCM_URL_DRC_RADIO="udpm://239.255.76.70:7670?ttl=1"
+	export LCM_URL_DRC_CONTROL="udpm://239.255.76.80:7680?ttl=1"
+	export LCM_URL_DRC_PERCEPTION="udpm://239.255.76.81:7681?ttl=1"
+	export LCM_URL_DRC_ATLAS_0_2="udpm://239.255.76.82:7682?ttl=1"
+	export LCM_URL_DRC_ATLAS_1_2="udpm://239.255.76.83:7683?ttl=1"
+    fi
+}
+
+# remove this flag to run with isolated lcm communities
+export DEBUG_NETWORK="true"
+
 set_drc_base
 #setup_drcsim
 setup_drc
 setup_network_sim
+setup_lcm_communities
 setup_robot_computers
 
 # aliases
