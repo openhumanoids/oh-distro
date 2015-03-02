@@ -6,7 +6,7 @@
 <robot name="atlas" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <link name="l_clav">
     <inertial>
-      <mass value="3.45"/>
+      <mass value="4.466"/>
       <origin rpy="0 -0 0" xyz="0 0.048 -0.084"/>
       <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="-0.004" izz="0.004"/>
     </inertial>
@@ -23,7 +23,7 @@
   </link>
   <link name="l_ufarm">
     <inertial>
-      <mass value="3.388"/>
+      <mass value="4.386"/>
       <origin rpy="0 -0 0" xyz="0 -0.065 0"/>
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
@@ -40,7 +40,7 @@
   </link>
   <link name="l_foot">
     <inertial>
-      <mass value="2.05"/>
+      <mass value="2.41"/>
       <origin rpy="0 -0 0" xyz="0.027 0 -0.067"/>
       <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008"/>
     </inertial>
@@ -155,7 +155,7 @@
   </link>
   <link name="l_larm">
     <inertial>
-      <mass value="2.509"/>
+      <mass value="3.248"/>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
@@ -174,7 +174,7 @@
   </link>
   <link name="l_lglut">
     <inertial>
-      <mass value="0.866"/>
+      <mass value="0.898"/>
       <origin rpy="0 -0 0" xyz="0.0133341 0.0170484 -0.0312052"/>
       <inertia ixx="0.000691326" ixy="-2.24344e-05" ixz="2.50508e-06" iyy="0.00126856" iyz="0.000137862" izz="0.00106487"/>
     </inertial>
@@ -191,7 +191,7 @@
   </link>
   <link name="l_lleg">
     <inertial>
-      <mass value="5.479"/>
+      <mass value="4.515"/>
       <origin rpy="0 -0 0" xyz="0.001 0 -0.187"/>
       <inertia ixx="0.077" ixy="0" ixz="-0.003" iyy="0.076" iyz="0" izz="0.01"/>
     </inertial>
@@ -208,7 +208,7 @@
   </link>
   <link name="l_scap">
     <inertial>
-      <mass value="3.012"/>
+      <mass value="3.899"/>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <inertia ixx="0.00319" ixy="0" ixz="0" iyy="0.00583" iyz="0" izz="0.00583"/>
     </inertial>
@@ -237,7 +237,7 @@
   </link>
   <link name="l_uarm">
     <inertial>
-      <mass value="3.388"/>
+      <mass value="4.386"/>
       <origin rpy="0 -0 0" xyz="0 -0.065 0"/>
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
@@ -254,7 +254,7 @@
   </link>
   <link name="l_uglut">
     <inertial>
-      <mass value="0.648"/>
+      <mass value="1.959"/>
       <origin rpy="0 -0 0" xyz="0.00529262 -0.00344732 0.00313046"/>
       <inertia ixx="0.00074276" ixy="-3.79607e-08" ixz="-2.79549e-05" iyy="0.000688179" iyz="-3.2735e-08" izz="0.00041242"/>
     </inertial>
@@ -271,7 +271,7 @@
   </link>
   <link name="l_uleg">
     <inertial>
-      <mass value="9.209"/>
+      <mass value="8.204"/>
       <origin rpy="0 -0 0" xyz="0 0 -0.21"/>
       <inertia ixx="0.09" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.02"/>
     </inertial>
@@ -291,7 +291,7 @@
   </link>
   <link name="ltorso">
     <inertial>
-      <mass value="2.409"/>
+      <mass value="2.270"/>
       <origin rpy="0 -0 0" xyz="-0.0112984 -3.15366e-06 0.0746835"/>
       <inertia ixx="0.0039092" ixy="-5.04491e-08" ixz="-0.000342157" iyy="0.00341694" iyz="4.87119e-07" izz="0.00174492"/>
     </inertial>
@@ -303,7 +303,7 @@
   </link>
   <link name="mtorso">
     <inertial>
-      <mass value="0.69"/>
+      <mass value="0.799"/>
       <origin rpy="0 -0 0" xyz="-0.00816266 -0.0131245 0.0305974"/>
       <inertia ixx="0.000454181" ixy="-6.10764e-05" ixz="3.94009e-05" iyy="0.000483282" iyz="5.27463e-05" izz="0.000444215"/>
     </inertial>
@@ -315,7 +315,7 @@
   </link>
   <link name="pelvis">
     <inertial>
-      <mass value="17.882"/>
+      <mass value="9.509"/>
       <origin rpy="0 -0 0" xyz="0.0111 0 0.0271"/>
       <inertia ixx="0.1244" ixy="0.0008" ixz="-0.0007" iyy="0.0958" iyz="-0.0005" izz="0.1167"/>
     </inertial>
@@ -332,7 +332,7 @@
   </link>
   <link name="r_clav">
     <inertial>
-      <mass value="3.45"/>
+      <mass value="4.466"/>
       <origin rpy="0 -0 0" xyz="0 -0.048 -0.084"/>
       <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="0.004" izz="0.004"/>
     </inertial>
@@ -349,7 +349,7 @@
   </link>
   <link name="r_ufarm">
     <inertial>
-      <mass value="3.388"/>
+      <mass value="4.386"/>
       <origin rpy="0 -0 0" xyz="0 0.065 0"/>
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
@@ -366,7 +366,7 @@
   </link>
   <link name="r_foot">
     <inertial>
-      <mass value="2.05"/>
+      <mass value="2.41"/>
       <origin rpy="0 -0 0" xyz="0.027 0 -0.067"/>
       <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008"/>
     </inertial>
@@ -479,7 +479,7 @@
   </link>
   <link name="r_larm">
     <inertial>
-      <mass value="2.509"/>
+      <mass value="3.248"/>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
@@ -496,7 +496,7 @@
   </link>
   <link name="r_lglut">
     <inertial>
-      <mass value="0.866"/>
+      <mass value="0.898"/>
       <origin rpy="0 -0 0" xyz="0.0133341 -0.0170484 -0.0312052"/>
       <inertia ixx="0.000691326" ixy="2.24344e-05" ixz="2.50508e-06" iyy="0.00126856" iyz="-0.000137862" izz="0.00106487"/>
     </inertial>
@@ -513,7 +513,7 @@
   </link>
   <link name="r_lleg">
     <inertial>
-      <mass value="5.479"/>
+      <mass value="4.515"/>
       <origin rpy="0 -0 0" xyz="0.001 0 -0.187"/>
       <inertia ixx="0.077" ixy="-0" ixz="-0.003" iyy="0.076" iyz="-0" izz="0.01"/>
     </inertial>
@@ -530,7 +530,7 @@
   </link>
   <link name="r_scap">
     <inertial>
-      <mass value="3.012"/>
+      <mass value="3.899"/>
       <origin rpy="0 -0 0" xyz="0 0 0"/>
       <inertia ixx="0.00319" ixy="0" ixz="0" iyy="0.00583" iyz="0" izz="0.00583"/>
     </inertial>
@@ -559,7 +559,7 @@
   </link>
   <link name="r_uarm">
     <inertial>
-      <mass value="3.388"/>
+      <mass value="4.386"/>
       <origin rpy="0 -0 0" xyz="0 0.065 0"/>
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
@@ -576,7 +576,7 @@
   </link>
   <link name="r_uglut">
     <inertial>
-      <mass value="0.648"/>
+      <mass value="1.959"/>
       <origin rpy="0 -0 0" xyz="0.00529262 0.00344732 0.00313046"/>
       <inertia ixx="0.00074276" ixy="3.79607e-08" ixz="-2.79549e-05" iyy="0.000688179" iyz="3.2735e-08" izz="0.00041242"/>
     </inertial>
@@ -593,7 +593,7 @@
   </link>
   <link name="r_uleg">
     <inertial>
-      <mass value="9.209"/>
+      <mass value="8.204"/>
       <origin rpy="0 -0 0" xyz="0 0 -0.21"/>
       <inertia ixx="0.09" ixy="0" ixz="0" iyy="0.09" iyz="0" izz="0.02"/>
     </inertial>
@@ -613,9 +613,9 @@
   </link>
   <link name="utorso">
     <inertial>
-      <mass value="63.73"/>
-      <origin rpy="0 -0 0" xyz="-0.0581 0 0.3056"/>
-      <inertia ixx="1.466" ixy="0.00362" ixz="0.336" iyy="1.51" iyz="0.001" izz="1.3"/>
+      <mass value="84.409"/>
+      <origin rpy="0 -0 0" xyz="-0.0622 0.0023 0.3157"/>
+      <inertia ixx="1.577" ixy="-0.032" ixz="0.102" iyy="1.602" iyz="0.047" izz="0.565"/>
     </inertial>
     <visual>
       <geometry>
@@ -921,9 +921,8 @@
   <joint name="r_situational_awareness_camera_joint" type="fixed">
     <parent link="utorso"/>
     <child link="r_situational_awareness_camera_link"/>
-    <!-- if camera points x-forward, bottom towards front of robot, 15 degree yaw forwards from
-         lateral (+y) view -->
-    <origin rpy="1.57079633 0 -1.30899694" xyz="0.216409 -0.121799 0.406759"/>
+    <!-- SA camera mounted above the multisense head -->
+    <origin rpy="0 0 -1.309" xyz="0.155 -0.121 0.785"/>
   </joint>
   <joint name="r_situational_awareness_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
@@ -953,9 +952,8 @@
   <joint name="l_situational_awareness_camera_joint" type="fixed">
     <parent link="utorso"/>
     <child link="l_situational_awareness_camera_link"/>
-    <!-- if camera points x-forward, bottom towards front of robot, 15 degree yaw forwards from
-         lateral (+y) view -->
-    <origin rpy="-1.57079633 0 1.30899694" xyz="0.216409 0.121799 0.406759"/>
+    <!-- SA camera mounted above the multisense head -->
+    <origin rpy="0 0 1.309" xyz="0.155 0.121 0.785"/>
   </joint>
   <joint name="l_situational_awareness_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
@@ -963,37 +961,6 @@
     <child link="l_situational_awareness_camera_optical_frame"/>
   </joint>
   <link name="l_situational_awareness_camera_optical_frame"/>
-  <link name="rear_situational_awareness_camera_link">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </collision>
-  </link>
-  <joint name="rear_situational_awareness_camera_joint" type="fixed">
-    <parent link="utorso"/>
-    <child link="rear_situational_awareness_camera_link"/>
-    <!-- if camera points towards -X direction of the utorso link frame -->
-    <origin rpy="0 0 3.14159" xyz="-0.0026 0.0264 0.6649"/>
-  </joint>
-  <joint name="rear_situational_awareness_camera_optical_frame_joint" type="fixed">
-    <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
-    <parent link="rear_situational_awareness_camera_link"/>
-    <child link="rear_situational_awareness_camera_optical_frame"/>
-  </joint>
-  <link name="rear_situational_awareness_camera_optical_frame"/>
   <frame link="l_foot" name="l_foot_sole" rpy="0 0 0" xyz="0.0426  0.0017 -0.07645"/>
   <frame link="r_foot" name="r_foot_sole" rpy="0 0 0" xyz="0.0426 -0.0017 -0.07645"/>
   <collision_filter_group name="feet">
