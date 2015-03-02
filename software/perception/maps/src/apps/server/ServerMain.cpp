@@ -239,10 +239,10 @@ struct ViewWorker {
         }
         else {
           view->setId(mRequest.view_id);
-          if ((mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) ||
-              (mRequest.view_id == drc::data_request_t::STEREO_HEIGHT)) {
-            view->setId(drc::data_request_t::HEIGHT_MAP_SCENE);
-          }
+          //if ((mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) ||
+          //    (mRequest.view_id == drc::data_request_t::STEREO_HEIGHT)) {
+          //  view->setId(drc::data_request_t::HEIGHT_MAP_SCENE);
+          //}
           drc::map_image_t msg;
           LcmTranslator::toLcm(*view, msg);
           msg.utime = drc::Clock::instance()->getCurrentTime();
