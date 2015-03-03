@@ -836,7 +836,6 @@ class IKPlanner(object):
             graspToHandLinkFrame = self.newGraspToHandFrame(side)
 
         positionConstraint, orientationConstraint = self.createPositionOrientationGraspConstraints(side, targetFrame, graspToHandLinkFrame, positionTolerance=0.0, angleToleranceInDegrees=0.0)
-
         positionConstraint.tspan = [1.0, 1.0]
         orientationConstraint.tspan = [1.0, 1.0]
 
@@ -859,6 +858,172 @@ class IKPlanner(object):
             constraints = self.createMovingReachConstraints(startPoseName, lockBase=lockBase, lockBack=lockBack, lockArm=lockArm)
 
         return self.newReachGoal(startPoseName, side, graspFrame, constraints)
+        
+
+
+    def newReachGoals(self, startPoseName, rightFrame, leftFrame, constraints, graspToHandLinkFrame=None, lockOrient=True):
+        
+        graspToHandLeftLinkFrame = self.newGraspToHandFrame('left')
+
+        positionLeftConstraint, orientationLeftConstraint = self.createPositionOrientationGraspConstraints('left', leftFrame, graspToHandLeftLinkFrame, positionTolerance=0.0, angleToleranceInDegrees=0.0)
+        positionLeftConstraint.tspan = [1.0, 1.0]
+        orientationLeftConstraint.tspan = [1.0, 1.0]
+
+        constraints.append(positionLeftConstraint)
+        if lockOrient:
+            constraints.append(orientationLeftConstraint)
+
+        graspToHandRightLinkFrame = self.newGraspToHandFrame('right')
+
+        positionRightConstraint, orientationRightConstraint = self.createPositionOrientationGraspConstraints('right', rightFrame, graspToHandRightLinkFrame, positionTolerance=0.0, angleToleranceInDegrees=0.0)
+        positionRightConstraint.tspan = [1.0, 1.0]
+        orientationRightConstraint.tspan = [1.0, 1.0]
+
+        constraints.append(positionRightConstraint)
+        if lockOrient:
+            constraints.append(orientationRightConstraint)
+
+        constraintSet = ConstraintSet(self, constraints, 'reach_end', startPoseName)
+        
+        return constraintSet
+
+
+    def planEndEffectorGoals(self, startPose, rightFrame, leftFrame, constraints=None, lockBase=False, lockBack=False, lockArm=True):
+        
+        startPoseName = 'reach_start'
+        self.addPose(startPose, startPoseName)
+
+        if constraints is None:
+            constraints = self.createMovingReachConstraints(startPoseName, lockBase=lockBase, lockBack=lockBack, lockArm=lockArm)
+
+        return self.newReachGoals(startPoseName, rightFrame, leftFrame, constraints)
+        
+    def planEndEffectorGoalLine(self, startPose, rightGraspFrame, leftGraspFrame, constraints=None, lockBase=False, lockBack=False, lockArm=True,
+                                angleToleranceInDegrees=0.0):
+        
+        startPoseName = 'reach_start'
+        self.addPose(startPose, startPoseName)
+
+        if constraints is None:
+            constraints = self.createMovingReachConstraints(startPoseName, lockBase=lockBase, lockBack=lockBack, lockArm=lockArm)
+            
+        for hand in ['left', 'right']:
+            graspToHandLinkFrame = self.newGraspToHandFrame(hand)
+            posConstraint, quatConstraint = self.createSegmentConstraint(self.getHandLink(hand), rightGraspFrame,
+                                                                         leftGraspFrame, graspToHandLinkFrame, angleToleranceInDegrees)
+            posConstraint.tspan = [1.0, 1.0]
+            quatConstraint.tspan = [1.0, 1.0]
+            constraints.extend([posConstraint, quatConstraint])
+
+        constraintSet = ConstraintSet(self, constraints, 'reach_end', startPoseName)
+        return constraintSet
+    
+    def planAsymmetricGoal(self, startPose, rightGraspFrame, leftGraspFrame, constraints=None, lockBase=False, lockBack=False, lockArm=True):
+        
+        startPoseName = 'reach_start'
+        self.addPose(startPose, startPoseName)
+
+        if constraints is None:
+            constraints = self.createMovingReachConstraints(startPoseName, lockBase=lockBase, lockBack=lockBack, lockArm=lockArm)
+            
+        graspToHandLinkFrame = self.newGraspToHandFrame('left')
+        posConstraint, quatConstraint = self.createSegmentConstraint(self.getHandLink('left'), rightGraspFrame,
+                                                                     leftGraspFrame, graspToHandLinkFrame)
+        posConstraint.tspan = [1.0, 1.0]
+        quatConstraint.tspan = [1.0, 1.0]
+        constraints.extend([posConstraint, quatConstraint])
+        
+        linkName = self.getHandLink('right')            
+        graspToHandLinkFrame = self.newGraspToHandFrame('right')
+
+        p = ik.PositionConstraint()
+        p.linkName = linkName
+        p.pointInLink = np.array(graspToHandLinkFrame.GetPosition())
+        p.referenceFrame = rightGraspFrame.transform
+        p.lowerBound = np.array([np.nan, np.nan, 0.0])
+        p.upperBound = np.array([np.nan, np.nan, 0.0])
+        positionConstraint = p
+            
+        graspToHandLinkFrame = self.newGraspToHandFrame('right')
+        rollConstraint1, rollConstraint2 = self.createAxisInPlaneConstraintAsymmetric('right', rightGraspFrame, graspToHandLinkFrame)
+        rollConstraint1.tspan = [1.0, 1.0]
+        rollConstraint2.tspan = [1.0, 1.0]
+        constraints.extend([positionConstraint, rollConstraint1, rollConstraint2])
+
+        constraintSet = ConstraintSet(self, constraints, 'reach_end', startPoseName)
+        return constraintSet
+        
+    def createSegmentConstraint(self, linkName, firstFrame, secondFrame, linkOffsetFrame, angleToleranceInDegrees=0.0):
+
+        firstFrame = firstFrame if isinstance(firstFrame, vtk.vtkTransform) else firstFrame.transform
+        secondFrame = secondFrame if isinstance(secondFrame, vtk.vtkTransform) else secondFrame.transform
+        
+        targetFrame = transformUtils.frameInterpolate(firstFrame, secondFrame, 0.5)
+        vis.updateFrame(targetFrame, 'target frame', parent=None, visible=False, scale=0.2)
+        
+        distance = np.sqrt(vtk.vtkMath().Distance2BetweenPoints(firstFrame.GetPosition(), secondFrame.GetPosition()))
+        distance = distance/2 * 0.9
+
+        p = ik.PositionConstraint()
+        p.linkName = linkName
+        p.pointInLink = np.array(linkOffsetFrame.GetPosition())
+        p.referenceFrame = targetFrame
+        
+        p.lowerBound = np.array([-distance, 0.0, 0.0])
+        p.upperBound = np.array([distance, 0.0, 0.0])
+        positionConstraint = p
+
+        t = vtk.vtkTransform()
+        t.PostMultiply()
+        t.Concatenate(linkOffsetFrame.GetLinearInverse())
+        t.Concatenate(targetFrame)
+        
+        p = ik.QuatConstraint()
+        p.linkName = linkName
+        p.quaternion = t
+        p.angleToleranceInDegrees = angleToleranceInDegrees
+        orientationConstraint = p
+
+        return positionConstraint, orientationConstraint
+
+
+    def createAxisInPlaneConstraintAsymmetric(self, side, targetFrame, graspToHandLinkFrame):
+        '''
+        Constrain the ?? axis of targetFrame to be in the ?? plane of graspToHandLinkFrame in hand link.
+        Returns two relative position constraints.
+        '''
+
+        targetFrame = targetFrame if isinstance(targetFrame, vtk.vtkTransform) else targetFrame.transform
+
+        def makeOffsetTransform(offset):
+            t = vtk.vtkTransform()
+            t.PostMultiply()
+            t.Translate(offset)
+            t.Concatenate(targetFrame)
+            return t
+
+        p = ik.RelativePositionConstraint()
+        p.bodyNameA = 'world'
+        p.bodyNameB = self.getHandLink(side)
+        p.frameInBodyB = graspToHandLinkFrame
+        p.pointInBodyA = makeOffsetTransform([0.0, 0.0, 0.05])
+        p.positionTarget = np.zeros(3)
+        p.lowerBound = np.array([0.0, 0.0, np.nan])
+        p.upperBound = np.array([0.0, 0.0, np.nan])
+        rollConstraint1 = p
+
+        p = ik.RelativePositionConstraint()
+        p.bodyNameA = 'world'
+        p.bodyNameB = self.getHandLink(side)
+        p.frameInBodyB = graspToHandLinkFrame
+        p.pointInBodyA = makeOffsetTransform([0.0, 0.0, -0.05])
+        p.positionTarget = np.zeros(3)
+        p.lowerBound = np.array([0.0, 0.0, np.nan])
+        p.upperBound = np.array([0.0, 0.0, np.nan])
+        rollConstraint2 = p
+
+        return rollConstraint1, rollConstraint2
+
 
 
     def computeMultiPostureGoal(self, poses, feetOnGround=True, times=None):

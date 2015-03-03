@@ -224,6 +224,42 @@
       "nominal_handedness": "none"
     }
   ], 
+  "bihanded": [
+    {
+      "allow_mirror": true, 
+      "description": "board pregrasp both", 
+      "joints": {
+        "l_arm_elx": 1.8572478294372559, 
+        "l_arm_ely": 2.6745777130126953, 
+        "l_arm_mwx": -1.0170594453811646, 
+        "l_arm_shx": 0.011214695870876312, 
+        "l_arm_shz": 0.5639946460723877, 
+        "l_arm_uwy": 2.0632102489471436, 
+        "r_arm_elx": -1.8572478294372559, 
+        "r_arm_ely": 2.6745777130126953, 
+        "r_arm_mwx": 1.0170594453811646, 
+        "r_arm_shx": -0.011214695870876312, 
+        "r_arm_shz": -0.5639946460723877, 
+        "r_arm_uwy": 2.0632102489471436
+      }, 
+      "name": "board pregrasp both", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "board pregrasp", 
+      "joints": {
+        "l_arm_elx": 1.8572478294372559, 
+        "l_arm_ely": 2.6745777130126953, 
+        "l_arm_mwx": -1.0170594453811646, 
+        "l_arm_shx": 0.011214695870876312, 
+        "l_arm_shz": 0.5639946460723877, 
+        "l_arm_uwy": 2.0632102489471436
+      }, 
+      "name": "board pregrasp", 
+      "nominal_handedness": "left"
+    }
+  ], 
   "drill": [
     {
       "allow_mirror": true, 

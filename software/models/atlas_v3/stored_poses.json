@@ -162,6 +162,42 @@
       "nominal_handedness": "left"
     }
   ], 
+  "bihanded": [
+    {
+      "allow_mirror": true, 
+      "description": "board pregrasp", 
+      "joints": {
+        "r_arm_elx": -1.5795105695724487, 
+        "r_arm_ely": 2.230776309967041, 
+        "r_arm_mwx": 0.7648744583129883, 
+        "r_arm_shx": 0.5976978540420532, 
+        "r_arm_usy": 0.5292156338691711, 
+        "r_arm_uwy": 2.354386329650879
+      }, 
+      "name": "board pregrasp", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "board pregrasp both", 
+      "joints": {
+        "l_arm_elx": 1.5795105695724487, 
+        "l_arm_ely": 2.230776309967041, 
+        "l_arm_mwx": -0.7648744583129883, 
+        "l_arm_shx": -0.5976978540420532, 
+        "l_arm_usy": 0.5292156338691711, 
+        "l_arm_uwy": 2.354386329650879, 
+        "r_arm_elx": -1.5795105695724487, 
+        "r_arm_ely": 2.230776309967041, 
+        "r_arm_mwx": 0.7648744583129883, 
+        "r_arm_shx": 0.5976978540420532, 
+        "r_arm_usy": 0.5292156338691711, 
+        "r_arm_uwy": 2.354386329650879
+      }, 
+      "name": "board pregrasp both", 
+      "nominal_handedness": "none"
+    }
+  ], 
   "drill": [
     {
       "allow_mirror": true, 
@@ -258,25 +294,25 @@
       }, 
       "name": "both raise power on [old]", 
       "nominal_handedness": "none"
-    },
+    }, 
     {
-      "allow_mirror": true,
-      "description": "both raise power on",
+      "allow_mirror": true, 
+      "description": "both raise power on", 
       "joints": {
-        "l_arm_elx": 1.9557924270629883,
-        "l_arm_ely": 1.7382441759109497,
-        "l_arm_mwx": 0.0,
-        "l_arm_shx": 0.009102821350097656,
-        "l_arm_usy": -0.26963281631469727,
-        "l_arm_uwy": 0.024385511875152588,
-        "r_arm_elx": -1.774211049079895,
-        "r_arm_ely": 1.9917680025100708,
-        "r_arm_mwx": -0.1625777930021286,
-        "r_arm_shx": 0.9204887747764587,
-        "r_arm_usy": -0.7084315419197083,
+        "l_arm_elx": 1.9557924270629883, 
+        "l_arm_ely": 1.7382441759109497, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_shx": 0.009102821350097656, 
+        "l_arm_usy": -0.26963281631469727, 
+        "l_arm_uwy": 0.024385511875152588, 
+        "r_arm_elx": -1.774211049079895, 
+        "r_arm_ely": 1.9917680025100708, 
+        "r_arm_mwx": -0.1625777930021286, 
+        "r_arm_shx": 0.9204887747764587, 
+        "r_arm_usy": -0.7084315419197083, 
         "r_arm_uwy": 2.54154634475708
-      },
-      "name": "both raise power on",
+      }, 
+      "name": "both raise power on", 
       "nominal_handedness": "none"
     }
   ], 
