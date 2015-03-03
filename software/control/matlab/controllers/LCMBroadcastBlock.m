@@ -12,7 +12,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     joint_names_cache;
     r_hand_joint_names_cache;
     r_hand_joint_inds;
-    
+    r_foot_id
+    l_foot_id
     % FC publish period
     fc_publish_period = 0.01;
     
@@ -226,6 +227,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       obj.r = r;
       obj.r_control = r_control;
+      obj.l_foot_id = obj.r_control.findLinkId('l_foot');
+      obj.r_foot_id = obj.r_control.findLinkId('r_foot');
       obj.nq_control = obj.r_control.getNumPositions();
       if (isa(input_frame, 'MultiCoordinateFrame'))
         obj.frame_nums.atlas_state = input_frame.getFrameNumByName('drcFrames.AtlasState');
@@ -298,8 +301,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % Scale foot up for the foot that the com is more over
         com = obj.r_control.getCOM(atlas_state(1:obj.r_control.getNumPositions));
         kinsol = doKinematics(obj.r_control,atlas_state(1:obj.r_control.getNumPositions));
-        lfootpos = obj.r_control.forwardKin(kinsol,obj.r_control.findLinkId('l_foot'),[0,0,0].');
-        rfootpos = obj.r_control.forwardKin(kinsol,obj.r_control.findLinkId('r_foot'),[0,0,0].');
+        lfootpos = obj.r_control.forwardKin(kinsol,obj.l_foot_id,[0,0,0].');
+        rfootpos = obj.r_control.forwardKin(kinsol,obj.r_foot_id,[0,0,0].');
         ldist = lfootpos(1:2)-com(1:2); ldist = ldist.'*ldist;
         rdist = rfootpos(1:2)-com(1:2); rdist = rdist.'*rdist;
         interdist = lfootpos(1:2)-rfootpos(1:2); interdist = interdist.'*interdist;

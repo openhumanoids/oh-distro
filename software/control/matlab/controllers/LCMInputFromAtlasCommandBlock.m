@@ -29,6 +29,10 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     neck_in_i;
     neck_out_i;
     neck_desired_angle;
+    
+    %
+    l_foot_id;
+    r_foot_id;
   end
   
   methods
@@ -58,6 +62,8 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       
       obj.r = r;
       obj.r_control = r_control;
+      obj.l_foot_id = obj.r_control.findLinkId('l_foot');
+      obj.r_foot_id = obj.r_control.findLinkId('r_foot');
       
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.lcmonitor_cmd = drake.util.MessageMonitor(drc.atlas_command_t,'utime');
@@ -271,11 +277,11 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       % If we haven't received a command make our own
       if (isempty(data))
         % foot contact
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(atlas_state(1:obj.r_control.getNumPositions()),false);
+        [phiC,~,~,~,idxA,idxB] = obj.r_control.getManipulator().collisionDetect(atlas_state(1:obj.r_control.getNumPositions()),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r_control.findLinkId('l_foot')));
-              any(any(contact_pairs == obj.r_control.findLinkId('r_foot')))];
+        fc = [any(any(contact_pairs == obj.l_foot_id));
+              any(any(contact_pairs == obj.r_foot_id))];
             
         % qtraj eval
         q_des_and_x = output(obj.qt,t,[],atlas_state);
