@@ -13,6 +13,7 @@ add_library(maps SHARED
   OctreeView.cpp
   DepthImageView.cpp
   VoxelGridView.cpp
+  ScanBundleView.cpp
   LocalMap.cpp
   MapManager.cpp
   LcmTranslator.cpp
@@ -42,6 +43,7 @@ pods_install_headers(
   OctreeView.hpp
   DepthImageView.hpp
   VoxelGridView.hpp
+  ScanBundleView.hpp
   LocalMap.hpp
   MapManager.hpp
   LcmTranslator.hpp

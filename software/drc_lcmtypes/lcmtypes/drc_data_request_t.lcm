@@ -36,6 +36,7 @@ struct data_request_t {
   const int8_t STEREO_MAP_HEAD         = 61;
   const int8_t STEREO_MAP_LHAND        = 62;
   const int8_t STEREO_MAP_RHAND        = 63;
+  const int8_t SCANS_HALF_SWEEP        = 71;
   const int8_t TERRAIN_COST            = 90;
   const int8_t FUSED_DEPTH             = 100;
   const int8_t FUSED_HEIGHT            = 101;

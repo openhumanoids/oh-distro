@@ -8,6 +8,8 @@ namespace drc {
   class map_cloud_t;
   class map_octree_t;
   class map_image_t;
+  class map_scans_t;
+  class map_scan_t;
 }
 
 #include "LocalMap.hpp"
@@ -19,6 +21,8 @@ class DataBlob;
 class PointCloudView;
 class OctreeView;
 class DepthImageView;
+class ScanBundleView;
+class LidarScan;
 
 class LcmTranslator {
 public:
@@ -49,6 +53,16 @@ public:
   static bool toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
                     const float iQuantMax=-1, const bool iCompress=true);
   static bool fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView);
+
+  // for scan
+  static bool toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
+                    const float iQuantMax=-1, const bool iCompress=true);
+  static bool fromLcm(const drc::map_scan_t& iMessage, LidarScan& oScan);
+
+  // for scan bundle
+  static bool toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
+                    const float iQuantMax=-1, const bool iCompress=true);
+  static bool fromLcm(const drc::map_scans_t& iMessage, ScanBundleView& oView);
 };
 
 }

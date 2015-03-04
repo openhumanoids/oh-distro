@@ -2,6 +2,7 @@
 #define _maps_LocalMap_hpp_
 
 #include <memory>
+#include <deque>
 #include <Eigen/Geometry>
 
 #include "Types.hpp"
@@ -12,6 +13,7 @@ class PointDataBuffer;
 class PointCloudView;
 class OctreeView;
 class DepthImageView;
+class ScanBundleView;
 class LidarScan;
 
 class LocalMap {
@@ -63,6 +65,16 @@ public:
     void operator()(LidarScan& ioScan);
   };
 
+  // class for filtering scans based on line of sight angles
+  class RangeAngleFilter : public Filter {
+  protected:
+    float mThetaMin;
+  public:
+    RangeAngleFilter();
+    void set(const float iThetaMin);
+    void operator()(LidarScan& ioScan);
+  };
+
   // structure for specifying data volume in space and time
   struct SpaceTimeBounds {
     std::vector<Eigen::Vector4f> mPlanes;
@@ -105,6 +117,9 @@ public:
   // get point data buffer
   const std::shared_ptr<PointDataBuffer> getPointData() const;
 
+  // get scan data buffer
+  std::deque<std::shared_ptr<LidarScan> > getScanData() const;
+
   // export this entire representation as an ordinary point cloud
   std::shared_ptr<PointCloudView>
   getAsPointCloud(const float iResolution=0,
@@ -127,11 +142,16 @@ public:
                   const int iAccumMethod,
                   const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
 
+  // export this entire representation as a scan bundle
+  std::shared_ptr<ScanBundleView>
+  getAsScanBundle(const SpaceTimeBounds& iBounds=SpaceTimeBounds()) const;
+
 protected:
   int64_t mStateId;
   Spec mSpec;
   bool mIsFrozen;
   std::shared_ptr<PointDataBuffer> mPointData;
+  std::deque<std::shared_ptr<LidarScan> > mScanData;
   std::vector<Filter::Ptr> mFilters;
 };
 

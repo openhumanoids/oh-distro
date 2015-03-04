@@ -12,6 +12,7 @@ public:
     TypeOctree,
     TypeDepthImage,
     TypeVoxelGrid,
+    TypeScanBundle,
     TypeMesh,
     TypeSurfels,
   };
