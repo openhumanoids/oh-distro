@@ -400,8 +400,8 @@ struct Worker {
     msg.resolution = 0.005;
     msg.frequency = 0;
     msg.quantization_max = 0.005;
-    msg.time_min = -5;
-    msg.time_max = 185;
+    msg.time_min = -3;
+    msg.time_max = 182;
     msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
     msg.relative_location = false;
     msg.num_clip_planes = 0;

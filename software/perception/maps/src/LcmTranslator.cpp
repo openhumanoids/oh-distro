@@ -602,6 +602,7 @@ toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
   const int numScans = scans.size();
 
   // set basic info
+  oMessage.view_id = iView.getId();
   oMessage.num_scans = numScans;
   oMessage.scans.resize(numScans);
   auto xform = iView.getTransform();
