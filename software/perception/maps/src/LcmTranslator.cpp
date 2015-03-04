@@ -538,6 +538,7 @@ toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
     }
     rangeScale /= ((1 << bits) - 1);
   }
+  msg.range_scale = rangeScale;
   for (auto& r : ranges) r = r/rangeScale + 0.5f;
 
   // store ranges to blob
@@ -577,6 +578,8 @@ fromLcm(const drc::map_scan_t& iMessage, LidarScan& oScan) {
   for (int k = 0; k < 4; ++k) startQuat.coeffs()[k] =
                                 msg.quaternion_start[(k+1)%4];
   for (int k = 0; k < 4; ++k) endQuat.coeffs()[k] = msg.quaternion_end[(k+1)%4];
+  startPose.linear() = startQuat.matrix();
+  endPose.linear() = endQuat.matrix();
   oScan.setPoses(startPose, endPose);
 
   // ranges
@@ -594,6 +597,7 @@ fromLcm(const drc::map_scan_t& iMessage, LidarScan& oScan) {
 bool LcmTranslator::
 toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
       const float iQuantMax, const bool iCompress) {
+
   const auto& scans = iView.getScans();
   const int numScans = scans.size();
 
@@ -606,10 +610,12 @@ toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
   }
 
   // set scan data
+  oMessage.data_bytes = 0;
   for (int i = 0; i < numScans; ++i) {
     drc::map_scan_t& msg = oMessage.scans[i];
     LidarScan::Ptr scan = scans[i];
     toLcm(*scan, msg, iQuantMax, iCompress);
+    oMessage.data_bytes += msg.range_blob.num_bytes;
   }
 
   return true;
@@ -626,5 +632,6 @@ fromLcm(const drc::map_scans_t& iMessage, ScanBundleView& oView) {
   std::vector<LidarScan::Ptr> scans(numScans);
   for (auto& scan : scans) scan.reset(new LidarScan());
   for (int i = 0; i < numScans; ++i) fromLcm(iMessage.scans[i], *scans[i]);
+  oView.set(scans);
   return true;
 }

@@ -99,6 +99,8 @@ operator()(LidarScan& ioScan) {
   const int n = ioScan.getNumRanges();
   const float angleThresh = mThetaMin*M_PI/180;
   for (int i = 1; i < n-1; ++i) {
+    if ((ioScan.range(i-1) <= 0) || (ioScan.range(i) <= 0) ||
+        (ioScan.range(i+1) <= 0)) continue;
     Eigen::Vector2f p1 = ioScan.getVector(i-1).head<2>();
     Eigen::Vector2f p2 = ioScan.getVector(i).head<2>();
     Eigen::Vector2f p3 = ioScan.getVector(i+1).head<2>();

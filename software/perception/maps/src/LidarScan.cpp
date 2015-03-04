@@ -125,6 +125,7 @@ get(maps::PointCloud& oCloud, const bool iInterp) const {
     Eigen::Vector3f T1(mPoseStart.translation());
     Eigen::Vector3f T2(mPoseEnd.translation());
     for (int i = 0; i < n; ++i) {
+      if (mRanges[i] <= 0) continue;
       float alpha = (float)i/(n-1);
       Eigen::Vector3f T = (1-alpha)*T1 + alpha*T2;
       Eigen::Quaternionf q = q1.slerp(alpha, q2);

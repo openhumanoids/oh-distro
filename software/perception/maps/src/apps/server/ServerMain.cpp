@@ -390,7 +390,7 @@ struct ViewWorker {
             mRequest.channel.size()>0 ? mRequest.channel : "MAP_SCANS";
           lcm->publish(chan, &msgScans);
           std::cout << "Sent scan bundle on " << chan << " at " <<
-            "[unknown]" << " bytes (view " << bundle->getId() <<
+            msgScans.data_bytes << " bytes (view " << bundle->getId() <<
             ")" << std::endl;
         }
       }
@@ -647,15 +647,19 @@ int main(const int iArgc, const char** iArgv) {
   mapSpec.mId = 2;
   state.mCollector->getMapManager()->createMap(mapSpec);
   auto localMap = state.mCollector->getMapManager()->getMap(mapSpec.mId);
-  LocalMap::Filter::Ptr angleFilter(new LocalMap::RangeDiffFilter());
+  LocalMap::Filter::Ptr rangeFilter(new LocalMap::RangeFilter());
+  std::static_pointer_cast<LocalMap::RangeFilter>(rangeFilter)
+    ->setValidRanges(0.1, 10.0);
+  LocalMap::Filter::Ptr angleFilter(new LocalMap::RangeAngleFilter());
   std::static_pointer_cast<LocalMap::RangeAngleFilter>(angleFilter)->set(30);
+  localMap->addFilter(rangeFilter);
   localMap->addFilter(angleFilter);
 
   // add heavily filtered map
   mapSpec.mId = 3;
   state.mCollector->getMapManager()->createMap(mapSpec);
   localMap = state.mCollector->getMapManager()->getMap(mapSpec.mId);
-  LocalMap::Filter::Ptr rangeFilter(new LocalMap::RangeFilter());
+  rangeFilter.reset(new LocalMap::RangeFilter());
   std::static_pointer_cast<LocalMap::RangeFilter>(rangeFilter)
     ->setValidRanges(0.1, 3.0);
   LocalMap::Filter::Ptr torsoFilter(new maps::TorsoFilter(state.mBotWrapper));

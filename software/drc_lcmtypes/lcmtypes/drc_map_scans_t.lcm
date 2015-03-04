@@ -14,6 +14,9 @@ struct map_scans_t
   // number of scans
   int32_t num_scans;
 
+  // approximate payload size
+  int32_t data_bytes;
+
   // transform from reference to cloud coords
   float transform[4][4];
 
