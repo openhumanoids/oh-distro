@@ -6,7 +6,6 @@
   <DataFileName name="l_hand.obj"/>
   <templateName name=""/>
  </DocumentData>
- <point x="0.0686277" y="0.0937385" z="-0.0201257" active="1" name="reference"/>
- <point x="0.0516277" y="0.0787385" z="-0.0201257" active="1" name="base"/>
- <point x="0.0516277" y="0.0787385" z="-0.0603657" active="1" name="marker"/>
+ <point x="0" y="0.1245" z="0.0112" active="1" name="forcetorque"/>
+ <point x="0" y="0.13565" z="0.0112" active="1" name="marker"/>
 </PickedPoints>
