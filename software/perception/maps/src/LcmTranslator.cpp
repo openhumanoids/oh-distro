@@ -5,6 +5,7 @@
 #include "OctreeView.hpp"
 #include "DepthImageView.hpp"
 #include "DepthImage.hpp"
+#include "ScanBundleView.hpp"
 #include "Utils.hpp"
 
 #include <limits>
@@ -15,6 +16,7 @@
 #include <lcmtypes/drc/map_cloud_t.hpp>
 #include <lcmtypes/drc/map_octree_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
+#include <lcmtypes/drc/map_scans_t.hpp>
 
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
@@ -69,6 +71,8 @@ toLcm(const ViewBase::Spec& iSpec, drc::map_request_t& oMessage) {
     oMessage.type = drc::map_request_t::POINT_CLOUD; break;
   case ViewBase::TypeDepthImage:
     oMessage.type = drc::map_request_t::DEPTH_IMAGE; break;
+  case ViewBase::TypeScanBundle:
+    oMessage.type = drc::map_request_t::SCAN_BUNDLE; break;
   default:
     std::cout << "LcmTranslator: bad type given in map spec" << std::endl;
     return false;
@@ -112,6 +116,8 @@ fromLcm(const drc::map_request_t& iMessage, ViewBase::Spec& oSpec) {
     oSpec.mType = ViewBase::TypePointCloud; break;
   case drc::map_request_t::DEPTH_IMAGE:
     oSpec.mType = ViewBase::TypeDepthImage; break;
+  case drc::map_request_t::SCAN_BUNDLE:
+    oSpec.mType = ViewBase::TypeScanBundle; break;
   default:
     std::cout << "LcmTranslator: bad type given in map_request" << std::endl;
     break;
@@ -363,15 +369,6 @@ bool LcmTranslator::
 toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
       const float iQuantMax, const bool iCompress) {
 
-  // TODO
-#if 0
-  static int imageNum = 0;
-  char fileName[256];
-  sprintf(fileName, "/home/antone/depth_images/%.6d.depth", imageNum);
-  ++imageNum;
-  writeDepths(iView, fileName);
-#endif
-
   oMessage.view_id = iView.getId();
 
   // copy depth array
@@ -494,5 +491,148 @@ fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView) {
 
   // done
   // NOTE: ids not set here
+  return true;
+}
+
+
+bool LcmTranslator::
+toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
+      const float iQuantMax, const bool iCompress) {
+  auto& msg = oMessage;
+
+  // basic info
+  msg.utime = iScan.getTimestamp();
+  msg.num_ranges = iScan.getNumRanges();
+  msg.theta_min = iScan.getThetaMin();
+  msg.theta_step = iScan.getThetaStep();
+  const Eigen::Vector3f startPos = iScan.getStartPose().translation();
+  const Eigen::Vector3f endPos = iScan.getEndPose().translation();
+  const Eigen::Quaternionf startQuat(iScan.getStartPose().rotation());
+  const Eigen::Quaternionf endQuat(iScan.getEndPose().rotation());
+  for (int k = 0; k < 3; ++k) msg.translation_start[k] = startPos[k];
+  for (int k = 0; k < 3; ++k) msg.translation_end[k] = endPos[k];
+  msg.quaternion_start[0] = startQuat.w();
+  msg.quaternion_start[1] = startQuat.x();
+  msg.quaternion_start[2] = startQuat.y();
+  msg.quaternion_start[3] = startQuat.z();
+  msg.quaternion_end[0] = endQuat.w();
+  msg.quaternion_end[1] = endQuat.x();
+  msg.quaternion_end[2] = endQuat.y();
+  msg.quaternion_end[3] = endQuat.z();
+
+  // examine ranges and determine number of bits required
+  std::vector<float> ranges = iScan.getRanges();
+  for (auto& r : ranges) r = std::max(r,0.0f);
+  float maxRange = 0;
+  for (auto& r : ranges) maxRange = std::max(r, maxRange);
+  float rangeScale = maxRange;
+  int bits = 11;
+  if (iQuantMax == 0) {
+    bits = 32;
+    rangeScale = 1;
+  }
+  else {
+    if (iQuantMax > 0) {
+      bits = ceil(std::log2(rangeScale/iQuantMax));
+      bits = std::max(std::min(bits, 16), 0);
+    }
+    rangeScale /= ((1 << bits) - 1);
+  }
+  msg.range_scale = rangeScale;
+  for (auto& r : ranges) r = r/rangeScale + 0.5f;
+
+  // store ranges to blob
+  std::vector<uint8_t> bytes((uint8_t*)ranges.data(),
+                             (uint8_t*)(ranges.data() + ranges.size()));
+  DataBlob::Spec spec;
+  spec.mDimensions.push_back(msg.num_ranges);
+  spec.mStrideBytes.push_back(sizeof(float));
+  spec.mCompressionType = DataBlob::CompressionTypeNone;
+  spec.mDataType = DataBlob::DataTypeFloat32;
+  DataBlob blob;
+  blob.setData(bytes, spec);
+  DataBlob::CompressionType compressionType =
+    iCompress ? DataBlob::CompressionTypeZlib : DataBlob::CompressionTypeNone;
+  DataBlob::DataType dataType;
+  if (bits <= 8) dataType = DataBlob::DataTypeUint8;
+  else if (bits <= 16) dataType = DataBlob::DataTypeUint16;
+  else dataType = DataBlob::DataTypeFloat32;
+  blob.convertTo(compressionType, dataType);
+  return toLcm(blob, oMessage.range_blob);
+}
+
+bool LcmTranslator::
+fromLcm(const drc::map_scan_t& iMessage, LidarScan& oScan) {
+  const auto& msg = iMessage;
+
+  // basic info
+  oScan.setTimestamp(msg.utime);
+  oScan.setAngles(msg.theta_min, msg.theta_step);
+
+  // poses
+  Eigen::Isometry3f startPose = Eigen::Isometry3f::Identity();
+  Eigen::Isometry3f endPose = Eigen::Isometry3f::Identity();
+  for (int k = 0; k < 3; ++k) startPose(k,3) = msg.translation_start[k];
+  for (int k = 0; k < 3; ++k) endPose(k,3) = msg.translation_end[k];
+  Eigen::Quaternionf startQuat, endQuat;
+  for (int k = 0; k < 4; ++k) startQuat.coeffs()[k] =
+                                msg.quaternion_start[(k+1)%4];
+  for (int k = 0; k < 4; ++k) endQuat.coeffs()[k] = msg.quaternion_end[(k+1)%4];
+  startPose.linear() = startQuat.matrix();
+  endPose.linear() = endQuat.matrix();
+  oScan.setPoses(startPose, endPose);
+
+  // ranges
+  DataBlob blob;
+  if (!fromLcm(msg.range_blob, blob)) return false;
+  blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32);
+  float* raw = (float*)(&blob.getBytes()[0]);
+  std::vector<float> ranges(raw, raw+blob.getBytes().size()/sizeof(float));
+  for (auto& r : ranges) r *= msg.range_scale;
+  oScan.setRanges(ranges);
+
+  return true;
+}
+
+bool LcmTranslator::
+toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
+      const float iQuantMax, const bool iCompress) {
+
+  const auto& scans = iView.getScans();
+  const int numScans = scans.size();
+
+  // set basic info
+  oMessage.view_id = iView.getId();
+  oMessage.num_scans = numScans;
+  oMessage.scans.resize(numScans);
+  auto xform = iView.getTransform();
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) oMessage.transform[i][j] = xform(i,j);
+  }
+
+  // set scan data
+  oMessage.data_bytes = 0;
+  for (int i = 0; i < numScans; ++i) {
+    drc::map_scan_t& msg = oMessage.scans[i];
+    LidarScan::Ptr scan = scans[i];
+    toLcm(*scan, msg, iQuantMax, iCompress);
+    oMessage.data_bytes += msg.range_blob.num_bytes;
+  }
+
+  return true;
+}
+
+bool LcmTranslator::
+fromLcm(const drc::map_scans_t& iMessage, ScanBundleView& oView) {
+  Eigen::Projective3f xform;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) xform(i,j) = iMessage.transform[i][j];
+  }
+  oView.setTransform(xform);
+  const int numScans = iMessage.num_scans;
+  std::vector<LidarScan::Ptr> scans(numScans);
+  for (auto& scan : scans) scan.reset(new LidarScan());
+  for (int i = 0; i < numScans; ++i) fromLcm(iMessage.scans[i], *scans[i]);
+  oView.set(scans);
   return true;
 }

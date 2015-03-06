@@ -4,6 +4,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <bot_core/timestamp.h>
 #include <lcmtypes/drc/utime_t.hpp>
+#include <lcmtypes/drc/robot_state_t.hpp>
 #include "PointerUtils.hpp"
 
 using namespace drc;
@@ -13,6 +14,7 @@ struct Clock::Impl {
   std::string mChannel;
   int mTimeoutInterval;
   bool mUseTimeMessages;
+  bool mUseRobotState;
   bool mUseRealTimeWhenInvalid;
   bool mVerbose;
 
@@ -22,7 +24,13 @@ struct Clock::Impl {
 
   Impl() {
     mTimeoutInterval = 2000;
-    mChannel = "ROBOT_UTIME";  
+    if (false) {
+      mChannel = "ROBOT_UTIME";
+      mUseRobotState = false;
+    } else {
+      mChannel = "EST_ROBOT_STATE";
+      mUseRobotState = true;
+    }
     mLcm.reset(new lcm::LCM());
     mUseTimeMessages = true;
     mUseRealTimeWhenInvalid = true;
@@ -41,7 +49,12 @@ struct Clock::Impl {
   void subscribe() {
     unsubscribe();
     if ((mLcm != NULL) && mUseTimeMessages) {
-      mTimeSubscription = mLcm->subscribe(mChannel, &Impl::onTime, this);
+      if (mUseRobotState) {
+        mTimeSubscription = mLcm->subscribe(mChannel, &Impl::onState, this);
+      }
+      else {
+        mTimeSubscription = mLcm->subscribe(mChannel, &Impl::onTime, this);
+      }
     }
   }
 
@@ -72,6 +85,22 @@ struct Clock::Impl {
     }
     mLastMessageReceivedTime = curRealTime;
   }
+
+  void onState(const lcm::ReceiveBuffer* iBuf,
+               const std::string& iChannel,
+               const drc::robot_state_t* iMessage) {
+    mCurrentTime = iMessage->utime;
+    int64_t curRealTime = bot_timestamp_now();
+    int64_t dt = curRealTime - mLastMessageReceivedTime;
+    if ((mLastMessageReceivedTime > 0) && (dt > mTimeoutInterval*1000)) {
+      if (mVerbose) {
+        std::cout << "drc::Clock: WARNING: last timestamp message received " <<
+          (dt/1e6) << " seconds ago" << std::endl;
+      }
+    }
+    mLastMessageReceivedTime = curRealTime;
+  }
+
 };
 
 

@@ -102,6 +102,8 @@ struct Worker {
         sendDenseCloudLeftHandRequest(); break;
       case drc::data_request_t::DENSE_CLOUD_RHAND:
         sendDenseCloudRightHandRequest(); break;
+      case drc::data_request_t::SCANS_HALF_SWEEP:
+        sendScansHalfSweep(); break;
       case drc::data_request_t::TERRAIN_COST:
         sendTerrainCostRequest(); break;
       case drc::data_request_t::FUSED_DEPTH:
@@ -387,6 +389,26 @@ struct Worker {
     msg.width = msg.height = 0;
     setTransform(Eigen::Projective3f::Identity(), msg);
     return msg;
+  }
+
+  void sendScansHalfSweep() {
+    drc::map_request_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.map_id = 2;
+    msg.view_id = drc::data_request_t::SCANS_HALF_SWEEP;
+    msg.type = drc::map_request_t::SCAN_BUNDLE;
+    msg.resolution = 0.005;
+    msg.frequency = 0;
+    msg.quantization_max = 0.005;
+    msg.time_min = -3;
+    msg.time_max = 182;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
+    msg.relative_location = false;
+    msg.num_clip_planes = 0;
+    msg.active = true;
+    msg.width = msg.height = 0;
+    setTransform(Eigen::Projective3f::Identity(), msg);
+    mLcm->publish("MAP_REQUEST", &msg);
   }
 
   void sendTerrainCostRequest() {

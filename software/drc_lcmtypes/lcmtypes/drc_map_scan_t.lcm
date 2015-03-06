@@ -1,0 +1,22 @@
+package drc;
+
+struct map_scan_t
+{
+  // timestamp of this scan
+  int64_t utime;
+
+  // scan information
+  int16_t num_ranges;
+  float theta_min;
+  float theta_step;
+
+  // scan-to-reference transforms
+  float translation_start[3];
+  float quaternion_start[4];
+  float translation_end[3];
+  float quaternion_end[4];
+
+  // scan data blob
+  float range_scale;
+  map_blob_t range_blob;
+}
