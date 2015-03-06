@@ -150,7 +150,7 @@ while(~done)
   sys = mimoFeedback(lcmInputBlock, sys, [], [], [], outs);
   % LCM interpret in for hand
   if (add_hands)
-    lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlock(r_complete, options);
+    lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
     sys = mimoFeedback(lcmRobotiqInputBlock, sys, [], [], [], outs);
   end
   
