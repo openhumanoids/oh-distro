@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+
+Name: ps-engine
+Description: Primesense SDK Driver Plugin for OpenNI
+Version: __VERSION__
+Requires: openni-dev >= __VERSION__
+
+Libs: -L${libdir} -lXnCore -lXnDDK -lXnFormats

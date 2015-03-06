@@ -1,0 +1,11 @@
+--- a/Data/GlobalDefaults.ini
++++ b/Data/GlobalDefaults.ini
+@@ -6,7 +6,7 @@
+ ; 0 - No (default), 1 - Yes
+ ;LogWriteToConsole=1
+ ; 0 - No (default), 1 - Yes
+-LogWriteToFile=1
++;LogWriteToFile=1
+ ; 0 - No (default), 1 - Yes
+ ;LogWriteLineInfo=0
+ ; leave empty for nothing (default). ALL - all masks

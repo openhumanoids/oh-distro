@@ -1,0 +1,27 @@
+package kinect;
+
+struct image_msg_t
+{
+    // acquisition time (adjusted to host clock)
+    int64_t  timestamp;
+
+    int16_t  width;
+    int16_t  height;
+
+    int32_t  image_data_nbytes;
+    byte     image_data[image_data_nbytes];
+    int8_t   image_data_format;
+
+
+// enum values taken from libfreenect.h (plus a couple more)
+    const int8_t VIDEO_RGB = 0;
+    const int8_t VIDEO_BAYER = 1;
+    const int8_t VIDEO_IR_8BIT = 2;
+    const int8_t VIDEO_IR_10BIT = 3;
+    const int8_t VIDEO_IR_10BIT_PACKED = 4;
+    const int8_t VIDEO_YUV_RGB =5;
+    const int8_t VIDEO_YUV_RAW = 6;
+
+    const int8_t VIDEO_RGB_JPEG = 100;
+    const int8_t VIDEO_NONE = 101;
+}

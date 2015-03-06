@@ -1,0 +1,9 @@
+package kinect;
+
+struct skeleton_msg_t
+{
+      int64_t utime;
+      int32_t num_links;
+      int32_t user_id;
+      kinect.link_msg_t links[num_links];
+}

@@ -1,0 +1,33 @@
+--- a/Platform/Linux-x86/Build/Samples/NiUserTracker/Makefile
++++ b/Platform/Linux-x86/Build/Samples/NiUserTracker/Makefile
+@@ -14,7 +14,7 @@
+ ifeq ("$(OSTYPE)","Darwin")
+ 	LDFLAGS += -framework OpenGL -framework GLUT
+ else
+-	USED_LIBS += glut
++	USED_LIBS += glut GL
+ endif
+ else
+ 	DEFINES += USE_GLES
+--- a/Platform/Linux-x86/Build/Samples/NiViewer/Makefile
++++ b/Platform/Linux-x86/Build/Samples/NiViewer/Makefile
+@@ -11,7 +11,7 @@
+ ifeq ("$(OSTYPE)","Darwin")
+ 	LDFLAGS += -framework OpenGL -framework GLUT
+ else
+-	USED_LIBS += glut
++	USED_LIBS += glut GL
+ endif
+ 
+ USED_LIBS += OpenNI
+--- a/Platform/Linux-x86/Build/Samples/NiSimpleViewer/Makefile
++++ b/Platform/Linux-x86/Build/Samples/NiSimpleViewer/Makefile
+@@ -11,7 +11,7 @@
+ ifeq ("$(OSTYPE)","Darwin")
+ 	LDFLAGS += -framework OpenGL -framework GLUT
+ else
+-	USED_LIBS += glut
++	USED_LIBS += glut GL
+ endif
+ 
+ USED_LIBS += OpenNI

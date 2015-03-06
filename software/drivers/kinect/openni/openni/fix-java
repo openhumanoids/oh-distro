@@ -1,0 +1,139 @@
+diff --git a/Samples/SimpleRead.java/org/OpenNI/Samples/SimpleRead/SimpleRead.java b/Samples/SimpleRead.java/org/OpenNI/Samples/SimpleRead/SimpleRead.java
+index f617960..4d06446 100644
+--- a/Samples/SimpleRead.java/org/OpenNI/Samples/SimpleRead/SimpleRead.java
++++ b/Samples/SimpleRead.java/org/OpenNI/Samples/SimpleRead/SimpleRead.java
+@@ -36,7 +36,6 @@ public class SimpleRead implements IObserver<ErrorStateEventArgs>
+ 		}
+ 	}
+ 	
+-	@Override
+ 	public void update(IObservable<ErrorStateEventArgs> arg0, ErrorStateEventArgs arg1)
+ 	{
+ 		System.out.printf("Global error state has changed: %s", arg1.getCurrentError());
+diff --git a/Samples/SimpleViewer.java/org/OpenNI/Samples/SimpleViewer/SimpleViewerApplication.java b/Samples/SimpleViewer.java/org/OpenNI/Samples/SimpleViewer/SimpleViewerApplication.java
+index ebde466..5dc9291 100644
+--- a/Samples/SimpleViewer.java/org/OpenNI/Samples/SimpleViewer/SimpleViewerApplication.java
++++ b/Samples/SimpleViewer.java/org/OpenNI/Samples/SimpleViewer/SimpleViewerApplication.java
+@@ -20,11 +20,8 @@ public class SimpleViewerApplication
+         	this.frame = frame;
+         	frame.addKeyListener(new KeyListener()
+     		{
+-    			@Override
+     			public void keyTyped(KeyEvent arg0) {}
+-    			@Override
+     			public void keyReleased(KeyEvent arg0) {}
+-    			@Override
+     			public void keyPressed(KeyEvent arg0) {
+     				if (arg0.getKeyCode() == KeyEvent.VK_ESCAPE)
+     				{
+diff --git a/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTracker.java b/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTracker.java
+index e0eff74..3b10ebc 100644
+--- a/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTracker.java
++++ b/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTracker.java
+@@ -12,7 +12,6 @@ public class UserTracker extends Component
+ {
+ 	class NewUserObserver implements IObserver<UserEventArgs>
+ 	{
+-		@Override
+ 		public void update(IObservable<UserEventArgs> observable,
+ 				UserEventArgs args)
+ 		{
+@@ -28,7 +27,6 @@ public class UserTracker extends Component
+ 	}
+ 	class LostUserObserver implements IObserver<UserEventArgs>
+ 	{
+-		@Override
+ 		public void update(IObservable<UserEventArgs> observable,
+ 				UserEventArgs args)
+ 		{
+@@ -39,7 +37,6 @@ public class UserTracker extends Component
+ 	
+ 	class CalibrationCompleteObserver implements IObserver<CalibrationProgressEventArgs>
+ 	{
+-		@Override
+ 		public void update(IObservable<CalibrationProgressEventArgs> observable,
+ 				CalibrationProgressEventArgs args)
+ 		{
+@@ -64,7 +61,6 @@ public class UserTracker extends Component
+ 	}
+ 	class PoseDetectedObserver implements IObserver<PoseDetectionEventArgs>
+ 	{
+-		@Override
+ 		public void update(IObservable<PoseDetectionEventArgs> observable,
+ 				PoseDetectionEventArgs args)
+ 		{
+diff --git a/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTrackerApplication.java b/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTrackerApplication.java
+index 3da63d7..c1a8fa3 100644
+--- a/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTrackerApplication.java
++++ b/Samples/UserTracker.java/org/OpenNI/Samples/UserTracker/UserTrackerApplication.java
+@@ -21,11 +21,8 @@ public class UserTrackerApplication {
+     	this.frame = frame;
+     	frame.addKeyListener(new KeyListener()
+ 		{
+-			@Override
+ 			public void keyTyped(KeyEvent arg0) {}
+-			@Override
+ 			public void keyReleased(KeyEvent arg0) {}
+-			@Override
+ 			public void keyPressed(KeyEvent arg0) {
+ 				if (arg0.getKeyCode() == KeyEvent.VK_ESCAPE)
+ 				{
+diff --git a/Wrappers/OpenNI.java/src/org/OpenNI/NodeInfoList.java b/Wrappers/OpenNI.java/src/org/OpenNI/NodeInfoList.java
+index 0782e4f..14eab53 100644
+--- a/Wrappers/OpenNI.java/src/org/OpenNI/NodeInfoList.java
++++ b/Wrappers/OpenNI.java/src/org/OpenNI/NodeInfoList.java
+@@ -62,12 +62,10 @@ public class NodeInfoList extends ObjectWrapper implements Iterable<NodeInfo>
+ 		WrapperUtils.throwOnError(status);
+ 	}
+ 
+-	@Override
+ 	public Iterator<NodeInfo> iterator() {
+ 		return new NodeInfoListIterator(toNative());
+ 	}
+ 
+-	@Override
+ 	protected void freeObject(long ptr) 
+ 	{
+ 		NativeMethods.xnNodeInfoListFree(ptr);
+@@ -80,13 +78,11 @@ public class NodeInfoList extends ObjectWrapper implements Iterable<NodeInfo>
+ 			this.it = NativeMethods.xnNodeInfoListGetFirst(pNodeInfoList);
+ 		}
+ 		
+-		@Override
+ 		public boolean hasNext() 
+ 		{
+ 			return NativeMethods.xnNodeInfoListIteratorIsValid(this.it);
+ 		}
+ 
+-		@Override
+ 		public NodeInfo next() 
+ 		{
+ 			if (!hasNext())
+@@ -107,7 +103,6 @@ public class NodeInfoList extends ObjectWrapper implements Iterable<NodeInfo>
+ 			return next;
+ 		}
+ 
+-		@Override
+ 		public void remove() 
+ 		{
+ 			throw new UnsupportedOperationException();
+diff --git a/Wrappers/OpenNI.java/src/org/OpenNI/Observable.java b/Wrappers/OpenNI.java/src/org/OpenNI/Observable.java
+index fbaec80..1d5b07d 100644
+--- a/Wrappers/OpenNI.java/src/org/OpenNI/Observable.java
++++ b/Wrappers/OpenNI.java/src/org/OpenNI/Observable.java
+@@ -9,7 +9,6 @@ public abstract class Observable<Args> implements IObservable<Args>
+ 		this.observers = new ArrayList<IObserver<Args>>();
+ 	}
+ 	
+-	@Override
+ 	public void addObserver(IObserver<Args> observer) throws StatusException 
+ 	{
+ 		if (this.observers.size() == 0)
+@@ -23,7 +22,6 @@ public abstract class Observable<Args> implements IObservable<Args>
+ 		this.observers.add(observer);
+ 	}
+ 
+-	@Override
+ 	public void deleteObserver(IObserver<Args> observer) 
+ 	{
+ 		this.observers.remove(observer);

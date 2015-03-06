@@ -1,0 +1,8 @@
+Package: openni-dev
+Version: __VERSION__
+Section: devel
+Priority: optional
+Architecture: __ARCHITECTURE__
+Depends: libstdc++6 (>= 4.4), libusb-1.0-0 (>= 1.0.8)
+Maintainer: Suat Gedikli (gedikli@willowgarage.com)
+Description: OpenNI developer package

@@ -1,0 +1,369 @@
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Platform/Linux-x86/Build/EngineLibMakefile ../build_patched/ps_engine/Platform/Linux-x86/Build/EngineLibMakefile
+--- ps_engine/Platform/Linux-x86/Build/EngineLibMakefile	2011-08-10 13:33:59.781588999 -0700
++++ ../build_patched/ps_engine/Platform/Linux-x86/Build/EngineLibMakefile	2011-08-10 09:11:14.301589000 -0700
+@@ -14,7 +14,7 @@
+ #############################################################################
+ 
+ INC_DIRS += \
+-	/usr/include/ni \
++	/usr/include/openni \
+ 	../../../../Include \
+ 	../../../../Source \
+ 	../../../../Source/XnCommon
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Platform/Linux-x86/Build/Utils/EngineUtilMakefile ../build_patched/ps_engine/Platform/Linux-x86/Build/Utils/EngineUtilMakefile
+--- ps_engine/Platform/Linux-x86/Build/Utils/EngineUtilMakefile	2011-08-10 13:35:07.711588999 -0700
++++ ../build_patched/ps_engine/Platform/Linux-x86/Build/Utils/EngineUtilMakefile	2011-08-10 09:11:18.641589000 -0700
+@@ -14,7 +14,7 @@
+ #############################################################################
+ 
+ INC_DIRS += \
+-	/usr/include/ni \
++	/usr/include/openni \
+ 	../../../../../Include \
+ 	../../../../../Source \
+ 	../../../../../Source/XnCommon
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/Registration.cpp ../build_patched/ps_engine/Source/XnDeviceSensorV2/Registration.cpp
+--- ps_engine/Source/XnDeviceSensorV2/Registration.cpp	2011-08-10 09:58:38.421589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/Registration.cpp	2011-08-10 10:02:53.321589000 -0700
+@@ -480,13 +480,28 @@ void XnRegistration::Apply1000(XnDepthPi
+ 			nNewX = (XnInt32)(XnDouble(*pRegTable)/XN_REG_X_SCALE + XnInt32(pDepth2ShiftTable[nValue]/XN_REG_PARAB_COEFF - nConstShift) * dShiftFactor);
+ 			nNewY = *(pRegTable+1);
+ 
+-			if ((XnUInt32)nNewX-1 < (XnUInt32)nDepthXRes-1)
++			if ((XnUInt32)nNewX-1 < (XnUInt32)nDepthXRes-1 && (XnUInt32)nNewY <(XnUInt32) nDepthYRes)
+ 			{
+ 				nArrPos = nNewY * nDepthXRes + nNewX;
+ 				nOutValue = pOutput[nArrPos];
+ 
+ 				if (nOutValue == 0 || nOutValue > nValue)
+ 				{
++				  if ( nNewX > 0 && nNewY > 0 )
++					{
++						pOutput[nArrPos-nDepthXRes] = nValue;
++						pOutput[nArrPos-nDepthXRes-1] = nValue;
++						pOutput[nArrPos-1] = nValue;
++					}
++					else if( nNewY > 0 )
++					{
++						pOutput[nArrPos-nDepthXRes] = nValue;
++					}
++					else if( nNewX > 0 )
++					{
++						pOutput[nArrPos-1] = nValue;
++					}
++    
+ 					pOutput[nArrPos] = nValue;
+ 					pOutput[nArrPos-1] = nValue;
+ 					pOutput[nArrPos-nDepthXRes] = nValue;
+@@ -533,7 +548,7 @@ void XnRegistration::Apply1080(XnDepthPi
+ 				nNewX = (XnUInt32)(*pRegTable + pRGBRegDepthToShiftTable[nValue]) / RGB_REG_X_VAL_SCALE;
+ 				nNewY = *(pRegTable+1);
+ 
+-				if (nNewX < nDepthXRes)
++				if (nNewX < nDepthXRes && nNewY < nDepthYRes)
+ 				{
+ 					nArrPos = bMirror ? (nNewY+1)*nDepthXRes - nNewX - 2 : (nNewY*nDepthXRes) + nNewX;
+ 					nArrPos -= nConstOffset;
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnDataProcessor.h ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnDataProcessor.h
+--- ps_engine/Source/XnDeviceSensorV2/XnDataProcessor.h	2011-08-10 09:58:38.471589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnDataProcessor.h	2011-08-10 10:04:07.821589002 -0700
+@@ -91,7 +91,9 @@ protected:
+ 	/* The number of bytes received so far (since last time this member was reset). */
+ 	XnUInt32 m_nBytesReceived;
+ 	/* Stores last packet ID */
+-	XnUInt16 m_nLastPacketID;
++	//XnUInt16 m_nLastPacketID;
++	// --avin mod--
++  XnUInt8  m_nLastPacketID;
+ 	/* The name of the stream. */
+ 	const XnChar* m_csName;
+ 
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorIO.cpp ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorIO.cpp
+--- ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorIO.cpp	2011-08-10 09:58:38.421589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorIO.cpp	2011-08-10 10:11:53.491589002 -0700
+@@ -39,6 +39,8 @@
+ #define XN_SENSOR_2_0_PRODUCT_ID	0x0200
+ #define XN_SENSOR_5_0_PRODUCT_ID	0x0500
+ #define XN_SENSOR_6_0_PRODUCT_ID	0x0600
++#define XN_SENSOR_MSK_VENDOR_ID   0x045E
++#define XN_SENSOR_MSK_PRODUCT_ID  0x02AE
+ 
+ //---------------------------------------------------------------------------
+ // Enums
+@@ -362,14 +364,14 @@ XnStatus XnSensorIO::CloseDevice()
+ 	return (XN_STATUS_OK);
+ }
+ 
+-XnStatus Enumerate(XnUInt16 nProduct, XnStringsHash& devicesSet)
++XnStatus Enumerate(XnUInt16 nVendor, XnUInt16 nProduct, XnStringsHash& devicesSet)
+ {
+ 	XnStatus nRetVal = XN_STATUS_OK;
+ 	
+ 	const XnUSBConnectionString* astrDevicePaths;
+ 	XnUInt32 nCount;
+-
+-	nRetVal = xnUSBEnumerateDevices(XN_SENSOR_VENDOR_ID, nProduct, &astrDevicePaths, &nCount);
++	
++  nRetVal = xnUSBEnumerateDevices(nVendor, nProduct, &astrDevicePaths, &nCount);
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
+ 	for (XnUInt32 i = 0; i < nCount; ++i)
+@@ -393,17 +395,21 @@ XnStatus XnSensorIO::EnumerateSensors(Xn
+ 		return nRetVal;
+ 
+ 	XnStringsHash devicesSet;
++	
++	// search for a MSK device
++  nRetVal = Enumerate(XN_SENSOR_MSK_VENDOR_ID, XN_SENSOR_MSK_PRODUCT_ID, devicesSet);
++  XN_IS_STATUS_OK(nRetVal);
+ 
+ 	// search for a v6.0 device
+-	nRetVal = Enumerate(XN_SENSOR_6_0_PRODUCT_ID, devicesSet);
++	nRetVal = Enumerate(XN_SENSOR_VENDOR_ID, XN_SENSOR_6_0_PRODUCT_ID, devicesSet);
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
+ 	// search for a v5.0 device
+-	nRetVal = Enumerate(XN_SENSOR_5_0_PRODUCT_ID, devicesSet);
++	nRetVal = Enumerate(XN_SENSOR_VENDOR_ID, XN_SENSOR_5_0_PRODUCT_ID, devicesSet);
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
+ 	// try searching for an older device
+-	nRetVal = Enumerate(XN_SENSOR_2_0_PRODUCT_ID, devicesSet);
++	nRetVal = Enumerate(XN_SENSOR_VENDOR_ID, XN_SENSOR_2_0_PRODUCT_ID, devicesSet);
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
+ 	// now copy back
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorProtocol.h ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorProtocol.h
+--- ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorProtocol.h	2011-08-10 09:58:38.421589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnDeviceSensorProtocol.h	2011-08-10 10:12:58.801589002 -0700
+@@ -88,7 +88,10 @@ typedef struct XnSensorProtocolResponseH
+ {
+ 	XnUInt16 nMagic;
+ 	XnUInt16 nType;
+-	XnUInt16 nPacketID;
++	//XnUInt16 nPacketID;
++  // --avin mod--
++  XnUInt8  nPacketID;
++  XnUInt8  nUnknown;
+ 	XnUInt16 nBufSize;
+ 	XnUInt32 nTimeStamp;
+ } XnSensorProtocolResponseHeader;
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnFirmwareStreams.cpp ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnFirmwareStreams.cpp
+--- ps_engine/Source/XnDeviceSensorV2/XnFirmwareStreams.cpp	2011-08-10 09:58:38.411589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnFirmwareStreams.cpp	2011-08-10 10:14:06.221588999 -0700
+@@ -117,11 +117,12 @@ XnStatus XnFirmwareStreams::CheckClaimSt
+ 				XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Cannot set depth stream to resolution %d when IR is set to resolution %d!", nRes, pIRStreamData->nRes);
+ 			}
+ 
++      // highres enable from avin
+ 			// check FPS
+-			if (pIRStreamData->nFPS != nFPS)
+-			{
+-				XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Depth and IR streams must have the same FPS!");
+-			}
++			//if (pIRStreamData->nFPS != nFPS)
++			//{
++			//	XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Depth and IR streams must have the same FPS!");
++			//}
+ 		}
+ 	}
+ 	else if (strcmp(strType, XN_STREAM_TYPE_IR) == 0)
+@@ -150,10 +151,10 @@ XnStatus XnFirmwareStreams::CheckClaimSt
+ 			}
+ 
+ 			// check FPS
+-			if (pDepthStreamData->nFPS != nFPS)
+-			{
+-				XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Depth and IR streams must have the same FPS!");
+-			}
++			//if (pDepthStreamData->nFPS != nFPS)
++			//{
++			//	XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Depth and IR streams must have the same FPS!");
++			//}
+ 		}
+ 	}
+ 	else if (strcmp(strType, XN_STREAM_TYPE_IMAGE) == 0)
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnHostProtocol.h ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnHostProtocol.h
+--- ps_engine/Source/XnDeviceSensorV2/XnHostProtocol.h	2011-08-10 09:58:38.471589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnHostProtocol.h	2011-08-10 10:14:56.381589000 -0700
+@@ -112,8 +112,8 @@ enum EPsProtocolOpCodes_V017
+ typedef enum
+ {
+ 	XN_HOST_PROTOCOL_ALGORITHM_DEPTH_INFO	= 0x00,
+-	XN_HOST_PROTOCOL_ALGORITHM_REGISTRATION	= 0x02,
+-	XN_HOST_PROTOCOL_ALGORITHM_PADDING		= 0x03,
++	XN_HOST_PROTOCOL_ALGORITHM_REGISTRATION	= 0x40,
++	XN_HOST_PROTOCOL_ALGORITHM_PADDING		= 0x41,
+ 	XN_HOST_PROTOCOL_ALGORITHM_BLANKING		= 0x06,
+ 	XN_HOST_PROTOCOL_ALGORITHM_DEVICE_INFO	= 0x07,
+ 	XN_HOST_PROTOCOL_ALGORITHM_FREQUENCY	= 0x80
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.cpp ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.cpp
+--- ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.cpp	2011-08-10 09:58:38.421589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.cpp	2011-08-10 10:16:43.241589000 -0700
+@@ -317,6 +317,8 @@ XnStatus XnSensorDepthStream::ConfigureS
+ 	nRetVal = m_Helper.GetCmosInfo()->SetCmosConfig(XN_CMOS_TYPE_DEPTH, GetResolution(), GetFPS());
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
++  // Thanks to avin again! :-)
++  XnHostProtocolSetParam(GetHelper()->GetPrivateData(), 0x105, 0);
+ 	return XN_STATUS_OK;
+ }
+ 
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.h ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.h
+--- ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.h	2011-08-10 09:58:38.451589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorDepthStream.h	2011-08-10 10:18:33.071589000 -0700
+@@ -41,11 +41,11 @@
+ // Defines
+ //---------------------------------------------------------------------------
+ #define XN_DEPTH_STREAM_DEFAULT_INPUT_FORMAT				XN_IO_DEPTH_FORMAT_UNCOMPRESSED_11_BIT
+-#define XN_DEPTH_STREAM_DEFAULT_RESOLUTION					XN_RESOLUTION_QVGA
++#define XN_DEPTH_STREAM_DEFAULT_RESOLUTION					XN_RESOLUTION_VGA
+ #define XN_DEPTH_STREAM_DEFAULT_FPS							30
+ #define XN_DEPTH_STREAM_DEFAULT_OUTPUT_FORMAT				XN_OUTPUT_FORMAT_DEPTH_VALUES
+ #define XN_DEPTH_STREAM_DEFAULT_REGISTRATION				FALSE
+-#define XN_DEPTH_STREAM_DEFAULT_REGISTRATION_TYPE			XN_PROCESSING_DONT_CARE
++#define XN_DEPTH_STREAM_DEFAULT_REGISTRATION_TYPE	  XN_PROCESSING_SOFTWARE
+ #define XN_DEPTH_STREAM_DEFAULT_HOLE_FILLER					TRUE
+ #define XN_DEPTH_STREAM_DEFAULT_WHITE_BALANCE				TRUE
+ #define XN_DEPTH_STREAM_DEFAULT_GAIN_OLD					50
+@@ -167,4 +167,4 @@ private:
+ 	XnCallbackHandle m_hReferenceSizeChangedCallback;
+ };
+ 
+-#endif //__XN_SENSOR_DEPTH_STREAM_H__
+\ No newline at end of file
++#endif //__XN_SENSOR_DEPTH_STREAM_H__
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnSensorFirmwareParams.cpp ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorFirmwareParams.cpp
+--- ps_engine/Source/XnDeviceSensorV2/XnSensorFirmwareParams.cpp	2011-08-10 09:58:38.431589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorFirmwareParams.cpp	2011-08-10 10:19:24.601589002 -0700
+@@ -520,10 +520,10 @@ XnStatus XnSensorFirmwareParams::SetImag
+ 		case XN_RESOLUTION_VGA:
+ 			break;
+ 		case XN_RESOLUTION_SXGA:
+-			if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_3)
+-			{
+-				XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
+-			}
++			//if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_3)
++			//{
++			//	XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
++			//}
+ 			break;
+ 		case XN_RESOLUTION_UXGA:
+ 			if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_1)
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.cpp ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.cpp
+--- ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.cpp	2011-08-10 09:58:38.441589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.cpp	2011-08-10 10:27:50.791589000 -0700
+@@ -157,11 +157,19 @@ XnStatus XnSensorImageStream::Init()
+ 			{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 30 },
+ 			{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 60 },
+ 			{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 30 },
++			// --avin mod--			
++      { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER,  XN_RESOLUTION_SXGA, 15 },
++      // suat
++      { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER,  XN_RESOLUTION_VGA, 30 },
++      { XN_IO_IMAGE_FORMAT_BAYER,  XN_RESOLUTION_VGA, 30 },
++      { XN_IO_IMAGE_FORMAT_BAYER,  XN_RESOLUTION_QVGA, 60 },
++      { XN_IO_IMAGE_FORMAT_BAYER,  XN_RESOLUTION_QVGA, 30 },
+ 		};
+ 		nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+ 		XN_IS_STATUS_OK(nRetVal);
+-
+-		if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
++		
++   //Suat: changed to 5_1 since out 5_1_6 works good with 25Hz
++   if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_1)
+ 		{
+ 			XnCmosPreset aSupportedModes25[] = 
+ 			{
+@@ -169,6 +177,8 @@ XnStatus XnSensorImageStream::Init()
+ 				{ XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_VGA, 25 },
+ 				{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 25 },
+ 				{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 25 },
++				{ XN_IO_IMAGE_FORMAT_BAYER,  XN_RESOLUTION_VGA, 25 },
++        { XN_IO_IMAGE_FORMAT_BAYER,  XN_RESOLUTION_QVGA, 25 },
+ 			};
+ 			nRetVal = AddSupportedModes(aSupportedModes25, sizeof(aSupportedModes25)/sizeof(aSupportedModes25[0]));
+ 			XN_IS_STATUS_OK(nRetVal);
+@@ -180,7 +190,7 @@ XnStatus XnSensorImageStream::Init()
+ 			nRetVal = AddSupportedModes(&highRes, 1);
+ 			XN_IS_STATUS_OK(nRetVal);
+ 		}
+-		else if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
++		else if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_1)
+ 		{
+ 			XnCmosPreset highRes = { XN_IO_IMAGE_FORMAT_BAYER, XN_RESOLUTION_UXGA, 30 };
+ 			nRetVal = AddSupportedModes(&highRes, 1);
+@@ -268,13 +278,13 @@ XnStatus XnSensorImageStream::ValidateMo
+ 	XnResolutions nResolution = GetResolution();
+ 
+ 	// check resolution
+-	if ((nResolution == XN_RESOLUTION_UXGA || nResolution == XN_RESOLUTION_SXGA) && nInputFormat != XN_IO_IMAGE_FORMAT_BAYER)
+-	{
+-		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "UXGA resolution is only supported with BAYER input!");
+-	}
++	//if ((nResolution == XN_RESOLUTION_UXGA || nResolution == XN_RESOLUTION_SXGA) && nInputFormat != XN_IO_IMAGE_FORMAT_BAYER)
++	//{
++	//	XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "UXGA resolution is only supported with BAYER input!");
++	//}
+ 
+ 	// check output format
+-	if (nOutputFormat == XN_OUTPUT_FORMAT_GRAYSCALE8 && nInputFormat != XN_IO_IMAGE_FORMAT_BAYER)
++	if (nOutputFormat == XN_OUTPUT_FORMAT_GRAYSCALE8 && nInputFormat != XN_IO_IMAGE_FORMAT_BAYER && nInputFormat != XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER )
+ 	{
+ 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Grayscale8 output requires BAYER input!");
+ 	}
+@@ -284,11 +294,11 @@ XnStatus XnSensorImageStream::ValidateMo
+ 	}
+ 
+ 	// check input format
+-	if (nInputFormat == XN_IO_IMAGE_FORMAT_BAYER && nResolution != XN_RESOLUTION_UXGA && nResolution != XN_RESOLUTION_SXGA)
++	/*if (nInputFormat == XN_IO_IMAGE_FORMAT_BAYER && nResolution != XN_RESOLUTION_UXGA && nResolution != XN_RESOLUTION_SXGA)
+ 	{
+ 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "BAYER input requires SXGA/UXGA resolution!");
+ 	}
+-	else if (nInputFormat == XN_IO_IMAGE_FORMAT_JPEG && nOutputFormat != XN_OUTPUT_FORMAT_RGB24 && nOutputFormat != XN_OUTPUT_FORMAT_JPEG)
++	else */if (nInputFormat == XN_IO_IMAGE_FORMAT_JPEG && nOutputFormat != XN_OUTPUT_FORMAT_RGB24 && nOutputFormat != XN_OUTPUT_FORMAT_JPEG)
+ 	{
+ 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Jpeg input is only supported for RGB24 or JPEG output!");
+ 	}
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.h ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.h
+--- ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.h	2011-08-10 09:58:38.431589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorImageStream.h	2011-08-10 10:24:50.211589000 -0700
+@@ -38,8 +38,8 @@
+ // Defines
+ //---------------------------------------------------------------------------
+ #define XN_IMAGE_STREAM_DEFAULT_FPS				30
+-#define XN_IMAGE_STREAM_DEFAULT_RESOLUTION		XN_RESOLUTION_QVGA
+-#define XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT	XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422
++#define XN_IMAGE_STREAM_DEFAULT_RESOLUTION		XN_RESOLUTION_VGA
++#define XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT	XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER
+ #define XN_IMAGE_STREAM_DEFAULT_OUTPUT_FORMAT	XN_OUTPUT_FORMAT_RGB24
+ #define XN_IMAGE_STREAM_DEFAULT_FLICKER			0
+ #define XN_IMAGE_STREAM_DEFAULT_QUALITY			3
+@@ -174,4 +174,4 @@ private:
+ 	XnActualIntProperty m_ActualRead;
+ };
+ 
+-#endif //__XN_SENSOR_IMAGE_STREAM_H__
+\ No newline at end of file
++#endif //__XN_SENSOR_IMAGE_STREAM_H__
+diff -rupN -x Release -x Lib -x CreateRedist -x DoxyGen -x .git ps_engine/Source/XnDeviceSensorV2/XnSensorIRStream.cpp ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorIRStream.cpp
+--- ps_engine/Source/XnDeviceSensorV2/XnSensorIRStream.cpp	2011-08-10 09:58:38.471589002 -0700
++++ ../build_patched/ps_engine/Source/XnDeviceSensorV2/XnSensorIRStream.cpp	2011-08-10 10:25:48.651588999 -0700
+@@ -93,6 +93,7 @@ XnStatus XnSensorIRStream::Init()
+ 		{ 0, XN_RESOLUTION_QVGA, 60 },
+ 		{ 0, XN_RESOLUTION_VGA, 30 },
+ 		{ 0, XN_RESOLUTION_SXGA, 30 },
++		{ 0, XN_RESOLUTION_SXGA, 15 },
+ 	};
+ 	nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+ 	XN_IS_STATUS_OK(nRetVal);
+@@ -102,6 +103,7 @@ XnStatus XnSensorIRStream::Init()
+ 		XnCmosPreset aSupportedModesSXGA[] = 
+ 		{
+ 			{ 0, XN_RESOLUTION_SXGA, 30 },
++			{ 0, XN_RESOLUTION_SXGA, 15 },
+ 		};
+ 		nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+ 		XN_IS_STATUS_OK(nRetVal);

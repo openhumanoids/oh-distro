@@ -1,0 +1,19 @@
+--- a/Platform/Linux-x86/Build/Common/Platform.x86
++++ b/Platform/Linux-x86/Build/Common/Platform.x86
+@@ -1,6 +1,6 @@
+ # some defaults
+ ifndef SSE_GENERATION
+-	SSE_GENERATION = 3
++	SSE_GENERATION = 0
+ endif
+ 
+ # change c struct alignment options to be compatable with Win32
+@@ -17,8 +17,6 @@
+ 	else
+ 		ifeq ($(SSE_GENERATION), 3)
+ 			CFLAGS += -msse3
+-		else
+-			($error "Only SSE2 and SSE3 are supported")
+ 		endif
+ 	endif
+ endif

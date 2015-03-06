@@ -1,0 +1,35 @@
+package kinect;
+
+struct frame_msg_t
+{
+    // message transmission time
+    int64_t  timestamp;
+
+    kinect.image_msg_t image;
+    kinect.depth_msg_t depth;
+
+    // accelerometer data, in sensor units
+    int16_t  raw_accel[3];
+    // tilt angle, in sensor units
+    int8_t   raw_tilt;
+
+    // accelerometer data, in m/s^2
+    double   accel[3];
+    // tilt angle, in radians
+    double   tilt_radians;
+
+    int8_t led_status;
+    int8_t tilt_status;
+
+    const int8_t LED_OFF    = 0;
+    const int8_t LED_GREEN  = 1;
+    const int8_t LED_RED    = 2;
+    const int8_t LED_YELLOW = 3;
+    const int8_t LED_BLINK_YELLOW = 4;
+    const int8_t LED_BLINK_GREEN = 5;
+    const int8_t LED_BLINK_RED_YELLOW = 6;
+
+    const int8_t TILT_STATUS_STOPPED = 0x00;
+    const int8_t TILT_STATUS_LIMIT = 0x01;
+    const int8_t TILT_STATUS_MOVING = 0x04;
+}

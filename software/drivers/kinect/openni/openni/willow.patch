@@ -1,0 +1,308 @@
+diff -rupN -x Platform -x DoxyGen -x .git openni/Include/XnCppWrapper.h ../build_patched/openni/Include/XnCppWrapper.h
+--- openni/Include/XnCppWrapper.h	2011-08-04 20:25:06.341589001 -0700
++++ ../build_patched/openni/Include/XnCppWrapper.h	2011-08-15 11:29:53.841589000 -0700
+@@ -129,7 +129,7 @@ namespace xn
+ 		 *
+ 		 * @param	ppData		[in]	A pointer to the data member of the meta data object.
+ 		 */
+-		inline OutputMetaData(const XnUInt8** ppData) : m_ppData(ppData), m_nAllocatedSize(0), m_pAllocatedData(NULL)
++		inline OutputMetaData(const XnUInt8** ppData) : m_pAllocatedData(NULL), m_ppData(ppData), m_nAllocatedSize(0)
+ 		{
+ 			xnOSMemSet(&m_output, 0, sizeof(XnOutputMetaData));
+ 		}
+@@ -1152,6 +1152,7 @@ namespace xn
+ 		 *
+ 		 * @param	other		[in]	An object to copy from.
+ 		 */
++
+ 		NodeInfo(const NodeInfo& other) : m_pNeededNodes(NULL), m_bOwnerOfNode(FALSE)
+ 		{
+ 			SetUnderlyingObject(other.m_pInfo);
+@@ -1260,7 +1261,7 @@ namespace xn
+ 			xnNodeQueryAllocate(&m_pQuery);
+ 		}
+ 
+-		inline Query(XnNodeQuery* pNodeQuery) : m_bAllocated(FALSE), m_pQuery(pNodeQuery)
++		inline Query(XnNodeQuery* pNodeQuery) : m_pQuery(pNodeQuery), m_bAllocated(FALSE)
+ 		{
+ 		}
+ 
+@@ -4139,6 +4140,7 @@ namespace xn
+ 		 */
+ 		inline XnBool IsCalibrated(XnUserID user) const
+ 		{
++
+ 			return xnIsSkeletonCalibrated(GetHandle(), user);
+ 		}
+ 
+@@ -4348,6 +4350,7 @@ namespace xn
+ 			CalibrationStartCookie* pCalibrationCookie = (CalibrationStartCookie*)hCallback;
+ 			xnUnregisterFromCalibrationStart(GetHandle(), pCalibrationCookie->hCallback);
+ 			xnOSFree(pCalibrationCookie);
++			return XN_STATUS_OK;
+ 		}
+ 
+ 		/**
+@@ -5280,7 +5283,7 @@ namespace xn
+ 	{
+ 	public:
+ 		/// Ctor
+-		inline EnumerationErrors() : m_bAllocated(TRUE), m_pErrors(NULL) { xnEnumerationErrorsAllocate(&m_pErrors); }
++		inline EnumerationErrors() : m_pErrors(NULL), m_bAllocated(TRUE) { xnEnumerationErrorsAllocate(&m_pErrors); }
+ 
+ 		/**
+ 		 * Ctor
+@@ -5288,7 +5291,7 @@ namespace xn
+ 		 * @param	pErrors		[in]	underlying C object to wrap
+ 		 * @param	bOwn		[in]	TRUE to own the object (i.e. free it upon destruction), FALSE otherwise.
+ 		 */
+-		inline EnumerationErrors(XnEnumerationErrors* pErrors, XnBool bOwn = FALSE) : m_bAllocated(bOwn), m_pErrors(pErrors) {}
++		inline EnumerationErrors(XnEnumerationErrors* pErrors, XnBool bOwn = FALSE) : m_pErrors(pErrors), m_bAllocated(bOwn) {}
+ 
+ 		/// Dtor
+ 		~EnumerationErrors() { Free(); }
+@@ -5869,6 +5872,7 @@ namespace xn
+ 
+ 		/** @copybrief xnUnregisterFromGlobalErrorStateChange
+ 		 * For full details and usage, see @ref xnUnregisterFromGlobalErrorStateChange
++
+ 		 */
+ 		inline void UnregisterFromErrorStateChange(XnCallbackHandle hCallback)
+ 		{
+diff -rupN -x Platform -x DoxyGen -x .git openni/Include/XnOS.h ../build_patched/openni/Include/XnOS.h
+--- openni/Include/XnOS.h	2011-08-04 20:25:06.371589001 -0700
++++ ../build_patched/openni/Include/XnOS.h	2011-08-10 05:36:55.101588999 -0700
+@@ -47,9 +47,13 @@
+ #elif (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_MACOSX || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
+ 	#include "Linux-x86/XnOSLinux-x86.h"
+ #elif defined(_ARC)
+-	#include "ARC/XnOSARC.h"
++  #include "ARC/XnOSARC.h" 
+ #else
+-	#error OpenNI OS Abstraction Layer - Unsupported Platform!
++  #if defined __INTEL_COMPILER
++    #include "Linux-x86/XnOSLinux-x86.h" 
++  #else
++     #error OpenNI OS Abstraction Layer - Unsupported Platform!
++  #endif
+ #endif
+ 
+ //---------------------------------------------------------------------------
+diff -rupN -x Platform -x DoxyGen -x .git openni/Include/XnPlatform.h ../build_patched/openni/Include/XnPlatform.h
+--- openni/Include/XnPlatform.h	2011-08-04 20:25:06.371589001 -0700
++++ ../build_patched/openni/Include/XnPlatform.h	2011-08-10 05:37:27.121589001 -0700
+@@ -69,11 +69,16 @@
+ #elif _ARC
+ 	#include "ARC/XnPlatformARC.h"
+ #elif (__APPLE__)
+-	#include "MacOSX/XnPlatformMacOSX.h"
++    #include "MacOSX/XnPlatformMacOSX.h" 
+ #else
+-	#error OpenNI Platform Abstraction Layer - Unsupported Platform!
++ #if defined __INTEL_COMPILER
++   #include "Linux-x86/XnPlatformLinux-x86.h" 
++ #else
++    #error OpenNI Platform Abstraction Layer - Unsupported Platform!
++ #endif
+ #endif
+ 
++
+ //---------------------------------------------------------------------------
+ // Basic Common Macros
+ //---------------------------------------------------------------------------
+diff -rupN -x Platform -x DoxyGen -x .git openni/Include/XnTypes.h ../build_patched/openni/Include/XnTypes.h
+--- openni/Include/XnTypes.h	2011-08-04 20:25:06.391589001 -0700
++++ ../build_patched/openni/Include/XnTypes.h	2011-08-10 05:38:47.611589002 -0700
+@@ -325,7 +325,7 @@ typedef XnUInt16 XnLabel;
+ 
+ // deprecated pragma is only supported in Visual Studio
+ #if (XN_PLATFORM == XN_PLATFORM_WIN32)
+-#pragma deprecated("XN_CAPABILITY_ANTI_FILCKER")
++//#pragma deprecated("XN_CAPABILITY_ANTI_FILCKER")
+ #endif
+ 
+ //---------------------------------------------------------------------------
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiAudioSample/NiAudioSample.cpp ../build_patched/openni/Samples/NiAudioSample/NiAudioSample.cpp
+--- openni/Samples/NiAudioSample/NiAudioSample.cpp	2011-08-04 20:28:02.691589002 -0700
++++ ../build_patched/openni/Samples/NiAudioSample/NiAudioSample.cpp	2011-08-10 05:09:37.851589001 -0700
+@@ -31,7 +31,7 @@
+ //---------------------------------------------------------------------------
+ // Defines
+ //---------------------------------------------------------------------------
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ 
+ #define NUMBER_OF_AUDIO_BUFFERS 100
+ 
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiCRead/NiCRead.c ../build_patched/openni/Samples/NiCRead/NiCRead.c
+--- openni/Samples/NiCRead/NiCRead.c	2011-08-04 20:25:07.681589001 -0700
++++ ../build_patched/openni/Samples/NiCRead/NiCRead.c	2011-08-10 05:09:37.931589001 -0700
+@@ -27,7 +27,7 @@
+ //---------------------------------------------------------------------------
+ // Defines
+ //---------------------------------------------------------------------------
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ 
+ //---------------------------------------------------------------------------
+ // Macros
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiRecordRaw/NiRecordRaw.cpp ../build_patched/openni/Samples/NiRecordRaw/NiRecordRaw.cpp
+--- openni/Samples/NiRecordRaw/NiRecordRaw.cpp	2011-08-04 20:25:07.691589001 -0700
++++ ../build_patched/openni/Samples/NiRecordRaw/NiRecordRaw.cpp	2011-08-10 05:09:37.761589001 -0700
+@@ -30,7 +30,7 @@
+ //---------------------------------------------------------------------------
+ // Defines
+ //---------------------------------------------------------------------------
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ #define RECORDING_FILE_NAME "recordingWithRaw.oni"
+ #define RAW_NODE_NAME "Raw1"
+ 
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiRecordSynthetic/NiRecordSynthetic.cpp ../build_patched/openni/Samples/NiRecordSynthetic/NiRecordSynthetic.cpp
+--- openni/Samples/NiRecordSynthetic/NiRecordSynthetic.cpp	2011-08-04 20:28:02.691589002 -0700
++++ ../build_patched/openni/Samples/NiRecordSynthetic/NiRecordSynthetic.cpp	2011-08-10 05:09:37.881589001 -0700
+@@ -30,7 +30,7 @@
+ //---------------------------------------------------------------------------
+ // Defines
+ //---------------------------------------------------------------------------
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ 
+ //---------------------------------------------------------------------------
+ // Macros
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiSimpleRead/NiSimpleRead.cpp ../build_patched/openni/Samples/NiSimpleRead/NiSimpleRead.cpp
+--- openni/Samples/NiSimpleRead/NiSimpleRead.cpp	2011-08-04 20:28:02.701589002 -0700
++++ ../build_patched/openni/Samples/NiSimpleRead/NiSimpleRead.cpp	2011-08-10 05:09:37.741589001 -0700
+@@ -30,7 +30,7 @@
+ //---------------------------------------------------------------------------
+ // Defines
+ //---------------------------------------------------------------------------
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ 
+ //---------------------------------------------------------------------------
+ // Macros
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiSimpleViewer/NiSimpleViewer.cpp ../build_patched/openni/Samples/NiSimpleViewer/NiSimpleViewer.cpp
+--- openni/Samples/NiSimpleViewer/NiSimpleViewer.cpp	2011-08-04 20:28:02.701589002 -0700
++++ ../build_patched/openni/Samples/NiSimpleViewer/NiSimpleViewer.cpp	2011-08-10 05:09:37.911589001 -0700
+@@ -36,7 +36,7 @@ using namespace xn;
+ //---------------------------------------------------------------------------
+ // Defines
+ //---------------------------------------------------------------------------
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ 
+ #define GL_WIN_SIZE_X 1280
+ #define GL_WIN_SIZE_Y 1024
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiUserTracker/main.cpp ../build_patched/openni/Samples/NiUserTracker/main.cpp
+--- openni/Samples/NiUserTracker/main.cpp	2011-08-04 20:28:02.701589002 -0700
++++ ../build_patched/openni/Samples/NiUserTracker/main.cpp	2011-08-10 05:09:37.811589001 -0700
+@@ -311,7 +311,7 @@ void glInit (int * pargc, char ** argv)
+ }
+ #endif // USE_GLES
+ 
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ 
+ #define CHECK_RC(nRetVal, what)										\
+ 	if (nRetVal != XN_STATUS_OK)									\
+diff -rupN -x Platform -x DoxyGen -x .git openni/Samples/NiViewer/NiViewer.cpp ../build_patched/openni/Samples/NiViewer/NiViewer.cpp
+--- openni/Samples/NiViewer/NiViewer.cpp	2011-08-04 20:28:02.701589002 -0700
++++ ../build_patched/openni/Samples/NiViewer/NiViewer.cpp	2011-08-10 05:09:37.721589001 -0700
+@@ -84,7 +84,7 @@ using namespace glh;
+ // --------------------------------
+ // Defines
+ // --------------------------------
+-#define SAMPLE_XML_PATH "../../../../Data/SamplesConfig.xml"
++#define SAMPLE_XML_PATH "/etc/openni/SamplesConfig.xml"
+ 
+ // --------------------------------
+ // Types
+diff -rupN -x Platform -x DoxyGen -x .git openni/Source/OpenNI/Linux-x86/XnUSBLinux-x86.cpp ../build_patched/openni/Source/OpenNI/Linux-x86/XnUSBLinux-x86.cpp
+--- openni/Source/OpenNI/Linux-x86/XnUSBLinux-x86.cpp	2011-08-04 20:25:08.141589001 -0700
++++ ../build_patched/openni/Source/OpenNI/Linux-x86/XnUSBLinux-x86.cpp	2011-08-10 05:33:27.601589000 -0700
+@@ -1051,7 +1051,7 @@ XN_THREAD_PROC xnUSBReadThreadMain(XN_TH
+ 								if (pTransfer->buffer + nTotalBytes != pBuffer)
+ 								{
+ //									printf("buffer %d has %d bytes. Moving to offset %d...\n", i, pPacket->actual_length, nTotalBytes);
+-									memcpy(pTransfer->buffer + nTotalBytes, pBuffer, pPacket->actual_length);
++									memmove(pTransfer->buffer + nTotalBytes, pBuffer, pPacket->actual_length);
+ 								}
+ 								nTotalBytes += pPacket->actual_length;
+ 							}
+diff -rupN -x Platform -x DoxyGen -x .git openni/Source/OpenNI/XnOpenNI.cpp ../build_patched/openni/Source/OpenNI/XnOpenNI.cpp
+--- openni/Source/OpenNI/XnOpenNI.cpp	2011-08-04 20:25:08.191589001 -0700
++++ ../build_patched/openni/Source/OpenNI/XnOpenNI.cpp	2011-08-10 09:35:47.511589002 -0700
+@@ -6535,9 +6535,9 @@ XN_C_API XnStatus xnScriptNodeRun(XnNode
+ #if (XN_PLATFORM == XN_PLATFORM_WIN32)
+ 	#define XN_OPEN_NI_FILES_LOCATION "\\Data\\"
+ #elif (CE4100)
+-	#define XN_OPEN_NI_FILES_LOCATION "/usr/etc/ni/"
++	#define XN_OPEN_NI_FILES_LOCATION "/etc/openni/"
+ #elif (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_MACOSX)
+-	#define XN_OPEN_NI_FILES_LOCATION "/var/lib/ni/"
++	#define XN_OPEN_NI_FILES_LOCATION "/etc/openni/"
+ #elif (XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
+ 	#define XN_OPEN_NI_FILES_LOCATION "/data/ni/"
+ #else
+@@ -6556,7 +6556,7 @@ XnStatus xnGetOpenNIConfFilesPath(XnChar
+ 			return nRetVal;
+ 		#else
+ 			// use root FS
+-			strDest[0] = '\0';
++			strcpy (strDest, "");
+ 		#endif
+ 	}
+ 	else
+diff -rupN -x Platform -x DoxyGen -x .git openni/Source/OpenNI/XnProfiling.cpp ../build_patched/openni/Source/OpenNI/XnProfiling.cpp
+--- openni/Source/OpenNI/XnProfiling.cpp	2011-08-04 20:25:08.191589001 -0700
++++ ../build_patched/openni/Source/OpenNI/XnProfiling.cpp	2011-08-10 05:16:09.141589002 -0700
+@@ -87,8 +87,8 @@ XN_THREAD_PROC xnProfilingThread(XN_THRE
+ 		// print profiled sections
+ 		nReportChars = 0;
+ 		nReportChars += sprintf(csReport + nReportChars, "Profiling Report:\n");
+-		nReportChars += sprintf(csReport + nReportChars, "%-*s %-5s %-6s %-9s %-7s\n", g_ProfilingData.nMaxSectionName, "TaskName", "Times", "% Time", "TotalTime", "AvgTime");
+-		nReportChars += sprintf(csReport + nReportChars, "%-*s %-5s %-6s %-9s %-7s\n", g_ProfilingData.nMaxSectionName, "========", "=====", "======", "=========", "=======");
++		nReportChars += sprintf(csReport + nReportChars, "%-*s %-5s %-6s %-9s %-7s\n", (int)g_ProfilingData.nMaxSectionName, "TaskName", "Times", "% Time", "TotalTime", "AvgTime");
++		nReportChars += sprintf(csReport + nReportChars, "%-*s %-5s %-6s %-9s %-7s\n", (int)g_ProfilingData.nMaxSectionName, "========", "=====", "======", "=========", "=======");
+ 
+ 		XnUInt64 nTotalTime = 0;
+ 
+@@ -104,7 +104,7 @@ XN_THREAD_PROC xnProfilingThread(XN_THRE
+ 				nAvgTime = pSection->nTotalTime / pSection->nTimesExecuted;
+ 			}
+ 
+-			nReportChars += sprintf(csReport + nReportChars, "%-*s %5u %6.2f %9llu %7llu\n", g_ProfilingData.nMaxSectionName, 
++			nReportChars += sprintf(csReport + nReportChars, "%-*s %5u %6.2f %9llu %7llu\n", (int)g_ProfilingData.nMaxSectionName, 
+ 				pSection->csName, pSection->nTimesExecuted, dCPUPercentage, pSection->nTotalTime, nAvgTime);
+ 
+ 			if (pSection->nIndentation == 0)
+@@ -118,7 +118,7 @@ XN_THREAD_PROC xnProfilingThread(XN_THRE
+ 		// print total
+ 		XnDouble dCPUPercentage = ((XnDouble)nTotalTime) / (nNow - nLastTime) * 100.0;
+ 		nReportChars += sprintf(csReport + nReportChars, "%-*s %5s %6.2f %9llu %7s\n", 
+-			g_ProfilingData.nMaxSectionName, "*** Total ***", "-", dCPUPercentage, nTotalTime, "-");
++			(int)g_ProfilingData.nMaxSectionName, "*** Total ***", "-", dCPUPercentage, nTotalTime, "-");
+ 
+ 		xnLogVerbose(XN_MASK_PROFILING, "%s", csReport);
+ 
+diff -rupN -x Platform -x DoxyGen -x .git openni/Source/Utils/niLicense/niLicense.cpp ../build_patched/openni/Source/Utils/niLicense/niLicense.cpp
+--- openni/Source/Utils/niLicense/niLicense.cpp	2011-08-04 20:25:08.201589001 -0700
++++ ../build_patched/openni/Source/Utils/niLicense/niLicense.cpp	2011-08-10 05:40:24.511589001 -0700
+@@ -120,14 +120,14 @@ int main(int argc, char* argv[])
+ 		nRetVal = xnOSStrNCopy(license.strVendor, strVendor, strlen(strVendor) + 1, sizeof(license.strVendor));
+ 		if (nRetVal != XN_STATUS_OK)
+ 		{
+-			printf("Error: Vendor name is too long (should be up to %u characters).", sizeof(license.strVendor) - 1);
++			printf("Error: Vendor name is too long (should be up to %u characters).", (unsigned)sizeof(license.strVendor) - 1);
+ 			return -1;
+ 		}
+ 
+ 		nRetVal = xnOSStrNCopy(license.strKey, strKey, strlen(strKey) + 1, sizeof(license.strKey));
+ 		if (nRetVal != XN_STATUS_OK)
+ 		{
+-			printf("Error: Key is too long (should be up to %u characters).", sizeof(license.strKey) - 1);
++			printf("Error: Key is too long (should be up to %u characters).", (unsigned)sizeof(license.strKey) - 1);
+ 			return -1;
+ 		}
+ 	}

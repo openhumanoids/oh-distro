@@ -1,0 +1,80 @@
+--- a/Platform/Linux-x86/Build/EngineLibMakefile
++++ b/Platform/Linux-x86/Build/EngineLibMakefile
+@@ -14,7 +14,7 @@
+ #############################################################################
+ 
+ INC_DIRS += \
+-	/usr/include/openni \
++	../../../../../../../openni/build/openni/Platform/Linux-x86/Redist/Include \
+ 	../../../../Include \
+ 	../../../../Source \
+ 	../../../../Source/XnCommon
+--- a/Platform/Linux-x86/Build/Utils/EngineUtilMakefile
++++ b/Platform/Linux-x86/Build/Utils/EngineUtilMakefile
+@@ -14,7 +14,7 @@
+ #############################################################################
+ 
+ INC_DIRS += \
+-	/usr/include/openni \
++	../../../../../../../../openni/build/openni/Platform/Linux-x86/Redist/Include \
+ 	../../../../../Include \
+ 	../../../../../Source \
+ 	../../../../../Source/XnCommon
+--- a/Platform/Linux-x86/Build/Utils/XnSensorServer/Makefile
++++ b/Platform/Linux-x86/Build/Utils/XnSensorServer/Makefile
+@@ -2,6 +2,7 @@ SRC_FILES = ../../../../../Source/Utils/XnSensorServer/*.cpp
+ 
+ EXE_NAME = XnSensorServer
+ USED_LIBS = OpenNI XnCore XnFormats XnDDK XnDeviceSensorV2
++LIB_DIRS = ../../../../../../../../openni/build/openni/Platform/Linux-x86/Bin/Release/
+ 
+ include ../EngineUtilMakefile
+ 
+--- a/Platform/Linux-x86/Build/XnCore/Makefile
++++ b/Platform/Linux-x86/Build/XnCore/Makefile
+@@ -4,5 +4,6 @@ SRC_FILES = \
+ LIB_NAME = XnCore
+ USED_LIBS = OpenNI
+ DEFINES = XN_CORE_EXPORTS
++LIB_DIRS = ../../../../../../../openni/build/openni/Platform/Linux-x86/Bin/Release/
+ 
+ include ../EngineLibMakefile
+--- a/Platform/Linux-x86/Build/XnDDK/Makefile
++++ b/Platform/Linux-x86/Build/XnDDK/Makefile
+@@ -3,6 +3,7 @@ SRC_FILES = ../../../../Source/XnDDK/*.cpp
+ LIB_NAME = XnDDK
+ USED_LIBS = XnCore XnFormats OpenNI
+ DEFINES = XN_DDK_EXPORTS
++LIB_DIRS = ../../../../../../../openni/build/openni/Platform/Linux-x86/Bin/Release/
+ 
+ include ../EngineLibMakefile
+ 
+--- a/Platform/Linux-x86/Build/XnDeviceFile/Makefile
++++ b/Platform/Linux-x86/Build/XnDeviceFile/Makefile
+@@ -3,6 +3,7 @@ SRC_FILES = ../../../../Source/XnDeviceFile/*.cpp
+ LIB_NAME = XnDeviceFile
+ USED_LIBS = XnCore XnFormats XnDDK OpenNI
+ DEFINES = XN_DEVICE_EXPORTS
++LIB_DIRS = ../../../../../../../openni/build/openni/Platform/Linux-x86/Bin/Release/
+ 
+ include ../EngineLibMakefile
+ 
+--- a/Platform/Linux-x86/Build/XnDeviceSensorV2/Makefile
++++ b/Platform/Linux-x86/Build/XnDeviceSensorV2/Makefile
+@@ -4,6 +4,7 @@ SRC_FILES = \
+ LIB_NAME = XnDeviceSensorV2
+ USED_LIBS = XnCore XnFormats XnDDK OpenNI
+ DEFINES = XN_DEVICE_EXPORTS
++LIB_DIRS = ../../../../../../../openni/build/openni/Platform/Linux-x86/Bin/Release/
+ 
+ include ../EngineLibMakefile
+ 
+--- a/Platform/Linux-x86/Build/XnFormats/Makefile
++++ b/Platform/Linux-x86/Build/XnFormats/Makefile
+@@ -6,5 +6,6 @@ LIB_NAME = XnFormats
+ USED_LIBS = XnCore OpenNI
+ DEFINES = XN_FORMATS_EXPORTS
+ INC_DIRS = ../../../../Source/External/LibJPEG
++LIB_DIRS = ../../../../../../../openni/build/openni/Platform/Linux-x86/Bin/Release/
+ 
+ include ../EngineLibMakefile

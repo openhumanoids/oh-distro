@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include/nite
+
+Name: nite
+Description: Nite development package
+Version: __VERSION__
+Requires: openni-dev >= __VERSION__
+Cflags: -I${includedir}
+Libs: -L${libdir} -lXnVNite

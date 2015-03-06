@@ -1,0 +1,41 @@
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+
+  http://sourceforge.net/projects/pods
+====
+
+Name:         kinect
+Maintainers:  Albert Huang <albert@csail.mit.edu>
+Summary:      Kinect LCM driver and utilities
+Description:  
+  Kinect LCM driver and utility functions.
+
+  uses libfreenect, imported on Tue. Dec 21, 2010.
+
+Requirements:
+  LCM (http://lcm.googlecode.com)
+  (no official packages exist for LCM or libbot2, those must be installed
+  from source)
+  libjpeg8-dev
+
+Required Pods:
+  libbot2 (https://svn.csail.mit.edu/libbot2)
+
+Debian/Ubuntu packages:
+  libusb-1.0-0-dev
+  freeglut3-dev
+  OpenGL
+  GLUT
+
+Additional Packages:
+OpenNI:
+sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
+sudo apt-get update
+sudo apt-get install openni-dev ps-engine 
+
+
+Problems with the driver failing to launch due to Xn****?
+try killing this program:
+/usr/bin/XnSensorServer /etc/openni
+

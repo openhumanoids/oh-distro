@@ -1,0 +1,12 @@
+package kinect;
+
+struct pointcloud_t
+{
+    // acquisition time (adjusted to host clock)
+    int64_t  timestamp;
+
+    int32_t   num;
+    float     x[num];
+    float     y[num];
+    float     z[num];
+}

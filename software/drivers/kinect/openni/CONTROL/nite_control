@@ -1,0 +1,8 @@
+Package: nite-dev
+Version: __VERSION__
+Section: devel
+Priority: optional
+Architecture: __ARCHITECTURE__
+Depends: openni-dev (>=__OPENNI_VERSION__)
+Maintainer: Suat Gedikli (gedikli@willowgarage.com)
+Description: Nite development package

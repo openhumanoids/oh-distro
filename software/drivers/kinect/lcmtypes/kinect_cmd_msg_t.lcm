@@ -1,0 +1,28 @@
+package kinect;
+
+struct cmd_msg_t
+{
+    int64_t  timestamp;
+
+    int8_t   command_type;
+
+    int32_t  tilt_degree;
+    int8_t   led_status;
+    int8_t   depth_data_format; // see kinect.depth_data_t
+    int8_t   image_data_format; // see kinect.image_data_t
+
+    // command type constants
+    const int8_t SET_TILT = 0;
+    const int8_t SET_LED  = 1;	
+    const int8_t SET_DEPTH_DATA_FORMAT  = 2;	
+    const int8_t SET_IMAGE_DATA_FORMAT  = 3;	
+
+    // LED state
+    const int8_t LED_OFF    = 0;
+    const int8_t LED_GREEN  = 1;
+    const int8_t LED_RED    = 2;
+    const int8_t LED_YELLOW = 3;
+    const int8_t LED_BLINK_YELLOW = 4;
+    const int8_t LED_BLINK_GREEN = 5;
+    const int8_t LED_BLINK_RED_YELLOW = 6;
+}

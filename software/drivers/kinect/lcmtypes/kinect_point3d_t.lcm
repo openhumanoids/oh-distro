@@ -1,0 +1,7 @@
+package kinect;
+
+struct point3d_t {
+    double x;
+    double y;
+    double z;
+}

@@ -1,0 +1,9 @@
+# make primesense device mount with writing permissions (default is read only for unknown devices)
+ATTRS{idProduct}=="0200",ATTRS{idVendor}=="1d27",MODE="666",GROUP="video"
+ATTRS{idProduct}=="0300",ATTRS{idVendor}=="1d27",MODE="666",GROUP="video"
+ATTRS{idProduct}=="0400",ATTRS{idVendor}=="1d27",MODE="666",GROUP="video"
+ATTRS{idProduct}=="0500",ATTRS{idVendor}=="1d27",MODE="666",GROUP="video"
+ATTRS{idProduct}=="0600",ATTRS{idVendor}=="1d27",MODE="666",GROUP="video"
+ATTRS{idProduct}=="02ae",ATTRS{idVendor}=="045e",MODE="666",GROUP="video"
+ATTRS{idProduct}=="02ad",ATTRS{idVendor}=="045e",MODE="666",GROUP="video"
+ATTRS{idProduct}=="02b0",ATTRS{idVendor}=="045e",MODE="666",GROUP="video"

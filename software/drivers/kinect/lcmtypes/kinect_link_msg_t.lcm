@@ -1,0 +1,8 @@
+package kinect;
+
+struct link_msg_t
+{
+    int32_t joint_id;
+    kinect.point3d_t source;
+    kinect.point3d_t dest;
+}

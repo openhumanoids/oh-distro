@@ -1,0 +1,11 @@
+--- a/Include/Linux-x86/XnPlatformLinux-x86.h
++++ b/Include/Linux-x86/XnPlatformLinux-x86.h
+@@ -163,7 +163,7 @@
+ #define XN_STRINGIFY_HELPER(n) #n
+ 
+ /** Asserts an expression, only on Debug build. */
+-#define XN_ASSERT(x)
++#define XN_ASSERT(x) ((void)(x))
+ 
+ //---------------------------------------------------------------------------
+ // API Export/Import Macros

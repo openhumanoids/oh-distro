@@ -1,0 +1,12 @@
+--- a/Platform/Linux-x86/Build/Platform.x86
++++ b/Platform/Linux-x86/Build/Platform.x86
+@@ -6,9 +6,6 @@ endif
+ # change c struct alignment options to be compatable with Win32
+ ifneq ("$(OSTYPE)","Darwin")
+ 	CFLAGS += -malign-double
+-else
+-	CFLAGS += -arch i386 -arch x86_64
+-	LDFLAGS += -arch i386 -arch x86_64
+ endif
+ 
+ ifeq "$(CFG)" "Release"

@@ -1,0 +1,7 @@
+TEMPORARY FIX:
+If this is not compiling, type
+
+make
+sudo make install
+
+

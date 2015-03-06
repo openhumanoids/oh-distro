@@ -1,0 +1,46 @@
+--- a/Platform/Linux-x86/CreateRedist/Redist_OpenNi.py
++++ b/Platform/Linux-x86/CreateRedist/Redist_OpenNi.py
+@@ -284,12 +284,12 @@
+ MonoDetected = 0
+ shutil.copy("Bin/Release/niReg", "Redist/Bin")
+ shutil.copy("Bin/Release/niLicense", "Redist/Bin")
+-if platform == 'x86':
+-    if (os.path.exists("/usr/bin/gmcs")):
+-        shutil.copy("Bin/Release/OpenNI.net.dll", "Redist/Bin")
+-        shutil.copy("Bin/Release/OpenNI.net.dll", "Redist/Samples/Bin/Debug")
+-        shutil.copy("Bin/Release/OpenNI.net.dll", "Redist/Samples/Bin/Release")
+-        MonoDetected = 1
++#if platform == 'x86':
++#    if (os.path.exists("/usr/bin/gmcs")):
++#        shutil.copy("Bin/Release/OpenNI.net.dll", "Redist/Bin")
++#        shutil.copy("Bin/Release/OpenNI.net.dll", "Redist/Samples/Bin/Debug")
++#        shutil.copy("Bin/Release/OpenNI.net.dll", "Redist/Samples/Bin/Release")
++#        MonoDetected = 1
+         
+ # java wrapper
+ shutil.copy("Bin/Release/org.OpenNI.jar", "Redist/Jar")
+--- a/Platform/Linux-x86/Build/Makefile
++++ b/Platform/Linux-x86/Build/Makefile
+@@ -106,14 +106,14 @@
+ ALL_PROJS = \
+ 	$(ALL_BUILD_PROJS)
+ 
+-ifeq "$(PLATFORM)" "x86"
+-	# check if mono is installed
+-	ifneq "$(realpath /usr/bin/gmcs)" ""
+-		ALL_PROJS += $(ALL_MONO_PROJS)
+-		ALL_PROJS += $(MONO_SAMPLES)
+-		ALL_PROJS += $(MONO_FORMS_SAMPLES)
+-	endif
+-endif
++#ifeq "$(PLATFORM)" "x86"
++#	# check if mono is installed
++#	ifneq "$(realpath /usr/bin/gmcs)" ""
++#		ALL_PROJS += $(ALL_MONO_PROJS)
++#		ALL_PROJS += $(MONO_SAMPLES)
++#		ALL_PROJS += $(MONO_FORMS_SAMPLES)
++#	endif
++#endif
+ 
+ ALL_PROJS_CLEAN = $(foreach proj,$(ALL_PROJS),$(proj)-clean)
+ 
