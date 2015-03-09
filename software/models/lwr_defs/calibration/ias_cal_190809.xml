@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<root>
+
+  <!-- ********** Head ********** -->
+  <!-- PTU -> Camera projection center extra offsets-->
+  <property name="cal_ptu_cam_x_offset"   value=" 0.0455" />
+  <property name="cal_ptu_cam_y_offset"  value="-0.0661" />
+  <property name="cal_ptu_cam_z_offset" value="0.0409" />
+
+  <!-- Camera -> Robotarm_right complete transformation -->
+  <property name="cal_r_cam_to_arm_x"   value=" -0.0704203346228965" />
+  <property name="cal_r_cam_to_arm_y"  value="1.68695303569692" />
+  <property name="cal_r_cam_to_arm_z" value="-0.193860877340746" />
+  <property name="cal_r_cam_to_arm_roll"     value=" 90.4298328743212" />
+  <property name="cal_r_cam_to_arm_pitch"   value="359.776689500259" />
+  <property name="cal_r_cam_to_arm_yaw"     value="88.4655493181154" />
+  
+</root>
