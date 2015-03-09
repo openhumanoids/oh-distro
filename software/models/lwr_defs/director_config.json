@@ -1,0 +1,53 @@
+{
+  "urdfConfig": {
+    "default": "./robots/lwr_pen.urdf",
+    "robotState": "./robots/lwr_pen.urdf",
+    "ik":         "./robots/lwr_pen_drake.urdf",
+    "chull":      "./robots/lwr_pen_drake.urdf",
+    "playback":   "./robots/lwr_pen.urdf",
+    "teleop":     "./robots/lwr_pen.urdf"
+  },
+
+  "teleopJointGroups" : [
+
+      { "name" : "Arm",
+        "joints" : [
+          "lwr_arm_0_joint",
+          "lwr_arm_1_joint",
+          "lwr_arm_2_joint",
+          "lwr_arm_3_joint",
+          "lwr_arm_4_joint",
+          "lwr_arm_5_joint",
+          "lwr_arm_6_joint"
+          ],
+        "labels" : ["0","1", "2", "3", "4", "5", "6"]
+      }
+
+    ],
+
+  "drakeJointNames": [
+    "base_x",
+    "base_y",
+    "base_z",
+    "base_roll",
+    "base_pitch",
+    "base_yaw",
+    "lwr_arm_0_joint",
+    "lwr_arm_1_joint",
+    "lwr_arm_2_joint",
+    "lwr_arm_3_joint",
+    "lwr_arm_4_joint",
+    "lwr_arm_5_joint",
+    "lwr_arm_6_joint"
+  ],
+  "robotStateJointNames": [
+    "lwr_arm_0_joint",
+    "lwr_arm_1_joint",
+    "lwr_arm_2_joint",
+    "lwr_arm_3_joint",
+    "lwr_arm_4_joint",
+    "lwr_arm_5_joint",
+    "lwr_arm_6_joint"
+  ],
+  "fixedPointFile" : "../../control/matlab/data/kuka_lwr_fp.mat"
+}
