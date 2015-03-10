@@ -129,13 +129,13 @@ end
     % move to calib pos
     atlasLinearMoveToPos(q_calib,state_frame,ref_frame,act_idx,7);
 
-    pause(5);
+    pause(0.1);
     % record encoder values
     [ex,~] = extra_frame.getMessage();
 
     % move to initial pos again
     atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
-    
+
     % display encoder offsets 
     ex = ex(1:28); % just grab state off the robot
     enc_diff = calib_val(r.stateToBDIInd) - ex;
@@ -198,7 +198,6 @@ end
     msg.entries(1) = joint_ind;
     msg.entries(2) = offsets;
     lc.publish('PARAM_SET',msg);
-
     disp('Arm encoder calibration completed.');
     send_status(1, 0, 0, 'Arm encoder calibration completed.');
 
