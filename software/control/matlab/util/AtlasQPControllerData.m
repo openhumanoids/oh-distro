@@ -3,13 +3,13 @@ classdef AtlasQPControllerData < QPControllerData
   % running on Atlas
   
   % optional: for properties that change infrequently or never
-  properties (SetAccess=private,GetAccess=public)
-    force_controlled_joints
-    position_controlled_joints
+  properties (SetAccess=protected,GetAccess=public)
   end
   
   % properties that can be modified 'on the fly'
   properties (SetAccess=public,GetAccess=public)
+    force_controlled_joints
+    position_controlled_joints
     integral % position control integral terms
     integral_gains
     integral_clamps

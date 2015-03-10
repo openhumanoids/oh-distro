@@ -1,29 +1,34 @@
-function runAtlasPlanEvalAsync(example_options)
-%NOTEST 
+function runAtlasPlanEvalHardware(controller_type, run_in_simul_mode,atlas_version)
 
-checkDependency('gurobi');
-checkDependency('lcmgl');
-
-if nargin<1, example_options=struct(); end
-example_options = applyDefaults(example_options, struct('use_mex', true,...
-                                                        'use_bullet', false,...
-                                                        'navgoal', [0.5;0;0;0;0;0],...
-                                                        'quiet', true,...
-                                                        'num_steps', 4,...
-                                                        'terrain', RigidBodyFlatTerrain));
+if nargin < 1
+  controller_type = 2; % 1: PID, 2: PID+manip params, 3: PD+gravity comp, 4: inverse dynamics
+  run_in_simul_mode = 0; % Initialize to support drakeWalking-like controllers
+                         % (is this redundant with controller_type?)
+                         % Use value 1 for normal, 2 to add weights to the
+                         % control model's hands
+end
+if nargin < 2
+  run_in_simul_mode = 0;
+end
+if nargin < 3
+  atlas_version = 4;
+end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
-
-% construct robot model
+options.visual = false; % loads faster
 options.floating = true;
-options.ignore_self_collisions = true;
 options.ignore_friction = true;
-options.dt = 0.001;
-options.terrain = example_options.terrain;
-options.use_bullet = example_options.use_bullet;
-r = Atlas(fullfile(getDrakePath,'examples','Atlas','urdf','atlas_minimal_contact.urdf'),options);
+options.run_in_simul_mode = run_in_simul_mode;
+options.atlas_version = atlas_version;
+if (run_in_simul_mode == 2)
+  options.hands = 'robotiq_weight_only';
+end
+
+r = DRCAtlas([],options);
+r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 

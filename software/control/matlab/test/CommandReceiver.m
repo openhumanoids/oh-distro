@@ -5,8 +5,8 @@ classdef CommandReceiver < DrakeSystem
 
   methods
     function obj = CommandReceiver(r)
-      input_frame = r.getInputFrame();
-      output_frame = input_frame;
+      input_frame = atlasFrames.AtlasInput(r);
+      output_frame = r.getInputFrame();
       obj = obj@DrakeSystem(0,0,numel(input_frame.coordinates),numel(output_frame.coordinates),true,true);
       obj = obj.setInputFrame(input_frame);
       obj = obj.setOutputFrame(output_frame);

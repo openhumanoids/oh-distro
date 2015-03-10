@@ -5,11 +5,12 @@
 class AtlasCommandDriver {
   private:
     int m_num_joints; 
-    RobotJointIndexMap joint_index_map;
+    RobotJointIndexMap input_index_map;
+    VectorXi state_to_drake_input_map;
     drc::atlas_command_t msg;
 
   public:
-    AtlasCommandDriver(JointNames *input_joint_names);
+    AtlasCommandDriver(JointNames *input_joint_names, std::vector<std::string> &state_coordinate_names);
     int dim(void) {
       return 3*m_num_joints;
     }

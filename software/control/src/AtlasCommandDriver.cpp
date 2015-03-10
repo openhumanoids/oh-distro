@@ -2,8 +2,20 @@
 
 using namespace std;
 
-AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names) {
-  getRobotJointIndexMap(input_joint_names, &joint_index_map);
+AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names, vector<string> &state_coordinate_names) {
+  getRobotJointIndexMap(input_joint_names, &input_index_map);
+
+  state_to_drake_input_map = VectorXi::Zero(state_coordinate_names.size());
+  for (int i=0; i < state_coordinate_names.size(); i++) {
+    state_to_drake_input_map[i] = -1;
+    for (int j=0; j < input_joint_names->drake.size(); j++) {
+      if (state_coordinate_names[i].compare(input_joint_names->drake[j]) == 0) {
+        state_to_drake_input_map[i] = j;
+        // cout << "state coordinate: " << state_coordinate_names[i] << " matches input name: " << input_joint_names->drake[j] << endl;
+      }
+    }
+  }
+
   m_num_joints = input_joint_names->robot.size();
 
   msg.num_joints = m_num_joints;
@@ -30,18 +42,18 @@ AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names) {
     msg.velocity[i] = 0.0;
     msg.effort[i] = 0.0;
 
-    msg.joint_names[joint_index_map.drake_to_robot[i]] = input_joint_names->drake[i];
+    msg.joint_names[input_index_map.drake_to_robot[i]] = input_joint_names->drake[i];
     
-    msg.k_q_p[joint_index_map.drake_to_robot[i]] = 0;
-    msg.k_q_i[joint_index_map.drake_to_robot[i]] = 0;;
-    msg.k_qd_p[joint_index_map.drake_to_robot[i]] = 0;;
-    msg.k_f_p[joint_index_map.drake_to_robot[i]] = 0;;
-    msg.ff_qd[joint_index_map.drake_to_robot[i]] = 0;;
-    msg.ff_qd_d[joint_index_map.drake_to_robot[i]] = 0;;
-    msg.ff_f_d[joint_index_map.drake_to_robot[i]] = 0;;
-    msg.ff_const[joint_index_map.drake_to_robot[i]] = 0;;
+    msg.k_q_p[input_index_map.drake_to_robot[i]] = 0;
+    msg.k_q_i[input_index_map.drake_to_robot[i]] = 0;;
+    msg.k_qd_p[input_index_map.drake_to_robot[i]] = 0;;
+    msg.k_f_p[input_index_map.drake_to_robot[i]] = 0;;
+    msg.ff_qd[input_index_map.drake_to_robot[i]] = 0;;
+    msg.ff_qd_d[input_index_map.drake_to_robot[i]] = 0;;
+    msg.ff_f_d[input_index_map.drake_to_robot[i]] = 0;;
+    msg.ff_const[input_index_map.drake_to_robot[i]] = 0;;
 
-    msg.k_effort[joint_index_map.drake_to_robot[i]] = (uint8_t)255; // take complete control of joints (remove BDI control), sim only
+    msg.k_effort[input_index_map.drake_to_robot[i]] = (uint8_t)255; // take complete control of joints (remove BDI control), sim only
   }
 }
 
@@ -65,14 +77,14 @@ void AtlasCommandDriver::updateGains(AtlasHardwareGains *gains) {
     mexErrMsgTxt("Length of ff_const must be equal to m_num_joints");
   
   for (int i=0; i<m_num_joints; i++) {
-    msg.k_q_p[joint_index_map.drake_to_robot[i]] = gains->k_q_p[i];
-    msg.k_q_i[joint_index_map.drake_to_robot[i]] = gains->k_q_i[i];
-    msg.k_qd_p[joint_index_map.drake_to_robot[i]] = gains->k_qd_p[i];
-    msg.k_f_p[joint_index_map.drake_to_robot[i]] = gains->k_f_p[i];
-    msg.ff_qd[joint_index_map.drake_to_robot[i]] = gains->ff_qd[i];
-    msg.ff_qd_d[joint_index_map.drake_to_robot[i]] = gains->ff_qd_d[i];
-    msg.ff_f_d[joint_index_map.drake_to_robot[i]] = gains->ff_f_d[i];
-    msg.ff_const[joint_index_map.drake_to_robot[i]] = gains->ff_const[i];
+    msg.k_q_p[input_index_map.drake_to_robot[i]] = gains->k_q_p[i];
+    msg.k_q_i[input_index_map.drake_to_robot[i]] = gains->k_q_i[i];
+    msg.k_qd_p[input_index_map.drake_to_robot[i]] = gains->k_qd_p[i];
+    msg.k_f_p[input_index_map.drake_to_robot[i]] = gains->k_f_p[i];
+    msg.ff_qd[input_index_map.drake_to_robot[i]] = gains->ff_qd[i];
+    msg.ff_qd_d[input_index_map.drake_to_robot[i]] = gains->ff_qd_d[i];
+    msg.ff_f_d[input_index_map.drake_to_robot[i]] = gains->ff_f_d[i];
+    msg.ff_const[input_index_map.drake_to_robot[i]] = gains->ff_const[i];
   }
 }
 
@@ -88,12 +100,19 @@ drc::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *q
   msg.utime = (long)(t*1000000);
   int j;
   for (int i=0; i < m_num_joints; i++) {
-    j = joint_index_map.drake_to_robot[i];
-    msg.position[j] = qp_output->q_ref(i);
-    msg.velocity[j] = qp_output->qd_ref(i);
+    j = input_index_map.drake_to_robot[i];
     msg.effort[j] = qp_output->u(i);
   }
-
+  int state_index, drake_input_index, robot_input_index;
+  for (int i=0; i < state_to_drake_input_map.size(); i++) {
+    state_index = i;
+    drake_input_index = state_to_drake_input_map[i];
+    if (drake_input_index != -1) {
+      robot_input_index = input_index_map.drake_to_robot[drake_input_index];
+      msg.position[robot_input_index] = qp_output->q_ref(state_index);
+      msg.velocity[robot_input_index] = qp_output->qd_ref(state_index);
+    }
+  }
   if (new_gains) {
     updateGains(new_gains);
   }

@@ -254,10 +254,21 @@ void threadLoop()
     int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, solveArgs.b_contact_force, &qp_output, solveArgs.debug);
     (void)info; // info not used
 
-
+    AtlasParams *params; 
+    std::map<string,AtlasParams>::iterator it;
+    it = solveArgs.pdata->param_sets.find(qp_input->param_set_name);
+    if (it == solveArgs.pdata->param_sets.end()) {
+      mexWarnMsgTxt("Got a param set I don't recognize! Using standing params instead");
+      it = solveArgs.pdata->param_sets.find("standing_hardware");
+      if (it == solveArgs.pdata->param_sets.end()) {
+        params = nullptr;
+        mexErrMsgTxt("Could not fall back to standing parameters either. I have to give up here.");
+      }
+    }
+    params = &(it->second);
     // publish ATLAS_COMMAND
-    drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output);
-    lcmHandler.LCMHandle->publish("ATLAS_COMMAND", command_msg);
+    drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, &params->hardware_gains);
+    lcmHandler.LCMHandle->publish("ATLAS_COMMAND_DEBUG", command_msg);
 
 
 
@@ -276,7 +287,7 @@ void threadLoop()
 void controllerLoop(NewQPControllerData *pdata)
 {
   state_driver.reset(new RobotStateDriver(pdata->state_coordinate_names));
-  command_driver.reset(new AtlasCommandDriver(&pdata->input_joint_names));
+  command_driver.reset(new AtlasCommandDriver(&pdata->input_joint_names, pdata->state_coordinate_names));
 
   solveArgs.pdata = pdata;
   solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->r->num_bodies);

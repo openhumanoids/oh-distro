@@ -48,7 +48,7 @@ r = r.setInitialState(xstar);
 
 % start the controller
 
-control = atlasControllers.InstantaneousQPController(r, [],...
+control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r),...
    struct('use_mex', example_options.use_mex));
 control.quiet = example_options.quiet;
 
