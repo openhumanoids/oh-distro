@@ -35,14 +35,4 @@ r = compile(r);
 control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r),...
    struct('use_mex', 1));
 
-contact_sensor = zeros(length(r.getManipulator().body), 1);
-
-state_coder = drcFrames.AtlasState(r).lcmcoder;
-lc = lcm.lcm.LCM.getSingleton();
-input_monitor = drake.util.MessageMonitor(drake.lcmt_qp_controller_input, 'timestamp');
-state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
-lc.subscribe('QP_CONTROLLER_INPUT', input_monitor);
-lc.subscribe('EST_ROBOT_STATE', state_monitor);
-disp('controller ready');
-
 threadedControllermex(control.data_mex_ptr);
