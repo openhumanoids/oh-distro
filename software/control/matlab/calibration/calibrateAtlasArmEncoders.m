@@ -47,22 +47,6 @@ x_calib = Point(state_frame);
 x_calib.r_arm_shz = jlmin(joint_index_map.r_arm_shz) - delta;
 x_calib.r_arm_shx = jlmax(joint_index_map.r_arm_shx) + delta;
 x_calib.r_arm_ely = jlmin(joint_index_map.r_arm_ely) - delta;
-x_calib.r_arm_elx = jlmin(joint_index_map.r_arm_elx) - delta;
-x_calib.r_arm_uwy = jlmax(joint_index_map.r_arm_uwy) + delta;
-x_calib.r_arm_mwx = jlmin(joint_index_map.r_arm_mwx) - delta;
-x_calib.l_arm_shz = jlmax(joint_index_map.l_arm_shz) + delta;
-x_calib.l_arm_shx = jlmin(joint_index_map.l_arm_shx) - delta;
-x_calib.l_arm_ely = jlmin(joint_index_map.l_arm_ely) - delta;
-x_calib.l_arm_elx = jlmax(joint_index_map.l_arm_elx) + delta;
-x_calib.l_arm_uwy = jlmax(joint_index_map.l_arm_uwy) + delta;
-x_calib.l_arm_mwx = jlmax(joint_index_map.l_arm_mwx) + delta;
-x_calib = double(x_calib);
-q_calib = x_calib(1:nq);
-
-x_calib = Point(state_frame);
-x_calib.r_arm_shz = jlmin(joint_index_map.r_arm_shz) - delta;
-x_calib.r_arm_shx = jlmax(joint_index_map.r_arm_shx) + delta;
-x_calib.r_arm_ely = jlmin(joint_index_map.r_arm_ely) - delta;
 x_calib.r_arm_elx = jlmax(joint_index_map.r_arm_elx) + delta;
 x_calib.r_arm_uwy = jlmin(joint_index_map.r_arm_uwy) - delta;
 x_calib.r_arm_mwx = jlmin(joint_index_map.r_arm_mwx) - delta;
@@ -73,24 +57,24 @@ x_calib.l_arm_elx = jlmin(joint_index_map.l_arm_elx) - delta;
 x_calib.l_arm_uwy = jlmin(joint_index_map.l_arm_uwy) - delta;
 x_calib.l_arm_mwx = jlmax(joint_index_map.l_arm_mwx) + delta;
 x_calib = double(x_calib);
-q_calib2 = x_calib(1:nq);
+q_calib = x_calib(1:nq);
 
 % "correct" encoder readings at joint limits
 calib_val = Point(state_frame);
 
-calib_val.r_arm_shz = -0.8049;
-calib_val.r_arm_shx =  1.5795;
-calib_val.r_arm_ely = -9.0000e-04;
-calib_val.r_arm_elx = -2.3574;
-calib_val.r_arm_uwy = 3.1534;
-calib_val.r_arm_mwx = -1.1936;
+calib_val.r_arm_shz = -0.8050;
+calib_val.r_arm_shx =  1.5789;
+calib_val.r_arm_ely = -0.0017;
+calib_val.r_arm_elx = 0.0026;
+calib_val.r_arm_uwy = 0.0012;
+calib_val.r_arm_mwx = -1.1926;
 
-calib_val.l_arm_shz = 0.7662;
-calib_val.l_arm_shx = -1.5941;
-calib_val.l_arm_ely = -0.0164;
-calib_val.l_arm_elx = 2.3309;
-calib_val.l_arm_uwy = 3.1523;
-calib_val.l_arm_mwx = 1.0840;
+calib_val.l_arm_shz = 0.7677;
+calib_val.l_arm_shx = -1.5936;
+calib_val.l_arm_ely = -0.0167;
+calib_val.l_arm_elx = -0.0486;
+calib_val.l_arm_uwy = 0.0041;
+calib_val.l_arm_mwx = 1.0764;
 
 calib_val = double(calib_val);
 
@@ -214,33 +198,7 @@ end
     msg.entries(1) = joint_ind;
     msg.entries(2) = offsets;
     lc.publish('PARAM_SET',msg);
-    
-    
-    pause(5);
-    % move to better calib pos
-    atlasLinearMoveToPos(q_calib2,state_frame,ref_frame,act_idx,7);
-    
-    pause(5);
-    [ex2,~] = extra_frame.getMessage();
-    encoder_values_at_new_pose = [...
-                       num2str(ex2(JOINT_R_ARM_SHZ)) ',' ...
-                       num2str(ex2(JOINT_R_ARM_SHX)) ',' ...
-                       num2str(ex2(JOINT_R_ARM_ELY)) ',' ...
-                       num2str(ex2(JOINT_R_ARM_ELX)) ',' ...
-                       num2str(ex2(JOINT_R_ARM_UWY)) ',' ...
-                       num2str(ex2(JOINT_R_ARM_MWX)) ',' ...
-                       num2str(ex2(JOINT_L_ARM_SHZ)) ',' ...
-                       num2str(ex2(JOINT_L_ARM_SHX)) ',' ...
-                       num2str(ex2(JOINT_L_ARM_ELY)) ',' ...
-                       num2str(ex2(JOINT_L_ARM_ELX)) ',' ...
-                       num2str(ex2(JOINT_L_ARM_UWY)) ',' ...
-                       num2str(ex2(JOINT_L_ARM_MWX))];
-    disp('Calibrated encoder values at better position:')
-    disp(encoder_values_at_new_pose);
-    
-    % move to initial pos again
-    atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
-    
+
     disp('Arm encoder calibration completed.');
     send_status(1, 0, 0, 'Arm encoder calibration completed.');
 
