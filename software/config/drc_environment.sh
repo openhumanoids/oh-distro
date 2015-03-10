@@ -110,7 +110,7 @@ setup_network_sim()
 setup_lcm_communities()
 {
     export LCM_URL_DRC_DEFAULT="udpm://239.255.76.67:7667?ttl=1"
-    if [ "true" = ${DEBUG_NETWORK} ]
+    if [[ "true" = ${DEBUG_NETWORK} ]]
     then
 	export LCM_URL_DRC_RADIO=${LCM_URL_DRC_DEFAULT}
 	export LCM_URL_DRC_CONTROL=${LCM_URL_DRC_DEFAULT}
@@ -127,7 +127,7 @@ setup_lcm_communities()
 }
 
 # remove this flag to run with isolated lcm communities
-export DEBUG_NETWORK="true"
+#export DEBUG_NETWORK="true"
 
 set_drc_base
 #setup_drcsim
