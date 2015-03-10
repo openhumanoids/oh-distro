@@ -17,7 +17,7 @@ r = DRCAtlas();
 if exist([logfile '.mat'], 'file')
   load([logfile '.mat']);
 else
-  [t_x,x_data,t_u,u_data_full,t_vicon,~,~,~,t_extra,extra_data,vicon_data_struct] = parseAtlasViconLog(r,logfile);
+  [t_x,x_data,t_u,u_data_full,t_vicon,vicon_data_full,~,~,t_extra,extra_data,vicon_data_struct] = parseAtlasViconLog(r,logfile);
   save([logfile '.mat'], 't_x', 'x_data', 't_u', 'u_data_full', 't_vicon', 'vicon_data_full', 't_extra', 'extra_data', 'vicon_data_struct');
 end
 
