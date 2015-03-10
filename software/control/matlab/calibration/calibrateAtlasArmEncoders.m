@@ -69,12 +69,12 @@ calib_val.r_arm_elx = -2.3574;
 calib_val.r_arm_uwy = 3.1534;
 calib_val.r_arm_mwx = -1.1936;
 
-calib_val.l_arm_shz = 0.6949;
-calib_val.l_arm_shx = -1.5850;
-calib_val.l_arm_ely = 0.0730;
-calib_val.l_arm_elx = 2.2564;
-calib_val.l_arm_uwy = 3.0513;
-calib_val.l_arm_mwx = 0.9395;
+calib_val.l_arm_shz = 0.7662;
+calib_val.l_arm_shx = -1.5941;
+calib_val.l_arm_ely = -0.0164;
+calib_val.l_arm_elx = 2.3309;
+calib_val.l_arm_uwy = 3.1523;
+calib_val.l_arm_mwx = 1.0840;
 
 calib_val = double(calib_val);
 
