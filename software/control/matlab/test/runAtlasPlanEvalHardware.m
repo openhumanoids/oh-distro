@@ -79,7 +79,12 @@ standing_plan = StandingPlan.from_standing_state(x0, r);
 % queue = {standing_plan, walking_plan};
 
 queue = {standing_plan};
-planeval = DRCPlanEval(r, 'hardware', queue);
+if options.run_in_simul_mode
+  mode = 'sim';
+else
+  mode = 'hardware';
+end
+planeval = DRCPlanEval(r, mode, queue);
 
 disp('plan eval ready');
 while true
