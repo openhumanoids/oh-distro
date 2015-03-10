@@ -31,7 +31,7 @@ t_x = t_x - t_x(1);
 t_extra = t_extra - t_extra(1);
 
 % trim data
-min_index = find(t_x < min_time, 1); if isempty(min_index), min_index = 1; end;
+min_index = find(t_x > min_time, 1); if isempty(min_index), min_index = 1; end;
 max_index = find(t_x > max_time, 1); if isempty(max_index), max_index = length(t_x); end;
 
 t_x = t_x(min_index : max_index);
