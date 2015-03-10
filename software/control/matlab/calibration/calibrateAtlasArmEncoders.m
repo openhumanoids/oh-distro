@@ -59,6 +59,22 @@ x_calib.l_arm_mwx = jlmax(joint_index_map.l_arm_mwx) + delta;
 x_calib = double(x_calib);
 q_calib = x_calib(1:nq);
 
+x_calib = Point(state_frame);
+x_calib.r_arm_shz = jlmin(joint_index_map.r_arm_shz) - delta;
+x_calib.r_arm_shx = jlmax(joint_index_map.r_arm_shx) + delta;
+x_calib.r_arm_ely = jlmin(joint_index_map.r_arm_ely) - delta;
+x_calib.r_arm_elx = jlmax(joint_index_map.r_arm_elx) + delta;
+x_calib.r_arm_uwy = jlmin(joint_index_map.r_arm_uwy) - delta;
+x_calib.r_arm_mwx = jlmin(joint_index_map.r_arm_mwx) - delta;
+x_calib.l_arm_shz = jlmax(joint_index_map.l_arm_shz) + delta;
+x_calib.l_arm_shx = jlmin(joint_index_map.l_arm_shx) - delta;
+x_calib.l_arm_ely = jlmin(joint_index_map.l_arm_ely) - delta;
+x_calib.l_arm_elx = jlmin(joint_index_map.l_arm_elx) - delta;
+x_calib.l_arm_uwy = jlmin(joint_index_map.l_arm_uwy) - delta;
+x_calib.l_arm_mwx = jlmax(joint_index_map.l_arm_mwx) + delta;
+x_calib = double(x_calib);
+q_calib2 = x_calib(1:nq);
+
 % "correct" encoder readings at joint limits
 calib_val = Point(state_frame);
 
@@ -129,13 +145,13 @@ end
     % move to calib pos
     atlasLinearMoveToPos(q_calib,state_frame,ref_frame,act_idx,7);
 
-    pause(0.1);
+    pause(5);
     % record encoder values
     [ex,~] = extra_frame.getMessage();
 
     % move to initial pos again
     atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
-
+    
     % display encoder offsets 
     ex = ex(1:28); % just grab state off the robot
     enc_diff = calib_val(r.stateToBDIInd) - ex;
@@ -198,6 +214,32 @@ end
     msg.entries(1) = joint_ind;
     msg.entries(2) = offsets;
     lc.publish('PARAM_SET',msg);
+    
+    
+    pause(5);
+    % move to better calib pos
+    atlasLinearMoveToPos(q_calib2,state_frame,ref_frame,act_idx,7);
+    
+    pause(5);
+    [ex2,~] = extra_frame.getMessage();
+    encoder_values_at_new_pose = [...
+                       num2str(ex2(JOINT_R_ARM_SHZ)) ',' ...
+                       num2str(ex2(JOINT_R_ARM_SHX)) ',' ...
+                       num2str(ex2(JOINT_R_ARM_ELY)) ',' ...
+                       num2str(ex2(JOINT_R_ARM_ELX)) ',' ...
+                       num2str(ex2(JOINT_R_ARM_UWY)) ',' ...
+                       num2str(ex2(JOINT_R_ARM_MWX)) ',' ...
+                       num2str(ex2(JOINT_L_ARM_SHZ)) ',' ...
+                       num2str(ex2(JOINT_L_ARM_SHX)) ',' ...
+                       num2str(ex2(JOINT_L_ARM_ELY)) ',' ...
+                       num2str(ex2(JOINT_L_ARM_ELX)) ',' ...
+                       num2str(ex2(JOINT_L_ARM_UWY)) ',' ...
+                       num2str(ex2(JOINT_L_ARM_MWX))];
+    disp('Calibrated encoder values at better position:')
+    disp(encoder_values_at_new_pose);
+    
+    % move to initial pos again
+    atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
     
     disp('Arm encoder calibration completed.');
     send_status(1, 0, 0, 'Arm encoder calibration completed.');
