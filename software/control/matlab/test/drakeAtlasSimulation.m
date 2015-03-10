@@ -3,7 +3,7 @@ function drakeAtlasSimulation(atlas_version, visualize, add_hokuyo, add_hands, w
 if nargin < 1, atlas_version = 4; end
 if nargin < 2, visualize = false; end
 if nargin < 3, add_hokuyo = true; end
-if nargin < 4, add_hands = false; end
+if nargin < 4, add_hands = 0; end
 if nargin < 5, world_name = ''; end
 
 % IF YOU WANT MASS EST LOOK HERE
@@ -47,9 +47,9 @@ options.foot_force_sensors = false; % This works (you'll have to change
 % but is slow right now.
 sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
 terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
-if (add_hands)
-  options.hands = 'robotiq';
-end
+
+options.hands = getHandString(add_hands);
+
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
     1.2, 0.0, 0.8, 1, 0.30;];
@@ -150,7 +150,8 @@ while(~done)
   sys = mimoFeedback(lcmInputBlock, sys, [], [], [], outs);
   % LCM interpret in for hand
   if (add_hands)
-    lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
+    %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
+    lcmRobotiqInputBlock = getHandDriver(add_hands, r_complete, options);
     sys = mimoFeedback(lcmRobotiqInputBlock, sys, [], [], [], outs);
   end
   
@@ -175,5 +176,33 @@ while(~done)
     simulate(sys,[0.0,Inf], xstar_complete, options);
   catch err
     disp('caught error in simulate(): restarting sim');
+  end
+end
+end
+
+function handString = getHandString(hand_id)
+  switch hand_id
+    case 1
+      handString = 'robotiq';
+    case 2
+      handString = 'robotiq_tendons';
+    case 3
+      handString = 'robotiq_simple';
+    otherwise
+      handString = 'none';
+  end
+end
+
+function handDriver = getHandDriver(hand_id, r_complete, options)
+  switch hand_id
+    case 1
+      handDriver = LCMInputFromRobotiqCommandBlock(r_complete, options);
+    case 2
+      handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
+    case 3
+      handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, options);
+    otherwise
+      handDriver = [];
+      disp('unexpected hand type, should be {1, 2, 3}')
   end
 end

@@ -1,4 +1,4 @@
-classdef LCMInputFromRobotiqCommandBlockTendons < MIMODrakeSystem
+classdef LCMInputFromRobotiqCommandBlockSimplePD < MIMODrakeSystem
   
   properties
     lc; % LCM
@@ -17,10 +17,12 @@ classdef LCMInputFromRobotiqCommandBlockTendons < MIMODrakeSystem
     in_indices;
     % Output order
     out_indices;
+
+    pp;
   end
   
   methods
-    function obj = LCMInputFromRobotiqCommandBlockTendons(r, options)
+    function obj = LCMInputFromRobotiqCommandBlockSimplePD(r, options)
       typecheck(r,{'Atlas', 'IRB140'});
 
       output_frame = r.getInputFrame().getFrameByName('HandInput');
@@ -62,15 +64,38 @@ classdef LCMInputFromRobotiqCommandBlockTendons < MIMODrakeSystem
           obj.lcmtype_constructor = constructors(i);
         end
       end
-      
+      q_closed = [1.2427, 1.0864, -0.1336, 1.2427, 1.0864,-0.1336, 1.2427, 0.9114, 0.0000]';
+      q_open = zeros(numel(q_closed), 1);
+      obj.pp = spline([0, 1], [q_open, q_closed]);
+
       % Precompute indices for our position control
-      obj.in_indices = [obj.getInputFrame.findCoordinateIndex('finger_1_joint_0');
+      obj.in_indices = [obj.getInputFrame.findCoordinateIndex('finger_middle_joint_0');
+                        obj.getInputFrame.findCoordinateIndex('finger_middle_joint_1');
+                        obj.getInputFrame.findCoordinateIndex('finger_middle_joint_2');
+                        obj.getInputFrame.findCoordinateIndex('finger_1_joint_0');
+                        obj.getInputFrame.findCoordinateIndex('finger_1_joint_1');
+                        obj.getInputFrame.findCoordinateIndex('finger_1_joint_2');
                         obj.getInputFrame.findCoordinateIndex('finger_2_joint_0');
-                        obj.getInputFrame.findCoordinateIndex('finger_middle_joint_0');
+                        obj.getInputFrame.findCoordinateIndex('finger_2_joint_1');
+                        obj.getInputFrame.findCoordinateIndex('finger_2_joint_2');
+                        obj.getInputFrame.findCoordinateIndex('finger_middle_joint_0dot');
+                        obj.getInputFrame.findCoordinateIndex('finger_middle_joint_1dot');
+                        obj.getInputFrame.findCoordinateIndex('finger_middle_joint_2dot');
                         obj.getInputFrame.findCoordinateIndex('finger_1_joint_0dot');
+                        obj.getInputFrame.findCoordinateIndex('finger_1_joint_1dot');
+                        obj.getInputFrame.findCoordinateIndex('finger_1_joint_2dot');
                         obj.getInputFrame.findCoordinateIndex('finger_2_joint_0dot');
-                        obj.getInputFrame.findCoordinateIndex('finger_middle_joint_0dot')];
-      obj.out_indices = [obj.getOutputFrame.findCoordinateIndex('gripper')];
+                        obj.getInputFrame.findCoordinateIndex('finger_2_joint_1dot');
+                        obj.getInputFrame.findCoordinateIndex('finger_2_joint_2dot')];
+      obj.out_indices = [obj.getOutputFrame.findCoordinateIndex('finger_middle_joint_0');
+                        obj.getOutputFrame.findCoordinateIndex('finger_middle_joint_1');
+                        obj.getOutputFrame.findCoordinateIndex('finger_middle_joint_2');
+                        obj.getOutputFrame.findCoordinateIndex('finger_1_joint_0');
+                        obj.getOutputFrame.findCoordinateIndex('finger_1_joint_1');
+                        obj.getOutputFrame.findCoordinateIndex('finger_1_joint_2');
+                        obj.getOutputFrame.findCoordinateIndex('finger_2_joint_0');
+                        obj.getOutputFrame.findCoordinateIndex('finger_2_joint_1');
+                        obj.getOutputFrame.findCoordinateIndex('finger_2_joint_2')];
     end
     
     function x=decode(obj, data)
@@ -94,7 +119,7 @@ classdef LCMInputFromRobotiqCommandBlockTendons < MIMODrakeSystem
         cmd = obj.decode(data);
         % Use this to set our goal state
         if cmd.mode==0
-          obj.target_positions(:) = -1.0*(cmd.position/255);
+          obj.target_positions(:) = (cmd.position/255.0);
         else
           % Don't know how to handle this yet
           fprintf('Nonzero hand control mode\n')
@@ -102,7 +127,18 @@ classdef LCMInputFromRobotiqCommandBlockTendons < MIMODrakeSystem
         
       end
       
-      efforts(obj.out_indices) = min(obj.target_positions);
+      % pd position control
+      % I should vectorize this...
+      pos = hand_state(obj.in_indices(1:9));
+      vel = hand_state(obj.in_indices(10:18));
+      
+      kp = -3;
+      kd = 0.1;
+
+      q_desired = ppval(obj.pp, max(obj.target_positions));
+
+      efforts(obj.out_indices) = kp*(pos-q_desired(obj.in_indices(1:9))) - kd*vel;
+      
       varargout = {efforts};
     end
   end
