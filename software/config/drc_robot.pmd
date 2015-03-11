@@ -136,6 +136,12 @@ group "8.network" {
         exec = "drc-network-shaper -r base -c drc_robot.cfg -l -p /tmp -i link2";
         host = "localhost";
     }
+
+#    cmd "base_tunnel-link3" {
+#        exec = "bot-lcm-tunnel -p 16384 -u ";
+#        host = "localhost";
+#    }
+
     cmd "base_network_shaper-link3" {
         exec = "drc-network-shaper -r base -c drc_robot.cfg -l -p /tmp  -i link3";
         host = "localhost";
