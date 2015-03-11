@@ -61,8 +61,9 @@ classdef StatelessWalkingPlanner
         walking_plan_data = walking_plan_data.fix_link(r, kinsol, r.findLinkId('l_hand+l_hand_point_mass'), [0; 0.1; 0], 0.05, 0);
       end
 
-      
-      walking_ctrl_data = WalkingControllerData.from_drake_walking_data(walking_plan_data);
+      % Convert the walking plan data to the DRC type that extends
+      % in terms of LCM transcription methods
+      walking_ctrl_data = DRCQPWalkingPlan.from_drake_walking_data(walking_plan_data, r);
       ts = linspace(0,walking_ctrl_data.comtraj.tspan(2),150);
 
       lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');

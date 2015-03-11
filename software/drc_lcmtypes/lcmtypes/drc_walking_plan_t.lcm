@@ -5,8 +5,8 @@ struct walking_plan_t
 	int64_t utime;
 	string robot_name;
 
-	int32_t n_qtraj_bytes;
-  byte qtraj[n_qtraj_bytes];
+	int32_t n_xtraj_bytes;
+  byte xtraj[n_xtraj_bytes];
 
 	int32_t n_support_times;
   float support_times[n_support_times];
@@ -35,6 +35,9 @@ struct walking_plan_t
 	int32_t n_zmptraj_bytes;
   byte zmptraj[n_zmptraj_bytes];
 
+  int32_t n_D_ls_bytes;
+  byte D_ls[n_D_ls_bytes];
+
   int32_t n_link_constraints_bytes;
   byte link_constraints[n_link_constraints_bytes];
 
@@ -43,5 +46,7 @@ struct walking_plan_t
   float t_offset;
 
   boolean ignore_terrain;
+
+  string gain_set;
 }
 
