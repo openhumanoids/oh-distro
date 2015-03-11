@@ -93,7 +93,7 @@ void LCM2ROS::sendBasicSteps(){
   //mout.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   mout.transferTime = 1.0;
   mout.swingTime = 1.0;
-  mout.trajectoryWaypointGenerationMethod = 0;
+  //mout.trajectoryWaypointGenerationMethod = 0;
   mout.footstepDataList.push_back( createFootStepList(LEFT , 0,  0.12,   0, 1,0,0,0) );
   mout.footstepDataList.push_back( createFootStepList(RIGHT, 0, -0.12,   0, 1,0,0,0) );
   mout.footstepDataList.push_back( createFootStepList(LEFT , 0.1,  0.12, 0, 1,0,0,0) );
@@ -115,7 +115,7 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   ihmc_msgs::FootstepDataListMessage mout;
   mout.transferTime = 1.2;
   mout.swingTime = 1.2;
-  mout.trajectoryWaypointGenerationMethod = 0;
+  // mout.trajectoryWaypointGenerationMethod = 0;
   for (int i=2; i < msg->footstep_plan.num_steps; i++){ // skip the first two standing steps
     drc::footstep_t s = msg->footstep_plan.footsteps[i];
     mout.footstepDataList.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z, 

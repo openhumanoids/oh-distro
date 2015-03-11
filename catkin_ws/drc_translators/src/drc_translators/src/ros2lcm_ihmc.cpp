@@ -155,18 +155,18 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   }
 
   for (int i = 0; i < n_joints; i++)  {
-    if (msg_out.joint_name[i] == "l_arm_shz"){
-      msg_out.joint_name[i] = "l_arm_usy";
-    }
+    //if (msg_out.joint_name[i] == "l_arm_shz"){
+    //  msg_out.joint_name[i] = "l_arm_usy";
+    //}
     if (msg_out.joint_name[i] == "l_arm_wry"){
       msg_out.joint_name[i] = "l_arm_uwy";
     }
     if (msg_out.joint_name[i] == "l_arm_wrx"){
       msg_out.joint_name[i] = "l_arm_mwx";
     }
-    if (msg_out.joint_name[i] == "r_arm_shz"){
-      msg_out.joint_name[i] = "r_arm_usy";
-    }
+    //if (msg_out.joint_name[i] == "r_arm_shz"){
+    //  msg_out.joint_name[i] = "r_arm_usy";
+    //}
     if (msg_out.joint_name[i] == "r_arm_wry"){
       msg_out.joint_name[i] = "r_arm_uwy";
     }
