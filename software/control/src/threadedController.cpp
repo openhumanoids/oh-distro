@@ -14,6 +14,9 @@
 
 namespace {
 
+struct ThreadedControllerOptions {
+  std::string atlas_command_channel;
+};
 
 std::atomic<bool> done(false);
 
@@ -221,7 +224,7 @@ public:
 LCMHandler lcmHandler;
 LCMControlReceiver controlReceiver(&lcmHandler);
 
-void threadLoop()
+void threadLoop(std::string &atlas_command_channel)
 {
 
   QPControllerOutput qp_output;
@@ -253,6 +256,10 @@ void threadLoop()
 
     int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, solveArgs.b_contact_force, &qp_output, solveArgs.debug);
     (void)info; // info not used
+    std::cout << "u: " << qp_output.u << std::endl;
+    std::cout << "q: " << qp_output.q_ref << std::endl;
+    std::cout << "qd: " << qp_output.qd_ref << std::endl;
+    std::cout << "qdd: " << qp_output.qdd << std::endl;
 
     AtlasParams *params; 
     std::map<string,AtlasParams>::iterator it;
@@ -268,7 +275,7 @@ void threadLoop()
     params = &(it->second);
     // publish ATLAS_COMMAND
     drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, &params->hardware_gains);
-    lcmHandler.LCMHandle->publish("ATLAS_COMMAND_DEBUG", command_msg);
+    lcmHandler.LCMHandle->publish(atlas_command_channel, command_msg);
 
 
 
@@ -284,7 +291,7 @@ void threadLoop()
 
 
 
-void controllerLoop(NewQPControllerData *pdata)
+void controllerLoop(NewQPControllerData *pdata, std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 {
   state_driver.reset(new RobotStateDriver(pdata->state_coordinate_names));
   command_driver.reset(new AtlasCommandDriver(&pdata->input_joint_names, pdata->state_coordinate_names));
@@ -299,7 +306,7 @@ void controllerLoop(NewQPControllerData *pdata)
 
   std::cout << "starting control loop... " << std::endl;
 
-  threadLoop();
+  threadLoop(ctrl_opts->atlas_command_channel);
 }
 
 
