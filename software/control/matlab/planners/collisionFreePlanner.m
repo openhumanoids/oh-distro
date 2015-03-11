@@ -268,26 +268,8 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
         q_path = extractPath(T_smooth, path_ids_smooth);
         path_length = size(q_path,2);
 
-        % Scale timing to obey joint velocity limits
-        % Create initial spline
-        q_traj = PPTrajectory(pchip(linspace(0, 1, path_length), q_path(q_idx,:)));
-        t = linspace(0, 1, 10*path_length);
-        q_path = eval(q_traj, t);
-
-        % Determine max joint velocity at midpoint of  each segment
-        t_mid = mean([t(2:end); t(1:end-1)],1);
-        v_mid = q_traj.fnder().eval(t_mid);
-        scale_factor = max(abs(bsxfun(@rdivide, v_mid, options.v_max)), [], 1);
-
-        % Adjust durations to keep velocity below max
-        t_scaled = [0, cumsum(diff(t).*scale_factor)];
-        tf = t_scaled(end);
-
-        % Warp time to give gradual acceleration/deceleration
-        t_scaled = tf*(-real(acos(2*t_scaled/tf-1)+pi)/2);
-        [t_scaled, idx_unique] = unique(t_scaled,'stable');
-
-        xtraj = PPTrajectory(pchip(t_scaled,[q_path(:,idx_unique); zeros(r.getNumVelocities(),numel(t_scaled))]));
+        % Create plan trajectory over the interval [0, 1]
+        xtraj = PPTrajectory(pchip(linspace(0, 1, path_length), [q_path(q_idx,:); zeros(r.getNumVelocities(), size(q_path,2))] ));
       else
         xtraj = [];
         info = 13;
