@@ -95,6 +95,10 @@ cmd "drakeAtlasSimulation Walking Flat" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 0, 1, 0, '');\"";
     host = "base";
 }
+cmd "drakeAtlasSimulation Walking Flat (Vis)" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 1, 0, '');\"";
+    host = "base";
+}
 cmd "drakeAtlasSimulation Walking Two Steps" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 0, 1, 0, 'steps');\"";
     host = "base";
@@ -139,6 +143,31 @@ cmd "systemwide-tests-valve" {
 cmd "systemwide-tests-walking" {
     exec = "drc-systemwide-tests walking";
     host = "localhost";
+}
+
+cmd "PlanEval" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(); \"";
+    host = "base";
+}
+
+cmd "InstQP" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(); \"";
+    host = "base";
+}
+
+script "-1.run_split_controller_simul" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+
+    start cmd "drakeAtlasSimulation Walking Flat (Vis)";
+    start cmd "PlanEval";
+    start cmd "InstQP";
 }
 
 script "0.run_all_but_simul_and_controller" {
