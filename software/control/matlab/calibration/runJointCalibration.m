@@ -8,6 +8,8 @@ v_norm_limit = getOption(options, 'v_norm_limit');
 num_poses = getOption(options, 'num_poses');
 use_extra_data = getOption(options, 'use_extra_data', false);
 just_visualize_vicon = getOption(options, 'just_visualize_vicon', false);
+min_time = getOption(options, 'min_time', -inf);
+max_time = getOption(options, 'max_time', inf);
 
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 r = DRCAtlas();
@@ -27,6 +29,13 @@ t_offset = min(t_x) - min(t_vicon) - vicon_lag;
 t_vicon = t_vicon - t_x(1) + t_offset;
 t_x = t_x - t_x(1);
 t_extra = t_extra - t_extra(1);
+
+% trim data
+min_index = find(t_x > min_time, 1); if isempty(min_index), min_index = 1; end;
+max_index = find(t_x > max_time, 1); if isempty(max_index), max_index = length(t_x); end;
+
+t_x = t_x(min_index : max_index);
+x_data = x_data(:, min_index : max_index);
 
 nq = r.getNumPositions();
 nv = r.getNumVelocities();
@@ -57,12 +66,6 @@ if use_extra_data
   v_data_full(r.stateToBDIInd(extra_data_valid_indices), :) = interp1(t_extra, v_data_extra(extra_data_valid_indices, :)', t_x)';
 end
 
-pose_indices = findCalibrationPoseIndices(v_data_full, num_poses, v_norm_limit);
-if show_pose_indices
-  showPoseIndices(t_x, t_u, t_vicon, v_data_full, u_data_full, vicon_data_full, pose_indices);
-end
-num_poses = length(pose_indices);
-
 bodies = cell(nb, 1);
 for i = 1 : nb
   bodies{i} = r.findLinkId(body_names{i});
@@ -74,6 +77,13 @@ for i = 2 : nb
   joint_indices = [joint_indices; additional_joint_indices]; %#ok<AGROW>
 end
 q_indices = [r.getBody(joint_indices).position_num];
+v_indices = [r.getBody(joint_indices).velocity_num];
+
+pose_indices = findCalibrationPoseIndices(v_data_full(v_indices, :), num_poses, v_norm_limit);
+if show_pose_indices
+  showPoseIndices(t_x, v_data_full(v_indices, :), pose_indices);
+end
+num_poses = length(pose_indices);
 
 [q_data, motion_capture_data, u_data] = selectPoseData(t_x, t_vicon, t_u, q_data_full, vicon_data_struct, vicon_object_names, u_data_full, pose_indices);
 
@@ -173,31 +183,11 @@ for i = 1 : num_poses
 end
 end
 
-function showPoseIndices(t_x, t_u, t_vicon, v_data_full, u_data_full, vicon_data_full, pose_indices)
+function showPoseIndices(t_x, v_data_full, pose_indices)
 figure();
 v_norm = sum(sqrt(v_data_full .* v_data_full), 1);
 hold on;
 plot(t_x, v_norm / max(v_norm), 'b');
-
-u_dt = mean(diff(t_u));
-filter = designfilt('lowpassiir', 'FilterOrder', 1, 'PassbandFrequency', 1, 'PassbandRipple', 1, 'SampleRate', 1 / u_dt);
-u_data_dot = bsxfun(@rdivide, diff(u_data_full, 1, 2), diff(t_u)');
-for i = 1 : size(u_data_dot, 1)
-  u_data_dot(i, :) = filtfilt(filter, u_data_dot(i, :));
-end
-u_data_dot_norm = sqrt(sum(u_data_dot .* u_data_dot, 1));
-plot(t_u(1:end -1), u_data_dot_norm / max(u_data_dot_norm), 'g')
-
-vicon_dt = mean(diff(t_vicon));
-filter = designfilt('lowpassiir', 'FilterOrder', 1, 'PassbandFrequency', 1, 'PassbandRipple', 1, 'SampleRate', 1 / vicon_dt);
-vicon_data_dot = bsxfun(@rdivide, diff(vicon_data_full, 1, 2), diff(t_vicon)');
-for i = 1 : size(vicon_data_dot, 1)
-  vicon_data_dot(i, :) = filtfilt(filter, vicon_data_dot(i, :));
-end
-vicon_data_dot_norm = sqrt(sum(vicon_data_dot .* vicon_data_dot, 1));
-
-%   plot(t_vicon(1:end - 10001), vicon_data_dot_norm(1 : end - 10000) / max(vicon_data_dot_norm(1 : end - 10000)), 'c')
-plot(t_vicon(1:end - 1), vicon_data_dot_norm / max(vicon_data_dot_norm), 'c')
 
 plot(t_x(pose_indices), zeros(size(pose_indices)), 'r*');
 

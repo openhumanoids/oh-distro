@@ -62,35 +62,20 @@ q_calib = x_calib(1:nq);
 % "correct" encoder readings at joint limits
 calib_val = Point(state_frame);
 
-% old values for atlas v3
-% calib_val.r_arm_usy = 0.79804;
-% calib_val.r_arm_shx = 1.57022;
-% calib_val.r_arm_ely = -0.01648;
-% calib_val.r_arm_elx = -0.00297;
-% calib_val.r_arm_uwy = 0.02374;
-% calib_val.r_arm_mwx = -1.22977;
+calib_val.r_arm_shz = -0.8050;
+calib_val.r_arm_shx =  1.5789;
+calib_val.r_arm_ely = -0.0017;
+calib_val.r_arm_elx = 0.0026;
+calib_val.r_arm_uwy = 0.0012;
+calib_val.r_arm_mwx = -1.1926;
 
-calib_val.r_arm_shz = 0.02314   -0.776993;
-calib_val.r_arm_shx =  1.58;%0.4482   +1.14736;
-calib_val.r_arm_ely = -0.01648;%-0.671    +0.69366;
-calib_val.r_arm_elx = -0.00297;%-0.5263   +0.534128;
-calib_val.r_arm_uwy = -0.8335   +0.832932;
-calib_val.r_arm_mwx = -1.22977;%-1.036    -0.333815;
+calib_val.l_arm_shz = 0.7677;
+calib_val.l_arm_shx = -1.5936;
+calib_val.l_arm_ely = -0.0167;
+calib_val.l_arm_elx = -0.0486;
+calib_val.l_arm_uwy = 0.0041;
+calib_val.l_arm_mwx = 1.0764;
 
-
-
-calib_val.l_arm_shz = -calib_val.r_arm_shz;
-calib_val.l_arm_shx = -1.58616;
-calib_val.l_arm_ely = -0.04079;
-calib_val.l_arm_elx = 0.00481;
-calib_val.l_arm_uwy = 0.02515;
-calib_val.l_arm_mwx = 1.16325;
-% calib_val.l_arm_shz = 0.79858;
-% calib_val.l_arm_shx = -1.58616;
-% calib_val.l_arm_ely = -0.04079;
-% calib_val.l_arm_elx = 0.00481;
-% calib_val.l_arm_uwy = 0.02515;
-% calib_val.l_arm_mwx = 1.16325;
 calib_val = double(calib_val);
 
 behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
@@ -213,7 +198,6 @@ end
     msg.entries(1) = joint_ind;
     msg.entries(2) = offsets;
     lc.publish('PARAM_SET',msg);
-    
     disp('Arm encoder calibration completed.');
     send_status(1, 0, 0, 'Arm encoder calibration completed.');
 
