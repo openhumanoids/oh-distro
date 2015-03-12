@@ -8,7 +8,7 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, acceleration_param)
   % Scale timing to obey joint velocity limits
   % Create initial spline
   t = linspace(qtraj.tspan(1), qtraj.tspan(2),200);
-  x_path = eval(qtraj, t); %#ok
+  q_path = eval(qtraj, t); %#ok
 
   % Determine max joint velocity at midpoint of  each segment
   t_mid = mean([t(2:end); t(1:end-1)],1);
@@ -23,6 +23,6 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, acceleration_param)
   t_warped = tf*warpTime(t_scaled/tf, acceleration_param);
   [t_unique, idx_unique] = unique(t_warped,'stable');
 
-  qtraj_rescaled = PPTrajectory(pchip(t_unique, x_path(:,idx_unique)));
+  qtraj_rescaled = PPTrajectory(pchip(t_unique, q_path(:,idx_unique)));
 end
 
