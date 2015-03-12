@@ -52,18 +52,19 @@ bool configure(const std::string& iConfigFile, const std::string& iName,
     std::cout << "error: no bindings in config" << std::endl;
     return false;
   }
-  if ((bindingStrings.size() % 4) != 0) {
-    std::cout << "error: bindings must all have four entries" << std::endl;
+  if ((bindingStrings.size() % 5) != 0) {
+    std::cout << "error: bindings must all have five entries" << std::endl;
     return false;
   }
 
   int numBindings = 0;
-  for (int i = 0; i < (int)bindingStrings.size(); i+=4) {
+  for (int i = 0; i < (int)bindingStrings.size(); i+=5) {
     Bridge::BindingSpec spec;
     spec.mInputCommunity  = bindingStrings[i+0];
     spec.mOutputCommunity = bindingStrings[i+1];
     spec.mInputChannel    = bindingStrings[i+2];
     spec.mOutputChannel   = bindingStrings[i+3];
+    spec.mOutputFrequency = stoi(bindingStrings[i+4]);
     oBridge.addBinding(spec);
     ++numBindings;
   }
