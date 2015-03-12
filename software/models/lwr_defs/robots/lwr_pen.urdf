@@ -439,9 +439,9 @@
     <safety_controller k_position="30" k_velocity="30" soft_lower_limit="-2.93215314335" soft_upper_limit="2.93215314335"/>
     <dynamics damping="1.0"/>
     <parent link="lwr_arm_6_link"/>
-    <child link="lwr_arm_7_link"/>
+    <child link="l_hand"/>
   </joint>
-  <link name="lwr_arm_7_link">
+  <link name="l_hand">
     <inertial>
       <mass value="0.2"/>
       <origin xyz="0 0 0"/>
@@ -461,7 +461,7 @@
       </geometry>
     </collision>
   </link>
-  <gazebo reference="lwr_arm_7_link">
+  <gazebo reference="l_hand">
     <gravity>false</gravity>
   </gazebo>
   <transmission name="lwr_arm_6_trans" type="SimpleTransmission">
@@ -470,11 +470,32 @@
     <mechanicalReduction>1.0</mechanicalReduction>
   </transmission>
 
+  <joint name="left_palm_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="l_hand" />
+    <child link="left_palm"/>
+  </joint>
+  <link name="left_palm"/>
+
+  <joint name="l_hand_face_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="1.57 0 0" />
+    <parent link="l_hand" />
+    <child link="l_hand_face"/>
+  </joint>
+  <link name="l_hand_face"/>
+
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="l_hand" />
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="l_hand_force_torque"/>
+
   <!-- Pen Tool-->
     <joint name="pen_base_joint" type="fixed" >
       <origin rpy="0 0 0" xyz="0 0 0.11"/>
       <insert_block name="origin" />
-      <parent link="lwr_arm_7_link" />
+      <parent link="l_hand" />
       <child link="pen_base_link" />
     </joint>
 
@@ -527,7 +548,7 @@
     <joint name="pen_ori_joint" type="fixed" >
       <origin rpy="0 0 0" xyz="0 0 0.11"/>
       <insert_block name="origin" />
-      <parent link="lwr_arm_7_link" />
+      <parent link="l_hand" />
       <child link="pen_ori_link" />
     </joint>
 
