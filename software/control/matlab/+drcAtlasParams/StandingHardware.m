@@ -5,7 +5,7 @@ classdef StandingHardware < atlasParams.Standing
       obj = obj@atlasParams.Standing(r);
 
       force_controlled_joint_names = {'leg', 'back_bkx'};
-      obj.hardware_gains = drcAtlasParams.getHardwareGains(r, force_controlled_joint_names);
+      obj.hardware = drcAtlasParams.getHardwareParams(r, force_controlled_joint_names);
 
       % integral gains for position controlled joints
       integral_gains = zeros(getNumPositions(r),1);

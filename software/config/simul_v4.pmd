@@ -146,7 +146,7 @@ cmd "systemwide-tests-walking" {
 }
 
 cmd "PlanEval" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(); \"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1); \"";
     host = "base";
 }
 

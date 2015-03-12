@@ -1,4 +1,4 @@
-function gains = getHardwareGains(r, force_controlled_joint_names)
+function params = getHardwareParams(r, force_controlled_joint_names)
 typecheck(r, 'DRCAtlas');
 typecheck(force_controlled_joint_names, 'cell');
 
@@ -17,3 +17,12 @@ gains.k_f_p(position_controlled_joints) = 0;
 gains.ff_f_d(position_controlled_joints) = 0;
 gains.ff_qd(position_controlled_joints) = 0;
 gains.ff_qd_d(position_controlled_joints) = 0;
+
+joint_is_force_controlled = zeros(r.getNumInputs(), 1);
+joint_is_position_controlled = zeros(r.getNumInputs(), 1);
+joint_is_force_controlled(force_controlled_joints) = 1;
+joint_is_position_controlled(position_controlled_joints) = 1;
+
+params = struct('gains', gains,...
+                'joint_is_force_controlled', joint_is_force_controlled,...
+                'joint_is_position_controlled', joint_is_position_controlled);

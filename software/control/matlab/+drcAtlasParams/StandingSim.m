@@ -5,7 +5,7 @@ classdef StandingSim < atlasParams.Standing
       obj = obj@atlasParams.Standing(r);
 
       force_controlled_joint_names = {'leg', 'arm', 'back', 'neck'};
-      obj.hardware_gains = drcAtlasParams.getHardwareGains(r, force_controlled_joint_names);
+      obj.hardware = drcAtlasParams.getHardwareParams(r, force_controlled_joint_names);
 
       obj.body_motion(r.findLinkId('pelvis')).Kp = [150; 150; 150; 200; 200; 200];
       obj.body_motion(r.findLinkId('pelvis')).damping_ratio = 0.6;

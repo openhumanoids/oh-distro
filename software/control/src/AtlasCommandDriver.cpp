@@ -93,6 +93,8 @@ drc::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *q
 
   msg.utime = (long)(t*1000000);
   int state_index, drake_input_index, robot_input_index;
+  // cout << "force: " << endl << params.joint_is_force_controlled << endl << endl;
+  // cout << "position: " << endl << params.joint_is_position_controlled << endl << endl;
   for (int i=0; i < m_num_joints; i++) {
     drake_input_index = i;
     robot_input_index = input_index_map.drake_to_robot[i];
@@ -108,10 +110,10 @@ drc::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *q
     if (drake_input_index != -1) {
       robot_input_index = input_index_map.drake_to_robot[drake_input_index];
       msg.position[robot_input_index] = qp_output->q_ref(state_index);
-      if (params.joint_is_force_controlled(drake_input_index)) {
-        msg.velocity[robot_input_index] = qp_output->qd_ref(state_index);
-      } else {
+      if (params.joint_is_position_controlled(drake_input_index)) {
         msg.velocity[robot_input_index] = 0;
+      } else {
+        msg.velocity[robot_input_index] = qp_output->qd_ref(state_index);
       }
     }
   }
