@@ -10,7 +10,7 @@ if nargin < 3
   ctrl_options = struct();
 end
 atlas_options = applyDefaults(atlas_options, struct('atlas_version', 4, ...
-                                                    'hands', 'robotiq_weight_only'));
+                                                    'hands', 'none'));
 ctrl_options = applyDefaults(ctrl_options, struct('atlas_command_channel', 'ATLAS_COMMAND'));
 
 % silence some warnings

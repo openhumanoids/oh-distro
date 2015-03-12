@@ -11,7 +11,7 @@ if nargin < 3
 end
 
 atlas_options = applyDefaults(atlas_options, struct('atlas_version', 4, ...
-                                                    'hands', 'robotiq_weight_only'));
+                                                    'hands', 'none'));
 walking_options = applyDefaults(walking_options, struct('navgoal', [0.5;0;0;0;0;0],...
                                                         'num_steps', 4));
 
