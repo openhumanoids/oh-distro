@@ -1,30 +1,28 @@
-function runAtlasControllerStandalone(run_in_simul_mode, atlas_version, ctrl_options)
+function runAtlasControllerStandalone(run_in_simul_mode, atlas_options, ctrl_options)
 
 if nargin < 1
   run_in_simul_mode = 0;
 end
 if nargin < 2
-  atlas_version = 4;
+  atlas_options = struct();
 end
 if nargin < 3
   ctrl_options = struct();
 end
+atlas_options = applyDefaults(atlas_options, struct('atlas_version', 4, ...
+                                                    'hands', 'robotiq_weight_only'));
 ctrl_options = applyDefaults(ctrl_options, struct('atlas_command_channel', 'ATLAS_COMMAND'));
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
-options.visual = false; % loads faster
-options.floating = true;
-options.ignore_friction = true;
-options.run_in_simul_mode = run_in_simul_mode;
-options.atlas_version = atlas_version;
-if (run_in_simul_mode == 2)
-  options.hands = 'robotiq_weight_only';
-end
+atlas_options.visual = false; % loads faster
+atlas_options.floating = true;
+atlas_options.ignore_friction = true;
+atlas_options.run_in_simul_mode = run_in_simul_mode;
 
-r = DRCAtlas([],options);
+r = DRCAtlas([],atlas_options);
 r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
