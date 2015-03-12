@@ -4,6 +4,7 @@
 #include <atomic>
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
+#include "drc/controller_status_t.hpp"
 #include "drc/robot_state_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include "drake/QPCommon.h"
@@ -45,7 +46,8 @@ public:
 };
 
 SolveArgs solveArgs;
-
+std::unique_ptr<drc::controller_status_t> controller_status_msg(new drc::controller_status_t());
+// drc::controller_status_t controller_status_msg;
 
 class LCMHandler {
 
@@ -277,7 +279,12 @@ void threadLoop(std::string &atlas_command_channel)
     drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
     lcmHandler.LCMHandle->publish(atlas_command_channel, command_msg);
 
-
+    controller_status_msg->state = controller_status_msg->STANDING;
+    controller_status_msg->V = 0;
+    controller_status_msg->Vdot = 0;
+    controller_status_msg->utime = (int64_t) robot_state->t * 1000000;
+    controller_status_msg->controller_utime = controller_status_msg->utime;
+    lcmHandler.LCMHandle->publish("CONTROLLER_STATUS", controller_status_msg.get());
 
     typedef std::chrono::duration<float> float_seconds;
     auto end = std::chrono::high_resolution_clock::now();

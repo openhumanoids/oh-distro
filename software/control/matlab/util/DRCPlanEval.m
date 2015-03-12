@@ -113,6 +113,14 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         if ~isempty(qp_input)
           qp_input.param_set_name = [qp_input.param_set_name, '_', obj.mode]; % send _sim or _hardware param variant
           encodeQPInputLCMMex(qp_input);
+        else
+          msg = drc.controller_status_t();
+          msg.utime = t * 1e6;
+          msg.controller_utime = msg.utime;
+          msg.V = 0;
+          msg.Vdot = 0;
+          msg.state = msg.DUMMY;
+          obj.lc.publish('CONTROLLER_STATUS', msg);
         end
       end
     end
