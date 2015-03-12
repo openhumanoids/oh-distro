@@ -3,7 +3,7 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, acceleration_param)
   %                             adjusts the acceleration profile. Higher values
   %                             yield more gradual accelerations. @defualt 3
 
-  if nargin < 3, acceleration_param = 3; end
+  if nargin < 3, acceleration_param = 2; end
   
   % Scale timing to obey joint velocity limits
   % Create initial spline
