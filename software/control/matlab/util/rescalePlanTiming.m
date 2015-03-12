@@ -1,10 +1,8 @@
-function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, acceleration_param)
+function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
   % @param acceleration_param - Scalar parameter greater than or equal to 2 that
   %                             adjusts the acceleration profile. Higher values
   %                             yield more gradual accelerations. @defualt 3
 
-  if nargin < 3, acceleration_param = 2; end
-  
   % Scale timing to obey joint velocity limits
   % Create initial spline
   n_breaks = numel(qtraj.getBreaks());
@@ -21,7 +19,7 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, acceleration_param)
   tf = t_scaled(end);
 
   % Warp time to give gradual acceleration/deceleration
-  t_warped = tf*warpTime(t_scaled/tf, acceleration_param);
+  t_warped = tf*warpTime(t_scaled/tf, varargin{:});
   [t_unique, idx_unique] = unique(t_warped,'stable');
 
   qtraj_rescaled = PPTrajectory(pchip(t_unique, q_path(:,idx_unique)));
