@@ -1,23 +1,33 @@
-function runDRCInstQP(atlas_version)
+function runDRCInstQP(run_in_simul_mode, atlas_options, ctrl_options)
 
 if nargin < 1
-  atlas_version = 4;
+  run_in_simul_mode = 0;
 end
+if nargin < 2
+  atlas_options = struct();
+end
+if nargin < 3
+  ctrl_options = struct();
+end
+atlas_options = applyDefaults(atlas_options, struct('atlas_version', 4, ...
+                                                    'hands', 'robotiq_weight_only'));
+ctrl_options = applyDefaults(ctrl_options, struct('atlas_command_channel', 'ATLAS_COMMAND'));
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
-options.visual = false; % loads faster
-options.floating = true;
-options.ignore_friction = true;
-options.atlas_version = atlas_version;
+atlas_options.visual = false; % loads faster
+atlas_options.floating = true;
+atlas_options.ignore_friction = true;
+atlas_options.run_in_simul_mode = run_in_simul_mode;
 
-r = DRCAtlas([],options);
+r = DRCAtlas([],atlas_options);
+r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
-planEval = DRCInstantaneousQPController(r);
-planEval.run();
+control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r),...
+   struct('use_mex', 1));
 
-end
+threadedControllermex(control.data_mex_ptr, ctrl_options);

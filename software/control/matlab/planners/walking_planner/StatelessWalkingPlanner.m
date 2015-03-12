@@ -63,8 +63,7 @@ classdef StatelessWalkingPlanner
 
       % Convert the walking plan data to the DRC type that extends
       % in terms of LCM transcription methods
-      walking_ctrl_data = DRCQPWalkingPlan.from_drake_walking_data(walking_plan_data, r);
-      ts = linspace(0,walking_ctrl_data.comtraj.tspan(2),150);
+      ts = linspace(0,walking_plan_data.comtraj.tspan(2),150);
 
       lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 
@@ -72,7 +71,7 @@ classdef StatelessWalkingPlanner
 %         lcmgl.glColor3f(0, 0, 1);
 %         lcmgl.sphere([walking_plan.comtraj.eval(ts(i));0], 0.01, 20, 20);
         lcmgl.glColor3f(0, 1, 0);
-        lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+        lcmgl.sphere([walking_plan_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
       end
       lcmgl.switchBuffers();
 
@@ -85,7 +84,7 @@ classdef StatelessWalkingPlanner
         if simulate
           x0_resolved = r.resolveConstraints(r.getInitialState());
           r = r.setInitialState(x0_resolved);
-          traj = atlasUtil.simulateWalking(r, walking_ctrl_data, 1, false, false, false, false);
+          traj = atlasUtil.simulateWalking(r, walking_plan_data, 1, false, false, false, false);
           ts = traj.getBreaks();
           if length(ts) > 300
             % Limit the number of samples in the plan to get around LCM packet size issues in Java/Matlab
@@ -95,7 +94,7 @@ classdef StatelessWalkingPlanner
           walking_plan = WalkingPlan(ts, xs, joint_names);
         end
       else
-        walking_plan = walking_ctrl_data;
+        walking_plan = DRCQPWalkingPlan.toLCM(walking_plan_data);
       end
       disp('done')
     end

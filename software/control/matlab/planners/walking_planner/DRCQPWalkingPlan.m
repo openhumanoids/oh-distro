@@ -1,33 +1,5 @@
 classdef DRCQPWalkingPlan < QPWalkingPlan
-  methods
-    function obj = DRCQPWalkingPlan(x0, support_times, supports, ...
-           link_constraints, zmptraj, D_ls, V, c, comtraj, mu, ignore_terrain,...
-           t_offset, gain_set, biped)
-      obj = obj@QPWalkingPlan(biped);
-      % Feed straight in
-      obj.x0 = x0;
-      obj.support_times = support_times;
-      obj.supports = supports;
-      obj.link_constraints = link_constraints;
-      obj.zmptraj = zmptraj;
-      obj.D_ls = D_ls;
-      obj.V = V;
-      obj.c = c;
-      obj.comtraj = comtraj;
-      obj.mu = mu;
-      obj.t_offset = t_offset;
-      obj.ignore_terrain = ignore_terrain;
-      obj.gain_set = gain_set;
-      obj.robot = biped;
-
-      % generate some handy other things
-      obj.duration = obj.support_times(end)-obj.support_times(1)-0.001;
-      obj.zmp_final = obj.zmptraj.eval(obj.zmptraj.tspan(end));
-      if isa(obj.V.S, 'ConstantTrajectory')
-        obj.V.S = fasteval(obj.V.S, 0);
-      end
-    end
-
+  methods (Static)
     function msg = toLCM(obj)
       msg = drc.walking_plan_t();
 
@@ -45,8 +17,8 @@ classdef DRCQPWalkingPlan < QPWalkingPlan
       % msg.s1dot = mxSerialize(obj.s1dot);
       % msg.n_s1dot_bytes = length(msg.s1dot);
 
-      msg.s2 = mxSerialize(obj.V.s2);
-      msg.n_s2_bytes = length(msg.s2);
+      % msg.s2 = mxSerialize(obj.V.s2);
+      % msg.n_s2_bytes = length(msg.s2);
 
       % msg.s2dot = mxSerialize(obj.s2dot);
       % msg.n_s2dot_bytes = length(msg.s2dot);
@@ -63,8 +35,7 @@ classdef DRCQPWalkingPlan < QPWalkingPlan
       msg.zmptraj = mxSerialize(obj.zmptraj);
       msg.n_zmptraj_bytes = length(msg.zmptraj);
 
-      msg.D_ls = mxSerialize(obj.D_ls);
-      msg.n_D_ls_bytes = length(msg.D_ls);
+      msg.D_ls = obj.D_ls;
 
       msg.link_constraints = mxSerialize(obj.link_constraints);
       msg.n_link_constraints_bytes = length(msg.link_constraints);
@@ -80,17 +51,6 @@ classdef DRCQPWalkingPlan < QPWalkingPlan
         msg.t_offset = 0;
       end
     end
-  end
-
-  methods (Static = true)
-
-    function obj = from_drake_walking_data(data, biped)
-      % ugly order-dependent unpacking
-      obj = DRCQPWalkingPlan(data.x0, data.support_times, data.supports, ...
-           data.link_constraints, data.zmptraj, data.D_ls, data.V, data.c, data.comtraj, ...
-           data.mu, data.ignore_terrain,...
-           data.t_offset, data.gain_set, biped);
-    end
 
     function obj = from_walking_plan_t(msg_data, biped)
 
@@ -102,35 +62,29 @@ classdef DRCQPWalkingPlan < QPWalkingPlan
 
       s1 = mxDeserialize(msg_data.s1);
 %       s1dot = mxDeserialize(msg_data.s1dot);
-      s2 = mxDeserialize(msg_data.s2, 'uint8');
+      % s2 = mxDeserialize(msg_data.s2, 'uint8');
 %       s2dot = mxDeserialize(msg_data.s2dot);
       supports = mxDeserialize(msg_data.supports);
       if iscell(supports)
         supports = [supports{:}];
       end
-      comtraj = mxDeserialize(msg_data.comtraj);
-      zmptraj = mxDeserialize(msg_data.zmptraj);
-      D_ls = mxDeserialize(msg_data.D_ls);
-      link_constraints = mxDeserialize(msg_data.link_constraints);
       x0 = mxDeserialize(msg_data.xtraj);
-      gain_set = char(msg_data.gain_set);
 
-      V = struct('S', S, 's1', s1, 's2', s2);
-
-      obj = DRCQPWalkingPlan(x0,...
-       msg_data.support_times,...
-       supports,...
-       link_constraints,...
-       zmptraj,...
-       D_ls,...
-       V,...
-       [],...
-       comtraj,...
-       msg_data.mu,...
-       msg_data.ignore_terrain,...
-       msg_data.t_offset, ...
-       gain_set, ...
-       biped);
+      obj = QPWalkingPlan(biped);
+      obj.x0 = x0;
+      obj.support_times = double(msg_data.support_times);
+      obj.supports = supports;
+      obj.link_constraints = mxDeserialize(msg_data.link_constraints);
+      obj.zmptraj = mxDeserialize(msg_data.zmptraj);
+      obj.zmp_final = fasteval(obj.zmptraj, obj.zmptraj.tspan(end));
+      obj.D_ls = msg_data.D_ls;
+      obj.V = struct('S', S, 's1', s1);
+      obj.qstar = x0(1:biped.getNumPositions());
+      obj.c = [];
+      obj.comtraj = mxDeserialize(msg_data.comtraj);
+      obj.mu = double(msg_data.mu);
+      obj.gain_set = char(msg_data.gain_set);
+      obj.duration = obj.support_times(end) - obj.support_times(1) - 0.001;
     end
   end
 end

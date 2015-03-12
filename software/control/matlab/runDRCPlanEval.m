@@ -1,23 +1,40 @@
-function runDRCPlanEval(atlas_version)
+function runDRCPlanEval(run_in_simul_mode,atlas_options,walking_options)
 
 if nargin < 1
-  atlas_version = 4;
+  run_in_simul_mode = 0;
 end
+if nargin < 2
+  atlas_options = struct();
+end
+if nargin < 3
+  walking_options = struct();
+end
+
+atlas_options = applyDefaults(atlas_options, struct('atlas_version', 4, ...
+                                                    'hands', 'robotiq_weight_only'));
+walking_options = applyDefaults(walking_options, struct('navgoal', [0.5;0;0;0;0;0],...
+                                                        'num_steps', 4));
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
-options.visual = false; % loads faster
-options.floating = true;
-options.ignore_friction = true;
-options.atlas_version = atlas_version;
+atlas_options.visual = false; % loads faster
+atlas_options.floating = true;
+atlas_options.ignore_friction = true;
+atlas_options.run_in_simul_mode = run_in_simul_mode;
 
-r = DRCAtlas([],options);
+r = DRCAtlas([],atlas_options);
+r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
-planEval = DRCPlanEval(r);
+if run_in_simul_mode
+  mode = 'sim';
+else
+  mode = 'hardware';
+end
+planEval = DRCPlanEval(r, mode);
 planEval.run();
 
 end

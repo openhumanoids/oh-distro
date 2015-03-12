@@ -35,8 +35,7 @@ struct walking_plan_t
 	int32_t n_zmptraj_bytes;
   byte zmptraj[n_zmptraj_bytes];
 
-  int32_t n_D_ls_bytes;
-  byte D_ls[n_D_ls_bytes];
+  double D_ls[2][2];
 
   int32_t n_link_constraints_bytes;
   byte link_constraints[n_link_constraints_bytes];

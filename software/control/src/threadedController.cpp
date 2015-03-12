@@ -256,10 +256,10 @@ void threadLoop(std::string &atlas_command_channel)
 
     int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, solveArgs.b_contact_force, &qp_output, solveArgs.debug);
     (void)info; // info not used
-    std::cout << "u: " << qp_output.u << std::endl;
-    std::cout << "q: " << qp_output.q_ref << std::endl;
-    std::cout << "qd: " << qp_output.qd_ref << std::endl;
-    std::cout << "qdd: " << qp_output.qdd << std::endl;
+    // std::cout << "u: " << qp_output.u << std::endl;
+    // std::cout << "q: " << qp_output.q_ref << std::endl;
+    // std::cout << "qd: " << qp_output.qd_ref << std::endl;
+    // std::cout << "qdd: " << qp_output.qdd << std::endl;
 
     AtlasParams *params; 
     std::map<string,AtlasParams>::iterator it;
