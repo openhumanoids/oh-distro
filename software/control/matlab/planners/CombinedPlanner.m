@@ -194,7 +194,7 @@ classdef CombinedPlanner
       link_constraints(1).traj = PPTrajectory(pchip(ts,pelvis_pose));
       link_constraints(1).dtraj = fnder(link_constraints.traj);
 %       link_constraints.ddtraj = fnder(link_constraints.dtraj);
-      plan = ConfigurationTraj(qtraj_pp,link_constraints);
+      plan = ConfigurationTrajPlan(obj.biped,qtraj_pp,link_constraints);
     end
 
     function region = iris_region(obj, msg)
