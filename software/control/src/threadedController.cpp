@@ -274,7 +274,7 @@ void threadLoop(std::string &atlas_command_channel)
     }
     params = &(it->second);
     // publish ATLAS_COMMAND
-    drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, &params->hardware_gains);
+    drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
     lcmHandler.LCMHandle->publish(atlas_command_channel, command_msg);
 
 

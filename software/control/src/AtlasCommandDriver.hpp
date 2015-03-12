@@ -16,6 +16,5 @@ class AtlasCommandDriver {
     }
     void updateGains(AtlasHardwareGains *gains);
 
-    drc::atlas_command_t* encode(double t, QPControllerOutput *qp_output);
-    drc::atlas_command_t* encode(double t, QPControllerOutput *qp_output, AtlasHardwareGains *new_gains);
+    drc::atlas_command_t* encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params);
 };

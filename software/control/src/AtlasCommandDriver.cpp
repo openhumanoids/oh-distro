@@ -88,33 +88,33 @@ void AtlasCommandDriver::updateGains(AtlasHardwareGains *gains) {
   }
 }
 
-drc::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *qp_output) {
-  return encode(t, qp_output, nullptr);
-}
-
-drc::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *qp_output, AtlasHardwareGains *new_gains) {
-  // Copy data from the given qp_output into the stored LCM message object. If
-  // new_gains is NULL, then the existing hardware gains will be used.
-  // Otherwise the new gains will be copied in as well.
+drc::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params) {
+  // Copy data from the given qp_output into the stored LCM message object. 
 
   msg.utime = (long)(t*1000000);
-  int j;
-  for (int i=0; i < m_num_joints; i++) {
-    j = input_index_map.drake_to_robot[i];
-    msg.effort[j] = qp_output->u(i);
-  }
   int state_index, drake_input_index, robot_input_index;
+  for (int i=0; i < m_num_joints; i++) {
+    drake_input_index = i;
+    robot_input_index = input_index_map.drake_to_robot[i];
+    if (params.joint_is_force_controlled(drake_input_index)) {
+      msg.effort[robot_input_index] = qp_output->u(drake_input_index);
+    } else {
+      msg.effort[robot_input_index] = 0;
+    }
+  }
   for (int i=0; i < state_to_drake_input_map.size(); i++) {
     state_index = i;
     drake_input_index = state_to_drake_input_map[i];
     if (drake_input_index != -1) {
       robot_input_index = input_index_map.drake_to_robot[drake_input_index];
       msg.position[robot_input_index] = qp_output->q_ref(state_index);
-      msg.velocity[robot_input_index] = qp_output->qd_ref(state_index);
+      if (params.joint_is_force_controlled(drake_input_index)) {
+        msg.velocity[robot_input_index] = qp_output->qd_ref(state_index);
+      } else {
+        msg.velocity[robot_input_index] = 0;
+      }
     }
   }
-  if (new_gains) {
-    updateGains(new_gains);
-  }
+  updateGains(&params.gains);
   return &msg;
 }
