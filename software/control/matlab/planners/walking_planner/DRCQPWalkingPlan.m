@@ -61,9 +61,9 @@ classdef DRCQPWalkingPlan < QPWalkingPlan
       end
 
       s1 = mxDeserialize(msg_data.s1);
-%       s1dot = mxDeserialize(msg_data.s1dot);
+      % s1dot = mxDeserialize(msg_data.s1dot);
       % s2 = mxDeserialize(msg_data.s2, 'uint8');
-%       s2dot = mxDeserialize(msg_data.s2dot);
+      % s2dot = mxDeserialize(msg_data.s2dot);
       supports = mxDeserialize(msg_data.supports);
       if iscell(supports)
         supports = [supports{:}];
