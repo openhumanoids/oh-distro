@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   ihmc_msgs
   tf
+  trajectory_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -175,8 +176,16 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_executable(ros2lcm_ihmc src/ros2lcm_ihmc.cpp)
 target_link_libraries(ros2lcm_ihmc ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils)
-add_dependencies(ros2lcm_ihmc trooper_mlc_msgs_generate_messages_cpp)
 
 add_executable(lcm2ros_ihmc src/lcm2ros_ihmc.cpp)
 target_link_libraries(lcm2ros_ihmc ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(lcm2ros_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core)
+
+######################################################
+add_executable(lcm2ros_kuka src/lcm2ros_kuka.cpp)
+target_link_libraries(lcm2ros_kuka ${catkin_LIBRARIES})
+pods_use_pkg_config_packages(lcm2ros_kuka lcm lcmtypes_pronto-lcmtypes bot2-core)
+
+add_executable(ros2lcm_kuka src/ros2lcm_kuka.cpp)
+target_link_libraries(ros2lcm_kuka ${catkin_LIBRARIES})
+pods_use_pkg_config_packages(ros2lcm_kuka lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils)
