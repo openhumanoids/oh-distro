@@ -7,7 +7,8 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, acceleration_param)
   
   % Scale timing to obey joint velocity limits
   % Create initial spline
-  t = linspace(qtraj.tspan(1), qtraj.tspan(2),200);
+  n_breaks = numel(qtraj.getBreaks());
+  t = linspace(qtraj.tspan(1), qtraj.tspan(2),max(n_breaks, 20));
   q_path = eval(qtraj, t); %#ok
 
   % Determine max joint velocity at midpoint of  each segment
