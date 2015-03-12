@@ -78,7 +78,10 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
       timer_(io_),
       work_(io_),
       next_slot_t_(goby::common::goby_time()),
-      latency_ms_(0)
+      latency_ms_(0),
+      expected_packet_loss_percent_(0),
+      full_header_overhead_(0),
+      fast_mode_(false)
 {   
     assert(floor_multiple_sixteen(1025) == 1024);
     dccl_->add_id_codec<DRCEmptyIdentifierCodec>("drc_header_codec");    
@@ -184,6 +187,10 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
         load_robot_plan_custom_codecs();
     }
 
+    fast_mode_ = bot_param_get_boolean_or_fail(app.bot_param,
+                                               std::string(config_prefix + "fast_mode").c_str());
+    
+    
     load_lzma_custom_codecs();
     
     dccl_->validate<drc::ShaperHeader>();
@@ -199,14 +206,22 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     full_header.set_message_size(0);
     full_header.set_sent_millisec(0);
     DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
-    full_header_overhead_ = dccl_->size(full_header);
-
-    std::string encoded_header;
-    dccl_->encode(&encoded_header, full_header);
-    assert(encoded_header.size() == full_header_overhead_);
     
-
+    if(fast_mode_)
+    {
+        // +1 for header size byte
+        full_header_overhead_ = full_header.ByteSize() + 1;
+    }
+    else
+    {
+        full_header_overhead_ = dccl_->size(full_header);
         
+        std::string encoded_header;
+        
+        dccl_->encode(&encoded_header, full_header);
+        assert(encoded_header.size() == full_header_overhead_);
+    }
+    
     
     const std::vector<Resend>& resendlist = app.resendlist();
     
@@ -498,8 +513,18 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     std::string header;
     drc::ShaperHeader header_msg = send_queue_.top().header();
     header_msg.set_sent_millisec((goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX);
-    dccl_->encode(frame, header_msg);
 
+    if(fast_mode_)
+    {
+        *frame = std::string(1, header_msg.ByteSize() & 0xff);
+        *frame += header_msg.SerializeAsString();
+    }
+    else
+    {
+        dccl_->encode(frame, header_msg);
+    }
+    
+        
     (*frame) += send_queue_.top().data();
     
     int encoded_size = msg->frame(0).size();
@@ -606,9 +631,20 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
         drc::ShaperPacket packet;
 
         DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
-        dccl_->decode(msg.frame(0), packet.mutable_header());
-        packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));    
 
+
+        if(fast_mode_)
+        {
+            unsigned header_size = (msg.frame(0)[0] & 0xff);
+            packet.mutable_header()->ParseFromString(msg.frame(0).substr(1, header_size+1));
+            packet.set_data(msg.frame(0).substr(header_size+1));
+        }
+        else
+        {
+            dccl_->decode(msg.frame(0), packet.mutable_header());
+            packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));
+        }
+        
         received_data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
 
         if(packet.header().has_sent_millisec())
