@@ -69,7 +69,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     function current_plan = getCurrentPlan(obj, t, x)
       % check for new plans, and use them to modify the queue
       for j = 1:length(obj.plan_monitors)
-        msg = obj.plan_monitors{j}.getNextMessage(5);
+        msg = obj.plan_monitors{j}.getNextMessage(0);
         if isempty(msg)
           continue
         end
