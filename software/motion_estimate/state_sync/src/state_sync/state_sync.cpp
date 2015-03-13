@@ -446,8 +446,8 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     }
   }
 
-  //atlas_joints_.position[Atlas::JOINT_BACK_BKX] = atlas_joints_.position[Atlas::JOINT_BACK_BKX] + 1.2*M_PI/180.0;
-  //atlas_joints_.position[Atlas::JOINT_BACK_BKY] = atlas_joints_.position[Atlas::JOINT_BACK_BKY] - 1.2*M_PI/180.0;
+  atlas_joints_.position[Atlas::JOINT_BACK_BKX] = atlas_joints_.position[Atlas::JOINT_BACK_BKX] + 1.2*M_PI/180.0;
+  atlas_joints_.position[Atlas::JOINT_BACK_BKY] = atlas_joints_.position[Atlas::JOINT_BACK_BKY] - 1.2*M_PI/180.0;
 
   if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);

@@ -223,13 +223,9 @@ public:
 
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg)
   {
-    std::cout << "received foot contact on lcm thread " << std::this_thread::get_id() << std::endl;
-
     Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->r->num_bodies);
 
     foot_contact_driver->decode(msg, b_contact_force);
-
-    std::cout << "decoded foot contact state is: " << b_contact_force << std::endl;
 
     pointerMutex.lock();
     solveArgs.b_contact_force = b_contact_force;
