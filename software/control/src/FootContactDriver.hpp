@@ -7,5 +7,5 @@ class FootContactDriver {
 
   public:
     FootContactDriver(BodyIdsCache body_ids);
-    void decode(drc::foot_contact_estimate_t *msg, Ref<VectorXd> &contact_force_detected);
+    void decode(const drc::foot_contact_estimate_t *msg, Matrix<bool, Dynamic, 1> &contact_force_detected);
 };

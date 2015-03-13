@@ -28,7 +28,7 @@ std::mutex pointerMutex;
 
 std::shared_ptr<RobotStateDriver> state_driver;
 std::shared_ptr<AtlasCommandDriver> command_driver;
-
+std::shared_ptr<FootContactDriver> foot_contact_driver;
 
 class SolveArgs {
 public:
@@ -181,6 +181,9 @@ public:
 
     sub = this->lcmHandler->LCMHandle->subscribe("EST_ROBOT_STATE", &LCMControlReceiver::onRobotState, this);
     sub->setQueueCapacity(1);
+
+    sub = this->lcmHandler->LCMHandle->subscribe("FOOT_CONTACT_ESTIMATE", &LCMControlReceiver::onFootContact, this);
+    sub->setQueueCapacity(1);
   }
 
   void inputHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_qp_controller_input* msg)
@@ -216,6 +219,21 @@ public:
     solveArgs.robot_state = state;
     pointerMutex.unlock();
     newStateAvailable = true;
+  }
+
+  void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg)
+  {
+    std::cout << "received foot contact on lcm thread " << std::this_thread::get_id() << std::endl;
+
+    Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->r->num_bodies);
+
+    foot_contact_driver->decode(msg, b_contact_force);
+
+    std::cout << "decoded foot contact state is: " << b_contact_force << std::endl;
+
+    pointerMutex.lock();
+    solveArgs.b_contact_force = b_contact_force;
+    pointerMutex.unlock();
   }
 
 
@@ -302,6 +320,7 @@ void controllerLoop(NewQPControllerData *pdata, std::shared_ptr<ThreadedControll
 {
   state_driver.reset(new RobotStateDriver(pdata->state_coordinate_names));
   command_driver.reset(new AtlasCommandDriver(&pdata->input_joint_names, pdata->state_coordinate_names));
+  foot_contact_driver.reset(new FootContactDriver(pdata->rpc.body_ids));
 
   solveArgs.pdata = pdata;
   solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->r->num_bodies);
