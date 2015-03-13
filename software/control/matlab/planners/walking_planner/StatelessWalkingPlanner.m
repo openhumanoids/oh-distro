@@ -94,7 +94,8 @@ classdef StatelessWalkingPlanner
           walking_plan = WalkingPlan(ts, xs, joint_names);
         end
       else
-        walking_plan = DRCQPWalkingPlan.toLCM(walking_plan_data);
+        walking_plan_data.gain_set
+        walking_plan = DRCQPLocomotionPlan.toLCM(walking_plan_data);
       end
       disp('done')
     end

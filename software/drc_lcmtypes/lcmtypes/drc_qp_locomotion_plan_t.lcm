@@ -24,8 +24,7 @@ struct qp_locomotion_plan_t
 
   double LIP_height;
 
-	int32_t n_S_bytes;
-  byte S[n_S_bytes];
+  double S[4][4];
 
   int32_t n_s1_bytes;
   byte s1[n_s1_bytes];

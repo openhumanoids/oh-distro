@@ -31,8 +31,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
       obj.atlas_state_channel = 'EST_ROBOT_STATE';
 
-      obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_t, 'utime');
+      obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.qp_locomotion_plan_t, 'utime');
       obj.plan_channels{end+1} = 'WALKING_CONTROLLER_PLAN_RESPONSE';
+      obj.plan_handlers{end+1} = @obj.handle_walking_plan;
+
+      obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.qp_locomotion_plan_t, 'utime');
+      obj.plan_channels{end+1} = 'CONFIGURATION_TRAJ';
       obj.plan_handlers{end+1} = @obj.handle_walking_plan;
 
       obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.utime_t(), 'utime');
@@ -50,17 +54,17 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       msg = drc.utime_t(msg);
 
       [x0, ~] = obj.atlas_state_coder.decode(drc.robot_state_t(obj.atlas_state_monitor.getMessage()));
-      new_plan = StandingPlan.from_standing_state(x0, obj.robot);
+      new_plan = DRCQPLocomotionPlan.from_standing_state(x0, obj.robot);
 
     end
 
     function new_plan = handle_walking_plan(obj, msg)
       disp('Got a walking plan')
-      msg = drc.walking_plan_t(msg);
+      msg = drc.qp_locomotion_plan_t(msg);
 
       % Convert the plan from a walking plan msg to 
       % 
-      new_plan = DRCQPWalkingPlan.from_walking_plan_t(msg, obj.robot);
+      new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
       
     end
 
