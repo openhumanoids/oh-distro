@@ -66,6 +66,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       
     end
 
+    function new_plan = handle_atlas_behavior_command(obj, msg)
+      msg = drc.atlas_behavior_command_t(msg);
+
+      new_plan = SilentPlan(obj.robot);
+    end
+
     function current_plan = getCurrentPlan(obj, t, x)
       % check for new plans, and use them to modify the queue
       for j = 1:length(obj.plan_monitors)
@@ -100,7 +106,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       % state_data = obj.atlas_state_monitor.getNextMessage(5);
       % [x, t] = obj.atlas_state_coder.decode(drc.robot_state_t(state_data));
-      obj.data.plan_queue = {SilentPlan()};
+      obj.data.plan_queue = {SilentPlan(obj.robot)};
       
       disp('DRCPlanEval now listening');
 
@@ -115,14 +121,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         if ~isempty(qp_input)
           qp_input.param_set_name = [qp_input.param_set_name, '_', obj.mode]; % send _sim or _hardware param variant
           encodeQPInputLCMMex(qp_input);
-        else
-          msg = drc.controller_status_t();
-          msg.utime = t * 1e6;
-          msg.controller_utime = msg.utime;
-          msg.V = 0;
-          msg.Vdot = 0;
-          msg.state = msg.DUMMY;
-          obj.lc.publish('CONTROLLER_STATUS', msg);
         end
       end
     end
