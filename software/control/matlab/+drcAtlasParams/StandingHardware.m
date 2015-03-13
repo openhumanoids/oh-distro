@@ -7,6 +7,10 @@ classdef StandingHardware < atlasParams.Standing
       force_controlled_joint_names = {'leg', 'back_bkx'};
       obj.hardware = drcAtlasParams.getHardwareParams(r, force_controlled_joint_names);
 
+      obj.whole_body.Kp = zeros(r.getNumPositions(), 1);
+      obj.whole_body.Kp(r.findPositionIndices('back_bkx')) = 50;
+      obj.whole_body.damping_ratio = 0.0;
+
       % integral gains for position controlled joints
       integral_gains = zeros(getNumPositions(r),1);
       integral_clamps = zeros(getNumPositions(r),1);
@@ -24,3 +28,4 @@ classdef StandingHardware < atlasParams.Standing
     end
   end
 end
+
