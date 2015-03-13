@@ -254,10 +254,10 @@ switch atlas_version
     % k_q_p(back_bky)  = 70.0;
     % k_q_p(back_bkx)  = 70.0;
     % k_q_p(neck_ay)   = 1000.0;
-    k_q_p(l_leg_hpz) = 60.0;
-    k_q_p(l_leg_hpx) = 78.0;
-    k_q_p(l_leg_hpy) = 50.0;
-    k_q_p(l_leg_kny) = 140.0;
+    k_q_p(l_leg_hpz) = 45.0;
+    k_q_p(l_leg_hpx) = 30.0;
+    k_q_p(l_leg_hpy) = 60.0;
+    k_q_p(l_leg_kny) = 60.0;
     k_q_p(l_leg_aky) = 2000.0;
     k_q_p(l_leg_akx) = 2000.0;
     % k_q_p(l_arm_shz) = 4.0; 
