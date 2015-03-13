@@ -33,11 +33,11 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.qp_locomotion_plan_t, 'utime');
       obj.plan_channels{end+1} = 'WALKING_CONTROLLER_PLAN_RESPONSE';
-      obj.plan_handlers{end+1} = @obj.handle_walking_plan;
+      obj.plan_handlers{end+1} = @obj.handle_locomotion_plan;
 
       obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.qp_locomotion_plan_t, 'utime');
       obj.plan_channels{end+1} = 'CONFIGURATION_TRAJ';
-      obj.plan_handlers{end+1} = @obj.handle_walking_plan;
+      obj.plan_handlers{end+1} = @obj.handle_locomotion_plan;
 
       obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.utime_t(), 'utime');
       obj.plan_channels{end+1} = 'START_MIT_STAND';
@@ -58,12 +58,10 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     end
 
-    function new_plan = handle_walking_plan(obj, msg)
-      disp('Got a walking plan')
+    function new_plan = handle_locomotion_plan(obj, msg)
+      disp('Got a locomotion plan')
       msg = drc.qp_locomotion_plan_t(msg);
 
-      % Convert the plan from a walking plan msg to 
-      % 
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
       
     end
