@@ -270,35 +270,46 @@ void threadLoop(std::string &atlas_command_channel)
 
     // std::cout << "calling solve " << std::endl;
 
-    int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, solveArgs.b_contact_force, &qp_output, solveArgs.debug);
-    (void)info; // info not used
-    // std::cout << "u: " << qp_output.u << std::endl;
-    // std::cout << "q: " << qp_output.q_ref << std::endl;
-    // std::cout << "qd: " << qp_output.qd_ref << std::endl;
-    // std::cout << "qdd: " << qp_output.qdd << std::endl;
+    if (qp_input->be_silent) {
+      // Act as a dummy controller, produce no ATLAS_COMMAND, and reset all integrator states
+      controller_status_msg->state = controller_status_msg->DUMMY;
+      solveArgs.pdata->state.t_prev = robot_state->t;
+      solveArgs.pdata->state.vref_integrator_state = VectorXd::Zero(solveArgs.pdata->state.vref_integrator_state.size());
+      solveArgs.pdata->state.q_integrator_state = VectorXd::Zero(solveArgs.pdata->state.q_integrator_state.size());
+    } else {
+      int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, solveArgs.b_contact_force, &qp_output, solveArgs.debug);
+      (void)info; // info not used
+      // std::cout << "u: " << qp_output.u << std::endl;
+      // std::cout << "q: " << qp_output.q_ref << std::endl;
+      // std::cout << "qd: " << qp_output.qd_ref << std::endl;
+      // std::cout << "qdd: " << qp_output.qdd << std::endl;
 
-    AtlasParams *params; 
-    std::map<string,AtlasParams>::iterator it;
-    it = solveArgs.pdata->param_sets.find(qp_input->param_set_name);
-    if (it == solveArgs.pdata->param_sets.end()) {
-      mexWarnMsgTxt("Got a param set I don't recognize! Using standing params instead");
-      it = solveArgs.pdata->param_sets.find("standing_hardware");
+      AtlasParams *params; 
+      std::map<string,AtlasParams>::iterator it;
+      it = solveArgs.pdata->param_sets.find(qp_input->param_set_name);
       if (it == solveArgs.pdata->param_sets.end()) {
-        params = nullptr;
-        mexErrMsgTxt("Could not fall back to standing parameters either. I have to give up here.");
+        mexWarnMsgTxt("Got a param set I don't recognize! Using standing params instead");
+        it = solveArgs.pdata->param_sets.find("standing_hardware");
+        if (it == solveArgs.pdata->param_sets.end()) {
+          params = nullptr;
+          mexErrMsgTxt("Could not fall back to standing parameters either. I have to give up here.");
+        }
       }
-    }
-    params = &(it->second);
-    // publish ATLAS_COMMAND
-    drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
-    lcmHandler.LCMHandle->publish(atlas_command_channel, command_msg);
+      params = &(it->second);
+      // publish ATLAS_COMMAND
+      drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
+      lcmHandler.LCMHandle->publish(atlas_command_channel, command_msg);
 
-    controller_status_msg->state = controller_status_msg->STANDING;
+      controller_status_msg->state = controller_status_msg->STANDING;
+    }
+
     controller_status_msg->V = 0;
     controller_status_msg->Vdot = 0;
-    controller_status_msg->utime = (int64_t) robot_state->t * 1000000;
-    controller_status_msg->controller_utime = controller_status_msg->utime;
-    lcmHandler.LCMHandle->publish("CONTROLLER_STATUS", controller_status_msg.get());
+    if ((robot_state->t - controller_status_msg->utime / 1000000.0) > 0.2) {
+      controller_status_msg->utime = (int64_t) robot_state->t * 1000000;
+      controller_status_msg->controller_utime = controller_status_msg->utime;
+      lcmHandler.LCMHandle->publish("CONTROLLER_STATUS", controller_status_msg.get());
+    }
 
     typedef std::chrono::duration<float> float_seconds;
     auto end = std::chrono::high_resolution_clock::now();
