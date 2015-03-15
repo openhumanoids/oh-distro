@@ -8,6 +8,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     lc
     mode = 'sim';
 
+    foot_contact_monitor;
+    foot_contact_channel;
     atlas_state_coder;
     atlas_state_monitor;
     atlas_state_channel;
@@ -170,10 +172,11 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
             contact_force_detected(obj.robot_property_cache.body_ids.l_foot) = 1;
           end
         end
+       
         [x, t] = obj.atlas_state_coder.decode(drc.robot_state_t(state_data));
         obj.updateQueueLCM(t, x);
         if ~isempty(obj.data.plan_queue)
-          qp_input = obj.getQPControllerInput(t, x);
+          qp_input = obj.getQPControllerInput(t, x, contact_force_detected);
           if ~isempty(qp_input)
             qp_input.param_set_name = [qp_input.param_set_name, '_', obj.mode]; % send _sim or _hardware param variant
             encodeQPInputLCMMex(qp_input);
