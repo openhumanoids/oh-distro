@@ -352,7 +352,7 @@ switch atlas_version
     % force, proportunal
     k_f_p(back_bkz)  = 0.005;
     k_f_p(back_bky)  = 0.02;
-    k_f_p(back_bkx)  = 0.0075;
+    k_f_p(back_bkx)  = 0.0025;
     k_f_p(l_leg_hpz) = 0.02; % 02-03-14, f+v 
     k_f_p(l_leg_hpx) = 0.02; % 02-03-14, f+v 
     k_f_p(l_leg_hpy) = 0.02; % 02-03-14, f+v
