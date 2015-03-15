@@ -37,6 +37,8 @@ classdef WalkingHardware < atlasParams.Walking
       obj.whole_body.integrator.gains = integral_gains;
       obj.whole_body.integrator.clamps = integral_clamps;
 
+      obj.vref_integrator.eta = 0.0;
+
       obj = obj.updateKd();
 
     end
