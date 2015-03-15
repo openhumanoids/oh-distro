@@ -31,6 +31,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
       obj.atlas_state_channel = 'EST_ROBOT_STATE';
 
+      obj.foot_contact_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t, 'utime');
+      obj.foot_contact_channel = 'FOOT_CONTACT_ESTIMATE';
+
       obj.plan_monitors{end+1} = drake.util.MessageMonitor(drc.qp_locomotion_plan_t, 'utime');
       obj.plan_channels{end+1} = 'WALKING_CONTROLLER_PLAN_RESPONSE';
       obj.plan_handlers{end+1} = @obj.handle_locomotion_plan;
@@ -139,6 +142,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     function run(obj)
       % subscribe to everything we're listening to -- plan channels + robot state
       obj.lc.subscribe(obj.atlas_state_channel, obj.atlas_state_monitor);
+      obj.lc.subscribe(obj.foot_contact_channel, obj.foot_contact_monitor);
       for j = 1:length(obj.plan_monitors)
         obj.lc.subscribe(obj.plan_channels{j}, obj.plan_monitors{j});
       end
@@ -154,6 +158,17 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         state_data = obj.atlas_state_monitor.getNextMessage(0);
         if isempty(state_data)
           continue
+        end
+        contact_force_detected = zeros(obj.robot_property_cache.num_bodies, 1);
+        foot_data = obj.foot_contact_monitor.getMessage();
+        if ~isempty(foot_data)
+          foot_msg = drc.foot_contact_estimate_t(foot_data);
+          if foot_msg.right_contact > 0.5
+            contact_force_detected(obj.robot_property_cache.body_ids.r_foot) = 1;
+          end
+          if foot_msg.left_contact > 0.5
+            contact_force_detected(obj.robot_property_cache.body_ids.l_foot) = 1;
+          end
         end
         [x, t] = obj.atlas_state_coder.decode(drc.robot_state_t(state_data));
         obj.updateQueueLCM(t, x);
