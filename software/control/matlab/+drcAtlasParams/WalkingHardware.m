@@ -14,14 +14,14 @@ classdef WalkingHardware < atlasParams.Walking
       if (r.getNumVelocities() ~= r.getNumPositions())
         error('this code calls findPositionIndices, which is no longer equivalent to findVelocityIndices');
       end
-      obj.whole_body.w_qdd(r.findPositionIndices('back_bkx')) = 0.0005;
+      obj.whole_body.w_qdd(r.findPositionIndices('back_bkx')) = 0.01;
 
       obj.body_motion(r.foot_body_id.right).Kp = [12; 12; 12; 12; 12; 12];
       obj.body_motion(r.foot_body_id.right).damping_ratio = 0.7;
-      obj.body_motion(r.foot_body_id.right).weight = 0.1;
+      obj.body_motion(r.foot_body_id.right).weight = 0.15;
       obj.body_motion(r.foot_body_id.left).Kp = [12; 12; 12; 12; 12; 12];
       obj.body_motion(r.foot_body_id.left).damping_ratio = 0.7;
-      obj.body_motion(r.foot_body_id.left).weight = 0.1;
+      obj.body_motion(r.foot_body_id.left).weight = 0.15;
 
       obj.body_motion(r.findLinkId('pelvis')).weight = 0.075;
 
