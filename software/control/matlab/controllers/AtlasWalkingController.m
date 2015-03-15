@@ -113,7 +113,7 @@ classdef AtlasWalkingController < DRCController
 
     function obj = initialize(obj,data)
       msg_data = data.WALKING_CONTROLLER_PLAN_RESPONSE;
-      walk_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg_data);
+      walk_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg_data, obj.robot);
       obj.controller_data.S = walk_ctrl_data.V.S;
       obj.controller_data.s1 = walk_ctrl_data.V.s1;
       obj.controller_data.lqr_is_time_varying = true;
@@ -128,7 +128,7 @@ classdef AtlasWalkingController < DRCController
       obj.controller_data.x0 = ConstantTrajectory([fasteval(walk_ctrl_data.zmptraj,T);0;0]);
       obj.controller_data.y0 = walk_ctrl_data.zmptraj;
       obj.controller_data.link_constraints = walk_ctrl_data.link_constraints;
-      obj.controller_data.qtraj = walk_ctrl_data.q0;
+      obj.controller_data.qtraj = walk_ctrl_data.qtraj;
 %       obj.controller_data.mu = msg_data.mu;
       obj.controller_data.plan_shift = [0;0;0];
       obj = setDuration(obj,T,false); % set the controller timeout
