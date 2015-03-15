@@ -113,12 +113,12 @@ classdef AtlasWalkingController < DRCController
 
     function obj = initialize(obj,data)
       msg_data = data.WALKING_CONTROLLER_PLAN_RESPONSE;
-      walk_ctrl_data = WalkingControllerData.from_walking_plan_t(msg_data);
+      walk_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg_data);
       obj.controller_data.S = walk_ctrl_data.V.S;
       obj.controller_data.s1 = walk_ctrl_data.V.s1;
       obj.controller_data.lqr_is_time_varying = true;
       %obj.controller_data.s1dot = walk_ctrl_data.V.s1dot;
-      obj.controller_data.s2 = walk_ctrl_data.V.s2;
+      % obj.controller_data.s2 = walk_ctrl_data.V.s2;
       %obj.controller_data.s2dot = walk_ctrl_data.V.s2dot;
       support_times = msg_data.support_times;
       obj.controller_data.support_times = support_times;
