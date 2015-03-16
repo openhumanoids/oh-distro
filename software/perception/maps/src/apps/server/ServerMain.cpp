@@ -605,7 +605,6 @@ int main(const int iArgc, const char** iArgv) {
   string laserChannel = "SCAN_FREE";
   float publishPeriod = 0;
   float defaultResolution = 0.1;
-  float timeWindowSeconds = 0;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(laserChannel, "l", "laser_channel",
           "laser channel to use in map creation");
@@ -615,8 +614,6 @@ int main(const int iArgc, const char** iArgv) {
           "resolution of default contextual map, in m");
   opt.add(state.mCatalogPublishPeriod, "c", "catalog",
           "interval between catalog publications, in s");
-  opt.add(timeWindowSeconds, "w", "window",
-          "time window of default contextual map, in s");
   opt.parse();
   state.mCollector->getDataReceiver()->
     addChannel(laserChannel,
@@ -686,28 +683,28 @@ int main(const int iArgc, const char** iArgv) {
   CatalogSender catalogSender(&state);
   std::thread catalogThread(catalogSender);
 
-  // start publishing data
-  ViewBase::Spec viewSpec;
-  viewSpec.mMapId = 1;  // TODO: could make this -1
-  viewSpec.mViewId = 1;
-  viewSpec.mType = ViewBase::TypeOctree;
-  viewSpec.mResolution = defaultResolution;
-  viewSpec.mFrequency = 1.0/publishPeriod;
-  viewSpec.mTimeMin = viewSpec.mTimeMax = -1;
-  viewSpec.mTimeMode = ViewBase::TimeModeAbsolute;
-  if (timeWindowSeconds > 0) {
-    viewSpec.mTimeMin = -timeWindowSeconds*1e6;
-    viewSpec.mTimeMax = 0;
-    viewSpec.mTimeMode = ViewBase::TimeModeRelative;
-  }
-  viewSpec.mClipPlanes = Utils::planesFromBox(Eigen::Vector3f(-5,-5,-5),
-                                              Eigen::Vector3f(5,5,5));
-  viewSpec.mActive = true;
-  viewSpec.mRelativeLocation = true;
-  viewSpec.mWidth = viewSpec.mHeight = 0;
+  // start publishing data (scan bundles)
   drc::map_request_t request;
-  LcmTranslator::toLcm(viewSpec, request);
   request.utime = drc::Clock::instance()->getCurrentTime();
+  request.map_id = 2;
+  request.view_id = drc::data_request_t::SCANS_HALF_SWEEP;
+  request.type = drc::map_request_t::SCAN_BUNDLE;
+  request.resolution = 0.005;
+  request.frequency = 1.0f/publishPeriod;
+  request.quantization_max = 0.005;
+  request.time_min = -3;
+  request.time_max = 182;
+  request.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
+  request.relative_location = false;
+  request.num_clip_planes = 0;
+  request.active = true;
+  request.width = request.height = 0;
+  Eigen::Isometry3d ident = Eigen::Isometry3d::Identity();
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      request.transform[i][j] = ident(i,j);
+    }
+  }
   if (publishPeriod > 0) {
     state.addViewWorker(request);
   }
