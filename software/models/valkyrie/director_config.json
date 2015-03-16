@@ -141,9 +141,30 @@
     "l_leg_akx"
   ],
   "fixedPointFile" : "../../control/matlab/data/valkyrie_fp.mat",
-  "handCombination" : "LV_RV",
   "leftFootMeshFiles" : ["meshes/lj6_Left.stl"],
   "rightFootMeshFiles" : ["meshes/lj6_Right.stl"],
   "postureDatabaseFile" : "./stored_poses.json",
-  "mirrorJointSignFlips" : ["back_bkz"]
+  "mirrorJointSignFlips" : ["back_bkz"],
+
+  "handCombinations": [
+      { "side" : "left",
+        "handType" : "left_valkyrie",
+        "handLinkName" : "l_hand",
+        "handUrdf" : "valkyrie_hand_left.urdf",
+        "handJointName" : "left_valkyrie_hand_joint",
+        "handRootLink" : "left_palm",
+        "robotMountLink" : "l_hand_force_torque",
+        "palmLink" : "l_hand_face"
+      },
+      { "side" : "right",
+        "handType" : "right_valkyrie",
+        "handLinkName" : "r_hand",
+        "handUrdf" : "valkyrie_hand_right.urdf",
+        "handJointName" : "right_valkyrie_hand_joint",
+        "handRootLink" : "right_palm",
+        "robotMountLink" : "r_hand_force_torque",
+        "palmLink" : "r_hand_face"
+      }
+  ]
+
 }
