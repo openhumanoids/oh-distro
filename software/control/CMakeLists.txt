@@ -56,14 +56,14 @@ file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/addpath_control.m
 	   "function addpath_control()\n"
      "  setenv('ROS_PACKAGE_PATH',[getenv('ROS_PACKAGE_PATH'),':${ROS_MODEL_PKG}:${MODELS}:${COMMON_COMPONENTS}']);\n"
      "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
-	   "  addpath_control();\n"
+	   "  add_ctrl_path();\n"
 	   "  cd(wd);\n"
     )
 
 file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/rmpath_control.m
 	   "function rmpath_control()\n"
 	   "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
-	   "  rmpath_control();\n"
+	   "  rm_ctrl_path();\n"
 	   "  cd(wd);\n"
     )
 
@@ -86,5 +86,3 @@ include(CTest)
 
 # todo: build doxygen here (and remove it from the Makefile)
 # http://majewsky.wordpress.com/2010/08/14/tip-of-the-day-cmake-and-doxygen/
-
-

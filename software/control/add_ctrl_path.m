@@ -1,4 +1,4 @@
-function addpath_control()
+function add_ctrl_path()
 
 if ~isempty(getenv('PODS_MATLAB_SKIP_SETUP'))
   disp('Found PODS_MATLAB_SKIP_SETUP. Skipping addpath_control');

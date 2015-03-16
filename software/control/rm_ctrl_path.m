@@ -1,4 +1,4 @@
-function rmpath_control()
+function rm_ctrl_path()
 
 if ~exist('pods_get_base_path')
   % todo: implement the BUILD_PREFIX logic from the pod Makefiles (e.g.
