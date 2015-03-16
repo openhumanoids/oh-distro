@@ -54,7 +54,7 @@
   "handCombinations": [
       { "side" : "left",
         "handType" : "left_robotiq",
-        "handLinkName" : "l_hand",
+        "handLinkName" : "lwr_arm_7_link",
         "handUrdf" : "robotiq_hand_left.urdf",
         "handJointName" : "left_robotiq_hand_joint",
         "handRootLink" : "left_palm",
