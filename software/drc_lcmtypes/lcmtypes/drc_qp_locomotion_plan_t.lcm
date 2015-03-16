@@ -1,0 +1,42 @@
+package drc;
+
+struct qp_locomotion_plan_t
+{
+	int64_t utime;
+
+  double duration;
+  double start_time;
+
+  int32_t n_states;
+  double x0[n_states];
+
+  int32_t n_support_times;
+  double support_times[n_support_times];
+
+  int32_t n_supports_bytes;
+  byte supports[n_supports_bytes];
+
+  int32_t n_link_constraints_bytes;
+  byte link_constraints[n_link_constraints_bytes];
+
+  int32_t n_zmptraj_bytes;
+  byte zmptraj[n_zmptraj_bytes];
+
+  double LIP_height;
+
+  double S[4][4];
+
+  int32_t n_s1_bytes;
+  byte s1[n_s1_bytes];
+
+  int32_t n_qtraj_bytes;
+  byte qtraj[n_qtraj_bytes];
+
+  int32_t n_comtraj_bytes;
+  byte comtraj[n_comtraj_bytes];
+
+  float mu; // friction coef
+
+  string gain_set;
+}
+

@@ -1,0 +1,25 @@
+package drc;
+
+struct map_scans_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // id of map
+  int64_t map_id;
+
+  // id of view
+  int64_t view_id;
+
+  // number of scans
+  int32_t num_scans;
+
+  // approximate payload size
+  int32_t data_bytes;
+
+  // transform from reference to cloud coords
+  float transform[4][4];
+
+  // scan data
+  map_scan_t scans[num_scans];
+}

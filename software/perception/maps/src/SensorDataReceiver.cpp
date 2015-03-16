@@ -27,6 +27,7 @@ struct SensorDataReceiver::Helper {
     std::string mTransformTo;
     float mRangeMin;
     float mRangeMax;
+    float mFrequency;
     lcm::Subscription* mSubscription;
     typedef std::shared_ptr<SubscriptionInfo> Ptr;
   };
@@ -56,10 +57,20 @@ struct SensorDataReceiver::Helper {
                 maps::PointCloud::Ptr& cloud = iter->mPointSet->mCloud;
                 if (mHelper->getPose(info, dataTime, cloud->sensor_origin_,
                                      cloud->sensor_orientation_)) {
-                  Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
-                  pose.translation() = cloud->sensor_origin_.head<3>();
-                  pose.linear() = cloud->sensor_orientation_.matrix();
-                  iter->mScan->setPose(pose);
+                  Eigen::Isometry3f poseEnd = Eigen::Isometry3f::Identity();
+                  poseEnd.translation() = cloud->sensor_origin_.head<3>();
+                  poseEnd.linear() = cloud->sensor_orientation_.matrix();
+
+                  Eigen::Isometry3f poseStart;
+                  float angleRange = (iter->mScan->getNumRanges()-1) *
+                    iter->mScan->getThetaStep();
+                  float scanTime = angleRange/(2*M_PI*info->mFrequency);
+                  int64_t startTime = dataTime - int64_t(scanTime*1e-6f + 0.5);
+                  mHelper->mBotWrapper->getTransform(info->mTransformFrom,
+                                                     info->mTransformTo,
+                                                     poseStart, startTime);
+                                                
+                  iter->mScan->setPoses(poseStart, poseEnd);
                   data = *iter;
                   mPendingData.erase(iter++);
                   data.mSensorType = info->mSensorType;
@@ -214,6 +225,7 @@ addChannel(const std::string& iSensorChannel,
   info->mTransformTo = iTransformTo;
   info->mRangeMin = 0;
   info->mRangeMax = 1e10;
+  info->mFrequency = 40;
 
   // get min and max values from config
   BotParam* botParam = mHelper->mBotWrapper->getBotParam();
@@ -230,6 +242,10 @@ addChannel(const std::string& iSensorChannel,
   key = std::string(prefix) + ".min_range";
   if (0 == bot_param_get_double(botParam, key.c_str(), &val)) {
     info->mRangeMin = val;
+  }
+  key = std::string(prefix) + ".frequency";
+  if (0 == bot_param_get_double(botParam, key.c_str(), &val)) {
+    info->mFrequency = val;
   }
   free(lidarName);
 

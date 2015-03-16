@@ -11,6 +11,7 @@
 #include "OctreeView.hpp"
 #include "DepthImageView.hpp"
 #include "DepthImage.hpp"
+#include "ScanBundleView.hpp"
 
 using namespace maps;
 
@@ -83,6 +84,40 @@ operator()(LidarScan& ioScan) {
   }
 }
 
+LocalMap::RangeAngleFilter::
+RangeAngleFilter() {
+  set(30);
+}
+
+void LocalMap::RangeAngleFilter::
+set(const float iThetaMin) {
+  mThetaMin = iThetaMin;
+}
+
+void LocalMap::RangeAngleFilter::
+operator()(LidarScan& ioScan) {
+  const int n = ioScan.getNumRanges();
+  const float angleThresh = mThetaMin*M_PI/180;
+  for (int i = 1; i < n-1; ++i) {
+    if ((ioScan.range(i-1) <= 0) || (ioScan.range(i) <= 0) ||
+        (ioScan.range(i+1) <= 0)) continue;
+    Eigen::Vector2f p1 = ioScan.getVector(i-1).head<2>();
+    Eigen::Vector2f p2 = ioScan.getVector(i).head<2>();
+    Eigen::Vector2f p3 = ioScan.getVector(i+1).head<2>();
+    Eigen::Vector2f pointDelta1 = (p1-p2).normalized();
+    Eigen::Vector2f pointDelta2 = (p3-p2).normalized();
+    Eigen::Vector2f ray = p2.normalized();
+    float angle1 = std::acos(ray.dot(pointDelta1));
+    if (angle1 > M_PI/2) angle1 = M_PI-angle1;
+    float angle2 = std::acos(ray.dot(pointDelta2));
+    if (angle2 > M_PI/2) angle2 = M_PI-angle2;
+    if ((angle1 < angleThresh) && (angle2 < angleThresh)) {
+      ioScan.range(i) = -ioScan.range(i);
+    }
+  }
+}
+
+
 
 
 LocalMap::
@@ -100,6 +135,7 @@ LocalMap::
 void LocalMap::
 clear() {
   mPointData->clear();
+  mScanData.clear();
 }
 
 int64_t LocalMap::
@@ -141,6 +177,8 @@ addData(const maps::LidarScan& iScan) {
   if (!mSpec.mActive) return false;
   LidarScan scan = iScan;
   for (auto filter : mFilters) (*filter)(scan);
+  mScanData.push_back(LidarScan::Ptr(new LidarScan(scan)));
+  while(mScanData.size() > getMaxPointDataBufferSize()) mScanData.pop_front();
   PointSet points;
   scan.get(points);
   return addData(points);
@@ -190,6 +228,11 @@ addData(const maps::PointSet& iPointSet) {
 const std::shared_ptr<PointDataBuffer> LocalMap::
 getPointData() const {
   return mPointData;
+}
+
+std::deque<LidarScan::Ptr> LocalMap::
+getScanData() const {
+  return mScanData;
 }
 
 PointCloudView::Ptr LocalMap::
@@ -269,5 +312,21 @@ getAsDepthImage(const int iWidth, const int iHeight,
   view->setSize(iWidth, iHeight);
   view->setTransform(iProjector);
   view->set(cloudView->getPointCloud());
+  return view;
+}
+
+ScanBundleView::Ptr LocalMap::
+getAsScanBundle(const SpaceTimeBounds& iBounds) const {
+  // TODO: can have dedicated scan buffer object
+  ScanBundleView::Ptr view(new ScanBundleView());
+  auto allScans = mScanData;
+  std::vector<LidarScan::Ptr> scans;
+  scans.reserve(allScans.size());
+  for (auto scan : allScans) {
+    int64_t t = scan->getTimestamp();
+    if ((t < iBounds.mTimeMin) || (t > iBounds.mTimeMax)) continue;
+    scans.push_back(scan);
+  }
+  view->set(scans);
   return view;
 }

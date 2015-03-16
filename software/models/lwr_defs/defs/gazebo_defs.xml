@@ -1,0 +1,51 @@
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+<!--
+  <gazebo>
+    <plugin name="lwr_controller" filename="liblwr_controller.so">
+      <alwaysOn>true</alwaysOn>
+      <robotPrefix>lwr</robotPrefix>
+      <remotePort>49938</remotePort>
+      <lwr_arm_0_joint>0.0</lwr_arm_0_joint>
+      <lwr_arm_1_joint>0.7</lwr_arm_1_joint>
+      <lwr_arm_2_joint>0.0</lwr_arm_2_joint>
+      <lwr_arm_3_joint>-0.7</lwr_arm_3_joint>
+      <lwr_arm_4_joint>0.7</lwr_arm_4_joint>
+      <lwr_arm_5_joint>0.7</lwr_arm_5_joint>
+      <lwr_arm_6_joint>0.7</lwr_arm_6_joint>
+    </plugin>
+  </gazebo>
+-->
+  <gazebo>
+    <plugin name="rtt_gazebo" filename="librtt_gazebo_plugin.so">
+      <opsScript>
+        import("rtt_ros");
+        ros.import("rtt_roscomm");
+        ros.import("rtt_rosparam");
+        ros.import("rtt_sensor_msgs");
+        ros.import("lwr_simulation");
+        ros.import("oro_joint_state_publisher");
+        
+        loadComponent("FRI","LWRController");
+        loadComponent("joints","JointStatePublisher");
+        
+        loadService("FRI","rosparam");
+        loadService("joints","rosparam");
+        
+        setActivity("FRI", 0.0, 5, ORO_SCHED_RT);
+        setActivity("joints", 0.02, 5, ORO_SCHED_RT);
+        
+        connect("FRI.JointPosition","joints.msrJntPos", ConnPolicy());
+        stream("joints.joints_state", rostopic.connection("/joints_state"));
+        
+        joints.rosparam.refreshProperties();
+        joints.configure();
+        joints.start();
+      </opsScript>
+      
+      <component>FRI</component>
+    </plugin>
+  </gazebo>
+
+</robot>

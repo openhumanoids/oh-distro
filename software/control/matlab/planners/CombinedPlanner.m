@@ -134,6 +134,7 @@ classdef CombinedPlanner
             continue
           end
           try
+            fprintf(1, 'Handling plan on channel: %s...', obj.request_channels{j});
             plan = obj.handlers{j}(msg);
             if ismethod(plan, 'toLCM')
               plan = plan.toLCM();
@@ -150,6 +151,7 @@ classdef CombinedPlanner
             msg.value = report;
             obj.lc.publish('SYSTEM_STATUS', msg);
           end
+          fprintf(1, '...done\n');
         end
       end
     end
@@ -191,10 +193,12 @@ classdef CombinedPlanner
       end
       link_constraints(1).link_ndx = pelvis_ind;
       link_constraints(1).pt = [0;0;0];
-      link_constraints(1).traj = PPTrajectory(pchip(ts,pelvis_pose));
-      link_constraints(1).dtraj = fnder(link_constraints.traj);
-%       link_constraints.ddtraj = fnder(link_constraints.dtraj);
-      plan = ConfigurationTraj(qtraj_pp,link_constraints);
+      pp = pchip(ts, pelvis_pose);
+      [breaks, coefs, l, k, d] = unmkpp(pp);
+      link_constraints(1).ts = [breaks(1:end-1), inf];
+      link_constraints(1).coefs = reshape(coefs, [d,l,k]);
+      plan = QPLocomotionPlan.from_configuration_traj(obj.biped,qtraj_pp,link_constraints);
+      plan = DRCQPLocomotionPlan.toLCM(plan);
     end
 
     function region = iris_region(obj, msg)

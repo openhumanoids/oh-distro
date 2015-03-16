@@ -199,30 +199,371 @@
       "nominal_handedness": "left"
     }
   ], 
-  "door": [
+  "arm-calibration": [
     {
       "allow_mirror": true, 
-      "description": "narrow walking profile", 
+      "description": "pose-1", 
       "joints": {
-        "back_bkx": -0.0012335698120296001, 
-        "back_bky": -0.010241607204079628, 
-        "back_bkz": 6.361957639455795e-05, 
-        "l_arm_elx": 0.04901176691055298, 
-        "l_arm_ely": 2.09968900680542, 
-        "l_arm_mwx": -0.001135408878326416, 
-        "l_arm_shx": -1.3347748517990112, 
-        "l_arm_shz": 0.2725708484649658, 
-        "l_arm_uwy": 0.1728922724723816, 
-        "r_arm_elx": -0.04314535856246948, 
-        "r_arm_ely": 2.0999293327331543, 
-        "r_arm_mwx": 0.00019365549087524414, 
-        "r_arm_shx": 1.3254579305648804, 
-        "r_arm_shz": -0.2694024443626404, 
-        "r_arm_uwy": 0.17152655124664307
+        "l_arm_elx": 0.4983791708946228, 
+        "l_arm_ely": 2.09848952293396, 
+        "l_arm_mwx": -0.0021711657755076885, 
+        "l_arm_shx": -1.3243898153305054, 
+        "l_arm_shz": 0.26862025260925293, 
+        "l_arm_uwy": 0.18197745084762573
       }, 
-      "name": "narrow walking profile", 
-      "nominal_handedness": "none"
-    }
+      "name": "pose-1", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-2", 
+      "joints": {
+        "l_arm_elx": 2.251546859741211, 
+        "l_arm_ely": 2.153376817703247, 
+        "l_arm_mwx": -0.4056894779205322, 
+        "l_arm_shx": -0.7213974595069885, 
+        "l_arm_shz": 0.622323215007782, 
+        "l_arm_uwy": 2.5359792709350586
+      }, 
+      "name": "pose-2", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-3", 
+      "joints": {
+        "l_arm_elx": 1.7655384540557861, 
+        "l_arm_ely": 2.8289380073547363, 
+        "l_arm_mwx": -0.9808677434921265, 
+        "l_arm_shx": 0.2051519900560379, 
+        "l_arm_shz": -0.24779853224754333, 
+        "l_arm_uwy": 1.6732349395751953
+      }, 
+      "name": "pose-3", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-4", 
+      "joints": {
+        "l_arm_elx": 1.2346278429031372, 
+        "l_arm_ely": 1.888590931892395, 
+        "l_arm_mwx": -0.40295886993408203, 
+        "l_arm_shx": -0.3985883891582489, 
+        "l_arm_shz": -0.8138488531112671, 
+        "l_arm_uwy": 0.8160935044288635
+      }, 
+      "name": "pose-4", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-5", 
+      "joints": {
+        "l_arm_elx": 0.6426105499267578, 
+        "l_arm_ely": 0.7909762263298035, 
+        "l_arm_mwx": 0.6005620360374451, 
+        "l_arm_shx": -1.1163711547851562, 
+        "l_arm_shz": -1.3157283067703247, 
+        "l_arm_uwy": 0.24580326676368713
+      }, 
+      "name": "pose-5", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-6", 
+      "joints": {
+        "l_arm_elx": 1.4995882511138916, 
+        "l_arm_ely": 0.20764483511447906, 
+        "l_arm_mwx": 0.13771352171897888, 
+        "l_arm_shx": -1.4203602075576782, 
+        "l_arm_shz": -0.9882323145866394, 
+        "l_arm_uwy": 1.459101676940918
+      }, 
+      "name": "pose-6", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-7", 
+      "joints": {
+        "l_arm_elx": 1.2097647190093994, 
+        "l_arm_ely": 1.5993690490722656, 
+        "l_arm_mwx": 0.7716012001037598, 
+        "l_arm_shx": 0.1882011443376541, 
+        "l_arm_shz": -0.412489116191864, 
+        "l_arm_uwy": 0.014982768334448338
+      }, 
+      "name": "pose-7", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-8", 
+      "joints": {
+        "l_arm_elx": 1.439347505569458, 
+        "l_arm_ely": 0.7857130169868469, 
+        "l_arm_mwx": 0.8608444929122925, 
+        "l_arm_shx": 0.09198170900344849, 
+        "l_arm_shz": -0.5454976558685303, 
+        "l_arm_uwy": 1.5371789932250977
+      }, 
+      "name": "pose-8", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-9", 
+      "joints": {
+        "l_arm_elx": 1.3537487983703613, 
+        "l_arm_ely": 2.895855188369751, 
+        "l_arm_mwx": -1.1515345573425293, 
+        "l_arm_shx": 1.417493224143982, 
+        "l_arm_shz": -0.5633578896522522, 
+        "l_arm_uwy": 2.6446292400360107
+      }, 
+      "name": "pose-9", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-10", 
+      "joints": {
+        "l_arm_elx": 1.3215874433517456, 
+        "l_arm_ely": 2.5936005115509033, 
+        "l_arm_mwx": -1.0416871309280396, 
+        "l_arm_shx": 1.261821985244751, 
+        "l_arm_shz": 0.44515758752822876, 
+        "l_arm_uwy": 3.122835159301758
+      }, 
+      "name": "pose-10", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-11", 
+      "joints": {
+        "l_arm_elx": 1.1454418897628784, 
+        "l_arm_ely": 1.9165356159210205, 
+        "l_arm_mwx": 0.5013890266418457, 
+        "l_arm_shx": -1.1925243139266968, 
+        "l_arm_shz": 0.691789448261261, 
+        "l_arm_uwy": -0.015712033957242966
+      }, 
+      "name": "pose-11", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-12", 
+      "joints": {
+        "l_arm_elx": 0.13916084170341492, 
+        "l_arm_ely": 3.132445812225342, 
+        "l_arm_mwx": 0.011978751979768276, 
+        "l_arm_shx": -0.722893238067627, 
+        "l_arm_shz": -0.8470561504364014, 
+        "l_arm_uwy": 3.1212515830993652
+      }, 
+      "name": "pose-12", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-13", 
+      "joints": {
+        "l_arm_elx": 0.1421298086643219, 
+        "l_arm_ely": 3.1334481239318848, 
+        "l_arm_mwx": 0.014088736847043037, 
+        "l_arm_shx": 0.15990856289863586, 
+        "l_arm_shz": -1.456365704536438, 
+        "l_arm_uwy": 3.127951145172119
+      }, 
+      "name": "pose-13", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-14", 
+      "joints": {
+        "l_arm_elx": 0.14052170515060425, 
+        "l_arm_ely": 3.1334481239318848, 
+        "l_arm_mwx": 0.013592359609901905, 
+        "l_arm_shx": 1.2955983877182007, 
+        "l_arm_shz": 0.045682452619075775, 
+        "l_arm_uwy": 3.1190593242645264
+      }, 
+      "name": "pose-14", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-15", 
+      "joints": {
+        "l_arm_elx": 0.14225320518016815, 
+        "l_arm_ely": 3.132821798324585, 
+        "l_arm_mwx": 0.014709372073411942, 
+        "l_arm_shx": 0.17561277747154236, 
+        "l_arm_shz": 0.015077929012477398, 
+        "l_arm_uwy": 3.1179630756378174
+      }, 
+      "name": "pose-15", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-16", 
+      "joints": {
+        "l_arm_elx": 1.4891977310180664, 
+        "l_arm_ely": 1.7085164785385132, 
+        "l_arm_mwx": -1.1613401174545288, 
+        "l_arm_shx": 0.36518511176109314, 
+        "l_arm_shz": 0.7542551159858704, 
+        "l_arm_uwy": 2.920030355453491
+      }, 
+      "name": "pose-16", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-17", 
+      "joints": {
+        "l_arm_elx": 1.6805580854415894, 
+        "l_arm_ely": 1.6760603189468384, 
+        "l_arm_mwx": -0.3688255548477173, 
+        "l_arm_shx": 0.26435431838035583, 
+        "l_arm_shz": 0.16038241982460022, 
+        "l_arm_uwy": 2.908092975616455
+      }, 
+      "name": "pose-17", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-18", 
+      "joints": {
+        "l_arm_elx": 1.5668799877166748, 
+        "l_arm_ely": 1.6958600282669067, 
+        "l_arm_mwx": 0.5980796813964844, 
+        "l_arm_shx": 0.15367688238620758, 
+        "l_arm_shz": 0.3489461839199066, 
+        "l_arm_uwy": 0.02972111664712429
+      }, 
+      "name": "pose-18", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-19", 
+      "joints": {
+        "l_arm_elx": 1.1171150207519531, 
+        "l_arm_ely": 1.745608925819397, 
+        "l_arm_mwx": 0.3651038706302643, 
+        "l_arm_shx": -0.0003741069231182337, 
+        "l_arm_shz": -0.32013678550720215, 
+        "l_arm_uwy": 0.06674989312887192
+      }, 
+      "name": "pose-19", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-20", 
+      "joints": {
+        "l_arm_elx": 1.5491911172866821, 
+        "l_arm_ely": 1.5981159210205078, 
+        "l_arm_mwx": 0.3925347626209259, 
+        "l_arm_shx": -0.9518507719039917, 
+        "l_arm_shz": 0.16190795600414276, 
+        "l_arm_uwy": 1.0413107872009277
+      }, 
+      "name": "pose-20", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-21", 
+      "joints": {
+        "l_arm_elx": 1.0614510774612427, 
+        "l_arm_ely": 0.9081435799598694, 
+        "l_arm_mwx": 0.36708980798721313, 
+        "l_arm_shx": -0.8836745619773865, 
+        "l_arm_shz": -0.687930166721344, 
+        "l_arm_uwy": 1.1581218242645264
+      }, 
+      "name": "pose-21", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-22", 
+      "joints": {
+        "l_arm_elx": 1.1960340738296509, 
+        "l_arm_ely": 1.6403461694717407, 
+        "l_arm_mwx": 0.7267934083938599, 
+        "l_arm_shx": -0.6032419204711914, 
+        "l_arm_shz": -0.47253140807151794, 
+        "l_arm_uwy": 2.3569257259368896
+      }, 
+      "name": "pose-22", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pose-23", 
+      "joints": {
+        "l_arm_elx": 0.9048498272895813, 
+        "l_arm_ely": 0.8641588091850281, 
+        "l_arm_mwx": 0.9395374655723572, 
+        "l_arm_shx": -1.2362717390060425, 
+        "l_arm_shz": -1.012195348739624, 
+        "l_arm_uwy": 3.1007885932922363
+      }, 
+      "name": "pose-23", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "near-limits", 
+      "joints": {
+        "l_arm_elx": 2.2581026554107666, 
+        "l_arm_ely": 0.1036352589726448, 
+        "l_arm_mwx": 1.0482676029205322, 
+        "l_arm_shx": -1.4572527408599854, 
+        "l_arm_shz": 0.7106367945671082, 
+        "l_arm_uwy": 2.9808106422424316
+      }, 
+      "name": "near-limits", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "near-limits-2", 
+      "joints": {
+        "l_arm_elx": 0.08572330325841904, 
+        "l_arm_ely": 0.1055152639746666, 
+        "l_arm_mwx": 1.0302700996398926, 
+        "l_arm_shx": -1.4580005407333374, 
+        "l_arm_shz": 0.7067773938179016, 
+        "l_arm_uwy": 0.164559006690979
+      }, 
+      "name": "near-limits-2", 
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "outside-limits", 
+      "joints": {
+        "l_arm_elx": 2.4085498775598295, 
+        "l_arm_ely": -0.05235987755982989, 
+        "l_arm_mwx": 1.2304598775598299, 
+        "l_arm_shx": -1.62315987755983, 
+        "l_arm_shz": 0.83775787755983, 
+        "l_arm_uwy": 3.1939498775598296
+      }, 
+      "name": "outside-limits", 
+      "nominal_handedness": "left"
+    } 
   ], 
   "bihanded": [
     {
@@ -258,6 +599,31 @@
       }, 
       "name": "board pregrasp", 
       "nominal_handedness": "left"
+    }
+  ], 
+  "door": [
+    {
+      "allow_mirror": true, 
+      "description": "narrow walking profile", 
+      "joints": {
+        "back_bkx": -0.0012335698120296001, 
+        "back_bky": -0.010241607204079628, 
+        "back_bkz": 6.361957639455795e-05, 
+        "l_arm_elx": 0.04901176691055298, 
+        "l_arm_ely": 2.09968900680542, 
+        "l_arm_mwx": -0.001135408878326416, 
+        "l_arm_shx": -1.3347748517990112, 
+        "l_arm_shz": 0.2725708484649658, 
+        "l_arm_uwy": 0.1728922724723816, 
+        "r_arm_elx": -0.04314535856246948, 
+        "r_arm_ely": 2.0999293327331543, 
+        "r_arm_mwx": 0.00019365549087524414, 
+        "r_arm_shx": 1.3254579305648804, 
+        "r_arm_shz": -0.2694024443626404, 
+        "r_arm_uwy": 0.17152655124664307
+      }, 
+      "name": "narrow walking profile", 
+      "nominal_handedness": "none"
     }
   ], 
   "drill": [
@@ -405,6 +771,36 @@
         "l_arm_uwy": 1.5549284219741821
       }, 
       "name": "pre drop 2", 
+      "nominal_handedness": "left"
+    }
+  ], 
+  "test": [
+    {
+      "allow_mirror": true, 
+      "description": "test", 
+      "joints": {
+        "l_arm_elx": 1.4430586099624634, 
+        "l_arm_ely": 1.309770941734314, 
+        "l_arm_mwx": -1.056581735610962, 
+        "l_arm_shx": -0.7434581518173218, 
+        "l_arm_shz": -0.4311567544937134, 
+        "l_arm_uwy": 1.4111108779907227
+      }, 
+      "name": "test", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "test-2", 
+      "joints": {
+        "l_arm_elx": 1.9364886283874512, 
+        "l_arm_ely": 1.3095204830169678, 
+        "l_arm_mwx": -1.053975224494934, 
+        "l_arm_shx": -0.7433335781097412, 
+        "l_arm_shz": -0.43106722831726074, 
+        "l_arm_uwy": 1.4124504327774048
+      }, 
+      "name": "test-2", 
       "nominal_handedness": "left"
     }
   ]

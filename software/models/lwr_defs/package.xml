@@ -1,0 +1,18 @@
+<package>
+  <name>lwr_defs</name>
+  <version>0.0.1</version>
+  <description>This package contains the description (mechanical, kinematic, visual,
+  etc.) of the KUKA LWR robot. The files in this package are parsed and used by
+  a variety of other components. Most users will not interact directly
+  with this package.</description>
+  <maintainer email="konradb3@gmail.com">Konrad Banachowicz</maintainer>
+
+  <license>BSD</license>
+
+  <author>Konrad Banachowicz</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>xacro</run_depend>
+
+</package>

@@ -5,11 +5,14 @@
 #include <vector>
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/LcmWrapper.hpp>
+#include <drc_utils/Clock.hpp>
 
 struct Bridge::Imp {
   struct Binding {
     drc::LcmWrapper::Ptr mDestLcmWrapper;
     BindingSpec mSpec;
+    int64_t mOutputPeriod;
+    int64_t mLastPublishTime;
   };
 
   struct BindingList {
@@ -21,10 +24,16 @@ struct Bridge::Imp {
 
     void handler(const lcm::ReceiveBuffer* iBuffer,
                  const std::string& iChannel) {
-      for (auto binding : mBindings) {
+      for (auto& binding : mBindings) {
         auto& spec = binding.mSpec;
+        int64_t currentTime = drc::Clock::instance()->getCurrentTime();
+        if ((binding.mOutputPeriod > 0) &&
+            ((currentTime-binding.mLastPublishTime) < binding.mOutputPeriod)) {
+          continue;
+        }
         binding.mDestLcmWrapper->get()->
           publish(spec.mOutputChannel, iBuffer->data, iBuffer->data_size);
+        binding.mLastPublishTime = currentTime;
         if (mImp->mVerbose) {
           std::cout << "transferred (" << spec.mInputCommunity << "," <<
             spec.mInputChannel << ") to (" << spec.mOutputCommunity << "," <<
@@ -127,6 +136,9 @@ addBinding(const BindingSpec& iSpec) {
   binding.mSpec = iSpec;
   binding.mSpec.mOutputChannel = iSpec.mOutputChannel.length() > 0 ?
     iSpec.mOutputChannel : iSpec.mInputChannel;
+  binding.mOutputPeriod = (iSpec.mOutputFrequency == 0) ? 0 :
+    1.0/iSpec.mOutputFrequency*1e6;
+  binding.mLastPublishTime = 0;
   
   if (inputCommunity->mBindingLists[iSpec.mInputChannel] == NULL) {
     inputCommunity->mBindingLists[iSpec.mInputChannel].reset

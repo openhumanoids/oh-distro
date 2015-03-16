@@ -21,7 +21,7 @@ def on_bw(channel, data):
   estate_time = estate.utime*1E-6
   print estate_time
 
-  l_arm_names = ['l_arm_usy','l_arm_shx','l_arm_ely','l_arm_elx','l_arm_uwy','l_arm_mwx']
+  l_arm_names = ['l_arm_shz','l_arm_shx','l_arm_ely','l_arm_elx','l_arm_uwy','l_arm_mwx']
   l_arm_angles = []
   for i in range(0,6):
     ix= estate.joint_name.index(l_arm_names[i])

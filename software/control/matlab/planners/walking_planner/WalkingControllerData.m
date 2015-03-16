@@ -1,4 +1,4 @@
-classdef WalkingControllerData < WalkingPlanData
+classdef WalkingControllerData < QPWalkingPlan
   properties
     t_offset
     ignore_terrain
@@ -6,8 +6,9 @@ classdef WalkingControllerData < WalkingPlanData
 
   methods
     function obj = WalkingControllerData(q0, support_times, supports, link_constraints, zmptraj, V, c, comtraj, mu, ignore_terrain, t_offset)
-      obj = obj@WalkingPlanData(q0, support_times, supports, link_constraints, zmptraj, V, c, comtraj, mu);
-      obj.t_offset = t_offset;
+      %obj = obj@WalkingPlanData(q0, support_times, supports, link_constraints, zmptraj, V, c, comtraj, mu);
+      obj = obj@QPWalkingPlan.from_biped_footstep_plan(footstep_plan, obj, x0)
+      bj.t_offset = t_offset;
       obj.ignore_terrain = ignore_terrain;
     end
 

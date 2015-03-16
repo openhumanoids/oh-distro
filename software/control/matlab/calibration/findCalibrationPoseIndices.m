@@ -10,6 +10,7 @@ function pose_indices = findCalibrationPoseIndices(v_data, num_poses, v_norm_lim
 % regions where the robot's velocity is low.
 
 v_norm = sum(sqrt(v_data .* v_data), 1);
+v_norm = v_norm / max(v_norm);
 
 indices = v_norm < v_norm_limit;
 

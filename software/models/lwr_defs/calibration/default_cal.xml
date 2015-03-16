@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<root>
+
+  <!-- Robot Base -> Left arm base -->
+  <property name="cal_base_to_left_arm_x"     value="0.0" />
+  <property name="cal_base_to_left_arm_y"     value="0.5" />
+  <property name="cal_base_to_left_arm_z"     value="1.1" />
+  <property name="cal_base_to_left_arm_roll"  value="0" />
+  <property name="cal_base_to_left_arm_pitch" value="0" />
+  <property name="cal_base_to_left_arm_yaw"   value="0" />
+
+  <!-- Robot Base -> Right arm base -->
+  [0.385121, -0.0570121, 1.15408, 5.57141, 5.42596, 2.4299]
+  <property name="cal_base_to_right_arm_x"     value="0.0" />
+  <property name="cal_base_to_right_arm_y"     value="-0.5" />
+  <property name="cal_base_to_right_arm_z"     value="1.1" />
+  <property name="cal_base_to_right_arm_roll"  value="0.0" />
+  <property name="cal_base_to_right_arm_pitch" value="0.0" />
+  <property name="cal_base_to_right_arm_yaw"   value="0.0" />
+
+</root>

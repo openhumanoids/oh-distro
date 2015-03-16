@@ -11,6 +11,7 @@ public:
     std::string mInputChannel;
     std::string mOutputCommunity;
     std::string mOutputChannel;
+    float mOutputFrequency;
   };
 
 public:
