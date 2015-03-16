@@ -1,4 +1,23 @@
-function replaySim(simVars)
+function replaySim(scene, iteration)
+
+if nargin < 1, scene = 'scene1'; end
+if nargin < 2, iteration = 1; end
+
+warning('off', 'Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off', 'MATLAB:class:mustReturnObject')
+
+path= fileparts(which('replaySim'));
+if isdir([path ,'/', scene])    
+    cd([path, '/', 'scene1'])
+    try
+        load(sprintf('%03d.mat',iteration), 'simVars')
+    catch
+        fprintf('Cannot find iteration %d of %s', iteration, scene)
+    end
+else
+    fprintf('Cannot find %s folder', scene)
+end
+
 
 %Unpack simVars
 names = fieldnames(simVars);
@@ -65,7 +84,30 @@ switch options.scene
         table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
         r = addGeometryToBody(r, world, table);
         
-        targetObjectPos = [0.7 0 1.05];
+        targetObjectPos = [0.7 0 1.0625];
+        targetObject = RigidBodyBox([.05 .05 .3], targetObjectPos, [0 0 0]);
+        r = addGeometryToBody(r, world, targetObject);
+    case 'scene2'
+        table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+        r = addGeometryToBody(r, world, table);
+        
+        obstacle = RigidBodyBox([.3 .3 .4], [.55 .35 1.10], [0 0 0]);
+        r = addGeometryToBody(r, world, obstacle);
+        
+        obstacle = RigidBodyBox([.3 .3 .4], [.55 -0.35 1.10], [0 0 0]);
+        r = addGeometryToBody(r, world, obstacle);
+        
+        obstacle = RigidBodyBox([.3 1 .4], [.55 0 1.50], [0 0 0]);
+        r = addGeometryToBody(r, world, obstacle);
+        
+        targetObjectPos = [0.7 0 1.0625];
+        targetObject = RigidBodyBox([.05 .05 .3], targetObjectPos, [0 0 0]);
+        r = addGeometryToBody(r, world, targetObject);
+    case 'scene3'
+        table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+        r = addGeometryToBody(r, world, table);
+        
+        targetObjectPos = [0.7 0 0.6];
         targetObject = RigidBodyBox([.05 .05 .3], targetObjectPos, [0 0 0]);
         r = addGeometryToBody(r, world, targetObject);
 end
@@ -135,9 +177,15 @@ posture_constraint_8 = posture_constraint_8.setJointLimits(joint_inds, joints_lo
 
 v = r.constructVisualizer();
 
+TA = TA.setLCMGL('TA',[1,0,0]);
+TB = TB.setLCMGL('TB',[0,0,1]);
+T_smooth = T_smooth.setLCMGL('T_smooth', [1,0,0]);
+TConnected = TConnected.setLCMGL('TConnected', [1,0,1]);
+
 drawTree(TA);
 drawTree(TB);
 drawPath(T_smooth, path_ids_A);
+drawPath(TConnected, path_ids_C);
 
 q_path = extractPath(T_smooth, path_ids_A);
 path_length = size(q_path,2);
@@ -164,8 +212,15 @@ t_scaled = tf*(-real(acos(2*t_scaled/tf-1)+pi)/2);
 
 xtraj = PPTrajectory(pchip(t_scaled,[q_path(:,idx_unique); zeros(r.getNumVelocities(),numel(t_scaled))]));
 xtraj = xtraj.setOutputFrame(r.getStateFrame());
-v.playback(xtraj);
+key = [];
+while isempty(key)
+    fprintf('Playing %s iteration %d\n', scene, iteration)
+    v.playback(xtraj);
+    key = input('Press return to replay animation or eneter any other key to exit', 's');
+end
 
+warning('on', 'Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('on', 'MATLAB:class:mustReturnObject')
 end
 
 
