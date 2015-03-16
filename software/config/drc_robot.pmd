@@ -131,6 +131,23 @@ group "7.other_drivers" {
     }
 }
 
+group "8.network" {
+    cmd "base_network_shaper-link2" {
+        exec = "drc-network-shaper -r base -c drc_robot.cfg -i link2";
+        host = "localhost";
+    }
+
+#    cmd "base_tunnel-link3" {
+#        exec = "bot-lcm-tunnel -p 16384 -u ";
+#        host = "localhost";
+#    }
+
+    cmd "base_network_shaper-link3" {
+        exec = "drc-network-shaper -r base -c drc_robot.cfg -i link3";
+        host = "localhost";
+    }
+}
+
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
     host = "atlas2";

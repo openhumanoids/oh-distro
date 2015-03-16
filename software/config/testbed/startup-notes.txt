@@ -1,0 +1,13 @@
+launch bot-procman-sheriff -l drc_robot.cfg
+  - launch base deputy and network
+
+ssh to field and launch field-startup.sh
+
+ssh to robot and run:
+    - robot-routes.sh
+    - robot-startup.sh
+
+Operator: 10.5.1.2
+Field: 10.5.1.3
+       10.5.3.3
+Robot: 10.5.3.2
