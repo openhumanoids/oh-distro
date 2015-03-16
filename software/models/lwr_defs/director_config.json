@@ -1,11 +1,11 @@
 {
   "urdfConfig": {
-    "default": "./robots/lwr_pen.urdf",
-    "robotState": "./robots/lwr_pen.urdf",
+    "default": "./robots/lwr_pen_robotiq.urdf",
+    "robotState": "./robots/lwr_pen_robotiq.urdf",
     "ik":         "./robots/lwr_pen_drake.urdf",
     "chull":      "./robots/lwr_pen_drake.urdf",
-    "playback":   "./robots/lwr_pen.urdf",
-    "teleop":     "./robots/lwr_pen.urdf"
+    "playback":   "./robots/lwr_pen_robotiq.urdf",
+    "teleop":     "./robots/lwr_pen_robotiq.urdf"
   },
 
   "teleopJointGroups" : [
