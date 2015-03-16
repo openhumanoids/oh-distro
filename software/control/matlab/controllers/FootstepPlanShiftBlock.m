@@ -79,18 +79,8 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
       tt = t-ctrl_data.link_constraints(lfoot_link_con_ind).ts(foot_traj_ind);
       
       lfoot_des = evalCubicSplineSegment(tt, ctrl_data.link_constraints(lfoot_link_con_ind).coefs(:,foot_traj_ind,:));
-      % a0 = ctrl_data.link_constraints(lfoot_link_con_ind).a0(:,foot_traj_ind);
-      % a1 = ctrl_data.link_constraints(lfoot_link_con_ind).a1(:,foot_traj_ind);
-      % a2 = ctrl_data.link_constraints(lfoot_link_con_ind).a2(:,foot_traj_ind);
-      % a3 = ctrl_data.link_constraints(lfoot_link_con_ind).a3(:,foot_traj_ind);
-      % lfoot_des = evalCubicSplineSegment(tt,a0, a1,a2,a3);
 
       rfoot_des = evalCubicSplineSegment(tt, ctrl_data.link_constraints(rfoot_link_con_ind).coefs(:,foot_traj_ind,:));
-      % a0 = ctrl_data.link_constraints(rfoot_link_con_ind).a0(:,foot_traj_ind);
-      % a1 = ctrl_data.link_constraints(rfoot_link_con_ind).a1(:,foot_traj_ind);
-      % a2 = ctrl_data.link_constraints(rfoot_link_con_ind).a2(:,foot_traj_ind);
-      % a3 = ctrl_data.link_constraints(rfoot_link_con_ind).a3(:,foot_traj_ind);
-      % rfoot_des = evalCubicSplineSegment(tt,a0,a1,a2,a3);
 
       left_foot_in_contact = fc(1) > 0.5 && loading_foot==obj.robot.foot_body_id.left;
       right_foot_in_contact = fc(2) > 0.5 && loading_foot==obj.robot.foot_body_id.right;

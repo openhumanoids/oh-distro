@@ -77,12 +77,12 @@ end
 lcmgl.switchBuffers();
 
 foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-link_constraints = struct('link_ndx',{}, 'pt', {}, 'pos', {}, 'a0', {});
+link_constraints = struct('link_ndx',{}, 'pt', {}, 'pos', {}, 'coefs', {});
 for f = {'right', 'left'}
   foot = f{1};
   frame_id = r.foot_frame_id.(foot);
   body_ind = r.getFrame(frame_id).body_ind;
-  link_constraints(end+1) = struct('link_ndx', body_ind, 'pt', [0;0;0], 'pos', forwardKin(r, kinsol, body_ind, [0;0;0], 1), 'a0', []);
+  link_constraints(end+1) = struct('link_ndx', body_ind, 'pt', [0;0;0], 'pos', forwardKin(r, kinsol, body_ind, [0;0;0], 1), 'coefs', []);
 end
 
 ctrl_data = QPControllerData(true,struct(...
