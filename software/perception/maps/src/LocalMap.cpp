@@ -135,6 +135,7 @@ LocalMap::
 void LocalMap::
 clear() {
   mPointData->clear();
+  std::unique_lock<std::mutex> lock(mScanMutex);
   mScanData.clear();
 }
 
@@ -177,8 +178,11 @@ addData(const maps::LidarScan& iScan) {
   if (!mSpec.mActive) return false;
   LidarScan scan = iScan;
   for (auto filter : mFilters) (*filter)(scan);
-  mScanData.push_back(LidarScan::Ptr(new LidarScan(scan)));
-  while(mScanData.size() > getMaxPointDataBufferSize()) mScanData.pop_front();
+  {
+    std::unique_lock<std::mutex> lock(mScanMutex);
+    mScanData.push_back(LidarScan::Ptr(new LidarScan(scan)));
+    while(mScanData.size() > getMaxPointDataBufferSize()) mScanData.pop_front();
+  }
   PointSet points;
   scan.get(points);
   return addData(points);
@@ -232,6 +236,7 @@ getPointData() const {
 
 std::deque<LidarScan::Ptr> LocalMap::
 getScanData() const {
+  std::unique_lock<std::mutex> lock(mScanMutex);
   return mScanData;
 }
 
@@ -319,7 +324,11 @@ ScanBundleView::Ptr LocalMap::
 getAsScanBundle(const SpaceTimeBounds& iBounds) const {
   // TODO: can have dedicated scan buffer object
   ScanBundleView::Ptr view(new ScanBundleView());
-  auto allScans = mScanData;
+  std::deque<std::shared_ptr<LidarScan>> allScans;
+  {
+    std::unique_lock<std::mutex> lock(mScanMutex);
+    allScans = mScanData;
+  }
   std::vector<LidarScan::Ptr> scans;
   scans.reserve(allScans.size());
   for (auto scan : allScans) {

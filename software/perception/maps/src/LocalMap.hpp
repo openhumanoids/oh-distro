@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <deque>
+#include <mutex>
 #include <Eigen/Geometry>
 
 #include "Types.hpp"
@@ -153,6 +154,7 @@ protected:
   std::shared_ptr<PointDataBuffer> mPointData;
   std::deque<std::shared_ptr<LidarScan> > mScanData;
   std::vector<Filter::Ptr> mFilters;
+  mutable std::mutex mScanMutex;
 };
 
 }
