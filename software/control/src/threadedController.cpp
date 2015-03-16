@@ -6,6 +6,7 @@
 #include "drake/lcmt_qp_controller_input.hpp"
 #include "drc/controller_status_t.hpp"
 #include "drc/robot_state_t.hpp"
+#include "drc/atlas_behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include "drake/QPCommon.h"
 #include "RobotStateDriver.hpp"
@@ -17,6 +18,8 @@ namespace {
 
 struct ThreadedControllerOptions {
   std::string atlas_command_channel;
+  std::string atlas_behavior_channel;
+  int max_infocount; // If we see info < 0 more than max_infocount times, freeze Atlas. Set to -1 to disable freezing.
 };
 
 std::atomic<bool> done(false);
@@ -47,6 +50,10 @@ public:
 
 SolveArgs solveArgs;
 std::unique_ptr<drc::controller_status_t> controller_status_msg(new drc::controller_status_t());
+
+std::unique_ptr<drc::atlas_behavior_command_t> atlas_behavior_msg(new drc::atlas_behavior_command_t());
+
+int infocount = 0;
 // drc::controller_status_t controller_status_msg;
 
 class LCMHandler {
@@ -240,7 +247,7 @@ public:
 LCMHandler lcmHandler;
 LCMControlReceiver controlReceiver(&lcmHandler);
 
-void threadLoop(std::string &atlas_command_channel)
+void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 {
 
   QPControllerOutput qp_output;
@@ -276,9 +283,19 @@ void threadLoop(std::string &atlas_command_channel)
       solveArgs.pdata->state.t_prev = robot_state->t;
       solveArgs.pdata->state.vref_integrator_state = VectorXd::Zero(solveArgs.pdata->state.vref_integrator_state.size());
       solveArgs.pdata->state.q_integrator_state = VectorXd::Zero(solveArgs.pdata->state.q_integrator_state.size());
+      infocount = 0;
     } else {
       int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, solveArgs.b_contact_force, &qp_output, solveArgs.debug);
-      (void)info; // info not used
+      if (info < 0 && ctrl_opts->max_infocount > 0) {
+        infocount++;
+        if (infocount > ctrl_opts->max_infocount) {
+          atlas_behavior_msg->utime = 0;
+          atlas_behavior_msg->command = "freeze";
+          lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, atlas_behavior_msg.get());
+        }
+      } else {
+        infocount = 0;
+      }
       // std::cout << "u: " << qp_output.u << std::endl;
       // std::cout << "q: " << qp_output.q_ref << std::endl;
       // std::cout << "qd: " << qp_output.qd_ref << std::endl;
@@ -298,7 +315,7 @@ void threadLoop(std::string &atlas_command_channel)
       params = &(it->second);
       // publish ATLAS_COMMAND
       drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
-      lcmHandler.LCMHandle->publish(atlas_command_channel, command_msg);
+      lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg);
 
       controller_status_msg->state = controller_status_msg->STANDING;
     }
@@ -339,7 +356,7 @@ void controllerLoop(NewQPControllerData *pdata, std::shared_ptr<ThreadedControll
 
   std::cout << "starting control loop... " << std::endl;
 
-  threadLoop(ctrl_opts->atlas_command_channel);
+  threadLoop(ctrl_opts);
 }
 
 

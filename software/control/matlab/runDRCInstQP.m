@@ -11,7 +11,9 @@ if nargin < 3
 end
 atlas_options = applyDefaults(atlas_options, struct('atlas_version', 4, ...
                                                     'hands', 'none'));
-ctrl_options = applyDefaults(ctrl_options, struct('atlas_command_channel', 'ATLAS_COMMAND'));
+ctrl_options = applyDefaults(ctrl_options, struct('atlas_command_channel', 'ATLAS_COMMAND',...
+                                                  'atlas_behavior_channel', 'ATLAS_BEHAVIOR_COMMAND',...
+                                                  'max_infocount', 10));
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
