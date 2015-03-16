@@ -2,7 +2,7 @@ function testHandWorkspace
 % test if the HandWorkspace can query the arm posture to achieve closest distance to the
 % desired hand pose
 options.floating = true;
-robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/atlas_v3/model_minimal_contact.urdf'),options);
 nomdata = load([getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_fp.mat']);
 nq = robot.getNumPositions();
 qstar = nomdata.xstar(1:nq);
