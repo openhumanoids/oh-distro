@@ -1,4 +1,5 @@
 function drakeIRB140Simulation(visualize)
+%NOTEST
 if nargin < 1
   visualize = 1;
 end
