@@ -14,7 +14,7 @@ if ~isfield(options,'goal_bias'), options.goal_bias = 0.5; end;
 if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
 if ~isfield(options,'planning_mode'), options.planning_mode = 'rrt_connect'; end;
 if ~isfield(options,'visualize'), options.visualize = true; end;
-if ~isfield(options,'scene'), options.scene = 'scene1'; end;
+if ~isfield(options,'scene'), options.scene = 'debris'; end;
 if ~isfield(options,'model'), options.model = 'v3'; end;
 options.floating = true;
 options.terrain = RigidBodyFlatTerrain();
@@ -24,6 +24,10 @@ switch options.model
         urdf = fullfile(getDrakePath(),'..','models','atlas_v3','model_convex_hull_robotiq_hands.urdf');
     case 'v4'
         urdf = fullfile(getDrakePath(),'..','models','atlas_v4','model_convex_hull_fingers.urdf');
+    case 'v5'
+        urdf = fullfile(getDrakePath(),'..','models','atlas_v5','model_convex_hull_fingers.urdf');
+    case 'val'
+        urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_sim_mit_drake.urdf');
     otherwise
         urdf = fullfile(getDrakePath(),'examples','Atlas','urdf','atlas_convex_hull.urdf');
 end
@@ -32,135 +36,19 @@ r = RigidBodyManipulator(urdf,options);
 nq = r.getNumPositions();
 S = load([getDrakePath(), '/examples/Atlas/data/atlas_fp.mat']);
 q_nom = S.xstar(1:nq);
-q_zero = zeros(nq, 1);
+q_zero = zeros(nq, 1); %is it needed??
 
 world = r.findLinkId('world');
 l_foot = r.findLinkId('l_foot');
 r_foot = r.findLinkId('r_foot');
 l_hand = r.findLinkId('l_hand');
-l_foot_pts = r.getBody(l_foot).getTerrainContactPoints();
-r_foot_pts = r.getBody(r_foot).getTerrainContactPoints();
 joints = Point(r.getStateFrame, (1:r.getStateFrame.dim)');
 
-% Add obstacles
-
-switch options.scene
-    case 'debris'
-        collision_object = RigidBodyCapsule(0.05,1,[0.95,0.22,0.35],[0,pi/2,0]);
-        collision_object.c = [0.5;0.4;0.3];
-        r = addGeometryToBody(r, world, collision_object);
-
-        collision_object = RigidBodyCapsule(0.05,1,[0.95,-0.22,0.35],[0,pi/2,0]);
-        collision_object.c = [0.5;0.4;0.3];
-        r = addGeometryToBody(r, world, collision_object);
-
-        collision_object = RigidBodyCapsule(0.05,1,[0.8,-0.05,0.35],[-pi/4,0,0]);
-        collision_object.c = [0.5;0.4;0.3];
-        r = addGeometryToBody(r, world, collision_object);
-
-        collision_object = RigidBodyCapsule(0.05,1,[0.45,-0.05,0.35],[-pi/4,0,0]);
-        collision_object.c = [0.5;0.4;0.3];
-        r = addGeometryToBody(r, world, collision_object);
-
-        collision_object = RigidBodyCapsule(0.05,1, [0.35,0.27,0],[0,pi/2,0]);
-        collision_object.c = [0.5;0.4;0.3];
-        r = addGeometryToBody(r, l_hand, collision_object);
-        collision_object = RigidBodyCapsule(0.05,1,[0;0;0],[0,pi/2,0]);
-        collision_object.c = [0.5;0.4;0.3];
-    case 'scene1'
-        table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
-        r = addGeometryToBody(r, world, table);
-        
-        targetObjectPos = [0.7 0 1.0625];
-        targetObject = RigidBodyBox([.05 .05 .3], targetObjectPos, [0 0 0]);
-        r = addGeometryToBody(r, world, targetObject);
-    case 'scene2'
-        table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
-        r = addGeometryToBody(r, world, table);
-        
-        obstacle = RigidBodyBox([.3 .3 .4], [.55 .35 1.10], [0 0 0]);
-        r = addGeometryToBody(r, world, obstacle);
-        
-        obstacle = RigidBodyBox([.3 .3 .4], [.55 -0.35 1.10], [0 0 0]);
-        r = addGeometryToBody(r, world, obstacle);
-        
-        obstacle = RigidBodyBox([.3 1 .4], [.55 0 1.50], [0 0 0]);
-        r = addGeometryToBody(r, world, obstacle);
-        
-        targetObjectPos = [0.7 0 1.0625];
-        targetObject = RigidBodyBox([.05 .05 .3], targetObjectPos, [0 0 0]);
-        r = addGeometryToBody(r, world, targetObject);
-    case 'scene3'
-        table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
-        r = addGeometryToBody(r, world, table);
-        
-        targetObjectPos = [0.7 0 0.6];
-        targetObject = RigidBodyBox([.05 .05 .3], targetObjectPos, [0 0 0]);
-        r = addGeometryToBody(r, world, targetObject);
-end
+r = Scenes.generate(options.scene, r, world);
 
 r = r.compile();
 warning(w);
 
-xyz_quat_start = [0.5969; -0.1587; 0.9; -0.2139; 0.6724; 0.3071; -0.6387];
-
-% IK constraints
-
-%Quasi Static Constraint
-qsc_constraint_0 = QuasiStaticConstraint(r, [-inf, inf], 1);
-qsc_constraint_0 = qsc_constraint_0.setShrinkFactor(0.5);
-qsc_constraint_0 = qsc_constraint_0.setActive(true);
-qsc_constraint_0 = qsc_constraint_0.addContact(l_foot, l_foot_pts);
-qsc_constraint_0 = qsc_constraint_0.addContact(r_foot, r_foot_pts);
-
-%Left Foot Constraints
-point_in_link_frame = [0.0; 0.0; 0.0];
-ref_frame = [0.99999962214379723, 3.8873668451910772e-05, 0.00086844752325226373, -0.024113362129690341; -4.319650228383918e-05, 0.99998760778828055, 0.0049781928381826216, 0.13142880655433892; -0.00086824324064880729, -0.0049782284710370005, 0.99998723161596681, 0.081845132612297311; 0.0, 0.0, 0.0, 1.0];
-lower_bounds = [0.0; 0.0; 0.0] + [0.0; 0.0; 0.0];
-upper_bounds = [0.0; 0.0; 0.0] + [0.0; 0.0; 0.0];
-ref_frame = inv(ref_frame);
-position_constraint_1 = WorldPositionConstraint(r, l_foot, ref_frame(1:3,:)*[point_in_link_frame;1], lower_bounds, upper_bounds, [0.0, 1.0]);
-
-
-quat_constraint_2 = WorldQuatConstraint(r, l_foot, [0.99999680768841015; -0.0024891132733300568; 0.00043417407699420605; -2.0517608182535892e-05], 0.0, [0.0, 1.0]);
-
-%Right Foot Constraints
-point_in_link_frame = [0.0; 0.0; 0.0];
-ref_frame = [0.99999972333813658, -3.8603987442147522e-05, 0.00074285488657430923, -0.024113358389590833; 4.2294235092508014e-05, 0.99998765711726534, -0.0049682818277853539, -0.13142881299268941; -0.00074265392211426647, 0.0049683118717304582, 0.99998738209154281, 0.081845129013906948; 0.0, 0.0, 0.0, 1.0];
-lower_bounds = [0.0; 0.0; 0.0] + [0.0; 0.0; 0.0];
-upper_bounds = [0.0; 0.0; 0.0] + [0.0; 0.0; 0.0];
-ref_frame = inv(ref_frame);
-position_constraint_3 = WorldPositionConstraint(r, r_foot, ref_frame(1:3,:)*[point_in_link_frame;1], lower_bounds, upper_bounds, [0.0, 1.0]);
-
-
-quat_constraint_4 = WorldQuatConstraint(r, r_foot, [0.99999684531339206; 0.0024841562616134435; 0.00037137837375452614; 2.0224619435999976e-05], 0.0, [0.0, 1.0]);
-
-%Back Constraints
-posture_constraint_5 = PostureConstraint(r, [-inf, inf]);
-joint_inds = [joints.back_bkx; joints.back_bky; joints.back_bkz];
-joints_lower_limit = q_zero(joint_inds) + [-0.08726646259971647; -0.08726646259971647; -inf];
-joints_upper_limit = q_zero(joint_inds) + [0.08726646259971647; 0.08726646259971647; inf];
-posture_constraint_5 = posture_constraint_5.setJointLimits(joint_inds, joints_lower_limit, joints_upper_limit);
-
-%Base Constraints
-posture_constraint_6 = PostureConstraint(r, [-inf, inf]);
-joint_inds = [joints.base_x; joints.base_y; joints.base_roll; joints.base_pitch; joints.base_yaw];
-joints_lower_limit = q_nom(joint_inds) + [0.0; 0.0; 0.0; 0.0; 0.0];
-joints_upper_limit = q_nom(joint_inds) + [0.0; 0.0; 0.0; 0.0; 0.0];
-posture_constraint_6 = posture_constraint_6.setJointLimits(joint_inds, joints_lower_limit, joints_upper_limit);
-
-% fixed right arm
-posture_constraint_7 = PostureConstraint(r, [-inf, inf]);
-joint_inds = [joints.r_arm_usy; joints.r_arm_shx; joints.r_arm_ely; joints.r_arm_elx; joints.r_arm_uwy; joints.r_arm_mwx; joints.neck_ay];
-joints_lower_limit = q_nom(joint_inds);
-joints_upper_limit = q_nom(joint_inds);
-posture_constraint_7 = posture_constraint_7.setJointLimits(joint_inds, joints_lower_limit, joints_upper_limit);
-
-posture_constraint_8 = PostureConstraint(r, [-inf, inf]);
-joint_inds = [joints.l_leg_kny;joints.r_leg_kny];
-joints_lower_limit = 30*pi/180*[1;1];
-joints_upper_limit = 120*pi/180*[1;1];
-posture_constraint_8 = posture_constraint_8.setJointLimits(joint_inds, joints_lower_limit, joints_upper_limit);
 
 if strcmp(options.scene, 'debris')
         %Final position for the debrtis scene
@@ -173,19 +61,14 @@ if strcmp(options.scene, 'debris')
         %ref_frame = inv(ref_frame);
         %position_constraint_7 = WorldPositionConstraint(r, l_hand, ref_frame(1:3,:)*[point_in_link_frame;1], lower_bounds, upper_bounds, [1.0, 1.0]);
 
-        %Start position for the debris scene
-        l_hand_initial_position_constraint = WorldPositionConstraint(r, l_hand, [0;0;0], xyz_quat_start(1:3), xyz_quat_start(1:3));
-        point_in_link_frame = [0.9; 0.24449999999999988; 0.011200000000000071];
-
         l_hand_final_quat_constraint = WorldQuatConstraint(r, l_hand, [0.73638758447380859; 0.089093166809596377; 0.6584413641826542; -0.1274782451791375], 10*pi/180, [1.0, 1.0]);
 
-        l_hand_initial_quat_constraint = WorldQuatConstraint(r, l_hand, xyz_quat_start(4:7), 0*pi/180);
 else
         %Pos respect to the wrist frame
         point_in_link_frame = [0; 0.4; 0];
         
         %Reference frame for the final constraint
-        ref_frame = [eye(3) targetObjectPos'; 0 0 0 1];
+        ref_frame = [eye(3) Scenes.getTargetObjPos(options.scene)'; 0 0 0 1];
         
         lower_bounds = [0.0; 0.0; 0.0];
         upper_bounds = [0.0; 0.0; 0.0];
@@ -234,8 +117,8 @@ ikoptions = ikoptions.setMajorOptimalityTolerance(1e-3);
 TA.trees{TA.cspace_idx}.ikoptions = ikoptions;
 
 
-active_constraints = {qsc_constraint_0, position_constraint_1, quat_constraint_2, position_constraint_3, quat_constraint_4, posture_constraint_5, posture_constraint_6, posture_constraint_7,posture_constraint_8};%, l_hand_initial_position_constraint , l_hand_initial_quat_constraint};
-[q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, active_constraints{:}, ikoptions);
+startPoseConstraints = Scenes.setStartPoseConstraints(options.scene, r);
+[q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
 
 if options.visualize
   v = r.constructVisualizer();
@@ -243,16 +126,16 @@ else
   v = [];
 end
 
-posture_constraint_6 = PostureConstraint(r, [-inf, inf]);
+baseConstraint = PostureConstraint(r, [-inf, inf]);
 joint_inds = [joints.base_x; joints.base_y; joints.base_roll; joints.base_pitch; joints.base_yaw];
 joints_lower_limit = q_start(joint_inds) + [0.0; 0.0; 0.0; 0.0; 0.0];
 joints_upper_limit = q_start(joint_inds) + [0.0; 0.0; 0.0; 0.0; 0.0];
-posture_constraint_6 = posture_constraint_6.setJointLimits(joint_inds, joints_lower_limit, joints_upper_limit);
+baseConstraint = baseConstraint.setJointLimits(joint_inds, joints_lower_limit, joints_upper_limit);
 
-base_constraints = {qsc_constraint_0, position_constraint_1, quat_constraint_2, position_constraint_3, quat_constraint_4, posture_constraint_5, posture_constraint_6,posture_constraint_7, posture_constraint_8};
+%base_constraints = {quasiStaticConstraint, leftFootPosConstraint, leftFootQuatConstraint, rightFootPosConstraint, rightFootQuatConstraint, backConstraint, baseConstraint,rightArmConstraint, leftLegConstraint};
 
 
-active_constraints = [base_constraints, {l_hand_final_pos_constraint,l_hand_final_quat_constraint}];
+active_constraints = [startPoseConstraints, {l_hand_final_pos_constraint,l_hand_final_quat_constraint}];
 [q_end, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, active_constraints{:}, ikoptions);
 
 if options.visualize
@@ -272,7 +155,7 @@ position_constraint_7 = WorldPositionConstraint(r, l_hand, point_in_link_frame, 
 
 quat_constraint_8 = WorldQuatConstraint(r, l_hand, xyz_quat_start(4:7), 0, [1.0, 1.0]);
 
-active_constraints = [base_constraints,{position_constraint_7,quat_constraint_8}];
+active_constraints = [startPoseConstraints,{position_constraint_7,quat_constraint_8}];
 
 [q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, active_constraints{:}, ikoptions);
 
@@ -283,7 +166,7 @@ xyz_min = min(xyz_quat_start(1:3),xyz_quat_goal(1:3)) - xyz_box_edge_length/2;
 xyz_max = max(xyz_quat_start(1:3),xyz_quat_goal(1:3)) + xyz_box_edge_length/2;
 
 TA = TA.setTranslationSamplingBounds(xyz_min, xyz_max);
-TA = TA.addKinematicConstraint(base_constraints{:});
+TA = TA.addKinematicConstraint(startPoseConstraints{:});
 TA = TA.setNominalConfiguration(q_nom);
 
 TA = TA.compile();
