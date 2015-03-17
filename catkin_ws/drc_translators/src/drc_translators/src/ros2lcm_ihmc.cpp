@@ -30,6 +30,9 @@
 #include "lcmtypes/pronto/utime_t.hpp"
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
+
+#include <tf/transform_listener.h>
+
 using namespace std;
 
 int width =800;//1024; // hardcoded
@@ -44,6 +47,8 @@ public:
 private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
+
+  tf::TransformListener listener_;
   
   ros::Subscriber  joint_states_sub_;  
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);  
@@ -76,13 +81,30 @@ App::App(ros::NodeHandle node_) :
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  joint_states_sub_ = node_.subscribe(string("/atlas/outputs/joint_states"), 100, &App::joint_states_cb,this);
-  pose_robot_sub_ = node_.subscribe(string("/atlas/outputs/rootPose"), 100, &App::pose_cb,this);
+  pose_msg_.pose.position.x = 0;
+  pose_msg_.pose.position.y = 0;
+  pose_msg_.pose.position.z = 0.85;
+  pose_msg_.pose.orientation.w = 1;
+  pose_msg_.pose.orientation.x = 0;
+  pose_msg_.pose.orientation.y = 0;
+  pose_msg_.pose.orientation.z = 0;
+
+
+  // not working march 2015:
+  //pose_robot_sub_ = node_.subscribe(string("/atlas/outputs/rootPose"), 100, &App::pose_cb,this);
+
+  // working, march 2015:
+  // joint_states_sub_ = node_.subscribe(string("/atlas/outputs/joint_states"), 100, &App::joint_states_cb,this);
+  joint_states_sub_ = node_.subscribe(string("/ihmc_msgs/atlas/output/joint_states"), 100, &App::joint_states_cb,this);
   rotating_scan_sub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::rotating_scan_cb,this);
   head_l_image_sub_ = node_.subscribe("/multisense/left/image_rect_color/compressed", 1, &App::head_l_image_cb,this);
 
   imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );  
   verbose_ = false;
+
+  listener_;
+
+
 };
 
 App::~App()  {
@@ -114,18 +136,6 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
 
 void App::pose_cb(const geometry_msgs::PoseStampedConstPtr& msg){
   pose_msg_ = *msg;
-
-  bot_core::pose_t pose_msg;
-  pose_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
-  pose_msg.pos[0] = msg->pose.position.x;
-  pose_msg.pos[1] = msg->pose.position.y;
-  pose_msg.pos[2] = msg->pose.position.z;
-  pose_msg.orientation[0] =  msg->pose.orientation.w;
-  pose_msg.orientation[1] =  msg->pose.orientation.x;
-  pose_msg.orientation[2] =  msg->pose.orientation.y;
-  pose_msg.orientation[3] =  msg->pose.orientation.z;
-
-  lcm_publish_.publish("POSE_BODY", &pose_msg);
 }
 
 
@@ -155,24 +165,38 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   }
 
   for (int i = 0; i < n_joints; i++)  {
+    // ihmc v3 to mit v3:
     //if (msg_out.joint_name[i] == "l_arm_shz"){
     //  msg_out.joint_name[i] = "l_arm_usy";
     //}
+    //if (msg_out.joint_name[i] == "r_arm_shz"){
+    //  msg_out.joint_name[i] = "r_arm_usy";
+    //}
+
     if (msg_out.joint_name[i] == "l_arm_wry"){
       msg_out.joint_name[i] = "l_arm_uwy";
     }
     if (msg_out.joint_name[i] == "l_arm_wrx"){
       msg_out.joint_name[i] = "l_arm_mwx";
     }
-    //if (msg_out.joint_name[i] == "r_arm_shz"){
-    //  msg_out.joint_name[i] = "r_arm_usy";
-    //}
+    if (msg_out.joint_name[i] == "l_arm_wrx"){
+      msg_out.joint_name[i] = "l_arm_mwx";
+    }
     if (msg_out.joint_name[i] == "r_arm_wry"){
       msg_out.joint_name[i] = "r_arm_uwy";
     }
     if (msg_out.joint_name[i] == "r_arm_wrx"){
       msg_out.joint_name[i] = "r_arm_mwx";
     }
+
+    // ihmc v5 to mit v5:
+    if (msg_out.joint_name[i] == "l_arm_wry2"){
+      msg_out.joint_name[i] = "l_arm_lwy";
+    }
+    if (msg_out.joint_name[i] == "r_arm_wry2"){
+      msg_out.joint_name[i] = "r_arm_lwy";
+    }
+
     if (msg_out.joint_name[i] == "neck_ry"){
       msg_out.joint_name[i] = "neck_ay";
     }
@@ -189,6 +213,25 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   pronto::force_torque_t force_torque;
   msg_out.force_torque = force_torque;
 
+
+  tf::StampedTransform transform;
+  try{
+    listener_.lookupTransform("/world", "/pelvis",
+                              ros::Time(0), transform);
+
+    pose_msg_.pose.position.x = transform.getOrigin().x();
+    pose_msg_.pose.position.y = transform.getOrigin().y();
+    pose_msg_.pose.position.z = transform.getOrigin().z();
+    pose_msg_.pose.orientation.w = transform.getRotation().w();
+    pose_msg_.pose.orientation.x = transform.getRotation().x();
+    pose_msg_.pose.orientation.y = transform.getRotation().y();
+    pose_msg_.pose.orientation.z = transform.getRotation().z();
+  }
+  catch (tf::TransformException &ex) {
+    ROS_ERROR("%s",ex.what());
+  }
+
+
   msg_out.pose.translation.x = pose_msg_.pose.position.x;
   msg_out.pose.translation.y = pose_msg_.pose.position.y;
   msg_out.pose.translation.z = pose_msg_.pose.position.z;
@@ -196,8 +239,20 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   msg_out.pose.rotation.x = pose_msg_.pose.orientation.x;
   msg_out.pose.rotation.y = pose_msg_.pose.orientation.y;
   msg_out.pose.rotation.z = pose_msg_.pose.orientation.z;
-
   lcm_publish_.publish("EST_ROBOT_STATE", &msg_out);
+
+  bot_core::pose_t pose_msg;
+  pose_msg.utime = (int64_t) pose_msg_.header.stamp.toNSec()/1000; // from nsec to usec
+  pose_msg.pos[0] = pose_msg_.pose.position.x;
+  pose_msg.pos[1] = pose_msg_.pose.position.y;
+  pose_msg.pos[2] = pose_msg_.pose.position.z;
+  pose_msg.orientation[0] =  pose_msg_.pose.orientation.w;
+  pose_msg.orientation[1] =  pose_msg_.pose.orientation.x;
+  pose_msg.orientation[2] =  pose_msg_.pose.orientation.y;
+  pose_msg.orientation[3] =  pose_msg_.pose.orientation.z;
+
+  lcm_publish_.publish("POSE_BODY", &pose_msg);
+
   
   pronto::utime_t utime_msg;
   int64_t joint_utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
@@ -234,8 +289,42 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 
 
 int main(int argc, char **argv){
+
+
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
+
+  /*
+  tf::TransformListener listener;
+  ros::Rate rate(10.0);
+
+  while (nh.ok()){
+    tf::StampedTransform transform;
+    try{
+      listener.lookupTransform("/world", "/pelvis",
+                               ros::Time(0), transform);
+    }
+    catch (tf::TransformException &ex) {
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      continue;
+    }
+
+    ROS_ERROR("blurp");
+
+    ROS_ERROR("%f", transform.getOrigin().z() );
+
+    geometry_msgs::Twist vel_msg;
+    vel_msg.angular.z = 4.0 * atan2(transform.getOrigin().y(),
+                                    transform.getOrigin().x());
+    vel_msg.linear.x = 0.5 * sqrt(pow(transform.getOrigin().x(), 2) +
+                                  pow(transform.getOrigin().y(), 2));
+
+    rate.sleep();
+  }
+  */
+
+
   new App(nh);
   std::cout << "ros2lcm translator ready\n";
   ROS_ERROR("ROS2LCM Translator Ready");
