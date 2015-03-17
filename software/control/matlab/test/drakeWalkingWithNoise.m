@@ -82,11 +82,6 @@ request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
-% No-op: just make sure we can cleanly encode and decode the plan as LCM
-tic;
-walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
-fprintf(1, 'control data lcm code/decode time: %f\n', toc);
-
 ts = walking_plan.ts;
 T = ts(end);
 
