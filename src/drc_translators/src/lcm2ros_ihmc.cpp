@@ -59,18 +59,20 @@ class LCM2ROS{
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST",&LCM2ROS::footstepPlanHandler, this);
-  walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/atlas/inputs/ihmc_msgs/FootstepDataListMessage",10);
+  // was walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/atlas/inputs/ihmc_msgs/FootstepDataListMessage",10);
+  walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/ihmc_msgs/atlas/control/footstep_list",10);
 
   lcm_->subscribe("VAL_COMMAND_COM_HEIGHT",&LCM2ROS::comHeightHandler, this);
-  com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/atlas/inputs/ihmc_msgs/ComHeightPacketMessage",10);
+  // was com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/atlas/inputs/ihmc_msgs/ComHeightPacketMessage",10);
+  com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/ihmc_msgs/atlas/control/CoM_height",10);
 
   lcm_->subscribe("VAL_COMMAND_PAUSE",&LCM2ROS::pauseHandler, this);
   lcm_->subscribe("STOP_WALKING",&LCM2ROS::stopHandler, this); // from drake-designer
-  pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/atlas/inputs/ihmc_msgs/PauseCommandMessage",10);
+  pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_msgs/atlas/control/pause_footstep_exec",10);
 
   lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
-  hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/atlas/inputs/ihmc_msgs/HandPosePacketMessage",10);
-
+  // was hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/atlas/inputs/ihmc_msgs/HandPosePacketMessage",10);
+  hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_msgs/atlas/control/hand_pose",10);
 
   rosnode = new ros::NodeHandle();
 }
@@ -128,8 +130,8 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 void LCM2ROS::comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::com_height_packet_message_t* msg) {
   ROS_ERROR("LCM2ROS got com height");
   ihmc_msgs::ComHeightPacketMessage mout;
-  mout.MIN_COM_HEIGHT = msg->min_com_height;
-  mout.MAX_COM_HEIGHT = msg->max_com_height;
+//  mout.MIN_COM_HEIGHT = msg->min_com_height;
+//  mout.MAX_COM_HEIGHT = msg->max_com_height;
   mout.heightOffset = msg->height_offset;
   com_height_pub_.publish(mout);
 }
