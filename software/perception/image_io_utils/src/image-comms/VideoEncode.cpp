@@ -26,6 +26,8 @@ struct State {
   drc::BotWrapper::Ptr mBotWrapper;
 
   int mScaleFactor;
+  int mBitRate;
+  double mKeyframeInterval;
   double mPublishPeriod;
   std::string mCameraChannel;
   std::string mVideoChannel;
@@ -36,6 +38,10 @@ struct State {
   x264_picture_t mPictureOut;
   struct SwsContext* mConverterContext;
   int64_t mLastPublishTime;
+
+  std::deque<int> mPublishBytes;
+  std::deque<int64_t> mPublishTimes;
+  int mTimeWindowSize;
 
   bool setup() {
     auto lcm = mLcmWrapper->get();
@@ -59,18 +65,18 @@ struct State {
     mParams.i_threads = 1;
     mParams.i_width = width;
     mParams.i_height = height;
-    mParams.i_fps_num = mPublishPeriod*1000;
+    mParams.i_fps_num = 1000/mPublishPeriod;
     mParams.i_fps_den = 1000;
+    mParams.i_nal_hrd = X264_NAL_HRD_CBR;
+
     // Intra refresh:
-    mParams.i_keyint_max = 5/mPublishPeriod;
+    mParams.i_keyint_max = mKeyframeInterval/mPublishPeriod;
     mParams.b_intra_refresh = 1;
     //Rate control:
-    mParams.rc.i_rc_method = X264_RC_CRF;
-    //mParams.rc.f_rf_constant = 40;
-    //mParams.rc.f_rf_constant_max = 50;
-    mParams.rc.i_bitrate = 500;
-    mParams.rc.i_vbv_buffer_size = 2000000;
-    mParams.rc.i_vbv_max_bitrate = 1000;
+    mParams.rc.i_rc_method = X264_RC_ABR;
+    mParams.rc.i_bitrate = mBitRate;
+    mParams.rc.i_vbv_max_bitrate = mBitRate;
+    mParams.rc.i_vbv_buffer_size = mBitRate;
     //For streaming:
     mParams.b_repeat_headers = 1;
     mParams.b_annexb = 1;
@@ -85,8 +91,6 @@ struct State {
 
     x264_picture_alloc(&mPictureIn, X264_CSP_I420, width, height);
 
-    // TODO: other params? figure out bitrate stuff
-
     // set up converter
     mConverterContext = sws_getContext(width, height, PIX_FMT_RGB24,
                                        width, height, PIX_FMT_YUV420P,
@@ -96,6 +100,8 @@ struct State {
       return false;
     }
 
+    mTimeWindowSize = 5.0/mPublishPeriod;
+
     return true;
   }
 
@@ -103,7 +109,8 @@ struct State {
   void onCamera(const lcm::ReceiveBuffer* iBuf,
                 const std::string& iChannel,
                 const bot_core::image_t* iMessage) {
-    if ((iMessage->utime - mLastPublishTime) < mPublishPeriod*1e6) return;
+    if ((mPublishTimes.size() > 0) &&
+        ((iMessage->utime - mPublishTimes.back()) < mPublishPeriod*1e6)) return;
 
     // convert image to rgb
     const auto& img = *iMessage;
@@ -153,9 +160,20 @@ struct State {
 
     // publish bytes
     mLcmWrapper->get()->publish(mVideoChannel, &rawMsg);
-    mLastPublishTime = iMessage->utime;
 
-    std::cout << "TODO TEMP encoded " << numBytes << std::endl;
+    // compute bandwidth
+    mPublishTimes.push_back(iMessage->utime);
+    mPublishBytes.push_back(rawMsg.length);
+    while ((int)mPublishTimes.size() > mTimeWindowSize) {
+      mPublishTimes.pop_front();
+      mPublishBytes.pop_front();
+    }
+    double dt = (mPublishTimes.back() - mPublishTimes.front())*1e-6;
+    double bytes =
+      std::accumulate(mPublishBytes.begin(), mPublishBytes.end(), 0);
+    double kbps = bytes*8/dt/1024;
+    std::cout << "cur bytes: " << rawMsg.length << ", bandwidth: " <<
+      kbps << " kbps" << std::endl;
   }
 
 
@@ -178,8 +196,9 @@ struct State {
 int main(const int iArgc, const char** iArgv) {
 
   int scaleFactor = 16;
-  int bitRate = 1000;
+  int bitRate = 4096;
   double publishFrequency = 2;
+  double keyframeInterval = 5;
   std::string cameraChannel = "CAMERA";
   std::string videoChannel = "CAMERA_STREAM";
 
@@ -188,6 +207,8 @@ int main(const int iArgc, const char** iArgv) {
   opt.add(scaleFactor, "s", "scale-factor", "downsample factor");
   opt.add(publishFrequency, "f", "publish-frequency", "publish frequency (Hz)");
   opt.add(bitRate, "b", "bitrate", "target bitrate (bps)");
+  opt.add(keyframeInterval, "k", "keyframe-interval",
+          "max keyframe interval (s)");
   opt.add(cameraChannel, "c", "camera-channel", "camera channel");
   opt.add(videoChannel, "o", "output-channel", "output video channel");
   opt.parse();
@@ -206,6 +227,8 @@ int main(const int iArgc, const char** iArgv) {
   state->mCameraChannel = cameraChannel;
   state->mVideoChannel = videoChannel;
   state->mScaleFactor = scaleFactor;
+  state->mBitRate = bitRate/1024;
+  state->mKeyframeInterval = keyframeInterval;
   state->mPublishPeriod = 1/publishFrequency;
 
   if (!state->setup()) {
