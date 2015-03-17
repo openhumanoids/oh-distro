@@ -32,6 +32,7 @@ std::mutex pointerMutex;
 std::shared_ptr<RobotStateDriver> state_driver;
 std::shared_ptr<AtlasCommandDriver> command_driver;
 std::shared_ptr<FootContactDriver> foot_contact_driver;
+Matrix<bool, Dynamic, 1> b_contact_force;
 
 class SolveArgs {
 public:
@@ -49,12 +50,10 @@ public:
 };
 
 SolveArgs solveArgs;
-std::unique_ptr<drc::controller_status_t> controller_status_msg(new drc::controller_status_t());
 
-std::unique_ptr<drc::atlas_behavior_command_t> atlas_behavior_msg(new drc::atlas_behavior_command_t());
+drc::atlas_behavior_command_t atlas_behavior_msg;
 
 int infocount = 0;
-// drc::controller_status_t controller_status_msg;
 
 class LCMHandler {
 
@@ -268,8 +267,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
     pointerMutex.lock();
     std::shared_ptr<DrakeRobotState> robot_state = solveArgs.robot_state;
     std::shared_ptr<drake::lcmt_qp_controller_input> qp_input = solveArgs.qp_input;
-    // solveArgs.robot_state = nullptr;
-    // solveArgs.qp_input = nullptr;
+    b_contact_force = solveArgs.b_contact_force;
     pointerMutex.unlock();
 
     // newInputAvailable = false;
@@ -279,19 +277,18 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 
     if (qp_input->be_silent) {
       // Act as a dummy controller, produce no ATLAS_COMMAND, and reset all integrator states
-      controller_status_msg->state = controller_status_msg->DUMMY;
       solveArgs.pdata->state.t_prev = robot_state->t;
       solveArgs.pdata->state.vref_integrator_state = VectorXd::Zero(solveArgs.pdata->state.vref_integrator_state.size());
       solveArgs.pdata->state.q_integrator_state = VectorXd::Zero(solveArgs.pdata->state.q_integrator_state.size());
       infocount = 0;
     } else {
-      int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, solveArgs.b_contact_force, &qp_output, solveArgs.debug);
+      int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, b_contact_force, &qp_output, solveArgs.debug);
       if (info < 0 && ctrl_opts->max_infocount > 0) {
         infocount++;
         if (infocount > ctrl_opts->max_infocount) {
-          atlas_behavior_msg->utime = 0;
-          atlas_behavior_msg->command = "freeze";
-          lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, atlas_behavior_msg.get());
+          atlas_behavior_msg.utime = 0;
+          atlas_behavior_msg.command = "freeze";
+          lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
         }
       } else {
         infocount = 0;
@@ -316,16 +313,6 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       // publish ATLAS_COMMAND
       drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
       lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg);
-
-      controller_status_msg->state = controller_status_msg->STANDING;
-    }
-
-    controller_status_msg->V = 0;
-    controller_status_msg->Vdot = 0;
-    if ((robot_state->t - controller_status_msg->utime / 1000000.0) > 0.2) {
-      controller_status_msg->utime = (int64_t) robot_state->t * 1000000;
-      controller_status_msg->controller_utime = controller_status_msg->utime;
-      lcmHandler.LCMHandle->publish("CONTROLLER_STATUS", controller_status_msg.get());
     }
 
     typedef std::chrono::duration<float> float_seconds;

@@ -9,11 +9,13 @@ classdef DRCPlanEvalData < ControllerData
     t
     x
     contact_force_detected
+    last_status_msg_time
   end
 
   properties(Constant)
    PAUSE_NONE = 0;
-   PAUSE_ASAP = 1;
+   PAUSE_NOW = 1;
+   STOP_WALKING_ASAP = 2;
  end
 
 

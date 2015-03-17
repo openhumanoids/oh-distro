@@ -89,11 +89,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_pause(obj, msg)
-      disp('Got a plan pause ASAP:')
-      if (msg.control == msg.PAUSE || msg.control == msg.TERMINATE)
-        obj.data.pause_state = obj.data.PAUSE_ASAP;
-        % maybe terminate is different? it's what sent for
-        % stop walking right now.
+      if msg.control == msg.PAUSE
+        disp('Got a plan pause NOW');
+        obj.data.pause_state = obj.data.PAUSE_NOW;
+      elseif msg.control == msg.TERMINATE
+        disp('Got a stop walking ASAP');
+        obj.data.pause_state = obj.data.STOP_WALKING_ASAP;
       else
         % handle this somehow
         disp('I want to resume but I dont know how yet');
@@ -135,7 +136,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function pauseIfRequested(obj)
       % TODO: should this use sensed foot contact instead of planned contact?
-      if obj.data.pause_state == obj.data.PAUSE_ASAP && ~isempty(obj.data.qp_input)
+      if obj.data.pause_state == obj.data.STOP_WALKING_ASAP && ~isempty(obj.data.qp_input)
         have_right_foot = 0;
         have_left_foot = 0;
         for i=1:length(obj.data.qp_input.support_data)
@@ -154,6 +155,34 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           obj.data.pause_state = obj.data.PAUSE_NONE;
           obj.switchToPlan(DRCQPLocomotionPlan.from_standing_state(obj.data.x, obj.robot));
         end
+      elseif obj.data.pause_state == obj.data.PAUSE_NOW
+        disp('freezing now')
+        obj.switchToPlan(FrozenPlan(obj.data.qp_input));
+        obj.data.pause_state = obj.data.PAUSE_NONE;
+      end
+    end
+
+    function sendStatus(obj)
+      if isempty(obj.data.last_status_msg_time) || (obj.data.t - obj.data.last_status_msg_time) > 0.2
+        if ~isempty(obj.data.plan_queue)
+          current_plan = obj.data.plan_queue{1};
+          if strcmp(current_plan.gain_set, 'standing')
+            state_flag = drc.controller_status_t.STANDING;
+          elseif strcmp(current_plan.gain_set, 'walking')
+            state_flag = drc.controller_status_t.WALKING;
+          elseif strcmp(current_plan.gain_set, 'manip')
+            state_flag = drc.controller_status_t.MANIPULATING;
+          else
+            state_flag = drc.controller_status_t.UNKNOWN;
+          end
+        else
+          state_flag = drc.controller_status_t.DUMMY;
+        end
+        obj.data.last_status_msg_time = obj.data.t;
+        status_msg = drc.controller_status_t();
+        status_msg.utime = obj.data.t * 1e6;
+        status_msg.state = state_flag;
+        obj.lc.publish('CONTROLLER_STATUS', status_msg);
       end
     end
 
@@ -171,11 +200,14 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           if ~isempty(obj.data.plan_queue)
             qp_input = obj.getQPControllerInput(obj.data.t, obj.data.x, obj.data.contact_force_detected);
             if ~isempty(qp_input)
-              qp_input.param_set_name = [qp_input.param_set_name, '_', obj.mode]; % send _sim or _hardware param variant
+              if ~strcmp(qp_input.param_set_name(end-length(obj.mode):end), ['_', obj.mode])
+                qp_input.param_set_name = [qp_input.param_set_name, '_', obj.mode]; % send _sim or _hardware param variant
+              end
               encodeQPInputLCMMex(qp_input);
               obj.data.qp_input = qp_input;
             end
           end
+          obj.sendStatus();
         catch e
           disp('error in planEval loop:')
           disp(e.getReport())
