@@ -22,8 +22,8 @@ extern "C" {
 }
 
 struct State {
-  std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
-  std::shared_ptr<lcm::LCM> mOutputLcm;
+  drc::LcmWrapper::Ptr mLcmWrapper;
+  drc::BotWrapper::Ptr mBotWrapper;
 
   int mScaleFactor;
   double mPublishPeriod;
@@ -37,13 +37,24 @@ struct State {
   struct SwsContext* mConverterContext;
   int64_t mLastPublishTime;
 
-  void setup() {
+  bool setup() {
     auto lcm = mLcmWrapper->get();
     lcm->subscribe(mCameraChannel, &State::onCameras, this);
 
+    std::string keyBase = "cameras." + mCameraChannel + ".intrinsic_cal";
+    if (!mBotWrapper->hasKey(keyBase)) {
+      keyBase = "cameras." + mCameraChannel + "_LEFT.intrinsic_cal";
+      if (!mBotWrapper->hasKey(keyBase)) {
+        std::cout << "error: no such camera " << mCameraChannel << std::endl;
+        return false;
+      }
+    }
+    int nativeWidth = mBotWrapper->getInt(keyBase + ".width");
+    int nativeHeight = mBotWrapper->getInt(keyBase + ".height");
+
     // x264 params
-    int width = 1024/mScaleFactor;  // TODO: get from config
-    int height = 1024/mScaleFactor;
+    int width = nativeWidth/mScaleFactor;
+    int height = nativeHeight/mScaleFactor;
     x264_param_default_preset(&mParams, "veryfast", "zerolatency");
     mParams.i_threads = 1;
     mParams.i_width = width;
@@ -67,8 +78,12 @@ struct State {
 
     // set up encoder
     mEncoder = x264_encoder_open(&mParams);
+    if (mEncoder == NULL) {
+      std::cout << "error: cannot open h264 encoder" << std::endl;
+      return false;
+    }
+
     x264_picture_alloc(&mPictureIn, X264_CSP_I420, width, height);
-    // TODO: need corresponding clean() call
 
     // TODO: other params? figure out bitrate stuff
 
@@ -76,7 +91,12 @@ struct State {
     mConverterContext = sws_getContext(width, height, PIX_FMT_RGB24,
                                        width, height, PIX_FMT_YUV420P,
                                        SWS_FAST_BILINEAR, NULL, NULL, NULL);
+    if (mConverterContext == NULL) {
+      std::cout << "error: cannot create swscaler" << std::endl;
+      return false;
+    }
 
+    return true;
   }
 
 
@@ -85,6 +105,7 @@ struct State {
                 const bot_core::image_t* iMessage) {
     if ((iMessage->utime - mLastPublishTime) < mPublishPeriod*1e6) return;
 
+    // convert image to rgb
     const auto& img = *iMessage;
     int w = img.width;
     int h = img.height;
@@ -100,6 +121,8 @@ struct State {
       std::cout << "error: unknown pixel format" << std::endl; break;
     }
     if (cvImg.channels() == 3) cv::cvtColor(cvImg, cvImg, CV_BGR2RGB);
+
+    // scale down image
     cv::resize(cvImg,cvImg,cv::Size(),1.0f/mScaleFactor,1.0f/mScaleFactor,
                cv::INTER_AREA);
 
@@ -115,6 +138,8 @@ struct State {
     int numNals;
     int numBytes = x264_encoder_encode(mEncoder, &nals, &numNals,
                                        &mPictureIn, &mPictureOut);
+
+    // push payload bytes to message
     bot_core::raw_t rawMsg;
     rawMsg.utime = drc::Clock::instance()->getCurrentTime();
     rawMsg.data.resize(numBytes);
@@ -125,12 +150,12 @@ struct State {
       curIndex += nals[i].i_payload;
     }
     rawMsg.length = rawMsg.data.size();
-    mOutputLcm->publish(mVideoChannel, &rawMsg);
+
+    // publish bytes
+    mLcmWrapper->get()->publish(mVideoChannel, &rawMsg);
     mLastPublishTime = iMessage->utime;
 
-    // TODO: error checking
-
-    std::cout << "encoded " << numBytes << " " << curIndex << std::endl;
+    std::cout << "TODO TEMP encoded " << numBytes << std::endl;
   }
 
 
@@ -162,27 +187,30 @@ int main(const int iArgc, const char** iArgv) {
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(scaleFactor, "s", "scale-factor", "downsample factor");
   opt.add(publishFrequency, "f", "publish-frequency", "publish frequency (Hz)");
-  opt.add(bitRate, "b", "bit-rate", "target bit rate (bps)");
+  opt.add(bitRate, "b", "bitrate", "target bitrate (bps)");
   opt.add(cameraChannel, "c", "camera-channel", "camera channel");
-  opt.add(videoChannel, "v", "video-channel", "video channel");
+  opt.add(videoChannel, "o", "output-channel", "output video channel");
   opt.parse();
 
   // create lcm wrapper
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
-  std::shared_ptr<drc::LcmWrapper> lcmWrapper(new drc::LcmWrapper(lcm));
+  drc::LcmWrapper::Ptr lcmWrapper(new drc::LcmWrapper(lcm));
 
-  std::shared_ptr<lcm::LCM> outLcm
-    (new lcm::LCM("udpm://239.255.76.67:7667?ttl=0"));
+  // create bot wrapper
+  drc::BotWrapper::Ptr botWrapper(new drc::BotWrapper(lcm));
 
   // set up state
   std::shared_ptr<State> state(new State());
   state->mLcmWrapper = lcmWrapper;
+  state->mBotWrapper = botWrapper;
   state->mCameraChannel = cameraChannel;
   state->mVideoChannel = videoChannel;
   state->mScaleFactor = scaleFactor;
   state->mPublishPeriod = 1/publishFrequency;
-  state->mOutputLcm = outLcm;
-  state->setup();
+
+  if (!state->setup()) {
+    return -1;
+  }
 
   // run
   lcmWrapper->startHandleThread(true);

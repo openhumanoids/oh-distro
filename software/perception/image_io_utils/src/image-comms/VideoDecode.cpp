@@ -25,11 +25,13 @@ extern "C" {
  */
 
 struct State {
-  std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
+  drc::LcmWrapper::Ptr mLcmWrapper;
+  drc::BotWrapper::Ptr mBotWrapper;
 
   int mScaleFactor;
   std::string mInputChannel;
   std::string mOutputChannel;
+  std::string mCameraChannel;
 
   int mWidth;
   int mHeight;
@@ -40,19 +42,28 @@ struct State {
   AVCodecContext* mContext;
   struct SwsContext* mConverterContext;
 
-  void setup() {
+  bool setup() {
     auto lcm = mLcmWrapper->get();
     lcm->subscribe(mInputChannel, &State::onVideoFrame, this);
     mInitialized = false;
 
-    mWidth = 1024/mScaleFactor;
-    mHeight = 1024/mScaleFactor; // TODO: TEMP; get from config
+    std::string keyBase = "cameras." + mCameraChannel + ".intrinsic_cal";
+    if (!mBotWrapper->hasKey(keyBase)) {
+      std::cout << "error: no such camera " << mCameraChannel << std::endl;
+      return false;
+    }
+    int nativeWidth = mBotWrapper->getInt(keyBase + ".width");
+    int nativeHeight = mBotWrapper->getInt(keyBase + ".height");
+    mWidth = nativeWidth/mScaleFactor;
+    mHeight = nativeHeight/mScaleFactor;
 
     // TODO: can we deduce this from the stream itself?
     if (!mInitialized) {
-      setupCodec();
+      if (!setupCodec()) return false;
       mInitialized = true;
     }
+
+    return true;
   }
 
   AVFrame* allocatePicture(const int iFormat, const int iWidth,
@@ -66,17 +77,32 @@ struct State {
     return picture;
   }
 
-  void setupCodec() {
+  bool setupCodec() {
     int w = mWidth;
     int h = mHeight;
 
     avcodec_register_all();
+    av_log_set_callback([](void*, int, const char*, va_list){});
+
     mCodec = avcodec_find_decoder(CODEC_ID_H264);
+    if (mCodec == NULL) {
+      std::cout << "error: cannot find H264 codec" << std::endl;
+      return false;
+    }
+
     mContext = avcodec_alloc_context3(mCodec);
+    if (mContext == NULL) {
+      std::cout << "error: cannot allocate context" << std::endl;
+      return false;
+    }
+
     mContext->width = w;
     mContext->height = h;
     mContext->pix_fmt = PIX_FMT_YUV420P;
-    avcodec_open2(mContext, mCodec, NULL);
+    if (avcodec_open2(mContext, mCodec, NULL) < 0) {
+      std::cout << "error: cannot open codec" << std::endl;
+      return false;
+    }
 
     // pictures
     mFrameIn = allocatePicture(PIX_FMT_YUV420P, w, h);
@@ -86,6 +112,12 @@ struct State {
     mConverterContext = sws_getContext(w, h, PIX_FMT_YUV420P,
                                        w, h, PIX_FMT_RGB24,
                                        SWS_FAST_BILINEAR, NULL, NULL, NULL);
+    if (mConverterContext == NULL) {
+      std::cout << "error: cannot create swscaler" << std::endl;
+      return false;
+    }
+
+    return true;
   }
 
   void onVideoFrame(const lcm::ReceiveBuffer* iBuf,
@@ -96,7 +128,6 @@ struct State {
     int h = mHeight;
 
     AVPacket packet;
-    av_new_packet(&packet, size);
     packet.data = (uint8_t*)iMessage->data.data();
     packet.size = size;
 
@@ -104,15 +135,11 @@ struct State {
     int rgbSize = mWidth*mHeight*3;
     std::vector<uint8_t> buf(rgbSize);
     int ret = avcodec_decode_video2(mContext, mFrameIn, &finished, &packet);
-    if (ret < 0) {
-      std::cout << "BAD!" << std::endl;
+    if ((ret < 0) || (finished == 0)) {
+      std::cout << "error: cannot decode packet" << std::endl;
       return;
     }
-    if (finished == 0) {
-      std::cout << "BAD2!" << std::endl;
-      // TODO: error handling
-      return;
-    }
+
     sws_scale(mConverterContext, mFrameIn->data, mFrameIn->linesize, 0, h,
               mFrameOut->data, mFrameOut->linesize);
     avpicture_layout((AVPicture*)mFrameOut, PIX_FMT_RGB24, w, h,
@@ -138,9 +165,7 @@ struct State {
 
     img.size = img.data.size();
     mLcmWrapper->get()->publish(mOutputChannel, &img);
-
   }
-
   
 };
 
@@ -149,24 +174,33 @@ int main(const int iArgc, const char** iArgv) {
   int scaleFactor = 16;
   std::string inputChannel = "CAMERA_STREAM";
   std::string outputChannel = "DECODED_IMAGE";
+  std::string cameraChannel = "CAMERA_LEFT";
 
   // parse arguments
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(scaleFactor, "s", "scale-factor", "downsample factor");
+  opt.add(inputChannel, "i", "input-channel", "input video stream channel");
   opt.add(outputChannel, "o", "output-channel", "output channel");
+  opt.add(cameraChannel, "c", "camera-channel", "camera channel");
   opt.parse();
 
   // create lcm wrapper
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
-  std::shared_ptr<drc::LcmWrapper> lcmWrapper(new drc::LcmWrapper(lcm));
+  drc::LcmWrapper::Ptr lcmWrapper(new drc::LcmWrapper(lcm));
+
+  // create bot wrapper
+  drc::BotWrapper::Ptr botWrapper(new drc::BotWrapper(lcm));
 
   // set up state
   std::shared_ptr<State> state(new State());
   state->mLcmWrapper = lcmWrapper;
+  state->mBotWrapper = botWrapper;
   state->mScaleFactor = scaleFactor;
   state->mInputChannel = inputChannel;
   state->mOutputChannel = outputChannel;
-  state->setup();
+  state->mCameraChannel = cameraChannel;
+
+  if (!state->setup()) return -1;
 
   // run
   lcmWrapper->startHandleThread(true);
