@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #**********************************************************************
-# $Id: drcctrl.py 52 2015-02-18 22:42:45Z karl $
+# $Id: drcctrl.py 70 2015-03-10 16:24:12Z karl $
 #**********************************************************************
 
 # http://wxpython.org/Phoenix/docs/html/main.html
@@ -13,6 +13,7 @@ import json
 import os
 import select
 import signal
+import string
 import subprocess
 import sys
 import syslog
@@ -132,7 +133,7 @@ def ShowMessage(*args):
     global UseSyslog
     msg = datetime.datetime.now().isoformat() \
           + ' "' + TrackName + '" ' \
-          + " ".join(args)
+          + " ".join(map(str, args))
     print msg
     if UseSyslog:
         syslog.syslog(syslog.LOG_INFO | syslog.LOG_USER, msg)
@@ -245,7 +246,7 @@ class StatusBar(wx.StatusBar):
 class DRCCFrame(wx.Frame):
     def __init__(self, app, trackname, position, trackcolor, autostart_uri,
                  schedpgm, fifofilename, insidefilename,
-                 csvfile, maxpro_hostname):
+                 csvfile, maxpro_hostname, slowrate, icmprate):
         self.App = app
         self.TrackName = trackname
         self.OurPosition = position
@@ -257,6 +258,8 @@ class DRCCFrame(wx.Frame):
         self.InsideIndicatorFileName = insidefilename
         self.CsvFile = csvfile
         self.MaxProHostname = maxpro_hostname
+        self.SlowRate = slowrate
+        self.ICMPRate = icmprate
 #--#        self.errMsgInfo = None
         self.SchedProcess = None
         wx.Frame.__init__(self, None, -1,
@@ -566,7 +569,9 @@ class DRCCFrame(wx.Frame):
                        "--track", self.TrackName,
                        "--beaconpipe", self.FifoFileName,
                        "--csvfile", self.CsvFile,
-                       "--inside_filename", self.InsideIndicatorFileName]
+                       "--inside_filename", self.InsideIndicatorFileName,
+                       "--slowrate", str(self.SlowRate),
+                       "--icmprate", str(self.ICMPRate)]
             if UseSyslog:
                 subargs.append("--syslog")
             subargs.append(self.MaxProHostname)
@@ -840,7 +845,7 @@ class DRCCFrame(wx.Frame):
 class DRCCApp(wx.App):
     def __init__(self, trackname, position, trackcolorname, autostart_uri,
                  schedpgm, fifofilename, insidefilename,
-                 csvfile, maxpro_hostname):
+                 csvfile, maxpro_hostname, slowrate, icmprate):
         self.TrackName = trackname
         self.OurPosition = position
         self.TrackColorName = trackcolorname
@@ -850,6 +855,8 @@ class DRCCApp(wx.App):
         self.InsideIndicatorFileName = insidefilename
         self.CsvFile = csvfile
         self.MaxProHostname = maxpro_hostname
+        self.SlowRate = slowrate
+        self.ICMPRate = icmprate
         self.Restart = False
         wx.App.__init__(self, 0)
 
@@ -866,7 +873,9 @@ class DRCCApp(wx.App):
                                    self.FifoFileName,
                                    self.InsideIndicatorFileName,
                                    self.CsvFile, 
-                                   self.MaxProHostname)
+                                   self.MaxProHostname,
+                                   self.SlowRate,
+                                   self.ICMPRate)
         self.DrccFrame.Show(True)
         self.SetTopWindow(self.DrccFrame)
 #--#        if self.DrccFrame.errMsgInfo:
@@ -1014,6 +1023,14 @@ def main():
                              "Use 'center' to center the window.\n"
                              "Format: XxY | center")
 
+    parser.add_argument("-r", "--slowrate", required=False, metavar="<slow link bit rate>",
+                        type=int, default=9600,
+                        help="R|Slow link bit rate [default: %(default)s]")
+
+    parser.add_argument("-i", "--icmprate", required=False, metavar="<icmp link bit rate>",
+                        type=int, default=4800,
+                        help="R|ICMP link bit rate [default: %(default)s]")
+
     parser.add_argument("-t", "--trackname", required=True, metavar="<track name>",
                         dest='trackname',
                         help="R|Track name.")
@@ -1067,18 +1084,29 @@ def main():
         fifofilename = os.path.abspath(os.path.join(tempdir, "fromsched_%u.pipe" % cycle))
         insidefilename = os.path.abspath(os.path.join(tempdir, "inside_indicator_%u" % cycle))
 
-        print "AUTOSTART", pargs.autostart_uri
-        print "POSITION", pargs.position
-        print "CYCLE", cycle
-        print "TRACK", TrackName
-        print "TRACK COLOR", pargs.trackcolor
-        print "TDIR", tempdir
-        print "FIFO", fifofilename
-        print "INSIDE INDICATOR", insidefilename
-        print "TRACKDIR", trackdir
-        print "BLACKOUT_FILE", blackout_file
-        print "SCHEDPGM", schedpgm
-        print "MAXPRO", pargs.maxpro_hostname
+        ShowMessage("AUTOSTART", pargs.autostart_uri)
+        ShowMessage("POSITION", pargs.position)
+        ShowMessage("CYCLE", cycle)
+        ShowMessage("TRACK", TrackName)
+        ShowMessage("TRACK COLOR", pargs.trackcolor)
+        ShowMessage("TDIR", tempdir)
+        ShowMessage("FIFO", fifofilename)
+        ShowMessage("INSIDE INDICATOR", insidefilename)
+        ShowMessage("TRACKDIR", trackdir)
+        ShowMessage("BLACKOUT_FILE", blackout_file)
+        ShowMessage("SCHEDPGM", schedpgm)
+        ShowMessage("MAXPRO", pargs.maxpro_hostname)
+        ShowMessage("SLOW BITRATE", pargs.slowrate)
+        ShowMessage("ICMP BITRATE", pargs.icmprate)
+
+        #**************************************************
+        # Do some early validation
+        #**************************************************
+        if not os.access(blackout_file, os.F_OK):
+            raise DRCCtrlError, "Can not locate blackout CSV file" 
+
+        if not os.access(schedpgm, os.F_OK):
+            raise DRCCtrlError, "Can not locate scheduler program file" 
 
         try:
             os.remove(fifofilename)
@@ -1094,7 +1122,8 @@ def main():
         app = DRCCApp(TrackName, pargs.position, pargs.trackcolor,
                       pargs.autostart_uri,
                       schedpgm, fifofilename, insidefilename,
-                      blackout_file, pargs.maxpro_hostname)
+                      blackout_file, pargs.maxpro_hostname,
+                      pargs.slowrate, pargs.icmprate)
         app.MainLoop()
 
         restart = app.Restart

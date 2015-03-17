@@ -1,7 +1,7 @@
 #!/bin/env python
 
 #**********************************************************************
-# $Id: track.py 28 2015-02-02 18:38:10Z karl $
+# $Id: track.py 71 2015-03-10 16:35:27Z karl $
 #**********************************************************************
 
 # http://stackoverflow.com/questions/2398661/schedule-a-repeating-event-in-python-3
@@ -11,6 +11,7 @@ import datetime
 import json
 import os
 import signal
+import string
 import sys
 import syslog
 import threading
@@ -276,7 +277,7 @@ def ShowMessage(*args):
     global UseSyslog
     msg = datetime.datetime.now().isoformat() \
           + ' "' + TrackName + '" ' \
-          + " ".join(args)
+          + " ".join(map(str, args))
     print msg
     if UseSyslog:
         syslog.syslog(syslog.LOG_INFO | syslog.LOG_USER, msg)
@@ -442,13 +443,13 @@ def SetupJobsFromCSV(csvfile, jobs, trackname, mm_hostname):
         return True
 
     except AssertionError, err:
-        print "Data consistency error occurred at or just prior to line %u in %s." % \
-            (linenum, csvfile)
+        ShowMessage("Data consistency error occurred at or just prior to line %u in %s." % \
+                    (linenum, csvfile))
         return False
 
     except Exception, err:
-        print "Error occurred at or just prior to line %u in %s." % \
-            (linenum, csvfile)
+        ShowMessage("Error occurred at or just prior to line %u in %s." % \
+                    (linenum, csvfile))
         return False
 
 #**********************************************************************
@@ -906,6 +907,14 @@ def main():
     parser.add_argument("-B", "--beaconpipe", metavar="<Status beacon named pipe name>",
                         help="R|Name of a named pipe into which to emit status reports.")
 
+    parser.add_argument("-r", "--slowrate", required=False, metavar="<slow link bit rate>",
+                        type=int, default=9600,
+                        help="R|Slow link bit rate [default: %(default)s]")
+
+    parser.add_argument("-i", "--icmprate", required=False, metavar="<icmp link bit rate>",
+                        type=int, default=4800,
+                        help="R|ICMP link bit rate [default: %(default)s]")
+
     parser.add_argument("-t", "--track", required=True, metavar="<track name>",
                         help="R|Track name.")
 
@@ -929,6 +938,8 @@ def main():
 
     pargs = parser.parse_args()
 
+    UseSyslog = pargs.syslog
+
     # It seems that parser adds an item in the pargs dictionary for every parameter
     # whether it is present or not.
 
@@ -947,12 +958,10 @@ def main():
                          (start_on_signal,
                           start_file_exists, start_file_appears,
                           start_time), 0) > 1:
-        print "Error: Only one of start_* option may be specified. - Aborting"
+        ShowMessage("Error: Only one of start_* option may be specified. - Aborting")
         sys.exit(1)
 
     TrackName = pargs.track
-
-    UseSyslog = pargs.syslog
 
     StatusBeacon = StatusBeaconObj(beaconpipename)
 
@@ -967,45 +976,52 @@ def main():
     csvfile = os.path.abspath(pargs.csvfile)
     linger = pargs.linger
 
-    print "Repeater Interval:", repeater_interval
-    print "Seconds to linger when finished:", linger
-    print "Track:", TrackName
-    print "Status pipe name:", beaconpipename
-    print "Use Syslog:", UseSyslog
-    print "MPHost:", maxpro_hostname
-    print "CSV File:", csvfile
-    print "Inside Marker File:", InsideMarkerFile
+    ShowMessage("Repeater Interval:", repeater_interval)
+    ShowMessage("Seconds to linger when finished:", linger)
+    ShowMessage("Track:", TrackName)
+    ShowMessage("Slow link bit rate:", pargs.slowrate)
+    ShowMessage("ICMP link bit rate:", pargs.icmprate)
+    ShowMessage("Status pipe name:", beaconpipename)
+    ShowMessage("Use Syslog:", UseSyslog)
+    ShowMessage("MPHost:", maxpro_hostname)
+    ShowMessage("CSV File:", csvfile)
+    ShowMessage("Inside Marker File:", InsideMarkerFile)
     if start_on_signal:
-        print "Start: SIGUSR1"
+        ShowMessage("Start: SIGUSR1")
     if start_file_appears:
-        print "Start: When file \"%s\" appears" % start_file_appears
+        ShowMessage("Start: When file \"%s\" appears" % start_file_appears)
     elif start_file_exists:
-        print "Start: When file \"%s\" exists" % start_file_exists
+        ShowMessage("Start: When file \"%s\" exists" % start_file_exists)
     elif start_time:
-        print "Start: At time %s" % start_time.isoformat()
+        ShowMessage("Start: At time %s" % start_time.isoformat())
     else:
-        print "Start: immediately"
+        ShowMessage("Start: immediately")
+
+    ShowMessage("Scheduler starting. CSV file:", csvfile,
+                "DCE:", maxpro_hostname)
 
     if not os.access(csvfile, os.R_OK):
-        print "Error: Can not read CSV scheduling file: \"%s\" - Aborting" % csvfile
+        ShowMessage("Error: Can not read CSV scheduling file: \"%s\" - Aborting" % csvfile)
         sys.exit(1)
 
     Jobs = RunList()
 
     if not SetupJobsFromCSV(csvfile, Jobs, TrackName, maxpro_hostname):
-        print "Error when reading CSV scheduling file: \"%s\" - Aborting" % csvfile
+        ShowMessage("Error when reading CSV scheduling file: \"%s\" - Aborting" % csvfile)
         sys.exit(1)
 
     try:
-        print "OPENING DCE"
-        DCECtrl = dce_ctl.DCEControl(maxpro_hostname)
-        print "CONNECTING DCE"
+        ShowMessage("OPENING DCE")
+        DCECtrl = dce_ctl.DCEControl(maxpro_hostname,
+                                     slow_rate=pargs.slowrate,
+                                     icmp_rate=pargs.icmprate)
+        ShowMessage("CONNECTING DCE")
         DCECtrl.Connect()
-        print "CONNECTED"
+        ShowMessage("CONNECTED")
         DCECtrl.ClearAllFlows()
-        print "CLEARED"
+        ShowMessage("CLEARED")
     except Exception, err:
-        print "Can not connect to DCE:", str(err)
+        ShowMessage("Can not connect to DCE:", str(err))
         DCECtrl = None
         PGMStatus = PGM_DONE
         PGMMsg = "DCE error: "+ str(err)
@@ -1031,7 +1047,7 @@ def main():
                 startevent.set()
 
         oldhandler = signal.signal(signal.SIGUSR1, usr1handler)
-        print "Waiting for signal SIGUSR1 to this process (%u)" % os.getpid()
+        ShowMessage("Waiting for signal SIGUSR1 to this process (%u)" % os.getpid())
         while not startevent.wait(repeater_interval):
             pass
         # We got the signal
@@ -1042,14 +1058,14 @@ def main():
             os.remove(start_file_appears)
         except:
             pass
-        print "Waiting for file \"%s\" to appear." % start_file_appears
+        ShowMessage("Waiting for file \"%s\" to appear." % start_file_appears)
         while True:
             if os.access(start_file_appears, os.F_OK):
                 break
             time.sleep(repeater_interval)
 
     elif start_file_exists:
-        print "Waiting for file \"%s\" to exit." % start_file_appears
+        ShowMessage("Waiting for file \"%s\" to exit." % start_file_appears)
         while True:
             if os.access(start_file_exists, os.F_OK):
                 break
@@ -1061,9 +1077,9 @@ def main():
         waitdelta = start_datetime - today
         sleepsecs = waitdelta.total_seconds()
         if (sleepsecs < 0):
-            print "Error: Target start time is in the past"
+            ShowMessage("Error: Target start time is in the past")
             sys.exit(1)
-        print "Sleeping for %f seconds" % sleepsecs
+        ShowMessage("Sleeping for %f seconds" % sleepsecs)
         time.sleep(sleepsecs)
         
     PGMStatus = PGM_RUNNING
@@ -1072,7 +1088,7 @@ def main():
     StatusBeacon.Emit({})
 
     TimeBase = datetime.datetime.now()
-    print "TBase:", TimeBase
+    ShowMessage("TBase:", TimeBase)
 
     Jobs.FinalizeStartTime(TimeBase)
 
