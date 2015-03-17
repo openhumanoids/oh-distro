@@ -1,7 +1,7 @@
 #!/bin/env python
 
 #**********************************************************************
-# $Id: dce_ctl.py 50 2015-02-18 08:18:11Z karl $
+# $Id: dce_ctl.py 66 2015-03-08 14:09:31Z karl $
 #**********************************************************************
 
 # If the servercomm module isn't in the same directory as this module
@@ -163,7 +163,7 @@ class DCEControl(DCE):
     SlowpathPortmask = "0xF800"
 
     def __init__(self, dce_address,
-                 fast_queue_length=16*1500*8,
+                 fast_queue_length=256*1500*8,
                  # Typical router queue may be 16 packets of 1500 bytes.
                  slow_queue_length=5000*8,
                  # Actual negotiated link rate of data ports. Assume 1 Gig.
@@ -176,7 +176,9 @@ class DCEControl(DCE):
                  # preamble(8) + dst(6) + src(6) + length(2) + CRC(4) + interframe gap(12)
                  # overhead=(8 + 6 + 6 + 2 + 4 + 12)*8
                  # dst(6) + src(6) + length(2)
-                 overhead=(6 + 6 + 2)*8
+                 overhead=(6 + 6 + 2)*8,
+                 slow_rate=9600,
+                 icmp_rate=4800
                 ):
 
         super(DCEControl, self).__init__(dce_address)
@@ -184,6 +186,8 @@ class DCEControl(DCE):
         # Rate limit queue sizes, in bytes
         self.FastQLen = fast_queue_length
         self.SlowQLen = slow_queue_length
+        self.SlowRate = slow_rate
+        self.ICMPRate = icmp_rate
 
         self.PhysRate = phys_rate
         self.MinPayload = min_payload
@@ -321,9 +325,9 @@ class DCEControl(DCE):
                                zeroStats = False)
         self.SrvrCtrl.SetImpair(self.__class__.SlowPath,
                                 self.__class__.TeamToRobot,
-                                # OLD: "delay 1000000 rate 9600 %d %d %d %d %d 0" %
-                                "rate 9600 %d %d %d %d %d 0" %
-                                (self.MinPayload, self.MaxPayload, self.Overhead,
+                                "rate %d %d %d %d %d %d 0" %
+                                (self.SlowRate,
+                                 self.MinPayload, self.MaxPayload, self.Overhead,
                                  self.SlowQLen, self.PhysRate),
                                 zeroStats = True)
 
@@ -335,8 +339,9 @@ class DCEControl(DCE):
                                zeroStats = False)
         self.SrvrCtrl.SetImpair(self.__class__.SlowPath,
                                 self.__class__.RobotToTeam,
-                                "rate 9600 %d %d %d %d %d 0" %
-                                (self.MinPayload, self.MaxPayload, self.Overhead,
+                                "rate %d %d %d %d %d %d 0" %
+                                (self.SlowRate,
+                                 self.MinPayload, self.MaxPayload, self.Overhead,
                                  self.SlowQLen, self.PhysRate),
                                 zeroStats = True)
 
@@ -354,9 +359,9 @@ class DCEControl(DCE):
                                zeroStats = False)
         self.SrvrCtrl.SetImpair(self.__class__.IcmpBypass,
                                 self.__class__.TeamToRobot,
-                                # OLD: "delay 1000000 rate 4800 %d %d %d %d %d 0" %
-                                "rate 4800 %d %d %d %d %d 0" %
-                                (self.MinPayload, self.MaxPayload, self.Overhead,
+                                "rate %d %d %d %d %d %d 0" %
+                                (self.ICMPRate,
+                                 self.MinPayload, self.MaxPayload, self.Overhead,
                                  self.SlowQLen, self.PhysRate),
                                 zeroStats = True)
 
@@ -366,8 +371,9 @@ class DCEControl(DCE):
                                zeroStats = False)
         self.SrvrCtrl.SetImpair(self.__class__.IcmpBypass,
                                 self.__class__.RobotToTeam,
-                                "rate 4800 %d %d %d %d %d 0" %
-                                (self.MinPayload, self.MaxPayload, self.Overhead,
+                                "rate %d %d %d %d %d %d 0" %
+                                (self.ICMPRate,
+                                 self.MinPayload, self.MaxPayload, self.Overhead,
                                  self.SlowQLen, self.PhysRate),
                                 zeroStats = True)
 
