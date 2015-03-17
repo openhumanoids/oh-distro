@@ -32,8 +32,6 @@ classdef StatelessWalkingPlanner
 
       r = configureDRCTerrain(r, request.footstep_plan.params.map_mode, q0);
 
-      qstar = xstar(1:nq);
-
       footstep_plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, r);
 
       % Align the first two steps to the current feet poses
@@ -94,7 +92,6 @@ classdef StatelessWalkingPlanner
           walking_plan = WalkingPlan(ts, xs, joint_names);
         end
       else
-        walking_plan_data.gain_set
         walking_plan = DRCQPLocomotionPlan.toLCM(walking_plan_data);
       end
       disp('done')
