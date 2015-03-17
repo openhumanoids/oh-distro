@@ -57,8 +57,8 @@
         "handLinkName" : "lwr_arm_7_link",
         "handUrdf" : "schunk_hand.urdf",
         "handRootLink" : "sdh_palm_link",
-        "robotMountLink" : "l_hand_force_torque",
-        "palmLink" : "l_hand_face"
+        "robotMountLink" : "sdh_hand_force_torque",
+        "palmLink" : "sdh_hand_face"
       }
   ]
 }

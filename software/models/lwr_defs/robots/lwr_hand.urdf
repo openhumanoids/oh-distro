@@ -472,7 +472,7 @@
 
 
   <!-- Components for bonus robotiq hand frames -->
-  <link name="l_hand_force_torque">
+  <link name="sdh_hand_force_torque">
     <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0"/>
@@ -485,23 +485,23 @@
       </geometry>
     </visual>
   </link>
-  <joint name="l_hand_force_torque_joint" type="fixed">
+  <joint name="sdh_hand_force_torque_joint" type="fixed">
     <origin rpy="1.57079 0 -1.57079" xyz="0 0 -0.015"/>
     <parent link="lwr_arm_7_link"/>
-    <child link="l_hand_force_torque"/>
+    <child link="sdh_hand_force_torque"/>
   </joint>
-  <joint name="l_hand_face_joint" type="fixed">
-    <origin rpy="0.0 0.0 0.0" xyz="0 0.12 0"/>
-    <parent link="l_hand_force_torque"/>
-    <child link="l_hand_face"/>
+  <joint name="sdh_hand_face_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.095 0.01"/>
+    <parent link="sdh_hand_force_torque"/>
+    <child link="sdh_hand_face"/>
   </joint>
-  <link name="l_hand_face"/>
-  <joint name="l_hand_gripper_joint" type="fixed">
-    <origin rpy="0.0 0.0 0.0" xyz="0 0.18 0"/>
-    <parent link="l_hand_force_torque"/>
-    <child link="l_hand_gripper"/>
+  <link name="sdh_hand_face"/>
+  <joint name="sdh_hand_gripper_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.225 0.01"/>
+    <parent link="sdh_hand_force_torque"/>
+    <child link="sdh_hand_gripper"/>
   </joint>
-  <link name="l_hand_gripper"/>
+  <link name="sdh_hand_gripper"/>
 
 
 
