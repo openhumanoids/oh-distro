@@ -47,6 +47,7 @@ pods_use_pkg_config_packages(AtlasCommandDriver drake-qp-common)
 
 add_mex(RobotStateDriver SHARED RobotStateDriver.cpp)
 pods_use_pkg_config_packages(RobotStateDriver drake-control-util)
+target_link_libraries(RobotStateDriver drakeGeometryUtil)
 
 add_mex(FootContactDriver SHARED FootContactDriver.cpp)
 

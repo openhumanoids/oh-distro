@@ -1,5 +1,6 @@
 #include <mex.h>
 #include "RobotStateDriver.hpp"
+#include "drake/drakeGeometryUtil.h"
 
 using namespace std;
 
@@ -69,7 +70,10 @@ void RobotStateDriver::decode(const drc::robot_state_t *msg, DrakeRobotState *st
   omega(0) = msg->twist.angular_velocity.x;
   omega(1) = msg->twist.angular_velocity.y;
   omega(2) = msg->twist.angular_velocity.z;
-  Vector3d rpydot = angularvel2rpydot(rpy,omega);
+
+  Matrix3d phi = Matrix3d::Zero();
+  angularvel2rpydotMatrix(rpy, phi, (MatrixXd*) nullptr, (MatrixXd*) nullptr);
+  Vector3d rpydot = phi * omega;
 
   it = m_floating_joint_map.find("base_roll");
   if (it!=m_floating_joint_map.end()) {
