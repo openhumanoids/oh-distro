@@ -196,7 +196,7 @@ struct State {
 int main(const int iArgc, const char** iArgv) {
 
   int scaleFactor = 16;
-  int bitRate = 4096;
+  int bitRate = 4;
   double publishFrequency = 2;
   double keyframeInterval = 5;
   std::string cameraChannel = "CAMERA";
@@ -206,7 +206,7 @@ int main(const int iArgc, const char** iArgv) {
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(scaleFactor, "s", "scale-factor", "downsample factor");
   opt.add(publishFrequency, "f", "publish-frequency", "publish frequency (Hz)");
-  opt.add(bitRate, "b", "bitrate", "target bitrate (bps)");
+  opt.add(bitRate, "b", "bitrate", "target bitrate (kbps)");
   opt.add(keyframeInterval, "k", "keyframe-interval",
           "max keyframe interval (s)");
   opt.add(cameraChannel, "c", "camera-channel", "camera channel");
@@ -227,7 +227,7 @@ int main(const int iArgc, const char** iArgv) {
   state->mCameraChannel = cameraChannel;
   state->mVideoChannel = videoChannel;
   state->mScaleFactor = scaleFactor;
-  state->mBitRate = bitRate/1024;
+  state->mBitRate = bitRate;
   state->mKeyframeInterval = keyframeInterval;
   state->mPublishPeriod = 1/publishFrequency;
 
