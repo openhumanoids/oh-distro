@@ -1,0 +1,63 @@
+material Schunk/LightGrey
+{
+  receive_shadows on
+
+	technique
+	{
+		pass
+		{
+			ambient 0.95 0.95 0.95 1
+			diffuse 0.1 0.1 0.1 1
+		}
+	}
+}
+
+material Schunk/DarkGrey
+{
+  receive_shadows on
+
+	technique
+	{
+		pass
+		{
+			ambient 0.4 0.4 0.4 1
+			diffuse 0.1 0.1 0.1 1
+		}
+	}
+}
+
+material Schunk/Black
+{
+	technique
+	{
+		pass
+		{
+			ambient 0.0 0.0 0.0 1.0
+			diffuse 0.1 0.1 0.1 1
+		}
+	}
+}
+
+material Schunk/DarkGolden
+{
+	technique
+	{
+		pass
+		{
+			ambient 0.4 0.4 0.3 1.0
+			diffuse 0.1 0.1 0.1 1
+		}
+	}
+}
+
+material Schunk/Blue
+{
+	technique
+	{
+		pass
+		{
+			ambient 0.0 0.0 0.8 1.0
+			diffuse 0.1 0.1 0.1 1
+		}
+	}
+}

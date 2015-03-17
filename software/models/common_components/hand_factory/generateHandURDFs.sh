@@ -19,3 +19,10 @@ python ../../model_transformation/xacro.py xacro/pointer_hand_left.urdf.xacro > 
 python ../../model_transformation/xacro.py xacro/pointer_hand_right.urdf.xacro > pointer_hand_right.urdf
 
 # Valkyrie hands are not generated from xacro
+
+echo "schunk hand"
+rosrun xacro xacro.py xacro/schunk_hand.urdf.xacro > schunk_hand.urdf
+# additional step for schunk, find replace:
+#      <material name="Schunk/LightGrey"/>
+# with:
+#      <material name="grey"><color rgba="0.7 0.7 0.7 1"/> </material>

@@ -142,7 +142,6 @@
         "handType" : "left_robotiq",
         "handLinkName" : "l_hand",
         "handUrdf" : "robotiq_hand_left.urdf",
-        "handJointName" : "left_robotiq_hand_joint",
         "handRootLink" : "left_palm",
         "robotMountLink" : "l_hand_force_torque",
         "palmLink" : "l_hand_face"
@@ -151,7 +150,6 @@
         "handType" : "right_robotiq",
         "handLinkName" : "r_hand",
         "handUrdf" : "robotiq_hand_right.urdf",
-        "handJointName" : "right_robotiq_hand_joint",
         "handRootLink" : "right_palm",
         "robotMountLink" : "r_hand_force_torque",
         "palmLink" : "r_hand_face"

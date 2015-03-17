@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="schunk_sdh_transmission" params="name">
+
+    <transmission name="${name}_knuckle_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_finger_21_joint"/>
+      <actuator name="${name}_knuckle_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+    <transmission name="${name}_knuckle_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_knuckle_joint"/>
+      <actuator name="${name}_knuckle_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+    <!-- finger1 -->
+    <transmission name="${name}_finger_12_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_finger_12_joint"/>
+      <actuator name="${name}_finger_12_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  
+    <transmission name="${name}_finger_13_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_finger_13_joint"/>
+      <actuator name="${name}_finger_13_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  
+    <!-- finger2 -->
+    <transmission name="${name}_finger_22_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_finger_22_joint"/>
+      <actuator name="${name}_finger_22_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  
+    <transmission name="${name}_finger_23_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_finger_23_joint"/>
+      <actuator name="${name}_finger_23_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  
+    <!-- thumb -->
+    <transmission name="${name}_thumb_2_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_thumb_2_joint"/>
+      <actuator name="${name}_thumb_2_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  
+    <transmission name="${name}_thumb_3_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}_thumb_3_joint"/>    
+      <actuator name="${name}_thumb_3_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+  </xacro:macro>
+
+</robot>

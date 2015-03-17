@@ -106,7 +106,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/base.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/base.stl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
@@ -136,7 +136,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.008"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_1.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_1.stl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
@@ -191,7 +191,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_2.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_2.stl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
@@ -246,7 +246,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.008"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_3.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_3.stl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
@@ -301,7 +301,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_4.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_4.stl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
@@ -358,7 +358,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.008"/>
       <geometry name="lwr_arm_5_geom">
-        <mesh filename="package://lwr_defs/meshes/lwr/link_5.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_5.stl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
@@ -413,7 +413,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_6.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_6.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -450,7 +450,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_7.STL"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_7.stl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -469,6 +469,41 @@
     <joint name="lwr_arm_6_joint"/>
     <mechanicalReduction>1.0</mechanicalReduction>
   </transmission>
+
+
+  <!-- Components for bonus robotiq hand frames -->
+  <link name="l_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin rpy="1.57079 0 -1.57079" xyz="0 0 -0.015"/>
+    <parent link="lwr_arm_7_link"/>
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <joint name="l_hand_face_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.12 0"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="l_hand_face"/>
+  </joint>
+  <link name="l_hand_face"/>
+  <joint name="l_hand_gripper_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.18 0"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="l_hand_gripper"/>
+  </joint>
+  <link name="l_hand_gripper"/>
+
+
 
   <!-- SHD hands-->
     <!-- joint between arm_7_link and sdh_palm_link -->

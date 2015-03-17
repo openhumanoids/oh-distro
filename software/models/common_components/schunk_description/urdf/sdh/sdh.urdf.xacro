@@ -1,0 +1,362 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find schunk_description)/urdf/sdh/sdh.gazebo.xacro" />
+  <xacro:include filename="$(find schunk_description)/urdf/sdh/sdh.transmission.xacro" />
+
+  <xacro:macro name="schunk_sdh" params="parent name *origin">
+
+    <!-- joint between arm_7_link and sdh_palm_link -->
+    <joint name="${name}_palm_joint" type="fixed" >
+      <insert_block name="origin" />
+      <parent link="${parent}" />
+      <child link="${name}_palm_link" />
+    </joint>
+
+    <link name="${name}_palm_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/palm.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/palm.stl"/>
+        </geometry>
+      </collision>
+    </link>
+    
+    <!-- grasp link -->
+    <joint name="${name}_grasp_joint" type="fixed" >
+      <origin xyz="0 0 0.15" rpy="0 0 0"/>
+      <parent link="${name}_palm_link" />
+      <child link="${name}_grasp_link" />
+    </joint>
+
+    <link name="${name}_grasp_link"/>
+
+    <!-- tip link -->
+    <joint name="${name}_tip_joint" type="fixed" >
+      <origin xyz="0 0 0.22" rpy="0 0 0"/>
+      <parent link="${name}_palm_link" />
+      <child link="${name}_tip_link" />
+    </joint>
+
+    <link name="${name}_tip_link"/>
+
+    <!-- finger1 -->
+    <!-- joint between sdh_palm_link and sdh_finger_11_link -->
+    <joint name="${name}_knuckle_joint" type="revolute">
+      <origin xyz="0.01905 0.033 0.0745" rpy="0 0 3.14159265" />
+      <parent link="${name}_palm_link"/>
+      <child link="${name}_finger_11_link"/>
+      <axis xyz="0 0 1" />
+      <dynamics damping="1" />
+      <limit effort="100" lower="0" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_finger_11_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+        <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- joint between sdh_finger_11_link and sdh_finger_12_link -->
+    <joint name="${name}_finger_12_joint" type="revolute">
+      <origin xyz="0 0 0.0165" rpy="0 0 0" />
+      <parent link="${name}_finger_11_link"/>
+      <child link="${name}_finger_12_link"/>
+      <axis xyz="0 1 0" />
+      <dynamics damping="1" />
+      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_finger_12_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger.stl" />
+        </geometry>
+      <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- joint between sdh_finger_12_link and sdh_finger_13_link -->
+    <joint name="${name}_finger_13_joint" type="revolute">
+       
+      <origin xyz="0 0 0.0865" rpy="0 0 0" />
+      <parent link="${name}_finger_12_link"/>
+      <child link="${name}_finger_13_link"/>
+      <axis xyz="0 1 0" />
+      <dynamics damping="1" />
+      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_finger_13_link">
+      <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- finger2 -->
+    <!-- joint between sdh_palm_link and sdh_finger_21_link -->
+    <joint name="${name}_finger_21_joint" type="revolute">
+      <mimic joint="${name}_knuckle_joint" multiplier="1" offset="0"/>
+      <origin xyz="0.01905 -0.033 0.0745" rpy="0 0 3.14159265" />
+      <parent link="${name}_palm_link"/>
+      <child link="${name}_finger_21_link"/>
+      <axis xyz="0 0 -1" />
+      <dynamics damping="1" />
+      <limit effort="100" lower="0" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_finger_21_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- joint between sdh_finger_21_link and sdh_finger_22_link -->
+    <joint name="${name}_finger_22_joint" type="revolute">
+      <origin xyz="0 0 0.0165" rpy="0 0 0" />
+      <parent link="${name}_finger_21_link"/>
+      <child link="${name}_finger_22_link"/>
+      <axis xyz="0 1 0" />
+      <dynamics damping="1" />
+      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_finger_22_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- joint between sdh_finger_22_link and sdh_finger_23_link -->
+    <joint name="${name}_finger_23_joint" type="revolute">
+      <origin xyz="0 0 0.0865" rpy="0 0 0" />
+      <parent link="${name}_finger_22_link"/>
+      <child link="${name}_finger_23_link"/>
+      <axis xyz="0 1 0" />
+      <dynamics damping="1" />
+      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_finger_23_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- thumb -->
+    <!-- joint between sdh_palm_link and sdh_thumb_1_link -->
+    <joint name="${name}_thumb_1_joint" type="fixed">
+      <origin xyz="-0.03811 0 0.0745 " rpy="0 0 0" />
+      <parent link="${name}_palm_link"/>
+      <child link="${name}_thumb_1_link"/>
+    </joint>
+
+    <link name="${name}_thumb_1_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- joint between sdh_thumb_1_link and shd_thumb_2_link -->
+    <joint name="${name}_thumb_2_joint" type="revolute">
+    <origin xyz="0 0 0.0165" rpy="0 0 0" />
+    <parent link="${name}_thumb_1_link"/>
+    <child link="${name}_thumb_2_link"/>
+    <axis xyz="0 1 0" />
+    <dynamics damping="1" />
+    <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_thumb_2_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>  
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+    
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+    
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger.stl"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- joint between sdh_thumb_2_link and sdh_thumb_3_link -->
+    <joint name="${name}_thumb_3_joint" type="revolute">
+      <origin xyz="0 0 0.0865" rpy="0 0 0" />
+      <parent link="${name}_thumb_2_link"/>
+      <child link="${name}_thumb_3_link"/>
+      <axis xyz="0 1 0" />
+      <dynamics damping="1" />
+      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
+    </joint>
+
+    <link name="${name}_thumb_3_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl" />
+        </geometry>
+        <material name="Schunk/LightGrey" />
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl"/>
+        </geometry>
+      </collision>
+    </link>
+  
+    <!-- extensions -->
+    <xacro:schunk_sdh_gazebo name="${name}" />
+    <xacro:schunk_sdh_transmission name="${name}" />
+
+  </xacro:macro>
+
+</robot>

@@ -485,7 +485,7 @@
     </visual>
   </link>
   <joint name="l_hand_force_torque_joint" type="fixed">
-    <origin rpy="1.57079 0 3.1416" xyz="0 0 -0.015"/>
+    <origin rpy="1.57079 0 -1.57079" xyz="0 0 -0.015"/>
     <parent link="lwr_arm_7_link"/>
     <child link="l_hand_force_torque"/>
   </joint>
