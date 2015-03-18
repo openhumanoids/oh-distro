@@ -64,9 +64,9 @@ set(velodyne_url https://svn.csail.mit.edu/rrg_pods/drivers/velodyne)
 set(velodyne_revision 852)
 set(velodyne_depends common_utils)
 
-#set(kinect_url https://svn.csail.mit.edu/rrg_pods/drivers/kinect)
-#set(kinect_revision 961)
-#set(kinect_depends libbot-drc)
+set(kinect_url https://svn.csail.mit.edu/rrg_pods/drivers/kinect)
+set(kinect_revision 962)
+set(kinect_depends libbot-drc)
 
 set(microstrain_comm_url https://svn.csail.mit.edu/rrg_pods/drivers/microstrain_comm)
 set(microstrain_comm_revision 853)
@@ -169,7 +169,7 @@ set(externals
   isam_include
   visualization
   #velodyne
-  #kinect
+  kinect
   microstrain_comm
   fovis-git
   estimate-pose
