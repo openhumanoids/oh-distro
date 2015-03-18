@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
-  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2014-12-09T19:36:09Z</created><keywords></keywords><modified>2014-12-09T19:36:09Z</modified><revision></revision><subject></subject><title></title><unit meter="1.000000" name="centimeter"></unit><up_axis>Z_UP</up_axis></asset>
+  <asset><contributor><author/><authoring_tool>FBX COLLADA exporter</authoring_tool><comments/></contributor><created>2014-12-09T19:36:09Z</created><keywords/><modified>2014-12-09T19:36:09Z</modified><revision/><subject/><title/><unit meter="1.000000" name="centimeter"/><up_axis>Z_UP</up_axis></asset>
   <library_images>
-    <image id="Map #6-image" name="Map #6"><init_from>../materials/textures/torso_diffuse_unplugged.jpg</init_from></image>
+    <image id="Map #6-image" name="Map #6"><init_from>../materials/textures/torso_diffuse_unplugged_mit.jpg</init_from></image>
   </library_images>
   <library_materials>
     <material id="Material #26 Slot #1" name="Material #26 Slot #1">
@@ -30720,6 +30719,6 @@
     </visual_scene>
   </library_visual_scenes>
   <scene>
-    <instance_visual_scene url="#utorso"></instance_visual_scene>
+    <instance_visual_scene url="#utorso"/>
   </scene>
 </COLLADA>
