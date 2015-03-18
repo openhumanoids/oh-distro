@@ -24,3 +24,15 @@ add_executable(drc-image-receive ImageReceive.cpp)
 pods_use_pkg_config_packages(drc-image-receive drc-utils opencv)
 target_link_libraries(drc-image-receive)
 pods_install_executables(drc-image-receive)
+
+# video encoder
+add_executable(drc-video-encode VideoEncode.cpp)
+pods_use_pkg_config_packages(drc-video-encode drc-utils opencv x264 libswscale)
+target_link_libraries(drc-video-encode)
+pods_install_executables(drc-video-encode)
+
+# video decoder
+add_executable(drc-video-decode VideoDecode.cpp)
+pods_use_pkg_config_packages(drc-video-decode drc-utils opencv x264 libswscale libavutil libavcodec)
+target_link_libraries(drc-video-decode)
+pods_install_executables(drc-video-decode)
