@@ -47,14 +47,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mexErrMsgIdAndTxt("DRC:footstepPlanShiftmex:BadInputs","the first argument should be the ptr");
   memcpy(&pdata,mxGetData(prhs[0]),sizeof(pdata));
 
-  int nq = pdata->r->num_dof;
+  int nq = pdata->r->num_positions;
   int narg = 1;
 
   double t = mxGetScalar(prhs[narg++]);
 
-  double *q = mxGetPr(prhs[narg++]);
-  double *qd = &q[nq];
-  Map<VectorXd> qdvec(qd,nq);
+  double *q_ptr = mxGetPr(prhs[narg++]);
+  double *qd_ptr = &q_ptr[nq];
+  Map<VectorXd> q(q_ptr, nq);
+  Map<VectorXd> qd(qd_ptr, pdata->r->num_velocities);
   
   int fc_left = (int) mxGetScalar(prhs[narg++]);
   int fc_right = (int) mxGetScalar(prhs[narg++]);

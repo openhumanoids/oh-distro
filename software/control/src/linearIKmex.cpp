@@ -58,7 +58,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   // first get the model_ptr back from matlab
   RigidBodyManipulator *model= (RigidBodyManipulator*) getDrakeMexPointer(prhs[0]);
 
-  int nq = model->num_dof;
+  int nq = model->num_positions;
 
   // set up cost function
   // cost:  (q-q_nom)'*Q*(q-q_nom)  \equiv q'*Q*q - 2*q_nom'*Q*q  (const term doesn't matter)
@@ -66,13 +66,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map<MatrixXd> Q(mxGetPr(prhs[3]),nq,nq);
   VectorXd f = -2*Q*q_nom;
   
-  double *q0 = mxGetPr(prhs[1]);
+  Map<VectorXd> q0(mxGetPr(prhs[1]), nq);
   model->doKinematics(q0);
   
   int n_fixed_dofs = mxGetM(prhs[4]);
   Map<VectorXd> fixed_dofs(mxGetPr(prhs[4]),n_fixed_dofs);
-
-  VectorXd q0vec = Map<VectorXd>(q0,nq);
 
   std::vector<VectorXd,aligned_allocator<VectorXd>> Aeq_ (nrhs*6+nq); // nrhs*6+nq is an upper bound
   VectorXd beq_ = VectorXd::Zero(nrhs*6+nq); // nrhs*6+nq is an upper bound
@@ -167,7 +165,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       for (int j = 0; j < rows; j++) {
         if (!mxIsNaN(world_pos(j))) {
           Aeq_[eq_count] = J.row(j);
-          beq_(eq_count++) = world_pos(j) - x(j) + J.row(j)*q0vec;   
+          beq_(eq_count++) = world_pos(j) - x(j) + J.row(j)*q0;   
         }
       } 
     }

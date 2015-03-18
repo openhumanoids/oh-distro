@@ -445,9 +445,11 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
       }
     }
   }
-
-  atlas_joints_.position[Atlas::JOINT_BACK_BKX] = atlas_joints_.position[Atlas::JOINT_BACK_BKX] + 1.2*M_PI/180.0;
-  atlas_joints_.position[Atlas::JOINT_BACK_BKY] = atlas_joints_.position[Atlas::JOINT_BACK_BKY] - 1.2*M_PI/180.0;
+  
+  if (cl_cfg_->apply_back_offsets){ // because LVDT calibration isn't good...
+    atlas_joints_.position[Atlas::JOINT_BACK_BKX] = atlas_joints_.position[Atlas::JOINT_BACK_BKX] + 1.2*M_PI/180.0;
+    atlas_joints_.position[Atlas::JOINT_BACK_BKY] = atlas_joints_.position[Atlas::JOINT_BACK_BKY] - 1.2*M_PI/180.0;
+  }
 
   if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
@@ -684,6 +686,7 @@ main(int argc, char ** argv){
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
   opt.add(cl_cfg->atlas_version, "a", "atlas_version", "Atlas version to use");
+  opt.add(cl_cfg->apply_back_offsets, "k", "apply_back_offsets", "Apply back position offsets");
   opt.parse();
   
   std::cout << "standalone_head: " << cl_cfg->standalone_head << "\n";

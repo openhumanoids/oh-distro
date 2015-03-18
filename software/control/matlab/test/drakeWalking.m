@@ -77,11 +77,12 @@ request = drc.walking_plan_request_t();
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
-walking_ctrl_data = walking_planner.plan_walking(r, request, false);
+walking_ctrl_msg = walking_planner.plan_walking(r, request, false);
+walking_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(walking_ctrl_msg, r);
 
 % No-op: just make sure we can cleanly encode and decode the plan as LCM
 tic;
-walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
+walking_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(DRCQPLocomotionPlan.toLCM(walking_ctrl_data), r);
 fprintf(1, 'control data lcm code/decode time: %f\n', toc);
 
 % plot walking traj in drake viewer
@@ -95,7 +96,14 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-traj = atlasUtil.simulateWalking(r, walking_ctrl_data, use_mex, use_ik, use_bullet, use_angular_momentum, true);
+% Hack because the old controller expects s2 as an input, but doesn't use it
+walking_ctrl_data.V.s2 = PPTrajectory(foh([-inf, inf], [0, 0]));
+
+traj = atlasUtil.simulateWalking(r, walking_ctrl_data, struct('use_mex', logical(use_mex),...
+                                                              'use_ik', logical(use_ik),...
+                                                              'use_bullet', logical(use_bullet),...
+                                                              'use_angular_momentum', logical(use_angular_momentum),...
+                                                              'draw_button', true));
 
 playback(v,traj,struct('slider',true));
 
