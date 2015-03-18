@@ -57,15 +57,15 @@ urdf = etree.parse(tmp.name)
 # Use .obj meshes
 mit.useObjMeshes(urdf)
 
+# Use convex hull meshes for collisions
+mit.useConvexHullMeshes(urdf)
+
 # Generate full urdf
 urdf.write(urdf_path, pretty_print=True)
 
 # Generate no-joint urdf
 for joint in urdf.findall("//joint"):
     joint.set("type", "fixed")
-
-# Use convex hull meshes for collisions
-mit.useConvexHullMeshes(urdf)
 
 urdf.write(no_joint_urdf_path, pretty_print=True)
 
