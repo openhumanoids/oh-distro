@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
-  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2014-12-09T20:32:12Z</created><keywords></keywords><modified>2014-12-09T20:32:12Z</modified><revision></revision><subject></subject><title></title><unit meter="1.000000" name="centimeter"></unit><up_axis>Z_UP</up_axis></asset>
+  <asset><contributor><author/><authoring_tool>FBX COLLADA exporter</authoring_tool><comments/></contributor><created>2014-12-09T20:32:12Z</created><keywords/><modified>2014-12-09T20:32:12Z</modified><revision/><subject/><title/><unit meter="1.000000" name="centimeter"/><up_axis>Z_UP</up_axis></asset>
   <library_images>
     <image id="Map #7-image" name="Map #7"><init_from>../materials/textures/right_leg_diffuse_unplugged.jpg</init_from></image>
   </library_images>
@@ -10512,6 +10511,6 @@
     </visual_scene>
   </library_visual_scenes>
   <scene>
-    <instance_visual_scene url="#r_uleg"></instance_visual_scene>
+    <instance_visual_scene url="#r_uleg"/>
   </scene>
 </COLLADA>

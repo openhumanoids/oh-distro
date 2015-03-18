@@ -2,7 +2,7 @@
   <asset><contributor><author/><authoring_tool>FBX COLLADA exporter</authoring_tool><comments/></contributor><created>2014-12-03T19:22:56Z</created><keywords/><modified>2014-12-03T19:22:56Z</modified><revision/><subject/><title/><unit meter="1.000000" name="centimeter"/><up_axis>Z_UP</up_axis></asset>
   <library_images>
     <image id="Map #0-image" name="Map #0"><init_from>../materials/textures/torso_diffuse.png</init_from></image>
-    <image id="Map #1-image" name="Map #1"><init_from>../materials/textures/torso_diffuse_unplugged.jpg</init_from></image>
+    <image id="Map #1-image" name="Map #1"><init_from>../materials/textures/torso_diffuse_unplugged_mit.jpg</init_from></image>
   </library_images>
   <library_materials>
     <material id="torso_diffuse" name="torso_diffuse">
