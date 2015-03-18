@@ -1,6 +1,0 @@
-package kinect;
-
-struct point2d_t {
-    int16_t u;
-    int16_t v;
-}

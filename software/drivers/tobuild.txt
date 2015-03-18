@@ -7,4 +7,3 @@ ipwebcam
 ptgrey
 robotiqhand
 irobothand
-kinect
