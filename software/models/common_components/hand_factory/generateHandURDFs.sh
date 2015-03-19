@@ -13,6 +13,8 @@ python ../../model_transformation/xacro.py xacro/irobot_hand_right.urdf.xacro > 
 echo "robotiq hands"
 python ../../model_transformation/xacro.py xacro/robotiq_hand_left.urdf.xacro > robotiq_hand_left.urdf
 python ../../model_transformation/xacro.py xacro/robotiq_hand_right.urdf.xacro > robotiq_hand_right.urdf
+#python ../../model_transformation/xacro.py xacro/robotiq_hand.urdf.xacro > robotiq_hand.urdf
+# additional step for robotiq without a side, find replace 'main_' with '' (empty string)
 
 echo "pointer hands"
 python ../../model_transformation/xacro.py xacro/pointer_hand_left.urdf.xacro > pointer_hand_left.urdf
