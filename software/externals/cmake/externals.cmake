@@ -41,7 +41,7 @@ set(occ-map_revision 958)
 set(occ-map_depends libbot-drc opencv-drc)
 
 set(common_utils_url https://svn.csail.mit.edu/common_utils)
-set(common_utils_revision 289)
+set(common_utils_revision 301)
 set(common_utils_depends Eigen_pod libbot-drc occ-map octomap-drc)
 
 set(scanmatch_url https://svn.csail.mit.edu/scanmatch/trunk)
