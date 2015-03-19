@@ -196,8 +196,7 @@ _load_collision_objects( collision_object_gfe_collision_object_type_t collisionO
               shared_ptr< Mesh > mesh = dynamic_pointer_cast< Mesh >( (*it->second)[ j ]->geometry );
               std::string model_filename = mesh->filename;
               model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
-              model_filename.erase( model_filename.end() - 4, model_filename.end() );
-              model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
+              model_filename = models_path + string( "/common_components" ) + model_filename;
               _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );
               cout << *_collision_objects.back() << endl;
             }
@@ -222,8 +221,7 @@ _load_collision_objects( collision_object_gfe_collision_object_type_t collisionO
           shared_ptr< Mesh > mesh = dynamic_pointer_cast< Mesh >( links[ i ]->collision->geometry );
           std::string model_filename = mesh->filename;
           model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
-          model_filename.erase( model_filename.end() - 4, model_filename.end() );
-          model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
+          model_filename = models_path + string( "/common_components" ) + model_filename;
           _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );      
           cout << *_collision_objects.back() << endl; 
         } 
@@ -248,8 +246,7 @@ _load_collision_objects( collision_object_gfe_collision_object_type_t collisionO
           shared_ptr< Mesh > mesh = dynamic_pointer_cast< Mesh >( links[ i ]->visual->geometry );
           std::string model_filename = mesh->filename;
           model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
-          model_filename.erase( model_filename.end() - 4, model_filename.end() );
-          model_filename = models_path + string( "/mit_gazebo_models" ) + model_filename + string( "_chull.obj" );
+          model_filename = models_path + string( "/common_components" ) + model_filename;
           _collision_objects.push_back( new Collision_Object_Convex_Hull( links[ i ]->name, model_filename ) );
           _collision_objects.back()->set_offset( Frame( KDL::Rotation::Quaternion( links[ i ]->visual->origin.rotation.x, links[ i ]->visual->origin.rotation.y, links[ i ]->visual->origin.rotation.z, links[ i ]->visual->origin.rotation.w ), KDL::Vector( links[ i ]->visual->origin.position.x, links[ i ]->visual->origin.position.y, links[ i ]->visual->origin.position.z ) ) );
           cout << *_collision_objects.back() << endl;
