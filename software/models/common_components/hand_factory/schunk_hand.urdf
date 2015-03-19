@@ -429,7 +429,7 @@
     <fudgeFactor value="1.0"/>
     <provideFeedback value="true"/>
   </gazebo>
-  <transmission name="sdh_knuckle_trans">
+  <transmission name="sdh_knuckle_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_finger_21_joint"/>
     <actuator name="sdh_knuckle_motor">
@@ -437,7 +437,7 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="sdh_knuckle_trans">
+  <transmission name="sdh_knuckle_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_knuckle_joint"/>
     <actuator name="sdh_knuckle_motor">
@@ -445,7 +445,7 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="sdh_finger_12_trans">
+  <transmission name="sdh_finger_12_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_finger_12_joint"/>
     <actuator name="sdh_finger_12_motor">
@@ -453,7 +453,7 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="sdh_finger_13_trans">
+  <transmission name="sdh_finger_13_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_finger_13_joint"/>
     <actuator name="sdh_finger_13_motor">
@@ -461,7 +461,7 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="sdh_finger_22_trans">
+  <transmission name="sdh_finger_22_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_finger_22_joint"/>
     <actuator name="sdh_finger_22_motor">
@@ -469,7 +469,7 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="sdh_finger_23_trans">
+  <transmission name="sdh_finger_23_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_finger_23_joint"/>
     <actuator name="sdh_finger_23_motor">
@@ -477,7 +477,7 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="sdh_thumb_2_trans">
+  <transmission name="sdh_thumb_2_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_thumb_2_joint"/>
     <actuator name="sdh_thumb_2_motor">
@@ -485,7 +485,7 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="sdh_thumb_3_trans">
+  <transmission name="sdh_thumb_3_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="sdh_thumb_3_joint"/>
     <actuator name="sdh_thumb_3_motor">
