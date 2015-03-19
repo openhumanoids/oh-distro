@@ -3,3 +3,6 @@
 pod-build/
 software/build/
 *.mexa64
+software/externals/
+*.o
+*.so
