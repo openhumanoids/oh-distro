@@ -160,6 +160,7 @@
   <actuator name="trunk/wj2" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <actuator name="trunk/wj3" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <transmission name="WaistRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="back_bkz"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -196,6 +197,7 @@
     </interface>
   </transmission>
   <transmission name="Waist" type="loadable_transmissions/PushrodTransmission">
+    <joint data="data" name="back_bkx"/>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="back_bky"/>
       <joint data="data" name="back_bkx"/>
@@ -542,6 +544,7 @@
   <actuator name="neck/j2" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
   <actuator name="neck/j3" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
   <transmission name="LowerNeckExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="neck_ay"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -578,6 +581,7 @@
     </interface>
   </transmission>
   <transmission name="NeckRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="neck_by"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -614,6 +618,7 @@
     </interface>
   </transmission>
   <transmission name="UpperNeckExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="neck_cy"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -1107,6 +1112,7 @@
   <actuator name="right_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
   <actuator name="right_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
   <transmission name="RightShoulderExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_arm_shz"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -1143,6 +1149,7 @@
     </interface>
   </transmission>
   <transmission name="RightShoulderAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_arm_shx"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -1179,6 +1186,7 @@
     </interface>
   </transmission>
   <transmission name="RightShoulderSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_arm_ely"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -1215,6 +1223,7 @@
     </interface>
   </transmission>
   <transmission name="RightElbowExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_arm_elx"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -1251,6 +1260,7 @@
     </interface>
   </transmission>
   <transmission name="RightForearmSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_arm_uwy"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -1287,6 +1297,7 @@
     </interface>
   </transmission>
   <transmission name="Right_Wrist" type="loadable_transmissions/PushrodTransmission">
+    <joint data="data" name="r_arm_mwx"/>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_arm_mwx"/>
       <joint data="data" name="r_arm_lwy"/>
@@ -2361,6 +2372,7 @@
   <actuator name="left_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
   <actuator name="left_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
   <transmission name="LeftShoulderExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_arm_shz"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -2397,6 +2409,7 @@
     </interface>
   </transmission>
   <transmission name="LeftShoulderAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_arm_shx"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -2433,6 +2446,7 @@
     </interface>
   </transmission>
   <transmission name="LeftShoulderSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_arm_ely"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -2469,6 +2483,7 @@
     </interface>
   </transmission>
   <transmission name="LeftElbowExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_arm_elx"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -2505,6 +2520,7 @@
     </interface>
   </transmission>
   <transmission name="LeftForearmSupinatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_arm_uwy"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -2541,6 +2557,7 @@
     </interface>
   </transmission>
   <transmission name="Left_Wrist" type="loadable_transmissions/PushrodTransmission">
+    <joint data="data" name="l_arm_mwx"/>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="l_arm_mwx"/>
       <joint data="data" name="l_arm_lwy"/>
@@ -3360,6 +3377,7 @@
   <actuator name="right_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <actuator name="right_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <transmission name="RightHipRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_leg_hpz"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -3396,6 +3414,7 @@
     </interface>
   </transmission>
   <transmission name="RightHipAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_leg_hpx"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -3432,6 +3451,7 @@
     </interface>
   </transmission>
   <transmission name="RightHipExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_leg_hpy"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -3468,6 +3488,7 @@
     </interface>
   </transmission>
   <transmission name="RightKneeExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="r_leg_kny"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -3504,6 +3525,7 @@
     </interface>
   </transmission>
   <transmission name="Right_Ankle" type="loadable_transmissions/PushrodTransmission">
+    <joint data="data" name="r_leg_aky"/>
     <interface type="ActuatorToJointStateInterface">
       <joint data="data" name="r_leg_aky"/>
       <joint data="data" name="r_leg_akx"/>
@@ -4016,6 +4038,7 @@
   <actuator name="left_leg/j5" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <actuator name="left_leg/j6" type="turbodriver_api/TurbodriverAPI_DRCv4_linear"/>
   <transmission name="LeftHipRotatorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_leg_hpz"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -4052,6 +4075,7 @@
     </interface>
   </transmission>
   <transmission name="LeftHipAdductorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_leg_hpx"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -4088,6 +4112,7 @@
     </interface>
   </transmission>
   <transmission name="LeftHipExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_leg_hpy"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
@@ -4124,6 +4149,7 @@
     </interface>
   </transmission>
   <transmission name="LeftKneeExtensorTransmission" type="loadable_transmissions/SimpleTransmission">
+    <joint data="data" name="l_leg_kny"/>
     <mechanicalReduction>1</mechanicalReduction>
     <jointOffset>0</jointOffset>
     <interface type="ActuatorToJointStateInterface">
