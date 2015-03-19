@@ -1,0 +1,5 @@
+.git/
+.gitmodules
+pod-build/
+software/build/
+*.mexa64
