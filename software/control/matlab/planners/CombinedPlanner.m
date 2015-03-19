@@ -195,7 +195,7 @@ classdef CombinedPlanner
       link_constraints(1).pt = [0;0;0];
       pp = pchip(ts, pelvis_pose);
       [breaks, coefs, l, k, d] = unmkpp(pp);
-      link_constraints(1).ts = [breaks(1:end-1), inf];
+      link_constraints(1).ts = breaks;
       link_constraints(1).coefs = reshape(coefs, [d,l,k]);
       plan = QPLocomotionPlan.from_configuration_traj(obj.biped,qtraj_pp,link_constraints);
       plan = DRCQPLocomotionPlan.toLCM(plan);
