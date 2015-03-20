@@ -54,5 +54,16 @@
   ],
   "fixedPointFile" : "../../control/matlab/data/abb_irb140_fp.mat",
   "postureDatabaseFile" : "stored_poses.json",
-  "mirrorJointSignFlips" : []
+  "mirrorJointSignFlips" : [],
+
+  "handCombinations": [
+      { "side" : "left",
+        "handType" : "left_robotiq",
+        "handLinkName" : "link_6",
+        "handUrdf" : "robotiq_hand.urdf",
+        "handRootLink" : "palm",
+        "robotMountLink" : "palm",
+        "palmLink" : "palm"
+      }
+  ]
 }

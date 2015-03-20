@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot>
+
+  <material name="Schunk/LightGrey">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+
+  <material name="Schunk/DarkGrey">
+    <color rgba="0.4 0.4 0.4 1.0"/>
+  </material>
+
+  <material name="Schunk/Black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+
+  <material name="Schunk/DarkGolden">
+    <color rgba="0.4 0.4 0.3 1.0"/>
+  </material>
+
+  <material name="Schunk/Blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+
+</robot>

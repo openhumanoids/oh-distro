@@ -106,15 +106,15 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/base.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/base.wrl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
     <collision>
       <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_base_convex.stl"/>
-        <!--cylinder length="0.11" radius="0.07"/-->
+        <!--<mesh filename="package://lwr_defs/meshes/lwr/convex/arm_base_convex.wrl"/>-->
+        <cylinder length="0.11" radius="0.07"/>
       </geometry>
     </collision>
   </link>
@@ -136,14 +136,14 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.008"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_1.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_1.wrl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_a_convex.stl"/>
+          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_a_convex.wrl"/>
         </geometry>
       </collision>
     <!--collision>
@@ -191,14 +191,14 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_2.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_2.wrl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
       <collision>
         <origin xyz="0 0 0.2" rpy="3.14159265359 0 0"/>
         <geometry>
-          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_b_convex.stl"/>
+          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_b_convex.wrl"/>
         </geometry>
       </collision>
     <!--collision>
@@ -246,14 +246,14 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.008"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_3.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_3.wrl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 3.1415926535897931"/>
         <geometry>
-          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_a_convex.stl"/>
+          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_a_convex.wrl"/>
         </geometry>
       </collision>
     <!--collision>
@@ -301,7 +301,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_4.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_4.wrl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
@@ -309,7 +309,7 @@
       <collision>
         <origin xyz="0 0 0.2" rpy="0 3.1415926535897931 0"/>
         <geometry>
-          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_b_convex.stl"/>
+          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_b_convex.wrl"/>
         </geometry>
       </collision>
 
@@ -358,14 +358,14 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.008"/>
       <geometry name="lwr_arm_5_geom">
-        <mesh filename="package://lwr_defs/meshes/lwr/link_5.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_5.wrl"/>
       </geometry>
       <material name="Orange"/>
     </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_last_convex.stl"/>
+          <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_segment_last_convex.wrl"/>
         </geometry>
       </collision>
     <!--collision>
@@ -413,14 +413,14 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_6.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_6.wrl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_wrist_convex.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/convex/arm_wrist_convex.wrl"/>
       </geometry>
     </collision>
   </link>
@@ -450,7 +450,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://lwr_defs/meshes/lwr/link_7.stl"/>
+        <mesh filename="package://lwr_defs/meshes/lwr/link_7.wrl"/>
       </geometry>
       <material name="Grey"/>
     </visual>
@@ -470,387 +470,5 @@
     <mechanicalReduction>1.0</mechanicalReduction>
   </transmission>
 
-
-  <!-- Components for bonus robotiq hand frames -->
-  <link name="sdh_hand_force_torque">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="sdh_hand_force_torque_joint" type="fixed">
-    <origin rpy="1.57079 0 -1.57079" xyz="0 0 -0.015"/>
-    <parent link="lwr_arm_7_link"/>
-    <child link="sdh_hand_force_torque"/>
-  </joint>
-  <joint name="sdh_hand_face_joint" type="fixed">
-    <origin rpy="0.0 0.0 0.0" xyz="0 0.095 0.01"/>
-    <parent link="sdh_hand_force_torque"/>
-    <child link="sdh_hand_face"/>
-  </joint>
-  <link name="sdh_hand_face"/>
-  <joint name="sdh_hand_gripper_joint" type="fixed">
-    <origin rpy="0.0 0.0 0.0" xyz="0 0.225 0.01"/>
-    <parent link="sdh_hand_force_torque"/>
-    <child link="sdh_hand_gripper"/>
-  </joint>
-  <link name="sdh_hand_gripper"/>
-
-
-
-  <!-- SHD hands-->
-    <!-- joint between arm_7_link and sdh_palm_link -->
-    <joint name="sdh_palm_joint" type="fixed" >
-      <insert_block name="origin" />
-      <parent link="lwr_arm_7_link" />
-      <child link="sdh_palm_link" />
-    </joint>
-
-    <link name="sdh_palm_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/palm.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/palm.stl"/>
-        </geometry>
-      </collision>
-    </link>
-    
-    <!-- grasp link -->
-    <joint name="sdh_grasp_joint" type="fixed" >
-      <origin xyz="0 0 0.15" rpy="0 0 0"/>
-      <parent link="sdh_palm_link" />
-      <child link="sdh_grasp_link" />
-    </joint>
-
-    <link name="sdh_grasp_link"/>
-
-    <!-- tip link -->
-    <joint name="sdh_tip_joint" type="fixed" >
-      <origin xyz="0 0 0.22" rpy="0 0 0"/>
-      <parent link="sdh_palm_link" />
-      <child link="sdh_tip_link" />
-    </joint>
-
-    <link name="sdh_tip_link"/>
-
-    <!-- finger1 -->
-    <!-- joint between sdh_palm_link and sdh_finger_11_link -->
-    <joint name="sdh_knuckle_joint" type="revolute">
-      <origin xyz="0.01905 0.033 0.0745" rpy="0 0 3.14159265" />
-      <parent link="sdh_palm_link"/>
-      <child link="sdh_finger_11_link"/>
-      <axis xyz="0 0 1" />
-      <dynamics damping="1" />
-      <limit effort="100" lower="0" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_finger_11_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-        <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- joint between sdh_finger_11_link and sdh_finger_12_link -->
-    <joint name="sdh_finger_12_joint" type="revolute">
-      <origin xyz="0 0 0.0165" rpy="0 0 0" />
-      <parent link="sdh_finger_11_link"/>
-      <child link="sdh_finger_12_link"/>
-      <axis xyz="0 1 0" />
-      <dynamics damping="1" />
-      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_finger_12_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger.stl" />
-        </geometry>
-      <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- joint between sdh_finger_12_link and sdh_finger_13_link -->
-    <joint name="sdh_finger_13_joint" type="revolute">
-       
-      <origin xyz="0 0 0.0865" rpy="0 0 0" />
-      <parent link="sdh_finger_12_link"/>
-      <child link="sdh_finger_13_link"/>
-      <axis xyz="0 1 0" />
-      <dynamics damping="1" />
-      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_finger_13_link">
-      <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- finger2 -->
-    <!-- joint between sdh_palm_link and sdh_finger_21_link -->
-    <joint name="sdh_finger_21_joint" type="revolute">
-      <mimic joint="sdh_knuckle_joint" multiplier="1" offset="0"/>
-      <origin xyz="0.01905 -0.033 0.0745" rpy="0 0 3.14159265" />
-      <parent link="sdh_palm_link"/>
-      <child link="sdh_finger_21_link"/>
-      <axis xyz="0 0 -1" />
-      <dynamics damping="1" />
-      <limit effort="100" lower="0" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_finger_21_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- joint between sdh_finger_21_link and sdh_finger_22_link -->
-    <joint name="sdh_finger_22_joint" type="revolute">
-      <origin xyz="0 0 0.0165" rpy="0 0 0" />
-      <parent link="sdh_finger_21_link"/>
-      <child link="sdh_finger_22_link"/>
-      <axis xyz="0 1 0" />
-      <dynamics damping="1" />
-      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_finger_22_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- joint between sdh_finger_22_link and sdh_finger_23_link -->
-    <joint name="sdh_finger_23_joint" type="revolute">
-      <origin xyz="0 0 0.0865" rpy="0 0 0" />
-      <parent link="sdh_finger_22_link"/>
-      <child link="sdh_finger_23_link"/>
-      <axis xyz="0 1 0" />
-      <dynamics damping="1" />
-      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_finger_23_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- thumb -->
-    <!-- joint between sdh_palm_link and sdh_thumb_1_link -->
-    <joint name="sdh_thumb_1_joint" type="fixed">
-      <origin xyz="-0.03811 0 0.0745 " rpy="0 0 0" />
-      <parent link="sdh_palm_link"/>
-      <child link="sdh_thumb_1_link"/>
-    </joint>
-
-    <link name="sdh_thumb_1_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/knuckle.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- joint between sdh_thumb_1_link and shd_thumb_2_link -->
-    <joint name="sdh_thumb_2_joint" type="revolute">
-    <origin xyz="0 0 0.0165" rpy="0 0 0" />
-    <parent link="sdh_thumb_1_link"/>
-    <child link="sdh_thumb_2_link"/>
-    <axis xyz="0 1 0" />
-    <dynamics damping="1" />
-    <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_thumb_2_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>  
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-    
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-    
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger.stl"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <!-- joint between sdh_thumb_2_link and sdh_thumb_3_link -->
-    <joint name="sdh_thumb_3_joint" type="revolute">
-      <origin xyz="0 0 0.0865" rpy="0 0 0" />
-      <parent link="sdh_thumb_2_link"/>
-      <child link="sdh_thumb_3_link"/>
-      <axis xyz="0 1 0" />
-      <dynamics damping="1" />
-      <limit effort="100" lower="-1.570796327" upper="1.570796327" velocity="5"/>
-    </joint>
-
-    <link name="sdh_thumb_3_link">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.1"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl" />
-        </geometry>
-        <material name="Grey"/>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-          <mesh filename="package://schunk_description/meshes/sdh/finger_tip.stl"/>
-        </geometry>
-      </collision>
-    </link>
 </robot>
 

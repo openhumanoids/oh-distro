@@ -470,6 +470,27 @@
     <mechanicalReduction>1.0</mechanicalReduction>
   </transmission>
 
+  <joint name="left_palm_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="lwr_arm_7_link" />
+    <child link="left_palm"/>
+  </joint>
+  <link name="left_palm"/>
+
+  <joint name="l_hand_face_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="1.57 0 0" />
+    <parent link="lwr_arm_7_link" />
+    <child link="l_hand_face"/>
+  </joint>
+  <link name="l_hand_face"/>
+
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="lwr_arm_7_link" />
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="l_hand_force_torque"/>
+
   <!-- Pen Tool-->
     <joint name="pen_base_joint" type="fixed" >
       <origin rpy="0 0 0" xyz="0 0 0.11"/>

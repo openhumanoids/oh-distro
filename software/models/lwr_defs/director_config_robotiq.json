@@ -1,11 +1,11 @@
 {
   "urdfConfig": {
-    "default": "./robots/lwr_hand.urdf",
-    "robotState": "./robots/lwr_hand.urdf",
+    "default": "./robots/lwr_robotiq.urdf",
+    "robotState": "./robots/lwr_robotiq.urdf",
     "ik":         "./robots/lwr_drake.urdf",
     "chull":      "./robots/lwr_drake.urdf",
-    "playback":   "./robots/lwr_hand.urdf",
-    "teleop":     "./robots/lwr_hand.urdf"
+    "playback":   "./robots/lwr_robotiq.urdf",
+    "teleop":     "./robots/lwr_robotiq.urdf"
   },
 
   "teleopJointGroups" : [
@@ -53,12 +53,12 @@
 
   "handCombinations": [
       { "side" : "left",
-        "handType" : "left_schunk",
+        "handType" : "left_robotiq",
         "handLinkName" : "lwr_arm_7_link",
-        "handUrdf" : "schunk_hand.urdf",
-        "handRootLink" : "sdh_palm_link",
-        "robotMountLink" : "sdh_hand_force_torque",
-        "palmLink" : "sdh_hand_face"
+        "handUrdf" : "robotiq_hand_left.urdf",
+        "handRootLink" : "left_palm",
+        "robotMountLink" : "l_hand_force_torque",
+        "palmLink" : "l_hand_face"
       }
   ]
 }
