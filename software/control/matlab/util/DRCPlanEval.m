@@ -79,6 +79,10 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       disp('Got a locomotion plan')
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
       obj.switchToPlan(obj.smoothPlanTransition(new_plan));
+      if isa(new_plan.qtraj, 'Trajectory')
+        disp('Automatically generating a standing plan from the end of this plan.')
+        obj.appendPlan(QPLocomotionPlan.from_standing_state(new_plan.qtraj.eval(new_plan.qtraj.tspan(end)), obj.robot, new_plan.supports(end)));
+      end
     end
 
     function handle_atlas_behavior_command(obj, msg)
@@ -103,12 +107,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function new_plan = smoothPlanTransition(obj, new_plan)
       % Make the transition to the new plan as smooth as possible
-      new_plan.start_time = obj.data.t;
+      new_plan.start_time = obj.data.t + 1;
 
       % Use the previously commanded state to override the first (or only) knot point in the new trajectory. This is necessary to prevent the robot from suddenly drooping or jerking at the start of a plan, since the initial state of the plan may not match the robot's current desired state. 
       if ~isempty(obj.data.qp_input) && isfield(new_plan, 'qtraj')
         if isnumeric(new_plan.qtraj)
-          new_plan.qtraj(7:end) = obj.data.qp_input.whole_body_data.q_des(7:end);
+          new_plan.qtraj(1:end) = obj.data.qp_input.whole_body_data.q_des(1:end);
         else
           if isa(new_plan.qtraj, 'PPTrajectory')
             % The qtraj is a piecewise polynomial, so we'll just add a constant offset to its first segment to ensure that its initial qdes is the same as our previously published qdes.
@@ -116,17 +120,18 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
             coefs = reshape(coefs, [d, l, k]);
             q0 = fasteval(new_plan.qtraj, ts(1));
             delta_q = obj.data.qp_input.whole_body_data.q_des - q0;
-            coefs(7:end,1,end) = coefs(7:end,1,end) + delta_q(7:end);
+            coefs(1:end,1,end) = coefs(1:end,1,end) + delta_q(1:end);
             if d > 1
               new_plan.qtraj = PPTrajectory(pchipDeriv(ts, [coefs(:,:,end), fasteval(new_plan.qtraj, ts(end))], coefs(:,:,end-1)));
             else
               new_plan.qtraj = PPTrajectory(pchip(ts, coefs(:,:,end)));
             end
           elseif isa(new_plan.qtraj, 'ConstantTrajectory')
-            q0 = double(new_plan.qtraj.pt);
-            delta_q = obj.data.qp_input.whole_body_data.q_des - q0;
-            q_smooth = [q0(1:6); q0(7:end) + delta_q(7:end)];
-            new_plan.qtraj = ConstantTrajectory(q_smooth);
+            % q0 = double(new_plan.qtraj.pt);
+            % delta_q = obj.data.qp_input.whole_body_data.q_des - q0;
+            % q_smooth = [q0(1:end) + delta_q(1:end)];
+            q_smooth = obj.data.qp_input.whole_body_data.q_des;
+            new_plan.qtraj = q_smooth;
           else
             warning('Got a new plan whose qtraj is neither a constant nor a PPTrajectory. I can not smooth the transition to this plan.');
           end
