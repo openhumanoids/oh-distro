@@ -508,6 +508,7 @@
   <!-- SHD hands-->
     <!-- joint between arm_7_link and sdh_palm_link -->
     <joint name="sdh_palm_joint" type="fixed" >
+    <origin rpy="0.0 0.0 -1.57079" xyz="0 0 0"/>
       <insert_block name="origin" />
       <parent link="lwr_arm_7_link" />
       <child link="sdh_palm_link" />
