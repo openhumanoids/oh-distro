@@ -246,6 +246,46 @@ public:
 LCMHandler lcmHandler;
 LCMControlReceiver controlReceiver(&lcmHandler);
 
+bool isOutputSafe(QPControllerOutput &qp_output) {
+  for (int i=0; i < qp_output.q_ref.size(); i++) {
+    if (std::isnan(qp_output.q_ref(i))) {
+      std::cout << "Error: NaN in q_ref" << std::endl;
+      return false;
+    }
+    if (std::isnan(qp_output.qd_ref(i))) {
+      std::cout << "Error: NaN in qd_ref" << std::endl;
+      return false;
+    }
+    if (std::isnan(qp_output.qdd(i))) {
+      std::cout << "Error: NaN in qdd" << std::endl;
+      return false;
+    }
+    if (std::isinf(qp_output.q_ref(i))) {
+      std::cout << "Error: Inf in q_ref" << std::endl;
+      return false;
+    }
+    if (std::isinf(qp_output.qd_ref(i))) {
+      std::cout << "Error: Inf in qd_ref" << std::endl;
+      return false;
+    }
+    if (std::isinf(qp_output.qdd(i))) {
+      std::cout << "Error: Inf in qdd" << std::endl;
+      return false;
+    }
+  }
+  for (int i=0; i < qp_output.u.size(); i++) {
+    if (std::isnan(qp_output.u(i))) {
+      std::cout << "Error: NaN in u" << std::endl;
+      return false;
+    }
+    if (std::isinf(qp_output.u(i))) {
+      std::cout << "Error: Inf in u" << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
 void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 {
 
@@ -283,9 +323,19 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       infocount = 0;
     } else {
       int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, b_contact_force, &qp_output, solveArgs.debug);
+
+      if (!isOutputSafe(qp_output)) {
+        atlas_behavior_msg.utime = 0;
+        atlas_behavior_msg.command = "freeze";
+        lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
+      }
+
       if (info < 0 && ctrl_opts->max_infocount > 0) {
         infocount++;
-        if (infocount > ctrl_opts->max_infocount) {
+        if (infocount >= ctrl_opts->max_infocount) {
+          if (infocount == ctrl_opts->max_infocount) {
+            std::cout << "Infocount exceeded. Freezing Atlas!" << std::endl;
+          }
           atlas_behavior_msg.utime = 0;
           atlas_behavior_msg.command = "freeze";
           lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
