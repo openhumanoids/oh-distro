@@ -41,7 +41,7 @@ App::App(ros::NodeHandle node_) :
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  joint_states_sub_ = node_.subscribe(string("/kuka/joint_states"), 100, &App::joint_states_cb,this);
+  joint_states_sub_ = node_.subscribe(string("/joint_states"), 100, &App::joint_states_cb,this);
 
 };
 
