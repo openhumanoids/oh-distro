@@ -49,15 +49,15 @@ group "2.plan_and_control" {
     }
 
     cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
+       exec = "bash -c 'if [ ! $DEBUG_NETWORK ]; then LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"; fi'";
        host = "base";
        stop_signal = 15;
     }
 
 
     cmd "CombinedPlanner" {
-       exec = "bash -c 'if [ ! $DEBUG_NETWORK ]; then LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"; fi'";
-       host = "atlas1";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
+       host = "atlas2";
        stop_signal = 15;
     }
 
