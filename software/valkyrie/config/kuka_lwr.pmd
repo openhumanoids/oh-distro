@@ -1,7 +1,7 @@
 group "0.params_and_model_pub" {
 
     cmd "model_LR_RR" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/lwr_defs/lwr_hand.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/lwr_defs/robots/lwr_hand.urdf";
         host = "localhost";
     }
 
