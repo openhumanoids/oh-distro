@@ -11,7 +11,8 @@ if nargin < 3
 end
 
 atlas_options = applyDefaults(atlas_options, struct('atlas_version', 4, ...
-                                                    'hands', 'none'));
+                                                    'hand_right', 'none', ...
+                                                    'hand_left', 'none'));
 walking_options = applyDefaults(walking_options, struct('navgoal', [0.5;0;0;0;0;0],...
                                                         'num_steps', 4));
 

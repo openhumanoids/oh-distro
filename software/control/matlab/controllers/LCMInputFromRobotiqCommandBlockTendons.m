@@ -2,8 +2,8 @@ classdef LCMInputFromRobotiqCommandBlockTendons < LCMInputFromRobotiqCommandBloc
   properties
   end
   methods
-    function obj = LCMInputFromRobotiqCommandBlockTendons(r, options)
-      obj = obj@LCMInputFromRobotiqCommandBlockBase(r, options);
+    function obj = LCMInputFromRobotiqCommandBlockTendons(r, handedness, options)
+      obj = obj@LCMInputFromRobotiqCommandBlockBase(r, handedness, options);
     end
     
     function varargout=mimoOutput(obj,t,~,hand_state)

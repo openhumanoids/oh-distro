@@ -120,21 +120,32 @@ classdef DRCAtlas < Atlas
 
       % Sanity check if we don't have hands.
       if (~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
-        obj.hands = 0;
+        obj.hand_right = 0;
+        obj.hand_left = 0;
       end
       % Construct state vector itself
-      if (obj.hands == 0 && ~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
+      if (obj.hand_right == 0 && obj.hand_left == 0 && ~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
         atlas_state_frame = drcFrames.AtlasState(obj);
       else
         atlas_state_frame = obj.manip.getStateFrame();
         atlas_state_frame = replaceFrameNum(atlas_state_frame,1,drcFrames.AtlasState(obj));
       end
-      if (obj.hands > 0)
-        % Sub in handstates for the hand (curently assuming just 1)
-        % TODO: by name?
-        for i=2:2
-          atlas_state_frame = replaceFrameNum(atlas_state_frame,i,atlasFrames.HandState(obj,i,'HandState'));
+      % Sub in handstates for the hands
+      % If we sub in the order that they are added
+      % we should get this in the right order
+      if (obj.hand_right > 0)
+        id = atlas_state_frame.getFrameNumByName('s-model_articulatedPosition+s-model_articulatedVelocity');
+        if (length(id) > 1)
+          id = id(1);
         end
+        atlas_state_frame = replaceFrameNum(atlas_state_frame,id,atlasFrames.HandState(obj,id,'right_atlasFrames.HandState'));
+      end
+      if (obj.hand_left > 0)
+        id = atlas_state_frame.getFrameNumByName('s-model_articulatedPosition+s-model_articulatedVelocity');
+        if (length(id) > 1)
+          id = id(1);
+        end
+        atlas_state_frame = replaceFrameNum(atlas_state_frame,id,atlasFrames.HandState(obj,id,'left_atlasFrames.HandState'));
       end
 %       if (obj.foot_force_sensors)
 %         lind = obj.getStateFrame.getFrameNumByName('l_footForceTorque_state');
@@ -159,16 +170,25 @@ classdef DRCAtlas < Atlas
       obj = obj.setStateFrame(state_frame);
       
       % Same bit of complexity for input frame to get hand inputs
-      if (obj.hands > 0)
+      if (obj.hand_right > 0 || obj.hand_left > 0)
         input_frame = getInputFrame(obj);
         input_frame  = replaceFrameNum(input_frame,1,drcFrames.AtlasInput(obj));
-        % Sub in handstates for each hand
-        % TODO: by name?
-        for i=2:2
-          input_frame = replaceFrameNum(input_frame,i,atlasFrames.HandInput(obj,i,'HandInput'));
-        end
       else
         input_frame = drcFrames.AtlasInput(obj);
+      end
+      if (obj.hand_right > 0)
+        id = input_frame.getFrameNumByName('s-model_articulatedInput');
+        if (length(id) > 1)
+          id = id(1);
+        end
+        input_frame = replaceFrameNum(input_frame,id,atlasFrames.HandInput(obj,id,'right_atlasFrames.HandInput'));
+      end
+      if (obj.hand_left > 0)
+        id = input_frame.getFrameNumByName('s-model_articulatedInput');
+        if (length(id) > 1)
+          id = id(1);
+        end 
+        input_frame = replaceFrameNum(input_frame,id,atlasFrames.HandInput(obj,id,'left_atlasFrames.HandInput'));
       end
       obj = obj.setInputFrame(input_frame);
       obj.manip = obj.manip.setInputFrame(input_frame);
