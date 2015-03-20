@@ -31,13 +31,11 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <tf/transform_listener.h>
 
 using namespace std;
-
-int width =800;//1024; // hardcoded
-int height =800;//544; // hardcoded
-uint8_t* singleimage_data = new uint8_t [2*2* width*height]; // 1 color scale image
 
 class App{
 public:
@@ -70,8 +68,6 @@ private:
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
 
   bool verbose_;
-  // Image Compression
-  image_io_utils*  imgutils_;  
 };
 
 App::App(ros::NodeHandle node_) :
@@ -99,12 +95,8 @@ App::App(ros::NodeHandle node_) :
   rotating_scan_sub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::rotating_scan_cb,this);
   head_l_image_sub_ = node_.subscribe("/multisense/left/image_rect_color/compressed", 1, &App::head_l_image_cb,this);
 
-  imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );  
   verbose_ = false;
-
   listener_;
-
-
 };
 
 App::~App()  {
@@ -272,6 +264,7 @@ void App::head_l_image_cb(const sensor_msgs::ImageConstPtr& msg){
 }
 
 void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
+
   int64_t current_utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   int  n_colors=3;
   int isize = msg->data.size();
@@ -281,50 +274,36 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
   lcm_img.height =msg->height;
   lcm_img.nmetadata =0;
   lcm_img.row_stride=n_colors*msg->width;
-  lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
-  lcm_img.data.assign(msg->data.begin(), msg->data.end());
-  lcm_img.size = isize;
+
+  // TODO: reallocate to speed?
+  void* bytes = const_cast<void*>(static_cast<const void*>(msg->data.data()));
+  cv::Mat mat(msg->height, msg->width, CV_8UC3, bytes, lcm_img.row_stride);
+
+  bool compress_images = true;
+  if (!compress_images){
+    lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+    lcm_img.size = isize;
+    cv::cvtColor(mat, mat, CV_RGB2BGR);
+    lcm_img.data.resize(mat.step*mat.rows);
+    std::copy(mat.data, mat.data + mat.step*mat.rows,
+                lcm_img.data.begin());
+  }else{
+    std::vector<int> params;
+    params.push_back(cv::IMWRITE_JPEG_QUALITY);
+    params.push_back( 90 );
+
+    cv::imencode(".jpg", mat, lcm_img.data, params);
+    lcm_img.size = lcm_img.data.size();
+    lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+  }
+
   lcm_publish_.publish(channel.c_str(), &lcm_img);
 }
 
 
 int main(int argc, char **argv){
-
-
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
-
-  /*
-  tf::TransformListener listener;
-  ros::Rate rate(10.0);
-
-  while (nh.ok()){
-    tf::StampedTransform transform;
-    try{
-      listener.lookupTransform("/world", "/pelvis",
-                               ros::Time(0), transform);
-    }
-    catch (tf::TransformException &ex) {
-      ROS_ERROR("%s",ex.what());
-      ros::Duration(1.0).sleep();
-      continue;
-    }
-
-    ROS_ERROR("blurp");
-
-    ROS_ERROR("%f", transform.getOrigin().z() );
-
-    geometry_msgs::Twist vel_msg;
-    vel_msg.angular.z = 4.0 * atan2(transform.getOrigin().y(),
-                                    transform.getOrigin().x());
-    vel_msg.linear.x = 0.5 * sqrt(pow(transform.getOrigin().x(), 2) +
-                                  pow(transform.getOrigin().y(), 2));
-
-    rate.sleep();
-  }
-  */
-
-
   new App(nh);
   std::cout << "ros2lcm translator ready\n";
   ROS_ERROR("ROS2LCM Translator Ready");

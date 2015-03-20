@@ -1,6 +1,6 @@
 group "0.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/simul_robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/simul_valkyrie.cfg";
         host = "localhost";
     }
 
@@ -66,7 +66,7 @@ group "5.maps" {
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot.cfg -v5";
+    exec = "drake-designer -c $DRC_BASE/software/config/simul_valkyrie.cfg -v5";
     host = "localhost";
 }
 
@@ -82,5 +82,6 @@ script "start" {
     start group "1.state_mit";
     start group "2.plan_and_control";
     start group "5.maps";
+    start cmd "drake-designer";
 }
 
