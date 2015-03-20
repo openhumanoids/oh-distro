@@ -45,3 +45,5 @@ pods_install_python_script(drc-measure-orientation-drift scripts/measure_orienta
 
 pods_install_python_script(drc-systemwide-tests python/system_test.py)
 
+pods_install_python_script(drc-atlas-pressure-monitor python/atlas_pressure_monitor.py)
+
