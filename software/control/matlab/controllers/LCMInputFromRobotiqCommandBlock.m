@@ -8,8 +8,8 @@ classdef LCMInputFromRobotiqCommandBlock < LCMInputFromRobotiqCommandBlockBase
   end
   
   methods
-    function obj = LCMInputFromRobotiqCommandBlock(r, options)
-      obj = obj@LCMInputFromRobotiqCommandBlockBase(r, options);
+    function obj = LCMInputFromRobotiqCommandBlock(r, handedness, options)
+      obj = obj@LCMInputFromRobotiqCommandBlockBase(r, handedness, options);
       % Precompute indices for our position control
       obj.in_indices = [obj.getInputFrame.findCoordinateIndex('finger_1_joint_0');
                         obj.getInputFrame.findCoordinateIndex('finger_2_joint_0');

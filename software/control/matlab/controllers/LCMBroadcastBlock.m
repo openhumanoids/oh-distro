@@ -12,6 +12,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     joint_names_cache;
     r_hand_joint_names_cache;
     r_hand_joint_inds;
+    l_hand_joint_names_cache;
+    l_hand_joint_inds;
     r_foot_id
     l_foot_id
     % FC publish period
@@ -102,8 +104,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       % write down names for the hands. these differ from simul a bit
       % (we have the fourbar explicitely), so I'm doing this by hand...
-      if (r.hands>0)
-        hand_names = {'right_finger_1_joint_1',
+      if (r.hand_right > 0)
+        r_hand_names = {'right_finger_1_joint_1',
                       'right_finger_1_joint_2',
                       'right_finger_1_joint_3',
                       'right_finger_2_joint_1',
@@ -116,14 +118,47 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
                       'right_palm_finger_2_joint'
                       };
         obj.r_hand_joint_names_cache = cell(11, 1);
-        for i=1:length(hand_names)
-          obj.r_hand_joint_names_cache(i) = java.lang.String(hand_names{i});
+        for i=1:length(r_hand_names)
+          obj.r_hand_joint_names_cache(i) = java.lang.String(r_hand_names{i});
         end
         % not sure what the last two correspond to. for now I'm going to 
         % zero them.
-        obj.r_hand_joint_inds = [1, 2, 3, 11, 12, 13, 21, 22, 23, 10, 20];
+        if (strcmp(r.hand_right_kind, 'robotiq'))
+          obj.r_hand_joint_inds = [1, 2, 3, 11, 12, 13, 21, 22, 23, 10, 20];
+        elseif (strcmp(r.hand_right_kind, 'robotiq_tendons'))
+          obj.r_hand_joint_inds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 1];
+        elseif (strcmp(r.hand_right_kind, 'robotiq_simple'))
+          obj.r_hand_joint_inds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 1];
+        end
       end
-      
+      if (r.hand_left > 0)
+        l_hand_names = {'left_finger_1_joint_1',
+                      'left_finger_1_joint_2',
+                      'left_finger_1_joint_3',
+                      'left_finger_2_joint_1',
+                      'left_finger_2_joint_2',
+                      'left_finger_2_joint_3',
+                      'left_finger_middle_joint_1',
+                      'left_finger_middle_joint_2',
+                      'left_finger_middle_joint_3',
+                      'left_palm_finger_1_joint',
+                      'left_palm_finger_2_joint'
+                      };
+        obj.l_hand_joint_names_cache = cell(11, 1);
+        for i=1:length(l_hand_names)
+          obj.l_hand_joint_names_cache(i) = java.lang.String(l_hand_names{i});
+        end
+        % not sure what the last two correspond to. for now I'm going to 
+        % zero them.
+        if (strcmp(r.hand_left_kind, 'robotiq'))
+          obj.l_hand_joint_inds = [1, 2, 3, 11, 12, 13, 21, 22, 23, 10, 20];
+        elseif (strcmp(r.hand_left_kind, 'robotiq_tendons'))
+          obj.l_hand_joint_inds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 1];
+        elseif (strcmp(r.hand_left_kind, 'robotiq_simple'))
+          obj.l_hand_joint_inds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 1];
+        end
+      end
+
       % figure out joint reordering -- atlas_state_t assumes joints
       % in a particular order :P
       switch r.atlas_version
@@ -232,13 +267,15 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       obj.nq_control = obj.r_control.getNumPositions();
       if (isa(input_frame, 'MultiCoordinateFrame'))
         obj.frame_nums.atlas_state = input_frame.getFrameNumByName('drcFrames.AtlasState');
-        obj.frame_nums.hand_state = input_frame.getFrameNumByName('drcFrames.HandState');
+        obj.frame_nums.right_hand_state = input_frame.getFrameNumByName('right_atlasFrames.HandState');
+        obj.frame_nums.left_hand_state = input_frame.getFrameNumByName('left_atlasFrames.HandState');
         obj.frame_nums.hokuyo_state = input_frame.getFrameNumByName('hokuyo');
         obj.frame_nums.left_foot_ft_state = input_frame.getFrameNumByName('l_footForceTorque');
         obj.frame_nums.right_foot_ft_state = input_frame.getFrameNumByName('r_footForceTorque');
       else
         obj.frame_nums.atlas_state = input_frame;
-        obj.frame_nums.hand_state = '';
+        obj.frame_nums.right_hand_state = '';
+        obj.frame_nums.left_hand_state = '';
         obj.frame_nums.hokuyo_state = '';
         obj.frame_nums.left_foot_ft_state = '';
         obj.frame_nums.right_foot_ft_state = '';
@@ -247,7 +284,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     
     function varargout=mimoOutput(obj,t,~,varargin)
       atlas_state = [];
-      hand_state = [];
+      right_hand_state = [];
+      left_hand_state = [];
       laser_state = [];
       left_ankle_ft_state = zeros(6, 1);
       right_ankle_ft_state = zeros(6, 1);
@@ -262,23 +300,27 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         end
         atlas_state = varargin{num};
 
-        num = obj.frame_nums.hand_state;
-
-        if (length(num)>1)
-          error(['Ambiguous hand state. No support for two hands yet...']);
-        elseif (length(num)==1)
-          hand_state_ours = varargin{num};
+        num = obj.frame_nums.right_hand_state;
+        if (length(num)==1)
+          hand_state_tmp = varargin{num};
           % Map it to the hand state the rest of the system understands
-          hand_state = [hand_state_ours(obj.r_hand_joint_inds);
-                        hand_state_ours(length(hand_state_ours)/2+obj.r_hand_joint_inds)];
-          hand_state(10:11) = [0;0];
+          right_hand_state = [hand_state_tmp(obj.r_hand_joint_inds);
+                        hand_state_tmp(length(hand_state_tmp)/2+obj.r_hand_joint_inds)];
+          right_hand_state(10:11) = [0;0];
         end
         
+        num = obj.frame_nums.left_hand_state;
+        if (length(num)==1)
+          hand_state_tmp = varargin{num};
+          % Map it to the hand state the rest of the system understands
+          left_hand_state = [hand_state_tmp(obj.l_hand_joint_inds);
+                        hand_state_tmp(length(hand_state_tmp)/2+obj.l_hand_joint_inds)];
+          left_hand_state(10:11) = [0;0];
+        end
+
         num = obj.frame_nums.hokuyo_state;
         laser_state = [];
-        if (length(num)>1)
-          error(['Ambiguous hand state. No support for two hands yet...']);
-        elseif (length(num)==1)
+        if (length(num)==1)
           laser_state = varargin{num};
         end
       end
@@ -323,9 +365,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       
       % What needs to go out:
-      num_dofs = length([atlas_state; hand_state]) / 2;
+      num_dofs = length([atlas_state; right_hand_state; left_hand_state]) / 2;
       atlas_dofs = length(atlas_state)/2;
-      hand_dofs = length(hand_state)/2;
+      right_hand_dofs = length(right_hand_state)/2;
+      left_hand_dofs = length(left_hand_state)/2;
       % Robot state publishing (channel depends on whether we're publishing
       % truth (on EST_ROBOT_STATE) or not (ATLAS_STATE)
       if (~obj.publish_truth)
@@ -373,7 +416,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % est_robot_state
         state_msg.num_joints = num_dofs-6+1;
         % only est_robot_state atlas_state message has joint names
-        state_msg.joint_name = [obj.joint_names_cache; obj.r_hand_joint_names_cache; 'hokuyo_joint'];
+        state_msg.joint_name = [obj.joint_names_cache; obj.r_hand_joint_names_cache; obj.l_hand_joint_names_cache; 'hokuyo_joint'];
       else
         state_msg.num_joints = atlas_dofs-6;
       end
@@ -390,8 +433,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.joint_position =atlas_pos;
         state_msg.joint_velocity = atlas_vel;
       else
-        state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle];
-        state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end); 0];
+        state_msg.joint_position = [atlas_pos; right_hand_state(1:right_hand_dofs); left_hand_state(1:left_hand_dofs); laser_spindle_angle];
+        state_msg.joint_velocity = [atlas_vel; right_hand_state(right_hand_dofs+1:end); left_hand_state(left_hand_dofs+1:end); 0];
       end
       state_msg.force_torque = drc.force_torque_t();
 
@@ -432,17 +475,26 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       
       % state_sync expects separate message for the hand state
-      if (~obj.publish_truth && ~isempty(hand_state))
-        robotiq_right_state = drc.hand_state_t();
-        robotiq_right_state.utime = t*1000*1000;
-        robotiq_right_state.num_joints = 11;
-        robotiq_right_state.joint_name = obj.r_hand_joint_names_cache;
-        robotiq_right_state.joint_position = hand_state(1:hand_dofs);
-        robotiq_right_state.joint_velocity = hand_state(hand_dofs+1:end);
-        robotiq_right_state.joint_effort = zeros(11, 1);
-        obj.lc.publish('ROBOTIQ_RIGHT_STATE', robotiq_right_state);
+      robotiq_state = drc.hand_state_t();
+      if (~obj.publish_truth && ~isempty(right_hand_state))
+        robotiq_state.utime = t*1000*1000;
+        robotiq_state.num_joints = 11;
+        robotiq_state.joint_name = obj.r_hand_joint_names_cache;
+        robotiq_state.joint_position = right_hand_state(1:right_hand_dofs);
+        robotiq_state.joint_velocity = right_hand_state(right_hand_dofs+1:end);
+        robotiq_state.joint_effort = zeros(11, 1);
+        obj.lc.publish('ROBOTIQ_RIGHT_STATE', robotiq_state);
       end
-      
+      if (~obj.publish_truth && ~isempty(left_hand_state))
+        robotiq_state.utime = t*1000*1000;
+        robotiq_state.num_joints = 11;
+        robotiq_state.joint_name = obj.l_hand_joint_names_cache;
+        robotiq_state.joint_position = left_hand_state(1:left_hand_dofs);
+        robotiq_state.joint_velocity = left_hand_state(left_hand_dofs+1:end);
+        robotiq_state.joint_effort = zeros(11, 1);
+        obj.lc.publish('ROBOTIQ_LEFT_STATE', robotiq_state);
+      end
+
       % Send over
       % -- "MULTISENSE_STATE" -- lcm_state msg for joint hokuyo_joint,
       %     labeled with tiem of scan

@@ -1,10 +1,11 @@
-function drakeAtlasSimulation(atlas_version, visualize, add_hokuyo, add_hands, world_name)
+function drakeAtlasSimulation(atlas_version, visualize, add_hokuyo, right_hand, left_hand, world_name)
 %NOTEST
 if nargin < 1, atlas_version = 4; end
 if nargin < 2, visualize = false; end
 if nargin < 3, add_hokuyo = true; end
-if nargin < 4, add_hands = 0; end
-if nargin < 5, world_name = ''; end
+if nargin < 4, right_hand = 0; end
+if nargin < 5, left_hand = 0; end
+if nargin < 6, world_name = ''; end
 
 % IF YOU WANT MASS EST LOOK HERE
 % (when this is more fleshed out this will become
@@ -26,8 +27,11 @@ options.foot_force_sensors = false; % This works (you'll have to change
 % LCMBroadcastBlock to broadcast them)
 % but is slow right now.
 options.obstacles = false; % Replaced by step terrain, though the option still works...
-if (add_hands)
-  options.hands = 'robotiq_weight_only';
+if (right_hand)
+  options.hand_right = 'robotiq_weight_only';
+end
+if (left_hand)
+  options.hand_left = 'robotiq_weight_only';
 end
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
@@ -48,7 +52,8 @@ options.foot_force_sensors = false; % This works (you'll have to change
 sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
 terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 
-options.hands = getHandString(add_hands);
+options.hand_right = getHandString(right_hand);
+options.hand_left = getHandString(left_hand);
 
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
@@ -149,12 +154,17 @@ while(~done)
   lcmInputBlock = LCMInputFromAtlasCommandBlock(r_complete,r_pure,options);
   sys = mimoFeedback(lcmInputBlock, sys, [], [], [], outs);
   % LCM interpret in for hand
-  if (add_hands)
+  if (right_hand)
     %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
-    lcmRobotiqInputBlock = getHandDriver(add_hands, r_complete, options);
-    sys = mimoFeedback(lcmRobotiqInputBlock, sys, [], [], [], outs);
+    lcmRobotiqInputBlock_right = getHandDriver(right_hand, r_complete, 'right', options);
+    sys = mimoFeedback(lcmRobotiqInputBlock_right, sys, [], [], [], outs);
   end
-  
+  if (left_hand)
+    %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
+    lcmRobotiqInputBlock_left = getHandDriver(right_hand, r_complete, 'left', options);
+    sys = mimoFeedback(lcmRobotiqInputBlock_left, sys, [], [], [], outs);
+  end
+
   % LCM broadcast out
   broadcast_opts = options;
   broadcast_opts.publish_truth = 0;
@@ -193,14 +203,14 @@ function handString = getHandString(hand_id)
   end
 end
 
-function handDriver = getHandDriver(hand_id, r_complete, options)
+function handDriver = getHandDriver(hand_id, r_complete, handedness, options)
   switch hand_id
     case 1
-      handDriver = LCMInputFromRobotiqCommandBlock(r_complete, options);
+      handDriver = LCMInputFromRobotiqCommandBlock(r_complete, handedness, options);
     case 2
-      handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
+      handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, handedness, options);
     case 3
-      handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, options);
+      handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, handedness, options);
     otherwise
       handDriver = [];
       disp('unexpected hand type, should be {1, 2, 3}')

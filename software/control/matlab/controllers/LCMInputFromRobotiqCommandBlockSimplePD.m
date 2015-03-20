@@ -9,8 +9,8 @@ classdef LCMInputFromRobotiqCommandBlockSimplePD < LCMInputFromRobotiqCommandBlo
   end
   
   methods
-    function obj = LCMInputFromRobotiqCommandBlockSimplePD(r, options)
-      obj = obj@LCMInputFromRobotiqCommandBlockBase(r, options);
+    function obj = LCMInputFromRobotiqCommandBlockSimplePD(r, handedness, options)
+      obj = obj@LCMInputFromRobotiqCommandBlockBase(r, handedness, options);
       q_closed = [1.2427, 1.0864, -0.1336, 1.2427, 1.0864,-0.1336, 1.2427, 0.9114, 0.0000]';
       q_open = zeros(numel(q_closed), 1);
       obj.pp = spline([0, 1], [q_open, q_closed]);
