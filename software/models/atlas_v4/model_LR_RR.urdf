@@ -7,28 +7,28 @@
   <link name="l_clav">
     <inertial>
       <mass value="4.466"/>
-      <origin rpy="0 -0 0" xyz="0 0.048 -0.084"/>
-      <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="-0.004" izz="0.004"/>
+      <origin rpy="0 -0 0" xyz="0 -0.048 -0.084"/>
+      <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="0.004" izz="0.004"/>
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_clav.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_clav.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="0 1.5707963267949 0" xyz="0 0.11 -0.248"/>
+      <origin rpy="0 1.5707963267949 0" xyz="0 -0.11 -0.248"/>
       <geometry>
         <cylinder length="0.1525" radius="0.0555"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="0 0 0" xyz="0.005 0.015 -0.08"/>
+      <origin rpy="0 0 0" xyz="0.005 -0.015 -0.08"/>
       <geometry>
         <cylinder length="0.26" radius="0.067"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="-1.05 0 0" xyz="0.004 0.064 -0.247"/>
+      <origin rpy="1.05 0 0" xyz="0.004 -0.064 -0.247"/>
       <geometry>
         <box size="0.1 0.07 0.072"/>
       </geometry>
@@ -37,22 +37,22 @@
   <link name="l_ufarm">
     <inertial>
       <mass value="4.386"/>
-      <origin rpy="0 -0 0" xyz="0 -0.065 0"/>
+      <origin rpy="0 -0 0" xyz="0 0.065 0"/>
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_farm.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_farm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="0 1.5708 0" xyz="0.0 0.13 0.004"/>
+      <origin rpy="0 1.5708 0" xyz="0.0 -0.13 0.004"/>
       <geometry>
         <cylinder length="0.125" radius="0.045"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="0 0 0" xyz="0.001 0.053 -0.002"/>
+      <origin rpy="0 0 0" xyz="0.001 -0.053 -0.002"/>
       <geometry>
         <box size="0.135 0.1 0.045"/>
       </geometry>
@@ -89,19 +89,19 @@
       <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_hand.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_hand.obj" scale="1 1 1"/>
       </geometry>
+      <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
     </visual>
     <collision>
-      <origin rpy="1.5707963267949 0 0" xyz="0.001 0.1 0.01"/>
+      <origin rpy="1.5707963267949 0 0" xyz="0.001 -0.1 0.01"/>
       <geometry>
         <cylinder length="0.05" radius="0.03"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="0 0 0" xyz="0.001 0.05 0.01"/>
+      <origin rpy="0 0 0" xyz="0.001 -0.05 0.01"/>
       <geometry>
         <box size="0.13 0.09 0.07"/>
       </geometry>
@@ -121,19 +121,18 @@
       <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_larm.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_larm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="1.5707963267949 0 0" xyz="0.001 0.127 0.00"/>
+      <origin rpy="1.5707963267949 0 0" xyz="0.001 -0.127 0.00"/>
       <geometry>
         <cylinder length="0.125" radius="0.045"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="0 0 0" xyz="0.001 0.051 0.0"/>
+      <origin rpy="0 0 0" xyz="0.001 -0.051 0.0"/>
       <geometry>
         <box size="0.135 0.15 0.06"/>
       </geometry>
@@ -189,29 +188,29 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_scap.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_scap.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="-1.5707963267949 0 0" xyz="-0.005 0.115 -0.014"/>
+      <origin rpy="1.5707963267949 0 0" xyz="-0.005 -0.115 -0.014"/>
       <geometry>
         <cylinder length="0.105" radius="0.057"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="0 0 0" xyz="-0.005 0.075 -0.015"/>
+      <origin rpy="0 0 0" xyz="-0.005 -0.075 -0.015"/>
       <geometry>
         <box size="0.16 0.17 0.08"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="-2.25 0 0" xyz="0.076 0.0615 0.0128"/>
+      <origin rpy="2.25 0 0" xyz="0.076 -0.0615 0.0128"/>
       <geometry>
         <box size="0.02 0.029 0.018"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="-1 0 0" xyz="-0.075 -0.015 0.019"/>
+      <origin rpy="1 0 0" xyz="-0.075 0.015 0.019"/>
       <geometry>
         <box size="0.028 0.090 0.05"/>
       </geometry>
@@ -232,28 +231,28 @@
   <link name="l_uarm">
     <inertial>
       <mass value="4.386"/>
-      <origin rpy="0 -0 0" xyz="0 -0.065 0"/>
+      <origin rpy="0 -0 0" xyz="0 0.065 0"/>
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v4/meshes/l_uarm.obj" scale="1 1 1"/>
+        <mesh filename="package://atlas_v4/meshes/r_uarm.obj" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="-1.5708 0 0" xyz="0.0 0.035 0.00"/>
+      <origin rpy="1.5708 0 0" xyz="0.0 -0.035 0.00"/>
       <geometry>
         <cylinder length="0.11" radius="0.065"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="0 1.5708 0" xyz="-0.005 0.111 0.017"/>
+      <origin rpy="0 1.5708 0" xyz="-0.005 -0.111 0.017"/>
       <geometry>
         <cylinder length="0.142" radius="0.047"/>
       </geometry>
     </collision>
     <collision>
-      <origin rpy="0 1.5707963267949 0" xyz="-0.001 0.043 0.01"/>
+      <origin rpy="0 1.5707963267949 0" xyz="-0.001 -0.043 0.01"/>
       <geometry>
         <box size="0.05 0.07 0.15"/>
       </geometry>
@@ -482,6 +481,7 @@
       <geometry>
         <mesh filename="package://atlas_v4/meshes/r_hand.obj" scale="1 1 1"/>
       </geometry>
+      <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
     </visual>
     <collision>
       <origin rpy="1.5707963267949 0 0" xyz="0.001 -0.1 0.01"/>
@@ -804,8 +804,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6632" soft_upper_limit="10.6632"/>
   </joint>
   <joint name="l_arm_elx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.119 0.0092"/>
-    <axis xyz="1 0 0"/>
+    <origin rpy="0 -0 0" xyz="0 -0.119 0.0092"/>
+    <axis xyz="-1.0 -0.0 -0.0"/>
     <parent link="l_uarm"/>
     <child link="l_larm"/>
     <dynamics damping="0.2" friction="0"/>
@@ -813,8 +813,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3562"/>
   </joint>
   <joint name="l_arm_ely" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.187 -0.016"/>
-    <axis xyz="0 1 0"/>
+    <origin rpy="0 -0 0" xyz="0 -0.187 -0.016"/>
+    <axis xyz="-0.0 -1.0 -0.0"/>
     <parent link="l_scap"/>
     <child link="l_uarm"/>
     <dynamics damping="0.2" friction="0"/>
@@ -822,8 +822,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
   <joint name="l_arm_shx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.11 -0.245"/>
-    <axis xyz="1 0 0"/>
+    <origin rpy="0 -0 0" xyz="0 -0.11 -0.245"/>
+    <axis xyz="-1.0 -0.0 -0.0"/>
     <parent link="l_clav"/>
     <child link="l_scap"/>
     <dynamics damping="0.1" friction="0"/>
@@ -831,16 +831,17 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="11.5708"/>
   </joint>
   <joint name="l_arm_shz" type="revolute">
-    <origin rpy="0 -0 0" xyz="0.1406 0.2256 0.4776"/>
+    <origin rpy="0 0 3.14159265359" xyz="0.1406 0.2256 0.4776"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
     <child link="l_clav"/>
     <dynamics damping="0.1" friction="0"/>
     <limit effort="87" lower="-1.5708" upper="0.785398" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="10.7854"/>
+    <!-- note, this is opposite of v1 and v3 -->
   </joint>
   <joint name="l_arm_mwx" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.119 0.0092"/>
+    <origin rpy="0 -0 0" xyz="0 -0.119 0.0092"/>
     <axis xyz="1 0 0"/>
     <parent link="l_ufarm"/>
     <child link="l_lfarm"/>
@@ -849,8 +850,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.1781" soft_upper_limit="11.1781"/>
   </joint>
   <joint name="l_arm_uwy" type="revolute">
-    <origin rpy="0 -0 0" xyz="0 0.187 -0.0092"/>
-    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.14159265359 0" xyz="0 -0.187 -0.0092"/>
+    <axis xyz="-0.0 -1.0 -0.0"/>
     <parent link="l_larm"/>
     <child link="l_ufarm"/>
     <dynamics damping="0.1" friction="0"/>
@@ -858,7 +859,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
   <joint name="l_arm_lwy" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
     <parent link="l_lfarm"/>
     <child link="l_hand"/>
@@ -1548,7 +1549,7 @@
     </visual>
   </link>
   <joint name="l_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0.1245 0.0112"/>
+    <origin rpy="0 0 3.141592" xyz="0 -0.1245 0.0112"/>
     <parent link="l_hand"/>
     <child link="l_hand_force_torque"/>
   </joint>
@@ -1566,7 +1567,7 @@
     </visual>
   </link>
   <joint name="r_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 3.142" xyz="0 -0.1245 -0.0112"/>
+    <origin rpy="0 0 3.141592" xyz="0 -0.1245 -0.0112"/>
     <parent link="r_hand"/>
     <child link="r_hand_force_torque"/>
   </joint>
