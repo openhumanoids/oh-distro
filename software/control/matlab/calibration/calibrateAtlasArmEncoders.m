@@ -76,6 +76,13 @@ calib_val.l_arm_elx = -0.0486;
 calib_val.l_arm_uwy = 0.0041;
 calib_val.l_arm_mwx = 1.0764;
 
+calib_val.l_arm_shz = 0.7494;
+calib_val.l_arm_shx = -1.5894;
+calib_val.l_arm_ely = -9.8400e-04;
+calib_val.l_arm_elx = -0.0548;
+calib_val.l_arm_uwy = -0.0027;
+calib_val.l_arm_mwx = 1.1654; % or: 1.3302;
+
 calib_val = double(calib_val);
 
 behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
