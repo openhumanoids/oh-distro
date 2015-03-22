@@ -8,5 +8,6 @@ software/externals/
 lcmtypes/java/
 lcmtypes/python/
 /software/drivers/atlas/AtlasRobotInterface_3.0.0/logs/
+software/config/drc_control_setup.m
 *.o
 *.so
