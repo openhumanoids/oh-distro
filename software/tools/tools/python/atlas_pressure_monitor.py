@@ -37,7 +37,7 @@ class AtlasPressureMonitor(object):
 		self.desired_psi = max(self.desired_psi, self.min_psi)
 		self.desired_psi = min(self.desired_psi, self.max_psi)
 
-		if self.desired_psi > self.last_published_psi or self.desired_psi - self.last_published_psi < -self.publish_threshold_psi:
+		if self.desired_psi > self.last_published_psi + 5 or self.desired_psi - self.last_published_psi < -self.publish_threshold_psi:
 			self.publish_pump_command()
 
 	def publish_pump_command(self):
