@@ -39,7 +39,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
-      obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -47,6 +46,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @drc.atlas_behavior_command_t, 0, @obj.handle_atlas_behavior_command);
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
+      obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
@@ -96,13 +96,13 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       disp('Got a locomotion plan')
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
       obj.switchToPlan(obj.smoothPlanTransition(new_plan));
-      if isa(new_plan.qtraj, 'Trajectory')
-        disp('Automatically generating a standing plan from the end of this plan.')
-        obj.appendPlan(QPLocomotionPlan.from_standing_state(new_plan.qtraj.eval(new_plan.qtraj.tspan(end)),...
-                                                            obj.robot,...
-                                                            new_plan.supports(end),...
-                                                            struct('center_pelvis', false)));
-      end
+      % if isa(new_plan.qtraj, 'Trajectory')
+      %   disp('Automatically generating a standing plan from the end of this plan.')
+      %   obj.appendPlan(QPLocomotionPlan.from_standing_state(new_plan.qtraj.eval(new_plan.qtraj.tspan(end)),...
+      %                                                       obj.robot,...
+      %                                                       new_plan.supports(end),...
+      %                                                       struct('center_pelvis', false)));
+      % end
     end
 
     function handle_atlas_behavior_command(obj, msg)
