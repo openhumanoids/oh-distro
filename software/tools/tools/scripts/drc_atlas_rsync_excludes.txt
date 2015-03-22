@@ -2,6 +2,7 @@
 .gitmodules
 pod-build/
 software/build/
+software/config/drc_control_setup.m
 *.mexa64
 software/externals/
 lcmtypes/java/
