@@ -86,7 +86,7 @@ void setMessageValue(js_event const & jse, const int8_t msg_type, drc::driving_c
   static const double scaleFactor = static_cast<double>((1<<15) - 1);
   switch (msg_type) {
     case drc::driving_control_cmd_t::TYPE_DRIVE_DELTA_STEERING:
-      msg.steering_angle = jse.value / scaleFactor * MAX_STEERING_ANGLE;
+      msg.steering_angle = -jse.value / scaleFactor * MAX_STEERING_ANGLE;
       printf("steering: %lf\n", msg.steering_angle);
       break;
     case drc::driving_control_cmd_t::TYPE_DRIVE:
