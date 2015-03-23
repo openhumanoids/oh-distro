@@ -84,10 +84,24 @@ setup_drc()
 
 setup_robot_computers()
 {
-  if [[ "paladin-04|paladin-05|paladin-06|paladin-10|paladin-12" =~ $(hostname) ]]
+  if [[ "paladin-04|paladin-05|paladin-10" =~ $(hostname) ]]
   then
       export LCM_DEFAULT_URL=${LCM_URL_DRC_RADIO}
   fi
+
+  # field computer
+  if [[ "paladin-12" =~ $(hostname) ]]
+  then
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_ROBOT}
+  fi
+
+  # operator computer
+  if [[ "paladin-06" =~ $(hostname) ]]
+  then
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_BASE}
+  fi
+
+
 
   if [ "atlas0" = $(hostname) ]
   then
@@ -127,7 +141,7 @@ setup_lcm_communities()
 }
 
 # remove this flag to run with isolated lcm communities
-export DEBUG_NETWORK="true"
+# export DEBUG_NETWORK="true"
 
 set_drc_base
 #setup_drcsim
