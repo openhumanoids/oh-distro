@@ -27,7 +27,7 @@ classdef RemotePlanner
     end
 
     function obj = withAtlas()
-      obj = CombinedPlanner(CombinedPlanner.constructAtlas());
+      obj = RemotePlanner(RemotePlanner.constructAtlas());
     end
 
     function r = constructValkyrie()
@@ -43,15 +43,15 @@ classdef RemotePlanner
     end
 
     function obj = withValkyrie()
-      obj = CombinedPlanner(CombinedPlanner.constructValkyrie());
+      obj = RemotePlanner(RemotePlanner.constructValkyrie());
     end
   end
 
   methods
-    function obj = CombinedPlanner(biped, varargin)
+    function obj = RemotePlanner(biped, varargin)
       checkDependency('iris');
       if nargin < 1 || isempty(biped)
-        biped = CombinedPlanner.constructAtlas(varargin{:});
+        biped = RemotePlanner.constructAtlas(varargin{:});
       end
 
       obj.biped = biped;
@@ -65,7 +65,7 @@ classdef RemotePlanner
       elseif isa(obj.biped, 'Valkyrie')
         obj.iris_planner = IRISPlanner(Valkyrie([], struct('floating', true)));
       else
-        warning('DRC:CombinedPlanner:NoFootstepCollisionModel', 'This robot may not support upper body collision planning. Footstep plans may cause the upper body to collide with the terrain');
+        warning('DRC:RemotePlanner:NoFootstepCollisionModel', 'This robot may not support upper body collision planning. Footstep plans may cause the upper body to collide with the terrain');
         obj.iris_planner = IRISPlanner(obj.biped);
       end
 
@@ -212,7 +212,7 @@ classdef RemotePlanner
       model = model.addRobotFromURDFString(char(msg.urdf.urdf_xml_string));
       heightmap = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(model,[],msg.x_min:msg.x_step:msg.x_max, msg.y_min:msg.y_step:msg.y_max, msg.scanner_height);
 
-      map_img = CombinedPlanner.getDRCMapImage(heightmap, 0, msg.x_step, msg.y_step, msg.utime);
+      map_img = RemotePlanner.getDRCMapImage(heightmap, 0, msg.x_step, msg.y_step, msg.utime);
     end
   end
 
