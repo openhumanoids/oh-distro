@@ -31,7 +31,7 @@ class AtlasPressureMonitor(object):
 
 		max_joint_psi = max(np.max(msg.psi_pos),
 			                np.max(msg.psi_neg))
-		self.desired_psi = max(self.desired_psi - 10,
+		self.desired_psi = max(self.desired_psi - 1,
 			                   max_joint_psi + self.default_offset_psi)
 
 		self.desired_psi = max(self.desired_psi, self.min_psi)
