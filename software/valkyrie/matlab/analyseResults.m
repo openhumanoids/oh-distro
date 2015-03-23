@@ -15,7 +15,11 @@ function [rrtTimes, smoothingTimes] = analyseResults(nFiles, statOnly, verbose)
 
     %Unpack statVars
     try
-        load('001.mat', 'statVars')
+        info = 2;
+        while info == 2
+            load('001.mat', 'statVars')
+            info = statVars.info;
+        end
     catch err
         disp('Cannot open 001.mat')
         rethrow(err);
