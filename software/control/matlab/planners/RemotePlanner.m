@@ -1,4 +1,4 @@
-classdef CombinedPlanner
+classdef RemotePlanner
   properties
     biped
     footstep_planner
