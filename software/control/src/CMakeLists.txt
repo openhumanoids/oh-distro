@@ -9,6 +9,9 @@ if (Boost_FOUND)
   link_directories( ${Boost_LIBRARY_DIRS} )
 endif()
 
+add_executable(SteeringCommandPublisher SteeringCommandPublisher.cpp)
+pods_use_pkg_config_packages(SteeringCommandPublisher lcm)
+
 add_mex(RobotStateMonitor RobotStateMonitor.cpp)
 pods_use_pkg_config_packages(RobotStateMonitor eigen3 lcm)
 
