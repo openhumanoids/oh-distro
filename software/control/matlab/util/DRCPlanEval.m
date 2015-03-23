@@ -130,7 +130,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       new_plan.start_time = [];
 
       % Use the previously commanded state to override the first (or only) knot point in the new trajectory. This is necessary to prevent the robot from suddenly drooping or jerking at the start of a plan, since the initial state of the plan may not match the robot's current desired state. 
-      if ~isempty(obj.qp_input) && isfield(new_plan, 'qtraj')
+      if ~isempty(obj.qp_input)
         if isnumeric(new_plan.qtraj)
           new_plan.qtraj(1:end) = obj.qp_input.whole_body_data.q_des(1:end);
         else
