@@ -89,7 +89,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     function handle_stand_default(obj, msg)
       disp('Got a default stand plan')
       new_plan = DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot);
-      obj.switchToPlan(obj.smoothPlanTransition(new_plan));
+      obj.switchToPlan(new_plan);
     end
 
     function handle_locomotion_plan(obj, msg)

@@ -11,6 +11,8 @@ classdef StandingHardware < atlasParams.Standing
       obj.whole_body.Kp(r.findPositionIndices('back_bkx')) = 50;
       obj.whole_body.damping_ratio = 0.5;
 
+      obj.body_motion(r.findLinkId('pelvis')).Kp = 40 * ones(6,1);
+
       % integral gains for position controlled joints
       integral_gains = zeros(getNumPositions(r),1);
       integral_clamps = zeros(getNumPositions(r),1);
