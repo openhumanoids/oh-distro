@@ -128,3 +128,5 @@ endif()
 add_jar(drc_control ${java_src_files})
 
 install_jar(drc_control share/java)
+
+add_subdirectory(freeSpline)
