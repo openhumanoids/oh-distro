@@ -5,9 +5,9 @@ classdef FrozenPlan < QPControllerPlan
 
   methods
     function obj = FrozenPlan(qp_input)
-      for j = 1:length(qp_input.body_motion_data)
-        qp_input.body_motion_data(j).coefs(:,:,1:end-1) = 0;
-      end
+      % for j = 1:length(qp_input.body_motion_data)
+      %   qp_input.body_motion_data(j).coefs(:,:,1:end-1) = 0;
+      % end
       qp_input.param_set_name = 'standing';
       obj.frozen_qp_input = qp_input;
       obj.duration = inf;
