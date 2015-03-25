@@ -42,13 +42,13 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
-    cmd "contact_monitor" {        
+    cmd "contact_monitor" {
     	exec = "drc-contact-monitor";
         host = "atlas2";
     }
 
-    cmd "CombinedPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
+    cmd "BasePlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner(); p.run();\"";
        host = "base";
        stop_signal = 15;
     }
