@@ -11,6 +11,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     last_plan;
   end
 
+  properties (Constant)
+    OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
+  end
+
   methods
     function obj = QPReactiveRecoveryPlan(robot, ~, ~)
       obj.robot = robot;
@@ -128,6 +132,102 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
   end
 
   methods(Static)
+    function [y, y_is_in_convhull] = closestPointInConvexHull(x, V)
+      if size(V, 1) > 3 || size(V, 2) > 8
+        error('V is too large for our custom solver')
+      end
+
+      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, V, x));
+      y_is_in_convhull = norm(u) < 1e-3;
+      y = u + x;
+    end
+
+    function intercept_plans = getInterceptPlans(foot_states, swing_foot, foot_vertices, r_ic, u, omega)
+      stance_foot = obj.OTHER_FOOT.(swing_foot);
+
+      % Find the center of pressure, which we'll place as close as possible to the ICP
+      r_cop = QPReactiveRecoveryPlan.closestPointInConvexHull(r_ic, foot_vertices.(stance_foot));
+
+      % Now transform the problem so that the x axis is aligned with (r_ic - r_cop)
+      xprime = r_ic - r_cop / norm(r_ic - r_cop);
+      yprime = [0, -1; 1, 0] * xprime;
+      R = [xprime'; yprime'];
+      foot_states_prime = foot_states;
+      foot_vertices_prime = foot_vertices;
+      for f = fieldnames(foot_states)'
+        foot = f{1};
+        foot_states_prime.(foot).position(1:2) = R * (foot_states.(foot).position(1:2) - r_cop);
+        foot_states_prime.(foot).velocity(1:2) = R * foot_state.(foot).velocity(1:2);
+        foot_vertices_prime.(foot) = R * foot_vertices_prime.(foot)
+      end
+      r_ic_prime = R * (r_ic - r_cop);
+      assert(abs(r_ic_prime(2)) < 1e-6);
+
+      intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, r_ic_prime, u, omega);
+    end
+
+    function intercept_plans = getLocalFrameIntercepts(foot_states, swing_foot, foot_vertices, r_ic_prime, u, omega)
+    end
+
+    function intercepts = bangbang(x0, xd0, xf, u_max)
+      % xf = x0 + 1/2 xd0 tf + 1/4 u tf^2 - 1/4 xd0^2 / u
+      % 1/4 u tf^2 + 1/2 xd0 tf + x0 - xf - 1/4 xd0^2 / u = 0
+      % a = 1/4 u
+      % b = 1/2 xd0
+      % c = x0 - xf - 1/4 xd0^2 / u
+      intercepts = struct('tf', {}, 'tswitch', {}, 'u', {});
+
+      figure(7)
+      clf
+      hold on
+
+      for u = [u_max, -u_max]
+        a = 0.25 * u;
+        b = 0.5 * xd0;
+        c = x0 - xf - 0.25 * xd0^2 / u;
+
+
+        t_roots = [(-b + sqrt(b^2 - 4*a*c)) / (2*a), (-b - sqrt(b^2 - 4*a*c)) / (2*a)]
+        mask = false(size(t_roots));
+        for j = 1:numel(t_roots)
+          if isreal(t_roots(j)) && t_roots(j) >= abs(xd0 / u)
+            mask(j) = true;
+          end
+        end
+        tf = unique(t_roots(mask));
+
+        % tf(tf < abs(xd0 / u)) = abs(xd0 / u)
+
+        tswitch = zeros(size(tf));
+        for j = 1:numel(tf)
+          tswitch(j) = 0.5 * (tf(j) - xd0 / u);
+        end
+
+        if numel(tf) > 1
+          error('i don''t think there should ever be more than one feasible root');
+        end
+        if ~isempty(tf)
+          intercepts(end+1) = struct('tf', tf, 'tswitch', tswitch, 'u', u);
+        end
+
+        tt = linspace(0, 3);
+        plot(tt, a*tt.^2 + b*tt + c, 'g-')
+        roots([a; b; c])
+        xswitch = x0 + xd0 * tswitch + 0.5 * u * tswitch.^2;
+        xdswitch = xd0 + u * tswitch;
+
+        for j = 1:numel(tswitch)
+          tt = linspace(0, tswitch(j));
+          plot(tt, x0 + xd0 * tt + 0.5 * u * tt.^2);
+
+          tt = linspace(tswitch(j), tf(j));
+          plot(tt, xswitch + xdswitch * (tt - tswitch(j)) + 0.5 * -1 * u * (tt - tswitch(j)).^2);
+
+          plot(tf(j), xf, 'ro');
+        end
+      end
+    end
+
     function [ts, coefs] = swingTraj(intercept_plan, foot_state)
       if intercept_plan.t_switch > 0
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
