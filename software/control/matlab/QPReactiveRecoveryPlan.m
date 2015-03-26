@@ -133,6 +133,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   methods(Static)
     function [y, y_is_in_convhull] = closestPointInConvexHull(x, V)
+      checkDependency('iris');
       if size(V, 1) > 3 || size(V, 2) > 8
         error('V is too large for our custom solver')
       end
@@ -142,31 +143,146 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       y = u + x;
     end
 
-    function intercept_plans = getInterceptPlans(foot_states, swing_foot, foot_vertices, r_ic, u, omega)
-      stance_foot = obj.OTHER_FOOT.(swing_foot);
+    function intercept_plans = getInterceptPlans(foot_states, swing_foot, foot_vertices, reachable_vertices_in_stance_frame, r_ic, u, omega)
+      stance_foot = QPReactiveRecoveryPlan.OTHER_FOOT.(swing_foot);
 
       % Find the center of pressure, which we'll place as close as possible to the ICP
       r_cop = QPReactiveRecoveryPlan.closestPointInConvexHull(r_ic, foot_vertices.(stance_foot));
+      r_ic - r_cop
 
       % Now transform the problem so that the x axis is aligned with (r_ic - r_cop)
-      xprime = r_ic - r_cop / norm(r_ic - r_cop);
+      xprime = (r_ic - r_cop) / norm(r_ic - r_cop);
       yprime = [0, -1; 1, 0] * xprime;
-      R = [xprime'; yprime'];
+      R = [xprime'; yprime']
       foot_states_prime = foot_states;
       foot_vertices_prime = foot_vertices;
       for f = fieldnames(foot_states)'
         foot = f{1};
         foot_states_prime.(foot).position(1:2) = R * (foot_states.(foot).position(1:2) - r_cop);
-        foot_states_prime.(foot).velocity(1:2) = R * foot_state.(foot).velocity(1:2);
-        foot_vertices_prime.(foot) = R * foot_vertices_prime.(foot)
+        foot_states_prime.(foot).velocity(1:2) = R * foot_states.(foot).velocity(1:2);
+        foot_vertices_prime.(foot) = R * foot_vertices_prime.(foot);
       end
-      r_ic_prime = R * (r_ic - r_cop);
+      r_ic_prime = R * (r_ic - r_cop)
       assert(abs(r_ic_prime(2)) < 1e-6);
 
-      intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, r_ic_prime, u, omega);
+      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).position(6)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).position(1:2));
+      reachable_vertices_prime = R * bsxfun(@minus, reachable_vertices_in_world_frame, r_cop);
+      intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
     end
 
-    function intercept_plans = getLocalFrameIntercepts(foot_states, swing_foot, foot_vertices, r_ic_prime, u, omega)
+    function intercept_plans = getLocalFrameIntercepts(foot_states, swing_foot, foot_vertices, reachable_vertices, r_ic_prime, u_max, omega)
+      OFFSET = 0.1;
+      error('TODO: apply this offset');
+
+      % r_ic(t) = (r_ic(0) - r_cop) e^(t*omega) + r_cop
+
+      stance_foot = QPReactiveRecoveryPlan.OTHER_FOOT.(swing_foot);
+      figure(7)
+      clf
+
+      r_cop_prime = [0;0];
+
+      tt = linspace(0, 1);
+
+      subplot(212)
+      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).position(2),...
+                                                   foot_states.(swing_foot).velocity(2),...
+                                                   0,...
+                                                   u_max);
+      min_time_to_xprime_axis = min([xprime_axis_intercepts.tf]);
+
+      subplot(211)
+      hold on
+      plot(tt, (r_ic_prime(1) - r_cop_prime(1)) * exp(tt * omega) + r_cop_prime(1));
+
+      x0 = foot_states.(swing_foot).position(1);
+      xd0 = foot_states.(swing_foot).velocity(1);
+
+      intercept_plans = struct('tf', {}, 'tswitch', {}, 'r_foot_new', {}, 'r_ic_new', {});
+
+      t_int = min_time_to_xprime_axis;
+      x_ic = r_ic_prime(1);
+      x_cop = r_cop_prime(1);
+      x_ic_int = QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_int, omega);
+      x_foot_int = [QPReactiveRecoveryPlan.bangbangXf(x0, xd0, t_int, u_max),...
+                  QPReactiveRecoveryPlan.bangbangXf(x0, xd0, t_int, -u_max)];
+
+      if x_ic_int >= min(x_foot_int) && x_ic_int <= max(x_foot_int)
+        % The time to get onto the xprime axis dominates, so we can hit the ICP as soon as we get to that axis
+
+        intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, x_ic_int, u_max);
+
+        if ~isempty(intercepts)
+          [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
+          intercept = intercepts(i);
+
+          r_foot_int = [x_foot_int; 0];
+          r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
+
+
+          intercept_plans(end+1) = struct('tf', t_int,...
+                                          'tswitch', intercept.tswitch,...
+                                          'r_foot_new', r_foot_reach,...
+                                          'r_ic_new', [x_ic_int; 0]);
+        end
+      end
+
+      subplot(211)
+
+      for u = [u_max, -u_max]
+        [t_int, x_int] = QPReactiveRecoveryPlan.expIntercept((x_ic - x_cop), omega, x_cop, x0, xd0, u, 5);
+        mask = false(size(t_int));
+        for j = 1:numel(t_int)
+          if isreal(t_int(j)) && t_int(j) >= min_time_to_xprime_axis && t_int(j) >= abs(xd0 / u)
+            mask(j) = true;
+          end
+        end
+        t_int = t_int(mask);
+        x_int = x_int(mask);
+
+        r_foot_int = [x_int; 0];
+        % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
+        r_foot_reach = r_foot_int;
+
+        intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, r_foot_reach(1), u_max);
+        if ~isempty(intercepts)
+          [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
+          intercept = intercepts(i);
+
+          intercept_plans(end+1) = struct('tf', intercept.tf,...
+                                          'tswitch', intercept.tswitch,...
+                                          'r_foot_new', r_foot_reach,...
+                                          'r_ic_new', [QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, intercept.tf, omega);
+                                                       0]);
+        end
+      end
+
+
+      for u = [u_max, -u_max]
+        tt = linspace(abs(xd0 / u), abs(xd0 / u) + 1);
+        plot(tt, QPReactiveRecoveryPlan.bangbangXf(x0, xd0, tt, u), 'g-');
+
+      end
+
+      plot([min_time_to_xprime_axis,...
+            min_time_to_xprime_axis], ...
+           [QPReactiveRecoveryPlan.bangbangXf(x0, xd0, min_time_to_xprime_axis, u_max),...
+            QPReactiveRecoveryPlan.bangbangXf(x0, xd0, min_time_to_xprime_axis, -u_max)], 'r-')
+
+      for j = 1:length(intercept_plans)
+        plot(intercept_plans(j).tf, intercept_plans(j).r_foot_new(1), 'ro');
+        plot(intercept_plans(j).tf, intercept_plans(j).r_ic_new(1), 'mo');
+      end
+
+
+    end
+
+    function xf = bangbangXf(x0, xd0, tf, u)
+      xf = x0 + 0.5 * xd0 .* tf + 0.25 * u * tf.^2 - 0.25 * xd0.^2 / u;
+    end
+
+    function x_ic_new = icpUpdate(x_ic, x_cop, dt, omega)
+      x_ic_new = (x_ic - x_cop) * exp(dt*omega) + x_cop;
     end
 
     function intercepts = bangbang(x0, xd0, xf, u_max)
@@ -177,8 +293,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % c = x0 - xf - 1/4 xd0^2 / u
       intercepts = struct('tf', {}, 'tswitch', {}, 'u', {});
 
-      figure(7)
-      clf
       hold on
 
       for u = [u_max, -u_max]
@@ -210,8 +324,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           intercepts(end+1) = struct('tf', tf, 'tswitch', tswitch, 'u', u);
         end
 
-        tt = linspace(0, 3);
-        plot(tt, a*tt.^2 + b*tt + c, 'g-')
+        tt = linspace(abs(xd0 / u), max([abs(xd0/u) + 0.3, tf]));
+        plot(tt, a*tt.^2 + b*tt + c + xf, 'g-')
         roots([a; b; c])
         xswitch = x0 + xd0 * tswitch + 0.5 * u * tswitch.^2;
         xdswitch = xd0 + u * tswitch;
@@ -395,11 +509,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       t_int = t_int(mask)';
       l_int = polyval(p_spline, t_int);
 
-      tt = linspace(0, max([t_int, 2]));
 
       % figure(1)
       % clf
       % hold on
+      % tt = linspace(0, max([t_int, 2]));
       % plot(tt, polyval(p, tt), 'g--');
       % plot(tt, a.*exp(b.*tt) + c, 'g-');
       % plot(tt, polyval(p_spline, tt), 'r-');
