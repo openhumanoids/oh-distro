@@ -1,83 +1,132 @@
-// Selective ros2lcm translator for Edinburgh Kuka Arm
-// mfallon
-#include <boost/thread.hpp>
-#include <boost/shared_ptr.hpp>
-
-#include <ros/ros.h>
-#include <ros/console.h>
-#include <cstdlib>
-#include <sys/time.h>
-#include <time.h>
-#include <iostream>
-#include <map>
-
-#include <Eigen/Dense>
-
-#include <sensor_msgs/JointState.h>
-
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <sensor_msgs/Image.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/pronto/robot_state_t.hpp"
+#include <zlib.h>
 
-using namespace std;
+using namespace sensor_msgs;
+using namespace message_filters;
+#include "lcmtypes/kinect.hpp"
+#include "lcmtypes/bot_core.hpp"
 
-class App{
-public:
-  App(ros::NodeHandle node_);
-  ~App();
 
-private:
-  lcm::LCM lcm_publish_ ;
-  ros::NodeHandle node_;
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
-  ros::Subscriber  joint_states_sub_;
-  void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);
+lcm::LCM* lcmThe(new lcm::LCM);
 
-};
+// Maximum size of reserved buffer. This will support and images smaller than this also:
+int local_img_buffer_size_ = 640 * 480 * sizeof(int16_t) * 4;
+uint8_t* local_img_buffer_= new uint8_t[local_img_buffer_size_];  // x4 was used for zlib in kinect_lcm
+// is x10 necessary for  jpeg? thats waht kinect_lcm assumed
 
-App::App(ros::NodeHandle node_) :
-    node_(node_){
-  ROS_INFO("Initializing Translator");
-  if(!lcm_publish_.good()){
+void callback(const ImageConstPtr& rgb, const ImageConstPtr& depth)
+{
+  /*
+  bot_core::image_t lcm_img;
+  lcm_img.utime =0;//msg->image.timestamp;
+  lcm_img.width =rgb->width;
+  lcm_img.height =rgb->height;
+  lcm_img.nmetadata =0;
+  int n_colors = 3;
+  lcm_img.row_stride=n_colors*rgb->width;
+  //    if (msg->image.image_data_format == kinect::image_msg_t::VIDEO_RGB){
+  lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
+  lcm_img.size = rgb->data.size();
+  lcm_img.data = rgb->data;
+  lcmThe->publish("KINECT_RGB", &lcm_img);
+  */
+
+
+  kinect::image_msg_t lcm_rgb;
+  lcm_rgb.timestamp =(int64_t) rgb->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_rgb.width =rgb->width;
+  lcm_rgb.height =rgb->height;
+  //lcm_rgb.nmetadata =0;
+  int  n_colors=3;
+  int isize = rgb->data.size();
+  bool compress_images = true;
+  if (!compress_images){
+    lcm_rgb.image_data_format =kinect::image_msg_t::VIDEO_RGB;//bot_core::image_t::PIXEL_FORMAT_RGB;
+    lcm_rgb.image_data_nbytes = isize;
+    //cv::cvtColor(mat, mat, CV_BGR2RGB);
+    //lcm_rgb.image_data.resize(mat.step*mat.rows);
+    //std::copy(mat.data, mat.data + mat.step*mat.rows,
+    //            lcm_rgb.image_data.begin());
+    lcm_rgb.image_data = rgb->data;
+  }else{
+    // TODO: reallocate to speed?
+    void* bytes = const_cast<void*>(static_cast<const void*>(rgb->data.data()));
+    cv::Mat mat(rgb->height, rgb->width, CV_8UC3, bytes, n_colors*rgb->width);
+    cv::cvtColor(mat, mat, CV_BGR2RGB);
+
+    std::vector<int> params;
+    params.push_back(cv::IMWRITE_JPEG_QUALITY);
+    params.push_back( 90 );
+
+    cv::imencode(".jpg", mat, lcm_rgb.image_data, params);
+    lcm_rgb.image_data_nbytes = lcm_rgb.image_data.size();
+    lcm_rgb.image_data_format = kinect::image_msg_t::VIDEO_RGB_JPEG;
+  }
+  // lcmThe->publish("KINECT_RGBX", &lcm_rgb);
+
+
+  kinect::depth_msg_t lcm_depth;
+  lcm_depth.timestamp =(int64_t) depth->header.stamp.toNSec()/1000; // from nsec to usec
+  lcm_depth.width =depth->width;
+  lcm_depth.height =depth->height;
+  lcm_depth.depth_data_format =kinect::depth_msg_t::DEPTH_MM;
+  lcm_depth.uncompressed_size = 480*640*2;//msg->depth.uncompressed_size; // the original value was not properly filled in
+
+  if (1==0){
+    lcm_depth.depth_data_nbytes =depth->data.size();
+    lcm_depth.depth_data =depth->data;
+    lcm_depth.compression = 0;//depth.compression;
+    lcm_depth.compression = kinect::depth_msg_t::COMPRESSION_NONE;
+  }else{
+    int uncompressed_size = 480*640*2;
+    unsigned long compressed_size = local_img_buffer_size_;
+    compress2(local_img_buffer_, &compressed_size, (const Bytef*) depth->data.data() , uncompressed_size,
+            Z_BEST_SPEED);
+    lcm_depth.compression = kinect::depth_msg_t::COMPRESSION_ZLIB;
+
+    lcm_depth.depth_data.resize(compressed_size);
+    std::copy(local_img_buffer_, local_img_buffer_+compressed_size,
+              lcm_depth.depth_data.begin());
+    lcm_depth.depth_data_nbytes = compressed_size;
+  }
+  // lcmThe->publish("KINECT_DEPTH_ONLY", &lcm_depth);
+
+  kinect::frame_msg_t out;
+  out.timestamp =(int64_t) rgb->header.stamp.toNSec()/1000; // from nsec to usec
+  out.image = lcm_rgb;
+  out.depth = lcm_depth;
+  lcmThe->publish("KINECT_FRAME", &out);
+
+}
+
+int main(int argc, char** argv)
+{
+  if(!lcmThe->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  joint_states_sub_ = node_.subscribe(string("/joint_states"), 100, &App::joint_states_cb,this);
+  ros::init(argc, argv, "vision_node");
 
-};
-
-App::~App()  {
-}
-
-
-void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
-  int n_joints = msg->position.size();
-
-  pronto::robot_state_t msg_out;
-  msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  msg_out.pose.translation.x = 0;  msg_out.pose.translation.y = 0;  msg_out.pose.translation.z = 0;
-  msg_out.pose.rotation.w = 1;  msg_out.pose.rotation.x = 0;  msg_out.pose.rotation.y = 0;  msg_out.pose.rotation.z = 0;
-
-  msg_out.joint_position.assign(n_joints , 0  );
-  msg_out.joint_velocity.assign(n_joints , 0  );
-  msg_out.joint_effort.assign(n_joints , 0  );
-  msg_out.num_joints = n_joints;
-  msg_out.joint_name= msg->name;
-  for (int i = 0; i < n_joints; i++)  {
-    msg_out.joint_position[ i ] = msg->position[ i ];
-    msg_out.joint_velocity[ i ] = msg->velocity[ i ];
-    msg_out.joint_effort[ i ] = msg->effort[i];
-  }
-
-  lcm_publish_.publish("EST_ROBOT_STATE", &msg_out);
-}
-
-
-int main(int argc, char **argv){
-  ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
-  new App(nh);
-  std::cout << "ros2lcm translator ready\n";
-  ROS_ERROR("ROS2LCM Translator Ready");
+  // message_filters::Subscriber<Image> image1_sub(nh, "/camera/rgb/image_raw", 1);
+  // message_filters::Subscriber<Image> image2_sub(nh, "/camera/depth/image_raw", 1);
+
+  message_filters::Subscriber<Image> image1_sub(nh, "/camera/rgb/image_rect_color", 1);
+  message_filters::Subscriber<Image> image2_sub(nh, "/camera/depth/image_rect_raw", 1);
+
+  typedef sync_policies::ApproximateTime<Image, Image> MySyncPolicy;
+  // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+  Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image1_sub, image2_sub);
+  sync.registerCallback(boost::bind(&callback, _1, _2));
+
   ros::spin();
+
   return 0;
 }

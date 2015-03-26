@@ -192,4 +192,4 @@ pods_use_pkg_config_packages(ros2lcm_kuka lcm lcmtypes_pronto-lcmtypes bot2-core
 
 add_executable(ros2lcm_kinect src/ros2lcm_kinect.cpp)
 target_link_libraries(ros2lcm_kinect ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils)
+pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils opencv)
