@@ -37,10 +37,10 @@ void ddKinectLCM::init(ddLCMThread* lcmThread, const QString& botConfigFile)
 
 
   kcal = kinect_calib_new();
-  kcal->intrinsics_depth.fx = 576.09757860;
+  kcal->intrinsics_depth.fx = 528.01442863461716;//was 576.09757860;
   kcal->intrinsics_depth.cx = 321.06398107;
   kcal->intrinsics_depth.cy = 242.97676897;
-  kcal->intrinsics_rgb.fx = 576.09757860;
+  kcal->intrinsics_rgb.fx = 528.01442863461716;//576.09757860; ... 528 seems to be better, emperically, march 2015
   kcal->intrinsics_rgb.cx = 321.06398107;
   kcal->intrinsics_rgb.cy = 242.97676897;
   kcal->intrinsics_rgb.k1 = 0; // none given so far
@@ -175,9 +175,9 @@ void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data, Kinec
         bot_matrix_multiply(depth_to_depth_xyz, 4, 4,
             uvd_depth, 4, 1, xyzw2);
 
-        cloud->points[j2].y = -xyzw2[0]/xyzw2[3];//y right+ (check)
-        cloud->points[j2].z = -xyzw2[1]/xyzw2[3];//z up+
-        cloud->points[j2].x = xyzw2[2]/xyzw2[3]; //x forward+
+        cloud->points[j2].x = xyzw2[0]/xyzw2[3]; //x right+
+        cloud->points[j2].y = xyzw2[1]/xyzw2[3]; //y down+
+        cloud->points[j2].z = xyzw2[2]/xyzw2[3]; //z forward+
 
         cloud->points[j2].b =b;
         cloud->points[j2].r =r;
@@ -207,22 +207,20 @@ void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data, Kinec
         uint8_t b = rgb_data[v*msg->depth.width*3 + u*3 + 2];
         double constant = 1.0f / kcal->intrinsics_rgb.fx ;
         double disparity_d = val[v*msg->depth.width+u]  / 1000.0; // convert to m
-        cloud->points[j2].y =  - (((double) u)- 319.50)*disparity_d*constant; //y right+ (check)
-        cloud->points[j2].z = - (((double) v)- 239.50)*disparity_d*constant;  //z up+
-        cloud->points[j2].x = disparity_d;  //x forward+
-        if (disparity_d==0){
-          double disparity_d = -0.1; // convert to m
-          cloud->points[j2].y =  - (((double) u)- 319.50)*disparity_d*constant; //y right+ (check)
-          cloud->points[j2].z =  -(((double) v)- 239.50)*disparity_d*constant;  //z up+
-          cloud->points[j2].x = disparity_d;  //x forward+
+
+        if (disparity_d!=0){
+          cloud->points[j2].x = (((double) u)- 319.50)*disparity_d*constant; //x right+
+          cloud->points[j2].y = (((double) v)- 239.50)*disparity_d*constant; //y down+
+          cloud->points[j2].z = disparity_d;  //z forward+
+          cloud->points[j2].b =b;
+          cloud->points[j2].r =r;
+          cloud->points[j2].g =g;
+          j2++;
         }
 
-        cloud->points[j2].b =b;
-        cloud->points[j2].r =r;
-        cloud->points[j2].g =g;
-        j2++;
       }
-    }         
+    }
+    cloud->points.resize (j2);
   }
 
   if(msg->depth.compression != KINECT_DEPTH_MSG_T_COMPRESSION_NONE) {
@@ -320,13 +318,15 @@ void ddKinectLCM::onKinectFrame(const QByteArray& data, const QString& channel)
 
   QMutexLocker locker(&this->mPolyDataMutex);
   this->mPolyData = polyData;
+  this->mUtime = message.timestamp;
 }
 
 
 //-----------------------------------------------------------------------------
-void ddKinectLCM::getPointCloudFromKinect(vtkPolyData* polyDataRender)
+qint64 ddKinectLCM::getPointCloudFromKinect(vtkPolyData* polyDataRender)
 {
   QMutexLocker locker(&this->mPolyDataMutex);
   polyDataRender->ShallowCopy(this->mPolyData);
+  return this->mUtime;
 }
 
