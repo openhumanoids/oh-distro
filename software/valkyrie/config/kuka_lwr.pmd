@@ -23,14 +23,23 @@ group "2.sensors" {
         host = "localhost";
     }
 
+    cmd "kinect-rgb-tool" {
+        exec = "kinect-rgb-tool";
+        host = "localhost";
+    }
 }
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -lwr";
+    exec = "drake-designer -lwr -c $DRC_BASE/software/config/kuka_lwr.cfgr";
     host = "localhost";
 }
 
+
+cmd "kintinuous" {
+    exec = "runkin";
+    host = "localhost";
+}
 
 script "start" {
     start group "0.params_and_model_pub";
