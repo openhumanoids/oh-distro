@@ -1,0 +1,14 @@
+package openni;
+
+struct frame_msg_t
+{
+    // message transmission time
+    int64_t timestamp;
+
+    openni.image_msg_t image;
+    openni.depth_msg_t depth;
+    openni.disparity_msg_t disparity;
+
+    // don't yet know how to read off the RGB camera intrinsics?
+    // don't yet know how to read off the RGB - IR camera translation
+}

@@ -1,0 +1,36 @@
+package openni;
+
+struct depth_msg_t
+{
+    // acquisition time (adjusted to host clock)
+    int64_t  timestamp;
+
+    int16_t  width;
+    int16_t  height;
+
+    int16_t  pixel_offset[2];
+
+    // contains the depth data for each pixel.  If compression is NONE,
+    // then depth_data can be interpreted as a width x height array of
+    // 16-bit unsigned integers, packed in little-endian byte order.
+    // Each integer is the depth of a single pixel in millimeters.
+    //
+    // If compression is ZLIB, then data is zlib-compressed.
+    int32_t  depth_data_nbytes;
+    byte     depth_data[depth_data_nbytes];
+
+    int8_t compression;
+    const int8_t COMPRESSION_NONE = 0;
+    const int8_t COMPRESSION_ZLIB = 1;
+    int32_t uncompressed_size;
+
+    // which camera viewpoint is the data coming from?
+    // the Kinect and PrimeSense have an IR camera and RGB camera,
+    // and can generate depth data from either viewpoint.
+    int8_t viewpoint;
+    const int8_t VIEWPOINT_IR = 0;
+    const int8_t VIEWPOINT_RGB = 1;
+
+    // focal length, in pixels, of the IR camera.
+    double focal_length;
+}
