@@ -54,11 +54,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       for f = {'right', 'left'}
         foot = f{1};
         [pos, J] = obj.robot.forwardKin(kinsol, obj.robot.foot_body_id.(foot), [0;0;0], 1);
+        T_orig = poseRPY2tform(pos);
+        T_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(foot)).T;
+        T_sole = T_orig * T_frame;
+        pos = tform2poseRPY(T_sole);
         vel = J * qd;
         foot_states.(foot).position = pos;
         foot_states.(foot).velocity = vel;
-        % warning('hard-coded foot height for contact')
-        if pos(3) < 0.085
+        warning('hard-coded foot height for contact')
+        if pos(3) < 0.005
           foot_states.(foot).contact = true;
         end
       end
@@ -72,7 +76,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      -0.15, -0.15, -0.4, -0.4],...
                             'left', [-0.3, 0.35, 0.35, -0.3;
                                      0.15, 0.15, 0.4, 0.4]);
-      warning('todo: compute plans for foot *sole*, not origin')
       intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, omega, 10);
 
       % intercept_plans = QPReactiveRecoveryPlan.enumerateCaptureOptions(foot_contact, foot_vertices, foot_states, r_ic, 10, omega);
@@ -85,6 +88,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
 
       [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
+      warning('todo: transform the foot sole coefs to foot origin coefs');
       pp = mkpp(ts, coefs, 6);
 
       ts = linspace(pp.breaks(1), pp.breaks(end));
@@ -168,7 +172,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       for j = 1:length(available_feet)
         swing_foot = available_feet(j).swing;
         new_plans = QPReactiveRecoveryPlan.getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reach_vertices.(swing_foot), r_ic, omega, u);
-        intercept_plans = [intercept_plans, new_plans];
+        if ~isempty(new_plans)
+          intercept_plans = [intercept_plans, new_plans];
+        end
       end
     end
 
@@ -204,6 +210,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       Ri = inv(R);
       for j = 1:length(intercept_plans)
         intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; foot_states.(swing_foot).position(3:6)];
+        warning('hard-coding z=0')
+        intercept_plans(j).r_foot_new(3) = 0;
         intercept_plans(j).r_ic_new = Ri * intercept_plans(j).r_ic_new + r_cop;
         intercept_plans(j).swing_foot = swing_foot;
         intercept_plans(j).r_cop = r_cop;
