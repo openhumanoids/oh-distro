@@ -41,6 +41,25 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
+
+    cmd "PlanEval" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 3, 'hand_right', 'none', 'hand_left', 'none')); \"";
+        host = "base";
+    }
+    cmd "InstQP" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 3, 'hand_right', 'none', 'hand_left', 'none')); \"";
+        host = "base";
+    }
+
+    cmd "PlanEvalRightHand" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 3, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
+        host = "base";
+    }
+    cmd "InstQPRightHand" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 3, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
+        host = "base";
+    }
+
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],3); p.run();\"";
        host = "base";
@@ -95,25 +114,69 @@ cmd "drakeAtlasSimulation Walking Flat" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 0, 1, 0, 0, '');\"";
     host = "base";
 }
+cmd "drakeAtlasSimulation Walking Flat (Vis)" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 0, 0, '');\"";
+    host = "base";
+}
 cmd "drakeAtlasSimulation Walking Two Steps" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 0, 1, 0, 0, 'steps');\"";
     host = "base";
 }
 cmd "drakeAtlasSimulation Manip Example" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 1, 0, 'manip_ex');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 3, 0, 'manip_ex');\"";
     host = "base";
 }
 cmd "drakeAtlasSimulation Valve Task" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 1, 0, 'valve_wall');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 3, 0, 'valve_wall');\"";
     host = "base";
 }
 cmd "drakeAtlasSimulation Door Task" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 1, 0, 'door');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 3, 0, 'door');\"";
     host = "base";
 }
 cmd "drakeAtlasSimulation Drill Task" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 1, 0, 'drill_frame');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 3, 0, 'drill_frame');\"";
     host = "base";
+}
+
+cmd "drakeAtlasSimulation Terrain Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 0, 0, 'terrain');\"";
+    host = "base";
+}
+
+cmd "drakeAtlasSimulation Stairs Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 0, 0, 'stairs');\"";
+    host = "base";
+}
+
+cmd "drakeAtlasSimulation Plug Task" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(3, 1, 1, 3, 0, 'plug');\"";
+    host = "base";
+}
+
+cmd "systemwide-tests-valve" {
+    exec = "drc-systemwide-tests valve";
+    host = "localhost";
+}
+
+cmd "systemwide-tests-walking" {
+    exec = "drc-systemwide-tests walking";
+    host = "localhost";
+}
+
+script "-1.run_monolithic_controller_simul" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+
+    start cmd "drakeAtlasSimulation Walking Flat (Vis)";
+    start cmd "AtlasControllerNoHands";
+    start cmd "director";
 }
 
 script "0.run_all_but_simul_and_controller" {
@@ -125,6 +188,7 @@ script "0.run_all_but_simul_and_controller" {
     start cmd "joints2frames";
     start cmd "CombinedPlanner";
     start group "5.maps";
+    start cmd "director";
 }
 
 script "1.run_walking_flat" {
@@ -137,7 +201,16 @@ script "1.run_walking_flat" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Walking Flat";
-    start cmd "AtlasControllerNoHands";
+    start cmd "PlanEval";
+    start cmd "InstQP";
+    start cmd "director";
+}
+
+script "1.run_walking_flat_test" {
+    start cmd "systemwide-tests-walking";
+    start cmd "director";
+    run_script "1.run_walking_flat";
+    wait cmd "systemwide-tests-walking" status "stopped";
 }
 
 script "2.run_walking_steps" {
@@ -150,20 +223,9 @@ script "2.run_walking_steps" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Walking Two Steps";
-    start cmd "AtlasControllerNoHands";
-}
-
-script "3.run_manip_ex" {
-    start cmd "base_deputy";
-    wait ms 1000;
-    start group "0.params_and_model_pub";
-    wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
-    start cmd "CombinedPlanner";
-    start group "5.maps";
-    start cmd "drakeAtlasSimulation Manip Example";
-    start cmd "AtlasControllerPlusHandWeight";
+    start cmd "PlanEval";
+    start cmd "InstQP";
+    start cmd "director";
 }
 
 script "3.run_valve" {
@@ -176,7 +238,16 @@ script "3.run_valve" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Valve Task";
-    start cmd "AtlasControllerPlusHandWeight";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
+script "3.run_valve_test" {
+    start cmd "systemwide-tests-valve";
+    start cmd "director";
+    run_script "3.run_valve";
+    wait cmd "systemwide-tests-valve" status "stopped";
 }
 
 script "4.run_door" {
@@ -189,7 +260,9 @@ script "4.run_door" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Door Task";
-    start cmd "AtlasControllerPlusHandWeight";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
 }
 
 script "5.run_drill" {
@@ -202,5 +275,67 @@ script "5.run_drill" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Drill Task";
-    start cmd "AtlasControllerPlusHandWeight";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
+script "6.run_terrain" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Terrain Task";
+    start cmd "PlanEval";
+    start cmd "InstQP";
+    start cmd "director";
+}
+
+script "7.run_plug" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Plug Task";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
+script "8.run_stairs" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Stairs Task";
+    start cmd "PlanEval";
+    start cmd "InstQP";
+    start cmd "director";
+}
+
+script "9.run_manip_ex" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Manip Example";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
 }
