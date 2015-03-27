@@ -61,7 +61,7 @@ classdef StatelessWalkingPlanner
 
       % Convert the walking plan data to the DRC type that extends
       % in terms of LCM transcription methods
-      ts = linspace(0,walking_plan_data.comtraj.tspan(2),150);
+      ts = linspace(0, walking_plan_data.duration, 150);
 
       lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 
