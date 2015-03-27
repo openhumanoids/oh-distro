@@ -1,4 +1,4 @@
-% Produced by CVXGEN, 2015-03-24 13:12:44 -0400.
+% Produced by CVXGEN, 2015-03-26 23:25:30 -0400.
 % CVXGEN is Copyright (C) 2006-2012 Jacob Mattingley, jem@cvxgen.com.
 % The code in this file is Copyright (C) 2006-2012 Jacob Mattingley.
 % CVXGEN, or solvers produced by CVXGEN, cannot be used for commercial
@@ -8,11 +8,11 @@
 % Description: Solution file, via cvx, for use with sample.m.
 function [vars, status] = cvxsolve(params, settings)
 r0 = params.r0;
-r_switch = params.r_switch;
-r_switch_slack = params.r_switch_slack;
+r_switch_lb = params.r_switch_lb;
+r_switch_ub = params.r_switch_ub;
 rd0 = params.rd0;
-rd_switch = params.rd_switch;
-rd_switch_slack = params.rd_switch_slack;
+rd_switch_lb = params.rd_switch_lb;
+rd_switch_ub = params.rd_switch_ub;
 rdf = params.rdf;
 rf = params.rf;
 t_f = params.t_f;
@@ -31,18 +31,20 @@ cvx_begin
 
   minimize(max_accel);
   subject to
-    max_accel >= abs(2*C1_2);
-    max_accel >= abs(2*C1_2 + 6*t_switch*C1_3);
-    max_accel >= abs(2*C2_2);
-    max_accel >= abs(2*C2_2 + 6*(t_f - t_switch)*C2_3);
+    max_accel >= sum(abs(2*C1_2));
+    max_accel >= sum(abs(2*C1_2 + 6*t_switch*C1_3));
+    max_accel >= sum(abs(2*C2_2));
+    max_accel >= sum(abs(2*C2_2 + 6*(t_f - t_switch)*C2_3));
     C1_0 + t_switch*C1_1 + t_switch*t_switch*C1_2 + t_switch*t_switch*t_switch*C1_3 == C2_0;
     C1_1 + 2*t_switch*C1_2 + 3*t_switch*t_switch*C1_3 == C2_1;
     C1_0 == r0;
     C1_1 == rd0;
     C2_0 + (t_f - t_switch)*C2_1 + (t_f - t_switch)*(t_f - t_switch)*C2_2 + (t_f - t_switch)*(t_f - t_switch)*(t_f - t_switch)*C2_3 == rf;
     C2_1 + 2*(t_f - t_switch)*C2_2 + 3*(t_f - t_switch)*(t_f - t_switch)*C2_3 == rdf;
-    abs(C2_0 - r_switch) <= r_switch_slack;
-    abs(C2_1 - rd_switch) <= rd_switch_slack;
+    C2_0 >= r_switch_lb;
+    C2_0 <= r_switch_ub;
+    C2_1 >= rd_switch_lb;
+    C2_1 <= rd_switch_ub;
 cvx_end
 vars.C1_0 = C1_0;
 vars.C1_1 = C1_1;

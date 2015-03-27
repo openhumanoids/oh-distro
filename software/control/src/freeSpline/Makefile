@@ -1,4 +1,4 @@
-# Produced by CVXGEN, 2015-03-24 13:12:44 -0400.
+# Produced by CVXGEN, 2015-03-26 23:25:29 -0400.
 # CVXGEN is Copyright (C) 2006-2012 Jacob Mattingley, jem@cvxgen.com.
 # The code in this file is Copyright (C) 2006-2012 Jacob Mattingley.
 # CVXGEN, or solvers produced by CVXGEN, cannot be used for commercial
@@ -25,6 +25,3 @@ testsolver.o: solver.h
 .PHONY : clean
 clean :
 	-rm -f *.o testsolver
-csolve.mex*: csolve.c ldl.c matrix_support.c solver.c util.c
-	matlab -nosplash -nodesktop -r "make_csolve"
-

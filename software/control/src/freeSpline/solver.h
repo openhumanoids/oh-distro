@@ -1,4 +1,4 @@
-/* Produced by CVXGEN, 2015-03-24 13:12:46 -0400.  */
+/* Produced by CVXGEN, 2015-03-26 23:25:31 -0400.  */
 /* CVXGEN is Copyright (C) 2006-2012 Jacob Mattingley, jem@cvxgen.com. */
 /* The code in this file is Copyright (C) 2006-2012 Jacob Mattingley. */
 /* CVXGEN, or solvers produced by CVXGEN, cannot be used for commercial */
@@ -34,10 +34,10 @@ typedef struct Params_t {
   double rd0[6];
   double rf[6];
   double rdf[6];
-  double r_switch[6];
-  double r_switch_slack[6];
-  double rd_switch[6];
-  double rd_switch_slack[6];
+  double r_switch_lb[6];
+  double r_switch_ub[6];
+  double rd_switch_lb[6];
+  double rd_switch_ub[6];
 } Params;
 typedef struct Vars_t {
   double *max_accel; /* 1 rows. */
@@ -49,9 +49,7 @@ typedef struct Vars_t {
   double *C2_2; /* 6 rows. */
   double *t_04; /* 6 rows. */
   double *C2_3; /* 6 rows. */
-  double *t_05; /* 6 rows. */
   double *C2_0; /* 6 rows. */
-  double *t_06; /* 6 rows. */
   double *C2_1; /* 6 rows. */
   double *C1_0; /* 6 rows. */
   double *C1_1; /* 6 rows. */
@@ -59,25 +57,25 @@ typedef struct Vars_t {
   double *C2[4];
 } Vars;
 typedef struct Workspace_t {
-  double h[108];
-  double s_inv[108];
-  double s_inv_z[108];
+  double h[76];
+  double s_inv[76];
+  double s_inv_z[76];
   double b[36];
-  double q[85];
-  double rhs[337];
-  double x[337];
+  double q[73];
+  double rhs[261];
+  double x[261];
   double *s;
   double *z;
   double *y;
-  double lhs_aff[337];
-  double lhs_cc[337];
-  double buffer[337];
-  double buffer2[337];
-  double KKT[660];
-  double L[620];
-  double d[337];
-  double v[337];
-  double d_inv[337];
+  double lhs_aff[261];
+  double lhs_cc[261];
+  double buffer[261];
+  double buffer2[261];
+  double KKT[508];
+  double L[614];
+  double d[261];
+  double v[261];
+  double d_inv[261];
   double gap;
   double optval;
   double ineq_resid_squared;

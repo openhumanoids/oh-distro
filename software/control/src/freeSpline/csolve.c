@@ -1,4 +1,4 @@
-/* Produced by CVXGEN, 2015-03-24 13:12:44 -0400.  */
+/* Produced by CVXGEN, 2015-03-26 23:25:30 -0400.  */
 /* CVXGEN is Copyright (C) 2006-2012 Jacob Mattingley, jem@cvxgen.com. */
 /* The code in this file is Copyright (C) 2006-2012 Jacob Mattingley. */
 /* CVXGEN, or solvers produced by CVXGEN, cannot be used for commercial */
@@ -99,28 +99,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
   this_var_errors = 0;
-  xm = mxGetField(prhs[0], 0, "r_switch");
+  xm = mxGetField(prhs[0], 0, "r_switch_lb");
   if (xm == NULL) {
-    printf("could not find params.r_switch.\n");
+    printf("could not find params.r_switch_lb.\n");
   } else {
     if (!((mxGetM(xm) == 6) && (mxGetN(xm) == 1))) {
-      printf("r_switch must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
+      printf("r_switch_lb must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
       this_var_errors++;
     }
     if (mxIsComplex(xm)) {
-      printf("parameter r_switch must be real.\n");
+      printf("parameter r_switch_lb must be real.\n");
       this_var_errors++;
     }
     if (!mxIsClass(xm, "double")) {
-      printf("parameter r_switch must be a full matrix of doubles.\n");
+      printf("parameter r_switch_lb must be a full matrix of doubles.\n");
       this_var_errors++;
     }
     if (mxIsSparse(xm)) {
-      printf("parameter r_switch must be a full matrix.\n");
+      printf("parameter r_switch_lb must be a full matrix.\n");
       this_var_errors++;
     }
     if (this_var_errors == 0) {
-      dest = params.r_switch;
+      dest = params.r_switch_lb;
       src = mxGetPr(xm);
       for (i = 0; i < 6; i++)
         *dest++ = *src++;
@@ -128,28 +128,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
   this_var_errors = 0;
-  xm = mxGetField(prhs[0], 0, "r_switch_slack");
+  xm = mxGetField(prhs[0], 0, "r_switch_ub");
   if (xm == NULL) {
-    printf("could not find params.r_switch_slack.\n");
+    printf("could not find params.r_switch_ub.\n");
   } else {
     if (!((mxGetM(xm) == 6) && (mxGetN(xm) == 1))) {
-      printf("r_switch_slack must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
+      printf("r_switch_ub must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
       this_var_errors++;
     }
     if (mxIsComplex(xm)) {
-      printf("parameter r_switch_slack must be real.\n");
+      printf("parameter r_switch_ub must be real.\n");
       this_var_errors++;
     }
     if (!mxIsClass(xm, "double")) {
-      printf("parameter r_switch_slack must be a full matrix of doubles.\n");
+      printf("parameter r_switch_ub must be a full matrix of doubles.\n");
       this_var_errors++;
     }
     if (mxIsSparse(xm)) {
-      printf("parameter r_switch_slack must be a full matrix.\n");
+      printf("parameter r_switch_ub must be a full matrix.\n");
       this_var_errors++;
     }
     if (this_var_errors == 0) {
-      dest = params.r_switch_slack;
+      dest = params.r_switch_ub;
       src = mxGetPr(xm);
       for (i = 0; i < 6; i++)
         *dest++ = *src++;
@@ -186,28 +186,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
   this_var_errors = 0;
-  xm = mxGetField(prhs[0], 0, "rd_switch");
+  xm = mxGetField(prhs[0], 0, "rd_switch_lb");
   if (xm == NULL) {
-    printf("could not find params.rd_switch.\n");
+    printf("could not find params.rd_switch_lb.\n");
   } else {
     if (!((mxGetM(xm) == 6) && (mxGetN(xm) == 1))) {
-      printf("rd_switch must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
+      printf("rd_switch_lb must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
       this_var_errors++;
     }
     if (mxIsComplex(xm)) {
-      printf("parameter rd_switch must be real.\n");
+      printf("parameter rd_switch_lb must be real.\n");
       this_var_errors++;
     }
     if (!mxIsClass(xm, "double")) {
-      printf("parameter rd_switch must be a full matrix of doubles.\n");
+      printf("parameter rd_switch_lb must be a full matrix of doubles.\n");
       this_var_errors++;
     }
     if (mxIsSparse(xm)) {
-      printf("parameter rd_switch must be a full matrix.\n");
+      printf("parameter rd_switch_lb must be a full matrix.\n");
       this_var_errors++;
     }
     if (this_var_errors == 0) {
-      dest = params.rd_switch;
+      dest = params.rd_switch_lb;
       src = mxGetPr(xm);
       for (i = 0; i < 6; i++)
         *dest++ = *src++;
@@ -215,28 +215,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
   this_var_errors = 0;
-  xm = mxGetField(prhs[0], 0, "rd_switch_slack");
+  xm = mxGetField(prhs[0], 0, "rd_switch_ub");
   if (xm == NULL) {
-    printf("could not find params.rd_switch_slack.\n");
+    printf("could not find params.rd_switch_ub.\n");
   } else {
     if (!((mxGetM(xm) == 6) && (mxGetN(xm) == 1))) {
-      printf("rd_switch_slack must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
+      printf("rd_switch_ub must be size (6,1), not (%d,%d).\n", mxGetM(xm), mxGetN(xm));
       this_var_errors++;
     }
     if (mxIsComplex(xm)) {
-      printf("parameter rd_switch_slack must be real.\n");
+      printf("parameter rd_switch_ub must be real.\n");
       this_var_errors++;
     }
     if (!mxIsClass(xm, "double")) {
-      printf("parameter rd_switch_slack must be a full matrix of doubles.\n");
+      printf("parameter rd_switch_ub must be a full matrix of doubles.\n");
       this_var_errors++;
     }
     if (mxIsSparse(xm)) {
-      printf("parameter rd_switch_slack must be a full matrix.\n");
+      printf("parameter rd_switch_ub must be a full matrix.\n");
       this_var_errors++;
     }
     if (this_var_errors == 0) {
-      dest = params.rd_switch_slack;
+      dest = params.rd_switch_ub;
       src = mxGetPr(xm);
       for (i = 0; i < 6; i++)
         *dest++ = *src++;
@@ -378,13 +378,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     for (i = 0; i < 6; i++)
       printf("  params.rdf[%d] = %.6g;\n", i, params.rdf[i]);
     for (i = 0; i < 6; i++)
-      printf("  params.r_switch[%d] = %.6g;\n", i, params.r_switch[i]);
+      printf("  params.r_switch_lb[%d] = %.6g;\n", i, params.r_switch_lb[i]);
     for (i = 0; i < 6; i++)
-      printf("  params.r_switch_slack[%d] = %.6g;\n", i, params.r_switch_slack[i]);
+      printf("  params.r_switch_ub[%d] = %.6g;\n", i, params.r_switch_ub[i]);
     for (i = 0; i < 6; i++)
-      printf("  params.rd_switch[%d] = %.6g;\n", i, params.rd_switch[i]);
+      printf("  params.rd_switch_lb[%d] = %.6g;\n", i, params.rd_switch_lb[i]);
     for (i = 0; i < 6; i++)
-      printf("  params.rd_switch_slack[%d] = %.6g;\n", i, params.rd_switch_slack[i]);
+      printf("  params.rd_switch_ub[%d] = %.6g;\n", i, params.rd_switch_ub[i]);
   }
   /* Perform the actual solve in here. */
   steps = solve();

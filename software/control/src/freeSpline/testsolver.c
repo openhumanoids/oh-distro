@@ -1,4 +1,4 @@
-/* Produced by CVXGEN, 2015-03-24 13:12:46 -0400.  */
+/* Produced by CVXGEN, 2015-03-26 23:25:31 -0400.  */
 /* CVXGEN is Copyright (C) 2006-2012 Jacob Mattingley, jem@cvxgen.com. */
 /* The code in this file is Copyright (C) 2006-2012 Jacob Mattingley. */
 /* CVXGEN, or solvers produced by CVXGEN, cannot be used for commercial */
@@ -74,28 +74,28 @@ void load_default_data(void) {
   params.rdf[3] = -1.372529046100147;
   params.rdf[4] = 0.17859607212737894;
   params.rdf[5] = 1.1212590580454682;
-  params.r_switch[0] = -0.774545870495281;
-  params.r_switch[1] = -1.1121684642712744;
-  params.r_switch[2] = -0.44811496977740495;
-  params.r_switch[3] = 1.7455345994417217;
-  params.r_switch[4] = 1.9039816898917352;
-  params.r_switch[5] = 0.6895347036512547;
-  params.r_switch_slack[0] = 1.8056682170767961;
-  params.r_switch_slack[1] = 1.6915017425863585;
-  params.r_switch_slack[2] = 0.7559880826577783;
-  params.r_switch_slack[3] = 0.18443401774344848;
-  params.r_switch_slack[4] = 1.3068218050470723;
-  params.r_switch_slack[5] = 1.1156815247769019;
-  params.rd_switch[0] = -0.5537409477496875;
-  params.rd_switch[1] = -1.0997819806406723;
-  params.rd_switch[2] = -0.3739203344950055;
-  params.rd_switch[3] = -0.12423900520332376;
-  params.rd_switch[4] = -0.923057686995755;
-  params.rd_switch[5] = -0.8328289030982696;
-  params.rd_switch_slack[0] = 0.9153727986459559;
-  params.rd_switch_slack[1] = 1.721067825893853;
-  params.rd_switch_slack[2] = 1.1725058089356428;
-  params.rd_switch_slack[3] = 0.5669757248644196;
-  params.rd_switch_slack[4] = 0.5559550132472026;
-  params.rd_switch_slack[5] = 0.9092441510438936;
+  params.r_switch_lb[0] = -0.774545870495281;
+  params.r_switch_lb[1] = -1.1121684642712744;
+  params.r_switch_lb[2] = -0.44811496977740495;
+  params.r_switch_lb[3] = 1.7455345994417217;
+  params.r_switch_lb[4] = 1.9039816898917352;
+  params.r_switch_lb[5] = 0.6895347036512547;
+  params.r_switch_ub[0] = 1.6113364341535923;
+  params.r_switch_ub[1] = 1.383003485172717;
+  params.r_switch_ub[2] = -0.48802383468444344;
+  params.r_switch_ub[3] = -1.631131964513103;
+  params.r_switch_ub[4] = 0.6136436100941447;
+  params.r_switch_ub[5] = 0.2313630495538037;
+  params.rd_switch_lb[0] = -0.5537409477496875;
+  params.rd_switch_lb[1] = -1.0997819806406723;
+  params.rd_switch_lb[2] = -0.3739203344950055;
+  params.rd_switch_lb[3] = -0.12423900520332376;
+  params.rd_switch_lb[4] = -0.923057686995755;
+  params.rd_switch_lb[5] = -0.8328289030982696;
+  params.rd_switch_ub[0] = -0.16925440270808823;
+  params.rd_switch_ub[1] = 1.442135651787706;
+  params.rd_switch_ub[2] = 0.34501161787128565;
+  params.rd_switch_ub[3] = -0.8660485502711608;
+  params.rd_switch_ub[4] = -0.8880899735055947;
+  params.rd_switch_ub[5] = -0.1815116979122129;
 }
