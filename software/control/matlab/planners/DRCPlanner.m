@@ -117,16 +117,22 @@ classdef DRCPlanner
       for j = 1:length(obj.monitors)
         obj.lc.subscribe(obj.request_channels{j}, obj.monitors{j});
       end
+      status_msg = drc.system_status_t();
+      status_msg.system = drc.system_status_t.PLANNING_BASE;
+      status_msg.importance = drc.system_status_t.VERY_IMPORTANT;
+      status_msg.frequency = drc.system_status_t.LOW_FREQUENCY;
+
+      req_msg = [];
       disp('Combined Planner: ready for plan requests');
       while true
         for j = 1:length(obj.monitors)
-          msg = obj.monitors{j}.getNextMessage(5);
-          if isempty(msg)
+          req_msg = obj.monitors{j}.getNextMessage(5);
+          if isempty(req_msg)
             continue
           end
           try
             fprintf(1, 'Handling plan on channel: %s...', obj.request_channels{j});
-            plan = obj.handlers{j}(msg);
+            plan = obj.handlers{j}(req_msg);
             if ismethod(plan, 'toLCM')
               plan = plan.toLCM();
             end
@@ -134,15 +140,11 @@ classdef DRCPlanner
           catch e
             report = e.getReport();
             disp(report)
-            msg = drc.system_status_t();
-            msg.utime = get_timestamp_now();
-            msg.system = drc.system_status_t.PLANNING_BASE;
-            msg.importance = drc.system_status_t.VERY_IMPORTANT;
-            msg.frequency = drc.system_status_t.LOW_FREQUENCY;
-            msg.value = report;
-            obj.lc.publish('SYSTEM_STATUS', msg);
+            status_msg.utime = get_timestamp_now();
+            status_msg.value = report;
+            obj.lc.publish('SYSTEM_STATUS', status_msg);
           end
-          fprintf(1, '...done\n');
+          whos
         end
       end
     end
