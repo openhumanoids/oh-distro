@@ -15,11 +15,16 @@ classdef LCMInputFromRobotiqCommandBlockBase < MIMODrakeSystem
   end
   
   methods
-    function obj = LCMInputFromRobotiqCommandBlockBase(r, options)
+    function obj = LCMInputFromRobotiqCommandBlockBase(r, handedness, options)
       typecheck(r,{'Atlas', 'IRB140'});
 
-      output_frame = r.getInputFrame().getFrameByName('HandInput');
-      input_frame = r.getOutputFrame().getFrameByName('HandState');
+      if (~strcmp(handedness, 'left') && ~strcmp(handedness, 'right'))
+        error('Handedness must be "left" or "right"');
+      end
+
+
+      output_frame = r.getInputFrame().getFrameByName([handedness, '_atlasFrames.HandInput']);
+      input_frame = r.getOutputFrame().getFrameByName([handedness, '_atlasFrames.HandState']);
 
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
@@ -29,8 +34,12 @@ classdef LCMInputFromRobotiqCommandBlockBase < MIMODrakeSystem
       
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.lcmonitor = drake.util.MessageMonitor(robotiqhand.command_t,'utime');
-      obj.lc.subscribe('ROBOTIQ_RIGHT_COMMAND',obj.lcmonitor); %this should be an arg when / if we move to 2 hands
-      
+      if (strcmp(handedness, 'right'))
+        obj.lc.subscribe('ROBOTIQ_RIGHT_COMMAND',obj.lcmonitor);
+      else
+        obj.lc.subscribe('ROBOTIQ_LEFT_COMMAND',obj.lcmonitor);
+      end
+
       lcmtype = robotiqhand.command_t;
       lcmtype = lcmtype.getClass();
       names={};

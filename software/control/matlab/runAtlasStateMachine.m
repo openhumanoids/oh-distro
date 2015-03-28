@@ -24,7 +24,7 @@ options.ignore_friction = true;
 options.run_in_simul_mode = run_in_simul_mode;
 options.atlas_version = atlas_version;
 if (run_in_simul_mode == 2)
-  options.hands = 'robotiq_weight_only';
+  options.hand_right = 'robotiq_weight_only';
 end
 
 r = DRCAtlas([],options);
