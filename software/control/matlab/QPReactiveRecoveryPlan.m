@@ -88,10 +88,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
 
       [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
-      warning('todo: transform the foot sole coefs to foot origin coefs');
+      ts
+      % TODO: rather than applying a transform to coefs, just send body_motion_data for the sole point, not the origin
+      warning('this transform is incorrect if the foot is rotating');
+      for j = 1:size(coefs, 2)
+        T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(best_plan.swing_foot)).T;
+        T_sole = poseRPY2tform(coefs(:,j,end));
+        T_origin = T_sole * inv(T_sole_frame);
+        coefs(:,j,end) = tform2poseRPY(T_origin);
+      end
+
       pp = mkpp(ts, coefs, 6);
 
-      ts = linspace(pp.breaks(1), pp.breaks(end));
+      ts = linspace(pp.breaks(1), pp.breaks(end), 50);
       obj.lcmgl.glColor3f(1.0, 0.2, 0.2);
       obj.lcmgl.glLineWidth(1);
       obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
@@ -128,7 +137,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                          'ts', t_global + ts(1:2),...
                                          'coefs', coefs(:,1,:));
 
-      % warning('no rotation');
+      warning('no rotation, fixed pelvis height');
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_global + ts(1:2),...
                                                 'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
@@ -219,7 +228,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function intercept_plans = getLocalFrameIntercepts(foot_states, swing_foot, foot_vertices, reachable_vertices, r_ic_prime, u_max, omega)
-      OFFSET = 0.0;
+      OFFSET = 0.1;
 
       % r_ic(t) = (r_ic(0) - r_cop) e^(t*omega) + r_cop
 
@@ -400,7 +409,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function [ts, coefs] = swingTraj(intercept_plan, foot_state)
-      if intercept_plan.tswitch > 0
+      if intercept_plan.tswitch > 0.05
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
         swing_height = 0.05;
         slack = 10;
