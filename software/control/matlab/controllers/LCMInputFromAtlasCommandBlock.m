@@ -18,10 +18,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     % Atlas and various controllers:
     r;
     r_control;
-    pelvis_controller;
-    fc;
-    qt;
-    pd_plus_qp_block;
+    plan_eval_and_control
     nq; % Atlas # of DOFS
     nu; % Atlas # of controllable DOFS
     joint_names;
@@ -115,8 +112,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       obj = setup_init_planner(obj, options);
       
       % And the lcm coder
-      obj.joint_names = obj.pd_plus_qp_block.getOutputFrame.getCoordinateNames;
-      obj.joint_names = obj.joint_names(1:obj.nu);
+      obj.joint_names = obj.r_control.getInputFrame().getCoordinateNames();
       gains = struct();
       gains.k_qd_p = zeros(obj.nu,1);
       gains.k_q_i = zeros(obj.nu,1);
@@ -149,7 +145,9 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     end
     
     function obj=setup_init_planner(obj, options)
+
       r = obj.r_control;
+
       S = load(r.fixed_point_file);
       x_init = Point(r.getStateFrame(),getInitialState(r));
       xstar = Point(r.getStateFrame(),S.xstar);
@@ -160,89 +158,13 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       x0 = double(xstar);
       obj.nq = getNumPositions(r);
       obj.nu = getNumInputs(r);
-      q0 = x0(1:obj.nq);
-      kinsol = doKinematics(r,q0);
-      
-      com = getCOM(r,kinsol);
-      
-      % build TI-ZMP controller
-      footidx = [findLinkId(r,'l_foot'), findLinkId(r,'r_foot')];
-      foot_pos = terrainContactPositions(r,kinsol,footidx);
-      comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
-      limp = LinearInvertedPendulum(com(3));
-      [~,V] = lqr(limp,comgoal);
-      
-      foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-      
-      pelvis_idx = findLinkId(r,'pelvis');
-      
-      link_constraints(1).link_ndx = pelvis_idx;
-      link_constraints(1).pt = [0;0;0];
-      link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,pelvis_idx,[0;0;0],1));
-      link_constraints(2).link_ndx = footidx(1);
-      link_constraints(2).pt = [0;0;0];
-      link_constraints(2).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(1),[0;0;0],1));
-      link_constraints(3).link_ndx = footidx(2);
-      link_constraints(3).pt = [0;0;0];
-      link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(2),[0;0;0],1));
-      
-      ctrl_data = QPControllerData(false,struct(...
-        'acceleration_input_frame',atlasFrames.AtlasCoordinates(r),...
-        'D',-com(3)/9.81*eye(2),...
-        'Qy',eye(2),...
-        'S',V.S,...
-        's1',zeros(4,1),...
-        's2',0,...
-        'x0',[comgoal;0;0],...
-        'u0',zeros(2,1),...
-        'y0',comgoal,...
-        'qtraj',x0(1:obj.nq),...
-        'support_times',0,...
-        'supports',foot_support,...
-        'link_constraints',link_constraints,...
-        'mu',1.0,...
-        'ignore_terrain',false,...
-        'plan_shift',zeros(3,1),...
-        'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
-      
-      % instantiate QP controller
-      options.slack_limit = 30.0;
-      nq = getNumPositions(r);
-      options.w_qdd = 0.001*ones(nq,1);
-      options.w_grf = 0;
-      options.w_slack = 0.001;
-      options.Kp_pelvis = [150; 150; 150; 200; 200; 200];
-      options.pelvis_damping_ratio = 0.6;
-      options.Kp_q = 150.0*ones(r.getNumPositions(),1);
-      options.q_damping_ratio = 0.6;
-      options.W_kdot = zeros(3);
-      
-      % construct QP controller and related control blocks
-      [qp,~,~,pelvis_controller,pd,options] = constructQPBalancingController(r,ctrl_data,options);
-      obj.pelvis_controller = pelvis_controller;
-      options.use_lcm=false;
-      options.contact_threshold = 0.002;
-      obj.fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
-      obj.qt = atlasControllers.QTrajEvalBlock(r,ctrl_data,options);
-      
-      ins(1).system = 1;
-      ins(1).input = 1;
-      ins(2).system = 1;
-      ins(2).input = 2;
-      ins(3).system = 2;
-      ins(3).input = 1;
-      ins(4).system = 2;
-      ins(4).input = 3;
-      ins(5).system = 2;
-      ins(5).input = 4;
-      outs(1).system = 2;
-      outs(1).output = 1;
-      outs(2).system = 2;
-      outs(2).output = 2;
-      pd = pd.setOutputFrame(atlasFrames.AtlasCoordinates(r));
-      obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
-      clear ins;
-      %fprintf('Current time: xxx.xxx');
+
+      standing_plan = QPLocomotionPlan.from_standing_state(x0, r);
+      standing_plan.planned_support_command = QPControllerPlan.support_logic_maps.kinematic_or_sensed;
+      plan_eval = atlasControllers.AtlasPlanEval(r, standing_plan);
+      control = atlasControllers.InstantaneousQPController(r);
+      obj.plan_eval_and_control = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, plan_eval);
+
     end
     
     function x=decode_cmd(obj, data)
@@ -276,23 +198,9 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         
       % If we haven't received a command make our own
       if (isempty(data))
-        % foot contact
-        [phiC,~,~,~,idxA,idxB] = obj.r_control.getManipulator().collisionDetect(atlas_state(1:obj.r_control.getNumPositions()),false);
-        within_thresh = phiC < 0.002;
-        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.l_foot_id));
-              any(any(contact_pairs == obj.r_foot_id))];
-            
-        % qtraj eval
-        q_des_and_x = output(obj.qt,t,[],atlas_state);
-        q_des = q_des_and_x(1:obj.nq);
-        % IK/QP
-        pelvis_ddot = output(obj.pelvis_controller,t,[],atlas_state);
-        u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; atlas_state; atlas_state; fc; pelvis_ddot]);
-        u=u_and_qdd(1:obj.nu);
-        for i=1:obj.nu
-          efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
-        end
+        y = obj.plan_eval_and_control.output(t, [], atlas_state);
+
+        efforts(obj.drake_to_atlas_joint_map(1:obj.nu)) = y(1:obj.nu);
       else
         cmd = obj.coder_cmd.decode(data);
         efforts = cmd.val(obj.nu*2+1:end);
