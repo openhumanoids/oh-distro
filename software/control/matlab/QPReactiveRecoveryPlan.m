@@ -34,20 +34,18 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
 
+      DEBUG = true;
+
       q = x(1:rpc.nq);
       qd = x(rpc.nq + (1:rpc.nv));
       kinsol = doKinematics(obj.robot, q);
 
       [com, J] = obj.robot.getCOM(kinsol);
       comd = J * qd;
-      obj.lcmgl.glColor3f(0.2,0.2,1.0);
-      obj.lcmgl.sphere([com(1:2); 0], 0.01, 20, 20);
 
       omega = sqrt(obj.g / obj.LIP_height);
 
       r_ic = com(1:2) + comd(1:2) / omega;
-      obj.lcmgl.sphere([r_ic; 0], 0.01, 20, 20);
-
 
       foot_states = struct('right', struct('position', [], 'velocity', [], 'contact', false),...
                           'left', struct('position', [], 'velocity', [], 'contact', false));
@@ -62,7 +60,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         foot_states.(foot).position = pos;
         foot_states.(foot).velocity = vel;
         warning('hard-coded foot height for contact')
-        if pos(3) < 0.005
+        if pos(3) < 0.001
           foot_states.(foot).contact = true;
         end
       end
@@ -72,9 +70,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                        -0.02, -0.02, 0.02, 0.02],...
                              'left', [-0.05, 0.05, 0.05, -0.05; 
                                        -0.02, -0.02, 0.02, 0.02]);
-      reachable_vertices = struct('right', [-0.3, 0.35, 0.35, -0.3;
+      reachable_vertices = struct('right', [-0.4, 0.4, 0.4, -0.4;
                                      -0.15, -0.15, -0.4, -0.4],...
-                            'left', [-0.3, 0.35, 0.35, -0.3;
+                            'left', [-0.4, 0.4, 0.4, -0.4;
                                      0.15, 0.15, 0.4, 0.4]);
       intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, omega, 10);
 
@@ -100,22 +98,52 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       pp = mkpp(ts, coefs, 6);
 
-      ts = linspace(pp.breaks(1), pp.breaks(end), 50);
-      obj.lcmgl.glColor3f(1.0, 0.2, 0.2);
-      obj.lcmgl.glLineWidth(1);
-      obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-      ps = ppval(pp, ts);
-      for j = 1:length(ts)-1
-        obj.lcmgl.glVertex3f(ps(1,j), ps(2,j), ps(3,j));
-        obj.lcmgl.glVertex3f(ps(1,j+1), ps(2,j+1), ps(3,j+1));
+      if DEBUG
+        obj.lcmgl.glColor3f(0.2,0.2,1.0);
+        obj.lcmgl.sphere([com(1:2); 0], 0.01, 20, 20);
+
+        obj.lcmgl.glColor3f(0.9,0.2,0.2);
+        obj.lcmgl.sphere([r_ic; 0], 0.01, 20, 20);
+
+
+        ts = linspace(pp.breaks(1), pp.breaks(end), 50);
+        obj.lcmgl.glColor3f(1.0, 0.2, 0.2);
+        obj.lcmgl.glLineWidth(1);
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+        ps = ppval(pp, ts);
+        for j = 1:length(ts)-1
+          obj.lcmgl.glVertex3f(ps(1,j), ps(2,j), ps(3,j));
+          obj.lcmgl.glVertex3f(ps(1,j+1), ps(2,j+1), ps(3,j+1));
+        end
+        obj.lcmgl.glEnd();
+
+        obj.lcmgl.glColor3f(0.2,1.0,0.2);
+        obj.lcmgl.sphere([best_plan.r_cop; 0], 0.01, 20, 20);
+
+        obj.lcmgl.glColor3f(0.9,0.2,0.2)
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES)
+        obj.lcmgl.glVertex3f(best_plan.r_cop(1), best_plan.r_cop(2), 0);
+        obj.lcmgl.glVertex3f(best_plan.r_ic_new(1), best_plan.r_ic_new(2), 0);
+        obj.lcmgl.glEnd();
+
+        obj.lcmgl.glColor3f(1.0,1.0,0.3);
+        stance_foot = obj.OTHER_FOOT.(best_plan.swing_foot);
+        reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).position(6)) * reachable_vertices.(best_plan.swing_foot), foot_states.(stance_foot).position(1:2));
+        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINE_LOOP)
+        for j = 1:size(reachable_vertices_in_world_frame, 2)
+          obj.lcmgl.glVertex3f(reachable_vertices_in_world_frame(1,j),...
+                               reachable_vertices_in_world_frame(2,j),...
+                               0);
+        end
+        obj.lcmgl.glEnd();
+        
+        obj.lcmgl.switchBuffers();
       end
-      obj.lcmgl.glEnd();
-
-      obj.lcmgl.glColor3f(0.2,1.0,0.2);
-      obj.lcmgl.sphere([best_plan.r_cop; 0], 0.01, 20, 20);
-
-      obj.lcmgl.switchBuffers();
-
+      
+      if foot_states.right.position(2) > -0.05
+        disp('here');
+      end
+      
       qp_input = obj.default_qp_input;
       qp_input.whole_body_data.q_des = obj.qtraj;
       qp_input.zmp_data.x0 = [0;0; 0; 0];
@@ -298,7 +326,14 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
         for j = 1:numel(x_int)
           r_foot_int = [x_int(j); 0];
-          r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
+          u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, reachable_vertices, r_foot_int));
+          if norm(u) < 1e-3
+            r_foot_reach = r_foot_int;
+          else
+            % TODO: is this the right thing to do?
+            r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
+          end
+          % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
           % r_foot_reach = r_foot_int;
 
           intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, r_foot_reach(1), u_max);
@@ -409,7 +444,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function [ts, coefs] = swingTraj(intercept_plan, foot_state)
-      if intercept_plan.tswitch > 0.05
+      if intercept_plan.tswitch > 0.05 && (intercept_plan.tf - intercept_plan.tswitch) > 0.05
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
         swing_height = 0.05;
         slack = 10;
@@ -422,10 +457,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      intercept_plan.r_foot_new(3) + swing_height;
                                      foot_state.position(4:6)],...
                         'r_switch_ub', [foot_state.position(1:2) + slack;
-                                     intercept_plan.r_foot_new(3) + swing_height + slack;
+                                     intercept_plan.r_foot_new(3) + swing_height;
                                      foot_state.position(4:6)],...
-                        'rd_switch_lb', -slack * ones(6,1),...
-                        'rd_switch_ub', slack * ones(6,1),...
+                        'rd_switch_lb', [-slack * ones(2,1); zeros(4,1)],...
+                        'rd_switch_ub', [slack * ones(2,1); zeros(4,1)],...
                         't_switch', intercept_plan.tswitch,...
                         't_f', intercept_plan.tf);
         settings = struct('verbose', 0);
