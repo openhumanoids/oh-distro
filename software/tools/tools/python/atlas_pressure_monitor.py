@@ -16,6 +16,7 @@ class AtlasPressureCommander(object):
         self.last_published_psi = None
 
     def publish_pump_command(self):
+        print "Publishing new desired pump pressure: {:d} PSI".format(self.desired_psi)
         msg = lcmdrc.atlas_pump_command_t()
         msg.desired_psi = self.desired_psi
         msg.desired_rpm = self.desired_rpm
@@ -72,7 +73,7 @@ DEFAULT_BEHAVIOR_PRESSURE_MAP = {'prep': 1500,
 
 class PlanPressureCommander(AtlasPressureCommander):
     def __init__(self,
-                 plan_map=DEFAULT_PRESSURE_MAP,
+                 plan_map=DEFAULT_PLAN_PRESSURE_MAP,
                  behavior_map=DEFAULT_BEHAVIOR_PRESSURE_MAP,
                  **kwargs):
         super(PlanPressureCommander, self).__init__(**kwargs)
@@ -101,10 +102,15 @@ class PlanPressureCommander(AtlasPressureCommander):
             self.desired_psi = self.behavior_map[s]
             self.publish_pump_command()
 
+    def run(self):
+        while True:
+            time.sleep(0.1)
+            self.lc.handle()
 
 def main():
-	mon = PlanPressureCommander()
-	mon.run()
+    mon = PlanPressureCommander()
+    print "Pressure Command: ready"
+    mon.run()
 
 if __name__ == '__main__':
 	main()
