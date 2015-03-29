@@ -67,7 +67,7 @@ DEFAULT_PLAN_PRESSURE_MAP = {lcmdrc.controller_status_t.MANIPULATING: 2500,
                         lcmdrc.controller_status_t.WALKING: 1900}
 
 DEFAULT_BEHAVIOR_PRESSURE_MAP = {'prep': 1500,
-                                 'stand': 1500,
+                                 'stand': 1900,
                                  'calibrate': 1500}
 
 
