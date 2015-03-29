@@ -107,26 +107,6 @@ param_sets = atlasParams.getDefaults(r);
 control = atlasControllers.InstantaneousQPController(r, []);
 qp = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
 
-
-% % ******************* BEGIN ADJUSTABLE ************************************
-% % *************************************************************************
-% options.dt = 0.003;
-% options.slack_limit = 30.0;
-% options.w_qdd = 0.001*ones(nq,1);
-% options.w_grf = 0;
-% options.w_slack = 0.001;
-% options.W_kdot = 0*eye(3);
-% options.contact_threshold = 0.005;
-% options.debug = false;
-% options.use_mex = true;
-% options.solver = 0;
-% options.use_bullet = use_bullet;
-
-% % ******************* END ADJUSTABLE **************************************
-
-% % instantiate QP controller
-% qp = QPController(rctrl,{},ctrl_data,options);
-
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
 options.delay_steps = 1;
@@ -154,19 +134,6 @@ options.noise_model(2).params = struct('std',0.0025);
 noiseblk = StateCorruptionBlock(r,options);
 rnoisy = cascade(r,noiseblk);
 
-% % cascade footstep plan shift block
-% fs = FootstepPlanShiftBlock(rctrl,ctrl_data,options);
-% rnoisy = cascade(rnoisy,fs);
-
-% % feedback QP controller with atlas
-% ins(1).system = 1;
-% ins(1).input = 2;
-% ins(2).system = 1;
-% ins(2).input = 3;
-% outs(1).system = 2;
-% outs(1).output = 1;
-% sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
-% clear ins;
 sys = feedback(rnoisy, sys);
 
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
