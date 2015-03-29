@@ -119,37 +119,14 @@ for i=1:length(ts)
   end
 end
 
-qtraj = PPTrajectory(spline(ts,q));
+qtraj = PPTrajectory(pchip(ts,q));
+link_constraints = extractLinkTrajectories(r, qtraj, r.findLinkId('pelvis'));
 
-ctrl_data = QPControllerData(false,struct(...
-  'acceleration_input_frame',atlasFrames.AtlasCoordinates(r),...
-  'D',-com(3)/9.81*eye(2),...
-  'Qy',eye(2),...
-  'S',V.S,...
-  's1',zeros(4,1),...
-  's2',0,...
-  'x0',[comgoal;0;0],...
-  'u0',zeros(2,1),...
-  'y0',comgoal,...
-  'qtraj',qtraj,...
-  'support_times',0,...
-  'supports',foot_support,...
-  'mu',1.0,...
-  'ignore_terrain',false,...
-  'plan_shift',zeros(3,1),...
-  'constrained_dofs',[]));
-
-% instantiate QP controller
-options.slack_limit = 30.0;
-options.w_qdd = 0.001*ones(nq,1);
-options.w_grf = 0;
-options.w_slack = 0.001;
-options.W_kdot = 0*eye(3);
-options.use_mex = true;
-options.solver = 0;
-
-qp = QPController(rctrl,{},ctrl_data,options);
-clear options;
+plan = QPLocomotionPlan.from_configuration_traj(r, qtraj.pp, link_constraints);
+plan.gain_set = 'manip_sim';
+planeval = atlasControllers.AtlasPlanEval(r, plan);
+control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r));
+plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
 
 if noisy
   options.delay_steps = 0;
@@ -159,7 +136,7 @@ end
 options.use_input_frame = true;
 % cascade qp controller with delay block
 delayblk = DelayBlock(r,options);
-sys = cascade(qp,delayblk);
+sys = cascade(plancontroller,delayblk);
 
 if noisy
   options.deadband = 0.01 * r.umax; 
@@ -205,37 +182,7 @@ end
 noiseblk = StateCorruptionBlock(r,options);
 rnoisy = cascade(r,noiseblk);
 
-% feedback QP controller with atlas
-ins(1).system = 1;
-ins(1).input = 2;
-ins(2).system = 1;
-ins(2).input = 3;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
-clear ins;
-
-% feedback foot contact detector with QP/atlas
-options.use_lcm=false;
-fc = FootContactBlock(r,ctrl_data,options);
-ins(1).system = 2;
-ins(1).input = 1;
-sys = mimoFeedback(fc,sys,[],[],ins,outs);
-clear ins;  
-
-% feedback PD trajectory controller 
-options.use_ik = false;
-pd = IKPDBlock(rctrl,ctrl_data,options);
-pd = pd.setOutputFrame(atlasFrames.AtlasCoordinates(r));
-ins(1).system = 1;
-ins(1).input = 1;
-sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins;
-
-qt = QTrajEvalBlock(rctrl,ctrl_data);
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(qt,sys,[],[],[],outs);
+sys = feedback(rnoisy, sys);
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
