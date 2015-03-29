@@ -1,8 +1,6 @@
-function drakeCOPTracking(use_mex)
+function drakeCOPTracking()
 
-addpath(fullfile(getDrakePath,'examples','ZMP'));
-
-if (nargin<1); use_mex = true; end
+path_handle = addpathTemporary(fullfile(getDrakePath,'examples','ZMP'));
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -11,7 +9,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 options.floating = true;
 options.dt = 0.002;
-options.atlas_version = 3;
+options.atlas_version = 4;
 r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
@@ -19,11 +17,12 @@ r = compile(r);
 nq = getNumPositions(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat'));
 xstar(1) = 0;%1*randn();
 xstar(2) = 0;%1*randn();
 xstar(6) = 0;%pi/2*randn();
 %xstar(nq+1) = 0.1;
+
 r = r.setInitialState(xstar);
 
 x0 = xstar;
@@ -62,8 +61,10 @@ zmptraj = zmptraj.setOutputFrame(desiredZMP);
 
 com = getCOM(r,kinsol);
 options.com0 = com(1:2);
+options.build_control_objects = false;
 zfeet = min(foot_pos(3,:));
 [~,V,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3)-zfeet,zmptraj,options);
+comtraj = ExpPlusPPTrajectory(comtraj.breaks, comtraj.K, comtraj.A, comtraj.alpha, comtraj.gamma);
 
 % plot zmp/com traj in drake viewer
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'zmp-traj');
@@ -76,81 +77,96 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-link_constraints = struct('link_ndx',{}, 'pt', {}, 'pos', {}, 'coefs', {});
-for f = {'right', 'left'}
-  foot = f{1};
-  frame_id = r.foot_frame_id.(foot);
-  body_ind = r.getFrame(frame_id).body_ind;
-  link_constraints(end+1) = struct('link_ndx', body_ind, 'pt', [0;0;0], 'pos', forwardKin(r, kinsol, body_ind, [0;0;0], 1), 'coefs', []);
+foot_support = RigidBodySupportState(r,[r.foot_body_id.right, r.foot_body_id.left]);
+link_constraints = struct('link_ndx',{}, 'pt', {}, 'coefs', {}, 'ts', {}, 'toe_off_allowed', {});
+for body_ind = [r.foot_body_id.right, r.foot_body_id.left, r.findLinkId('pelvis')]
+  coefs = cat(3, zeros(6, 1, 3), reshape(forwardKin(r, kinsol, body_ind, [0;0;0], 1), [6, 1, 1]));
+  link_constraints(end+1) = struct('link_ndx', body_ind, 'pt', [0;0;0], 'coefs', coefs, 'ts', [0, inf], 'toe_off_allowed', false);
 end
 
-ctrl_data = QPControllerData(true,struct(...
-  'acceleration_input_frame',atlasFrames.AtlasCoordinates(r),...
-  'D',-com(3)/9.81*eye(2),...
-  'Qy',eye(2),...
-  'S',V.S.eval(0),...
-  's1',V.s1,...
-  's2',V.s2,...
-  'x0',ConstantTrajectory([zmptraj.eval(T);0;0]),...
-  'u0',ConstantTrajectory(zeros(2,1)),...
-  'y0',zmptraj,...
-  'qtraj',q0,...
-  'support_times',0,...
-  'supports',foot_support,...
-  'mu',1.0,...
-  'link_constraints',link_constraints,...
-  'ignore_terrain',false,...
-  'comtraj',comtraj,...
-  'plan_shift',[0;0;0],...
-  'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
+plan = QPLocomotionPlan(r);
+plan.support_times = [0; zmptraj.tspan(end)];
+plan.supports = [foot_support, foot_support];
+plan.link_constraints = link_constraints;
+plan.zmptraj = zmptraj;
+plan.zmp_final = zmptraj.eval(zmptraj.tspan(end));
+plan.LIP_height = -com(3);
+plan.V = V;
+plan.comtraj = comtraj;
+plan.duration = zmptraj.tspan(end) - 0.001;
+plan.gain_set = 'walking';
 
-% instantiate QP controller
-options.slack_limit = 20;
-options.w_qdd = 0.001*ones(nq,1);
-options.W_kdot = zeros(3);
-options.w_grf = 0;
-options.w_slack = 0.001;
-options.debug = false;
-options.use_mex = use_mex;
-options.contact_threshold = 0.002;
-options.output_qdd = true;
+% ctrl_data = QPControllerData(true,struct(...
+%   'acceleration_input_frame',atlasFrames.AtlasCoordinates(r),...
+%   'D',-com(3)/9.81*eye(2),...
+%   'Qy',eye(2),...
+%   'S',V.S.eval(0),...
+%   's1',V.s1,...
+%   's2',V.s2,...
+%   'x0',ConstantTrajectory([zmptraj.eval(T);0;0]),...
+%   'u0',ConstantTrajectory(zeros(2,1)),...
+%   'y0',zmptraj,...
+%   'qtraj',q0,...
+%   'support_times',0,...
+%   'supports',foot_support,...
+%   'mu',1.0,...
+%   'link_constraints',link_constraints,...
+%   'ignore_terrain',false,...
+%   'comtraj',comtraj,...
+%   'plan_shift',[0;0;0],...
+%   'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'back');findPositionIndices(r,'neck')]));
 
-% feedback QP controller with atlas
-qp = QPController(r,{},ctrl_data,options);
+% % instantiate QP controller
+% options.slack_limit = 20;
+% options.w_qdd = 0.001*ones(nq,1);
+% options.W_kdot = zeros(3);
+% options.w_grf = 0;
+% options.w_slack = 0.001;
+% options.debug = false;
+% options.use_mex = use_mex;
+% options.contact_threshold = 0.002;
+% options.output_qdd = true;
 
-ins(1).system = 1;
-ins(1).input = 2;
-ins(2).system = 1;
-ins(2).input = 3;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins;
+% % feedback QP controller with atlas
+% qp = QPController(r,{},ctrl_data,options);
 
-% feedback foot contact detector with QP/atlas
-options.use_lcm=false;
-options.contact_threshold = 0.002;
-fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
+% ins(1).system = 1;
+% ins(1).input = 2;
+% ins(2).system = 1;
+% ins(2).input = 3;
+% outs(1).system = 2;
+% outs(1).output = 1;
+% sys = mimoFeedback(qp,r,[],[],ins,outs);
+% clear ins;
 
-ins(1).system = 2;
-ins(1).input = 1;
-sys = mimoFeedback(fc,sys,[],[],ins,outs);
-clear ins;
+% % feedback foot contact detector with QP/atlas
+% options.use_lcm=false;
+% options.contact_threshold = 0.002;
+% fc = atlasControllers.FootContactBlock(r,ctrl_data,options);
 
-% feedback PD trajectory controller
-options.Kp = 80.0*ones(nq,1);
-options.Kd = 8.0*ones(nq,1);
-pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
-pd = pd.setOutputFrame(atlasFrames.AtlasCoordinates(r));
+% ins(1).system = 2;
+% ins(1).input = 1;
+% sys = mimoFeedback(fc,sys,[],[],ins,outs);
+% clear ins;
 
-ins(1).system = 1;
-ins(1).input = 1;
-sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins;
+% % feedback PD trajectory controller
+% options.Kp = 80.0*ones(nq,1);
+% options.Kd = 8.0*ones(nq,1);
+% pd = atlasControllers.IKPDBlock(r,ctrl_data,options);
+% pd = pd.setOutputFrame(atlasFrames.AtlasCoordinates(r));
 
-qt = atlasControllers.QTrajEvalBlock(r,ctrl_data);
-sys = mimoFeedback(qt,sys,[],[],[],outs);
+% ins(1).system = 1;
+% ins(1).input = 1;
+% sys = mimoFeedback(pd,sys,[],[],ins,outs);
+% clear ins;
+
+% qt = atlasControllers.QTrajEvalBlock(r,ctrl_data);
+% sys = mimoFeedback(qt,sys,[],[],[],outs);
+
+planeval = atlasControllers.AtlasPlanEval(r, plan);
+control = atlasControllers.InstantaneousQPController(r, []);
+plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
+sys = feedback(r, plancontroller);
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
