@@ -314,7 +314,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % subplot(211)
 
       for u = [u_max, -u_max]
-        [t_int, x_int] = QPReactiveRecoveryPlan.expIntercept((x_ic - x_cop), omega, x_cop + OFFSET, x0, xd0, u, 5);
+        [t_int, x_int] = QPReactiveRecoveryPlan.expIntercept((x_ic - x_cop), omega, x_cop + OFFSET, x0, xd0, u, 7);
         mask = false(size(t_int));
         for j = 1:numel(t_int)
           if isreal(t_int(j)) && t_int(j) >= min_time_to_xprime_axis && t_int(j) >= abs(xd0 / u)
@@ -452,7 +452,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         params = struct('r0', foot_state.position,...
                         'rd0',foot_state.velocity + [0;0;0.1;0;0;0],...
                         'rf',intercept_plan.r_foot_new,...
-                        'rdf',[0;0;-0.1;0;0;0],...
+                        'rdf',[0;0;0;0;0;0],...
                         'r_switch_lb', [foot_state.position(1:2) - slack;
                                      intercept_plan.r_foot_new(3) + swing_height;
                                      foot_state.position(4:6)],...
@@ -493,96 +493,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       best_plan = intercept_plans(idx);
     end
 
-    function intercept_plans = enumerateCaptureOptions(foot_contact, foot_vertices, foot_state, r_ic, u, omega)
-      reachable_l_minus_r = [-0.3, 0.35, 0.35, -0.3;
-                             0.15, 0.15, 0.4, 0.4];
-      checkDependency('iris');
-
-      if foot_contact.right && foot_contact.left
-        available_feet = struct('stance', {'right', 'left'},...
-                                'swing', {'left', 'right'});
-      elseif ~foot_contact.right
-        available_feet = struct('stance', {'left'},...
-                                'swing', {'right'});
-      else
-        available_feet = struct('stance', {'right'},...
-                                'swing', {'left'});
-      end
-      
-      % warning('hard-coding offset');
-      offset = 0.15;
-
-      intercept_plans = struct('foot', {}, 'r_cop', {}, 'u', {}, 'tf', {}, 'tswitch', {}, 'error', {}, 'r_foot_new', {}, 'r_ic_new', {});
-      for j = 1:length(available_feet)
-        stance_vertices = bsxfun(@plus,...
-                                 foot_state.(available_feet(j).stance).position(1:2),...
-                                 foot_vertices.(available_feet(j).stance));
-        if size(stance_vertices, 2) > 4
-          error('too long for custom solver');
-        end
-        r_cop = iris.least_distance.cvxgen_ldp(bsxfun(@minus,...
-                                                      stance_vertices, r_ic)) + r_ic;
-        r_foot = foot_state.(available_feet(j).swing).position(1:2);
-        rd_foot = foot_state.(available_feet(j).swing).velocity(1:2);
-
-        reach_vertices = reachable_l_minus_r;
-        if strcmp(available_feet(j).swing, 'right')
-          reach_vertices(2,:) = -reach_vertices(2,:);
-        end
-        reach_vertices = bsxfun(@plus,...
-                                foot_state.(available_feet(j).stance).position(1:2),...
-                                reach_vertices);
-
-        available_u = [-u, u];
-        for k = 1:length(available_u)
-          [t_int, tswitch, r_foot_new, r_ic_new] = QPReactiveRecoveryPlan.icpIntercept(r_ic, r_cop, omega, r_foot, rd_foot, available_u(k), offset);
-          
-          error('if t_int is empty, we should project the icp onto the reachable polygon to find a reasonable step to take')
-          
-          for i = 1:length(t_int)
-            v_reach = iris.least_distance.cvxgen_ldp(bsxfun(@minus,...
-                                                            reach_vertices,...
-                                                            r_foot_new(:,i)));
-            if norm(v_reach) > 1e-3
-              % Desired pose is not reachable, so find the closest point in reachable region
-              r_foot_new(:,i) = v_reach + r_foot_new(:,i);
-            end
-            error('this needs additional logic to re-calculate the intercept times, r_ic_new, etc. for the new desired foot location. Otherwise, we might end up going to the edge of the reachable region, but only as t->inf');
-          
-
-            foot_vertices_new = bsxfun(@plus,...
-                                    r_foot_new(:,i),...
-                                    foot_vertices.(available_feet(j).stance));
-
-            v_double_support = iris.least_distance.cvxgen_ldp(bsxfun(@minus,...
-                                                                     [stance_vertices, foot_vertices_new],...
-                                                                     r_ic_new(:,i)));
-            if norm(v_double_support) < 1e-3
-              % We've brought the ICP into the support polygon
-              r_cop_new = r_ic_new(:,i);
-            else
-              % We're going to have to take another step
-              r_cop_new = iris.least_distance.cvxgen_ldp(bsxfun(@minus,...
-                                                                foot_vertices_new,...
-                                                                r_ic_new(:,i))) + r_ic_new(:,i);
-            end
-
-            % warning('hard-coded for Atlas and z=0 terrain')
-            foot_position_new = [r_foot_new(:,i); 0.0811; 0;0;0];
-
-            intercept_plans(end+1) = struct('foot', available_feet(j).swing,...
-                                            'r_cop', r_cop,...
-                                            'u', available_u(k),...
-                                            'tf', t_int(i),...
-                                            'tswitch', tswitch(i),...
-                                            'error', norm(r_cop_new - r_ic_new(:,i)),...
-                                            'r_foot_new', foot_position_new,...
-                                            'r_ic_new', r_ic_new(:,i));
-          end
-        end
-      end
-    end
-
     function p = expTaylor(a, b, c, n)
       % Taylor expansion of a*exp(b*x) + c about x=0 up to degree n
       p = zeros(n+1, length(a));
@@ -613,42 +523,14 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       l_int = polyval(p_spline, t_int);
 
 
-      % figure(1)
-      % clf
-      % hold on
-      % tt = linspace(0, max([t_int, 2]));
-      % plot(tt, polyval(p, tt), 'g--');
-      % plot(tt, a.*exp(b.*tt) + c, 'g-');
-      % plot(tt, polyval(p_spline, tt), 'r-');
-      % plot(t_int, polyval(p_spline, t_int), 'ro');
-    end
-
-    function [t_int, tswitch, r_foot_new, r_ic_new] = icpIntercept(r_ic, r_cop, omega, r_foot, rd_foot, u, offset)
-      nhat = r_ic - r_cop;
-      nhat = nhat / norm(nhat);
-
-      l_ic = r_ic' * nhat;
-      l_cop = r_cop' * nhat;
-      l_foot = r_foot' * nhat;
-      ld_foot = rd_foot' * nhat;
-
-      % u_signed = [u, -u];
-      % intercepts = struct('u', {u_signed}, 'ts', {{}, {}});
-      % for j = 1:2
-        % r_ic(t) = (r_ic(0) - r_cop) e^(t*omega) + r_cop
-      [t_int, l_int] = QPReactiveRecoveryPlan.expIntercept(l_ic - l_cop, omega, l_cop + offset, l_foot, ld_foot, u, 5);
-      % t_int = t_int(t_int >= abs(ld_foot / u));
-      tswitch = 0.5 * (t_int - ld_foot / u);
-
-      t_int
-      r_foot_new = zeros(2, length(t_int));
-      r_ic_new = zeros(2, length(t_int));
-      for j = 1:length(t_int)
-        r_foot_new(:,j) = l_int(j) * nhat + r_cop;
-        r_ic_new(:,j) = (r_ic - r_cop) * exp(t_int(j) * omega) + r_cop;
-      end
-
-      % end
+      figure(1)
+      clf
+      hold on
+      tt = linspace(0, max([t_int, 0.5]));
+      plot(tt, polyval(p, tt), 'g--');
+      plot(tt, a.*exp(b.*tt) + c, 'g-');
+      plot(tt, polyval(p_spline, tt), 'r-');
+      plot(t_int, polyval(p_spline, t_int), 'ro');
     end
   end
 end
