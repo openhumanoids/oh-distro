@@ -5,15 +5,14 @@ if nargin < 2, visualize = false; end
 if nargin < 3, add_hokuyo = true; end
 if nargin < 4, right_hand = 0; end
 if nargin < 5, left_hand = 0; end
-if nargin < 4, add_hands = false; end
 if nargin < 6, world_name = ''; end
 if nargin < 7, box_height = 1.10; end
 
-% IF YOU WANT MASS EST LOOK HERE
+% IF YOU WANT MASS EST OR ACCURATE FOOT F/T LOOK HERE
 % (when this is more fleshed out this will become
 % an argument)
 use_mass_est = false;
-foot_force_sensors = true;
+foot_force_sensors = false;
 
 initial_offset_xyzrpy = [0;0;0;0;0;0];
 
