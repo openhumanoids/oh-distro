@@ -144,7 +144,7 @@ classdef DRCPlanner
             status_msg.value = report;
             obj.lc.publish('SYSTEM_STATUS', status_msg);
           end
-          whos
+          fprintf(1, '...done\n');
         end
       end
     end
