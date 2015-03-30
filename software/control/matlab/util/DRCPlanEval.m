@@ -18,6 +18,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     atlas_state_coder;
 
     pause_state = 0;
+    recovery_state = 0;
+    reactive_recovery_planner;
     contact_force_detected;
     last_status_msg_time;
   end
@@ -27,6 +29,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
    PAUSE_NONE = 0;
    PAUSE_NOW = 1;
    STOP_WALKING_ASAP = 2;
+
+   RECOVERY_NONE = 0;
+   RECOVERY_NOW = 1;
  end
 
   methods
@@ -39,6 +44,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
+      obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
+
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -47,6 +54,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
+      obj = obj.addLCMInterface('enter_recovery', 'RECOVERY_TRIGGER_ON', @drc.utime_t, 0, @obj.handle_recovery_trigger_on);
+      obj = obj.addLCMInterface('exit_recovery', 'RECOVERY_TRIGGER_OFF', @drc.utime_t, 0, @obj.handle_recovery_trigger_off);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
@@ -123,6 +132,15 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         % handle this somehow
         disp('I want to resume but I dont know how yet');
       end
+    end
+
+    function handle_recovery_trigger_on(obj, msg)
+      disp('Entering reactive recovery mode!');
+      obj.recovery_state = obj.RECOVERY_NOW;
+    end
+    function handle_recovery_trigger_off(obj, msg)
+      disp('Exiting reactive recovery mode!');
+      obj.recovery_state = obj.RECOVERY_NONE;
     end
 
     function new_plan = smoothPlanTransition(obj, new_plan)
@@ -221,6 +239,13 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           obj.LCMReceive();
           % fprintf(1, 'recieve: %fs\n', toc(t0))
           % t0 = tic();
+
+          % Generate a recovery plan if requested and stick it on the queue
+          if (obj.t > 0 && obj.recovery_state == obj.RECOVERY_NOW)
+            fprintf('Recovery planner doing its thing!\n');
+            obj.switchToPlan(obj.reactive_recovery_planner);
+          end
+
           obj.pauseIfRequested();
           % fprintf(1, 'pause: %fs\n', toc(t0))
           if ~isempty(obj.plan_queue)
