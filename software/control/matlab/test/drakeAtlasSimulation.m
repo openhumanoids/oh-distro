@@ -14,7 +14,7 @@ if nargin < 7, box_height = 1.2; end
 use_mass_est = false;
 
 % And if you want external wrench input on pelvis
-use_external_wrench = true;
+use_external_wrench = 'pelvis';
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -47,6 +47,8 @@ end
 r_pure = DRCAtlas([],options);
 % And construct a complete one
 if (add_hokuyo)
+    
+    
   options.hokuyo = true;
   options.hokuyo_spin_rate = 4;
 end
@@ -197,8 +199,8 @@ while(~done)
 
   % LCM interpret in for the force/torque type
   if (use_external_wrench)
-    lcmFTBlock = LCMInputFromForceTorqueBlock(r_complete);
-    sys = mimoCascade(lcmFTBlock, sys);
+    lcmFTBlock = LCMInputFromForceTorqueBlock(r_complete, r_pure, use_external_wrench);
+    sys = mimoFeedback(lcmFTBlock, sys, [], [], [], outs);
   end
 
   % LCM broadcast out
