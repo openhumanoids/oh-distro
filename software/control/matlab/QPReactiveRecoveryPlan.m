@@ -80,9 +80,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if is_captured
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
       else
-        intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, omega, 10);
+        U_MAX = 20;
+        intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, omega, U_MAX);
 
-        % intercept_plans = QPReactiveRecoveryPlan.enumerateCaptureOptions(foot_contact, foot_vertices, foot_states, r_ic, 10, omega);
         best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
 
         if isempty(best_plan)
@@ -185,7 +185,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_global + ts(1:2),...
                                                 'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
-      qp_input.param_set_name = 'walking';
+      qp_input.param_set_name = 'recovery';
     end
 
     function qp_input = getCaptureInput(obj, t_global, r_ic, foot_states, rpc)
@@ -229,7 +229,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
                                             'ts', t_global + [0, 0],...
                                             'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
-      qp_input.param_set_name = 'walking';
+      qp_input.param_set_name = 'recovery';
     end
   end
 
@@ -242,15 +242,18 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       for f = {'right', 'left'}
         foot = f{1};
-        R = rotmat(foot_states.(foot).pose(6));
-        foot_vertices_in_world = bsxfun(@plus,...
-                                        SHRINK_FACTOR * R * foot_vertices.(foot),...
-                                        foot_states.(foot).pose(1:2));
-        all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
+        warning('z=0 assumption');
+        if foot_states.(foot).pose(3) < 0.01
+          R = rotmat(foot_states.(foot).pose(6));
+          foot_vertices_in_world = bsxfun(@plus,...
+                                          SHRINK_FACTOR * R * foot_vertices.(foot),...
+                                          foot_states.(foot).pose(1:2));
+          all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
+        end
       end
 
       u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, all_vertices_in_world, r_ic));
-      is_captured = norm(u) < 1e-3
+      is_captured = norm(u) < 1e-3;
     end
 
     function y = closestPointInConvexHull(x, V)
@@ -385,43 +388,46 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                           'r_foot_new', r_foot_reach,...
                                           'r_ic_new', [x_ic_int; 0]);
         end
-      end
-
-      % subplot(211)
-
-      for u = [u_max, -u_max]
-        [t_int, x_int] = QPReactiveRecoveryPlan.expIntercept((x_ic - x_cop), omega, x_cop + OFFSET, x0, xd0, u, 7);
-        mask = false(size(t_int));
-        for j = 1:numel(t_int)
-          if isreal(t_int(j)) && t_int(j) >= min_time_to_xprime_axis && t_int(j) >= abs(xd0 / u)
-            mask(j) = true;
+      else
+        for u = [u_max, -u_max]
+          [t_int, x_int] = QPReactiveRecoveryPlan.expIntercept((x_ic - x_cop), omega, x_cop + OFFSET, x0, xd0, u, 7);
+          mask = false(size(t_int));
+          for j = 1:numel(t_int)
+            if isreal(t_int(j)) && t_int(j) >= min_time_to_xprime_axis && t_int(j) >= abs(xd0 / u)
+              mask(j) = true;
+            end
           end
-        end
-        t_int = t_int(mask);
-        x_int = x_int(mask);
+          t_int = t_int(mask);
+          x_int = x_int(mask);
 
-        for j = 1:numel(x_int)
-          r_foot_int = [x_int(j); 0];
-          u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, reachable_vertices, r_foot_int));
-          if norm(u) < 1e-3
-            r_foot_reach = r_foot_int;
-          else
-            % TODO: is this the right thing to do?
-            r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
-          end
-          % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
-          % r_foot_reach = r_foot_int;
+          for j = 1:numel(x_int)
+            r_foot_int = [x_int(j); 0];
+            y = iris.least_distance.cvxgen_ldp(bsxfun(@minus, reachable_vertices, r_foot_int));
+            if norm(y) < 1e-3
+              r_foot_reach = r_foot_int;
+            else
+              % TODO: is this the right thing to do?
+              r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
+            end
+            % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
+            % r_foot_reach = r_foot_int;
 
-          intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, r_foot_reach(1), u_max);
-          if ~isempty(intercepts)
-            [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
-            intercept = intercepts(i);
-
-            intercept_plans(end+1) = struct('tf', intercept.tf,...
-                                            'tswitch', intercept.tswitch,...
-                                            'r_foot_new', r_foot_reach,...
-                                            'r_ic_new', [QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, intercept.tf, omega);
-                                                         0]);
+            intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, r_foot_reach(1), u_max);
+            if ~isempty(intercepts)
+              [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
+              intercept = intercepts(i);
+              
+              if ~valuecheck(x0 + 0.5 * xd0 * intercept.tf + 0.25 * intercept.u * intercept.tf^2 - 0.25 * xd0^2 / intercept.u, r_foot_reach(1))
+                keyboard()
+              end
+              
+              intercept.tf = max([intercept.tf, min_time_to_xprime_axis]);
+              intercept_plans(end+1) = struct('tf', intercept.tf,...
+                                              'tswitch', intercept.tswitch,...
+                                              'r_foot_new', r_foot_reach,...
+                                              'r_ic_new', [QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, intercept.tf, omega);
+                                                           0]);
+            end
           end
         end
       end
@@ -487,15 +493,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
         % tf(tf < abs(xd0 / u)) = abs(xd0 / u)
 
-        tswitch = zeros(size(tf));
-        for j = 1:numel(tf)
-          tswitch(j) = 0.5 * (tf(j) - xd0 / u);
-        end
-
         if numel(tf) > 1
           error('i don''t think there should ever be more than one feasible root');
         end
+
         if ~isempty(tf)
+          valuecheck(x0 + 1/2 * xd0 * tf + 1/4 * u * tf^2 - 1/4 * xd0^2 / u, xf, 1e-6);
+          tswitch = 0.5 * (tf - xd0 / u);
           intercepts(end+1) = struct('tf', tf, 'tswitch', tswitch, 'u', u);
         end
 
@@ -520,13 +524,16 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function [ts, coefs] = swingTraj(intercept_plan, foot_state)
+      if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
+        disp('here');
+      end
       if intercept_plan.tswitch > 0.05 && (intercept_plan.tf - intercept_plan.tswitch) > 0.05
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
         swing_height = 0.05;
         slack = 10;
         % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
         params = struct('r0', foot_state.pose,...
-                        'rd0',foot_state.velocity + [0;0;0.1;0;0;0],...
+                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
                         'rf',intercept_plan.r_foot_new,...
                         'rdf',[0;0;0;0;0;0],...
                         'r_switch_lb', [foot_state.pose(1:2) - slack;
@@ -543,6 +550,45 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         [vars, status] = freeSplineMex(params, settings);
         coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
         ts = [0, intercept_plan.tswitch, intercept_plan.tf];
+        
+        tt = linspace(ts(1), ts(end));
+        pp = mkpp(ts, coefs, 6);
+        ps = ppval(pp, tt);
+        figure(10)
+        clf
+        subplot(311)
+        plot(tt, ps(1,:), tt, ps(2,:));
+        subplot(312)
+        ps = ppval(fnder(pp, 1), tt);
+        plot(tt, ps(1,:), tt, ps(2,:));
+        subplot(313)
+        ps = ppval(fnder(pp, 2), tt);
+        plot(tt, ps(1,:), tt, ps(2,:));
+        disp('here');
+        
+      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.05
+        tswitch = intercept_plan.tf / 2;
+        swing_height = min([0.05, 0.25 * norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2))]);
+        slack = 10;
+        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
+        params = struct('r0', foot_state.pose,...
+                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
+                        'rf',intercept_plan.r_foot_new,...
+                        'rdf',[0;0;0;0;0;0],...
+                        'r_switch_lb', [foot_state.pose(1:2) - slack;
+                                     intercept_plan.r_foot_new(3) + swing_height;
+                                     intercept_plan.r_foot_new(4:6)],...
+                        'r_switch_ub', [foot_state.pose(1:2) + slack;
+                                     intercept_plan.r_foot_new(3) + swing_height;
+                                     intercept_plan.r_foot_new(4:6)],...
+                        'rd_switch_lb', [-slack * ones(3,1); zeros(3,1)],...
+                        'rd_switch_ub', [slack * ones(3,1); zeros(3,1)],...
+                        't_switch', tswitch,...
+                        't_f', intercept_plan.tf);
+        settings = struct('verbose', 0);
+        [vars, status] = freeSplineMex(params, settings);
+        coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
+        ts = [0, tswitch, intercept_plan.tf];
       else
         ts = [0, intercept_plan.tf];
         coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.pose, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
