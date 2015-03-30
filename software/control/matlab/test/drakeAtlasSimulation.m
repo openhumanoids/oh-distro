@@ -13,6 +13,7 @@ if nargin < 7, box_height = 1.10; end
 % (when this is more fleshed out this will become
 % an argument)
 use_mass_est = false;
+foot_force_sensors = true;
 
 initial_offset_xyzrpy = [0;0;0;0;0;0];
 
@@ -27,7 +28,7 @@ options.atlas_version = atlas_version;
 options.floating = true;
 options.dt = 0.00333;
 options.hokuyo = false;
-options.foot_force_sensors = true; % warning: slow
+options.foot_force_sensors = false;
 options.obstacles = false; % Replaced by step terrain, though the option still works...
 if (right_hand)
   options.hand_right = 'robotiq_weight_only';
@@ -44,11 +45,11 @@ else
 end
 r_pure = DRCAtlas([],options);
 % And construct a complete one
+options.foot_force_sensors = foot_force_sensors; % warning: slow
 if (add_hokuyo)
   options.hokuyo = true;
   options.hokuyo_spin_rate = 4;
 end
-options.foot_force_sensors = foot_force_sensors;
 sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
 terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 

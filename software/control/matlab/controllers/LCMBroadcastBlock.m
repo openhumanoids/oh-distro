@@ -311,7 +311,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         hand_state_tmp = varargin{num(1)};
         combined_frame = obj.getInputFrame.getFrameByNum(num(1));
         hand_state_tmp = hand_state_tmp(combined_frame.frame_id==num(2));
-      else
+      elseif (length(num) > 2)
         error(['I need to write a general case']);
       end
       if (~isempty(num))
@@ -327,7 +327,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         hand_state_tmp = varargin{num(1)};
         combined_frame = obj.getInputFrame.getFrameByNum(num(1));
         hand_state_tmp = hand_state_tmp(combined_frame.frame_id==num(2));
-      else
+      elseif (length(num)>2)
         error(['I need to write a general case']);
       end
       if (~isempty(num))

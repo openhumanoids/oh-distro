@@ -150,7 +150,9 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
 
       S = load(r.fixed_point_file);
       x_init = Point(r.getStateFrame(),getInitialState(r));
-      xstar = Point(r.getStateFrame(),S.xstar);
+      xstar = Point(r.getStateFrame()); 
+      xstar(1:length(S.xstar)) = S.xstar;
+      xstar = Point(r.getStateFrame(), xstar);
       xstar.base_x = x_init.base_x;
       xstar.base_y = x_init.base_y;
       xstar.base_z = x_init.base_z;
