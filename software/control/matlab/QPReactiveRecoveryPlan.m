@@ -1,11 +1,13 @@
 classdef QPReactiveRecoveryPlan < QPControllerPlan
   properties
     robot
-    qtraj
+    omega;
+    qtraj;
     mu = 0.5;
-    g = 9.81;
     V
+    g
     LIP_height;
+    point_mass_biped;
     lcmgl = LCMGLClient('reactive_recovery')
     last_qp_input;
     last_plan;
@@ -16,7 +18,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
   end
 
   methods
-    function obj = QPReactiveRecoveryPlan(robot, ~, ~)
+    function obj = QPReactiveRecoveryPlan(robot, options)
+      if nargin < 2
+        options = struct();
+      end
+      options = applyDefaults(options, struct('g', 9.81));
       obj.robot = robot;
       % obj.qtraj = qtraj;
       % obj.LIP_height = LIP_height;
@@ -26,6 +32,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       obj.default_qp_input.whole_body_data.q_des = zeros(obj.robot.getNumPositions(), 1);
       obj.default_qp_input.whole_body_data.constrained_dofs = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck');findPositionIndices(obj.robot,'back_bkz');findPositionIndices(obj.robot,'back_bky')];
       [~, obj.V, ~, obj.LIP_height] = obj.robot.planZMPController([0;0], obj.qtraj);
+      obj.g = options.g;
+      obj.point_mass_biped = PointMassBiped(sqrt(options.g / obj.LIP_height));
     end
 
     function next_plan = getSuccessor(obj, t, x)
@@ -43,9 +51,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       [com, J] = obj.robot.getCOM(kinsol);
       comd = J * qd;
 
-      omega = sqrt(obj.g / obj.LIP_height);
 
-      r_ic = com(1:2) + comd(1:2) / omega;
+      r_ic = com(1:2) + comd(1:2) / obj.point_mass_biped.omega;
 
       foot_states = struct('right', struct('pose', [], 'velocity', [], 'contact', false),...
                           'left', struct('pose', [], 'velocity', [], 'contact', false));
@@ -81,7 +88,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
       else
         U_MAX = 20;
-        intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, omega, U_MAX);
+        intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, obj.point_mass_biped.omega, U_MAX);
 
         best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
 
@@ -165,6 +172,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % qp_input.zmp_data.x0 = [0;0; 0; 0];
       qp_input.zmp_data.y0 = best_plan.r_cop;
       qp_input.zmp_data.S = obj.V.S;
+      qp_input.zmp_data.D = -obj.LIP_height/obj.g * eye(2);
 
       if strcmp(best_plan.swing_foot, 'right')
         stance_foot = 'left';
@@ -196,6 +204,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % qp_input.zmp_data.x0 = [0;0; 0; 0];
       qp_input.zmp_data.y0 = r_ic;
       qp_input.zmp_data.S = obj.V.S;
+      qp_input.zmp_data.D = -obj.LIP_height/obj.g * eye(2);
 
       qp_input.support_data = struct('body_id', cell(1, 2),...
                                      'contact_pts', cell(1, 2),...
@@ -524,6 +533,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function [ts, coefs] = swingTraj(intercept_plan, foot_state)
+      DEBUG = false;
+
       if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
         disp('here');
       end
@@ -551,20 +562,21 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
         ts = [0, intercept_plan.tswitch, intercept_plan.tf];
         
-        tt = linspace(ts(1), ts(end));
-        pp = mkpp(ts, coefs, 6);
-        ps = ppval(pp, tt);
-        figure(10)
-        clf
-        subplot(311)
-        plot(tt, ps(1,:), tt, ps(2,:));
-        subplot(312)
-        ps = ppval(fnder(pp, 1), tt);
-        plot(tt, ps(1,:), tt, ps(2,:));
-        subplot(313)
-        ps = ppval(fnder(pp, 2), tt);
-        plot(tt, ps(1,:), tt, ps(2,:));
-        disp('here');
+        if DEBUG
+          tt = linspace(ts(1), ts(end));
+          pp = mkpp(ts, coefs, 6);
+          ps = ppval(pp, tt);
+          figure(10)
+          clf
+          subplot(311)
+          plot(tt, ps(1,:), tt, ps(2,:));
+          subplot(312)
+          ps = ppval(fnder(pp, 1), tt);
+          plot(tt, ps(1,:), tt, ps(2,:));
+          subplot(313)
+          ps = ppval(fnder(pp, 2), tt);
+          plot(tt, ps(1,:), tt, ps(2,:));
+        end
         
       elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.05
         tswitch = intercept_plan.tf / 2;
@@ -629,6 +641,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n)
+      DEBUG = false;
+
       % Find the t >= 0 solutions to a*e^(b*t) + c == l0 + 1/2*ld0*t + 1/4*u*t^2 - 1/4*ld0^2/u
       % using a taylor expansion up to power n
       p = QPReactiveRecoveryPlan.expTaylor(a, b, c, n);
@@ -644,15 +658,16 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       t_int = t_int(mask)';
       l_int = polyval(p_spline, t_int);
 
-
-      figure(1)
-      clf
-      hold on
-      tt = linspace(0, max([t_int, 0.5]));
-      plot(tt, polyval(p, tt), 'g--');
-      plot(tt, a.*exp(b.*tt) + c, 'g-');
-      plot(tt, polyval(p_spline, tt), 'r-');
-      plot(t_int, polyval(p_spline, t_int), 'ro');
+      if DEBUG
+        figure(1)
+        clf
+        hold on
+        tt = linspace(0, max([t_int, 0.5]));
+        plot(tt, polyval(p, tt), 'g--');
+        plot(tt, a.*exp(b.*tt) + c, 'g-');
+        plot(tt, polyval(p_spline, tt), 'r-');
+        plot(t_int, polyval(p_spline, t_int), 'ro');
+      end
     end
   end
 end
