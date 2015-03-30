@@ -69,6 +69,11 @@ group "2.plan_and_control" {
         exec = "drc-bdi-step-translator -b";
         host = "base";
     }
+
+    cmd "PressureControl" {
+        exec = "drc-atlas-pressure-monitor";
+        host = "base";
+    }
 }
 
 group "4.perception_drivers" {

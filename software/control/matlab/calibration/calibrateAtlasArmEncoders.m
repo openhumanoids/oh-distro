@@ -98,6 +98,7 @@ end
 
   function moveAndWriteCalibration
 
+    send_controller_state(lc, 'MANIPULATING');
     switch_back_to_freeze = false;
     % get current atlas behavior
     pause(0.25);
@@ -209,6 +210,7 @@ end
     msg.utime = 1; % enable with positive utime
     lc.publish('ENABLE_ENCODERS',msg);
     
+    send_controller_state(lc, 'DUMMY');
     if switch_back_to_freeze      
       % switch to user mode
       d.utime = 0;
@@ -221,3 +223,12 @@ end
 
 
 end
+
+function send_controller_state(lc, state_name)
+  msg = drc.controller_status_t();
+  msg.utime = bot_timestamp_now();
+  msg.state = msg.(state_name);
+  lc.publish('CONTROLLER_STATUS', msg);
+end
+
+
