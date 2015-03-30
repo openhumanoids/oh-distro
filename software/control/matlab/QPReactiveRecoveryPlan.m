@@ -47,8 +47,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       r_ic = com(1:2) + comd(1:2) / omega;
 
-      foot_states = struct('right', struct('position', [], 'velocity', [], 'contact', false),...
-                          'left', struct('position', [], 'velocity', [], 'contact', false));
+      foot_states = struct('right', struct('pose', [], 'velocity', [], 'contact', false),...
+                          'left', struct('pose', [], 'velocity', [], 'contact', false));
       for f = {'right', 'left'}
         foot = f{1};
         [pos, J] = obj.robot.forwardKin(kinsol, obj.robot.foot_body_id.(foot), [0;0;0], 1);
@@ -57,7 +57,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         T_sole = T_orig * T_frame;
         pos = tform2poseRPY(T_sole);
         vel = J * qd;
-        foot_states.(foot).position = pos;
+        foot_states.(foot).pose = pos;
         foot_states.(foot).velocity = vel;
         warning('hard-coded foot height for contact')
         if pos(3) < 0.001
@@ -74,16 +74,32 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      -0.15, -0.15, -0.4, -0.4],...
                             'left', [-0.4, 0.4, 0.4, -0.4;
                                      0.15, 0.15, 0.4, 0.4]);
-      intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, omega, 10);
 
-      % intercept_plans = QPReactiveRecoveryPlan.enumerateCaptureOptions(foot_contact, foot_vertices, foot_states, r_ic, 10, omega);
-      best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
+      is_captured = QPReactiveRecoveryPlan.isICPCaptured(r_ic, foot_states, foot_vertices);
 
-      if isempty(best_plan)
-        best_plan = obj.last_plan;
+      if is_captured
+        qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
       else
-        obj.last_plan = best_plan;
+        intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, omega, 10);
+
+        % intercept_plans = QPReactiveRecoveryPlan.enumerateCaptureOptions(foot_contact, foot_vertices, foot_states, r_ic, 10, omega);
+        best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
+
+        if isempty(best_plan)
+          best_plan = obj.last_plan;
+        else
+          obj.last_plan = best_plan;
+        end
+
+        qp_input = obj.getInterceptInput(t_global, best_plan);
       end
+
+      obj.last_qp_input = qp_input;
+
+    end
+
+    function qp_input = getInterceptInput(obj, t_global, best_plan)
+      DEBUG = true;
 
       [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
       ts
@@ -128,7 +144,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
         obj.lcmgl.glColor3f(1.0,1.0,0.3);
         stance_foot = obj.OTHER_FOOT.(best_plan.swing_foot);
-        reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).position(6)) * reachable_vertices.(best_plan.swing_foot), foot_states.(stance_foot).position(1:2));
+        reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).pose(6)) * reachable_vertices.(best_plan.swing_foot), foot_states.(stance_foot).pose(1:2));
         obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINE_LOOP)
         for j = 1:size(reachable_vertices_in_world_frame, 2)
           obj.lcmgl.glVertex3f(reachable_vertices_in_world_frame(1,j),...
@@ -140,13 +156,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         obj.lcmgl.switchBuffers();
       end
       
-      if foot_states.right.position(2) > -0.05
-        disp('here');
-      end
-      
       qp_input = obj.default_qp_input;
       qp_input.whole_body_data.q_des = obj.qtraj;
-      qp_input.zmp_data.x0 = [0;0; 0; 0];
+      qp_input.zmp_data.x0 = [mean([foot_states.right.pose(1:2), foot_states.left.pose(1:2)], 2);
+                              0; 0];
+      % qp_input.zmp_data.x0 = [0;0; 0; 0];
       qp_input.zmp_data.y0 = best_plan.r_cop;
       qp_input.zmp_data.S = obj.V.S;
 
@@ -170,9 +184,50 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                                 'ts', t_global + ts(1:2),...
                                                 'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
       qp_input.param_set_name = 'walking';
+    end
 
-      obj.last_qp_input = qp_input;
+    function qp_input = getCaptureInput(obj, t_global, r_ic, foot_states, rpc)
+      qp_input = obj.default_qp_input;
+      qp_input.whole_body_data.q_des = obj.qtraj;
+      qp_input.zmp_data.x0 = [mean([foot_states.right.pose(1:2), foot_states.left.pose(1:2)], 2);
+                              0; 0];
+      % qp_input.zmp_data.x0 = [0;0; 0; 0];
+      qp_input.zmp_data.y0 = r_ic;
+      qp_input.zmp_data.S = obj.V.S;
 
+      qp_input.support_data = struct('body_id', cell(1, 3),...
+                                     'contact_pts', cell(1, 3),...
+                                     'support_logic_map', cell(1, 3),...
+                                     'mu', num2cell(obj.mu * ones(1, 3)),...
+                                     'contact_surfaces', num2cell(zeros(1, 3)));
+      qp_input.body_motion_data = struct('body_id', cell(1, 3),...
+                                         'ts', cell(1, 3),...
+                                         'coefs', cell(1, 3));
+      feet = {'right', 'left'};
+      for j = 1:2
+        foot = feet{j};
+        qp_input.support_data(j).body_id = obj.robot.foot_body_id.(foot);
+        qp_input.support_data(j).contact_pts = [rpc.contact_groups{obj.robot.foot_body_id.(foot)}.toe,...
+                                                rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel],...
+        qp_input.support_data(j).support_logic_map = obj.support_logic_maps.kinematic_or_sensed;
+
+        T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(best_plan.swing_foot)).T;
+        sole_pose = foot_states.(foot).pose;
+        warning('z = 0 assumption');
+        sole_pose(3) = 0;
+        T_sole = poseRPY2tform(sole_pose);
+        T_origin = T_sole * inv(T_sole_frame);
+        origin_pose = tform2poseRPY(T_origin);
+
+        qp_input.body_motion_data(j).body_id = obj.robot.foot_body_id.(foot);
+        qp_input.body_motion_data(j).ts = [t_global, t_global];
+        qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(origin_pose, [6, 1, 1]));
+      end
+      warning('no rotation, fixed pelvis height');
+      qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
+                                            'ts', t_global + ts(1:2),...
+                                            'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
+      qp_input.param_set_name = 'walking';
     end
   end
 
@@ -220,8 +275,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       % Find the center of pressure, which we'll place as close as possible to the ICP
       stance_foot_vertices_in_world = bsxfun(@plus,...
-                                             rotmat(foot_states.(stance_foot).position(6)) * foot_vertices.(stance_foot),...
-                                             foot_states.(stance_foot).position(1:2));
+                                             rotmat(foot_states.(stance_foot).pose(6)) * foot_vertices.(stance_foot),...
+                                             foot_states.(stance_foot).pose(1:2));
       r_cop = QPReactiveRecoveryPlan.closestPointInConvexHull(r_ic, stance_foot_vertices_in_world);
       % r_ic - r_cop
 
@@ -233,20 +288,20 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       foot_vertices_prime = foot_vertices;
       for f = fieldnames(foot_states)'
         foot = f{1};
-        foot_states_prime.(foot).position(1:2) = R * (foot_states.(foot).position(1:2) - r_cop);
+        foot_states_prime.(foot).pose(1:2) = R * (foot_states.(foot).pose(1:2) - r_cop);
         foot_states_prime.(foot).velocity(1:2) = R * foot_states.(foot).velocity(1:2);
         foot_vertices_prime.(foot) = R * foot_vertices_prime.(foot);
       end
       r_ic_prime = R * (r_ic - r_cop);
       assert(abs(r_ic_prime(2)) < 1e-6);
 
-      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).position(6)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).position(1:2));
+      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).pose(6)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).pose(1:2));
       reachable_vertices_prime = R * bsxfun(@minus, reachable_vertices_in_world_frame, r_cop);
       intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
       
       Ri = inv(R);
       for j = 1:length(intercept_plans)
-        intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; foot_states.(swing_foot).position(3:6)];
+        intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; foot_states.(swing_foot).pose(3:6)];
         warning('hard-coding z=0')
         intercept_plans(j).r_foot_new(3) = 0;
         intercept_plans(j).r_ic_new = Ri * intercept_plans(j).r_ic_new + r_cop;
@@ -268,7 +323,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       tt = linspace(0, 1);
 
       % subplot(212)
-      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).position(2),...
+      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).pose(2),...
                                                    foot_states.(swing_foot).velocity(2),...
                                                    0,...
                                                    u_max);
@@ -278,7 +333,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % hold on
       % plot(tt, QPReactiveRecoveryPlan.icpUpdate(r_ic_prime(1), r_cop_prime(1), tt, omega) + OFFSET, 'r-')
 
-      x0 = foot_states.(swing_foot).position(1);
+      x0 = foot_states.(swing_foot).pose(1);
       xd0 = foot_states.(swing_foot).velocity(1);
 
       intercept_plans = struct('tf', {}, 'tswitch', {}, 'r_foot_new', {}, 'r_ic_new', {});
@@ -449,16 +504,16 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         swing_height = 0.05;
         slack = 10;
         % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
-        params = struct('r0', foot_state.position,...
+        params = struct('r0', foot_state.pose,...
                         'rd0',foot_state.velocity + [0;0;0.1;0;0;0],...
                         'rf',intercept_plan.r_foot_new,...
                         'rdf',[0;0;0;0;0;0],...
-                        'r_switch_lb', [foot_state.position(1:2) - slack;
+                        'r_switch_lb', [foot_state.pose(1:2) - slack;
                                      intercept_plan.r_foot_new(3) + swing_height;
-                                     foot_state.position(4:6)],...
-                        'r_switch_ub', [foot_state.position(1:2) + slack;
+                                     intercept_plan.r_foot_new(4:6)],...
+                        'r_switch_ub', [foot_state.pose(1:2) + slack;
                                      intercept_plan.r_foot_new(3) + swing_height;
-                                     foot_state.position(4:6)],...
+                                     intercept_plan.r_foot_new(4:6)],...
                         'rd_switch_lb', [-slack * ones(2,1); zeros(4,1)],...
                         'rd_switch_ub', [slack * ones(2,1); zeros(4,1)],...
                         't_switch', intercept_plan.tswitch,...
@@ -469,7 +524,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         ts = [0, intercept_plan.tswitch, intercept_plan.tf];
       else
         ts = [0, intercept_plan.tf];
-        coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.position, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
+        coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.pose, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
       end
 
       % pp = mkpp(ts, coefs, 6);
