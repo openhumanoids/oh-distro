@@ -66,7 +66,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         vel = J * qd;
         foot_states.(foot).pose = pos;
         foot_states.(foot).velocity = vel;
-        warning('hard-coded foot height for contact')
+        %warning('hard-coded foot height for contact')
         if pos(3) < 0.001
           foot_states.(foot).contact = true;
         end
@@ -87,7 +87,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if is_captured
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
       else
-        U_MAX = 20;
+        U_MAX = 2;
         intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, obj.point_mass_biped.omega, U_MAX);
 
         best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
@@ -120,7 +120,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
       ts
       % TODO: rather than applying a transform to coefs, just send body_motion_data for the sole point, not the origin
-      warning('this transform is incorrect if the foot is rotating');
+      %warning('this transform is incorrect if the foot is rotating');
       for j = 1:size(coefs, 2)
         T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(best_plan.swing_foot)).T;
         T_sole = poseRPY2tform(coefs(:,j,end));
@@ -189,7 +189,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                          'ts', t_global + ts(1:2),...
                                          'coefs', coefs(:,1,:));
 
-      warning('no rotation, fixed pelvis height');
+      %warning('no rotation, fixed pelvis height');
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_global + ts(1:2),...
                                                 'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
@@ -224,7 +224,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
         T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(foot)).T;
         sole_pose = foot_states.(foot).pose;
-        warning('z = 0 assumption');
+        %warning('z = 0 assumption');
         sole_pose(3) = 0;
         T_sole = poseRPY2tform(sole_pose);
         T_origin = T_sole * inv(T_sole_frame);
@@ -234,7 +234,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         qp_input.body_motion_data(j).ts = [t_global, t_global];
         qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(origin_pose, [6, 1, 1]));
       end
-      warning('no rotation, fixed pelvis height');
+      %warning('no rotation, fixed pelvis height');
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
                                             'ts', t_global + [0, 0],...
                                             'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
@@ -251,7 +251,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       for f = {'right', 'left'}
         foot = f{1};
-        warning('z=0 assumption');
+        %warning('z=0 assumption');
         if foot_states.(foot).pose(3) < 0.01
           R = rotmat(foot_states.(foot).pose(6));
           foot_vertices_in_world = bsxfun(@plus,...
@@ -261,8 +261,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         end
       end
 
-      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, all_vertices_in_world, r_ic));
-      is_captured = norm(u) < 1e-3;
+      if (isempty(all_vertices_in_world))
+        is_captured = 0;
+      else
+        u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, all_vertices_in_world, r_ic));
+        is_captured = norm(u) < 1e-3;
+      end
     end
 
     function y = closestPointInConvexHull(x, V)
@@ -335,7 +339,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       Ri = inv(R);
       for j = 1:length(intercept_plans)
         intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; foot_states.(swing_foot).pose(3:6)];
-        warning('hard-coding z=0')
+        %warning('hard-coding z=0')
         intercept_plans(j).r_foot_new(3) = 0;
         intercept_plans(j).r_ic_new = Ri * intercept_plans(j).r_ic_new + r_cop;
         intercept_plans(j).swing_foot = swing_foot;

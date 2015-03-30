@@ -13,6 +13,9 @@ if nargin < 7, box_height = 1.2; end
 % an argument)
 use_mass_est = false;
 
+% And if you want external wrench input on pelvis
+use_external_wrench = true;
+
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
@@ -55,6 +58,7 @@ terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 
 options.hand_right = getHandString(right_hand);
 options.hand_left = getHandString(left_hand);
+options.pelvis_wrench = use_external_wrench;
 
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
@@ -194,7 +198,13 @@ while(~done)
     lcmRobotiqInputBlock_left = getHandDriver(right_hand, r_complete, 'left', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_left, sys, [], [], [], outs);
   end
-  
+
+  % LCM interpret in for the force/torque type
+  if (use_external_wrench)
+    lcmFTBlock = LCMInputFromForceTorqueBlock(r_complete);
+    sys = mimoCascade(lcmFTBlock, sys);
+  end
+
   % LCM broadcast out
   broadcast_opts = options;
   broadcast_opts.publish_truth = 0;
