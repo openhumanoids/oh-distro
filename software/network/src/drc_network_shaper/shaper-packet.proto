@@ -19,9 +19,6 @@ message ShaperHeader
   required bool is_last_fragment = 5;
   optional uint32 message_size = 10 [(dccl.field).min = 0,
                                      (dccl.field).max = 0xFFFFF]; // 1 Megabyte
-  optional double sent_millisec = 11 [(dccl.field).min = 0,
-                                      (dccl.field).max = 40940,
-                                      (dccl.field).precision = -1];
 }
 
 message ShaperPacket

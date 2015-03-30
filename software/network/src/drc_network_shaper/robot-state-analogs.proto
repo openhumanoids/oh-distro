@@ -10,7 +10,7 @@ message MinimalRobotState
   option (dccl.msg).id = 0xD4C0004;
   option (dccl.msg).codec_version = 3;
 
-  required double utime = 1 [(dccl.field) = { min: 0 max: 1450000000e6 precision: -3 }];
+  required double utime = 1 [(dccl.field) = { min: 1420000000e6 max: 1450000000e6 precision: -3 }];
   required Position3D pose = 2;
   repeated float joint_position = 3 [(dccl.field) = { min: -4 max: 4 precision: 3 max_repeat: 70 } ];
   repeated int32 joint_id = 4 [(dccl.field) = { min: 0 max: 109 max_repeat: 110 } ];

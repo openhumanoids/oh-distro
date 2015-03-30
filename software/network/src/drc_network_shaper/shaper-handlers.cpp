@@ -197,7 +197,6 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     full_header.set_fragment(0);
     full_header.set_is_last_fragment(false);
     full_header.set_message_size(0);
-    full_header.set_sent_millisec(0);
     DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
     full_header_overhead_ = dccl_->size(full_header);
 
@@ -497,7 +496,6 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     std::string* frame = msg->add_frame();
     std::string header;
     drc::ShaperHeader header_msg = send_queue_.top().header();
-    header_msg.set_sent_millisec((goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX);
     dccl_->encode(frame, header_msg);
 
     (*frame) += send_queue_.top().data();
@@ -611,13 +609,6 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
 
         received_data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
 
-        if(packet.header().has_sent_millisec())
-        {
-            int now_ms = (goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX;
-            latency_ms_ = now_ms - packet.header().sent_millisec();
-            if(latency_ms_ < 0)
-                latency_ms_ += LATENCY_MAX;
-        }
 
         glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | " << DebugStringNoData(packet) << std::endl;
 
@@ -734,17 +725,17 @@ void DRCShaper::publish_receive(std::string channel,
         }
         
 
-        static int64_t newest_ers_utime = 0;
+        // static int64_t newest_ers_utime = 0;
 
-        if(newest_ers_utime > robot_state.utime)
-        {
-            glog.is(WARN) && glog << group("ch-pop") << "EST_ROBOT_STATE message received with older time than latest ... discarding message." << std::endl;
-            return;
-        }
-        else
-        {
-            newest_ers_utime = robot_state.utime;
-        }
+        // if(newest_ers_utime > robot_state.utime)
+        // {
+        //     glog.is(WARN) && glog << group("ch-pop") << "EST_ROBOT_STATE message received with older time than latest ... discarding message." << std::endl;
+        //     return;
+        // }
+        // else
+        // {
+        //     newest_ers_utime = robot_state.utime;
+        // }
     }
     
     glog.is(VERBOSE) && glog << group("publish")
