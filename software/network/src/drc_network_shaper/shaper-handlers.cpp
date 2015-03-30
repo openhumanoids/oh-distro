@@ -852,7 +852,7 @@ void DRCShaper::post_bw_stats()
         stats.received_bytes.push_back(it->second.received_bytes);
     }        
         
-    lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
+    lcm_->publish(node_ == BASE ? std::string("BASE_BW_STATS_" + boost::to_upper_copy(app_.cl_cfg.id)) : std::string("ROBOT_BW_STATS_" + boost::to_upper_copy(app_.cl_cfg.id)), &stats);
     app_.bw_init_utime = stats.utime;
     
     if(data_usage_log_.is_open())
