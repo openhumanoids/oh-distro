@@ -31,7 +31,7 @@ group "2.sensors" {
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -lwr -c $DRC_BASE/software/config/kuka_lwr.cfgr";
+    exec = "drake-designer -lwr -c $DRC_BASE/software/config/kuka_lwr.cfg";
     host = "localhost";
 }
 
