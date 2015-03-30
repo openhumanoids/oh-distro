@@ -91,14 +91,23 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           obj.last_plan = best_plan;
         end
 
-        qp_input = obj.getInterceptInput(t_global, best_plan);
+        qp_input = obj.getInterceptInput(t_global, foot_states, reachable_vertices, best_plan, rpc);
       end
+
+      if DEBUG
+        obj.lcmgl.glColor3f(0.2,0.2,1.0);
+        obj.lcmgl.sphere([com(1:2); 0], 0.01, 20, 20);
+
+        obj.lcmgl.glColor3f(0.9,0.2,0.2);
+        obj.lcmgl.sphere([r_ic; 0], 0.01, 20, 20);
+      end
+
 
       obj.last_qp_input = qp_input;
 
     end
 
-    function qp_input = getInterceptInput(obj, t_global, best_plan)
+    function qp_input = getInterceptInput(obj, t_global, foot_states, reachable_vertices, best_plan, rpc)
       DEBUG = true;
 
       [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
@@ -115,13 +124,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       pp = mkpp(ts, coefs, 6);
 
       if DEBUG
-        obj.lcmgl.glColor3f(0.2,0.2,1.0);
-        obj.lcmgl.sphere([com(1:2); 0], 0.01, 20, 20);
-
-        obj.lcmgl.glColor3f(0.9,0.2,0.2);
-        obj.lcmgl.sphere([r_ic; 0], 0.01, 20, 20);
-
-
         ts = linspace(pp.breaks(1), pp.breaks(end), 50);
         obj.lcmgl.glColor3f(1.0, 0.2, 0.2);
         obj.lcmgl.glLineWidth(1);
@@ -195,11 +197,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       qp_input.zmp_data.y0 = r_ic;
       qp_input.zmp_data.S = obj.V.S;
 
-      qp_input.support_data = struct('body_id', cell(1, 3),...
-                                     'contact_pts', cell(1, 3),...
-                                     'support_logic_map', cell(1, 3),...
-                                     'mu', num2cell(obj.mu * ones(1, 3)),...
-                                     'contact_surfaces', num2cell(zeros(1, 3)));
+      qp_input.support_data = struct('body_id', cell(1, 2),...
+                                     'contact_pts', cell(1, 2),...
+                                     'support_logic_map', cell(1, 2),...
+                                     'mu', num2cell(obj.mu * ones(1, 2)),...
+                                     'contact_surfaces', num2cell(zeros(1, 2)));
       qp_input.body_motion_data = struct('body_id', cell(1, 3),...
                                          'ts', cell(1, 3),...
                                          'coefs', cell(1, 3));
@@ -211,7 +213,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                                 rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel],...
         qp_input.support_data(j).support_logic_map = obj.support_logic_maps.kinematic_or_sensed;
 
-        T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(best_plan.swing_foot)).T;
+        T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(foot)).T;
         sole_pose = foot_states.(foot).pose;
         warning('z = 0 assumption');
         sole_pose(3) = 0;
@@ -225,13 +227,32 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
       warning('no rotation, fixed pelvis height');
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
-                                            'ts', t_global + ts(1:2),...
+                                            'ts', t_global + [0, 0],...
                                             'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;0]));
       qp_input.param_set_name = 'walking';
     end
   end
 
   methods(Static)
+    function is_captured = isICPCaptured(r_ic, foot_states, foot_vertices)
+      checkDependency('iris');
+      SHRINK_FACTOR = 0.9;
+
+      all_vertices_in_world = zeros(2,0);
+
+      for f = {'right', 'left'}
+        foot = f{1};
+        R = rotmat(foot_states.(foot).pose(6));
+        foot_vertices_in_world = bsxfun(@plus,...
+                                        SHRINK_FACTOR * R * foot_vertices.(foot),...
+                                        foot_states.(foot).pose(1:2));
+        all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
+      end
+
+      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, all_vertices_in_world, r_ic));
+      is_captured = norm(u) < 1e-3
+    end
+
     function y = closestPointInConvexHull(x, V)
       checkDependency('iris');
       if size(V, 1) > 3 || size(V, 2) > 8
