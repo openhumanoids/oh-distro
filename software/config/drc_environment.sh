@@ -133,10 +133,16 @@ setup_lcm_communities()
 	export LCM_URL_DRC_ATLAS_0_2="udpm://239.255.76.82:7682?ttl=1"
 	export LCM_URL_DRC_ATLAS_1_2="udpm://239.255.76.83:7683?ttl=1"
     fi
+
+    if [[ "true" = ${NETWORK_PLAYBACK} ]];then
+        export LCM_URL_DRC_CONTROL=${LCM_URL_DRC_PERCEPTION}
+    fi
 }
 
 # remove this flag to run with isolated lcm communities
 # export DEBUG_NETWORK="true"
+export NETWORK_PLAYBACK="true"
+
 
 set_drc_base
 #setup_drcsim
