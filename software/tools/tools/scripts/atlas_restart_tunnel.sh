@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+#set -x
 
 if [[ "$1" == "server" ]]; then
     command="bot-lcm-tunnel"
@@ -8,6 +8,8 @@ else
     command="bot-lcm-tunnel 10.5.3.11 -l $LCM_URL_DRC_RADIO"
 fi
 
-pidof bot-lcm-tunnel && killall bot-lcm-tunnel
+killall -qw bot-lcm-tunnel
 screen -D -m -S tunnel $command &
-pidof bot-lcm-tunnel && echo started tunnel: `hostname`
+
+until pids=$(pidof bot-lcm-tunnel); do sleep 0.1; done
+echo started lcm tunnel on `hostname`: $command
