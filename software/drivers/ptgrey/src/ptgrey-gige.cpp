@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <thread>
 #include <chrono>
 
@@ -20,6 +21,7 @@ struct State {
   float mInitSeconds;
   float mDelaySeconds;
   int64_t mDesiredSerial;
+  std::string mDesiredIpAddress;
 
   bool mShouldCompress;
   int mPeriodMs;
@@ -65,10 +67,35 @@ struct State {
     // connect to camera
     std::cout << "Connecting to camera..." << std::flush;
     FlyCapture2::Error error;
+
+    // try to find by serial number
     if (mDesiredSerial >= 0) {
       if (!findCameraBySerial()) return false;
       error = mCamera.Connect(&mCameraUid);
     }
+
+    // try to find by ip address
+    else if (mDesiredIpAddress.length() > 0) {
+      int curComponent = 0;
+      std::stringstream ss(mDesiredIpAddress);
+      std::string token;
+      FlyCapture2::IPAddress address;
+      while (std::getline(ss, token, '.') && (curComponent <= 3)) {
+	int component = stoi(token);
+	address.octets[curComponent] = component;
+	++curComponent;
+      }
+      FlyCapture2::BusManager busManager;
+      error = busManager.GetCameraFromIPAddress(address, &mCameraUid);
+      if (error != FlyCapture2::PGRERROR_OK) {
+	std::cout << "failed to find camera on ip address " <<
+	  mDesiredIpAddress << std::endl;
+	return false;
+      }
+      error = mCamera.Connect(&mCameraUid);
+    }
+
+    // fallback to default camera
     else error = mCamera.Connect(NULL);
     if (error != FlyCapture2::PGRERROR_OK) {
       std::cout << "failed" << std::endl;
@@ -532,6 +559,7 @@ int main(const int iArgc, const char** iArgv) {
   opt.add(state.mFrameRate, "f", "framerate", "frame rate (0=max)");
   opt.add(state.mRotation, "r", "rotation", "rotation (0,90,180,270)");
   opt.add(state.mDesiredSerial, "s", "serial number");
+  opt.add(state.mDesiredIpAddress, "p", "ip-address", "ip address");
   opt.add(state.mTrigger, "t", "trigger", "whether to use trigger mode");
   opt.add(state.mInitSeconds, "i", "init", "number of seconds for init");
   opt.add(state.mDelaySeconds, "d", "delay", "number of seconds before init");
