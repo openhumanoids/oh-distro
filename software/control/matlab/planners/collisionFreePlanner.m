@@ -68,15 +68,6 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
     options.MajorFeasibilityTolerance = 5e-5; 
   end;
   if ~isfield(options,'t_max'), options.t_max = 30; end;
-  if ~isfield(options,'joint_v_max'), options.joint_v_max = 30*pi/180; end;
-  if ~isfield(options,'xyz_v_max'), options.xyz_v_max = 0.05; end;
-  if isscalar(options.joint_v_max)
-    options.joint_v_max = repmat(options.joint_v_max,r.getNumVelocities()-3,1);
-  end
-  if isscalar(options.xyz_v_max)
-    options.xyz_v_max = repmat(options.xyz_v_max,3,1);
-  end
-  options.v_max = [options.xyz_v_max; options.joint_v_max];
 
   if options.visualize
     plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,r.getStateFrame.coordinates);
