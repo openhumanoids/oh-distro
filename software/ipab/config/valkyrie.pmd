@@ -1,0 +1,17 @@
+group "2.plan_and_control" {
+
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner.withValkyrie(); p.run();\"";
+       host = "localhost";
+       stop_signal = 15;
+    }
+
+}
+
+
+
+cmd "drake-designer" {
+    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot.cfg -val";
+    host = "localhost";
+}
+

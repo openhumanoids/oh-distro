@@ -71,19 +71,26 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
     x0
     default_footstep_params = struct('nom_forward_step', 0.15,... %m
                                   'max_forward_step', 0.3,...%m
+                                  'max_backward_step', 0.2,...%m
                                   'max_step_width', 0.40,...%m
                                   'min_step_width', 0.21,...%m
                                   'nom_step_width', 0.26,...%m
                                   'max_outward_angle', pi/8,... % rad
                                   'max_inward_angle', 0.01,... % rad
-                                  'max_upward_step', 0.2,... % m
-                                  'max_downward_step', 0.2); % m
+                                  'nom_upward_step', 0.2,... % m
+                                  'nom_downward_step', 0.2,...% m
+                                  'max_num_steps', 10,...
+                                  'min_num_steps', 1,...
+                                  'leading_foot', 1); % 0: left, 1: right
     default_walking_params = struct('step_speed', 0.5,... % speed of the swing foot (m/s)
                                     'step_height', 0.05,... % approximate clearance over terrain (m)
                                     'hold_frac', 0.4,... % fraction of the swing time spent in double support
                                     'drake_min_hold_time', 1.0,... % minimum time in double support (s)
+                                    'drake_instep_shift', 0.0,... % Distance to shift ZMP trajectory inward toward the instep from the center of the foot (m)
                                     'mu', 1.0,... % friction coefficient
-                                    'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
+                                    'constrain_full_foot_pose', true,... % whether to constrain the swing foot roll and pitch
+                                    'pelvis_height_above_foot_sole', 1.0,... % default pelvis height when walking. MFALLON ADDED THESE VALUES, NOT OPTIMIZED... only barely works
+                                    'nominal_LIP_COM_height', 1.0); % nominal height used to construct D_ls for our linear inverted pendulum model
 
   end
 end
