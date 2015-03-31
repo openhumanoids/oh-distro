@@ -144,8 +144,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
             if k > 1
               new_plan.qtraj = PPTrajectory(pchipDeriv(ts, [coefs(:,:,end), fasteval(new_plan.qtraj, ts(end))], coefs(:,:,end-1)));
             else
-              assert(ismatrix(coefs));
-              new_plan.qtraj = PPTrajectory(pchip(ts, coefs));
+              new_plan.qtraj = PPTrajectory(pchip(ts, coefs(:,:,end)));
             end
           elseif isa(new_plan.qtraj, 'ConstantTrajectory')
             q_smooth = obj.qp_input.whole_body_data.q_des;
