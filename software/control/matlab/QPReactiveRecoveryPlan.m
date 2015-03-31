@@ -19,6 +19,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   methods
     function obj = QPReactiveRecoveryPlan(robot, options)
+      checkDependency('iris');
       if nargin < 2
         options = struct();
       end
@@ -54,6 +55,16 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       r_ic = com(1:2) + comd(1:2) / obj.point_mass_biped.omega;
 
+
+      if DEBUG
+        obj.lcmgl.glColor3f(0.2,0.2,1.0);
+        obj.lcmgl.sphere([com(1:2); 0], 0.01, 20, 20);
+
+        obj.lcmgl.glColor3f(0.9,0.2,0.2);
+        obj.lcmgl.sphere([r_ic; 0], 0.01, 20, 20);
+      end
+
+
       foot_states = struct('right', struct('pose', [], 'velocity', [], 'contact', false),...
                           'left', struct('pose', [], 'velocity', [], 'contact', false));
       for f = {'right', 'left'}
@@ -87,9 +98,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if is_captured
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
       else
-        U_MAX = 2;
+        U_MAX = 20;
         intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, obj.point_mass_biped.omega, U_MAX);
 
+        if isempty(intercept_plans)
+          disp('recovery is not possible');
+          qp_input = obj.last_qp_input;
+          return;
+        end
+        
         best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
 
         if isempty(best_plan)
@@ -101,14 +118,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         qp_input = obj.getInterceptInput(t_global, foot_states, reachable_vertices, best_plan, rpc);
       end
 
-      if DEBUG
-        obj.lcmgl.glColor3f(0.2,0.2,1.0);
-        obj.lcmgl.sphere([com(1:2); 0], 0.01, 20, 20);
-
-        obj.lcmgl.glColor3f(0.9,0.2,0.2);
-        obj.lcmgl.sphere([r_ic; 0], 0.01, 20, 20);
-      end
-
+      obj.lcmgl.switchBuffers();
 
       obj.last_qp_input = qp_input;
 
@@ -161,7 +171,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         end
         obj.lcmgl.glEnd();
         
-        obj.lcmgl.switchBuffers();
       end
       
       qp_input = obj.default_qp_input;
@@ -244,7 +253,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   methods(Static)
     function is_captured = isICPCaptured(r_ic, foot_states, foot_vertices)
-      checkDependency('iris');
       SHRINK_FACTOR = 0.9;
 
       all_vertices_in_world = zeros(2,0);
@@ -265,12 +273,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         is_captured = 0;
       else
         u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, all_vertices_in_world, r_ic));
-        is_captured = norm(u) < 1e-3;
+        is_captured = norm(u) < 1e-2;
       end
     end
 
     function y = closestPointInConvexHull(x, V)
-      checkDependency('iris');
       if size(V, 1) > 3 || size(V, 2) > 8
         error('V is too large for our custom solver')
       end
@@ -358,7 +365,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       r_cop_prime = [0;0];
 
-      tt = linspace(0, 1);
 
       % subplot(212)
       xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).pose(2),...
@@ -369,6 +375,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       % subplot(211)
       % hold on
+%       tt = linspace(0, 1);
       % plot(tt, QPReactiveRecoveryPlan.icpUpdate(r_ic_prime(1), r_cop_prime(1), tt, omega) + OFFSET, 'r-')
 
       x0 = foot_states.(swing_foot).pose(1);
@@ -512,7 +519,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         end
 
         if ~isempty(tf)
-          valuecheck(x0 + 1/2 * xd0 * tf + 1/4 * u * tf^2 - 1/4 * xd0^2 / u, xf, 1e-6);
+%           valuecheck(x0 + 1/2 * xd0 * tf + 1/4 * u * tf^2 - 1/4 * xd0^2 / u, xf, 1e-6);
           tswitch = 0.5 * (tf - xd0 / u);
           intercepts(end+1) = struct('tf', tf, 'tswitch', tswitch, 'u', u);
         end
