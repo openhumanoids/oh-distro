@@ -116,7 +116,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     function qp_input = getInterceptInput(obj, t_global, foot_states, reachable_vertices, best_plan, rpc)
       DEBUG = true;
-      stance_foot = obj.OTHER_FOOT.(best_plan.foot);
       [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
       ts
       % TODO: rather than applying a transform to coefs, just send body_motion_data for the sole point, not the origin
@@ -219,7 +218,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         foot = feet{j};
         qp_input.support_data(j).body_id = obj.robot.foot_body_id.(foot);
         qp_input.support_data(j).contact_pts = [rpc.contact_groups{obj.robot.foot_body_id.(foot)}.toe,...
-                                                rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel],...
+                                                rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel];
         qp_input.support_data(j).support_logic_map = obj.support_logic_maps.kinematic_or_sensed;
 
         T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(foot)).T;
