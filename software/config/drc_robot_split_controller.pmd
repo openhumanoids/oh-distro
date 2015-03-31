@@ -26,6 +26,10 @@ group "1.state_mit" {
         exec = "se-fusion -v";
         host = "atlas2";
     }
+    cmd "yaw-lock" {
+        exec = "se-yaw-lock";
+        host = "atlas2";
+    }
 }
 
 cmd "AtlasController" {

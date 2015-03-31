@@ -117,16 +117,22 @@ classdef DRCPlanner
       for j = 1:length(obj.monitors)
         obj.lc.subscribe(obj.request_channels{j}, obj.monitors{j});
       end
+      status_msg = drc.system_status_t();
+      status_msg.system = drc.system_status_t.PLANNING_BASE;
+      status_msg.importance = drc.system_status_t.VERY_IMPORTANT;
+      status_msg.frequency = drc.system_status_t.LOW_FREQUENCY;
+
+      req_msg = [];
       disp('Combined Planner: ready for plan requests');
       while true
         for j = 1:length(obj.monitors)
-          msg = obj.monitors{j}.getNextMessage(5);
-          if isempty(msg)
+          req_msg = obj.monitors{j}.getNextMessage(5);
+          if isempty(req_msg)
             continue
           end
           try
             fprintf(1, 'Handling plan on channel: %s...', obj.request_channels{j});
-            plan = obj.handlers{j}(msg);
+            plan = obj.handlers{j}(req_msg);
             if ismethod(plan, 'toLCM')
               plan = plan.toLCM();
             end
@@ -134,13 +140,9 @@ classdef DRCPlanner
           catch e
             report = e.getReport();
             disp(report)
-            msg = drc.system_status_t();
-            msg.utime = get_timestamp_now();
-            msg.system = drc.system_status_t.PLANNING_BASE;
-            msg.importance = drc.system_status_t.VERY_IMPORTANT;
-            msg.frequency = drc.system_status_t.LOW_FREQUENCY;
-            msg.value = report;
-            obj.lc.publish('SYSTEM_STATUS', msg);
+            status_msg.utime = get_timestamp_now();
+            status_msg.value = report;
+            obj.lc.publish('SYSTEM_STATUS', status_msg);
           end
           fprintf(1, '...done\n');
         end
@@ -175,19 +177,39 @@ classdef DRCPlanner
       joint_names = obj.biped.getStateFrame.coordinates(1:nq);
       [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
-      % compute link_constraints for pelvis
-      pelvis_ind = findLinkId(obj.biped,'pelvis');
-      pelvis_pose = zeros(6,length(ts));
-      for i=1:length(ts)
+
+
+      bodies_to_track = [obj.biped.findLinkId('pelvis'),...
+                         obj.biped.foot_body_id.right,...
+                         obj.biped.foot_body_id.left];
+      body_poses = zeros([6, length(ts), length(bodies_to_track)]);
+      for i = 1:numel(ts)
         kinsol = doKinematics(obj.biped,ppval(qtraj_pp,ts(i)));
-        pelvis_pose(:,i) = forwardKin(obj.biped,kinsol,pelvis_ind,[0;0;0],1);
+        for j = 1:numel(bodies_to_track)
+          body_poses(:,i,j) = obj.biped.forwardKin(kinsol, bodies_to_track(j), [0;0;0], 1);
+        end
       end
-      link_constraints(1).link_ndx = pelvis_ind;
-      link_constraints(1).pt = [0;0;0];
-      pp = pchip(ts, pelvis_pose);
-      [breaks, coefs, l, k, d] = unmkpp(pp);
-      link_constraints(1).ts = breaks;
-      link_constraints(1).coefs = reshape(coefs, [d,l,k]);
+      for j = 1:numel(bodies_to_track)
+        for k = 4:6
+          body_poses(k,:,j) = unwrap(body_poses(k,:,j));
+        end
+      end
+
+      link_constraints = struct('link_ndx', cell(1, numel(bodies_to_track)),...
+                                'pt', cell(1, numel(bodies_to_track)),...
+                                'ts', cell(1, numel(bodies_to_track)),...
+                                'coefs', cell(1, numel(bodies_to_track)),...
+                                'toe_off_allowed', cell(1, numel(bodies_to_track)));
+      for j = 1:numel(bodies_to_track)
+        link_constraints(j).link_ndx = bodies_to_track(j);
+        link_constraints(j).pt = [0;0;0];
+        pp = pchip(ts, body_poses(:,:,j));
+        [breaks, coefs, l, k, d] = unmkpp(pp);
+        link_constraints(j).ts = breaks;
+        link_constraints(j).coefs = reshape(coefs, [d, l, k]);
+        link_constraints(j).toe_off_allowed = false(1, numel(breaks));
+      end
+
       plan = QPLocomotionPlan.from_configuration_traj(obj.biped,qtraj_pp,link_constraints);
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end

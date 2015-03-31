@@ -624,6 +624,34 @@
       }, 
       "name": "narrow walking profile", 
       "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hand-up-tuck", 
+      "joints": {
+        "r_arm_elx": -2.306710720062256, 
+        "r_arm_ely": 0.14479857683181763, 
+        "r_arm_mwx": 0.16161412000656128, 
+        "r_arm_shx": 0.7676129341125488, 
+        "r_arm_shz": 1.5669173002243042, 
+        "r_arm_uwy": 3.141448974609375
+      }, 
+      "name": "hand-up-tuck", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hand-up-pre-tuck", 
+      "joints": {
+        "l_arm_elx": 2.3066322803497314, 
+        "l_arm_ely": 0.14388775825500488, 
+        "l_arm_mwx": -0.16209596395492554, 
+        "l_arm_shx": -0.7677726745605469, 
+        "l_arm_shz": -0.041280344128608704, 
+        "l_arm_uwy": 1.7961766719818115
+      }, 
+      "name": "hand-up-pre-tuck", 
+      "nominal_handedness": "left"
     }
   ], 
   "drill": [
