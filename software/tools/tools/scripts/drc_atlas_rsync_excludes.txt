@@ -11,3 +11,4 @@ lcmtypes/python/
 software/config/drc_control_setup.m
 *.o
 *.so
+lqr_solution_cache.mat
