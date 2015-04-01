@@ -117,6 +117,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     function handle_atlas_behavior_command(obj, msg)
       if strcmp(char(msg.command), 'stop') || strcmp(char(msg.command), 'freeze')
         disp('Got an atlas behavior command...going into silent mode');
+        obj.recovery_state = obj.RECOVERY_NONE;
         obj.switchToPlan(SilentPlan(obj.robot));
       end
     end
@@ -242,8 +243,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
           % Generate a recovery plan if requested and stick it on the queue
           if (obj.t > 0 && obj.recovery_state == obj.RECOVERY_NOW)
-            fprintf('Recovery planner doing its thing!\n');
+            %fprintf('Recovery planner doing its thing!\n');
             obj.switchToPlan(obj.reactive_recovery_planner);
+            %obj.reactive_recovery_planner.getQPControllerInput(obj.t, obj.x, obj.robot_property_cache, obj.contact_force_detected);
           end
 
           obj.pauseIfRequested();
