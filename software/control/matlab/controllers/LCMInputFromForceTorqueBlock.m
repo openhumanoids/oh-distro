@@ -61,7 +61,7 @@ classdef LCMInputFromForceTorqueBlock < MIMODrakeSystem
         rpy = x(4:6);
         rpy(3) = 0; % Force should yaw with robot
         quat_world_to_body = rpy2quat(-rpy);
-        wrench = quatRotateVec(quat_world_to_body, [data.fx; data.fy; data.fz])
+        wrench = quatRotateVec(quat_world_to_body, [data.fx; data.fy; data.fz]);
         obj.last_wrench.setData(wrench);
       end
       
