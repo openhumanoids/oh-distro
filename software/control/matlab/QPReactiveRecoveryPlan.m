@@ -143,15 +143,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     function qp_input = getInterceptInput(obj, t_global, foot_states, reachable_vertices, best_plan, rpc)
       DEBUG = true;
       [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
-      ts
+      %ts
       % TODO: rather than applying a transform to coefs, just send body_motion_data for the sole point, not the origin
       %warning('this transform is incorrect if the foot is rotating');
-      for j = 1:size(coefs, 2)
-        T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(best_plan.swing_foot)).T;
-        T_sole = poseRPY2tform(coefs(:,j,end));
-        T_origin = T_sole * inv(T_sole_frame);
-        coefs(:,j,end) = tform2poseRPY(T_origin);
-      end
+%       for j = 1:size(coefs, 2)
+%         T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(best_plan.swing_foot)).T;
+%         T_sole = poseRPY2tform(coefs(:,j,end));
+%         T_origin = T_sole * inv(T_sole_frame);
+%         coefs(:,j,end) = tform2poseRPY(T_origin);
+%       end
 
       pp = mkpp(ts, coefs, 6);
 
@@ -209,7 +209,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'support_logic_map', obj.support_logic_maps.require_support,...
                                      'mu',obj.mu,...
                                      'contact_surfaces', 0);
-      qp_input.body_motion_data = struct('body_id', obj.robot.foot_body_id.(best_plan.swing_foot),...
+      qp_input.body_motion_data = struct('body_id', obj.robot.foot_frame_id.(best_plan.swing_foot),...
                                          'ts', t_global + ts(1:2),...
                                          'coefs', coefs(:,1,:));
 

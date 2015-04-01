@@ -24,6 +24,7 @@ atlas_options.visual = false; % loads faster
 atlas_options.floating = true;
 atlas_options.ignore_friction = true;
 atlas_options.run_in_simul_mode = run_in_simul_mode;
+atlas_options.use_new_kinsol = true;
 
 r = DRCAtlas([],atlas_options);
 r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
