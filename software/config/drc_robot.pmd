@@ -87,7 +87,7 @@ group "2.plan_and_control" {
 
     cmd "PressureControl" {
         exec = "drc-atlas-pressure-monitor";
-        host = "base";
+        host = "atlas2";
     }
 
 }
