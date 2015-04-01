@@ -80,9 +80,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         if pos(3) < obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + 0.001
           foot_states.(foot).contact = true;
         end
-        if contact_force_detected(obj.robot.foot_body_id.(foot))
-          foot_states.(foot).contact = true;
-        end
+%         if contact_force_detected(obj.robot.foot_body_id.(foot))
+%           foot_states.(foot).contact = true;
+%         end
       end
 
       % warning('hard-coded for atlas foot shape');
