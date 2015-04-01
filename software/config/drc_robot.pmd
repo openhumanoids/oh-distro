@@ -78,11 +78,13 @@ group "2.plan_and_control" {
     cmd "PlanEval" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(0, struct('hands', 'robotiq_weight_only')); \"";
         host = "atlas2";
+        stop_signal = 15;
     }
 
     cmd "InstQP" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(0, struct('hands', 'robotiq_weight_only')); \"";
         host = "atlas2";
+        stop_signal = 15;
     }
 
     cmd "PressureControl" {
