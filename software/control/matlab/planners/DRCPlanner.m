@@ -11,10 +11,6 @@ classdef DRCPlanner
     lc
   end
 
-  methods (Abstract)
-    addSubscriptions(obj)
-  end
-
   methods(Static) 
     function r = constructAtlas(atlas_version)
       if nargin >= 1
@@ -109,8 +105,6 @@ classdef DRCPlanner
       obj.handlers = {};
       obj.response_channels = {};
       obj.lc = lcm.lcm.LCM.getSingleton();
-
-      obj = obj.addSubscriptions();
     end
 
     function run(obj)
@@ -231,6 +225,50 @@ classdef DRCPlanner
       heightmap = RigidBodyHeightMapTerrain.constructHeightMapFromRaycast(model,[],msg.x_min:msg.x_step:msg.x_max, msg.y_min:msg.y_step:msg.y_max, msg.scanner_height);
 
       map_img = CombinedPlanner.getDRCMapImage(heightmap, 0, msg.x_step, msg.y_step, msg.utime);
+    end
+
+    function obj = addRemoteSubscriptions(obj)
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
+      obj.request_channels{end+1} = 'WALKING_CONTROLLER_PLAN_REQUEST';
+      obj.handlers{end+1} = @obj.plan_walking_controller;
+      obj.response_channels{end+1} = 'WALKING_CONTROLLER_PLAN_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_t, 'utime');
+      obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN';
+      obj.handlers{end+1} = @obj.configuration_traj;
+      obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
+    end
+
+    function obj = addBaseSubscriptions(obj)
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.footstep_plan_request_t, 'utime');
+      obj.request_channels{end+1} = 'FOOTSTEP_PLAN_REQUEST';
+      obj.handlers{end+1} = @obj.plan_footsteps;
+      obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
+      obj.request_channels{end+1} = 'WALKING_TRAJ_REQUEST';
+      obj.handlers{end+1} = @obj.plan_walking_traj;
+      obj.response_channels{end+1} = 'WALKING_TRAJ_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
+      obj.request_channels{end+1} = 'WALKING_SIMULATION_DRAKE_REQUEST';
+      obj.handlers{end+1} = @obj.simulate_walking_drake;
+      obj.response_channels{end+1} = 'WALKING_SIMULATION_TRAJ_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.iris_region_request_t, 'utime');
+      obj.request_channels{end+1} = 'IRIS_REGION_REQUEST';
+      obj.handlers{end+1} = @obj.iris_region;
+      obj.response_channels{end+1} = 'IRIS_REGION_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.terrain_raycast_request_t, 'utime');
+      obj.request_channels{end+1} = 'TERRAIN_RAYCAST_REQUEST';
+      obj.handlers{end+1} = @obj.terrain_raycast;
+      obj.response_channels{end+1} = 'MAP_DEPTH';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.auto_iris_segmentation_request_t, 'utime');
+      obj.request_channels{end+1} = 'AUTO_IRIS_SEGMENTATION_REQUEST';
+      obj.handlers{end+1} = @obj.auto_iris_segmentation;
+      obj.response_channels{end+1} = 'IRIS_SEGMENTATION_RESPONSE';
     end
   end
 end

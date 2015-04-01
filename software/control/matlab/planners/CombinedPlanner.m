@@ -1,4 +1,4 @@
-classdef CombinedPlanner < BasePlanner & RemotePlanner
+classdef CombinedPlanner < DRCPlanner
   methods (Static)
     function obj = withAtlas()
       obj = CombinedPlanner(CombinedPlanner.constructAtlas());
@@ -11,14 +11,10 @@ classdef CombinedPlanner < BasePlanner & RemotePlanner
 
   methods
     function obj = CombinedPlanner(varargin)
-      obj = obj@BasePlanner(varargin{:});
+      obj = obj@DRCPlanner(varargin{:});
+      obj = obj.addRemoteSubscriptions();
+      obj = obj.addBaseSubscriptions();
     end
-    
-    function obj = addSubscriptions(obj)
-      obj = addSubscriptions@BasePlanner(obj);
-      obj = addSubscriptions@RemotePlanner(obj);
-    end
-
   end
 end
 
