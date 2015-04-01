@@ -14,7 +14,7 @@ if nargin < 7, box_height = 1.2; end
 use_mass_est = false;
 
 % And if you want external wrench input on pelvis
-use_external_wrench = 'pelvis';
+use_external_wrench = 'mtorso';
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
