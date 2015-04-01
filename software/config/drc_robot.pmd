@@ -27,7 +27,7 @@ group "1.state_mit" {
         host = "atlas2";
     }
     cmd "yaw-lock" {
-        exec = "se-yaw-lock";
+        exec = "se-yaw-lock -yd";
         host = "atlas2";
     }
 }
