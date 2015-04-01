@@ -77,8 +77,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         vel = J * qd;
         foot_states.(foot).pose = pos;
         foot_states.(foot).velocity = vel;
-        %warning('hard-coded foot height for contact')
-        if pos(3) < 0.001
+        if pos(3) < obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + 0.001
+          foot_states.(foot).contact = true;
+        end
+        if contact_force_detected(obj.robot.foot_body_id.(foot))
           foot_states.(foot).contact = true;
         end
       end
@@ -93,28 +95,42 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                             'left', [-0.4, 0.4, 0.4, -0.4;
                                      0.15, 0.15, 0.4, 0.4]);
 
-      is_captured = QPReactiveRecoveryPlan.isICPCaptured(r_ic, foot_states, foot_vertices);
+      is_captured = obj.isICPCaptured(r_ic, foot_states, foot_vertices);
 
       if is_captured
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
       else
-        U_MAX = 20;
-        intercept_plans = QPReactiveRecoveryPlan.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, obj.point_mass_biped.omega, U_MAX);
-
-        if isempty(intercept_plans)
-          disp('recovery is not possible');
-          qp_input = obj.last_qp_input;
-          return;
-        end
         
-        best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
-
-        if isempty(best_plan)
+        % if the last plan is about to finish, just finish it first.
+        if ~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
+            obj.last_plan.tf - t_global < 0.05
           best_plan = obj.last_plan;
         else
-          obj.last_plan = best_plan;
-        end
+        
+          U_MAX = 40;
+          intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
 
+          if isempty(intercept_plans)
+            disp('recovery is not possible');
+            qp_input = obj.last_qp_input;
+            return;
+          end
+
+          % Add to the errors a new term reflecting distance of 
+          % foot from down-projected com of robot
+          for j=1:numel(intercept_plans)
+            com_to_foot_error = norm(intercept_plans(j).r_foot_new(1:2) - com(1:2));
+            intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
+          end
+          best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
+
+          if isempty(best_plan)
+            best_plan = obj.last_plan;
+          else
+            obj.last_plan = best_plan;
+          end
+        end
+        
         qp_input = obj.getInterceptInput(t_global, foot_states, reachable_vertices, best_plan, rpc);
       end
 
@@ -191,16 +207,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'contact_pts', [rpc.contact_groups{obj.robot.foot_body_id.(stance_foot)}.toe,...
                                                      rpc.contact_groups{obj.robot.foot_body_id.(stance_foot)}.heel],...
                                      'support_logic_map', obj.support_logic_maps.require_support,...
-                                     'mu', obj.mu,...
+                                     'mu',obj.mu,...
                                      'contact_surfaces', 0);
       qp_input.body_motion_data = struct('body_id', obj.robot.foot_body_id.(best_plan.swing_foot),...
                                          'ts', t_global + ts(1:2),...
                                          'coefs', coefs(:,1,:));
 
-      %warning('no rotation, fixed pelvis height');
+      pelvis_height = obj.robot.getTerrainHeight(foot_states.(stance_foot).pose(1:2)) + 0.8;
+      pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_global + ts(1:2),...
-                                                'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;foot_states.(stance_foot).pose(6)]));
+                                                'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]));
       qp_input.param_set_name = 'recovery';
     end
 
@@ -219,7 +236,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'support_logic_map', cell(1, 2),...
                                      'mu', num2cell(obj.mu * ones(1, 2)),...
                                      'contact_surfaces', num2cell(zeros(1, 2)));
-      qp_input.body_motion_data = struct('body_id', cell(1, 3),...
+      qp_input.body_motion_data = struct('body_id', cell(1, 3),..._
                                          'ts', cell(1, 3),...
                                          'coefs', cell(1, 3));
       feet = {'right', 'left'};
@@ -232,8 +249,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
         T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(foot)).T;
         sole_pose = foot_states.(foot).pose;
-        %warning('z = 0 assumption');
-        sole_pose(3) = 0;
+        sole_pose(3) = obj.robot.getTerrainHeight(sole_pose(1:2));
         T_sole = poseRPY2tform(sole_pose);
         T_origin = T_sole * inv(T_sole_frame);
         origin_pose = tform2poseRPY(T_origin);
@@ -242,25 +258,24 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         qp_input.body_motion_data(j).ts = [t_global, t_global];
         qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(origin_pose, [6, 1, 1]));
       end
-      %warning('fixed pelvis height');
+      % warning('probably not right pelvis height if feet height differ...')
+      pelvis_height = (obj.robot.getTerrainHeight(foot_states.left.pose(1:2)) + obj.robot.getTerrainHeight(foot_states.right.pose(1:2)))/2 + 0.84;
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
                                             'ts', t_global + [0, 0],...
-                                            'coefs', cat(3, zeros(6,1,3), [nan;nan;0.84;0;0;pelvis_yaw]));
+                                            'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]));
       qp_input.param_set_name = 'recovery';
     end
-  end
 
-  methods(Static)
-    function is_captured = isICPCaptured(r_ic, foot_states, foot_vertices)
+    function is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices)
       SHRINK_FACTOR = 0.9;
 
       all_vertices_in_world = zeros(2,0);
 
       for f = {'right', 'left'}
         foot = f{1};
-        %warning('z=0 assumption');
-        if foot_states.(foot).pose(3) < 0.01
+        if foot_states.(foot).pose(3) < ...
+            obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + 0.01
           R = rotmat(foot_states.(foot).pose(6));
           foot_vertices_in_world = bsxfun(@plus,...
                                           SHRINK_FACTOR * R * foot_vertices.(foot),...
@@ -277,16 +292,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
     end
 
-    function y = closestPointInConvexHull(x, V)
-      if size(V, 1) > 3 || size(V, 2) > 8
-        error('V is too large for our custom solver')
-      end
-
-      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, V, x));
-      y = u + x;
-    end
-
-    function intercept_plans = getInterceptPlans(foot_states, foot_vertices, reach_vertices, r_ic, omega, u)
+    function intercept_plans = getInterceptPlans(obj, foot_states, foot_vertices, reach_vertices, r_ic, comd, omega, u)
       intercept_plans = struct('tf', {},...
                                'tswitch', {},...
                                'r_foot_new', {},...
@@ -307,14 +313,14 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       for j = 1:length(available_feet)
         swing_foot = available_feet(j).swing;
-        new_plans = QPReactiveRecoveryPlan.getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reach_vertices.(swing_foot), r_ic, omega, u);
+        new_plans = obj.getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reach_vertices.(swing_foot), r_ic, comd, omega, u);
         if ~isempty(new_plans)
           intercept_plans = [intercept_plans, new_plans];
         end
       end
     end
 
-    function intercept_plans = getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reachable_vertices_in_stance_frame, r_ic, omega, u)
+    function intercept_plans = getInterceptPlansForFoot(obj, foot_states, swing_foot, foot_vertices, reachable_vertices_in_stance_frame, r_ic, comd, omega, u)
       stance_foot = QPReactiveRecoveryPlan.OTHER_FOOT.(swing_foot);
 
       % Find the center of pressure, which we'll place as close as possible to the ICP
@@ -342,17 +348,52 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).pose(6)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).pose(1:2));
       reachable_vertices_prime = R * bsxfun(@minus, reachable_vertices_in_world_frame, r_cop);
       intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
-      
+
       Ri = inv(R);
+      foot_avg_direction = angleAverage(foot_states.left.pose(6), foot_states.right.pose(6));
+      % Desired foot direction is along direction of icp, or the opposite
+      % (so we either stumble forward along it or backward, not sideways).
+      if (norm(comd) > 0.25)
+        comd = comd / norm(comd);
+        desired_foot_direction = atan2(comd(2), comd(1));
+        if (abs(angleDiff(desired_foot_direction, foot_avg_direction)) > pi/2)
+          desired_foot_direction = atan2(-comd(2), -comd(1));
+        end
+      else
+        desired_foot_direction = foot_avg_direction;
+      end
+      
       for j = 1:length(intercept_plans)
-        %warning('hard-coding z=0')
+        % rotate foot to be pointing STEP degrees closer to desired foot
+        % dir
+        new_foot_dir_vec = [cos(foot_states.(stance_foot).pose(6)); sin(foot_states.(stance_foot).pose(6))];
+        err = angleDiff(foot_states.(stance_foot).pose(6), desired_foot_direction);
+        err = sign(err)*min(abs(err), pi/8);
+        new_foot_dir_vec = rotmat(err)*new_foot_dir_vec;
+        new_foot_yaw = atan2(new_foot_dir_vec(2), new_foot_dir_vec(1));
+        foot_states.(stance_foot).pose(6)
         intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; 
-                                         0
-                                         foot_states.(stance_foot).pose(4:6)];
+                                         0;
+                                         foot_states.(stance_foot).pose(4:5);
+                                         new_foot_yaw];
+        intercept_plans(j).r_foot_new(3) = obj.robot.getTerrainHeight(intercept_plans(j).r_foot_new(1:2));
         intercept_plans(j).r_ic_new = Ri * intercept_plans(j).r_ic_new + r_cop;
         intercept_plans(j).swing_foot = swing_foot;
         intercept_plans(j).r_cop = r_cop;
       end
+      
+    end
+
+  end
+
+  methods(Static)
+    function y = closestPointInConvexHull(x, V)
+      if size(V, 1) > 3 || size(V, 2) > 8
+        error('V is too large for our custom solver')
+      end
+
+      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, V, x));
+      y = u + x;
     end
 
     function intercept_plans = getLocalFrameIntercepts(foot_states, swing_foot, foot_vertices, reachable_vertices, r_ic_prime, u_max, omega)
@@ -420,8 +461,30 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           end
           t_int = t_int(mask);
           x_int = x_int(mask);
-
+          
+          % Pre-generate r_foot_reaches
+          
+          % If there are no intercepts, go as far along the cop->ic line
+          % out of our reachable set as possible.
+          if isempty(t_int)
+            r_foot_reaches = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
+            x_int = r_foot_reaches(1);
+          else
+            r_foot_reaches = zeros( 2, min(1, numel(x_int)) );
+            for j = 1:numel(x_int)
+              r_foot_int = [x_int(j); 0];
+              y = iris.least_distance.cvxgen_ldp(bsxfun(@minus, reachable_vertices, r_foot_int));
+              if norm(y) < 1e-3
+                r_foot_reaches(:, j) = r_foot_int;
+              else
+                % TODO: is this the right thing to do?
+                r_foot_reaches(:, j) = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
+              end
+            end
+          end
+         
           for j = 1:numel(x_int)
+            r_foot_reach = r_foot_reaches(:, j);
             r_foot_int = [x_int(j); 0];
             y = iris.least_distance.cvxgen_ldp(bsxfun(@minus, reachable_vertices, r_foot_int));
             if norm(y) < 1e-3
@@ -437,11 +500,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             if ~isempty(intercepts)
               [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
               intercept = intercepts(i);
-              
+
               if ~valuecheck(x0 + 0.5 * xd0 * intercept.tf + 0.25 * intercept.u * intercept.tf^2 - 0.25 * xd0^2 / intercept.u, r_foot_reach(1))
                 keyboard()
               end
-              
+
               intercept.tf = max([intercept.tf, min_time_to_xprime_axis]);
               intercept_plans(end+1) = struct('tf', intercept.tf,...
                                               'tswitch', intercept.tswitch,...
