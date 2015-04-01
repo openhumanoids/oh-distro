@@ -26,7 +26,7 @@ install(TARGETS RobotStateMonitor AtlasCommandPublisher footstepPlanShiftmex DES
 add_mex(mxSerialize mxSerialize.cpp)
 add_mex(mxDeserialize mxDeserialize.cpp)
 
-pods_find_pkg_config(maps)
+pods_find_pkg_config(mini-maps)
 pods_find_pkg_config(opencv)
 
 add_mex(linearIKmex linearIKmex.cpp)
@@ -67,7 +67,7 @@ install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mx
 install(TARGETS RobotStateDriver AtlasCommandDriver FootContactDriver DESTINATION lib)
 
 
-if (maps_FOUND AND opencv_FOUND)
+if (mini-maps_FOUND AND opencv_FOUND)
 
   add_mex(HeightMapWrapper HeightMapWrapper.cpp)
   pods_use_pkg_config_packages(HeightMapWrapper terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)

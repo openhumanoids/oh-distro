@@ -8,11 +8,10 @@
 
 #include <drc_utils/BotWrapper.hpp>
 
-#include <maps/BotWrapper.hpp>
-#include <maps/ViewClient.hpp>
-#include <maps/DepthImage.hpp>
-#include <maps/DepthImageView.hpp>
-#include <maps/LcmTranslator.hpp>
+#include <mini-maps/ViewClient.hpp>
+#include <mini-maps/DepthImage.hpp>
+#include <mini-maps/DepthImageView.hpp>
+#include <mini-maps/LcmTranslator.hpp>
 
 #include "FillMethods.hpp"
 
@@ -72,10 +71,7 @@ struct TerrainMap::Helper {
     mFillPlane << 0,0,1,0;
     mLatestFootPlane << 0,0,1,0;
     mViewClient.reset(new maps::ViewClient());
-    std::shared_ptr<maps::BotWrapper> wrapper
-      (new maps::BotWrapper(mBotWrapper->getLcm(), mBotWrapper->getBotParam(),
-                            mBotWrapper->getBotFrames()));
-    mViewClient->setBotWrapper(wrapper);
+    mViewClient->setBotWrapper(mBotWrapper);
     mBotWrapper->getLcm()->subscribe("POSE_GROUND", &Helper::onGround, this);
     mListener.reset(new Listener(this));
     mViewClient->addListener(mListener.get());
