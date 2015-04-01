@@ -121,6 +121,14 @@ int main(int argc, char** argv)
   message_filters::Subscriber<Image> image1_sub(nh, "/camera/rgb/image_rect_color", 1);
   message_filters::Subscriber<Image> image2_sub(nh, "/camera/depth/image_rect_raw", 1);
 
+  // To replay the running logs from 2012-04-22-highspeed-psdk:
+  // passport0/data/2012-marine/rgbd/ros_openni/2012-04-22-highspeed-psdk/4
+  // ROS_NAMESPACE=camera/rgb rosrun image_proc image_proc
+  // Remove color space conversion above
+  // message_filters::Subscriber<Image> image1_sub(nh, "/camera/rgb/image_rect_color", 1);
+  // message_filters::Subscriber<Image> image2_sub(nh, "/camera/depth/image_raw", 1);
+
+
   typedef sync_policies::ApproximateTime<Image, Image> MySyncPolicy;
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
   Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image1_sub, image2_sub);
