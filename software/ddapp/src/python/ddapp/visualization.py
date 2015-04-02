@@ -40,6 +40,7 @@ class PolyDataItem(om.ObjectModelItem):
         self.actor.SetMapper(self.mapper)
         self.shadowActor = None
         self.scalarBarWidget = None
+        self.extraViewRenderers = {}
 
         self.rangeMap = {
             'intensity' : (400, 4000),
@@ -183,6 +184,12 @@ class PolyDataItem(om.ObjectModelItem):
 
         self._renderAllViews()
 
+    def setScalarRange(self, rangeMin, rangeMax):
+        arrayName = self.getPropertyEnumValue('Color By')
+        if arrayName != 'Solid Color':
+            lut = self.mapper.GetLookupTable()
+            self.colorBy(arrayName, scalarRange=(rangeMin, rangeMax))
+
     def _updateSurfaceProperty(self):
         enableSurfaceMode = self.polyData.GetNumberOfPolys() or self.polyData.GetNumberOfStrips()
         self.properties.setPropertyAttribute('Surface Mode', 'hidden', not enableSurfaceMode)
@@ -308,6 +315,8 @@ class PolyDataItem(om.ObjectModelItem):
         view.renderer().RemoveActor(self.actor)
         if self.shadowActor:
             view.renderer().RemoveActor(self.shadowActor)
+        for renderer in self.extraViewRenderers.get(view, []):
+            renderer.RemoveActor(self.actor)
         view.render()
 
 
@@ -476,7 +485,8 @@ class FrameItem(PolyDataItem):
         self.transform.SetMatrix(transform.GetMatrix())
         self._blockSignals = False
         self.transform.Modified()
-        if self.getProperty('Visible'):
+        parent = self.parent()
+        if parent.getProperty('Visible') or self.getProperty('Visible'):
             self._renderAllViews()
 
     def _onPropertyChanged(self, propertySet, propertyName):
@@ -690,16 +700,15 @@ class ViewOptionsItem(om.ObjectModelItem):
         self.view.render()
 
 
-def showGrid(view, cellSize=0.5, numberOfCells=25, name='grid', parent='sensors', color=None, useSurface=False, gridTransform=None):
+def showGrid(view, cellSize=0.5, numberOfCells=25, name='grid', parent='sensors', color=[1,1,1], alpha=0.05, gridTransform=None):
 
     grid = vtk.vtkGridSource()
     grid.SetScale(cellSize)
     grid.SetGridSize(numberOfCells)
-    grid.SetSurfaceEnabled(useSurface)
+    grid.SetSurfaceEnabled(True)
     grid.Update()
 
-    color = color or [1, 1, 1]
-    gridObj = showPolyData(grid.GetOutput(), 'grid', view=view, alpha=0.10, color=color, visible=True, parent=parent)
+    gridObj = showPolyData(grid.GetOutput(), 'grid', view=view, alpha=alpha, color=color, visible=True, parent=parent)
     gridObj.gridSource = grid
     gridObj.actor.GetProperty().LightingOff()
     gridObj.actor.SetPickable(False)
@@ -708,8 +717,7 @@ def showGrid(view, cellSize=0.5, numberOfCells=25, name='grid', parent='sensors'
     gridObj.actor.SetUserTransform(gridTransform)
     showFrame(gridTransform, 'grid frame', scale=0.2, visible=False, parent=gridObj, view=view)
 
-    if useSurface:
-        gridObj.actor.GetProperty().EdgeVisibilityOn()
+    gridObj.setProperty('Surface Mode', 'Wireframe')
 
     def computeViewBoundsNoGrid():
         if not gridObj.getProperty('Visible'):

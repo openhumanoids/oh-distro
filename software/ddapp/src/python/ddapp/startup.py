@@ -43,7 +43,6 @@ from ddapp import robotstate
 from ddapp import roboturdf
 from ddapp import robotsystem
 from ddapp import affordancepanel
-from ddapp import raycastdriver
 from ddapp import filterUtils
 from ddapp import footstepsdriver
 from ddapp import footstepsdriverpanel
@@ -138,7 +137,7 @@ useControllerRate = True
 useForceDisplay = False
 useSkybox = False
 useDataFiles = True
-usePFGrasp = True
+usePFGrasp = False
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -191,13 +190,57 @@ if usePerception:
 
 
 if useGrid:
-    vis.showGrid(view, color=[0,0,0] if useLightColorScheme else [1,1,1], useSurface=useLightColorScheme)
+    grid = vis.showGrid(view, color=[0,0,0], alpha=0.1)
+    grid.setProperty('Surface Mode', 'Surface with edges')
 
-om.addToObjectModel(vis.ViewOptionsItem(view), parentObj=om.findObjectByName('sensors'))
+app.setBackgroundColor([0.3, 0.3, 0.35], [0.95,0.95,1])
+
+viewOptions = vis.ViewOptionsItem(view)
+om.addToObjectModel(viewOptions, parentObj=om.findObjectByName('sensors'))
+
+class ViewBackgroundLightHandler(object):
+
+    def __init__(self, viewOptions, grid):
+        self.viewOptions = viewOptions
+        self.action = app.getToolsMenuActions()['ActionToggleBackgroundLight']
+        self.action.connect('triggered()', self.toggle)
+
+        self.properties = { viewOptions : {'Gradient background':True, 'Background color':[0.0, 0.0, 0.0], 'Background color 2':[0.3, 0.3, 0.3]},
+                            grid : {'Surface Mode':'Wireframe', 'Alpha':0.05, 'Color':[1.0, 1.0, 1.0], 'Color By':0}
+                          }
+
+        self.cachedProperties = {}
+        self.storeProperties()
+
+    def storeProperties(self):
+
+        def grab(obj, props):
+            for key in props.keys():
+                self.cachedProperties.setdefault(obj, dict())[key] = obj.getProperty(key)
+
+        for obj, props in self.properties.iteritems():
+            grab(obj, props)
+
+    def applyProperties(self, properties):
+
+        def send(obj, props):
+            for key, value in props.iteritems():
+                obj.setProperty(key, value)
+
+        for obj, props in properties.iteritems():
+            send(obj, props)
+
+    def toggle(self):
+        if self.action.checked:
+            self.storeProperties()
+            self.applyProperties(self.properties)
+        else:
+            self.applyProperties(self.cachedProperties)
 
 
-if useLightColorScheme:
-    app.setBackgroundColor([0.3, 0.3, 0.35], [0.95,0.95,1])
+viewBackgroundLightHandler = ViewBackgroundLightHandler(viewOptions, grid)
+if not useLightColorScheme:
+    viewBackgroundLightHandler.action.trigger()
 
 if useHands:
     handcontrolpanel.init(lHandDriver, rHandDriver, robotStateModel)
@@ -492,37 +535,70 @@ if useImageWidget:
     #imageWidget = cameraview.ImageWidget(cameraview.imageManager, 'KINECT_RGB', view)
 
 
-if useImageViewDemo:
+class ImageOverlayManager(object):
 
-    def showImageOverlay(size=400, viewName='CAMERA_LEFT'):
-    #def showImageOverlay(size=400, viewName='KINECT_RGB'):
+    def __init__(self):
+        self.viewName = 'CAMERA_LEFT'
+        #self.viewName = 'KINECT_RGB'
+        self.size = 400
+        self.position = [0, 0]
+        self.usePicker = False
+        self.imageView = None
+        self.imagePicker = None
+        self._prevParent = None
 
-        global _prevParent, imageView, imagePicker
-        imageView = cameraview.views[viewName]
-        _prevParent = imageView.view.parent()
+    def show(self):
 
-        imageView.rayCallback = segmentation.extractPointsAlongClickRay
-        imagePicker = ImagePointPicker(imageView)
-        imagePicker.doubleClickCallback = drillDemo.onImageViewDoubleClick
+        if self.imageView:
+            return
+
+        imageView = cameraview.views[self.viewName]
+        self.imageView = imageView
+        self._prevParent = imageView.view.parent()
 
         imageView.view.hide()
         imageView.view.setParent(view)
-        imageView.view.resize(size, size)
-        imageView.view.move(0,0)
+        imageView.view.resize(self.size, self.size)
+        imageView.view.move(*self.position)
         imageView.view.show()
-        imagePicker.start()
 
-    def hideImageOverlay():
-        imageView.view.hide()
-        imageView.view.setParent(_prevParent)
-        imageView.view.show()
-        imagePicker.stop()
+        if self.usePicker:
+            self.imagePicker = ImagePointPicker(imageView)
+            #self.imagePicker.doubleClickCallback = drillDemo.onImageViewDoubleClick
+            #imageView.rayCallback = segmentation.extractPointsAlongClickRay
+            self.imagePicker.start()
 
-    #showImageOverlay()
+    def hide(self):
+        if self.imageView:
+            self.imageView.view.hide()
+            self.imageView.view.setParent(self._prevParent)
+            self.imageView.view.show()
+            self.imageView = None
+        if self.imagePicker:
+            self.imagePicker.stop()
+
+
+class ToggleImageViewHandler(object):
+
+    def __init__(self, manager):
+        self.action = app.getToolsMenuActions()['ActionToggleImageView']
+        self.action.connect('triggered()', self.toggle)
+        self.manager = manager
+
+    def toggle(self):
+        if self.action.checked:
+            self.manager.show()
+        else:
+            self.manager.hide()
+
+
+imageOverlayManager = ImageOverlayManager()
+imageViewHandler = ToggleImageViewHandler(imageOverlayManager)
+showImageOverlay = imageOverlayManager.show
+hideImageOverlay = imageOverlayManager.hide
 
 screengrabberpanel.init(view)
 framevisualization.init(view)
-raycastDriver = raycastdriver.RaycastDriver()
 affordancePanel = affordancepanel.init(view, affordanceManager, ikServer, robotStateJointController, raycastDriver)
 
 

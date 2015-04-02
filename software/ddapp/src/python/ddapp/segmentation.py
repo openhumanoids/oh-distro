@@ -912,10 +912,10 @@ def createLine(blockDimensions, p1, p2):
     if p1[0] > p2[0]:
         p1, p2 = p2, p1
 
-    _, worldPt1 = getRayFromDisplayPoint(getSegmentationView(), p1)
-    _, worldPt2 = getRayFromDisplayPoint(getSegmentationView(), p2)
+    _, worldPt1 = getRayFromDisplayPoint(app.getCurrentRenderView(), p1)
+    _, worldPt2 = getRayFromDisplayPoint(app.getCurrentRenderView(), p2)
 
-    cameraPt = np.array(getSegmentationView().camera().GetPosition())
+    cameraPt = np.array(app.getCurrentRenderView().camera().GetPosition())
 
     leftRay = worldPt1 - cameraPt
     rightRay = worldPt2 - cameraPt
@@ -930,7 +930,10 @@ def createLine(blockDimensions, p1, p2):
     updatePolyData(d.getPolyData(), 'line annotation', parent=getDebugFolder(), visible=False)
 
     inputObj = om.findObjectByName('pointcloud snapshot')
-    polyData = shallowCopy(inputObj.polyData)
+    if inputObj:
+        polyData = shallowCopy(inputObj.polyData)
+    else:
+        polyData = getCurrentRevolutionData()
 
     origin = cameraPt
 
@@ -973,12 +976,12 @@ def createLine(blockDimensions, p1, p2):
 def updateBlockAffordances(polyData=None):
 
     for obj in om.getObjects():
-        if isinstance(obj, BlockAffordanceItem):
+        if isinstance(obj, BoxAffordanceItem):
             if 'refit' in obj.getProperty('Name'):
                 om.removeFromObjectModel(obj)
 
     for obj in om.getObjects():
-        if isinstance(obj, BlockAffordanceItem):
+        if isinstance(obj, BoxAffordanceItem):
             updateBlockFit(obj, polyData)
 
 
@@ -1028,7 +1031,7 @@ def updateBlockFit(affordanceObj, polyData=None):
 
 def startInteractiveLineDraw(blockDimensions):
 
-    picker = LineDraw(getSegmentationView())
+    picker = LineDraw(app.getCurrentRenderView())
     addViewPicker(picker)
     picker.enabled = True
     picker.start()
@@ -1119,6 +1122,157 @@ def segmentValve(expectedValveRadius, point1, point2):
 
     frameObj = showFrame(obj.actor.GetUserTransform(), name + ' frame', parent=obj, scale=radius, visible=False)
     frameObj.addToView(app.getDRCView())
+
+
+def segmentValveByBoundingBox(polyData, searchPoint):
+
+    viewDirection = SegmentationContext.getGlobalInstance().getViewDirection()
+
+    polyData = cropToSphere(polyData, searchPoint, radius=0.6)
+    polyData = applyVoxelGrid(polyData, leafSize=0.015)
+
+    # extract tube search region
+    polyData = labelDistanceToLine(polyData, searchPoint, np.array(searchPoint) + np.array([0,0,1]))
+    searchRegion = thresholdPoints(polyData, 'distance_to_line', [0.0, 0.2])
+    updatePolyData(searchRegion, 'valve tube search region', parent=getDebugFolder(), color=[1,0,0], visible=False)
+
+    # guess valve plane
+    _, origin, normal = applyPlaneFit(searchRegion, distanceThreshold=0.01, perpendicularAxis=viewDirection, angleEpsilon=math.radians(30), expectedNormal=-viewDirection, returnOrigin=True)
+
+    # extract plane search region
+    polyData = labelPointDistanceAlongAxis(polyData, normal, origin)
+    searchRegion = thresholdPoints(polyData, 'distance_along_axis', [-0.05, 0.05])
+    updatePolyData(searchRegion, 'valve plane search region', parent=getDebugFolder(), colorByName='distance_along_axis', visible=False)
+
+
+    valvePoints = extractLargestCluster(searchRegion, minClusterSize=1)
+    updatePolyData(valvePoints, 'valve cluster', parent=getDebugFolder(), color=[0,1,0], visible=False)
+
+
+    valvePoints, _  = applyPlaneFit(valvePoints, expectedNormal=normal, perpendicularAxis=normal, distanceThreshold=0.01)
+    valveFit = thresholdPoints(valvePoints, 'dist_to_plane', [-0.01, 0.01])
+
+    updatePolyData(valveFit, 'valve cluster', parent=getDebugFolder(), color=[0,1,0], visible=False)
+
+    points = vtkNumpy.getNumpyFromVtk(valveFit, 'Points')
+    zvalues = points[:,2].copy()
+    minZ = np.min(zvalues)
+    maxZ = np.max(zvalues)
+
+    tubeRadius = 0.017
+    radius = float((maxZ - minZ) / 2.0) - tubeRadius
+
+    fields = makePolyDataFields(valveFit)
+    origin = np.array(fields.frame.GetPosition())
+
+    #origin = computeCentroid(valveFit)
+
+    zaxis = [0,0,1]
+    xaxis = normal
+    yaxis = np.cross(zaxis, xaxis)
+    yaxis /= np.linalg.norm(yaxis)
+    xaxis = np.cross(yaxis, zaxis)
+    xaxis /= np.linalg.norm(xaxis)
+
+    t = getTransformFromAxes(xaxis, yaxis, zaxis)
+    t.PostMultiply()
+    t.Translate(origin)
+
+    pose = transformUtils.poseFromTransform(t)
+    desc = dict(classname='CapsuleRingAffordanceItem', Name='valve', uuid=newUUID(), pose=pose, Color=[0,1,0], Radius=radius, Segments=20)
+    desc['Tube Radius'] = tubeRadius
+
+    import affordancepanel
+    obj = affordancepanel.panel.affordanceFromDescription(desc)
+    obj.params = dict(radius=radius)
+
+    return obj
+
+
+def segmentValveByRim(polyData, rimPoint1, rimPoint2):
+
+    viewDirection = SegmentationContext.getGlobalInstance().getViewDirection()
+
+    yaxis = np.array(rimPoint2) - np.array(rimPoint1)
+    zaxis = [0,0,1]
+    xaxis = np.cross(yaxis, zaxis)
+    xaxis /= np.linalg.norm(xaxis)
+
+    # flip xaxis to be with view direction
+    if np.dot(xaxis, viewDirection) < 0:
+        xaxis = -xaxis
+
+    yaxis = np.cross(zaxis, xaxis)
+    yaxis /= np.linalg.norm(yaxis)
+
+    origin = (np.array(rimPoint2) + np.array(rimPoint1)) / 2.0
+
+    polyData = labelPointDistanceAlongAxis(polyData, xaxis, origin)
+    polyData = thresholdPoints(polyData, 'distance_along_axis', [-0.05, 0.05])
+    updatePolyData(polyData, 'valve plane region', parent=getDebugFolder(), colorByName='distance_along_axis', visible=False)
+
+
+    polyData = cropToSphere(polyData, origin, radius=0.4)
+    polyData = applyVoxelGrid(polyData, leafSize=0.015)
+
+    updatePolyData(polyData, 'valve search region', parent=getDebugFolder(), color=[1,0,0], visible=False)
+
+
+    valveFit = extractLargestCluster(polyData, minClusterSize=1)
+    updatePolyData(valveFit, 'valve cluster', parent=getDebugFolder(), color=[0,1,0], visible=False)
+
+    points = vtkNumpy.getNumpyFromVtk(valveFit, 'Points')
+    zvalues = points[:,2].copy()
+    minZ = np.min(zvalues)
+    maxZ = np.max(zvalues)
+
+    tubeRadius = 0.017
+    radius = float((maxZ - minZ) / 2.0) - tubeRadius
+
+    fields = makePolyDataFields(valveFit)
+    origin = np.array(fields.frame.GetPosition())
+    vis.updatePolyData(transformPolyData(fields.box, fields.frame), 'valve cluster bounding box', visible=False)
+
+    #origin = computeCentroid(valveFit)
+
+    '''
+    zaxis = [0,0,1]
+    xaxis = normal
+    yaxis = np.cross(zaxis, xaxis)
+    yaxis /= np.linalg.norm(yaxis)
+    xaxis = np.cross(yaxis, zaxis)
+    xaxis /= np.linalg.norm(xaxis)
+    '''
+
+    radius = np.max(fields.dims)/2.0 - tubeRadius
+
+
+    proj = [np.abs(np.dot(xaxis, axis)) for axis in fields.axes]
+    xaxisNew = fields.axes[np.argmax(proj)]
+    if np.dot(xaxisNew, xaxis) < 0:
+        xaxisNew = -xaxisNew
+
+    xaxis = xaxisNew
+
+    yaxis = np.cross(zaxis, xaxis)
+    yaxis /= np.linalg.norm(yaxis)
+    xaxis = np.cross(yaxis, zaxis)
+    xaxis /= np.linalg.norm(xaxis)
+
+
+    t = getTransformFromAxes(xaxis, yaxis, zaxis)
+    t.PostMultiply()
+    t.Translate(origin)
+
+    pose = transformUtils.poseFromTransform(t)
+    desc = dict(classname='CapsuleRingAffordanceItem', Name='valve', uuid=newUUID(), pose=pose, Color=[0,1,0], Radius=float(radius), Segments=20)
+    desc['Tube Radius'] = tubeRadius
+
+    import affordancepanel
+    obj = affordancepanel.panel.affordanceFromDescription(desc)
+    obj.params = dict(radius=radius)
+
+    return obj
 
 
 def segmentValveByWallPlane(expectedValveRadius, point1, point2):
@@ -3146,7 +3300,7 @@ class LineDraw(TimerCallback):
         self.line.SetArrowPlacementToNone()
         self.line.GetPositionCoordinate().SetCoordinateSystemToViewport()
         self.line.GetPosition2Coordinate().SetCoordinateSystemToViewport()
-        self.line.GetProperty().SetLineWidth(2)
+        self.line.GetProperty().SetLineWidth(4)
         self.line.SetPosition(0,0)
         self.line.SetPosition2(0,0)
         self.clear()
@@ -3539,24 +3693,21 @@ def publishTriad(transform, collectionId=1234):
 
 def createBlockAffordance(origin, xaxis, yaxis, zaxis, xwidth, ywidth, zwidth, name, parent='affordances'):
 
-    cube = vtk.vtkCubeSource()
-    cube.SetXLength(xwidth)
-    cube.SetYLength(ywidth)
-    cube.SetZLength(zwidth)
-    cube.Update()
-    cube = shallowCopy(cube.GetOutput())
-
     t = getTransformFromAxes(xaxis, yaxis, zaxis)
     t.PostMultiply()
     t.Translate(origin)
 
-    obj = showPolyData(cube, name, cls=BlockAffordanceItem, parent=parent)
+    obj = BoxAffordanceItem(name, view=app.getCurrentRenderView())
+    obj.setProperty('Dimensions', [float(v) for v in [xwidth, ywidth, zwidth]])
     obj.actor.SetUserTransform(t)
-    obj.addToView(app.getDRCView())
 
-    params = dict(origin=origin, xwidth=xwidth, ywidth=ywidth, zwidth=zwidth, xaxis=xaxis, yaxis=yaxis, zaxis=zaxis, friendly_name=name)
-    obj.setAffordanceParams(params)
-    obj.updateParamsFromActorTransform()
+    om.addToObjectModel(obj, parentObj=om.getOrCreateContainer(parent))
+    frameObj = vis.showFrame(t, name + ' frame', scale=0.2, visible=False, parent=obj)
+
+    obj.addToView(app.getDRCView())
+    frameObj.addToView(app.getDRCView())
+
+    affordanceManager.registerAffordance(obj)
     return obj
 
 
@@ -3644,26 +3795,7 @@ def segmentBlockByTopPlane(polyData, blockDimensions, expectedNormal, expectedXA
     #obj.setProperty('Visible', False)
 
     obj = createBlockAffordance(origin, xaxis, yaxis, zaxis, xwidth, ywidth, zwidth, name)
-
-    icpTransform = mapsregistrar.getInitialTransform()
-
-    if icpTransform:
-        t = obj.actor.GetUserTransform()
-        objTrack = showPolyData(obj.polyData, name, cls=BlockAffordanceItem, parent=obj, color=[0.8, 1, 0.8])
-        objTrack.actor.SetUserTransform(t)
-        objTrack.baseTransform = vtk.vtkTransform()
-        objTrack.baseTransform.SetMatrix(t.GetMatrix())
-        objTrack.icpTransformInitial = icpTransform
-        objTrack.addToView(app.getDRCView())
-
-        print 'setting base transform:', objTrack.baseTransform.GetPosition()
-        print 'setting initial icp:', objTrack.icpTransformInitial.GetPosition()
-
-        mapsregistrar.addICPCallback(objTrack.updateICPTransform)
-
-
-    frameObj = showFrame(obj.actor.GetUserTransform(), name + ' frame', parent=obj, scale=0.2, visible=False)
-    frameObj.addToView(app.getDRCView())
+    obj.setProperty('Color', [222/255.0, 184/255.0, 135/255.0])
 
     computeDebrisGraspSeed(obj)
     t = computeDebrisStanceFrame(obj)
@@ -4470,7 +4602,7 @@ def extractPointsAlongClickRay(displayPoint, distanceToLineThreshold=0.3, addDeb
     return polyData
 
 
-def extractPointsAlongClickRay(position, ray, polyData=None):
+def extractPointsAlongClickRay(position, ray, polyData=None, distanceToLineThreshold=0.025, nearestToLine=True):
 
     #segmentationObj = om.findObjectByName('pointcloud snapshot')
     if polyData is None:
@@ -4481,36 +4613,37 @@ def extractPointsAlongClickRay(position, ray, polyData=None):
 
     polyData = labelDistanceToLine(polyData, position, position + ray)
 
-    distanceToLineThreshold = 0.025
-
     # extract points near line
     polyData = thresholdPoints(polyData, 'distance_to_line', [0.0, distanceToLineThreshold])
     if not polyData.GetNumberOfPoints():
         return None
 
 
-    polyData = labelPointDistanceAlongAxis(polyData, ray, origin=position, resultArrayName='dist_along_line')
-    polyData = thresholdPoints(polyData, 'dist_along_line', [0.20, 1e6])
+    polyData = labelPointDistanceAlongAxis(polyData, ray, origin=position, resultArrayName='distance_along_line')
+    polyData = thresholdPoints(polyData, 'distance_along_line', [0.20, 1e6])
     if not polyData.GetNumberOfPoints():
         return None
 
-    updatePolyData(polyData, 'ray points', colorByName='distance_to_line')
+    updatePolyData(polyData, 'ray points', colorByName='distance_to_line', visible=False, parent=getDebugFolder())
 
-    dists = vtkNumpy.getNumpyFromVtk(polyData, 'distance_to_line')
+    if nearestToLine:
+        dists = vtkNumpy.getNumpyFromVtk(polyData, 'distance_to_line')
+    else:
+        dists = vtkNumpy.getNumpyFromVtk(polyData, 'distance_along_line')
+
     points = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
-
-    d = DebugData()
     intersectionPoint = points[dists.argmin()]
 
+    d = DebugData()
     d.addSphere( intersectionPoint, radius=0.005)
     d.addLine(position, intersectionPoint)
-    obj = updatePolyData(d.getPolyData(), 'intersecting ray', visible=True, color=[0,1,0])
+    obj = updatePolyData(d.getPolyData(), 'intersecting ray', visible=False, color=[0,1,0], parent=getDebugFolder())
     obj.actor.GetProperty().SetLineWidth(2)
 
     d2 = DebugData()
     end_of_ray = position + 2*ray
     d2.addLine(position, end_of_ray)
-    obj2 = updatePolyData(d2.getPolyData(), 'camera ray', visible=False, color=[1,0,0])
+    obj2 = updatePolyData(d2.getPolyData(), 'camera ray', visible=False, color=[1,0,0], parent=getDebugFolder())
     obj2.actor.GetProperty().SetLineWidth(2)
 
     return intersectionPoint
