@@ -49,54 +49,6 @@
         <mesh filename="package://atlas_v4/meshes/l_foot.obj" scale="1 1 1"/>
       </geometry>
     </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
     <collision>
       <geometry>
         <mesh filename="package://atlas_v4/meshes/l_foot_chull.obj" scale="1 1 1"/>
@@ -105,27 +57,51 @@
     <collision group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
       <geometry>
-        <sphere radius="0.01"/>
+        <sphere radius="0.0"/>
       </geometry>
     </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <collision group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
   </link>
   <link name="l_lfarm">
     <inertial>
@@ -373,54 +349,6 @@
         <mesh filename="package://atlas_v4/meshes/r_foot.obj" scale="1 1 1"/>
       </geometry>
     </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
     <collision>
       <geometry>
         <mesh filename="package://atlas_v4/meshes/r_foot_chull.obj" scale="1 1 1"/>
@@ -429,27 +357,51 @@
     <collision group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
       <geometry>
-        <sphere radius="0.01"/>
+        <sphere radius="0.0"/>
       </geometry>
     </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <collision group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
   </link>
   <link name="r_lfarm">
     <inertial>
