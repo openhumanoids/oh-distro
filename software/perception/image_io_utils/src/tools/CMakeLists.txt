@@ -1,5 +1,7 @@
 set(PCL_LIBRARIES  pcl_io-1.7)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+
 add_executable(drc-multisense-image-tool multisense-image-tool.cpp  )
 pods_use_pkg_config_packages(drc-multisense-image-tool
   lcmtypes_bot2-core lcmtypes_multisense

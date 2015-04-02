@@ -10,6 +10,7 @@
 // drc-multisense-image-tool -p -s -d 4
 
 #include <stdio.h>
+#include <memory>
 #include <lcm/lcm.h>
 
 #include <opencv/cv.h>
@@ -35,7 +36,7 @@ using namespace std;
 
 class image_tool{
   public:
-    image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_, 
+    image_tool(std::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_, 
                std::string camera_out_, 
                bool output_pointcloud_, bool output_images_,
                bool write_pointcloud_, bool write_images_, 
@@ -44,7 +45,7 @@ class image_tool{
     ~image_tool(){}
     
   private:
-    boost::shared_ptr<lcm::LCM> lcm_;
+    std::shared_ptr<lcm::LCM> lcm_;
     std::string camera_in_, camera_out_;
     std::string mask_channel_;
     bool output_pointcloud_, output_images_;
@@ -74,7 +75,7 @@ class image_tool{
     bot_core::image_t last_mask_;    
 };    
 
-image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_,
+image_tool::image_tool(std::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_,
                        std::string camera_out_, 
                        bool output_pointcloud_, bool output_images_, 
                        bool write_pointcloud_, bool write_images_, 
@@ -258,7 +259,7 @@ int main(int argc, char ** argv) {
   cout << write_pointcloud << " is write_pointcloud\n"; 
   cout << write_images << " is write_images \n"; 
 
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
+  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }

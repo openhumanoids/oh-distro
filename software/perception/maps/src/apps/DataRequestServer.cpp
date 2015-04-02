@@ -15,7 +15,6 @@
 #include <ConciseArgs>
 #include <drc_utils/Clock.hpp>
 #include <drc_utils/BotWrapper.hpp>
-//#include <affordance/AffordanceUpWrapper.h>
 
 #include "RobotState.hpp"
 
@@ -29,7 +28,6 @@ struct Worker {
   std::shared_ptr<lcm::LCM> mLcm;
   std::shared_ptr<drc::BotWrapper> mBotWrapper;
   std::shared_ptr<maps::RobotState> mRobotState;
-//  std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
   std::thread mThread;
 
   ~Worker() {
@@ -550,7 +548,6 @@ struct State {
   std::shared_ptr<maps::RobotState> mRobotState;
   typedef std::unordered_map<int,Worker::Ptr> WorkerMap;
   WorkerMap mWorkers;
-//  std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
 
   State() {
     mLcm.reset(new lcm::LCM());
@@ -558,10 +555,6 @@ struct State {
     mRobotState.reset(new maps::RobotState(mLcm));
     drc::Clock::instance()->setLcm(mLcm->getUnderlyingLCM());
     drc::Clock::instance()->setVerbose(false);
-
-    boost::shared_ptr<lcm::LCM>
-      boostLcm(new lcm::LCM(mLcm->getUnderlyingLCM()));
-//    mAffordanceWrapper.reset(new affordance::AffordanceUpWrapper(boostLcm));
   }
 
   ~State() {
