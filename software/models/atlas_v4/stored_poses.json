@@ -197,8 +197,94 @@
       }, 
       "name": "arm straight down", 
       "nominal_handedness": "left"
-    }
+    } 
   ], 
+  "valve": [
+    {
+      "allow_mirror": true, 
+      "description": "retract 0", 
+      "joints": {
+        "l_arm_elx": 2.2313119299999995, 
+        "l_arm_ely": 0.0, 
+        "l_arm_mwx": -1.1781, 
+        "l_arm_shx": -1.0807104, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "0 - retract 0", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "extend 0", 
+      "joints": {
+        "l_arm_elx": 0.0, 
+        "l_arm_ely": 0.05, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_shx": 0.0, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 0.05
+      }, 
+      "name": "1 - extend 0", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "extend 360", 
+      "joints": {
+        "l_arm_elx": 0.0, 
+        "l_arm_ely": 3.1, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_shx": 0.0, 
+        "l_arm_shz": -1.52,
+        "l_arm_uwy": 3.14159
+      }, 
+      "name": "2 - extend 360", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retract 360", 
+      "joints": {
+        "l_arm_elx": 2.0051176899999996, 
+        "l_arm_ely": 3.1, 
+        "l_arm_mwx": 0.9448361999999999, 
+        "l_arm_shx": 1.0115951999999997, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 3.1
+      }, 
+      "name": "3 - retract 360", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "unwind 360", 
+      "joints": {
+        "l_arm_elx": 1.61399015, 
+        "l_arm_ely": 3.1, 
+        "l_arm_mwx": 0.05, 
+        "l_arm_shx": 0.05, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 3.1
+      }, 
+      "name": "4 - unwind 360", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "unwind 0", 
+      "joints": {
+        "l_arm_elx": 1.6139901876449585, 
+        "l_arm_ely": 0.05, 
+        "l_arm_mwx": 0.05, 
+        "l_arm_shx": 0.05, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 0.05
+      }, 
+      "name": "5 - unwind 0", 
+      "nominal_handedness": "left"
+    }
+  ],
   "arm-calibration": [
     {
       "allow_mirror": true, 
@@ -549,7 +635,7 @@
       }, 
       "name": "near-limits-2", 
       "nominal_handedness": "left"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "outside-limits", 
@@ -563,7 +649,7 @@
       }, 
       "name": "outside-limits", 
       "nominal_handedness": "left"
-    } 
+    }
   ], 
   "bihanded": [
     {
