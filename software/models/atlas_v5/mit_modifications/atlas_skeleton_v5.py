@@ -12,6 +12,7 @@ import copy
 from jointNameMap import jointNameMap
 from lxml import etree
 from glob import glob
+import math
 
 
 meshesDirectory = "../meshes"
@@ -61,6 +62,22 @@ mit.useObjMeshes(urdf)
 mit.addFrame(urdf, "l_foot_sole", "l_foot", "0.0426  0.0017 -0.07645", "0 0 0")
 mit.addFrame(urdf, "r_foot_sole", "r_foot", "0.0426 -0.0017 -0.07645", "0 0 0")
 mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
+
+armLinkNames = ['clav', 'scap', 'uarm', 'larm', 'ufarm', 'lfarm', 'hand']
+for armLinkName in armLinkNames:
+    mit.copyLinkProperties(urdf, 'r_' + armLinkName, 'l_' + armLinkName)
+
+jointCopyExceptions = ['limit', 'safety_controller']
+for armJointName in ['arm_shx', 'arm_ely', 'arm_elx', 'arm_uwy', 'arm_mwx']:#, 'arm_lwy']:
+    mit.copyJointProperties(urdf, 'r_' + armJointName, 'l_' + armJointName, jointCopyExceptions)
+mit.copyJointProperties(urdf, 'r_arm_shz', 'l_arm_shz', jointCopyExceptions + ['origin'])
+
+for jointName in ['arm_shx', 'arm_ely', 'arm_elx', 'arm_uwy', 'arm_lwy']:
+    mit.invertJointAxis(urdf, 'l_' + jointName)
+
+mit.setJointOriginRPY(urdf, 'l_arm_shz', [0, 0, math.pi])
+mit.setJointOriginRPY(urdf, 'l_arm_uwy', [0, math.pi, 0])
+mit.setJointOriginRPY(urdf, 'l_arm_lwy', [0, math.pi, 0])
 
 urdf.write(full_mesh_urdf_path, pretty_print=True)
 
