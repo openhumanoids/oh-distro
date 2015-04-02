@@ -959,7 +959,7 @@ void DRCShaper::run()
         // wait a limited amount of time for an incoming message
         struct timeval timeout = { 
             0, // seconds
-            1000  // microseconds
+            100  // microseconds
         };
         int status = select(lcm_fd + 1, &fds, 0, 0, &timeout);
         
