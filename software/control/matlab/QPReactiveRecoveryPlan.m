@@ -11,10 +11,27 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     lcmgl = LCMGLClient('reactive_recovery')
     last_qp_input;
     last_plan;
+
+    % Stateful foot contact lock
+    % Used to determine how long a foot has been continuously in
+    % contact (to the resolution of the rate at which this class
+    % is asked for a qp input)
+    l_foot_last_noncontact = 0;
+    r_foot_last_noncontact = 0;
+    l_foot_last_contact = 0;
+    r_foot_last_contact = 0;
+    l_foot_in_contact_lock = 0;
+    r_foot_in_contact_lock = 0;
+
+    % for debugging
+    l_foot_contact_history = [];
+    r_foot_contact_history = [];
+
   end
 
   properties (Constant)
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
+    TERRAIN_CONTACT_THRESH = 0.003;
   end
 
   methods
@@ -35,6 +52,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       [~, obj.V, ~, obj.LIP_height] = obj.robot.planZMPController([0;0], obj.qtraj);
       obj.g = options.g;
       obj.point_mass_biped = PointMassBiped(sqrt(options.g / obj.LIP_height));
+
+      figure;
     end
 
     function next_plan = getSuccessor(obj, t, x)
@@ -44,6 +63,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
 
       DEBUG = true;
+      HYST_MIN_CONTACT_TIME = 0.04;
+      HYST_MIN_NONCONTACT_TIME = 0.04;
 
       q = x(1:rpc.nq);
       qd = x(rpc.nq + (1:rpc.nv));
@@ -77,13 +98,54 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         vel = J * qd;
         foot_states.(foot).pose = pos;
         foot_states.(foot).velocity = vel;
-        if pos(3) < obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + 0.001
+        if pos(3) < obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + obj.TERRAIN_CONTACT_THRESH
           foot_states.(foot).contact = true;
         end
-%         if contact_force_detected(obj.robot.foot_body_id.(foot))
-%           foot_states.(foot).contact = true;
-%         end
+        if contact_force_detected(obj.robot.foot_body_id.(foot))
+          foot_states.(foot).contact = true;
+        end
       end
+
+      % Update and check against contact locks
+      if (~foot_states.left.contact)
+        obj.l_foot_last_noncontact = t_global;
+      else
+        obj.l_foot_last_contact = t_global;
+      end
+      if (~foot_states.right.contact)
+        obj.r_foot_last_noncontact = t_global;
+      else
+        obj.r_foot_last_contact = t_global;
+      end
+      % State switching only when hysterisis thresholds are met
+      % noncontact -> contact
+      if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > HYST_MIN_CONTACT_TIME)
+        obj.r_foot_in_contact_lock = true;
+      end
+      if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > HYST_MIN_CONTACT_TIME)
+        obj.l_foot_in_contact_lock = true;
+      end
+      % contact -> noncontact
+      if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > HYST_MIN_NONCONTACT_TIME)
+        obj.r_foot_in_contact_lock = false;
+      end
+      if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > HYST_MIN_NONCONTACT_TIME)
+        obj.l_foot_in_contact_lock = false;
+      end
+      fprintf('l: %d r: %d\n', obj.l_foot_in_contact_lock, obj.r_foot_in_contact_lock);
+
+     % obj.l_foot_contact_history = [obj.l_foot_contact_history; 
+     %     t_global - obj.l_foot_last_noncontact, t_global - obj.l_foot_last_contact, obj.l_foot_in_contact_lock, foot_states.left.contact];
+
+     % obj.r_foot_contact_history = [obj.r_foot_contact_history; 
+     %     t_global - obj.r_foot_last_noncontact, t_global - obj.r_foot_last_contact, obj.r_foot_in_contact_lock, foot_states.right.contact];
+
+     % [obj.l_foot_contact_history obj.r_foot_contact_history]
+
+      % commit contact from that filtering
+      foot_states.right.contact = obj.r_foot_in_contact_lock;
+      foot_states.left.contact = obj.l_foot_in_contact_lock;
+
 
       % warning('hard-coded for atlas foot shape');
       foot_vertices = struct('right', [-0.05, 0.05, 0.05, -0.05; 
@@ -107,7 +169,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           best_plan = obj.last_plan;
         else
         
-          U_MAX = 40;
+          U_MAX = 20;
           intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
 
           if isempty(intercept_plans)
@@ -275,7 +337,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       for f = {'right', 'left'}
         foot = f{1};
         if foot_states.(foot).pose(3) < ...
-            obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + 0.01
+            obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + obj.TERRAIN_CONTACT_THRESH
           R = rotmat(foot_states.(foot).pose(6));
           foot_vertices_in_world = bsxfun(@plus,...
                                           SHRINK_FACTOR * R * foot_vertices.(foot),...
@@ -617,17 +679,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
         swing_height = 0.05;
         slack = 10;
-        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
+        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0.
+        switch_ratio = intercept_plan.tswitch / intercept_plan.tf
+        switch_angle = angleWeightedAverage(foot_state.pose(4:6), switch_ratio, intercept_plan.r_foot_new(4:6), 1-switch_ratio);
         params = struct('r0', foot_state.pose,...
                         'rd0',foot_state.velocity + [0;0;0;0;0;0],...
                         'rf',intercept_plan.r_foot_new,...
                         'rdf',[0;0;0;0;0;0],...
                         'r_switch_lb', [foot_state.pose(1:2) - slack;
                                      intercept_plan.r_foot_new(3) + swing_height;
-                                     intercept_plan.r_foot_new(4:6)],...
+                                     switch_angle],...
                         'r_switch_ub', [foot_state.pose(1:2) + slack;
                                      intercept_plan.r_foot_new(3) + swing_height;
-                                     intercept_plan.r_foot_new(4:6)],...
+                                     switch_angle],...
                         'rd_switch_lb', [-slack * ones(2,1); zeros(4,1)],...
                         'rd_switch_ub', [slack * ones(2,1); zeros(4,1)],...
                         't_switch', intercept_plan.tswitch,...
