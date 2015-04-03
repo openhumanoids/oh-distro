@@ -10,7 +10,9 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/planner_request_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
+#include <ipab_msgs/PlannerRequest.h>
 
 using namespace std;
 
@@ -26,11 +28,17 @@ class LCM2ROS{
 
     void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
     ros::Publisher robot_plan_pub_;
+    void plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
+    ros::Publisher planner_request_pub_;
+
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
   lcm_->subscribe("COMMITTED_ROBOT_PLAN",&LCM2ROS::robotPlanHandler, this);
   robot_plan_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/kuka/robot_plan",10);
+
+  lcm_->subscribe("PLANNER_REQUEST",&LCM2ROS::plannerRequestHandler, this);
+  planner_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/planner_request",10);
   rosnode = new ros::NodeHandle();
 }
 
@@ -56,6 +64,15 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   robot_plan_pub_.publish(m);
 }
 
+
+void LCM2ROS::plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg) {
+  ROS_ERROR("LCM2ROS got PLANNER_REQUEST");
+  ipab_msgs::PlannerRequest m;
+  m.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+  m.poses = msg->poses;
+  m.constraints = msg->constraints;
+  planner_request_pub_.publish(m);
+}
 
 int main(int argc,char** argv) {
   ros::init(argc,argv,"lcm2ros",ros::init_options::NoSigintHandler);
