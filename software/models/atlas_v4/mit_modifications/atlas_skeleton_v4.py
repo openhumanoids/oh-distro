@@ -8,6 +8,7 @@ sys.path.append(os.path.join(drc_base_path, "software", "models",
 
 import convertCollada
 import mitUrdfUtils as mit
+import copy
 from jointNameMap import jointNameMap
 from lxml import etree
 from glob import glob
@@ -93,20 +94,39 @@ urdf.write(full_mesh_urdf_path, pretty_print=True)
 # Create minimal contact skeleton
 mit.removeAllCollisions(urdf)
 
-mit.addContactPoint(urdf, "r_foot", "-0.0876 0.0626 -0.07645", "heel")
-mit.addContactPoint(urdf, "r_foot", "-0.0876 -0.066 -0.07645", "heel")
-mit.addContactPoint(urdf, "r_foot", "0.1728 0.0626 -0.07645", "toe")
-mit.addContactPoint(urdf, "r_foot", "0.1728 -0.066 -0.07645", "toe")
+minimal_contact_urdf = copy.deepcopy(urdf)
 
-mit.addContactPoint(urdf, "l_foot", "-0.0876 0.066 -0.07645", "heel")
-mit.addContactPoint(urdf, "l_foot", "-0.0876 -0.0626 -0.07645", "heel")
-mit.addContactPoint(urdf, "l_foot", "0.1728 0.066 -0.07645", "toe")
-mit.addContactPoint(urdf, "l_foot", "0.1728 -0.0626 -0.07645", "toe")
+r_heel_points = ["-0.0876 0.0626 -0.07645", "-0.0876 -0.066 -0.07645"]
+r_toe_points = ["0.1728 0.0626 -0.07645","0.1728 -0.066 -0.07645"]
 
-urdf.write(minimal_contact_urdf_path, pretty_print=True)
+l_heel_points = ["-0.0876 0.066 -0.07645", "-0.0876 -0.0626 -0.07645"]
+l_toe_points = ["0.1728 0.066 -0.07645", "0.1728 -0.0626 -0.07645"]
+
+mit.addContactPoint(minimal_contact_urdf, "r_foot", r_heel_points[0], "heel")
+mit.addContactPoint(minimal_contact_urdf, "r_foot", r_heel_points[1], "heel")
+mit.addContactPoint(minimal_contact_urdf, "r_foot", r_toe_points[0], "toe")
+mit.addContactPoint(minimal_contact_urdf, "r_foot", r_toe_points[1], "toe")
+
+mit.addContactPoint(minimal_contact_urdf, "l_foot", l_heel_points[0], "heel")
+mit.addContactPoint(minimal_contact_urdf, "l_foot", l_heel_points[1], "heel")
+mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[0] , "toe")
+mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[1] , "toe")
+
+minimal_contact_urdf.write(minimal_contact_urdf_path, pretty_print=True)
 
 # Create convex hull skeleton
 mit.addCollisionsFromVisuals(urdf)
+
+mit.addContactPoint(urdf, "r_foot", r_heel_points[0], "heel")
+mit.addContactPoint(urdf, "r_foot", r_heel_points[1], "heel")
+mit.addContactPoint(urdf, "r_foot", r_toe_points[0], "toe")
+mit.addContactPoint(urdf, "r_foot", r_toe_points[1], "toe")
+
+mit.addContactPoint(urdf, "l_foot", l_heel_points[0], "heel")
+mit.addContactPoint(urdf, "l_foot", l_heel_points[1], "heel")
+mit.addContactPoint(urdf, "l_foot", l_toe_points[0] , "toe")
+mit.addContactPoint(urdf, "l_foot", l_toe_points[1] , "toe")
+
 mit.useConvexHullMeshes(urdf)
 mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
 

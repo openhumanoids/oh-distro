@@ -8,16 +8,16 @@
     <inertial>
       <mass value="4.466"/>
       <origin rpy="0 0 0" xyz="0 0 -0.084"/>
-      <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="-0.004" izz="0.004"/>
+      <inertia ixx="0.011" ixy="0" ixz="0" iyy="0.009" iyz="0.004" izz="0.004"/>
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_clav.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_clav.obj"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_clav_chull.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_clav_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -32,54 +32,6 @@
         <mesh filename="package://atlas_v5/meshes/l_foot.obj"/>
       </geometry>
     </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
     <collision>
       <geometry>
         <mesh filename="package://atlas_v5/meshes/l_foot_chull.obj"/>
@@ -88,32 +40,56 @@
     <collision group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
       <geometry>
-        <sphere radius="0.01"/>
+        <sphere radius="0.0"/>
       </geometry>
     </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <collision group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 -0.0626 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 0.066 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 -0.0626 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
   </link>
   <link name="l_hand">
     <inertial>
       <mass value="0.5839"/>
-      <origin rpy="0 0 0" xyz="0.00016 0.08159 0.00002"/>
+      <origin rpy="0 0 0" xyz="0.00016 -0.08159 0.00002"/>
       <inertia ixx="0.000388" ixy="0" ixz="0" iyy="0.000477" iyz="0" izz="0.000379"/>
     </inertial>
   </link>
@@ -125,29 +101,29 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_larm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_larm.obj"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_larm_chull.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_larm_chull.obj"/>
       </geometry>
     </collision>
   </link>
   <link name="l_lfarm">
     <inertial>
       <mass value="0.648"/>
-      <origin rpy="0 0 0" xyz="0.00017 0.02515 0.00163"/>
+      <origin rpy="0 0 0" xyz="0.00017 -0.02515 0.00163"/>
       <inertia ixx="0.000764" ixy="0" ixz="0" iyy="0.000429" iyz="0" izz="0.000825"/>
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_hand.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_hand.obj"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_hand_chull.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_hand_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -193,12 +169,12 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_scap.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_scap.obj"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_scap_chull.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_scap_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -217,34 +193,34 @@
   <link name="l_uarm">
     <inertial>
       <mass value="4.386"/>
-      <origin rpy="0 0 0" xyz="0.0 -0.065 0.0"/>
+      <origin rpy="0 0 0" xyz="0 0.065 0"/>
       <inertia ixx="0.00656" ixy="0" ixz="0" iyy="0.00358" iyz="0" izz="0.00656"/>
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uarm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uarm.obj"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_uarm_chull.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_uarm_chull.obj"/>
       </geometry>
     </collision>
   </link>
   <link name="l_ufarm">
     <inertial>
       <mass value="2.4798"/>
-      <origin rpy="0 0 0" xyz="0.00015 -0.08296 0.00037"/>
+      <origin rpy="0 0 0" xyz="0.00015 0.08296 0.00037"/>
       <inertia ixx="0.012731" ixy="0" ixz="0" iyy="0.002857" iyz="0" izz="0.011948"/>
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_farm.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_farm.obj"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://atlas_v5/meshes/l_farm_chull.obj"/>
+        <mesh filename="package://atlas_v5/meshes/r_farm_chull.obj"/>
       </geometry>
     </collision>
   </link>
@@ -354,54 +330,6 @@
         <mesh filename="package://atlas_v5/meshes/r_foot.obj"/>
       </geometry>
     </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
     <collision>
       <geometry>
         <mesh filename="package://atlas_v5/meshes/r_foot_chull.obj"/>
@@ -410,27 +338,51 @@
     <collision group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
       <geometry>
-        <sphere radius="0.01"/>
+        <sphere radius="0.0"/>
       </geometry>
     </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
     <collision group="heel">
+      <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
       <origin rpy="0 0 0" xyz="-0.0876 -0.066 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 0.0626 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
     <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
       <origin rpy="0 0 0" xyz="0.1728 -0.066 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
-    </collision>
+    </visual>
   </link>
   <link name="r_hand">
     <inertial>
@@ -652,8 +604,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6632" soft_upper_limit="10.6632"/>
   </joint>
   <joint name="l_arm_elx" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0.119 0.0092"/>
-    <axis xyz="1 0 0"/>
+    <origin rpy="0 0 0" xyz="0 -0.119 0.0092"/>
+    <axis xyz="-1.0 -0.0 -0.0"/>
     <parent link="l_uarm"/>
     <child link="l_larm"/>
     <dynamics damping="0.1" friction="0"/>
@@ -661,8 +613,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3562"/>
   </joint>
   <joint name="l_arm_ely" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0.187 -0.016"/>
-    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0 -0.187 -0.016"/>
+    <axis xyz="-0.0 -1.0 -0.0"/>
     <parent link="l_scap"/>
     <child link="l_uarm"/>
     <dynamics damping="0.1" friction="0"/>
@@ -670,8 +622,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="13.1416"/>
   </joint>
   <joint name="l_arm_shx" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0.11 -0.245"/>
-    <axis xyz="1 0 0"/>
+    <origin rpy="0 0 0" xyz="0 -0.11 -0.245"/>
+    <axis xyz="-1.0 -0.0 -0.0"/>
     <parent link="l_clav"/>
     <child link="l_scap"/>
     <dynamics damping="0.1" friction="0"/>
@@ -679,7 +631,7 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.5708" soft_upper_limit="11.5708"/>
   </joint>
   <joint name="l_arm_shz" type="revolute">
-    <origin rpy="0 0 0" xyz="0.1406 0.2256 0.4776"/>
+    <origin rpy="0 0 3.14159265359" xyz="0.1406 0.2256 0.4776"/>
     <axis xyz="0 0 1"/>
     <parent link="utorso"/>
     <child link="l_clav"/>
@@ -697,8 +649,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7628" soft_upper_limit="11.7628"/>
   </joint>
   <joint name="l_arm_uwy" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0.29955 -0.00921"/>
-    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.14159265359 0" xyz="0 -0.29955 -0.00921"/>
+    <axis xyz="-0.0 -1.0 -0.0"/>
     <parent link="l_larm"/>
     <child link="l_ufarm"/>
     <dynamics damping="0.1" friction="0"/>
@@ -706,8 +658,8 @@
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-13.011" soft_upper_limit="13.011"/>
   </joint>
   <joint name="l_arm_lwy" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.14159265359 0" xyz="0 0 0"/>
+    <axis xyz="-0.0 -1.0 -0.0"/>
     <parent link="l_lfarm"/>
     <child link="l_hand"/>
     <dynamics damping="0.1" friction="0"/>
@@ -1554,7 +1506,7 @@
     </visual>
   </link>
   <joint name="l_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0.1245 0.0112"/>
+    <origin rpy="0 0 3.141592" xyz="0 -0.1245 0.0112"/>
     <parent link="l_hand"/>
     <child link="l_hand_force_torque"/>
   </joint>
@@ -1572,7 +1524,7 @@
     </visual>
   </link>
   <joint name="r_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 3.142" xyz="0 -0.1245 -0.0112"/>
+    <origin rpy="0 0 3.141592" xyz="0 -0.1245 -0.0112"/>
     <parent link="r_hand"/>
     <child link="r_hand_force_torque"/>
   </joint>
