@@ -23,15 +23,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     l_foot_in_contact_lock = 0;
     r_foot_in_contact_lock = 0;
 
-    % for debugging
-    l_foot_contact_history = [];
-    r_foot_contact_history = [];
+    % And which-foot-I'm-using-as-stance lock. Only allowed to switch this
+    % slowly to prevent bouncing
+    last_used_swing = 'right';
+    last_swing_switch = 0;
 
   end
 
   properties (Constant)
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
     TERRAIN_CONTACT_THRESH = 0.003;
+    SWING_SWITCH_MIN_TIME = 0.08;
   end
 
   methods
@@ -52,8 +54,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       [~, obj.V, ~, obj.LIP_height] = obj.robot.planZMPController([0;0], obj.qtraj);
       obj.g = options.g;
       obj.point_mass_biped = PointMassBiped(sqrt(options.g / obj.LIP_height));
-
-      figure;
     end
 
     function next_plan = getSuccessor(obj, t, x)
@@ -132,15 +132,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > HYST_MIN_NONCONTACT_TIME)
         obj.l_foot_in_contact_lock = false;
       end
-      fprintf('l: %d r: %d\n', obj.l_foot_in_contact_lock, obj.r_foot_in_contact_lock);
-
-     % obj.l_foot_contact_history = [obj.l_foot_contact_history; 
-     %     t_global - obj.l_foot_last_noncontact, t_global - obj.l_foot_last_contact, obj.l_foot_in_contact_lock, foot_states.left.contact];
-
-     % obj.r_foot_contact_history = [obj.r_foot_contact_history; 
-     %     t_global - obj.r_foot_last_noncontact, t_global - obj.r_foot_last_contact, obj.r_foot_in_contact_lock, foot_states.right.contact];
-
-     % [obj.l_foot_contact_history obj.r_foot_contact_history]
 
       % commit contact from that filtering
       foot_states.right.contact = obj.r_foot_in_contact_lock;
@@ -184,12 +175,24 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             com_to_foot_error = norm(intercept_plans(j).r_foot_new(1:2) - com(1:2));
             intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
           end
+          % Don't switch stance feet if possible
+          if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
+            if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
+              intercept_plans(j).error = Inf;
+            end
+          end
+
           best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
 
           if isempty(best_plan)
             best_plan = obj.last_plan;
           else
             obj.last_plan = best_plan;
+          end
+
+          if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
+            obj.last_used_swing = best_plan.swing_foot;
+            obj.last_swing_switch = t_global;
           end
         end
         
@@ -204,7 +207,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     function qp_input = getInterceptInput(obj, t_global, foot_states, reachable_vertices, best_plan, rpc)
       DEBUG = true;
-      [ts, coefs] = QPReactiveRecoveryPlan.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
+      [ts, coefs] = obj.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
       %ts
       % TODO: rather than applying a transform to coefs, just send body_motion_data for the sole point, not the origin
       %warning('this transform is incorrect if the foot is rotating');
@@ -275,7 +278,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                          'ts', t_global + ts(1:2),...
                                          'coefs', coefs(:,1,:));
 
-      pelvis_height = obj.robot.getTerrainHeight(foot_states.(stance_foot).pose(1:2)) + 0.8;
+      pelvis_height = obj.robot.getTerrainHeight(foot_states.(stance_foot).pose(1:2)) + 0.84;
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_global + ts(1:2),...
@@ -336,8 +339,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       for f = {'right', 'left'}
         foot = f{1};
-        if foot_states.(foot).pose(3) < ...
-            obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + obj.TERRAIN_CONTACT_THRESH
+        if (foot_states.(foot).contact)
           R = rotmat(foot_states.(foot).pose(6));
           foot_vertices_in_world = bsxfun(@plus,...
                                           SHRINK_FACTOR * R * foot_vertices.(foot),...
@@ -413,12 +415,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       Ri = inv(R);
       foot_avg_direction = angleAverage(foot_states.left.pose(6), foot_states.right.pose(6));
-      % Desired foot direction is along direction of icp, or the opposite
+      % Desired foot direction is along direction of comd, or the opposite
       % (so we either stumble forward along it or backward, not sideways).
-      if (norm(comd) > 0.25)
+      % (strong preference for forward)
+      if (norm(comd(1:2)) > 0.25)
         comd = comd / norm(comd);
         desired_foot_direction = atan2(comd(2), comd(1));
-        if (abs(angleDiff(desired_foot_direction, foot_avg_direction)) > pi/2)
+        if (abs(angleDiff(desired_foot_direction, foot_avg_direction)) > 3*pi/2)
           desired_foot_direction = atan2(-comd(2), -comd(1));
         end
       else
@@ -433,17 +436,120 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         err = sign(err)*min(abs(err), pi/8);
         new_foot_dir_vec = rotmat(err)*new_foot_dir_vec;
         new_foot_yaw = atan2(new_foot_dir_vec(2), new_foot_dir_vec(1));
-        foot_states.(stance_foot).pose(6)
+
         intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; 
                                          0;
                                          foot_states.(stance_foot).pose(4:5);
-                                         new_foot_yaw];
-        intercept_plans(j).r_foot_new(3) = obj.robot.getTerrainHeight(intercept_plans(j).r_foot_new(1:2));
+                                         foot_states.(stance_foot).pose(6)];
+        %                                 new_foot_yaw];
+        % make it conform to terrain
+        [intercept_plans(j).r_foot_new(3), normal] = obj.robot.getTerrainHeight(intercept_plans(j).r_foot_new(1:2));
+        normal(3,normal(3,:) < 0) = -normal(3,normal(3,:) < 0);
+        intercept_plans(j).r_foot_new = fitPoseToNormal(intercept_plans(j).r_foot_new, normal);
+        assert(~any(isnan(intercept_plans(j).r_foot_new)));
+
         intercept_plans(j).r_ic_new = Ri * intercept_plans(j).r_ic_new + r_cop;
         intercept_plans(j).swing_foot = swing_foot;
         intercept_plans(j).r_cop = r_cop;
       end
       
+    end
+
+    function [ts, coefs] = swingTraj(obj, intercept_plan, foot_state)
+      DEBUG = false;
+
+      if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
+        disp('Asking for swing traj of very short step')
+        %if (foot_state.pose(3) < obj.robot.getTerrainHeight(foot_state.pose(1:2)) + obj.TERRAIN_CONTACT_THRESH)
+          %disp('Foot seems to be in contact. Holding pose and planting foot')
+          %intercept_plan.r_foot_new = foot_state.pose;
+          %intercept_plan.r_foot_new(3) = obj.robot.getTerrainHeight(foot_state.pose(1:2));
+        %end
+      end
+      if intercept_plan.tswitch > 0.05 && (intercept_plan.tf - intercept_plan.tswitch) > 0.05
+        sizecheck(intercept_plan.r_foot_new, [6, 1]);
+        swing_height = 0.05;
+        slack = 10;
+        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0.
+        switch_ratio = intercept_plan.tswitch / intercept_plan.tf;
+        switch_angle = angleWeightedAverage(foot_state.pose(4:6), switch_ratio, intercept_plan.r_foot_new(4:6), 1-switch_ratio);
+        params = struct('r0', foot_state.pose,...
+                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
+                        'rf',intercept_plan.r_foot_new,...
+                        'rdf',[0;0;0;0;0;0],...
+                        'r_switch_lb', [foot_state.pose(1:2) - slack;
+                                     intercept_plan.r_foot_new(3) + swing_height;
+                                     switch_angle],...
+                        'r_switch_ub', [foot_state.pose(1:2) + slack;
+                                     intercept_plan.r_foot_new(3) + swing_height;
+                                     switch_angle],...
+                        'rd_switch_lb', [-slack * ones(2,1); zeros(4,1)],...
+                        'rd_switch_ub', [slack * ones(2,1); zeros(4,1)],...
+                        't_switch', intercept_plan.tswitch,...
+                        't_f', intercept_plan.tf);
+        settings = struct('verbose', 0);
+        [vars, status] = freeSplineMex(params, settings);
+        coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
+        ts = [0, intercept_plan.tswitch, intercept_plan.tf];
+        
+        if DEBUG
+          tt = linspace(ts(1), ts(end));
+          pp = mkpp(ts, coefs, 6);
+          ps = ppval(pp, tt);
+          figure(10)
+          clf
+          subplot(311)
+          plot(tt, ps(1,:), tt, ps(2,:));
+          subplot(312)
+          ps = ppval(fnder(pp, 1), tt);
+          plot(tt, ps(1,:), tt, ps(2,:));
+          subplot(313)
+          ps = ppval(fnder(pp, 2), tt);
+          plot(tt, ps(1,:), tt, ps(2,:));
+        end
+        
+      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.05
+        tswitch = intercept_plan.tf / 2;
+        swing_height = min([0.05, 0.25 * norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2))]);
+        slack = 10;
+        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
+        params = struct('r0', foot_state.pose,...
+                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
+                        'rf',intercept_plan.r_foot_new,...
+                        'rdf',[0;0;0;0;0;0],...
+                        'r_switch_lb', [foot_state.pose(1:2) - slack;
+                                     intercept_plan.r_foot_new(3) + swing_height;
+                                     intercept_plan.r_foot_new(4:6)],...
+                        'r_switch_ub', [foot_state.pose(1:2) + slack;
+                                     intercept_plan.r_foot_new(3) + swing_height;
+                                     intercept_plan.r_foot_new(4:6)],...
+                        'rd_switch_lb', [-slack * ones(3,1); zeros(3,1)],...
+                        'rd_switch_ub', [slack * ones(3,1); zeros(3,1)],...
+                        't_switch', tswitch,...
+                        't_f', intercept_plan.tf);
+        settings = struct('verbose', 0);
+        [vars, status] = freeSplineMex(params, settings);
+        coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
+        ts = [0, tswitch, intercept_plan.tf];
+      else
+        ts = [0, intercept_plan.tf];
+        coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.pose, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
+      end
+
+      % pp = mkpp(ts, coefs, 6);
+
+      % tt = linspace(0, intercept_plan.tf);
+      % ps = ppval(pp, tt);
+      % p_knot = ppval(pp, ts);
+      % figure(4)
+      % clf
+      % hold on
+      % for j = 1:6
+      %   subplot(6, 1, j)
+      %   hold on
+      %   plot(tt, ps(j,:));
+      %   plot(ts, p_knot(j,:), 'ro');
+      % end
     end
 
   end
@@ -667,98 +773,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         %   plot(tf(j), xf, 'ro');
         % end
       end
-    end
-
-    function [ts, coefs] = swingTraj(intercept_plan, foot_state)
-      DEBUG = false;
-
-      if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
-        disp('here');
-      end
-      if intercept_plan.tswitch > 0.05 && (intercept_plan.tf - intercept_plan.tswitch) > 0.05
-        sizecheck(intercept_plan.r_foot_new, [6, 1]);
-        swing_height = 0.05;
-        slack = 10;
-        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0.
-        switch_ratio = intercept_plan.tswitch / intercept_plan.tf
-        switch_angle = angleWeightedAverage(foot_state.pose(4:6), switch_ratio, intercept_plan.r_foot_new(4:6), 1-switch_ratio);
-        params = struct('r0', foot_state.pose,...
-                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
-                        'rf',intercept_plan.r_foot_new,...
-                        'rdf',[0;0;0;0;0;0],...
-                        'r_switch_lb', [foot_state.pose(1:2) - slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     switch_angle],...
-                        'r_switch_ub', [foot_state.pose(1:2) + slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     switch_angle],...
-                        'rd_switch_lb', [-slack * ones(2,1); zeros(4,1)],...
-                        'rd_switch_ub', [slack * ones(2,1); zeros(4,1)],...
-                        't_switch', intercept_plan.tswitch,...
-                        't_f', intercept_plan.tf);
-        settings = struct('verbose', 0);
-        [vars, status] = freeSplineMex(params, settings);
-        coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
-        ts = [0, intercept_plan.tswitch, intercept_plan.tf];
-        
-        if DEBUG
-          tt = linspace(ts(1), ts(end));
-          pp = mkpp(ts, coefs, 6);
-          ps = ppval(pp, tt);
-          figure(10)
-          clf
-          subplot(311)
-          plot(tt, ps(1,:), tt, ps(2,:));
-          subplot(312)
-          ps = ppval(fnder(pp, 1), tt);
-          plot(tt, ps(1,:), tt, ps(2,:));
-          subplot(313)
-          ps = ppval(fnder(pp, 2), tt);
-          plot(tt, ps(1,:), tt, ps(2,:));
-        end
-        
-      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.05
-        tswitch = intercept_plan.tf / 2;
-        swing_height = min([0.05, 0.25 * norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2))]);
-        slack = 10;
-        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
-        params = struct('r0', foot_state.pose,...
-                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
-                        'rf',intercept_plan.r_foot_new,...
-                        'rdf',[0;0;0;0;0;0],...
-                        'r_switch_lb', [foot_state.pose(1:2) - slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     intercept_plan.r_foot_new(4:6)],...
-                        'r_switch_ub', [foot_state.pose(1:2) + slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     intercept_plan.r_foot_new(4:6)],...
-                        'rd_switch_lb', [-slack * ones(3,1); zeros(3,1)],...
-                        'rd_switch_ub', [slack * ones(3,1); zeros(3,1)],...
-                        't_switch', tswitch,...
-                        't_f', intercept_plan.tf);
-        settings = struct('verbose', 0);
-        [vars, status] = freeSplineMex(params, settings);
-        coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
-        ts = [0, tswitch, intercept_plan.tf];
-      else
-        ts = [0, intercept_plan.tf];
-        coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.pose, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
-      end
-
-      % pp = mkpp(ts, coefs, 6);
-
-      % tt = linspace(0, intercept_plan.tf);
-      % ps = ppval(pp, tt);
-      % p_knot = ppval(pp, ts);
-      % figure(4)
-      % clf
-      % hold on
-      % for j = 1:6
-      %   subplot(6, 1, j)
-      %   hold on
-      %   plot(tt, ps(j,:));
-      %   plot(ts, p_knot(j,:), 'ro');
-      % end
     end
 
     function best_plan = chooseBestIntercept(intercept_plans)
