@@ -541,7 +541,12 @@ toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
     rangeScale /= ((1 << bits) - 1);
   }
   msg.range_scale = rangeScale;
-  for (auto& r : ranges) r = r/rangeScale + 0.5f;
+  if (bits == 32) {
+    for (auto& r : ranges) r /= rangeScale;
+  }
+  else {
+    for (auto& r : ranges) r = r/rangeScale + 0.5f;
+  }
 
   // store ranges to blob
   std::vector<uint8_t> bytes((uint8_t*)ranges.data(),

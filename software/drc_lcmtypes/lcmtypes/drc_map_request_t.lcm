@@ -72,4 +72,5 @@ struct map_request_t
   const int8_t MEAN = 2;
   const int8_t MEDIAN = 3;
   const int8_t CLOSEST_PERCENTILE = 4;
+  const int8_t ROBUST_BLEND = 5;
 }
