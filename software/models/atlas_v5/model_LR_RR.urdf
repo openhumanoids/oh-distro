@@ -1629,7 +1629,7 @@
     </visual>
   </link>
   <joint name="l_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 3.141592" xyz="0 -0.1245 0.0112"/>
+    <origin rpy="0 0 3.141592" xyz="0 -0.1245 0"/>
     <parent link="l_hand"/>
     <child link="l_hand_force_torque"/>
   </joint>
@@ -1647,7 +1647,7 @@
     </visual>
   </link>
   <joint name="r_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 3.141592" xyz="0 -0.1245 -0.0112"/>
+    <origin rpy="0 0 3.141592" xyz="0 -0.1245 0"/>
     <parent link="r_hand"/>
     <child link="r_hand_force_torque"/>
   </joint>

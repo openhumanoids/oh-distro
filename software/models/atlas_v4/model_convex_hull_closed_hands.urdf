@@ -1536,45 +1536,41 @@
   </joint>
   <!-- Set the initial hand position and orientation by changing 'rpy' and 'xyz'
   to mach the values in your actual robot. -->
-  <link name="l_robotiq_convex_hull">
+  <link name="left_palm">
     <visual>
-      <origin rpy="-1.57079 -1.57079 0" xyz="0 0.29016 0.0112"/>
+      <origin rpy="-1.57079 -1.57079 0" xyz="0 0.1725 0"/>
       <geometry>
         <mesh filename="package://robotiq_hand_description/meshes/s-model/visual/GRIPPER_CLOSED.obj" scale="1 1 1"/>
       </geometry>
     </visual>
-    <collision group="l_hand_robotiq">
-      <origin rpy="-1.57079 -1.57079 0" xyz="0 0.29016 0.0112"/>
+    <collision group="left_hand_robotiq">
+      <origin rpy="-1.57079 -1.57079 0" xyz="0 0.1725 0"/>
       <geometry>
         <mesh filename="package://robotiq_hand_description/meshes/s-model/collision/GRIPPER_CLOSED.obj" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
-  <joint name="l_robotiq_convex_hull_joint" type="fixed">
-    <!--<origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>-->
-    <!--<parent link="${prefix}_hand_force_torque"/>-->
-    <parent link="l_hand"/>
-    <child link="l_robotiq_convex_hull"/>
+  <joint name="left_palm_joint" type="fixed">
+    <parent link="l_hand_force_torque"/>
+    <child link="left_palm"/>
   </joint>
-  <link name="r_robotiq_convex_hull">
+  <link name="right_palm">
     <visual>
-      <origin rpy="-1.57079 -1.57079 3.142" xyz="0 -0.29016 -0.0112"/>
+      <origin rpy="-1.57079 -1.57079 0" xyz="0 0.1725 0"/>
       <geometry>
         <mesh filename="package://robotiq_hand_description/meshes/s-model/visual/GRIPPER_CLOSED.obj" scale="1 1 1"/>
       </geometry>
     </visual>
-    <collision group="r_hand_robotiq">
-      <origin rpy="-1.57079 -1.57079 3.142" xyz="0 -0.29016 -0.0112"/>
+    <collision group="right_hand_robotiq">
+      <origin rpy="-1.57079 -1.57079 0" xyz="0 0.1725 0"/>
       <geometry>
         <mesh filename="package://robotiq_hand_description/meshes/s-model/collision/GRIPPER_CLOSED.obj" scale="1 1 1"/>
       </geometry>
     </collision>
   </link>
-  <joint name="r_robotiq_convex_hull_joint" type="fixed">
-    <!--<origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>-->
-    <!--<parent link="${prefix}_hand_force_torque"/>-->
-    <parent link="r_hand"/>
-    <child link="r_robotiq_convex_hull"/>
+  <joint name="right_palm_joint" type="fixed">
+    <parent link="l_hand_force_torque"/>
+    <child link="right_palm"/>
   </joint>
   <joint name="l_hand_face_joint" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0 0.12 0"/>
