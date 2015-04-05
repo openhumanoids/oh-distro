@@ -399,7 +399,7 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   if (iQuantMax == 0) {
     bits = 32;
     zScale = 1;
-    zOffset = 1;
+    zOffset = 0;
   }
   else {
     if (iQuantMax > 0) {
