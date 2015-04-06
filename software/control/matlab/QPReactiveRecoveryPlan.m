@@ -12,6 +12,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     last_qp_input;
     last_plan;
 
+    % Initializes on first getQPInput
+    % (setup foot contact lock and upper body state to be
+    % tracked)
+    initialized = 0;
+
     % Stateful foot contact lock
     % Used to determine how long a foot has been continuously in
     % contact (to the resolution of the rate at which this class
@@ -25,8 +30,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     % And which-foot-I'm-using-as-stance lock. Only allowed to switch this
     % slowly to prevent bouncing
-    last_used_swing = 'right';
+    last_used_swing = '';
     last_swing_switch = 0;
+
+    % debug visualization?
+    DEBUG;
 
   end
 
@@ -34,6 +42,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
     TERRAIN_CONTACT_THRESH = 0.003;
     SWING_SWITCH_MIN_TIME = 0.1;
+    HYST_MIN_CONTACT_TIME = 0.04; % Foot must be solidly, continuously in contact (or out) for this long
+    HYST_MIN_NONCONTACT_TIME = 0.01; % to be considered a support (or not a support).
+    PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
   end
 
   methods
@@ -42,8 +53,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if nargin < 2
         options = struct();
       end
-      options = applyDefaults(options, struct('g', 9.81));
+      options = applyDefaults(options, struct('g', 9.81, 'debug', 1));
       obj.robot = robot;
+      obj.DEBUG = options.debug;
       % obj.qtraj = qtraj;
       % obj.LIP_height = LIP_height;
       S = load(obj.robot.fixed_point_file);
@@ -54,6 +66,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       [~, obj.V, ~, obj.LIP_height] = obj.robot.planZMPController([0;0], obj.qtraj);
       obj.g = options.g;
       obj.point_mass_biped = PointMassBiped(sqrt(options.g / obj.LIP_height));
+      obj.initialized = 0;
+    end
+
+    function obj = resetInitialization(obj)
+      obj.initialized = 0;
     end
 
     function next_plan = getSuccessor(obj, t, x)
@@ -62,9 +79,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
 
-      DEBUG = true;
-      HYST_MIN_CONTACT_TIME = 0.04;
-      HYST_MIN_NONCONTACT_TIME = 0.04;
+      DEBUG = obj.DEBUG > 0;
+
 
       q = x(1:rpc.nq);
       qd = x(rpc.nq + (1:rpc.nv));
@@ -105,6 +121,20 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           foot_states.(foot).contact = true;
         end
       end
+      foot_states_raw = foot_states;
+
+      % Initialize if we haven't, to get foot lock into a known state
+      % and capture upper body pose to hold it through the plan
+      if (obj.initialized) 
+        % Take current foot state to be truth
+        obj.l_foot_in_contact_lock = foot_states.left.contact;
+        obj.r_foot_in_contact_lock = foot_states.right.contact;
+        % Record current state of arm, neck to hold (roughly) throughout recovery
+        arm_and_neck_inds = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck')];
+        obj.qtraj(arm_and_neck_inds) = x(arm_and_neck_inds);
+        obj.last_used_swing = '';
+        obj.initialized = 1;
+      end
 
       % Update and check against contact locks
       if (~foot_states.left.contact)
@@ -119,17 +149,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
       % State switching only when hysterisis thresholds are met
       % noncontact -> contact
-      if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > HYST_MIN_CONTACT_TIME)
+      if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
         obj.r_foot_in_contact_lock = true;
       end
-      if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > HYST_MIN_CONTACT_TIME)
+      if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
         obj.l_foot_in_contact_lock = true;
       end
       % contact -> noncontact
-      if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > HYST_MIN_NONCONTACT_TIME)
+      if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
         obj.r_foot_in_contact_lock = false;
       end
-      if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > HYST_MIN_NONCONTACT_TIME)
+      if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
         obj.l_foot_in_contact_lock = false;
       end
 
@@ -148,7 +178,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                             'left', [-0.4, 0.4, 0.4, -0.4;
                                      0.15, 0.15, 0.4, 0.4]);
 
-      is_captured = obj.isICPCaptured(r_ic, foot_states, foot_vertices);
+      is_captured = obj.isICPCaptured(r_ic, foot_states_raw, foot_vertices);
 
       if is_captured
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
@@ -156,7 +186,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         
         % if the last plan is about to finish, just finish it first.
         if ~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
-            obj.last_plan.tf - t_global < 0.05
+            obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD
           best_plan = obj.last_plan;
         else
         
@@ -193,6 +223,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           end
 
           if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
+            fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
             obj.last_used_swing = best_plan.swing_foot;
             obj.last_swing_switch = t_global;
           end
@@ -208,7 +239,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function qp_input = getInterceptInput(obj, t_global, foot_states, reachable_vertices, best_plan, rpc)
-      DEBUG = true;
+      DEBUG = obj.DEBUG > 0;
       [ts, coefs] = obj.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
       %ts
       % TODO: rather than applying a transform to coefs, just send body_motion_data for the sole point, not the origin
@@ -458,7 +489,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function [ts, coefs] = swingTraj(obj, intercept_plan, foot_state)
-      DEBUG = false;
+      DEBUG = obj.DEBUG > 1;
 
       if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
         disp('Asking for swing traj of very short step')
@@ -515,16 +546,18 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         swing_height = min([0.05, 0.25 * norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2))]);
         slack = 10;
         % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
+        switch_ratio = tswitch / intercept_plan.tf;
+        switch_angle = angleWeightedAverage(foot_state.pose(4:6), switch_ratio, intercept_plan.r_foot_new(4:6), 1-switch_ratio);
         params = struct('r0', foot_state.pose,...
                         'rd0',foot_state.velocity + [0;0;0;0;0;0],...
                         'rf',intercept_plan.r_foot_new,...
                         'rdf',[0;0;0;0;0;0],...
                         'r_switch_lb', [foot_state.pose(1:2) - slack;
                                      intercept_plan.r_foot_new(3) + swing_height;
-                                     intercept_plan.r_foot_new(4:6)],...
+                                     switch_angle],...
                         'r_switch_ub', [foot_state.pose(1:2) + slack;
                                      intercept_plan.r_foot_new(3) + swing_height;
-                                     intercept_plan.r_foot_new(4:6)],...
+                                     switch_angle],...
                         'rd_switch_lb', [-slack * ones(3,1); zeros(3,1)],...
                         'rd_switch_ub', [slack * ones(3,1); zeros(3,1)],...
                         't_switch', tswitch,...
@@ -672,7 +705,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
               intercept = intercepts(i);
 
               if ~valuecheck(x0 + 0.5 * xd0 * intercept.tf + 0.25 * intercept.u * intercept.tf^2 - 0.25 * xd0^2 / intercept.u, r_foot_reach(1))
-                keyboard()
+                warning('Unhandled bad value check')
               end
 
               intercept.tf = max([intercept.tf, min_time_to_xprime_axis]);
