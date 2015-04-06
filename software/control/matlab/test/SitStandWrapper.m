@@ -154,7 +154,7 @@ classdef SitStandWrapper
       obj.plan_options.use_mex = 1;
       obj.plan_options.pelvis_contact_angle = 0;
       obj.plan_options.use_new_planner = 1;
-      obj.plan_options.back_gaze_bound = 0.2;
+      obj.plan_options.back_gaze_bound = 0.3;
       obj.plan_options.shrink_factor = 0.5;
     end
   end

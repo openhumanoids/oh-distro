@@ -164,7 +164,7 @@ cmd "drakeAtlasSimulation Plug Task" {
 }
 
 cmd "drakeAtlasSimulation Box" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 0, 4, 4, 'box');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 0, 0, 4, 4, 'box');\"";
     host = "base";
 }
 
