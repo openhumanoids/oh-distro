@@ -33,7 +33,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
   properties (Constant)
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
     TERRAIN_CONTACT_THRESH = 0.003;
-    SWING_SWITCH_MIN_TIME = 0.08;
+    SWING_SWITCH_MIN_TIME = 0.1;
   end
 
   methods
@@ -177,8 +177,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           end
           % Don't switch stance feet if possible
           if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
-            if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
-              intercept_plans(j).error = Inf;
+            for j=1:numel(intercept_plans)
+              if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
+                intercept_plans(j).error = Inf;
+              end
             end
           end
 
