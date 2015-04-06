@@ -1,4 +1,4 @@
-function drakeAtlasSimulation(atlas_version, visualize, add_hokuyo, right_hand, left_hand, world_name)
+function drakeAtlasSimulation(atlas_version, visualize, add_hokuyo, right_hand, left_hand, world_name,box_height)
 %NOTEST
 if nargin < 1, atlas_version = 4; end
 if nargin < 2, visualize = false; end
@@ -6,6 +6,7 @@ if nargin < 3, add_hokuyo = true; end
 if nargin < 4, right_hand = 0; end
 if nargin < 5, left_hand = 0; end
 if nargin < 6, world_name = ''; end
+if nargin < 7, box_height = 1; end
 
 % IF YOU WANT MASS EST LOOK HERE
 % (when this is more fleshed out this will become
@@ -107,14 +108,21 @@ elseif (strcmp(world_name, 'manip_ex'))
   r_complete = r_complete.addRobotFromURDF('drill_box.urdf', [0.775; -0.2; 1.2], [], options_cyl);
 elseif(strcmp(world_name, 'terrain'))
   r_complete = r_complete.addRobotFromSDF(terrainSDF);
-elseif(strcmp(world_name, 'plug'))  
+elseif(strcmp(world_name, 'plug'))
   options_cyl.floating = true;
   r_complete = r_complete.addRobotFromURDF('plug_frame.urdf', [1.0 ; 0.0 ; 0.0]);
   r_complete = r_complete.addRobotFromURDF('table.urdf', [0; -1.5; 0.5]);
   r_complete = r_complete.addRobotFromURDF('big_plug.urdf', [-0.2; -1.2; 1.2], [], options_cyl);
   r_complete = r_complete.addRobotFromURDF('small_plug.urdf', [0.2; -1.2; 1.2], [], options_cyl);
-elseif(strcmp(world_name, 'stairs'))  
-  r_complete = r_complete.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0], [0 ; 0 ; pi]);  
+elseif(strcmp(world_name, 'stairs'))
+  r_complete = r_complete.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0], [0 ; 0 ; pi]);
+elseif(strcmp(world_name,'box'))
+  box = RigidBodyBox([1;2;box_height;]);
+  r_complete = r_complete.addCollisionGeometryToBody(1,box);
+  r_complete = r_complete.addVisualGeometryToBody(1,box);
+  handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
+  kpt = KinematicPoseTrajectory(r_complete,{});
+  r_complete = kpt.addSpecifiedCollisionGeometryToRobot({'l_fpelvis','r_fpelvis'},r_complete);  
 end
 r_complete = compile(r_complete);
 
@@ -128,6 +136,19 @@ xstar(6) = 0;
 x0 = zeros(r_pure.getNumStates, 1);
 x0(1:length(xstar)) = xstar;
 r_pure = r_pure.setInitialState(x0);
+
+% load the correct initial state in the box world
+if strcmp(world_name,'box')
+  % load the correct fixed point file
+  handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup']);
+  chair_data = load('chair_standup_data.mat');
+  qstar = chair_data.q_sol(:,3);
+  xstar = [qstar;0*qstar];
+  xstar(3) = xstar(3) + 0.08;
+  x0 = zeros(r_pure.getNumStates, 1);
+  x0(1:length(xstar)) = xstar;
+  r_pure = r_pure.setInitialState(x0);
+end
 
 % and complete state to a feasible sol
 % so lcp has an easier time
@@ -154,17 +175,17 @@ while(~done)
   lcmInputBlock = LCMInputFromAtlasCommandBlock(r_complete,r_pure,options);
   sys = mimoFeedback(lcmInputBlock, sys, [], [], [], outs);
   % LCM interpret in for hand
-  if (right_hand)
+  if (right_hand) && right_hand < 4
     %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
     lcmRobotiqInputBlock_right = getHandDriver(right_hand, r_complete, 'right', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_right, sys, [], [], [], outs);
   end
-  if (left_hand)
+  if (left_hand) && left_hand < 4
     %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
     lcmRobotiqInputBlock_left = getHandDriver(right_hand, r_complete, 'left', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_left, sys, [], [], [], outs);
   end
-
+  
   % LCM broadcast out
   broadcast_opts = options;
   broadcast_opts.publish_truth = 0;
@@ -191,28 +212,30 @@ end
 end
 
 function handString = getHandString(hand_id)
-  switch hand_id
-    case 1
-      handString = 'robotiq';
-    case 2
-      handString = 'robotiq_tendons';
-    case 3
-      handString = 'robotiq_simple';
-    otherwise
-      handString = 'none';
-  end
+switch hand_id
+  case 1
+    handString = 'robotiq';
+  case 2
+    handString = 'robotiq_tendons';
+  case 3
+    handString = 'robotiq_simple';
+  case 4
+    handString = 'robotiq_weight_only';
+  otherwise
+    handString = 'none';
+end
 end
 
 function handDriver = getHandDriver(hand_id, r_complete, handedness, options)
-  switch hand_id
-    case 1
-      handDriver = LCMInputFromRobotiqCommandBlock(r_complete, handedness, options);
-    case 2
-      handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, handedness, options);
-    case 3
-      handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, handedness, options);
-    otherwise
-      handDriver = [];
-      disp('unexpected hand type, should be {1, 2, 3}')
-  end
+switch hand_id
+  case 1
+    handDriver = LCMInputFromRobotiqCommandBlock(r_complete, handedness, options);
+  case 2
+    handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, handedness, options);
+  case 3
+    handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, handedness, options);
+  otherwise
+    handDriver = [];
+    disp('unexpected hand type, should be {1, 2, 3}')
+end
 end
