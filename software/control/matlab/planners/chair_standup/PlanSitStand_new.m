@@ -81,12 +81,12 @@ classdef PlanSitStand_new
           ub(j) = pmax.([name,'_motor'])*torque_multiplier_back;
         end
         if strfind(name,'back_bky')
-          lb(j) = -200;
-          ub(j) = 200;
+          lb(j) = -190;
+          ub(j) = 190;
         end
         if strfind(name,'back_bkx')
           lb(j) = -190;
-          ub(j) = 230;
+          ub(j) = 190;
         end
       end
       obj.torque_constraint = GravityCompensationTorqueConstraint(kpt.robot,joint_idx,lb,ub);
@@ -107,6 +107,7 @@ classdef PlanSitStand_new
       obj.xstar = atlas_fp.xstar;
       obj.qstar = obj.xstar(1:obj.nq);
       obj.Q = eye(obj.nq);
+      obj.Q(1:6) = zeros(6,1);
       obj.Q(1:6) = 0;
       obj.back_idx = obj.r.findPositionIndices('back');
       obj.arm_idx = obj.r.findPositionIndices('arm');
@@ -132,7 +133,7 @@ classdef PlanSitStand_new
       else
         obj.pelvis_bodies = repmat(r.findLinkId('pelvis'),1,3);
         middle_pelvis_contact_pt = 1/2.*(kpt.c('l_fpelvis') + kpt.c('r_fpelvis'));
-        middle_pelvis_contact_pt(1) = middle_pelvis_contact_pt(1) + 0.02;
+        middle_pelvis_contact_pt(1) = middle_pelvis_contact_pt(1) - 0.02;
         obj.pelvis_contact_pts = {obj.kpt.c('l_fpelvis'),obj.kpt.c('r_fpelvis'),middle_pelvis_contact_pt};
       end
 
@@ -580,7 +581,7 @@ classdef PlanSitStand_new
         info
         infeasible_constraint
         disp('some knot points dont satisfy all constraints, removing them');
-        I = find(I < 10);
+        I = find(info < 10);
         q_sol = q_sol(:,I);
         ts = ts(I);
       end

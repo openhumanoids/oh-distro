@@ -157,5 +157,70 @@ classdef SitStandWrapper
       obj.plan_options.back_gaze_bound = 0.3;
       obj.plan_options.shrink_factor = 0.5;
     end
+
+
+    function computeGravityTorqueConstraint(obj)
+      %% Torque Constraint
+      robot = obj.robot.getManipulator;
+      r = obj.robot;
+      joint_names = robot.getPositionFrame.coordinates;
+      idx_arm = ~cellfun('isempty',strfind(joint_names,'arm'));
+      idx_back = ~cellfun('isempty',strfind(joint_names,'back'));
+      % idx = or(idx_arm,idx_back);
+      idx = or(idx_arm,idx_back);
+      names_arm_back = joint_names(idx);
+      torque_multiplier = 0.5;
+      torque_multiplier_back = 1;
+      pmin = Point(robot.getInputFrame,r.umin);
+      pmax = Point(robot.getInputFrame,r.umax);
+      
+      
+      lb = zeros(length(names_arm_back),1);
+      ub = lb;
+      joint_idx = zeros(length(names_arm_back),1);
+      
+      
+      for j = 1:length(joint_idx)
+        name = names_arm_back{j};
+        joint_idx(j) = r.findPositionIndices(name);
+        lb(j) = pmin.(name)*torque_multiplier;
+        ub(j) = pmax.(name)*torque_multiplier;
+        if strfind(name,'back')
+          lb(j) = pmin.([name])*torque_multiplier_back;
+          ub(j) = pmax.([name])*torque_multiplier_back;
+        end
+        if strfind(name,'back_bky')
+          lb(j) = -190;
+          ub(j) = 190;
+          back_bky_idx = j;
+        end
+        if strfind(name,'back_bkx')
+          lb(j) = -190;
+          ub(j) = 190;
+          back_bkx_idx = j;
+        end
+      end
+      gct = GravityCompensationTorqueConstraint(robot,joint_idx,lb,ub);
+
+      nq = robot.getNumPositions();
+
+      data = [];
+      while isempty(data)
+          data = obj.state_monitor.getNextMessage(10);
+      end
+      [x, t] = obj.r.getStateFrame().lcmcoder.decode(data);
+
+      q0 = x(1:nq);
+      kinsol = robot.doKinematics(q0);
+      c = gct.eval(0,kinsol);
+
+      disp('back_bky')
+      c(back_bky_idx)
+      disp('back_bkx')
+      c(back_bkx_idx)
+
+    end
+
+
   end
 end
