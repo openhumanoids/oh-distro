@@ -45,6 +45,12 @@ group "2.plan_and_control" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 4, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
     }
+
+    cmd "PlanEvalBothHands" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 4, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
+        host = "base";
+    }
+
     cmd "InstQP" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 4, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
@@ -59,6 +65,10 @@ group "2.plan_and_control" {
         host = "base";
     }
 
+    cmd "InstQPBothHands" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 4, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
+        host = "base";
+    }
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],4); p.run();\"";
        host = "base";
@@ -153,6 +163,11 @@ cmd "drakeAtlasSimulation Plug Task" {
     host = "base";
 }
 
+cmd "drakeAtlasSimulation Box" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(4, 1, 0, 4, 4, 'box');\"";
+    host = "base";
+}
+
 cmd "systemwide-tests-valve" {
     exec = "drc-systemwide-tests valve";
     host = "localhost";
@@ -161,6 +176,21 @@ cmd "systemwide-tests-valve" {
 cmd "systemwide-tests-walking" {
     exec = "drc-systemwide-tests walking";
     host = "localhost";
+}
+
+script "-2.run_box" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Box";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
+    start cmd "director";
 }
 
 script "-1.run_monolithic_controller_simul" {
@@ -189,6 +219,8 @@ script "0.run_all_but_simul_and_controller" {
     start group "5.maps";
     start cmd "director";
 }
+
+
 
 script "1.run_walking_flat" {
     start cmd "base_deputy";
