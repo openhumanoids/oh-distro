@@ -19,8 +19,8 @@ marker_data.r_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFun
 % Left hand:
 marker_data.l_hand.num_markers = 5;
 l_markers = nan(3, marker_data.l_hand.num_markers);
-l_hand_force_torque_sensor_to_link = [0; 0.1245; 0.0112];
-l_markers(:, 3) = marker_to_force_torque_sensor + l_hand_force_torque_sensor_to_link;
+l_hand_force_torque_sensor_to_link = [0; -0.1245; 0.0112];
+l_markers(:, 3) = -marker_to_force_torque_sensor + l_hand_force_torque_sensor_to_link;
 marker_data.l_hand.num_params = sum(sum(isnan(l_markers)));
 marker_data.l_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, l_markers);
 

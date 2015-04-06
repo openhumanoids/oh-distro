@@ -178,3 +178,59 @@ def addCollisionFilterGroup(urdf, name, members, groupsToIgnore):
     for group in groupsToIgnore:
         g = etree.SubElement(cfg, 'ignored_collision_filter_group')
         g.set('collision_filter_group', group)
+
+def copyLinkProperties(urdf, sourceLinkName, destinationLinkName):
+    sourceLink = urdf.find("link[@name='%s']" % sourceLinkName)
+    destinationLink = urdf.find("link[@name='%s']" % destinationLinkName)
+    return copyElementProperties(urdf, sourceLink, destinationLink)
+
+def copyJointProperties(urdf, sourceJointName, destinationJointName, additionalExceptions = []):
+    sourceJoint = urdf.find("joint[@name='%s']" % sourceJointName)
+    destinationJoint = urdf.find("joint[@name='%s']" % destinationJointName)
+    return copyElementProperties(urdf, sourceJoint, destinationJoint, ['parent', 'child'] + additionalExceptions)
+
+def copyElementProperties(urdf, sourceElement, destinationElement, exceptionTagNames = []):
+    '''
+    doing it this way to try to preserve the order of the elements for easy text comparison
+    '''
+    sourceChildrenToAppend = copy.copy(list(sourceElement))
+    for destinationChild in destinationElement:
+        if destinationChild.tag not in exceptionTagNames:
+            sourceChildrenWithThisTag = sourceElement.findall(destinationChild.tag)
+            destinationChildrenWithThisTag = destinationElement.findall(destinationChild.tag)
+
+            if len(sourceChildrenWithThisTag) == 1 and len(destinationChildrenWithThisTag) == 1:
+                # replace and remove from sourceChildrenToAppend
+                sourceChild = sourceChildrenWithThisTag[0]
+                destinationElement.replace(destinationChild, copy.deepcopy(sourceChild))
+                sourceChildrenToAppend.remove(sourceChild)
+            else:
+                # remove and leave in sourceChildrenToAppend
+                destinationElement.remove(destinationChild)
+    for sourceChild in sourceChildrenToAppend:
+        if sourceChild.tag not in exceptionTagNames:
+            destinationElement.append(copy.deepcopy(sourceChild))
+    
+    return urdf
+
+def invertJointAxis(urdf, jointName):
+    axis = urdf.find("joint[@name='%s']/axis" % jointName)
+    xyz = axis.get('xyz').split(' ')
+    axis.set('xyz', ' '.join(map(lambda x : str(-float(x)), xyz)))
+    
+    return urdf
+
+def setJointOriginRPY(urdf, jointName, rpy):
+    origin = urdf.find("joint[@name='%s']/origin" % jointName)
+    origin.set('rpy', ' '.join(map(lambda x : str(x), rpy)))
+    
+    return urdf
+
+def setLinkVisualRPY(urdf, linkName, rpy):
+    visual = urdf.find("link[@name='%s']/visual" % linkName)
+    origin = visual.get('origin')
+    if origin is None:
+        origin = etree.SubElement(visual, 'origin', {'rpy': "0 0 0", 'xyz': "0 0 0"})
+    origin.set('rpy', ' '.join(map(lambda x : str(x), rpy)))
+
+    return urdf
