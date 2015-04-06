@@ -137,6 +137,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function handle_recovery_trigger_on(obj, msg)
       disp('Entering reactive recovery mode!');
+      obj.reactive_recovery_planner = obj.reactive_recovery_planner.resetInitialization();
       obj.recovery_state = obj.RECOVERY_NOW;
     end
     function handle_recovery_trigger_off(obj, msg)

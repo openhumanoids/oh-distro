@@ -21,6 +21,8 @@ classdef RecoveryHardware < atlasParams.Recovery
 
       obj.vref_integrator.eta = 0.0;
 
+      obj.whole_body.w_qdd(r.findPositionIndices('back_bkx')) = 0.001; % use back x for stabilization
+
       obj = obj.updateKd();
 
     end
