@@ -147,6 +147,7 @@ TerrainMap(const std::shared_ptr<drc::BotWrapper>& iBotWrapper) {
 
 TerrainMap::
 ~TerrainMap() {
+  stopListening();
 }
 
 void TerrainMap::
