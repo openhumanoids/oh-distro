@@ -76,7 +76,7 @@ class MultisensePanel(object):
         return self.widget.ledOnCheck.isChecked()
 
     def getCameraLedBrightness(self):
-        return self.widget.headCamFpsSpinner.value
+        return self.widget.ledBrightnessSpinner.value
 
     def getCameraAutoGain(self):
         return self.widget.headAutoGainCheck.isChecked()
@@ -156,7 +156,7 @@ class MultisensePanel(object):
 
         fps = self.getCameraFps()
         camGain = self.getCameraGain()
-        exposure = self.getCameraExposure()
+        exposure = 1000*self.getCameraExposure()
         ledFlash = self.getCameraLedOn()
         ledDuty = self.getCameraLedBrightness()
         spinRate = self.getSpinRate()

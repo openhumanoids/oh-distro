@@ -172,7 +172,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       terrainMap->startListening();
       if (terrainMap->getViewId() == kHeightMapViewId) {
         terrainMap->sendRequest(Eigen::Vector3d(-2,-5,-3),
-                                Eigen::Vector3d(5,5,0.3), 0.03, 5, 0.5);
+                                Eigen::Vector3d(5,5,0.3), 0.03, 10, 0.5);
       }
     }
 

@@ -1,8 +1,8 @@
-classdef StandingHardware < atlasParams.Standing
+classdef StandingHardware < atlasParams.Base
   methods
     function obj = StandingHardware(r)
       typecheck(r, 'DRCAtlas');
-      obj = obj@atlasParams.Standing(r);
+      obj = obj@atlasParams.Base(r);
 
       force_controlled_joint_names = {'leg', 'back_bkx'};
       obj.hardware = drcAtlasParams.getHardwareParams(r, force_controlled_joint_names);
