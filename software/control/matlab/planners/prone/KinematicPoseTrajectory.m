@@ -2070,9 +2070,6 @@ end
       kinsol = robot.doKinematics(q);
       com_pos = robot.getCOM(kinsol);
       com_pos(3) = 0;
-      if isKey(obj.contact_height,'r_foot')
-        com_pos(3) = obj.contact_height('r_foot');
-      end
       
       lcmgl = LCMGLClient;
       lcmgl.glColor3f(1,0,0);
