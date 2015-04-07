@@ -23,7 +23,7 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
         obj.zmp_final = fasteval(obj.zmptraj, obj.zmptraj.tspan(end));
       end
       obj.LIP_height = msg.LIP_height;
-      obj.V = struct('S', double(msg.S), 's1', mxDeserialize(msg.s1));
+      obj.V = struct('S', mxDeserialize(msg.S), 's1', mxDeserialize(msg.s1));
       obj.qtraj = mxDeserialize(msg.qtraj);
       obj.comtraj = mxDeserialize(msg.comtraj);
       obj.mu = double(msg.mu);
@@ -52,7 +52,9 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
 
       msg.LIP_height = obj.LIP_height;
 
-      msg.S = obj.V.S;
+      msg.S = mxSerialize(obj.V.S);
+      msg.n_S_bytes = length(msg.S);
+
       msg.s1 = mxSerialize(obj.V.s1);
       msg.n_s1_bytes = length(msg.s1);
 
