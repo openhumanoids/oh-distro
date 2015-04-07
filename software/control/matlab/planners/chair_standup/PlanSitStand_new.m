@@ -336,7 +336,7 @@ classdef PlanSitStand_new
 
       if strcmp(plan_type,'hold_with_pelvis_contact')
         qtraj = ConstantTrajectory(q0);
-        support_times = [-Inf,Inf];
+        support_times = [0,Inf];
         supports = struct('bodies',{},'contact_pts',{});
         supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot'),obj.pelvis_bodies];
         supports(1).contact_pts = [{kpt.c('l_foot'),kpt.c('r_foot')},obj.pelvis_contact_pts];
