@@ -159,7 +159,8 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
                                        bool use_rpy /* = false */,
                                        bool add_joint_effort /* = false */)
 {
-    dccl_state->set_utime(lcm_object.utime);
+    if(lcm_object.utime != 0)
+        dccl_state->set_utime(lcm_object.utime);
 
     if(!to_minimal_position3d(lcm_object.pose, dccl_state->mutable_pose(), use_rpy))
         return false;
@@ -167,7 +168,8 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
 
     if(!to_minimal_joint_pos(lcm_object.joint_name,
                              lcm_object.joint_position,
-                             dccl_state->mutable_joint_position()))
+                             dccl_state->mutable_joint_position(),
+                             dccl_state->mutable_joint_id()))
         return false;
 
 
@@ -228,7 +230,7 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
                                          bool use_rpy /* = false */)
 {
 
-    lcm_object->utime = dccl_state.utime();
+    lcm_object->utime = dccl_state.has_utime() ? dccl_state.utime() : 0;
 
     if(!from_minimal_position3d(&lcm_object->pose,dccl_state.pose(), use_rpy))
         return false;    
@@ -238,7 +240,8 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     
     if(!from_minimal_joint_pos(&lcm_object->joint_name,
                                &lcm_object->joint_position,
-                               dccl_state.joint_position()))
+                               dccl_state.joint_position(),
+                               dccl_state.joint_id()))
         return false;
     
     std::vector<float> joint_zeros;

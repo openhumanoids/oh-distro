@@ -73,87 +73,34 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
                                                 present_goal_diff->mutable_pos_diff()))
             return false;
 
-        
-        for(int i = 0, n = present_goal.joint_position_size(); i < n; ++i)
-        {
-            present_goal.set_joint_position(i, goby::util::unbiased_round(present_goal.joint_position(i), JOINT_POS_PRECISION));
 
-             /* if(i)  */
+        // pre-round everything
+        for(int j = 0, m = present_goal.joint_position_size(); j < m; ++j)
+        {
+            present_goal.set_joint_position(j, goby::util::unbiased_round(present_goal.joint_position(j), JOINT_POS_PRECISION));
+        }
+        
+        for(int j = 0, m = present_goal.joint_position_size(); j < m; ++j)
+        {
+            const google::protobuf::Reflection* present_goal_diff_refl = present_goal_diff->GetReflection();
+            const google::protobuf::Descriptor* present_goal_diff_desc = present_goal_diff->GetDescriptor();
+
+            const std::string& joint_name = present_lcm_goal.joint_name.at(j);
+            const google::protobuf::FieldDescriptor* present_goal_diff_field_desc = present_goal_diff_desc->FindFieldByName("joint_pos_diff_" + joint_name);
+            if(!present_goal_diff_field_desc)
+            {
+                glog.is(DIE) && glog << "No hardcoded joint called " << joint_name << " present in MinimalRobotStateDiff DCCL message!" << std::endl;
+            }
+            
+            float jp_diff = present_goal.joint_position(RobotStateCodec::joint_names_to_order_[joint_name]) - previous_goal.joint_position(RobotStateCodec::joint_names_to_order_[joint_name]);
+            present_goal_diff_refl->AddFloat(present_goal_diff, present_goal_diff_field_desc, jp_diff);
+
+            /* if(i)  */
              /*     std::cout << ",";  */
              /*  std::cout << present_goal.joint_position(i) - previous_goal.joint_position(i);  */
         }
         
-//        std::cout << std::endl;
-        
-        
-        present_goal_diff->add_joint_pos_diff_back_bkz(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bkz"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bkz"]));
-        present_goal_diff->add_joint_pos_diff_back_bky(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bky"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bky"]));
-        present_goal_diff->add_joint_pos_diff_back_bkx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bkx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bkx"]));
-
-        present_goal_diff->add_joint_pos_diff_neck_ay(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["neck_ay"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["neck_ay"]));
-        
-
-        present_goal_diff->add_joint_pos_diff_l_leg_hpz(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpz"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpz"]));
-        present_goal_diff->add_joint_pos_diff_l_leg_hpx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpx"]));
-        present_goal_diff->add_joint_pos_diff_l_leg_hpy(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpy"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpy"]));
-        present_goal_diff->add_joint_pos_diff_l_leg_kny(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_kny"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_kny"]));
-        present_goal_diff->add_joint_pos_diff_l_leg_aky(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_aky"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_aky"]));
-        present_goal_diff->add_joint_pos_diff_l_leg_akx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_akx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_akx"]));
-
-
-        present_goal_diff->add_joint_pos_diff_r_leg_hpz(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpz"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpz"]));
-        present_goal_diff->add_joint_pos_diff_r_leg_hpx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpx"]));
-        present_goal_diff->add_joint_pos_diff_r_leg_hpy(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpy"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpy"]));
-        present_goal_diff->add_joint_pos_diff_r_leg_kny(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_kny"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_kny"]));
-        present_goal_diff->add_joint_pos_diff_r_leg_aky(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_aky"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_aky"]));
-        present_goal_diff->add_joint_pos_diff_r_leg_akx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_akx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_akx"]));
-
-        
-        present_goal_diff->add_joint_pos_diff_l_arm_usy(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_usy"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_usy"]));
-        present_goal_diff->add_joint_pos_diff_l_arm_shx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_shx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_shx"]));
-        present_goal_diff->add_joint_pos_diff_l_arm_ely(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_ely"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_ely"]));
-        present_goal_diff->add_joint_pos_diff_l_arm_elx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_elx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_elx"]));
-        present_goal_diff->add_joint_pos_diff_l_arm_uwy(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_uwy"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_uwy"]));
-        present_goal_diff->add_joint_pos_diff_l_arm_mwx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_mwx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_mwx"]));
-        
-        present_goal_diff->add_joint_pos_diff_r_arm_usy(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_usy"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_usy"]));
-        present_goal_diff->add_joint_pos_diff_r_arm_shx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_shx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_shx"]));
-        present_goal_diff->add_joint_pos_diff_r_arm_ely(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_ely"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_ely"]));
-        present_goal_diff->add_joint_pos_diff_r_arm_elx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_elx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_elx"]));
-        present_goal_diff->add_joint_pos_diff_r_arm_uwy(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_uwy"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_uwy"]));
-        present_goal_diff->add_joint_pos_diff_r_arm_mwx(present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_mwx"]) -
-                                                       previous_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_mwx"]));
-        
-        
-//        drc::MinimalRobotStateDiff::JointPositionDiff* joint_pos_diff = present_goal_diff->add_joint_pos_diff();      
-//        joint_pos_diff->mutable_jp_diff_val()->CopyFrom(present_goal.joint_position());
+//        std::cout << std::endl;        
 
         previous_goal = present_goal;
     }
@@ -272,96 +219,23 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
          present_goal.set_utime(present_goal.utime() + dccl_plan.goal_diff().utime_diff(i));
          lcm_goal.utime = present_goal.utime();
          
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["back_bkz"],
-                                         dccl_plan.goal_diff().joint_pos_diff_back_bkz(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bkz"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["back_bky"],
-                                         dccl_plan.goal_diff().joint_pos_diff_back_bky(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bky"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["back_bkx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_back_bkx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["back_bkx"]));
-         
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["neck_ay"],
-                                         dccl_plan.goal_diff().joint_pos_diff_neck_ay(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["neck_ay"]));
-         
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpz"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_leg_hpz(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpz"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_leg_hpx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpx"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpy"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_leg_hpy(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_hpy"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_leg_kny"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_leg_kny(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_kny"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_leg_aky"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_leg_aky(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_aky"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_leg_akx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_leg_akx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_leg_akx"]));
-         
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpz"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_leg_hpz(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpz"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_leg_hpx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpx"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpy"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_leg_hpy(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_hpy"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_leg_kny"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_leg_kny(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_kny"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_leg_aky"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_leg_aky(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_aky"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_leg_akx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_leg_akx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_leg_akx"]));
-         
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_arm_usy"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_arm_usy(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_usy"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_arm_shx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_arm_shx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_shx"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_arm_ely"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_arm_ely(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_ely"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_arm_elx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_arm_elx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_elx"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_arm_uwy"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_arm_uwy(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_uwy"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["l_arm_mwx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_l_arm_mwx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["l_arm_mwx"]));
-         
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_arm_usy"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_arm_usy(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_usy"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_arm_shx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_arm_shx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_shx"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_arm_ely"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_arm_ely(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_ely"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_arm_elx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_arm_elx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_elx"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_arm_uwy"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_arm_uwy(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_uwy"]));
-         present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_["r_arm_mwx"],
-                                         dccl_plan.goal_diff().joint_pos_diff_r_arm_mwx(i) +
-                                         present_goal.joint_position(RobotStateCodec::joint_names_to_order_["r_arm_mwx"]));
 
+         for(int j = 0, m = first_lcm_goal.joint_name.size(); j < m; ++j)
+         {
+             
+             const google::protobuf::Reflection* present_goal_diff_refl = dccl_plan.goal_diff().GetReflection();
+             const google::protobuf::Descriptor* present_goal_diff_desc = dccl_plan.goal_diff().GetDescriptor();
+             
+             const std::string& joint_name = first_lcm_goal.joint_name.at(j);
+             const google::protobuf::FieldDescriptor* present_goal_diff_field_desc = present_goal_diff_desc->FindFieldByName("joint_pos_diff_" + joint_name);
+             if(!present_goal_diff_field_desc)
+             {
+                 glog.is(DIE) && glog << "No hardcoded joint called " << joint_name << " present in MinimalRobotStateDiff DCCL message!" << std::endl;
+             }
+             present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_[joint_name],
+                                             present_goal_diff_refl->GetRepeatedFloat(dccl_plan.goal_diff(), present_goal_diff_field_desc, i) +
+                                             present_goal.joint_position(RobotStateCodec::joint_names_to_order_[joint_name]));
+         }
 
          
          if(!RobotStateCodec::from_position3d_diff(present_goal.mutable_pose(),

@@ -9,13 +9,13 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
     using goby::glog;
     using namespace goby::common::logger;
 
-    if(false)
+    if(true)
     {
         const float MAX = 6.284;
         const float MIN = -MAX;    
 
-        std::string model_file_path = getenv ("HOME");
-        model_file_path += "/drc/software/network/network_sim/src/network_bridge/joint_pos_frequencies.csv";
+        std::string model_file_path = getenv ("DRC_BASE");
+        model_file_path += "/software/network/src/drc_network_shaper/2015_joint_pos_plan_frequencies.csv";
         std::ifstream model_file(model_file_path.c_str());
         if(!model_file.is_open())
             glog.is(DIE) && glog << "Could not open " << model_file_path << " for reading." << std::endl;
