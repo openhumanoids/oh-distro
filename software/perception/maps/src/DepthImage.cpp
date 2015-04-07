@@ -282,8 +282,9 @@ create(const maps::PointCloud::Ptr& iCloud) {
     int x(proj[0]+0.5f), y(proj[1]+0.5f);
     if ((x < 0) || (x >= mHelper->mWidth) ||
         (y < 0) || (y >= mHelper->mHeight)) continue;
-    int idx = y*mHelper->mWidth + x;
     float z = proj[2];
+    if (!mHelper->mIsOrthographic && (z <= 0)) continue;
+    int idx = y*mHelper->mWidth + x;
     switch (method) {
     case AccumulationMethodClosest:
       if ((mHelper->mIsOrthographic && (z < mHelper->mData[idx])) ||
