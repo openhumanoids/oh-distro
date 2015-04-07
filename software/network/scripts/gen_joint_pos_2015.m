@@ -7,8 +7,8 @@ x_full = -2*3.142:0.001:2*3.142;
 n_all = NaN(2, length(x_full));
 n_all(1,:) = x_full;
 
-a=100;
-c=1;
+a=10000;
+c=0.1;
 
 n_all(2,:) = 1+ a*exp(-x_full.^2/(2*c^2));
 plot(n_all(1,:), n_all(2,:))
