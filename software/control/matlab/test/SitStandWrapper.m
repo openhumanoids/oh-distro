@@ -45,7 +45,7 @@ classdef SitStandWrapper
       options.hand_right = 'robotiq_weight_only';
       options.hand_left = 'robotiq_weight_only';
       robot = DRCAtlas(atlas_convex_hull,options_planning);
-      chair_height = 1/2;
+      chair_height = 0.6;
       box = RigidBodyBox([1;2;2*chair_height]);
       r = r.addVisualGeometryToBody(1,box);
       r = compile(r);
@@ -63,7 +63,7 @@ classdef SitStandWrapper
     function PlanAndPublish(obj,plan_type,speed,execute_flag,chair_height,use_default_initial_pose)
       
       if ~any(strcmp(plan_type,{'sit','stand','squat','stand_from_squat','one_leg_stand','stand_from_one_leg',...
-        'lean','hold_with_pelvis_contact','sit_from_current'}))
+        'lean','hold_with_pelvis_contact','sit_from_current','hold_without_pelvis_contact'}))
         error('DRC:PLANSITSTAND','plan type must be one of {sit,stand,squat,stand_from_squat,one_leg_stand,lean,hold_with_pelvis_contact,sit_from_current}');
       end
       

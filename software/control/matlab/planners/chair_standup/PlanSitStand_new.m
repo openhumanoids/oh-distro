@@ -119,7 +119,7 @@ classdef PlanSitStand_new
       %% Max joint velocities
       max_degrees_per_second = 20;
       max_back_degrees_per_second = 3;
-      max_base_meters_per_second = 0.05;
+      max_base_meters_per_second = 0.03;
       back_xz_idx = [r.findPositionIndices('back_bkx'),r.findPositionIndices('back_bky')];
       joint_v_max = obj.plan_options.speed*repmat(max_degrees_per_second*pi/180, r.getNumVelocities()-3, 1);
       xyz_v_max = repmat(max_base_meters_per_second,3,1);
@@ -336,12 +336,22 @@ classdef PlanSitStand_new
 
       if strcmp(plan_type,'hold_with_pelvis_contact')
         qtraj = ConstantTrajectory(q0);
-        support_times = [0,Inf];
+        support_times = [0,10];
         supports = struct('bodies',{},'contact_pts',{});
         supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot'),obj.pelvis_bodies];
         supports(1).contact_pts = [{kpt.c('l_foot'),kpt.c('r_foot')},obj.pelvis_contact_pts];
         supports(2) = supports(1);
       end
+
+      if strcmp(plan_type,'hold_without_pelvis_contact')
+        qtraj = ConstantTrajectory(q0);
+        support_times = [0,10];
+        supports = struct('bodies',{},'contact_pts',{});
+        supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot')];
+        supports(1).contact_pts = {kpt.c('l_foot'),kpt.c('r_foot')};
+        supports(2) = supports(1);
+      end
+
 
       if strcmp(plan_type,'sit_from_current')
         clear options;
@@ -596,7 +606,8 @@ classdef PlanSitStand_new
     function [qtraj,supports,support_times] = plan(r,x0,plan_type,plan_options)
       obj = PlanSitStand_new(r,plan_options);
 
-      if any(strcmp(plan_type,{'sit','stand','squat','stand_from_squat','sit_from_current','hold_with_pelvis_contact'}))
+      if any(strcmp(plan_type,{'sit','stand','squat','stand_from_squat','sit_from_current',...
+        'hold_with_pelvis_contact','hold_without_pelvis_contact'}))
         [qtraj,supports,support_times] = obj.planSitting(x0,plan_type);
       elseif any(strcmp(plan_type,{'one_leg_stand','stand_from_one_leg','lean'}))
         [qtraj,supports,support_times] = obj.planOneLeg(x0,plan_type);
