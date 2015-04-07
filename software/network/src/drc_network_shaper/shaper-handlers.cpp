@@ -993,6 +993,7 @@ int64_t DRCShaperApp::get_current_utime()
 void DRCShaper::load_lzma_custom_codecs()
 {
     custom_codecs_.insert(std::make_pair("COMMITTED_FOOTSTEP_PLAN", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
+    custom_codecs_.insert(std::make_pair("WALKING_CONTROLLER_PLAN_REQUEST", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
 }
 
 
@@ -1083,7 +1084,7 @@ void DRCShaper::load_robot_plan_custom_codecs()
         drc::MinimalRobotPlan plan, plan_out;
         plan.set_utime(60000);
 
-        plan.mutable_goal()->set_utime(1386344883123000);
+        plan.mutable_goal()->set_utime(1420023598e6);
 
         drc::TranslationVector* translation = plan.mutable_goal()->mutable_pose()->mutable_translation();
         drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_pose()->mutable_rotation();
