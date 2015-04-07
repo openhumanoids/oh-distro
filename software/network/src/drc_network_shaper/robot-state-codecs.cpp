@@ -1,6 +1,7 @@
 #include "robot-state-codecs.h"
 #include "bot_core/bot_core.h"
 #include "drc_utils/joint_utils.hpp"
+#include "dccl/arithmetic/field_codec_arithmetic.h"
 
 std::map<std::string, int> RobotStateCodec::joint_names_to_order_;
 std::vector<std::string> RobotStateCodec::joint_names_;
@@ -15,6 +16,78 @@ RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
     : CustomChannelCodec(loopback_channel),
      dccl_(goby::acomms::DCCLCodec::get())
 {
+    if(true)
+    {
+        void* dl_handle = dlopen("libdccl_arithmetic.so", RTLD_LAZY);
+        if(!dl_handle)
+        {
+            std::cerr << "Failed to open libdccl_arithmetic.so" << std::endl;
+            exit(1);
+        }
+        dccl_->load_shared_library_codecs(dl_handle);
+
+        const int JOINT_POS_PRECISION = drc::MinimalRobotState::descriptor()->FindFieldByName("joint_position")->options().GetExtension(dccl::field).precision();
+
+        const float MAX = 6.284;
+        const float MIN = -MAX;    
+
+        std::string model_file_path = getenv ("DRC_BASE");
+        model_file_path += "/software/network/src/drc_network_shaper/2015_aggregate_joint_pos_frequencies.csv";
+        std::ifstream model_file(model_file_path.c_str());
+        if(!model_file.is_open())
+            glog.is(DIE) && glog << "Could not open " << model_file_path << " for reading." << std::endl;
+
+        std::string line;
+        std::getline(model_file, line);
+
+        std::vector<std::string> xs;
+        boost::split(xs, line, boost::is_any_of(","));
+
+        std::vector<double> x;
+        for(int i = 0; i < xs.size(); ++i)
+            x.push_back(goby::util::as<double>(xs[i]));
+    
+        dccl::arith::protobuf::ArithmeticModel model;
+        
+        glog.is(VERBOSE) && glog << "Making joint_pos_ers model" << std::endl;
+
+        std::getline(model_file, line);
+        std::vector<std::string> ys;
+        boost::split(ys, line, boost::is_any_of(","));
+        
+        std::vector<double> y;
+        for(int i = 0; i < xs.size(); ++i)
+            y.push_back(goby::util::as<double>(ys[i]));
+        
+        int total_frequency = 0;        
+        for(int i = 0, n = x.size(); i <= n; ++i)
+        {
+            if(i != n)
+            {
+                int freq = y[i];
+                model.add_value_bound(x[i]);
+                model.add_frequency(freq);
+                total_frequency += freq;
+            }
+            else
+            {
+                model.add_value_bound(x[i-1] + 1/pow(10.0, JOINT_POS_PRECISION));
+            }            
+        }
+        
+        const double eof_fraction = 0.1; // 10% of total frequency
+        model.set_eof_frequency(total_frequency*eof_fraction/(1-eof_fraction)); 
+        model.set_out_of_range_frequency(0);
+        
+        
+        model.set_name("joint_pos_ers");
+        glog.is(VERBOSE) && glog << "Setting joint_pos_ers model" << std::endl;
+        dccl::arith::ModelManager::set_model(model);        
+//        std::cout << pb_to_short_string(model) << std::endl;
+    
+    }
+
+
     dccl_->validate<drc::MinimalRobotState>();
 
     if(joint_names_.empty())
@@ -48,6 +121,8 @@ bool RobotStateCodec::encode(const std::vector<unsigned char>& lcm_data, std::ve
         return false;
     
     glog.is(VERBOSE) && glog << "MinimalRobotState: " << dccl_state.ShortDebugString() << std::endl;
+
+
     
     std::string encoded;
     dccl_->encode(&encoded, dccl_state);

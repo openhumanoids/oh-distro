@@ -119,8 +119,7 @@ class RobotStateCodec : public CustomChannelCodec
     
   private:
     goby::acomms::DCCLCodec* dccl_;
-        
-        
+    drc::MinimalRobotState key_state_;
 };
 
 
