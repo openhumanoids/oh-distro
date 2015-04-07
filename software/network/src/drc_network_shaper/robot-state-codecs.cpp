@@ -92,8 +92,7 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
 
     if(!to_minimal_joint_pos(lcm_object.joint_name,
                              lcm_object.joint_position,
-                             dccl_state->mutable_joint_position(),
-                             dccl_state->mutable_joint_id()))
+                             dccl_state->mutable_joint_position()))
         return false;
 
 
@@ -164,8 +163,7 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     
     if(!from_minimal_joint_pos(&lcm_object->joint_name,
                                &lcm_object->joint_position,
-                               dccl_state.joint_position(),
-                               dccl_state.joint_id()))
+                               dccl_state.joint_position()))
         return false;
     
     std::vector<float> joint_zeros;

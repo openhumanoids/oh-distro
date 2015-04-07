@@ -58,7 +58,7 @@ class RobotStateCodec : public CustomChannelCodec
         static bool to_minimal_joint_pos(const std::vector<std::string>& joint_names,
                                          const std::vector<D1>& joint_pos,
                                          google::protobuf::RepeatedField<D2>* dccl_joint_pos,
-                                         google::protobuf::RepeatedField<int>* dccl_joint_id,
+                                         google::protobuf::RepeatedField<int>* dccl_joint_id = 0,
                                          int offset = 0)
     {
         
@@ -71,9 +71,9 @@ class RobotStateCodec : public CustomChannelCodec
             std::map<std::string, int>::const_iterator order =
                 joint_names_to_order_.find(joint_names[i]);
 
-            if(order == joint_names_to_order_.end())
+            if(order->second != i)
             {
-                glog.is(WARN) && glog << "No joint called [" << joint_names[i] << "] found in hard-coded map." << std::endl;
+                glog.is(WARN) && glog << "Joint " << joint_names[i] << " out of order in joint_utils.hpp. Expecting: " << i << ", got " << order->second << std::endl;
                 return false;
             }
 
@@ -82,7 +82,7 @@ class RobotStateCodec : public CustomChannelCodec
 //            std::cout << "joint: " << joint_names[i] <<  " pos: " << position << " index: " << order->second - offset << std::endl;
             
             dccl_joint_pos->Add(position);
-            dccl_joint_id->Add(order->second);
+            //            dccl_joint_id->Add(order->second);
         }
         
         return true;
@@ -92,13 +92,13 @@ class RobotStateCodec : public CustomChannelCodec
         static bool from_minimal_joint_pos(std::vector<std::string>* joint_names,
                                            std::vector<D1>* joint_pos,
                                            const google::protobuf::RepeatedField<D2>& dccl_joint_pos,
-                                           const google::protobuf::RepeatedField<int>& dccl_joint_id,                                           
+                                           const google::protobuf::RepeatedField<int>& dccl_joint_id = google::protobuf::RepeatedField<int>(),                                           
                                            int offset = 0)
     {
 
         for(int i = 0, n = dccl_joint_pos.size(); i < n; ++i)
         {
-            joint_names->push_back(joint_names_.at(dccl_joint_id.Get(i)));
+            joint_names->push_back(joint_names_.at(i));
             joint_pos->push_back(dccl_joint_pos.Get(i));
         }
 

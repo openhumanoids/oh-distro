@@ -1041,7 +1041,7 @@ void DRCShaper::load_ers_custom_codecs()
 
     {
         drc::MinimalRobotState state, state_out;
-        state.set_utime(1386344883123000);
+        state.set_utime(1420023560e6);
         drc::TranslationVector* translation = state.mutable_pose()->mutable_translation();
         drc::RotationQuaternion* rotation = state.mutable_pose()->mutable_rotation();
 
