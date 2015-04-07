@@ -44,11 +44,6 @@ classdef StatelessWalkingPlanner
         footstep_plan.footsteps(2).pos = feet_centers.right;
       end
 
-      % Slow down the first and last steps, if necessary
-      for j = [length(footstep_plan.footsteps)-1,length(footstep_plan.footsteps)]
-        footstep_plan.footsteps(j).walking_params.step_speed = min([footstep_plan.footsteps(j).walking_params.step_speed, 1.5]);
-      end
-
       % Compute the ZMP traj, COM traj, feet trajs, etc.
       walking_plan_data = planWalkingZMP(r, x0, footstep_plan);
 
