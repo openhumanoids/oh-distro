@@ -48,7 +48,11 @@ classdef StatelessFootstepPlanner
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
-      plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      if request.num_iris_regions > 0
+        plan = StatelessFootstepPlanner.snapToIRISRegions(biped, plan);
+      else
+        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      end
       plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan);
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
       % for j = 1:length(plan.footsteps)
@@ -63,7 +67,11 @@ classdef StatelessFootstepPlanner
       biped = configureDRCTerrain(biped, request.params.map_mode, q0);
       plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, biped);
       if request.snap_to_terrain
-        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+        if request.num_iris_regions > 0
+          plan = StatelessFootstepPlanner.snapToIRISRegions(biped, plan);
+        else
+          plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+        end
         plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan);
       end
       if request.compute_infeasibility
@@ -175,6 +183,22 @@ classdef StatelessFootstepPlanner
       for j = 3:nsteps
         if ~plan.footsteps(j).pos_fixed(3)
           plan.footsteps(j) = fitStepToTerrain(biped, plan.footsteps(j));
+        end
+      end
+    end
+
+    function plan = snapToIRISRegions(biped, plan)
+      for j = 1:length(plan.footsteps)
+        region = plan.safe_regions(plan.region_order(j));
+        R_step = rpy2rotmat(plan.footsteps(j).pos(4:6));
+        step_normal = R_step * [0;0;1];
+
+        ax = reshape(cross(region.normal, step_normal), 3, 1);
+        if norm(ax) > 1e-3
+          theta = asin(norm(ax) / (norm(region.normal) * norm(step_normal)));
+          R_snap = axis2rotmat([ax; theta]);
+          R_step = R_snap * R_step;
+          plan.footsteps(j).pos(4:6) = rotmat2rpy(R_step);
         end
       end
     end
