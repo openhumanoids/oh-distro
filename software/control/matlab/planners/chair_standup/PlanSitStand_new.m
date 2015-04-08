@@ -18,6 +18,7 @@ classdef PlanSitStand_new
     pelvis_bodies
     pelvis_contact_pts
     back_idx
+    back_bkz_idx
     arm_idx
     min_distance_constraint
     handle
@@ -34,6 +35,7 @@ classdef PlanSitStand_new
       if ~isfield(plan_options,'min_distance'), obj.plan_options.min_distance = 0.05; end
       if ~isfield(plan_options,'foot_air'), obj.plan_options.foot_air = 'left'; end
       if ~isfield(plan_options,'foot_height'), obj.plan_options.foot_height = 0.2; end
+      if ~isfield(plan_options,'back_bkz_weight'), obj.plan_options.back_bkz_weight = 1; end
 
       if isfield(plan_options,'pelvis_contact_angle') && obj.plan_options.pelvis_contact_angle
         obj.pelvis_contacts = {'l_fpelvis','r_fpelvis','m_pelvis'};
@@ -137,6 +139,8 @@ classdef PlanSitStand_new
         obj.pelvis_contact_pts = {obj.kpt.c('l_fpelvis'),obj.kpt.c('r_fpelvis'),middle_pelvis_contact_pt};
       end
 
+      obj.back_bkz_idx = obj.r.findPositionIndices('back_bkz');
+
     end
 
     function [qtraj,supports,support_times] = planSitting(obj,x0,plan_type)
@@ -168,11 +172,19 @@ classdef PlanSitStand_new
       ub = [-0.05; nan; nan];
       lb = [-Inf;nan;nan];
       pelvis_x_constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId('pelvis'),[0;0;0],T_foot,lb,ub);
+
+
+      % constraint on pelvis position, only used in the sitdown portion of planning
+      T_pelvis = xyzrpy2HomogTransform(r.forwardKin(kinsol,r.findLinkId('pelvis'),[0;0;0],1));
+      lb = [-0.15;-0.02;nan];
+      ub = [-0.1;0.02;nan];
+      pelvis_xy_constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId('pelvis'),[0;0;0],T_pelvis,lb,ub);
+
       lb = [0.1;nan;nan];
       ub = [Inf;nan;nan];
       l_hand_x_constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId('l_hand'),[0;0;0],T_foot,lb,ub);
       r_hand_x_constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId('r_hand'),[0;0;0],T_foot,lb,ub);
-      x_position_constraints = {pelvis_x_constraint,l_hand_x_constraint,r_hand_x_constraint};
+      x_position_constraints = {pelvis_xy_constraint,l_hand_x_constraint,r_hand_x_constraint};
 
       
       kinsol = r.doKinematics(q0);
@@ -202,7 +214,10 @@ classdef PlanSitStand_new
         options.no_movement.q = q0;
         options.height.names = obj.pelvis_contacts;
         options.height.heights = repmat({pelvis_height},size(obj.pelvis_contacts));
+        
+        % want to penalize yaw motion
         options.Q = Q;
+        options.Q(obj.back_bkz_idx,obj.back_bkz_idx) = obj.plan_options.back_bkz_weight;
         options.qs_contacts = {'l_foot','r_foot','l_fpelvis','r_fpelvis','m_pelvis'};
         q_nom = q_sol(:,1);
         
@@ -224,7 +239,9 @@ classdef PlanSitStand_new
         options.no_movement.bodies = {'l_foot','r_foot','pelvis'};
         options.no_movement.q = q_sitting;
         options.qs_contacts = {'l_foot','r_foot'};
+        % want to penalize yaw motion
         options.Q = Q;
+        options.Q(obj.back_bkz_idx,obj.back_bkz_idx) = obj.plan_options.back_bkz_weight;
 
         q_nom = q_sol(:,2);
         q_nom(1:2) = q0(1:2);
