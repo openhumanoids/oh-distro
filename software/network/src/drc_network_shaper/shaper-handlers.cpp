@@ -78,7 +78,10 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
       timer_(io_),
       work_(io_),
       next_slot_t_(goby::common::goby_time()),
-      latency_ms_(0)
+      latency_ms_(0),
+      expected_packet_loss_percent_(0),
+      full_header_overhead_(0),
+      fast_mode_(false)
 {   
     assert(floor_multiple_sixteen(1025) == 1024);
     dccl_->add_id_codec<DRCEmptyIdentifierCodec>("drc_header_codec");    
@@ -184,6 +187,10 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
         load_robot_plan_custom_codecs();
     }
 
+    fast_mode_ = bot_param_get_boolean_or_fail(app.bot_param,
+                                               std::string(config_prefix + "fast_mode").c_str());
+    
+    
     load_lzma_custom_codecs();
     
     dccl_->validate<drc::ShaperHeader>();
@@ -197,16 +204,23 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     full_header.set_fragment(0);
     full_header.set_is_last_fragment(false);
     full_header.set_message_size(0);
-    full_header.set_sent_millisec(0);
     DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
-    full_header_overhead_ = dccl_->size(full_header);
-
-    std::string encoded_header;
-    dccl_->encode(&encoded_header, full_header);
-    assert(encoded_header.size() == full_header_overhead_);
     
-
+    if(fast_mode_)
+    {
+        // +1 for header size byte
+        full_header_overhead_ = full_header.ByteSize() + 1;
+    }
+    else
+    {
+        full_header_overhead_ = dccl_->size(full_header);
         
+        std::string encoded_header;
+        
+        dccl_->encode(&encoded_header, full_header);
+        assert(encoded_header.size() == full_header_overhead_);
+    }
+    
     
     const std::vector<Resend>& resendlist = app.resendlist();
     
@@ -497,9 +511,18 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     std::string* frame = msg->add_frame();
     std::string header;
     drc::ShaperHeader header_msg = send_queue_.top().header();
-    header_msg.set_sent_millisec((goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX);
-    dccl_->encode(frame, header_msg);
 
+    if(fast_mode_)
+    {
+        *frame = std::string(1, header_msg.ByteSize() & 0xff);
+        *frame += header_msg.SerializeAsString();
+    }
+    else
+    {
+        dccl_->encode(frame, header_msg);
+    }
+    
+        
     (*frame) += send_queue_.top().data();
     
     int encoded_size = msg->frame(0).size();
@@ -606,18 +629,22 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
         drc::ShaperPacket packet;
 
         DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
-        dccl_->decode(msg.frame(0), packet.mutable_header());
-        packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));    
 
+
+        if(fast_mode_)
+        {
+            unsigned header_size = (msg.frame(0)[0] & 0xff);
+            packet.mutable_header()->ParseFromString(msg.frame(0).substr(1, header_size+1));
+            packet.set_data(msg.frame(0).substr(header_size+1));
+        }
+        else
+        {
+            dccl_->decode(msg.frame(0), packet.mutable_header());
+            packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));
+        }
+        
         received_data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
 
-        if(packet.header().has_sent_millisec())
-        {
-            int now_ms = (goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX;
-            latency_ms_ = now_ms - packet.header().sent_millisec();
-            if(latency_ms_ < 0)
-                latency_ms_ += LATENCY_MAX;
-        }
 
         glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | " << DebugStringNoData(packet) << std::endl;
 
@@ -734,17 +761,17 @@ void DRCShaper::publish_receive(std::string channel,
         }
         
 
-        static int64_t newest_ers_utime = 0;
+        // static int64_t newest_ers_utime = 0;
 
-        if(newest_ers_utime > robot_state.utime)
-        {
-            glog.is(WARN) && glog << group("ch-pop") << "EST_ROBOT_STATE message received with older time than latest ... discarding message." << std::endl;
-            return;
-        }
-        else
-        {
-            newest_ers_utime = robot_state.utime;
-        }
+        // if(newest_ers_utime > robot_state.utime)
+        // {
+        //     glog.is(WARN) && glog << group("ch-pop") << "EST_ROBOT_STATE message received with older time than latest ... discarding message." << std::endl;
+        //     return;
+        // }
+        // else
+        // {
+        //     newest_ers_utime = robot_state.utime;
+        // }
     }
     
     glog.is(VERBOSE) && glog << group("publish")
@@ -852,7 +879,7 @@ void DRCShaper::post_bw_stats()
         stats.received_bytes.push_back(it->second.received_bytes);
     }        
         
-    lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
+    lcm_->publish(node_ == BASE ? std::string("BASE_BW_STATS_" + boost::to_upper_copy(app_.cl_cfg.id)) : std::string("ROBOT_BW_STATS_" + boost::to_upper_copy(app_.cl_cfg.id)), &stats);
     app_.bw_init_utime = stats.utime;
     
     if(data_usage_log_.is_open())
@@ -932,7 +959,7 @@ void DRCShaper::run()
         // wait a limited amount of time for an incoming message
         struct timeval timeout = { 
             0, // seconds
-            1000  // microseconds
+            100  // microseconds
         };
         int status = select(lcm_fd + 1, &fds, 0, 0, &timeout);
         
@@ -965,8 +992,7 @@ int64_t DRCShaperApp::get_current_utime()
 
 void DRCShaper::load_lzma_custom_codecs()
 {
-    custom_codecs_.insert(std::make_pair("FOOTSTEP_PLAN_RESPONSE", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
-    custom_codecs_.insert(std::make_pair("FOOTSTEP_PLAN_REQUEST", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
+    custom_codecs_.insert(std::make_pair("COMMITTED_FOOTSTEP_PLAN", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
     custom_codecs_.insert(std::make_pair("WALKING_CONTROLLER_PLAN_REQUEST", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
 }
 
@@ -1014,7 +1040,7 @@ void DRCShaper::load_ers_custom_codecs()
 
     {
         drc::MinimalRobotState state, state_out;
-        state.set_utime(1386344883123000);
+        state.set_utime(1420023560e6);
         drc::TranslationVector* translation = state.mutable_pose()->mutable_translation();
         drc::RotationQuaternion* rotation = state.mutable_pose()->mutable_rotation();
 
@@ -1058,7 +1084,7 @@ void DRCShaper::load_robot_plan_custom_codecs()
         drc::MinimalRobotPlan plan, plan_out;
         plan.set_utime(60000);
 
-        plan.mutable_goal()->set_utime(1386344883123000);
+        plan.mutable_goal()->set_utime(1420023598e6);
 
         drc::TranslationVector* translation = plan.mutable_goal()->mutable_pose()->mutable_translation();
         drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_pose()->mutable_rotation();
@@ -1113,8 +1139,6 @@ void DRCShaper::load_robot_plan_custom_codecs()
 
 void DRCShaper::load_custom_codecs()
 {
-    //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
-
     const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
     custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
     custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
