@@ -4,7 +4,7 @@
 class JointUtils
 {
 public:
-  JointUtils (int atlas_version){
+    JointUtils (int atlas_version){
 
     // Atlas:
     // Note: ordering here MUST match that in AtlasControlTypes.h ***********************
@@ -79,14 +79,14 @@ public:
     // Combine all joint names into one variable. Used by Toby in the shapers
     all_joint_names.insert(all_joint_names.end(), atlas_joint_names.begin(), atlas_joint_names.end());
     
-    all_joint_names.insert(all_joint_names.end(), head_joint_names.begin(), head_joint_names.end());    
-    // all_joint_names.insert(all_joint_names.end(), simple_head_joint_names.begin(), simple_head_joint_names.end()); // skipped as its in the above
+    //all_joint_names.insert(all_joint_names.end(), head_joint_names.begin(), head_joint_names.end());    
+    all_joint_names.insert(all_joint_names.end(), simple_head_joint_names.begin(), simple_head_joint_names.end()); 
     
-    all_joint_names.insert(all_joint_names.end(), sandia_l_joint_names.begin(), sandia_l_joint_names.end());
-    all_joint_names.insert(all_joint_names.end(), sandia_r_joint_names.begin(), sandia_r_joint_names.end());
+    // all_joint_names.insert(all_joint_names.end(), sandia_l_joint_names.begin(), sandia_l_joint_names.end());
+    // all_joint_names.insert(all_joint_names.end(), sandia_r_joint_names.begin(), sandia_r_joint_names.end());
     
-    all_joint_names.insert(all_joint_names.end(), irobot_l_joint_names.begin(), irobot_l_joint_names.end());
-    all_joint_names.insert(all_joint_names.end(), irobot_r_joint_names.begin(), irobot_r_joint_names.end());
+    // all_joint_names.insert(all_joint_names.end(), irobot_l_joint_names.begin(), irobot_l_joint_names.end());
+    // all_joint_names.insert(all_joint_names.end(), irobot_r_joint_names.begin(), irobot_r_joint_names.end());
     
     all_joint_names.insert(all_joint_names.end(), robotiq_l_joint_names.begin(), robotiq_l_joint_names.end());
     all_joint_names.insert(all_joint_names.end(), robotiq_r_joint_names.begin(), robotiq_r_joint_names.end());

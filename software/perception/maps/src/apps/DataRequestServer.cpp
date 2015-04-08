@@ -493,7 +493,7 @@ struct Worker {
     msg.resolution = 0.5*(iResX + iResY);
     msg.width = int((iMaxPt[0] - iMinPt[0]) / iResX);
     msg.height = int((iMaxPt[1] - iMinPt[1]) / iResY);
-    msg.accum_type = drc::map_request_t::CLOSEST_PERCENTILE;
+    msg.accum_type = drc::map_request_t::ROBUST_BLEND;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.clip_planes[0][3] = -iMinPt[0];
     msg.clip_planes[1][3] = iMaxPt[0];

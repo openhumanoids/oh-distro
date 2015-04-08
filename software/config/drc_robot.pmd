@@ -26,16 +26,21 @@ group "1.state_mit" {
         exec = "se-fusion -v";
         host = "atlas2";
     }
+    cmd "yaw-lock" {
+        exec = "se-yaw-lock -yd";
+        host = "atlas2";
+    }
+}
+
+cmd "AtlasController" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine(2,0,4);\"";
+    host = "atlas2";
+    stop_signal = 15;
 }
 
 group "2.plan_and_control" {
 
 
-    cmd "AtlasController" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine(2,0,4);\"";
-        host = "atlas2";
-        stop_signal = 15;
-    }
     cmd "EncoderCalibration" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders(true);\"";
         host = "atlas2";
@@ -70,10 +75,23 @@ group "2.plan_and_control" {
         host = "base";
     }
 
+    cmd "PlanEval" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(0, struct('hands', 'robotiq_weight_only')); \"";
+        host = "atlas2";
+        stop_signal = 15;
+    }
+
+    cmd "InstQP" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(0, struct('hands', 'robotiq_weight_only')); \"";
+        host = "atlas2";
+        stop_signal = 15;
+    }
+
     cmd "PressureControl" {
         exec = "drc-atlas-pressure-monitor";
-        host = "base";
+        host = "atlas2";
     }
+
 }
 
 group "4.perception_drivers" {
@@ -98,7 +116,7 @@ group "5.maps" {
     }
 
     cmd "maps-server" {
-        exec = "maps-server";
+        exec = "maps-server -p 0.5";
         host = "atlas0";
     }
 
@@ -136,23 +154,6 @@ group "7.other_drivers" {
     }
 }
 
-group "8.network" {
-    cmd "base_network_shaper-link2" {
-        exec = "drc-network-shaper -r base -c drc_robot.cfg -i link2";
-        host = "localhost";
-    }
-
-#    cmd "base_tunnel-link3" {
-#        exec = "bot-lcm-tunnel -p 16384 -u ";
-#        host = "localhost";
-#    }
-
-    cmd "base_network_shaper-link3" {
-        exec = "drc-network-shaper -r base -c drc_robot.cfg -i link3";
-        host = "localhost";
-    }
-}
-
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
     host = "atlas2";
@@ -174,7 +175,7 @@ cmd "atlas control panel" {
 }
 
 cmd "viewer" {
-    exec = "drc-viewer -c drc_robot_02.cfg";
+    exec = "drc-viewer -c drc_robot.cfg";
     host = "base";
 }
 
@@ -207,12 +208,14 @@ script "1.power_on" {
 script "2.stop_clean" {
     stop cmd "atlas-off";
     stop cmd "atlas-high";
-    stop cmd "AtlasController";
+    stop cmd "PlanEval";
+    stop cmd "InstQP";
     stop cmd "fusion";
     stop cmd "state-sync";
     wait ms 2000;
     start cmd "atlas-off";
     start cmd "state-sync";
     start cmd "fusion";
-    start cmd "AtlasController";
+    start cmd "PlanEval";
+    start cmd "InstQP";
 }

@@ -252,6 +252,7 @@ sendRequest(const Eigen::Vector3d& iBoxMin, const Eigen::Vector3d& iBoxMax,
   spec.mQuantizationMax = 0;
   spec.mTimeMax = 0;
   spec.mTimeMode = maps::ViewBase::TimeModeRelative;
+  spec.mAccumulationMethod = maps::ViewBase::AccumulationMethodRobustBlend;
   spec.mRelativeLocation = true;
   spec.mActive = true;
   Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();

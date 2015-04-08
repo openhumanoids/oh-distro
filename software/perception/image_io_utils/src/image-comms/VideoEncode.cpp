@@ -45,7 +45,6 @@ struct State {
 
   bool setup() {
     auto lcm = mLcmWrapper->get();
-    lcm->subscribe(mCameraChannel, &State::onCameras, this);
 
     std::string keyBase = "cameras." + mCameraChannel + ".intrinsic_cal";
     if (!mBotWrapper->hasKey(keyBase)) {
@@ -54,6 +53,10 @@ struct State {
         std::cout << "error: no such camera " << mCameraChannel << std::endl;
         return false;
       }
+      lcm->subscribe(mCameraChannel, &State::onCameras, this);
+    }
+    else {
+      lcm->subscribe(mCameraChannel, &State::onCamera, this);
     }
     int nativeWidth = mBotWrapper->getInt(keyBase + ".width");
     int nativeHeight = mBotWrapper->getInt(keyBase + ".height");
@@ -69,15 +72,17 @@ struct State {
     mParams.i_fps_den = 1000;
     mParams.i_nal_hrd = X264_NAL_HRD_CBR;
 
-    // Intra refresh:
+    // spacing between iframes and bframes
     mParams.i_keyint_max = mKeyframeInterval/mPublishPeriod;
     mParams.b_intra_refresh = 1;
-    //Rate control:
+
+    // rate control parameters
     mParams.rc.i_rc_method = X264_RC_ABR;
     mParams.rc.i_bitrate = mBitRate;
     mParams.rc.i_vbv_max_bitrate = mBitRate;
     mParams.rc.i_vbv_buffer_size = mBitRate;
-    //For streaming:
+
+    // settings for streaming
     mParams.b_repeat_headers = 1;
     mParams.b_annexb = 1;
     x264_param_apply_profile(&mParams, "baseline");
@@ -109,8 +114,10 @@ struct State {
   void onCamera(const lcm::ReceiveBuffer* iBuf,
                 const std::string& iChannel,
                 const bot_core::image_t* iMessage) {
-    if ((mPublishTimes.size() > 0) &&
-        ((iMessage->utime - mPublishTimes.back()) < mPublishPeriod*1e6)) return;
+    if (mPublishTimes.size() > 0) {
+      int64_t dt = iMessage->utime - mPublishTimes.back();
+      if ((dt > 0) && (dt < mPublishPeriod*1e6)) return;
+    }
 
     // convert image to rgb
     const auto& img = *iMessage;

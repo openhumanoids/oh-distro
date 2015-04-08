@@ -30,7 +30,6 @@ r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
-control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r),...
-   struct('use_mex', 1));
+control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r));
 
 threadedControllermex(control.data_mex_ptr, ctrl_options);

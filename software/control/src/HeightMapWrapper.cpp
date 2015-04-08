@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <sstream>
+#include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/Clock.hpp>
@@ -51,11 +52,9 @@ struct MapCollection {
 
   void cleanupAll() {
     mLcmWrapper->stopHandleThread();
-    if (mMaps.size() > 0) {
-      mexPrintf("destroying all map instances\n"); mexEvalString("drawnow");
-      mexPrintf("WARNING: all handles now invalid\n"); mexEvalString("drawnow");
-    }
+    std::cout << "clearing " << mMaps.size() << " map handles" << std::endl;
     mMaps.clear();
+    std::cout << "warning: all terrain map handles are now invalid" << std::endl;
   }
 
   std::shared_ptr<TerrainMap> createMap() {
@@ -172,7 +171,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       terrainMap->startListening();
       if (terrainMap->getViewId() == kHeightMapViewId) {
         terrainMap->sendRequest(Eigen::Vector3d(-2,-5,-3),
-                                Eigen::Vector3d(5,5,0.3), 0.03, 5, 0.5);
+                                Eigen::Vector3d(5,5,0.3), 0.03, 10, 0.5);
       }
     }
 

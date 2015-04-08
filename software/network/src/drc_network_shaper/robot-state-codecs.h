@@ -64,17 +64,19 @@ class RobotStateCodec : public CustomChannelCodec
         
         using goby::glog;
         using namespace goby::common::logger;
-    
+
+        bool joints_in_order = true;
         for(int i = 0, n = joint_pos.size(); i < n; ++i)
         {
             
             std::map<std::string, int>::const_iterator order =
                 joint_names_to_order_.find(joint_names[i]);
 
-            if(order == joint_names_to_order_.end())
+            if(order->second != i)
             {
-                glog.is(WARN) && glog << "No joint called [" << joint_names[i] << "] found in hard-coded map." << std::endl;
-                return false;
+                if(joints_in_order)
+                    glog.is(VERBOSE) && glog << "Joint " << joint_names[i] << " out of order in joint_utils.hpp. Expecting: " << i << ", got " << order->second << std::endl;
+                joints_in_order = false;
             }
 
             double position = joint_pos[i];
@@ -84,6 +86,9 @@ class RobotStateCodec : public CustomChannelCodec
             dccl_joint_pos->Add(position);
             dccl_joint_id->Add(order->second);
         }
+
+        if(joints_in_order)
+            dccl_joint_id->Clear(); // no need to waste space
         
         return true;
     }
@@ -92,13 +97,18 @@ class RobotStateCodec : public CustomChannelCodec
         static bool from_minimal_joint_pos(std::vector<std::string>* joint_names,
                                            std::vector<D1>* joint_pos,
                                            const google::protobuf::RepeatedField<D2>& dccl_joint_pos,
-                                           const google::protobuf::RepeatedField<int>& dccl_joint_id,                                           
+                                           const google::protobuf::RepeatedField<int>& dccl_joint_id,
                                            int offset = 0)
     {
 
         for(int i = 0, n = dccl_joint_pos.size(); i < n; ++i)
         {
-            joint_names->push_back(joint_names_.at(dccl_joint_id.Get(i)));
+            
+            if(dccl_joint_id.size()) // out of order
+                joint_names->push_back(joint_names_.at(dccl_joint_id.Get(i)));
+            else // in order
+                joint_names->push_back(joint_names_.at(i));
+            
             joint_pos->push_back(dccl_joint_pos.Get(i));
         }
 
@@ -119,8 +129,7 @@ class RobotStateCodec : public CustomChannelCodec
     
   private:
     goby::acomms::DCCLCodec* dccl_;
-        
-        
+    drc::MinimalRobotState key_state_;
 };
 
 

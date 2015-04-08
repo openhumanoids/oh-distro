@@ -260,19 +260,8 @@ create(const maps::PointCloud::Ptr& iCloud) {
   std::fill(mHelper->mData.begin(), mHelper->mData.end(), invalidValue);
   
   std::vector<std::vector<float> > lists;
-  std::vector<float> sums;
-  std::vector<int> counts;
   AccumulationMethod method = mHelper->mAccumulationMethod;
-  if ((method == AccumulationMethodMedian) ||
-      (method == AccumulationMethodClosestPercentile)) {
-    lists.resize(mHelper->mWidth * mHelper->mHeight);
-  }
-  else if (method == AccumulationMethodMean) {
-    sums.resize(mHelper->mWidth * mHelper->mHeight);
-    std::fill(sums.begin(), sums.end(), 0);
-    counts.resize(sums.size());
-    std::fill(counts.begin(), counts.end(), 0);
-  }
+  lists.resize(mHelper->mWidth * mHelper->mHeight);
 
   for (int i = 0; i < iCloud->size(); ++i) {
     maps::PointCloud::PointType& ptCur = (*iCloud)[i];
@@ -282,54 +271,60 @@ create(const maps::PointCloud::Ptr& iCloud) {
     int x(proj[0]+0.5f), y(proj[1]+0.5f);
     if ((x < 0) || (x >= mHelper->mWidth) ||
         (y < 0) || (y >= mHelper->mHeight)) continue;
+    int idx = y*mHelper->mWidth + x;
     float z = proj[2];
     if (!mHelper->mIsOrthographic && (z <= 0)) continue;
-    int idx = y*mHelper->mWidth + x;
-    switch (method) {
-    case AccumulationMethodClosest:
-      if ((mHelper->mIsOrthographic && (z < mHelper->mData[idx])) ||
-          (!mHelper->mIsOrthographic && (z > mHelper->mData[idx]))) {
-        mHelper->mData[idx] = z;
-      }
-      break;
-    case AccumulationMethodFurthest:
-      if ((mHelper->mData[idx] == invalidValue) ||
-          (mHelper->mIsOrthographic && (z > mHelper->mData[idx])) ||
-          (!mHelper->mIsOrthographic && (z < mHelper->mData[idx]))) {
-        mHelper->mData[idx] = z;
-      }
-      break;
-    case AccumulationMethodMedian:
-    case AccumulationMethodClosestPercentile:
-      lists[idx].push_back(z);
-      break;
-    case AccumulationMethodMean:
-      sums[idx] += 1/z;
-      ++counts[idx];
-      break;
-    default:
-      break;
+    lists[idx].push_back(z);
+  }
+
+  // sort z lists if necessary
+  if (method != AccumulationMethodMean) {
+    for (auto& list : lists) std::sort(list.begin(), list.end());
+  }
+
+  float percentile;
+  switch (method) {
+  case AccumulationMethodClosest: percentile = 0.0f;  break;
+  case AccumulationMethodFurthest: percentile = 1.0f;  break;
+  case AccumulationMethodMedian: percentile = 0.5f;  break;
+  case AccumulationMethodClosestPercentile: percentile = 0.1f;  break;
+  case AccumulationMethodRobustBlend: percentile = 0.1f;  break;
+  default: percentile = 0.5f;  break;
+  }
+  //if (mHelper->mIsOrthographic) percentile = 1.0f-percentile;
+
+  // take the mean of the z list
+  if (method == AccumulationMethodMean) {
+    for (int i = 0; i < lists.size(); ++i) {
+      const int n = lists[i].size();
+      if (n == 0) continue;
+      mHelper->mData[i] =
+        (std::accumulate(lists[i].begin(), lists[i].end(), 0.0f))/n;
     }
   }
 
-  if ((method == AccumulationMethodMedian) ||
-      (method == AccumulationMethodClosestPercentile)) {
-    float percentile = 0.5f;
-    if (method == AccumulationMethodClosestPercentile) {
-      if (mHelper->mIsOrthographic) percentile = 0.1f;
-      else percentile = 0.9f;
-    }
+  // choose either mean or percentile z
+  else if (method == AccumulationMethodRobustBlend) {
     for (int i = 0; i < lists.size(); ++i) {
-      int n = lists[i].size();
+      const auto& list = lists[i];
+      const int n = list.size();
       if (n == 0) continue;
-      std::sort(lists[i].begin(), lists[i].end());
-      mHelper->mData[i] = lists[i][(int)(percentile*n)];
+      float dz = list.back()-list.front();
+      if (dz < 0.05) {
+        mHelper->mData[i] = (std::accumulate(list.begin(), list.end(), 0.0f))/n;
+      }
+      else {
+        mHelper->mData[i] = list[(int)(percentile*(n-1))];
+      }
     }
   }
-  else if (method == AccumulationMethodMean) {
-    for (int i = 0; i < sums.size(); ++i) {
-      if (counts[i] == 0) continue;
-      mHelper->mData[i] = counts[i]/sums[i];
+
+  // choose z at particular percentile in list
+  else {
+    for (int i = 0; i < lists.size(); ++i) {
+      const int n = lists[i].size();
+      if (n == 0) continue;
+      mHelper->mData[i] = lists[i][(int)(percentile*(n-1))];
     }
   }
 

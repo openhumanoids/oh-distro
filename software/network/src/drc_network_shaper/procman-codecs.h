@@ -66,7 +66,8 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
             drc::ProcManWrapper::Host host;
             if(!drc::ProcManWrapper::Host_Parse(boost::to_upper_copy(lcm_object.host), &host))
             {
-                glog.is(WARN) && glog << "Warning, could not parse Host: " << lcm_object.host <<". Make sure it is defined in procman-analogs.proto" << std::endl;
+                if(lcm_object.host != "localhost")
+                    glog.is(WARN) && glog << "Warning, could not parse Host: " << lcm_object.host <<". Make sure it is defined in procman-analogs.proto" << std::endl;
                 return false;
             }
             else if(host == drc::ProcManWrapper::BASE && node() == BASE)

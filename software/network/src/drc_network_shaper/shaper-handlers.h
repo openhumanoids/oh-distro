@@ -205,6 +205,8 @@ class DRCShaper
     int expected_packet_loss_percent_;
 
     int full_header_overhead_;
+
+    bool fast_mode_;
     
     class ReceiveMessageParts
     {
@@ -244,7 +246,7 @@ class DRCShaper
     
     static double fec_;
 
-    goby::acomms::DCCLCodec* dccl_;    
+    goby::acomms::DCCLCodec* dccl_;
 };
 
 #endif

@@ -646,7 +646,7 @@ int main(const int iArgc, const char** iArgv) {
   auto localMap = state.mCollector->getMapManager()->getMap(mapSpec.mId);
   LocalMap::Filter::Ptr rangeFilter(new LocalMap::RangeFilter());
   std::static_pointer_cast<LocalMap::RangeFilter>(rangeFilter)
-    ->setValidRanges(0.1, 10.0);
+    ->setValidRanges(0.25, 10.0);
   LocalMap::Filter::Ptr angleFilter(new LocalMap::RangeAngleFilter());
   std::static_pointer_cast<LocalMap::RangeAngleFilter>(angleFilter)->set(30);
   localMap->addFilter(rangeFilter);
