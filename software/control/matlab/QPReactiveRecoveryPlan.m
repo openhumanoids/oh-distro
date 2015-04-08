@@ -32,7 +32,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     % slowly to prevent bouncing
     last_used_swing = '';
     last_swing_switch = 0;
-
     % debug visualization?
     DEBUG;
 
@@ -47,6 +46,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
     CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
     FOOT_HULL_COP_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
+    MAX_CONSIDERABLE_FOOT_SWING = 0.15; % strides with extrema farther than this are ignored
+    U_MAX = 20;
   end
 
   methods
@@ -191,7 +192,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           best_plan = obj.last_plan;
         else
         
-          U_MAX = 10;
+          U_MAX = obj.U_MAX;
           intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
 
           if isempty(intercept_plans)
@@ -413,9 +414,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       for j = 1:length(available_feet)
         swing_foot = available_feet(j).swing;
-        new_plans = obj.getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reach_vertices.(swing_foot), r_ic, comd, omega, u);
-        if ~isempty(new_plans)
-          intercept_plans = [intercept_plans, new_plans];
+        % ignore this foot if the foot velocity is abnormally high -- 
+        % given our u-limit, the foot would travel farther than
+        % a threshold
+        % dxdt = v - u*t
+        % integrate from 0 to v/u ( v - u*t) => v*tf - 1/2*u*tf^2
+        % -> v^2 / u - 1/2 * v^2 / u = 1/2 v^2 / u
+        if (norm(foot_states.(swing_foot).velocity)^2/u/2 < obj.MAX_CONSIDERABLE_FOOT_SWING)
+          new_plans = obj.getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reach_vertices.(swing_foot), r_ic, comd, omega, u);
+          if ~isempty(new_plans)
+            intercept_plans = [intercept_plans, new_plans];
+          end
         end
       end
     end
