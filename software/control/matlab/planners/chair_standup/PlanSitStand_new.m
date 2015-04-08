@@ -191,14 +191,14 @@ classdef PlanSitStand_new
 
       %% Hands, pelvis position constraints relative to feet, will use the right foot for now
       kinsol = r.doKinematics(q0);
-      T_foot = xyzrpy2HomogTransform(r.forwardKin(kinsol,r.findLinkId('r_foot'),[0;0;0],1));
+      T_foot = poseRPY2tform(r.forwardKin(kinsol,r.findLinkId('r_foot'),[0;0;0],1));
       ub = [-0.05; nan; nan];
       lb = [-Inf;nan;nan];
       pelvis_x_constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId('pelvis'),[0;0;0],T_foot,lb,ub);
 
 
       % constraint on pelvis position, only used in the sitdown portion of planning
-      T_pelvis = xyzrpy2HomogTransform(r.forwardKin(kinsol,r.findLinkId('pelvis'),[0;0;0],1));
+      T_pelvis = poseRPY2tform(r.forwardKin(kinsol,r.findLinkId('pelvis'),[0;0;0],1));
       lb = [-0.2;-0.02;nan];
       ub = [-0.12;0.02;nan];
       pelvis_xy_constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId('pelvis'),[0;0;0],T_pelvis,lb,ub);
@@ -676,7 +676,7 @@ classdef PlanSitStand_new
       lb = bds - tol_bds;
       ub = bds + tol_bds;
       
-      T_foot = xyzrpy2HomogTransform(foot_pos_ground);
+      T_foot = poseRPY2tform(foot_pos_ground);
       constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId(foot_air),pts,T_foot,lb,ub);
     end
 
@@ -691,7 +691,7 @@ classdef PlanSitStand_new
       bds = foot_pos_ground(1:3,:);
       bds(1:2,:) = nan*bds(1:2,:);
       
-      T_foot = xyzrpy2HomogTransform(foot_pos_ground);
+      T_foot = poseRPY2tform(foot_pos_ground);
       constraint = WorldPositionConstraint(kpt.robot,r.findLinkId(foot_air),pts,bds,bds);
     end    
     
