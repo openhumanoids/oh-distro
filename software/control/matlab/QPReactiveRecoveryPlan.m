@@ -45,8 +45,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     HYST_MIN_CONTACT_TIME = 0.04; % Foot must be solidly, continuously in contact (or out) for this long
     HYST_MIN_NONCONTACT_TIME = 0.01; % to be considered a support (or not a support).
     PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
-    CAPTURE_SHRINK_FACTOR = 0.5; % liberal to prevent foot-roll
-    FOOT_HULL_COP_SHRINK_FACTOR = 0.5; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
+    CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
+    FOOT_HULL_COP_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
   end
 
   methods
@@ -169,7 +169,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       foot_states.right.contact = obj.r_foot_in_contact_lock;
       foot_states.left.contact = obj.l_foot_in_contact_lock;
 
-
       % warning('hard-coded for atlas foot shape');
       foot_vertices = struct('right', [-0.05, 0.05, 0.05, -0.05; 
                                        -0.02, -0.02, 0.02, 0.02],...
@@ -225,7 +224,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           end
 
           if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
-            fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
+            %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
             obj.last_used_swing = best_plan.swing_foot;
             obj.last_swing_switch = t_global;
           end
@@ -378,6 +377,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                           obj.CAPTURE_SHRINK_FACTOR * R * foot_vertices.(foot),...
                                           foot_states.(foot).pose(1:2));
           all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
+        else
+          % not captured unless both feet are down, for stability purposes
+          is_captured = false;
+          return;
         end
       end
 
@@ -639,7 +642,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                   QPReactiveRecoveryPlan.bangbangXf(x0, xd0, t_int, -u_max)];
 
       if x_ic_int >= min(x_foot_int) && x_ic_int <= max(x_foot_int)
-        % The time to get onto the xprime axis dominates, so we can hit the ICP as soon as we get to that axis
+        % The time to get onto the xprime axis dominates, and we can hit the ICP as soon as we get to that axis
 
         intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, x_ic_int, u_max);
 
@@ -671,8 +674,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           
           % Pre-generate r_foot_reaches
           
-          % If there are no intercepts, go as far along the cop->ic line
-          % out of our reachable set as possible.
+          % If there are no intercepts, get as close to our desired capture
+          % as possible in our current reachable set
+          % note: this might be off of the xcop->xic line
           if isempty(t_int)
             r_foot_reaches = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
             x_int = r_foot_reaches(1);
@@ -684,22 +688,16 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
               if norm(y) < 1e-3
                 r_foot_reaches(:, j) = r_foot_int;
               else
-                % TODO: is this the right thing to do?
-                r_foot_reaches(:, j) = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
+                % we could theoretically catch it, but not reachably.
+                % so go as close as possible.
+                r_foot_reaches(:, j) = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
               end
             end
           end
          
           for j = 1:numel(x_int)
             r_foot_reach = r_foot_reaches(:, j);
-            r_foot_int = [x_int(j); 0];
-            y = iris.least_distance.cvxgen_ldp(bsxfun(@minus, reachable_vertices, r_foot_int));
-            if norm(y) < 1e-3
-              r_foot_reach = r_foot_int;
-            else
-              % TODO: is this the right thing to do?
-              r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
-            end
+
             % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
             % r_foot_reach = r_foot_int;
 
