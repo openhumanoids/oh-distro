@@ -21,6 +21,7 @@ public:
     AccumulationMethodMean,
     AccumulationMethodMedian,
     AccumulationMethodClosestPercentile,
+    AccumulationMethodRobustBlend,
   };
 
   typedef std::shared_ptr<DepthImage> Ptr;

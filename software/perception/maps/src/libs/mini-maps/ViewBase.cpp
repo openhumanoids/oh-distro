@@ -41,7 +41,7 @@ operator==(const Spec& iSpec) const {
   if (!eq) {
     return false;
   }
-  for (int i = 0; i < mClipPlanes.size(); ++i) {
+  for (int i = 0; i < (int)mClipPlanes.size(); ++i) {
     if (mClipPlanes[i] != iSpec.mClipPlanes[i]) {
       return false;
     }

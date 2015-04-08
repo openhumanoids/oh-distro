@@ -32,6 +32,7 @@ public:
     AccumulationMethodMean,
     AccumulationMethodMedian,
     AccumulationMethodClosestPercentile,
+    AccumulationMethodRobustBlend,
   };
 
   struct Spec {

@@ -205,6 +205,7 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   if (iQuantMax == 0) {
     bits = 32;
     zScale = 1;
+    zOffset = 0;
   }
   else {
     if (iQuantMax > 0) {
@@ -217,7 +218,8 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   for (int i = 0; i < numDepths; ++i) {
     float val = outDepths[i];
     if (val == invalidValue) continue;
-    outDepths[i] = (outDepths[i]-zOffset)/zScale + 0.5f;  // 0.5 for rounding
+    outDepths[i] = (outDepths[i]-zOffset)/zScale;
+    if (bits < 32) outDepths[i] += 0.5f;  // for rounding
   }
 
   // store to blob
