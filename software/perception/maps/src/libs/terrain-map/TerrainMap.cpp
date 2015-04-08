@@ -133,6 +133,44 @@ struct TerrainMap::Helper {
       mBotWrapper->getLcm()->publish(mMapPublishChannel, &msg);
     }
   }
+
+  maps::ViewBase::Spec
+  getSpec(const Eigen::Vector3d& iBoxMin, const Eigen::Vector3d& iBoxMax,
+          const double iResolutionMeters, const double iFrequencyHz) {
+
+    maps::ViewBase::Spec spec;
+    spec.mResolution = (float)iResolutionMeters;
+    spec.mWidth = int((iBoxMax[0] - iBoxMin[0]) / spec.mResolution);
+    spec.mHeight = int((iBoxMax[1] - iBoxMin[1]) / spec.mResolution);
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 1, 0, 0, -iBoxMin[0]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f(-1, 0, 0,  iBoxMax[0]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 1, 0, -iBoxMin[1]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0,-1, 0,  iBoxMax[1]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 0, 1, -iBoxMin[2]));
+    spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 0,-1,  iBoxMax[2]));
+
+    spec.mMapId = 1;
+    spec.mViewId = mViewId;
+    spec.mType = maps::ViewBase::TypeDepthImage;
+    spec.mChannel = mMapChannel;
+    spec.mFrequency = iFrequencyHz;
+    spec.mQuantizationMax = 0;
+    spec.mAccumulationMethod = maps::ViewBase::AccumulationMethodRobustBlend;
+    spec.mRelativeLocation = true;
+    spec.mActive = true;
+    Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
+    pose.translation() = Eigen::Vector3f(0,0,10);
+    pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
+    Eigen::Affine3f calib = Eigen::Affine3f::Identity();
+    calib(0,0) = 1/spec.mResolution;
+    calib(1,1) = 1/spec.mResolution;
+    calib(0,3) = -iBoxMin[0]*calib(0,0);
+    calib(1,3) = -iBoxMin[1]*calib(1,1);
+    Eigen::Projective3f projector = calib*pose.inverse();
+    spec.mTransform = projector;
+
+    return spec;
+  }
  
 };
 
@@ -226,49 +264,28 @@ stopListening() {
   return true;
 }
 
-
 bool TerrainMap::
-sendRequest(const Eigen::Vector3d& iBoxMin, const Eigen::Vector3d& iBoxMax,
-            const double iResolutionMeters, const double iTimeWindowSeconds,
-            const double iFrequencyHz) {
-
-  maps::ViewBase::Spec spec;
-  spec.mResolution = (float)iResolutionMeters;
-  spec.mWidth = int((iBoxMax[0] - iBoxMin[0]) / spec.mResolution);
-  spec.mHeight = int((iBoxMax[1] - iBoxMin[1]) / spec.mResolution);
+sendTimeRequest(const Eigen::Vector3d& iBoxMin, const Eigen::Vector3d& iBoxMax,
+                const double iResolutionMeters, const double iTimeWindowSeconds,
+                const double iFrequencyHz) {
+  auto spec = mHelper->getSpec(iBoxMin, iBoxMax, iResolutionMeters,
+                               iFrequencyHz);
   spec.mTimeMin = -iTimeWindowSeconds*1e6;
-  spec.mClipPlanes.push_back(Eigen::Vector4f( 1, 0, 0, -iBoxMin[0]));
-  spec.mClipPlanes.push_back(Eigen::Vector4f(-1, 0, 0,  iBoxMax[0]));
-  spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 1, 0, -iBoxMin[1]));
-  spec.mClipPlanes.push_back(Eigen::Vector4f( 0,-1, 0,  iBoxMax[1]));
-  spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 0, 1, -iBoxMin[2]));
-  spec.mClipPlanes.push_back(Eigen::Vector4f( 0, 0,-1,  iBoxMax[2]));
-
-  spec.mMapId = 1;
-  spec.mViewId = getViewId();
-  spec.mType = maps::ViewBase::TypeDepthImage;
-  spec.mChannel = getMapChannel();
-  spec.mFrequency = iFrequencyHz;
-  spec.mQuantizationMax = 0;
   spec.mTimeMax = 0;
   spec.mTimeMode = maps::ViewBase::TimeModeRelative;
-  spec.mAccumulationMethod = maps::ViewBase::AccumulationMethodRobustBlend;
-  spec.mRelativeLocation = true;
-  spec.mActive = true;
-  Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
-  pose.translation() = Eigen::Vector3f(0,0,10);
-  pose.linear() << 1,0,0, 0,-1,0, 0,0,-1;
-  Eigen::Affine3f calib = Eigen::Affine3f::Identity();
-  calib(0,0) = 1/spec.mResolution;
-  calib(1,1) = 1/spec.mResolution;
-  calib(0,3) = -iBoxMin[0]*calib(0,0);
-  calib(1,3) = -iBoxMin[1]*calib(1,1);
-  Eigen::Projective3f projector = calib*pose.inverse();
-  spec.mTransform = projector;
-
-  // send request
   mHelper->mViewClient->request(spec);
+  return true;
+}
 
+bool TerrainMap::
+sendSweepRequest(const Eigen::Vector3d& iBoxMin, const Eigen::Vector3d& iBoxMax,
+                 const double iResolutionMeters, const double iFrequencyHz) {
+  auto spec = mHelper->getSpec(iBoxMin, iBoxMax, iResolutionMeters,
+                               iFrequencyHz);
+  spec.mTimeMin = -185;
+  spec.mTimeMax = 0;
+  spec.mTimeMode = maps::ViewBase::TimeModeRollAngleRelative;
+  mHelper->mViewClient->request(spec);
   return true;
 }
 
