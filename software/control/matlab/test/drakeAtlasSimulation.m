@@ -193,7 +193,7 @@ while(~done)
   end
   if (left_hand > 0)
     %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
-    lcmRobotiqInputBlock_left = getHandDriver(right_hand, r_complete, 'left', options);
+    lcmRobotiqInputBlock_left = getHandDriver(left_hand, r_complete, 'left', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_left, sys, [], [], [], outs);
   end
   
@@ -241,18 +241,18 @@ end
 end
 
 function handString = getHandString(hand_id)
-switch hand_id
-  case 1
-    handString = 'robotiq';
-  case 2
-    handString = 'robotiq_tendons';
-  case 3
-    handString = 'robotiq_simple';
-  case -1
-    handString = 'robotiq_weight_only';
-  otherwise
-    handString = 'none';
-end
+  switch hand_id
+    case 1
+      handString = 'robotiq';
+    case 2
+      handString = 'robotiq_tendons';
+    case 3
+      handString = 'robotiq_simple';
+    case -1
+      handString = 'robotiq_weight_only';
+    otherwise
+      handString = 'none';
+  end
 end
 
 function handDriver = getHandDriver(hand_id, r_complete, handedness, options)
