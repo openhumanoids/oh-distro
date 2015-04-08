@@ -136,6 +136,7 @@ classdef SitStandWrapper
         v = robot.constructVisualizer();
         qtraj = qtraj.setOutputFrame(robot.getPositionFrame());
         v.playback(qtraj,struct('slider',true));
+        keyboard;
       end
       
       if execute_flag
@@ -156,6 +157,7 @@ classdef SitStandWrapper
       obj.plan_options.use_new_planner = 1;
       obj.plan_options.back_gaze_bound = 0.3;
       obj.plan_options.shrink_factor = 0.5;
+      obj.plan_options.back_gaze_bound_tight = 0.01;
     end
 
 
