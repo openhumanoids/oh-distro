@@ -332,6 +332,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 
       if (info < 0 && ctrl_opts->max_infocount > 0) {
         infocount++;
+        std::cout << "Incremented infocount to " << infocount << std::endl;
         if (infocount >= ctrl_opts->max_infocount) {
           if (infocount == ctrl_opts->max_infocount) {
             std::cout << "Infocount exceeded. Freezing Atlas!" << std::endl;
