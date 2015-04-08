@@ -45,6 +45,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     HYST_MIN_CONTACT_TIME = 0.04; % Foot must be solidly, continuously in contact (or out) for this long
     HYST_MIN_NONCONTACT_TIME = 0.01; % to be considered a support (or not a support).
     PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
+    CAPTURE_SHRINK_FACTOR = 0.5; % liberal to prevent foot-roll
+    FOOT_HULL_COP_SHRINK_FACTOR = 0.5; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
   end
 
   methods
@@ -78,7 +80,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
-
+      
       DEBUG = obj.DEBUG > 0;
 
 
@@ -125,7 +127,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       % Initialize if we haven't, to get foot lock into a known state
       % and capture upper body pose to hold it through the plan
-      if (obj.initialized) 
+      if (~obj.initialized) 
         % Take current foot state to be truth
         obj.l_foot_in_contact_lock = foot_states.left.contact;
         obj.r_foot_in_contact_lock = foot_states.right.contact;
@@ -190,7 +192,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           best_plan = obj.last_plan;
         else
         
-          U_MAX = 20;
+          U_MAX = 10;
           intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
 
           if isempty(intercept_plans)
@@ -366,8 +368,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices)
-      SHRINK_FACTOR = 0.9;
-
       all_vertices_in_world = zeros(2,0);
 
       for f = {'right', 'left'}
@@ -375,7 +375,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         if (foot_states.(foot).contact)
           R = rotmat(foot_states.(foot).pose(6));
           foot_vertices_in_world = bsxfun(@plus,...
-                                          SHRINK_FACTOR * R * foot_vertices.(foot),...
+                                          obj.CAPTURE_SHRINK_FACTOR * R * foot_vertices.(foot),...
                                           foot_states.(foot).pose(1:2));
           all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
         end
@@ -422,7 +422,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       % Find the center of pressure, which we'll place as close as possible to the ICP
       stance_foot_vertices_in_world = bsxfun(@plus,...
-                                             rotmat(foot_states.(stance_foot).pose(6)) * foot_vertices.(stance_foot),...
+                                             rotmat(foot_states.(stance_foot).pose(6)) * obj.FOOT_HULL_COP_SHRINK_FACTOR * foot_vertices.(stance_foot),...
                                              foot_states.(stance_foot).pose(1:2));
       r_cop = QPReactiveRecoveryPlan.closestPointInConvexHull(r_ic, stance_foot_vertices_in_world);
       % r_ic - r_cop
@@ -466,6 +466,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         % dir
         new_foot_dir_vec = [cos(foot_states.(stance_foot).pose(6)); sin(foot_states.(stance_foot).pose(6))];
         err = angleDiff(foot_states.(stance_foot).pose(6), desired_foot_direction);
+        %warning('This may result in excessive inward steps. Also pull this value from obj.robot')
         err = sign(err)*min(abs(err), pi/8);
         new_foot_dir_vec = rotmat(err)*new_foot_dir_vec;
         new_foot_yaw = atan2(new_foot_dir_vec(2), new_foot_dir_vec(1));
@@ -499,6 +500,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           %intercept_plan.r_foot_new(3) = obj.robot.getTerrainHeight(foot_state.pose(1:2));
         %end
       end
+
+      fprintf('0,%f,%f\n', intercept_plan.tswitch, intercept_plan.tf);
+      % long step that must go both up and down
       if intercept_plan.tswitch > 0.05 && (intercept_plan.tf - intercept_plan.tswitch) > 0.05
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
         swing_height = 0.05;
