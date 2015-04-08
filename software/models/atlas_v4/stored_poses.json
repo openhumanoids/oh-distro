@@ -694,6 +694,20 @@
       }, 
       "name": "door handle reach tuck2", 
       "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hand-up-tuck2", 
+      "joints": {
+        "l_arm_elx": 2.2760796546936035, 
+        "l_arm_ely": 0.3644244372844696, 
+        "l_arm_mwx": 0.784614622592926, 
+        "l_arm_shx": -1.3069056272506714, 
+        "l_arm_shz": -1.4836206436157227, 
+        "l_arm_uwy": 0.08796451985836029
+      }, 
+      "name": "hand-up-tuck2", 
+      "nominal_handedness": "left"
     }
   ], 
   "drill": [
