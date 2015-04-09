@@ -19,8 +19,9 @@ from ddapp import jointcontrol
 from ddapp import callbacks
 from ddapp import camerabookmarks
 from ddapp import cameracontrol
-from ddapp import debrisdemo
 from ddapp import bihandeddemo
+from ddapp import debrisdemo
+from ddapp import doordemo
 from ddapp import drilldemo
 from ddapp import tabledemo
 from ddapp import valvedemo
@@ -55,6 +56,7 @@ from ddapp import multisensepanel
 from ddapp import navigationpanel
 from ddapp import handcontrolpanel
 from ddapp import sensordatarequestpanel
+from ddapp import tasklaunchpanel
 from ddapp import pfgrasp
 from ddapp import pfgrasppanel
 
@@ -84,6 +86,7 @@ from ddapp.tasks import taskmanagerwidget
 from ddapp.tasks.descriptions import loadTaskDescriptions
 import drc as lcmdrc
 
+from collections import OrderedDict
 import functools
 import math
 
@@ -405,6 +408,16 @@ if usePlanning:
                     fitDrillMultisense, robotStateJointController,
                     playPlans, showPose, cameraview, segmentationpanel)
 
+    doorDemo = doordemo.DoorDemo(robotStateModel, footstepsDriver, manipPlanner, ikPlanner,
+                                      lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
+                                      fitDrillMultisense, robotStateJointController,
+                                      playPlans, showPose)
+    doorTaskPanel = doordemo.DoorTaskPanel(doorDemo)
+
+    taskPanels = OrderedDict()
+    taskPanels['Door'] = doorTaskPanel.widget
+    taskPanels['Valve'] = valveTaskPanel.widget
+    tasklaunchpanel.init(taskPanels)
 
     splinewidget.init(view, handFactory, robotStateModel)
 
