@@ -13,7 +13,6 @@
 #include "lcmtypes/valkyrie/pause_command_message_t.hpp"
 #include "lcmtypes/valkyrie/hand_pose_packet_message_t.hpp"
 
-#include <ihmc_msgs/Point2dMessage.h>
 #include <ihmc_msgs/FootstepDataListMessage.h>
 #include <ihmc_msgs/ComHeightPacketMessage.h>
 #include <ihmc_msgs/PauseCommandMessage.h>
@@ -60,26 +59,26 @@ class LCM2ROS{
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST",&LCM2ROS::footstepPlanHandler, this);
   // was walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/atlas/inputs/ihmc_msgs/FootstepDataListMessage",10);
-  walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/ihmc_msgs/atlas/control/footstep_list",10);
+  walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/ihmc_ros/atlas/control/footstep_list",10);
 
   lcm_->subscribe("VAL_COMMAND_COM_HEIGHT",&LCM2ROS::comHeightHandler, this);
   // was com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/atlas/inputs/ihmc_msgs/ComHeightPacketMessage",10);
-  com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/ihmc_msgs/atlas/control/CoM_height",10);
+  com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/ihmc_ros/atlas/control/com_height",10);
 
   lcm_->subscribe("VAL_COMMAND_PAUSE",&LCM2ROS::pauseHandler, this);
   lcm_->subscribe("STOP_WALKING",&LCM2ROS::stopHandler, this); // from drake-designer
-  pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_msgs/atlas/control/pause_footstep_exec",10);
+  pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/atlas/control/pause_footstep_exec",10);
 
   lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
   // was hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/atlas/inputs/ihmc_msgs/HandPosePacketMessage",10);
-  hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_msgs/atlas/control/hand_pose",10);
+  hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/atlas/control/hand_pose",10);
 
   rosnode = new ros::NodeHandle();
 }
 
 ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos, double orient_w, double orient_x, double orient_y, double orient_z){
   ihmc_msgs::FootstepDataMessage footStepList;
-  footStepList.robotSide = foot_to_start_with;
+  footStepList.robot_side = foot_to_start_with;
   footStepList.location.x = x_pos;
   footStepList.location.y = y_pos;
   footStepList.location.z = z_pos;
@@ -93,19 +92,19 @@ ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_wit
 void LCM2ROS::sendBasicSteps(){
   ihmc_msgs::FootstepDataListMessage mout;
   //mout.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-  mout.transferTime = 1.0;
-  mout.swingTime = 1.0;
+  mout.transfer_time = 1.0;
+  mout.swing_time = 1.0;
   //mout.trajectoryWaypointGenerationMethod = 0;
-  mout.footstepDataList.push_back( createFootStepList(LEFT , 0,  0.12,   0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(RIGHT, 0, -0.12,   0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(LEFT , 0.1,  0.12, 0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(RIGHT, 0.1, -0.12, 0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(LEFT , 0.2,  0.12, 0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(RIGHT, 0.2, -0.12, 0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(LEFT , 0.1,  0.12, 0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(RIGHT, 0.1, -0.12, 0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(LEFT , 0  ,  0.12, 0, 1,0,0,0) );
-  mout.footstepDataList.push_back( createFootStepList(RIGHT, 0  , -0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(LEFT , 0,  0.12,   0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(RIGHT, 0, -0.12,   0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(LEFT , 0.1,  0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(RIGHT, 0.1, -0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(LEFT , 0.2,  0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(RIGHT, 0.2, -0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(LEFT , 0.1,  0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(RIGHT, 0.1, -0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(LEFT , 0  ,  0.12, 0, 1,0,0,0) );
+  mout.footstep_data_list.push_back( createFootStepList(RIGHT, 0  , -0.12, 0, 1,0,0,0) );
   walking_plan_pub_.publish(mout);
 }
 
@@ -115,12 +114,12 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   // sendBasicSteps();
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transferTime = 1.2;
-  mout.swingTime = 1.2;
+  mout.transfer_time = 1.2;
+  mout.swing_time = 1.2;
   // mout.trajectoryWaypointGenerationMethod = 0;
   for (int i=2; i < msg->footstep_plan.num_steps; i++){ // skip the first two standing steps
     drc::footstep_t s = msg->footstep_plan.footsteps[i];
-    mout.footstepDataList.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z, 
+    mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z, 
                                                         s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z) );    
   } 
   walking_plan_pub_.publish(mout);
@@ -130,9 +129,7 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 void LCM2ROS::comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::com_height_packet_message_t* msg) {
   ROS_ERROR("LCM2ROS got com height");
   ihmc_msgs::ComHeightPacketMessage mout;
-//  mout.MIN_COM_HEIGHT = msg->min_com_height;
-//  mout.MAX_COM_HEIGHT = msg->max_com_height;
-  mout.heightOffset = msg->height_offset;
+  mout.height_offset = msg->height_offset;
   com_height_pub_.publish(mout);
 }
 
@@ -153,19 +150,10 @@ void LCM2ROS::stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &cha
 void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::hand_pose_packet_message_t* msg) {
   ROS_ERROR("LCM2ROS got handPose packet");
   ihmc_msgs::HandPosePacketMessage mout;
-  mout.robotSide = msg->robot_side;
-  mout.dataType = msg->data_type;
-  mout.referenceFrame = msg->reference_frame;
-  mout.toHomePosition = msg->to_home_position;
-  mout.position.x = msg->position[0];
-  mout.position.y = msg->position[1];
-  mout.position.z = msg->position[2];
-  mout.orientation.w = msg->orientation[0];
-  mout.orientation.x = msg->orientation[1];
-  mout.orientation.y = msg->orientation[2];
-  mout.orientation.z = msg->orientation[3];
-  mout.trajectoryTime = msg->trajectory_time;
-  mout.jointAngles = msg->joint_angles;
+  mout.robot_side = msg->robot_side;
+  mout.to_home_position = msg->to_home_position;
+  mout.trajectory_time = msg->trajectory_time;
+  mout.joint_angles = msg->joint_angles;
   hand_pose_pub_.publish(mout);
 }
 
