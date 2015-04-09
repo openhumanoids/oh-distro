@@ -46,15 +46,15 @@ private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
 
-  tf::TransformListener listener_;
+//  tf::TransformListener listener_;
   
   ros::Subscriber  joint_states_sub_;  
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);  
 
   // The position and orientation:
   ros::Subscriber pose_robot_sub_;
-  void pose_cb(const geometry_msgs::PoseStampedConstPtr& msg);
-  geometry_msgs::PoseStamped pose_msg_;
+  void pose_cb(const nav_msgs::OdometryConstPtr& msg);
+  nav_msgs::Odometry pose_msg_;
   int64_t last_joint_state_utime_;
 
   // Laser:
@@ -77,26 +77,26 @@ App::App(ros::NodeHandle node_) :
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  pose_msg_.pose.position.x = 0;
-  pose_msg_.pose.position.y = 0;
-  pose_msg_.pose.position.z = 0.85;
-  pose_msg_.pose.orientation.w = 1;
-  pose_msg_.pose.orientation.x = 0;
-  pose_msg_.pose.orientation.y = 0;
-  pose_msg_.pose.orientation.z = 0;
+  pose_msg_.pose.pose.position.x = 0;
+  pose_msg_.pose.pose.position.y = 0;
+  pose_msg_.pose.pose.position.z = 0.85;
+  pose_msg_.pose.pose.orientation.w = 1;
+  pose_msg_.pose.pose.orientation.x = 0;
+  pose_msg_.pose.pose.orientation.y = 0;
+  pose_msg_.pose.pose.orientation.z = 0;
 
 
   // not working march 2015:
-  //pose_robot_sub_ = node_.subscribe(string("/atlas/outputs/rootPose"), 100, &App::pose_cb,this);
+  pose_robot_sub_ = node_.subscribe(string("/ihmc_ros/atlas/output/robot_pose"), 100, &App::pose_cb,this);
 
   // working, march 2015:
   // joint_states_sub_ = node_.subscribe(string("/atlas/outputs/joint_states"), 100, &App::joint_states_cb,this);
-  joint_states_sub_ = node_.subscribe(string("/ihmc_msgs/atlas/output/joint_states"), 100, &App::joint_states_cb,this);
+  joint_states_sub_ = node_.subscribe(string("/ihmc_ros/atlas/output/joint_states"), 100, &App::joint_states_cb,this);
   rotating_scan_sub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::rotating_scan_cb,this);
   head_l_image_sub_ = node_.subscribe("/multisense/left/image_rect_color/compressed", 1, &App::head_l_image_cb,this);
 
   verbose_ = false;
-  listener_;
+//  listener_;
 };
 
 App::~App()  {
@@ -125,8 +125,7 @@ void App::send_lidar(const sensor_msgs::LaserScanConstPtr& msg,string channel ){
   lcm_publish_.publish(channel.c_str(), &scan_out);
 }
 
-
-void App::pose_cb(const geometry_msgs::PoseStampedConstPtr& msg){
+void App::pose_cb(const nav_msgs::OdometryConstPtr& msg){
   pose_msg_ = *msg;
 }
 
@@ -205,7 +204,7 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   pronto::force_torque_t force_torque;
   msg_out.force_torque = force_torque;
 
-
+  /*
   tf::StampedTransform transform;
   try{
     listener_.lookupTransform("/world", "/pelvis",
@@ -222,26 +221,26 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   catch (tf::TransformException &ex) {
     ROS_ERROR("%s",ex.what());
   }
+  */
 
-
-  msg_out.pose.translation.x = pose_msg_.pose.position.x;
-  msg_out.pose.translation.y = pose_msg_.pose.position.y;
-  msg_out.pose.translation.z = pose_msg_.pose.position.z;
-  msg_out.pose.rotation.w = pose_msg_.pose.orientation.w;
-  msg_out.pose.rotation.x = pose_msg_.pose.orientation.x;
-  msg_out.pose.rotation.y = pose_msg_.pose.orientation.y;
-  msg_out.pose.rotation.z = pose_msg_.pose.orientation.z;
+  msg_out.pose.translation.x = pose_msg_.pose.pose.position.x;
+  msg_out.pose.translation.y = pose_msg_.pose.pose.position.y;
+  msg_out.pose.translation.z = pose_msg_.pose.pose.position.z;
+  msg_out.pose.rotation.w = pose_msg_.pose.pose.orientation.w;
+  msg_out.pose.rotation.x = pose_msg_.pose.pose.orientation.x;
+  msg_out.pose.rotation.y = pose_msg_.pose.pose.orientation.y;
+  msg_out.pose.rotation.z = pose_msg_.pose.pose.orientation.z;
   lcm_publish_.publish("EST_ROBOT_STATE", &msg_out);
 
   bot_core::pose_t pose_msg;
   pose_msg.utime = (int64_t) pose_msg_.header.stamp.toNSec()/1000; // from nsec to usec
-  pose_msg.pos[0] = pose_msg_.pose.position.x;
-  pose_msg.pos[1] = pose_msg_.pose.position.y;
-  pose_msg.pos[2] = pose_msg_.pose.position.z;
-  pose_msg.orientation[0] =  pose_msg_.pose.orientation.w;
-  pose_msg.orientation[1] =  pose_msg_.pose.orientation.x;
-  pose_msg.orientation[2] =  pose_msg_.pose.orientation.y;
-  pose_msg.orientation[3] =  pose_msg_.pose.orientation.z;
+  pose_msg.pos[0] = pose_msg_.pose.pose.position.x;
+  pose_msg.pos[1] = pose_msg_.pose.pose.position.y;
+  pose_msg.pos[2] = pose_msg_.pose.pose.position.z;
+  pose_msg.orientation[0] =  pose_msg_.pose.pose.orientation.w;
+  pose_msg.orientation[1] =  pose_msg_.pose.pose.orientation.x;
+  pose_msg.orientation[2] =  pose_msg_.pose.pose.orientation.y;
+  pose_msg.orientation[3] =  pose_msg_.pose.pose.orientation.z;
 
   lcm_publish_.publish("POSE_BODY", &pose_msg);
 
