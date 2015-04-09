@@ -1,4 +1,4 @@
-classdef DRCPlanEval < atlasControllers.AtlasPlanEval
+classdef DRCPlanEvalJustVisualizingRecovery < atlasControllers.AtlasPlanEval
   % A standalone PlanEval (DRC-specific) extension 
   % that knows how to read plans from LCM, and offers
   % a blocking run() method to receive and publish
@@ -35,7 +35,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
  end
 
   methods
-    function obj = DRCPlanEval(r, mode, varargin)
+    function obj = DRCPlanEvalJustVisualizingRecovery(r, mode, varargin)
       typecheck(r,'DRCAtlas');
       obj = obj@atlasControllers.AtlasPlanEval(r, varargin{:});
       obj.contact_force_detected = zeros(obj.robot_property_cache.num_bodies, 1);
@@ -47,15 +47,10 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
-      obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
-      obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
-      obj = obj.addLCMInterface('start_stand', 'START_MIT_STAND', @drc.utime_t, 0, @obj.handle_stand_default);
-      obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @drc.atlas_behavior_command_t, 0, @obj.handle_atlas_behavior_command);
-      obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
-      obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
+      %obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @drc.atlas_behavior_command_t, 0, @obj.handle_atlas_behavior_command);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
-      %obj = obj.addLCMInterface('enter_recovery', 'RECOVERY_TRIGGER_ON', @drc.utime_t, 0, @obj.handle_recovery_trigger_on);
-      %obj = obj.addLCMInterface('exit_recovery', 'RECOVERY_TRIGGER_OFF', @drc.utime_t, 0, @obj.handle_recovery_trigger_off);
+      obj = obj.addLCMInterface('enter_recovery', 'RECOVERY_TRIGGER_ON', @drc.utime_t, 0, @obj.handle_recovery_trigger_on);
+      obj = obj.addLCMInterface('exit_recovery', 'RECOVERY_TRIGGER_OFF', @drc.utime_t, 0, @obj.handle_recovery_trigger_off);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
@@ -94,44 +89,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.contact_force_detected(obj.robot.foot_body_id.right) = double(msg.right_contact > 0.5);
       obj.contact_force_detected(obj.robot.foot_body_id.left) = double(msg.left_contact > 0.5);
     end
-    
-    function handle_stand_default(obj, msg)
-      disp('Got a default stand plan')
-      new_plan = DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot);
-      obj.switchToPlan(new_plan);
-    end
-
-    function handle_locomotion_plan(obj, msg)
-      disp('Got a locomotion plan')
-      new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
-      obj.switchToPlan(obj.smoothPlanTransition(new_plan));
-      % if isa(new_plan.qtraj, 'Trajectory')
-      %   disp('Automatically generating a standing plan from the end of this plan.')
-      %   obj.appendPlan(QPLocomotionPlan.from_standing_state(new_plan.qtraj.eval(new_plan.qtraj.tspan(end)),...
-      %                                                       obj.robot,...
-      %                                                       new_plan.supports(end),...
-      %                                                       struct('center_pelvis', false)));
-      % end
-    end
 
     function handle_atlas_behavior_command(obj, msg)
       if strcmp(char(msg.command), 'stop') || strcmp(char(msg.command), 'freeze')
         disp('Got an atlas behavior command...going into silent mode');
         obj.recovery_state = obj.RECOVERY_NONE;
         obj.switchToPlan(SilentPlan(obj.robot));
-      end
-    end
-
-    function handle_pause(obj, msg)
-      if msg.control == msg.PAUSE
-        disp('Got a plan pause NOW');
-        obj.pause_state = obj.PAUSE_NOW;
-      elseif msg.control == msg.TERMINATE
-        disp('Got a stop walking ASAP');
-        obj.pause_state = obj.STOP_WALKING_ASAP;
-      else
-        % handle this somehow
-        disp('I want to resume but I dont know how yet');
       end
     end
 
@@ -246,7 +209,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           if (obj.t > 0 && obj.recovery_state == obj.RECOVERY_NOW)
             %fprintf('Recovery planner doing its thing!\n');
             obj.switchToPlan(obj.reactive_recovery_planner);
-            %obj.reactive_recovery_planner.getQPControllerInput(obj.t, obj.x, obj.robot_property_cache, obj.contact_force_detected);
+            %obj.reactive_recovery_planner.getQPContaddrollerInput(obj.t, obj.x, obj.robot_property_cache, obj.contact_force_detected);
           end
 
           obj.pauseIfRequested();
@@ -260,7 +223,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
                 qp_input.param_set_name = [qp_input.param_set_name, '_', obj.mode]; % send _sim or _hardware param variant
               end
               % t0 = tic();
-              encodeQPInputLCMMex(qp_input);
+              % do everything except publish
+              %encodeQPInputLCMMex(qp_input);
               % fprintf(1, 'encode: %fs\n', toc(t0));
               obj.qp_input = qp_input;
             end
