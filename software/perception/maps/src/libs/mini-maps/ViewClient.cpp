@@ -7,7 +7,6 @@
 #include <lcm/lcm_coretypes.h>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/map_request_t.hpp>
-#include <drc_utils/Clock.hpp>
 #include <drc_utils/BotWrapper.hpp>
 
 #include "Utils.hpp"
@@ -191,7 +190,7 @@ void ViewClient::removeAllViewChannels() {
 int64_t ViewClient::request(const ViewBase::Spec& iSpec) {
   drc::map_request_t message;
   LcmTranslator::toLcm(iSpec, message);
-  message.utime = drc::Clock::instance()->getCurrentTime();
+  message.utime = mBotWrapper->getCurrentTime();
   if (message.view_id < 0) {
     message.view_id = (Utils::rand64() >> 1);
   }

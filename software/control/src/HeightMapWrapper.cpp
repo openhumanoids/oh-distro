@@ -7,7 +7,6 @@
 #include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
-#include <drc_utils/Clock.hpp>
 #include <drc_utils/LcmWrapper.hpp>
 #include <drc_utils/BotWrapper.hpp>
 
@@ -33,8 +32,6 @@ struct MapCollection {
 
   MapCollection() {
     mLcm.reset(new lcm::LCM());
-    drc::Clock::instance()->setLcm(mLcm);
-    drc::Clock::instance()->setVerbose(false);
     mLcmWrapper.reset(new drc::LcmWrapper(mLcm));
     mBotWrapper.reset(new drc::BotWrapper(mLcm, NULL, NULL));
     mNextId = 1;
@@ -42,12 +39,6 @@ struct MapCollection {
 
   ~MapCollection() {
     cleanupAll();
-
-    // TODO: don't know why, but segfaults on exit without this line
-    //   crashes in clock destructor, internal reference count of
-    //   shared pointer to lcm object is invalid memory (from valgrind)
-    // valgrind shows no errors when this line is present
-    drc::Clock::instance()->setLcm(std::shared_ptr<lcm::LCM>());
   }
 
   void cleanupAll() {
