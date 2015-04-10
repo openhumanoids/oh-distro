@@ -603,6 +603,7 @@ class MainWindow(QtGui.QWidget):
 
         self.setup()
         self.restoreSettings()
+        self.messageBoxWarning = functools.partial(QtGui.QMessageBox.warning, self)
 
     def setup(self):
         self.connect(QtGui.QShortcut(QtGui.QKeySequence('Ctrl+W'), self), QtCore.SIGNAL('activated()'), self.close)
@@ -612,7 +613,7 @@ class MainWindow(QtGui.QWidget):
         self.sendTrajPanel = SendEETrajPanel(self)
 
     def showWarning(self, title, message):
-        QtGui.QMessageBox.warning(self, title, message)
+        self.messageBoxWarning(title, message)
 
     def getSettings(self):
         return QtCore.QSettings('mitdrc', 'RobotPoseGUI')
