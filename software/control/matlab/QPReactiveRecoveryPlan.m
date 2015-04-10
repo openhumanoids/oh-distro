@@ -47,7 +47,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
     FOOT_HULL_COP_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
     MAX_CONSIDERABLE_FOOT_SWING = 0.15; % strides with extrema farther than this are ignored
-    U_MAX = 20;
+    U_MAX = 10;
   end
 
   methods
@@ -137,6 +137,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         obj.qtraj(arm_and_neck_inds) = x(arm_and_neck_inds);
         obj.last_used_swing = '';
         obj.initialized = 1;
+        replan = true;
+      else
+        replan = false;
       end
 
       % Update and check against contact locks
@@ -153,17 +156,21 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % State switching only when hysterisis thresholds are met
       % noncontact -> contact
       if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
+        replan = true;
         obj.r_foot_in_contact_lock = true;
       end
       if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
         obj.l_foot_in_contact_lock = true;
+        replan = true;
       end
       % contact -> noncontact
       if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
         obj.r_foot_in_contact_lock = false;
+        replan = true;
       end
       if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
         obj.l_foot_in_contact_lock = false;
+        replan = true;
       end
 
       % commit contact from that filtering
@@ -182,58 +189,63 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       is_captured = obj.isICPCaptured(r_ic, foot_states_raw, foot_vertices);
 
-      if is_captured
-        qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
+      if ~replan
+        qp_input = obj.last_qp_input;
       else
-        
-        % if the last plan is about to finish, just finish it first.
-        if ~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
-            obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD
-          best_plan = obj.last_plan;
+        disp('Not not replanning');
+        if is_captured
+          qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
         else
-        
-          U_MAX = obj.U_MAX;
-          intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
-
-          if isempty(intercept_plans)
-            disp('recovery is not possible');
-            qp_input = obj.last_qp_input;
-            return;
-          end
-
-          % Add to the errors a new term reflecting distance of 
-          % foot from down-projected com of robot
-          for j=1:numel(intercept_plans)
-            com_to_foot_error = norm(intercept_plans(j).r_foot_new(1:2) - com(1:2));
-            intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
-          end
-          % Don't switch stance feet if possible
-          if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
-            for j=1:numel(intercept_plans)
-              if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
-                intercept_plans(j).error = Inf;
-              end
-            end
-          end
-
-          best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
-
-          if isempty(best_plan)
+          
+          % if the last plan is about to finish, just finish it first.
+          % or if the current contact state equals the old contact state.
+          if (~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
+              obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD)
             best_plan = obj.last_plan;
           else
-            obj.last_plan = best_plan;
-          end
+          
+            U_MAX = obj.U_MAX;
+            intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
 
-          if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
-            %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
-            obj.last_used_swing = best_plan.swing_foot;
-            obj.last_swing_switch = t_global;
+            if isempty(intercept_plans)
+              disp('recovery is not possible');
+              qp_input = obj.last_qp_input;
+              return;
+            end
+
+            % Add to the errors a new term reflecting distance of 
+            % foot from down-projected com of robot
+            for j=1:numel(intercept_plans)
+              com_to_foot_error = norm(intercept_plans(j).r_foot_new(1:2) - com(1:2));
+              intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
+            end
+            % Don't switch stance feet if possible
+            if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
+              for j=1:numel(intercept_plans)
+                if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
+                  intercept_plans(j).error = Inf;
+                end
+              end
+            end
+
+            best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
+
+            if isempty(best_plan)
+              best_plan = obj.last_plan;
+            else
+              obj.last_plan = best_plan;
+            end
+
+            if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
+              %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
+              obj.last_used_swing = best_plan.swing_foot;
+              obj.last_swing_switch = t_global;
+            end
           end
+          
+          qp_input = obj.getInterceptInput(t_global, foot_states, reachable_vertices, best_plan, rpc);
         end
-        
-        qp_input = obj.getInterceptInput(t_global, foot_states, reachable_vertices, best_plan, rpc);
       end
-
       obj.lcmgl.switchBuffers();
 
       obj.last_qp_input = qp_input;
@@ -311,13 +323,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'contact_surfaces', 0);
       qp_input.body_motion_data = struct('body_id', obj.robot.foot_frame_id.(best_plan.swing_foot),...
                                          'ts', t_global + ts(1:2),...
-                                         'coefs', coefs(:,1,:));
+                                         'coefs', coefs(:,1,:),...
+                                         'toe_off_allowed', false,...
+                                         'in_floating_base_nullspace', true,...
+                                         'control_pose_when_in_contact', false);
 
       pelvis_height = obj.robot.getTerrainHeight(foot_states.(stance_foot).pose(1:2)) + 0.84;
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_global + ts(1:2),...
-                                                'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]));
+                                                'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]),...
+                                                'toe_off_allowed', false,...
+                                                'in_floating_base_nullspace', false,...
+                                                'control_pose_when_in_contact', false);
       qp_input.param_set_name = 'recovery';
     end
 
@@ -338,7 +356,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'contact_surfaces', num2cell(zeros(1, 2)));
       qp_input.body_motion_data = struct('body_id', cell(1, 3),..._
                                          'ts', cell(1, 3),...
-                                         'coefs', cell(1, 3));
+                                         'coefs', cell(1, 3),...
+                                         'toe_off_allowed', cell(1,3),...
+                                         'in_floating_base_nullspace', cell(1,3),...
+                                         'control_pose_when_in_contact', cell(1,3));
       feet = {'right', 'left'};
       for j = 1:2
         foot = feet{j};
@@ -357,13 +378,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         qp_input.body_motion_data(j).body_id = obj.robot.foot_body_id.(foot);
         qp_input.body_motion_data(j).ts = [t_global, t_global];
         qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(origin_pose, [6, 1, 1]));
+        qp_input.body_motion_data(j).toe_off_allowed = false;
+        qp_input.body_motion_data(j).in_floating_base_nullspace = true;
+        qp_input.body_motion_data(j).control_pose_when_in_contact = false;
       end
       % warning('probably not right pelvis height if feet height differ...')
       pelvis_height = (obj.robot.getTerrainHeight(foot_states.left.pose(1:2)) + obj.robot.getTerrainHeight(foot_states.right.pose(1:2)))/2 + 0.84;
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
                                             'ts', t_global + [0, 0],...
-                                            'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]));
+                                            'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]),...
+                                            'toe_off_allowed', false,...
+                                            'in_floating_base_nullspace', false,...
+                                            'control_pose_when_in_contact', false);
       qp_input.param_set_name = 'recovery';
     end
 

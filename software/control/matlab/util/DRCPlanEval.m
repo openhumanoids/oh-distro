@@ -54,8 +54,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
-      %obj = obj.addLCMInterface('enter_recovery', 'RECOVERY_TRIGGER_ON', @drc.utime_t, 0, @obj.handle_recovery_trigger_on);
-      %obj = obj.addLCMInterface('exit_recovery', 'RECOVERY_TRIGGER_OFF', @drc.utime_t, 0, @obj.handle_recovery_trigger_off);
+      obj = obj.addLCMInterface('enter_recovery', 'RECOVERY_TRIGGER_ON', @drc.utime_t, 0, @obj.handle_recovery_trigger_on);
+      obj = obj.addLCMInterface('exit_recovery', 'RECOVERY_TRIGGER_OFF', @drc.utime_t, 0, @obj.handle_recovery_trigger_off);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
