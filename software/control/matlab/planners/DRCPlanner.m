@@ -92,7 +92,7 @@ classdef DRCPlanner
 
       if isa(obj.biped, 'Atlas')
         obj.iris_planner = IRISPlanner(obj.biped,...
-         Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 5)));
+         Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v5/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 5)));
       elseif isa(obj.biped, 'Valkyrie')
         obj.iris_planner = IRISPlanner(Valkyrie([], struct('floating', true)));
       else
