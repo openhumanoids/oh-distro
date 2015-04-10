@@ -109,15 +109,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                           'left', struct('pose', [], 'velocity', [], 'contact', false));
       for f = {'right', 'left'}
         foot = f{1};
-        [pos, J] = obj.robot.forwardKin(kinsol, obj.robot.foot_body_id.(foot), [0;0;0], 1);
-        T_orig = poseRPY2tform(pos);
-        T_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(foot)).T;
-        T_sole = T_orig * T_frame;
-        pos = tform2poseRPY(T_sole);
+        [pos, J] = obj.robot.forwardKin(kinsol, obj.robot.foot_frame_id.(foot), [0;0;0], 1);
         vel = J * qd;
         foot_states.(foot).pose = pos;
         foot_states.(foot).velocity = vel;
-        if pos(3) < obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2)) + obj.TERRAIN_CONTACT_THRESH
+        [foot_states.(foot).terrain_height, foot_states.(foot).terrain_normal] = obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2));
+        if pos(3) < foot_states.(foot).terrain_height + obj.TERRAIN_CONTACT_THRESH
           foot_states.(foot).contact = true;
         end
         if contact_force_detected(obj.robot.foot_body_id.(foot))
@@ -328,7 +325,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                          'in_floating_base_nullspace', true,...
                                          'control_pose_when_in_contact', false);
 
-      pelvis_height = obj.robot.getTerrainHeight(foot_states.(stance_foot).pose(1:2)) + 0.84;
+      pelvis_height = foot_states.(stance_foot).terrain_height + 0.84;
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_global + ts(1:2),...
@@ -352,8 +349,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       qp_input.support_data = struct('body_id', cell(1, 2),...
                                      'contact_pts', cell(1, 2),...
                                      'support_logic_map', cell(1, 2),...
-                                     'mu', num2cell(obj.mu * ones(1, 2)),...
-                                     'contact_surfaces', num2cell(zeros(1, 2)));
+                                     'mu', {obj.mu, obj.mu},...
+                                     'contact_surfaces', {0, 0});
       qp_input.body_motion_data = struct('body_id', cell(1, 3),..._
                                          'ts', cell(1, 3),...
                                          'coefs', cell(1, 3),...
@@ -368,22 +365,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                                 rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel];
         qp_input.support_data(j).support_logic_map = obj.support_logic_maps.kinematic_or_sensed;
 
-        T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(foot)).T;
         sole_pose = foot_states.(foot).pose;
-        sole_pose(3) = obj.robot.getTerrainHeight(sole_pose(1:2));
-        T_sole = poseRPY2tform(sole_pose);
-        T_origin = T_sole * inv(T_sole_frame);
-        origin_pose = tform2poseRPY(T_origin);
-
-        qp_input.body_motion_data(j).body_id = obj.robot.foot_body_id.(foot);
+        sole_pose(3) = foot_states.(foot).terrain_height;
+        qp_input.body_motion_data(j).body_id = obj.robot.foot_frame_id.(foot);
         qp_input.body_motion_data(j).ts = [t_global, t_global];
-        qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(origin_pose, [6, 1, 1]));
+        qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(sole_pose, [6, 1, 1]));
         qp_input.body_motion_data(j).toe_off_allowed = false;
         qp_input.body_motion_data(j).in_floating_base_nullspace = true;
         qp_input.body_motion_data(j).control_pose_when_in_contact = false;
       end
       % warning('probably not right pelvis height if feet height differ...')
-      pelvis_height = (obj.robot.getTerrainHeight(foot_states.left.pose(1:2)) + obj.robot.getTerrainHeight(foot_states.right.pose(1:2)))/2 + 0.84;
+      pelvis_height = 0.5 * (foot_states.left.terrain_height + foot_states.right.terrain_height) + 0.84;
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
                                             'ts', t_global + [0, 0],...
@@ -516,7 +508,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                          foot_states.(stance_foot).pose(6)];
         %                                 new_foot_yaw];
         % make it conform to terrain
-        [intercept_plans(j).r_foot_new(3), normal] = obj.robot.getTerrainHeight(intercept_plans(j).r_foot_new(1:2));
+
+        intercept_plans(j).r_foot_new(3) = foot_states.(swing_foot).terrain_height;
+        % [intercept_plans(j).r_foot_new(3), normal] = obj.robot.getTerrainHeight(intercept_plans(j).r_foot_new(1:2));
+        normal = foot_states.(swing_foot).terrain_normal;
         normal(3,normal(3,:) < 0) = -normal(3,normal(3,:) < 0);
         intercept_plans(j).r_foot_new = fitPoseToNormal(intercept_plans(j).r_foot_new, normal);
         assert(~any(isnan(intercept_plans(j).r_foot_new)));
@@ -806,21 +801,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
         t_roots = [(-b + sqrt(b^2 - 4*a*c)) / (2*a), (-b - sqrt(b^2 - 4*a*c)) / (2*a)];
         mask = false(size(t_roots));
+        tf = [];
         for j = 1:numel(t_roots)
           if isreal(t_roots(j)) && t_roots(j) >= abs(xd0 / u)
-            mask(j) = true;
+            tf = t_roots(j);
+            break;
           end
         end
-        tf = unique(t_roots(mask));
-        if numel(tf) == 2 && abs(tf(1) - tf(2)) < 1e-3
-          tf = tf(1);
-        end
 
-        % tf(tf < abs(xd0 / u)) = abs(xd0 / u)
-
-        if numel(tf) > 1
-          error('i don''t think there should ever be more than one feasible root');
-        end
+        % if numel(tf) > 1
+        %   error('i don''t think there should ever be more than one feasible root');
+        % end
 
         if ~isempty(tf)
 %           valuecheck(x0 + 1/2 * xd0 * tf + 1/4 * u * tf^2 - 1/4 * xd0^2 / u, xf, 1e-6);
