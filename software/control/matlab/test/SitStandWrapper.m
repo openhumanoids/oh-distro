@@ -9,11 +9,21 @@ classdef SitStandWrapper
     nq
     handle_1;
     handle_2;
+    data_file
   end
   
   methods
     
-    function obj = SitStandWrapper()
+    % atlas version should be 4 or 5
+    function obj = SitStandWrapper(atlas_version)
+      if nargin < 1
+        atlas_version = 4;
+      end
+
+      if ~((atlas_version == 4) || (atlas_version == 5))
+        error('DRC:SitStandWrapper','atlas_version must be 4 or 5');
+      end
+
       example_options = struct();
       example_options = applyDefaults(example_options, struct('use_mex', true,...
         'use_bullet', false,...
@@ -26,7 +36,23 @@ classdef SitStandWrapper
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
       
-      % construct robot model
+ 
+
+      if atlas_version == 4
+        atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v4/model_minimal_contact.urdf'];
+        atlas_convex_hull = [getenv('DRC_BASE'),'/software/models/atlas_v4/model_convex_hull.urdf'];
+        obj.data_file = [getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup/chair_standup_data.mat'];
+      else
+        atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v5/model_minimal_contact.urdf'];
+        atlas_convex_hull = [getenv('DRC_BASE'),'/software/models/atlas_v5/model_convex_hull.urdf'];
+        obj.data_file = [getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup/chair_data_v5.mat'];
+      end
+
+      obj.plan_options.data_file = obj.data_file;
+
+     % construct robot model
+      clear options;
+      options.atlas_version = atlas_version;
       options.floating = true;
       options.ignore_self_collisions = true;
       options.ignore_friction = true;
@@ -34,17 +60,16 @@ classdef SitStandWrapper
       options.terrain = example_options.terrain;
       options.use_bullet = example_options.use_bullet;
       options.hand_right = 'robotiq_weight_only';
-      options.hand_left = 'robotiq_weight_only';
-      atlas_urdf = [getenv('DRC_BASE'),'/software/models/atlas_v4/model_minimal_contact.urdf'];
-      atlas_convex_hull = [getenv('DRC_BASE'),'/software/models/atlas_v4/model_convex_hull.urdf'];
-      r = DRCAtlas(atlas_convex_hull,options);
+      options.hand_left = 'robotiq_weight_only';      
+      r = DRCAtlas(atlas_urdf,options);
       obj.handle_1 = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup']);
       obj.handle_2 = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
 
       clear options_planning;
+      options_planning.atlas_version = atlas_version;
       options_planning.floating = true;
-      options.hand_right = 'robotiq_weight_only';
-      options.hand_left = 'robotiq_weight_only';
+      options_planning.hand_right = 'robotiq_weight_only';
+      options_planning.hand_left = 'robotiq_weight_only';
       robot = DRCAtlas(atlas_convex_hull,options_planning);
       chair_height = 0.6;
       T = zeros(4,4);
@@ -98,7 +123,7 @@ classdef SitStandWrapper
       
       data = [];
       if use_default_initial_pose
-        load([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup/chair_standup_data.mat']);
+        load(obj.data_file);
         if any(strcmp(plan_type,{'sit','squat','one_leg_stand','lean'}))
           q0 = q_sol(:,3);
         elseif strcmp(plan_type,'stand_from_one_leg')

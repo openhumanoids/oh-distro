@@ -133,7 +133,7 @@ classdef PlanSitStand_new
          0.16161412000656128;
          0.767612934112548; 
          1.5669173002243042; 
-         3.141448974609375];
+         3];
        
       names_r = {'r_arm_elx','r_arm_ely','r_arm_mwx','r_arm_shx','r_arm_shz',...
         'r_arm_uwy'};
@@ -181,7 +181,7 @@ classdef PlanSitStand_new
 
       %% Load the fixed point
       %% Nominal standing pose
-      atlas_fp = load([getenv('DRC_BASE'),'/software/control/matlab/data/atlas_v4_fp.mat']);
+      atlas_fp = load(obj.r.fixed_point_file);
       obj.xstar = atlas_fp.xstar;
       obj.qstar = obj.xstar(1:obj.nq);
       obj.Q = eye(obj.nq);
@@ -191,7 +191,7 @@ classdef PlanSitStand_new
       obj.arm_idx = obj.r.findPositionIndices('arm');
 
       % sitting data
-      data = load([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup/chair_standup_data_new.mat']);
+      data = load(obj.plan_options.data_file);
       obj.q_sol = data.q_sol;
 
       %% Max joint velocities

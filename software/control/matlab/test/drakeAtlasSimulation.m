@@ -141,7 +141,12 @@ r_pure = r_pure.setInitialState(x0);
 if strcmp(world_name,'box')
   % load the correct fixed point file
   handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup']);
-  chair_data = load('chair_standup_data.mat');
+  if atlas_version == 4
+    chair_data = load('chair_standup_data.mat');
+  else
+    chair_data = load('chair_data_v5.mat');
+  end
+    
   qstar = chair_data.q_sol(:,3);
   xstar = [qstar;0*qstar];
   xstar(3) = xstar(3) + 0.08;
