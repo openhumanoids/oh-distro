@@ -6,6 +6,7 @@ classdef SitStandWrapper
     state_monitor;
     plan_options;
     r
+    nq
     handle_1;
     handle_2;
   end
@@ -46,7 +47,11 @@ classdef SitStandWrapper
       options.hand_left = 'robotiq_weight_only';
       robot = DRCAtlas(atlas_convex_hull,options_planning);
       chair_height = 0.6;
-      box = RigidBodyBox([1;2;2*chair_height]);
+      T = zeros(4,4);
+      T(1:3,1:3) = eye(3);
+      T(1,4) = 0.1;
+      T(4,4) = 1;
+      box = RigidBodyBox([1;2;2*chair_height],[0.07;0;0],[0;0;0]);
       r = r.addVisualGeometryToBody(1,box);
       r = compile(r);
       obj.r = r;
@@ -57,6 +62,7 @@ classdef SitStandWrapper
       obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
 
       obj = obj.setDefaultPlanOptions();
+      obj.nq = obj.r.getNumPositions();
 
     end
     
@@ -125,24 +131,23 @@ classdef SitStandWrapper
         [qtraj,supports,support_times] = PlanSitStand.plan(obj.robot,x,plan_type,options);
       end
       
-      standup_sitdown_plan = QPLocomotionPlan.from_quasistatic_qtraj(r,qtraj,struct('supports',supports,'support_times',support_times));
-      msg = DRCQPLocomotionPlan.toLCM(standup_sitdown_plan);
-      
-      if ~execute_flag
-        robot = r.getManipulator();
-        handle_2 = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
-        kpt = KinematicPoseTrajectory(robot,{});
-        robot = kpt.addVisualContactPoints(robot);
-        v = robot.constructVisualizer();
-        qtraj = qtraj.setOutputFrame(robot.getPositionFrame());
-        v.playback(qtraj,struct('slider',true));
-        keyboard;
-      end
-      
+
+      robot = r.getManipulator();
+      handle_2 = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
+      kpt = KinematicPoseTrajectory(robot,{});
+      robot = kpt.addVisualContactPoints(robot);
+      v = robot.constructVisualizer();
+      qtraj = qtraj.setOutputFrame(robot.getPositionFrame());
+      v.playback(qtraj,struct('slider',true));
+
+      % handles the publishing of the message
+      T = qtraj.getBreaks();
+      X = qtraj.eval(T);
+      rpp = RobotPlanPublisher('COMMITTED_ROBOT_PLAN_WITH_SUPPORTS',true,r.getStateFrame.coordinates(1:obj.nq));      
       if execute_flag
         disp('do you want to publish this plan?')
         keyboard;
-        obj.lc.publish('CONFIGURATION_TRAJ',msg);
+        rpp.publishPlanWithSupports(X,T,supports,support_times);
       end
       
     end
@@ -156,8 +161,14 @@ classdef SitStandWrapper
       obj.plan_options.pelvis_contact_angle = 0;
       obj.plan_options.use_new_planner = 1;
       obj.plan_options.back_gaze_bound = 0.3;
-      obj.plan_options.shrink_factor = 0.5;
+      obj.plan_options.shrink_factor = 0.6;
       obj.plan_options.back_gaze_bound_tight = 0.01;
+      obj.plan_options.sit_back_distance = 0.15;
+      obj.plan_options.back_gaze_tight.bound = 0.3;
+      obj.plan_options.back_gaze_tight.angle = 0;
+      obj.plan_options.pelvis_gaze_bound = 0.05;
+      obj.plan_options.pelvis_gaze_angle = 0;
+      obj.plan_options.bky_angle = -0.2;
     end
 
 

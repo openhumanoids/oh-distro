@@ -4,10 +4,7 @@ struct support_element_t
 {
 	int64_t utime;
 
-	int32_t body_id;
+	int32_t num_bodies;
 
-	boolean override_contact_pts;
-	int32_t num_contact_pts;
-
-	double contact_pts[3][num_contact_pts];
+	support_body_t support_bodies[num_bodies];
 }

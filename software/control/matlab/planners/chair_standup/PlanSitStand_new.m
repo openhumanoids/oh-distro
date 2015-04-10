@@ -10,6 +10,11 @@ classdef PlanSitStand_new
     pelvis_contacts
     shoulder_in_constraints
     back_z_constraint
+    back_z_constraint_soft
+    back_y_constraint
+    hand_up_tuck_constraint
+    elbow_ind
+    elbow_angles
     r
     kpt
     xstar
@@ -33,12 +38,15 @@ classdef PlanSitStand_new
       if ~isfield(plan_options,'chair_height'), obj.plan_options.chair_height = 0.5; end
       if ~isfield(plan_options, 'use_mex'), obj.plan_options.use_mex = 1; end
       if ~isfield(plan_options,'speed'), obj.plan_options.speed = 1; end
-      if ~isfield(plan_options,'back_gaze_bound'), obj.plan_options.back_gaze_bound = 0.1; end
-      if ~isfield(plan_options,'min_distance'), obj.plan_options.min_distance = 0.05; end
+      if ~isfield(plan_options,'back_gaze_bound'), obj.plan_options.back_gaze_bound = 0.3; end
+      if ~isfield(plan_options,'min_distance'), obj.plan_options.min_distance = 0.03; end
       if ~isfield(plan_options,'foot_air'), obj.plan_options.foot_air = 'left'; end
       if ~isfield(plan_options,'foot_height'), obj.plan_options.foot_height = 0.2; end
       if ~isfield(plan_options,'back_bkz_weight'), obj.plan_options.back_bkz_weight = 1; end
       if ~isfield(plan_options,'pelvis_gaze_bound') obj.plan_options.pelvis_gaze_bound = 0.1; end
+      if ~isfield(plan_options,'pelvis_gaze_bound') obj.plan_options.pelvis_gaze_angle = 0; end
+      if ~isfield(plan_options,'sit_back_distance') obj.plan_options.sit_back_distance = 0.15; end
+      if ~isfield(plan_options,'bky_angle'), obj.plan_options.bky_angle = -0.2; end
 
       if ~isfield(plan_options,'back_gaze_tight')
         obj.plan_options.back_gaze_tight.bound = 0.01;
@@ -91,8 +99,8 @@ classdef PlanSitStand_new
           ub(j) = pmax.([name,'_motor'])*torque_multiplier_back;
         end
         if strfind(name,'back_bky')
-          lb(j) = -210;
-          ub(j) = 210;
+          lb(j) = -220;
+          ub(j) = 220;
         end
         if strfind(name,'back_bkx')
           lb(j) = -190;
@@ -106,9 +114,12 @@ classdef PlanSitStand_new
       %% Back gaze constraint
       theta = obj.plan_options.back_gaze_tight.angle;
       direction = [sin(theta);0;cos(theta)];
-      obj.back_gaze_constraint_tight = WorldGazeDirConstraint(kpt.robot,kpt.robot.findLinkId('utorso'),[0;0;1],direction,obj.plan_options.back_gaze_bound_tight);
+      obj.back_gaze_constraint_tight = WorldGazeDirConstraint(kpt.robot,kpt.robot.findLinkId('utorso'),[0;0;1],direction,obj.plan_options.back_gaze_tight.bound);
       %% Back gaze constraint
-      obj.pelvis_gaze_constraint = WorldGazeDirConstraint(kpt.robot,kpt.robot.findLinkId('pelvis'),[0;0;1],[0;0;1],obj.plan_options.pelvis_gaze_bound);
+      theta = obj.plan_options.pelvis_gaze_angle;
+      direction = [sin(theta);0;cos(theta)];
+      obj.pelvis_gaze_constraint = WorldGazeDirConstraint(kpt.robot,kpt.robot.findLinkId('pelvis'),[0;0;1],direction,obj.plan_options.pelvis_gaze_bound);
+
 
       joint_min = [1;-Inf];
       joint_max = [Inf;-1];
@@ -116,10 +127,52 @@ classdef PlanSitStand_new
       obj.shoulder_in_constraints = PostureConstraint(kpt.robot);
       obj.shoulder_in_constraints = obj.shoulder_in_constraints.setJointLimits(joint_ind,joint_min,joint_max);
 
-      joint_min = [-0.1];
-      joint_max = [0.1];
+
+      joint_angles_r = [-2.306710720062256;
+         0.14479857683181763;
+         0.16161412000656128;
+         0.767612934112548; 
+         1.5669173002243042; 
+         3.141448974609375];
+       
+      names_r = {'r_arm_elx','r_arm_ely','r_arm_mwx','r_arm_shx','r_arm_shz',...
+        'r_arm_uwy'};
+
+      joint_ind_r =zeros(6,1);
+      joint_ind_l = zeros(6,1);
+      joint_angles_l = joint_angles_r;
+      for j = 1:numel(names_r)
+        name_r = names_r{j};
+        joint_ind_r(j) = r.findPositionIndices(name_r);
+        name_l = name_r;
+        name_l(1) = 'l';
+        joint_ind_l(j) = r.findPositionIndices(name_l);
+
+        % if joint is not named y then we need to flip the joint angle
+        if ~strcmp(name_l(end),'y')
+          joint_angles_l(j) = -joint_angles_l(j);
+        end
+      end
+
+      joint_ind = [joint_ind_r;joint_ind_l];
+      joint_angles = [joint_angles_r;joint_angles_l];
+      obj.hand_up_tuck_constraint = PostureConstraint(kpt.robot);
+      obj.hand_up_tuck_constraint = obj.hand_up_tuck_constraint.setJointLimits(joint_ind,joint_angles,joint_angles);
+
+      joint_min = [-0.02];
+      joint_max = [0.02];
       obj.back_z_constraint = PostureConstraint(kpt.robot);
       obj.back_z_constraint = obj.back_z_constraint.setJointLimits(kpt.robot.findPositionIndices('back_bkz'),joint_min,joint_max);
+
+      joint_min = -0.3;
+      joint_max = 0;
+      obj.back_z_constraint_soft = PostureConstraint(kpt.robot);
+      obj.back_z_constraint_soft = obj.back_z_constraint_soft.setJointLimits(kpt.robot.findPositionIndices('back_bkz'),joint_min,joint_max);
+
+      joint_min = obj.plan_options.bky_angle;
+      joint_max = obj.plan_options.bky_angle;
+      obj.back_y_constraint = PostureConstraint(kpt.robot);
+      obj.back_y_constraint = obj.back_y_constraint.setJointLimits(kpt.robot.findPositionIndices('back_bky'),joint_min,joint_max);
 
       %% Collision Constraint
       aco.body_idx = [2:kpt.robot.getNumBodies];
@@ -142,13 +195,15 @@ classdef PlanSitStand_new
       obj.q_sol = data.q_sol;
 
       %% Max joint velocities
+      max_arm_degrees_per_second = 35;
       max_degrees_per_second = 20;
-      max_back_degrees_per_second = 3;
-      max_base_meters_per_second = 0.03;
+      max_back_degrees_per_second = 8;
+      max_base_meters_per_second = 0.05;
       back_xz_idx = [r.findPositionIndices('back_bkx'),r.findPositionIndices('back_bky')];
       joint_v_max = obj.plan_options.speed*repmat(max_degrees_per_second*pi/180, r.getNumVelocities()-3, 1);
       xyz_v_max = repmat(max_base_meters_per_second,3,1);
       obj.qd_max = [xyz_v_max;joint_v_max];
+      obj.qd_max(obj.arm_idx) = obj.plan_options.speed*repmat(max_arm_degrees_per_second*pi/180, length(obj.arm_idx), 1);
       obj.qd_max(back_xz_idx) = obj.plan_options.speed*repmat(max_back_degrees_per_second*pi/180,1,2);
 
       %% Setting for pelvis bodies and pelvis_contact_pts, depends on which pelvis mode we are using . . . 
@@ -163,6 +218,9 @@ classdef PlanSitStand_new
       end
 
       obj.back_bkz_idx = obj.r.findPositionIndices('back_bkz');
+
+      obj.elbow_ind = [r.findPositionIndices('r_arm_elx');r.findPositionIndices('r_arm_ely');r.findPositionIndices('l_arm_elx');r.findPositionIndices('l_arm_ely')];
+      obj.elbow_angles = [-2.228;0.581;2.228;0.581];
 
     end
 
@@ -199,9 +257,13 @@ classdef PlanSitStand_new
 
       % constraint on pelvis position, only used in the sitdown portion of planning
       T_pelvis = poseRPY2tform(r.forwardKin(kinsol,r.findLinkId('pelvis'),[0;0;0],1));
-      lb = [-0.2;-0.02;nan];
-      ub = [-0.12;0.02;nan];
+      lb = [-(obj.plan_options.sit_back_distance + 0.2);-0.02;nan];
+      ub = [-(obj.plan_options.sit_back_distance);0.02;nan];
       pelvis_xy_constraint = WorldPositionInFrameConstraint(kpt.robot,r.findLinkId('pelvis'),[0;0;0],T_pelvis,lb,ub);
+
+      % don't yaw from current orientation
+      yaw_constraint = PostureConstraint(kpt.robot);
+      yaw_constraint = yaw_constraint.setJointLimits(6,q0(6),q0(6));
 
       lb = [0.2;nan;nan];
       ub = [Inf;nan;nan];
@@ -230,15 +292,66 @@ classdef PlanSitStand_new
       
       if strcmp(plan_type,'sit') || strcmp(plan_type, 'squat')
         
+        
+        
+        %% Sitting with COM over feet
+        clear options;
+        options = obj.plan_options;
+        options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint,obj.back_z_constraint_soft,...
+        obj.pelvis_gaze_constraint,yaw_constraint},x_position_constraints];
+        options.no_movement.bodies = {'l_foot','r_foot'};
+        options.no_movement.q = q0;
+        options.qs_contacts = {'l_foot','r_foot'};
+        options.Q = Q;
+
+        options.height.names = obj.pelvis_contacts;
+        options.height.heights = repmat({pelvis_height},size(obj.pelvis_contacts));
+
+        q_nom = q_sol(:,2);
+        q_nom(1:2) = q0(1:2);
+        q_nom(6) = q0(6);
+        q_nom(obj.back_idx) = obj.qstar(obj.back_idx);
+        q_nom(obj.arm_idx) = obj.qstar(obj.arm_idx);
+
+        [q,info,infeasible_constraint] = kpt.inverseKin(q_nom,options);
+        info
+        infeasible_constraint
+        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
+        q_sitting_feet = q;
+
+        %% Intermediate posture to avoid arm collisions
+        clear options;
+        options = obj.plan_options;
+        options.constraints = [{obj.min_distance_constraint,obj.torque_constraint,obj.back_gaze_constraint_tight},x_hand_position_constraints];
+        options.no_movement.bodies = {'l_foot','r_foot','pelvis'};
+        options.no_movement.q = q_sitting_feet;
+
+        % increase the shrink factor 
+        options.shrink_factor = 0.9;
+        options.Q = Q;
+        options.qs_contacts = {'l_foot','r_foot','l_fpelvis','r_fpelvis','m_pelvis'};
+        % rotate to align it with the current position
+        q_nom(1:2) = q0(1:2);
+        q_nom(6) = q0(6);
+        q_nom(obj.back_idx) = obj.qstar(obj.back_idx);
+        q_nom(obj.arm_idx) = obj.qstar(obj.arm_idx);
+        [q,info,infeasible_constraint] = kpt.inverseKin(q_nom,options);
+        info
+        infeasible_constraint
+        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
+        q_intermediate = q;
+
         %% Sitting normally
         clear options;
         options = obj.plan_options;
-        options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint_tight,obj.min_distance_constraint,...
-        obj.pelvis_gaze_constraint,obj.shoulder_in_constraints,obj.back_z_constraint},x_position_constraints,hand_above_ground_constraints];
-        options.no_movement.bodies = {'l_foot','r_foot'};
-        options.no_movement.q = q0;
-        options.height.names = obj.pelvis_contacts;
-        options.height.heights = repmat({pelvis_height},size(obj.pelvis_contacts));
+        options.constraints = {obj.hand_up_tuck_constraint,obj.back_y_constraint};
+        
+
+        options.no_movement.bodies = {'l_foot','r_foot','pelvis'};
+        options.no_movement.q = q_sitting_feet;
+
+        % increase the shrink factor 
+        options.shrink_factor = 0.9;
         
         % want to penalize yaw motion
         options.Q = Q;
@@ -256,33 +369,13 @@ classdef PlanSitStand_new
         if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
         q_sitting = q;
         
-        %% Sitting with COM over feet
-        clear options;
-        options = obj.plan_options;
-        options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint,obj.min_distance_constraint,...
-        obj.pelvis_gaze_constraint,obj.back_z_constraint},x_position_constraints,hand_above_ground_constraints];
-        options.no_movement.bodies = {'l_foot','r_foot','pelvis'};
-        options.no_movement.q = q_sitting;
-        options.qs_contacts = {'l_foot','r_foot'};
-        % want to penalize yaw motion
-        options.Q = Q;
-
-        q_nom = q_sol(:,2);
-        q_nom(1:2) = q0(1:2);
-        q_nom(6) = q0(6);
-        q_nom(obj.back_idx) = obj.qstar(obj.back_idx);
-        q_nom(obj.arm_idx) = obj.qstar(obj.arm_idx);
-
-        [q,info,infeasible_constraint] = kpt.inverseKin(q_nom,options);
-        info
-        infeasible_constraint
-        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
-        q_sitting_feet = q;
-        
 
         %% Construct the trajectory
-        q_vals = [q0,q_sitting_feet,q_sitting];
+        q_arm_prep = q_intermediate;
+        q_arm_prep(obj.elbow_ind) = obj.elbow_angles;
+        q_vals = [q0,q_sitting_feet,q_intermediate,q_arm_prep,q_sitting];
         [qtraj,support_times] = obj.constructAndSmoothTrajectory(q_vals);
+        support_times = [support_times(1:2),support_times(end)];
         qtraj = obj.touchUpTrajectory(qtraj);
         
         supports = struct('bodies',{},'contact_pts',{});
@@ -308,6 +401,28 @@ classdef PlanSitStand_new
       end
       
       if strcmp(plan_type,'stand') || strcmp(plan_type,'stand_from_squat')
+
+        %% Intermediate posture to avoid arm collisions
+        clear options;
+        options = obj.plan_options;
+        options.constraints = [{obj.min_distance_constraint,obj.torque_constraint,obj.back_gaze_constraint_tight},x_hand_position_constraints];
+        options.no_movement.bodies = {'l_foot','r_foot','pelvis'};
+        options.no_movement.q = q0;
+
+        % increase the shrink factor 
+        options.shrink_factor = 0.9;
+        options.Q = Q;
+        options.qs_contacts = {'l_foot','r_foot','l_fpelvis','r_fpelvis','m_pelvis'};
+        % rotate to align it with the current position
+        q_nom = q0;
+        q_nom(obj.back_idx) = obj.qstar(obj.back_idx);
+        q_nom(obj.arm_idx) = obj.qstar(obj.arm_idx);
+        [q,info,infeasible_constraint] = kpt.inverseKin(q_nom,options);
+        info
+        infeasible_constraint
+        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
+        q_intermediate = q;
+
         %% Sitting with COM over feet
         disp('solving for sitting with COM over feet');
         clear options;
@@ -347,11 +462,15 @@ classdef PlanSitStand_new
         infeasible_constraint
         if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
         q_standing = q;
+
         
 
         %% Construct the Trajectory
-        q_vals = [q0, q_sitting_feet, q_standing];
+        q_arm_prep = q_intermediate;
+        q_arm_prep(obj.elbow_ind) = obj.elbow_angles;
+        q_vals = [q0, q_arm_prep, q_intermediate, q_sitting_feet, q_standing];
         [qtraj,support_times] = obj.constructAndSmoothTrajectory(q_vals);
+        support_times = [support_times(1),support_times(4:5)];
         qtraj = obj.touchUpTrajectory(qtraj);
              
         supports = struct('bodies',{},'contact_pts',{});

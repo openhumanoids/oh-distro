@@ -177,6 +177,19 @@ classdef DRCPlanner
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end
 
+    function plan = configuration_traj_with_supports(obj,msg)
+      msg = drc.robot_plan_with_supports_t(msg);
+      nq = getNumPositions(obj.biped);
+      joint_names = obj.biped.getStateFrame.coordinates(1:nq);
+      [X,T,supports,support_times] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
+      qtraj = PPTrajectory(pchip(T,X));
+      clear options;
+      options.supports = supports;
+      options.support_times = support_times;
+      plan = QPLocomotionPlan.from_quasistatic_qtraj(obj.biped, qtraj,options);
+      plan = DRCQPLocomotionPlan.toLCM(plan);
+    end
+
     function region = iris_region(obj, msg)
       msg = drc.iris_region_request_t(msg);
       region = obj.iris_planner.iris_region(msg);
@@ -205,6 +218,11 @@ classdef DRCPlanner
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_t, 'utime');
       obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN';
       obj.handlers{end+1} = @obj.configuration_traj;
+      obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_with_supports_t, 'utime');
+      obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN_WITH_SUPPORTS';
+      obj.handlers{end+1} = @obj.configuration_traj_with_supports;
       obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
     end
 
