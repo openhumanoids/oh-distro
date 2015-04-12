@@ -19,8 +19,8 @@ state_frame.subscribe('EST_ROBOT_STATE');
 ref_frame = drcFrames.AtlasPositionRef(r);
 
 % extra frame contains raw encoder values
-extra_frame = LCMCoordinateFrame('drcFrames.AtlasStateExtra',4*28,'x');
-coder = drc.control.AtlasStateExtraCoder(28);
+extra_frame = LCMCoordinateFrame('drcFrames.AtlasStateExtra',4*(nq-6),'x');
+coder = drc.control.AtlasStateExtraCoder(nq-6);
 extra_frame.setLCMCoder(JLCMCoder(coder));
 extra_frame.subscribe('ATLAS_STATE_EXTRA');
 
@@ -48,14 +48,16 @@ x_calib.r_arm_shz = jlmin(joint_index_map.r_arm_shz) - delta;
 x_calib.r_arm_shx = jlmax(joint_index_map.r_arm_shx) + delta;
 x_calib.r_arm_ely = jlmin(joint_index_map.r_arm_ely) - delta;
 x_calib.r_arm_elx = jlmax(joint_index_map.r_arm_elx) + delta;
-x_calib.r_arm_uwy = jlmin(joint_index_map.r_arm_uwy) - delta;
-x_calib.r_arm_mwx = jlmin(joint_index_map.r_arm_mwx) - delta;
+x_calib.r_arm_uwy = 0; % we dont calibrate these joints anymore
+x_calib.r_arm_mwx = 0;
+x_calib.r_arm_lwy = 0;
 x_calib.l_arm_shz = jlmax(joint_index_map.l_arm_shz) + delta;
 x_calib.l_arm_shx = jlmin(joint_index_map.l_arm_shx) - delta;
 x_calib.l_arm_ely = jlmin(joint_index_map.l_arm_ely) - delta;
 x_calib.l_arm_elx = jlmin(joint_index_map.l_arm_elx) - delta;
-x_calib.l_arm_uwy = jlmin(joint_index_map.l_arm_uwy) - delta;
-x_calib.l_arm_mwx = jlmax(joint_index_map.l_arm_mwx) + delta;
+x_calib.l_arm_uwy = 0;
+x_calib.l_arm_mwx = 0;
+x_calib.l_arm_lwy = 0;
 x_calib = double(x_calib);
 q_calib = x_calib(1:nq);
 
@@ -66,22 +68,17 @@ calib_val.r_arm_shz = -0.8050;
 calib_val.r_arm_shx =  1.5789;
 calib_val.r_arm_ely = -0.0017;
 calib_val.r_arm_elx = 0.0026;
-calib_val.r_arm_uwy = 0.0012;
-calib_val.r_arm_mwx = -1.1926;
-
-calib_val.l_arm_shz = 0.7677;
-calib_val.l_arm_shx = -1.5936;
-calib_val.l_arm_ely = -0.0167;
-calib_val.l_arm_elx = -0.0486;
-calib_val.l_arm_uwy = 0.0041;
-calib_val.l_arm_mwx = 1.0764;
+calib_val.r_arm_uwy = 0;
+calib_val.r_arm_mwx = 0;
+calib_val.r_arm_lwy = 0;
 
 calib_val.l_arm_shz = 0.7494;
 calib_val.l_arm_shx = -1.5894;
 calib_val.l_arm_ely = -9.8400e-04;
 calib_val.l_arm_elx = -0.0548;
-calib_val.l_arm_uwy = -0.0027;
-calib_val.l_arm_mwx = 1.1654;
+calib_val.l_arm_uwy = 0;
+calib_val.l_arm_mwx = 0;
+calib_val.l_arm_lwy = 0;
 
 calib_val = double(calib_val);
 
@@ -145,22 +142,26 @@ end
     atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
 
     % display encoder offsets 
-    ex = ex(1:28); % just grab state off the robot
+    ex = ex(1:(nq-6)); % just grab state off the robot
+    length(calib_val(r.stateToBDIInd)) 
+    length(ex)
     enc_diff = calib_val(r.stateToBDIInd) - ex;
 
-    % note: using BDI's order, same as in common_components.cfg
+    % note: using BDI's order, +1 for matlab
     JOINT_L_ARM_SHZ   = 17;
     JOINT_L_ARM_SHX   = 18;
     JOINT_L_ARM_ELY   = 19;
     JOINT_L_ARM_ELX   = 20;
     JOINT_L_ARM_UWY   = 21;
     JOINT_L_ARM_MWX   = 22;
-    JOINT_R_ARM_SHZ   = 23;
-    JOINT_R_ARM_SHX   = 24;
-    JOINT_R_ARM_ELY   = 25;
-    JOINT_R_ARM_ELX   = 26;
-    JOINT_R_ARM_UWY   = 27;
-    JOINT_R_ARM_MWX   = 28;
+    JOINT_L_ARM_LWY   = 23;
+    JOINT_R_ARM_SHZ   = 24;
+    JOINT_R_ARM_SHX   = 25;
+    JOINT_R_ARM_ELY   = 26;
+    JOINT_R_ARM_ELX   = 27;
+    JOINT_R_ARM_UWY   = 28;
+    JOINT_R_ARM_MWX   = 29;
+    JOINT_R_ARM_LWY   = 30;
 
     msg = bot_param.set_t();
     msg.utime = bot_timestamp_now();
@@ -177,12 +178,14 @@ end
                        num2str(JOINT_R_ARM_ELX-1) ',' ...
                        num2str(JOINT_R_ARM_UWY-1) ',' ...
                        num2str(JOINT_R_ARM_MWX-1) ',' ...
+                       num2str(JOINT_R_ARM_LWY-1) ',' ...
                        num2str(JOINT_L_ARM_SHZ-1) ',' ...
                        num2str(JOINT_L_ARM_SHX-1) ',' ...
                        num2str(JOINT_L_ARM_ELY-1) ',' ...
                        num2str(JOINT_L_ARM_ELX-1) ',' ...
                        num2str(JOINT_L_ARM_UWY-1) ',' ...
-                       num2str(JOINT_L_ARM_MWX-1)];
+                       num2str(JOINT_L_ARM_MWX-1) ',' ...
+                       num2str(JOINT_L_ARM_LWY-1)];
     
     offsets = bot_param.entry_t();
     offsets.is_array = true;
@@ -192,14 +195,16 @@ end
                        num2str(enc_diff(JOINT_R_ARM_SHX)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_ELY)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_ELX)) ',' ...
-                       num2str(enc_diff(JOINT_R_ARM_UWY)) ',' ...
-                       num2str(enc_diff(JOINT_R_ARM_MWX)) ',' ...
+                       num2str(0) ',' ...
+                       num2str(0) ',' ...
+                       num2str(0) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_SHZ)) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_SHX)) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_ELY)) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_ELX)) ',' ...
-                       num2str(enc_diff(JOINT_L_ARM_UWY)) ',' ...
-                       num2str(enc_diff(JOINT_L_ARM_MWX))];
+                       num2str(0) ',' ...
+                       num2str(0) ',' ...
+                       num2str(0)];
     
     msg.numEntries = 2;
     msg.entries = javaArray('bot_param.entry_t', msg.numEntries);
