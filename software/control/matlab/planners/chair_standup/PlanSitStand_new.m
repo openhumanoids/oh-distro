@@ -39,7 +39,7 @@ classdef PlanSitStand_new
       if ~isfield(plan_options, 'use_mex'), obj.plan_options.use_mex = 1; end
       if ~isfield(plan_options,'speed'), obj.plan_options.speed = 1; end
       if ~isfield(plan_options,'back_gaze_bound'), obj.plan_options.back_gaze_bound = 0.3; end
-      if ~isfield(plan_options,'min_distance'), obj.plan_options.min_distance = 0.03; end
+      if ~isfield(plan_options,'min_distance'), obj.plan_options.min_distance = 0.1; end
       if ~isfield(plan_options,'foot_air'), obj.plan_options.foot_air = 'left'; end
       if ~isfield(plan_options,'foot_height'), obj.plan_options.foot_height = 0.2; end
       if ~isfield(plan_options,'back_bkz_weight'), obj.plan_options.back_bkz_weight = 1; end
@@ -298,7 +298,7 @@ classdef PlanSitStand_new
         clear options;
         options = obj.plan_options;
         options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint,obj.back_z_constraint_soft,...
-        obj.pelvis_gaze_constraint,yaw_constraint},x_position_constraints];
+        obj.pelvis_gaze_constraint,yaw_constraint,obj.min_distance_constraint},x_position_constraints];
         options.no_movement.bodies = {'l_foot','r_foot'};
         options.no_movement.q = q0;
         options.qs_contacts = {'l_foot','r_foot'};
@@ -322,7 +322,7 @@ classdef PlanSitStand_new
         %% Intermediate posture to avoid arm collisions
         clear options;
         options = obj.plan_options;
-        options.constraints = [{obj.min_distance_constraint,obj.torque_constraint,obj.back_gaze_constraint_tight},x_hand_position_constraints];
+        options.constraints = [{obj.min_distance_constraint,obj.torque_constraint,obj.back_gaze_constraint_tight, obj.back_z_constraint},x_hand_position_constraints];
         options.no_movement.bodies = {'l_foot','r_foot','pelvis'};
         options.no_movement.q = q_sitting_feet;
 
@@ -331,6 +331,7 @@ classdef PlanSitStand_new
         options.Q = Q;
         options.qs_contacts = {'l_foot','r_foot','l_fpelvis','r_fpelvis','m_pelvis'};
         % rotate to align it with the current position
+        q_nom = q_sol(:,1);
         q_nom(1:2) = q0(1:2);
         q_nom(6) = q0(6);
         q_nom(obj.back_idx) = obj.qstar(obj.back_idx);

@@ -17,7 +17,7 @@ classdef SitStandWrapper
     % atlas version should be 4 or 5
     function obj = SitStandWrapper(atlas_version)
       if nargin < 1
-        atlas_version = 4;
+        atlas_version = 5;
       end
 
       if ~((atlas_version == 4) || (atlas_version == 5))
