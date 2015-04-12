@@ -33,7 +33,7 @@ group "2.state_without_pronto" {
 
 group "2.state_with_pronto" {
     cmd "state-sync" {
-        exec = "drc-state-sync";
+        exec = "drc-state-sync -a 5";
         host = "localhost";
     }
     cmd "joints2frames_with" {
@@ -42,6 +42,10 @@ group "2.state_with_pronto" {
     }
     cmd "drc-ihmc-step-translator" {
         exec = "drc-ihmc-step-translator";
+        host = "localhost";
+    }
+    cmd "se-fusion" {
+        exec = "se-fusion";
         host = "localhost";
     }
 }
