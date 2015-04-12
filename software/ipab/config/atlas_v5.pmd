@@ -37,7 +37,7 @@ group "2.state_with_pronto" {
         host = "localhost";
     }
     cmd "joints2frames_with" {
-        exec = "drc-joints2frames -m";
+        exec = "drc-joints2frames";
         host = "localhost";
     }
     cmd "drc-ihmc-step-translator" {

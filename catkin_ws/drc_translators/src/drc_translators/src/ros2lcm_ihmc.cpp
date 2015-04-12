@@ -168,6 +168,19 @@ void App::publishMultisenseState(int64_t utime, float position, float velocity){
   msg_out.joint_name.push_back( "hokuyo_joint");
   msg_out.num_joints = 1;
   lcmPublish_.publish("MULTISENSE_STATE", &msg_out);
+
+  // publish message for bot_frames
+  bot_core::rigid_transform_t preToPostFrame;
+  preToPostFrame.utime = utime;
+  preToPostFrame.trans[0] = 0;
+  preToPostFrame.trans[1] = 0;
+  preToPostFrame.trans[2] = 0;
+  preToPostFrame.quat[0] = std::cos(position/2);
+  preToPostFrame.quat[1] = 0;
+  preToPostFrame.quat[2] = 0;
+  preToPostFrame.quat[3] = std::sin(position/2);
+  lcmPublish_.publish("PRE_SPINDLE_TO_POST_SPINDLE",
+                              &preToPostFrame);
 }
 
 
