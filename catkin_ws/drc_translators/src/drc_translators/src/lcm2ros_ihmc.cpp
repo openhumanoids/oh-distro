@@ -41,6 +41,7 @@ class LCM2ROS{
     ros::NodeHandle* rosnode;    
 
     void footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::walking_plan_request_t* msg);
+    void footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::footstep_plan_t* msg);
     ros::Publisher walking_plan_pub_;
     ihmc_msgs::FootstepDataMessage createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos, double orient_w, double orient_x, double orient_y, double orient_z);
     void sendBasicSteps();
@@ -57,12 +58,13 @@ class LCM2ROS{
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
+  // If pronto is running never send plans like this:
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST",&LCM2ROS::footstepPlanHandler, this);
-  // was walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/atlas/inputs/ihmc_msgs/FootstepDataListMessage",10);
+    // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into BDI/IHMC frame:
+  lcm_->subscribe("BDI_ADJUSTED_FOOTSTEP_PLAN",&LCM2ROS::footstepPlanBDIModeHandler, this);
   walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/ihmc_ros/atlas/control/footstep_list",10);
 
   lcm_->subscribe("VAL_COMMAND_COM_HEIGHT",&LCM2ROS::comHeightHandler, this);
-  // was com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/atlas/inputs/ihmc_msgs/ComHeightPacketMessage",10);
   com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/ihmc_ros/atlas/control/com_height",10);
 
   lcm_->subscribe("VAL_COMMAND_PAUSE",&LCM2ROS::pauseHandler, this);
@@ -70,7 +72,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/atlas/control/pause_footstep_exec",10);
 
   lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
-  // was hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/atlas/inputs/ihmc_msgs/HandPosePacketMessage",10);
   hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/atlas/control/hand_pose",10);
 
   rosnode = new ros::NodeHandle();
@@ -110,7 +111,7 @@ void LCM2ROS::sendBasicSteps(){
 
 
 void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::walking_plan_request_t* msg) {
-  ROS_ERROR("LCM2ROS got plan");
+  ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
   // sendBasicSteps();
 
   ihmc_msgs::FootstepDataListMessage mout;
@@ -122,6 +123,22 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z, 
                                                         s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z) );    
   } 
+  walking_plan_pub_.publish(mout);
+}
+
+void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::footstep_plan_t* msg) {
+  ROS_ERROR("LCM2ROS got BDI_ADJUSTED_FOOTSTEP_PLAN (pronto and bdi mode)");
+  // sendBasicSteps();
+
+  ihmc_msgs::FootstepDataListMessage mout;
+  mout.transfer_time = 1.2;
+  mout.swing_time = 1.2;
+  // mout.trajectoryWaypointGenerationMethod = 0;
+  for (int i=2; i < msg->num_steps; i++){ // skip the first two standing steps
+    drc::footstep_t s = msg->footsteps[i];
+    mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
+                                                        s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z) );
+  }
   walking_plan_pub_.publish(mout);
 }
 

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
-
+# needed for string arrays
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 
 include(cmake/pods.cmake)
 set(POD_NAME drc_translators)
@@ -175,12 +176,19 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(ros2lcm_ihmc src/ros2lcm_ihmc.cpp)
 target_link_libraries(ros2lcm_ihmc ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 opencv)
+pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core eigen3)
+
+add_executable(ros2lcm_camera src/ros2lcm_camera.cpp)
+target_link_libraries(ros2lcm_camera ${catkin_LIBRARIES})
+pods_use_pkg_config_packages(ros2lcm_camera lcm bot2-core eigen3 opencv)
 
 add_executable(lcm2ros_ihmc src/lcm2ros_ihmc.cpp)
 target_link_libraries(lcm2ros_ihmc ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(lcm2ros_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core)
 
+add_executable(ros2lcm_test src/ros2lcm_test.cpp)
+target_link_libraries(ros2lcm_test ${catkin_LIBRARIES})
+pods_use_pkg_config_packages(ros2lcm_test lcm lcmtypes_pronto-lcmtypes bot2-core)
 ######################################################
 add_executable(lcm2ros_kuka src/lcm2ros_kuka.cpp)
 target_link_libraries(lcm2ros_kuka ${catkin_LIBRARIES})
@@ -193,3 +201,5 @@ pods_use_pkg_config_packages(ros2lcm_kuka lcm lcmtypes_pronto-lcmtypes bot2-core
 add_executable(ros2lcm_kinect src/ros2lcm_kinect.cpp)
 target_link_libraries(ros2lcm_kinect ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils opencv)
+
+

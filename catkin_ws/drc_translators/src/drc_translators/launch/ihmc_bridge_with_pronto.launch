@@ -1,5 +1,5 @@
 <launch>
-  <node name="ros2lcm" type="ros2lcm_ihmc" pkg="drc_translators" output="screen" args="mode_passthrough" />
+  <node name="ros2lcm" type="ros2lcm_ihmc" pkg="drc_translators" output="screen" args="mode_state_estimation" />
   <node name="ros2lcm_camera" type="ros2lcm_camera" pkg="drc_translators" output="screen"/>
   <node name="lcm2ros" type="lcm2ros_ihmc" pkg="drc_translators" /> 
 </launch>
