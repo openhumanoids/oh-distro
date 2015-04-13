@@ -173,16 +173,10 @@ end
         JOINT_L_ARM_SHX
         JOINT_L_ARM_ELY
         JOINT_L_ARM_ELX
-        JOINT_L_ARM_UWY
-        JOINT_L_ARM_MWX
-        JOINT_L_ARM_LWY
         JOINT_R_ARM_SHZ
         JOINT_R_ARM_SHX
         JOINT_R_ARM_ELY
         JOINT_R_ARM_ELX
-        JOINT_R_ARM_UWY
-        JOINT_R_ARM_MWX
-        JOINT_R_ARM_LWY
     ];
     cur_offsets = enc_diff(cur_indices);
 
