@@ -13,7 +13,7 @@ classdef IRISPlanner
       p = inputParser();
       p.addRequired('biped', @(x) isa(x, 'Biped'));
       p.addOptional('collision_model_biped', biped, @(x) isa(x, 'Biped'));
-      p.addParamValue('debug', true, @isscalar);
+      p.addParamValue('debug', false, @isscalar);
       p.parse(biped, varargin{:});
       options = p.Results;
 
@@ -37,9 +37,6 @@ classdef IRISPlanner
       % The left leg is just the first half of that path
       leg_body_ids = body_path(1:floor(length(body_path)/2))';
 
-      if options.debug && isa(r, 'Atlas')
-        valuecheck(leg_body_ids, [16, 15, 14, 13, 12, 11]);
-      end
       r = r.removeCollisionGroupsExcept({},1,leg_body_ids);
       r = r.compile();
       obj.collision_model_biped = r;

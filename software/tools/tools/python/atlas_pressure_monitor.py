@@ -63,12 +63,13 @@ class AutoPressureCommander(AtlasPressureCommander):
 			self.publish_pump_command()
 
 
-DEFAULT_PLAN_PRESSURE_MAP = {lcmdrc.controller_status_t.MANIPULATING: 2500,
-                        lcmdrc.controller_status_t.WALKING: 1900}
+DEFAULT_PLAN_PRESSURE_MAP = {lcmdrc.controller_status_t.MANIPULATING: 2650,
+                        lcmdrc.controller_status_t.WALKING: 2000}
 
 DEFAULT_BEHAVIOR_PRESSURE_MAP = {'prep': 1500,
-                                 'stand': 1900,
-                                 'calibrate': 1500}
+                                 'stand': 2000,
+                                 'calibrate_null_bias': 1500,
+                                 'calibrate_electric_arms': 1500}
 
 
 class PlanPressureCommander(AtlasPressureCommander):
