@@ -683,4 +683,4 @@
     <child link="l_situational_awareness_camera_optical_frame"/>
   </joint>
   <link name="l_situational_awareness_camera_optical_frame"/>
-<frame name="l_foot_sole" link="l_foot" xyz="0.0426  0.0017 -0.07645" rpy="0 0 0"/><frame name="r_foot_sole" link="r_foot" xyz="0.0426 -0.0017 -0.07645" rpy="0 0 0"/></robot>
+<frame name="l_foot_sole" link="l_foot" xyz="0.0426  0.0017 -0.07645" rpy="0 0 0"/><frame name="r_foot_sole" link="r_foot" xyz="0.0426 -0.0017 -0.07645" rpy="0 0 0"/><frame name="l_foot_toe" link="l_foot" xyz="0.1728 0.0017 -0.07645" rpy="0 0 0"/><frame name="r_foot_toe" link="r_foot" xyz="0.1728 -0.0017 -0.07645" rpy="0 0 0"/></robot>
