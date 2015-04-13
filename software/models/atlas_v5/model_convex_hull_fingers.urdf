@@ -910,6 +910,8 @@
   <link name="l_situational_awareness_camera_optical_frame"/>
   <frame link="l_foot" name="l_foot_sole" rpy="0 0 0" xyz="0.0426  0.0017 -0.07645"/>
   <frame link="r_foot" name="r_foot_sole" rpy="0 0 0" xyz="0.0426 -0.0017 -0.07645"/>
+  <frame link="l_foot" name="l_foot_toe" rpy="0 0 0" xyz="0.1728 0.0017 -0.07645"/>
+  <frame link="r_foot" name="r_foot_toe" rpy="0 0 0" xyz="0.1728 -0.0017 -0.07645"/>
   <collision_filter_group name="feet">
     <member link="l_foot"/>
     <member link="r_foot"/>
