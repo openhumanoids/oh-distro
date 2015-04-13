@@ -551,6 +551,7 @@ switch atlas_version
     k_qd_p(r_arm_shz) = 1.5;
     k_qd_p(r_arm_shx) = 1.25;
     k_qd_p(r_arm_ely) = 0.25; 
+    k_qd_p(r_arm_elx) = 0.6; 
     k_qd_p(r_arm_uwy) = 0.5; 
     k_qd_p(r_arm_mwx) = 0.5; 
     k_qd_p(r_arm_lwy) = 0.5; 
