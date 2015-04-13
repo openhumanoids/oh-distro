@@ -423,6 +423,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
               atlas_joints_.position[i] += 2*M_PI/3;
 
+            /*
             if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.11 && (msg->utime - utime_prev_ > 5000000)) {
               utime_prev_ = msg->utime;
 
@@ -441,7 +442,13 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
               std::cout << message.str() << std::endl; 
             }
 
+            */
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
+          }
+          else {
+
+            atlas_joints_.position[i] += encoder_joint_offsets_[i];
+
           }
         }
       }

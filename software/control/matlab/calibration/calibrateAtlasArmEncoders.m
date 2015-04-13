@@ -147,6 +147,11 @@ end
     length(ex)
     enc_diff = calib_val(r.stateToBDIInd) - ex;
 
+    % get original offsets from config
+    client = BotParam();
+    orig_indices = client.get('control.encoder_offsets.index')+1;
+    orig_offsets = client.get('control.encoder_offsets.value');
+    
     % note: using BDI's order, +1 for matlab
     JOINT_L_ARM_SHZ   = 17;
     JOINT_L_ARM_SHX   = 18;
@@ -163,48 +168,57 @@ end
     JOINT_R_ARM_MWX   = 29;
     JOINT_R_ARM_LWY   = 30;
 
+    cur_indices = [
+        JOINT_L_ARM_SHZ
+        JOINT_L_ARM_SHX
+        JOINT_L_ARM_ELY
+        JOINT_L_ARM_ELX
+        JOINT_L_ARM_UWY
+        JOINT_L_ARM_MWX
+        JOINT_L_ARM_LWY
+        JOINT_R_ARM_SHZ
+        JOINT_R_ARM_SHX
+        JOINT_R_ARM_ELY
+        JOINT_R_ARM_ELX
+        JOINT_R_ARM_UWY
+        JOINT_R_ARM_MWX
+        JOINT_R_ARM_LWY
+    ];
+    cur_offsets = enc_diff(cur_indices);
+
+    % replace existing offsets
+    final_indices = orig_indices(:);
+    final_offsets = orig_offsets(:);
+    for k = 1:numel(cur_indices)
+      idx = find(final_indices==cur_indices(k));
+      if ~isempty(idx)
+        final_offsets(idx) = cur_offsets(k);
+      else
+        final_indices = [final_indices; cur_indices(k)];
+        final_offsets = [final_offsets; cur_offsets(k)];
+      end
+    end
+    
     msg = bot_param.set_t();
     msg.utime = bot_timestamp_now();
     msg.sequence_number = bot_param_get_seqno();
     msg.server_id = bot_param_get_server_id();
+
+    % convert values to strings
+    index_strings = strtrim(cellstr(num2str(final_indices-1)))';
+    offset_strings = strtrim(cellstr(num2str(final_offsets)))';
+    index_string = strjoin(index_strings,',');
+    offset_string = strjoin(offset_strings,',');
     
     joint_ind = bot_param.entry_t();
     joint_ind.is_array = true;
     joint_ind.key = 'control.encoder_offsets.index';
-    joint_ind.value = ['3,' ...
-                       num2str(JOINT_R_ARM_SHZ-1) ',' ...
-                       num2str(JOINT_R_ARM_SHX-1) ',' ...
-                       num2str(JOINT_R_ARM_ELY-1) ',' ...
-                       num2str(JOINT_R_ARM_ELX-1) ',' ...
-                       num2str(JOINT_R_ARM_UWY-1) ',' ...
-                       num2str(JOINT_R_ARM_MWX-1) ',' ...
-                       num2str(JOINT_R_ARM_LWY-1) ',' ...
-                       num2str(JOINT_L_ARM_SHZ-1) ',' ...
-                       num2str(JOINT_L_ARM_SHX-1) ',' ...
-                       num2str(JOINT_L_ARM_ELY-1) ',' ...
-                       num2str(JOINT_L_ARM_ELX-1) ',' ...
-                       num2str(JOINT_L_ARM_UWY-1) ',' ...
-                       num2str(JOINT_L_ARM_MWX-1) ',' ...
-                       num2str(JOINT_L_ARM_LWY-1)];
+    joint_ind.value = index_string;
     
     offsets = bot_param.entry_t();
     offsets.is_array = true;
     offsets.key = 'control.encoder_offsets.value';
-    offsets.value = ['4.24,' ...
-                       num2str(enc_diff(JOINT_R_ARM_SHZ)) ',' ...
-                       num2str(enc_diff(JOINT_R_ARM_SHX)) ',' ...
-                       num2str(enc_diff(JOINT_R_ARM_ELY)) ',' ...
-                       num2str(enc_diff(JOINT_R_ARM_ELX)) ',' ...
-                       num2str(0) ',' ...
-                       num2str(0) ',' ...
-                       num2str(0) ',' ...
-                       num2str(enc_diff(JOINT_L_ARM_SHZ)) ',' ...
-                       num2str(enc_diff(JOINT_L_ARM_SHX)) ',' ...
-                       num2str(enc_diff(JOINT_L_ARM_ELY)) ',' ...
-                       num2str(enc_diff(JOINT_L_ARM_ELX)) ',' ...
-                       num2str(0) ',' ...
-                       num2str(0) ',' ...
-                       num2str(0)];
+    offsets.value = offset_string;
     
     msg.numEntries = 2;
     msg.entries = javaArray('bot_param.entry_t', msg.numEntries);

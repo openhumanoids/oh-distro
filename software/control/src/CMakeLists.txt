@@ -63,7 +63,7 @@ pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-util)
 target_link_libraries(threadedControllermex RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 
 
-install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize threadedControllermex DESTINATION matlab)
+install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize threadedControllermex BotParamClient DESTINATION matlab)
 install(TARGETS RobotStateDriver AtlasCommandDriver FootContactDriver DESTINATION lib)
 
 
