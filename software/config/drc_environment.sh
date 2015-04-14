@@ -55,46 +55,6 @@ use_default_lcm_url()
   export LCM_DEFAULT_URL="$LCM_URL_PREVIOUS"
 }
 
-use_lcm_url()
-{
-  echo Specify which lcm channel to use, e.g. 1,2,3,4
-  read channel
-
-  #   if [ "foo" = "foo" ]; then
-  #   export LCM_REVIEW_DEFAULT_URL="udpm://239.255.74.53:7453?ttl=0"
-  #   export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
-  #   echo "Using default LCM url for review mode: $LCM_DEFAULT_URL".
-  # fi
-
-  # if [ $channel == 1 ]; then
-  #   export LCM_REVIEW_DEFAULT_URL="udpm://239.255.74.53:7453?ttl=0"
-  #   export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
-  #   echo "Using default LCM url for review mode: $LCM_DEFAULT_URL".
-  # fi
-
-  # if [ $channel == 2 ]; then
-  #   export LCM_REVIEW_DEFAULT_URL="udpm://239.255.74.54:7454?ttl=0"
-  #   export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
-  #   echo "Using default LCM url for review mode: $LCM_DEFAULT_URL".
-  # fi
-
-  # if [ $channel == 3 ]; then
-  #   export LCM_REVIEW_DEFAULT_URL="udpm://239.255.74.55:7455?ttl=0"
-  #   export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
-  #   echo "Using default LCM url for review mode: $LCM_DEFAULT_URL".
-  # fi
-
-  # if [ $channel == 4 ]; then
-  #   export LCM_REVIEW_DEFAULT_URL="udpm://239.255.74.56:7456?ttl=0"
-  #   export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
-  #   echo "Using default LCM url for review mode: $LCM_DEFAULT_URL".
-  # fi
-
-  export LCM_REVIEW_DEFAULT_URL="udpm://239.255.75.5$channel:755$channel?ttl=0"
-  export LCM_DEFAULT_URL="$LCM_REVIEW_DEFAULT_URL"
-  echo "Using default LCM url for review mode: $LCM_DEFAULT_URL".
-}
-
 
 setup_drc()
 {
@@ -124,10 +84,19 @@ setup_drc()
 
 setup_robot_computers()
 {
-  if [[ "paladin-04|paladin-05|paladin-06|paladin-10|paladin-12" =~ $(hostname) ]]
+  # field computer
+  if [ "paladin-12" = $(hostname) ]
   then
-      export LCM_DEFAULT_URL=${LCM_URL_DRC_RADIO}
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_ROBOT}
   fi
+
+  # operator computer
+  if [ "paladin-06" = $(hostname) ]
+  then
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_BASE}
+  fi
+
+
 
   if [ "atlas0" = $(hostname) ]
   then
@@ -150,7 +119,7 @@ setup_network_sim()
 setup_lcm_communities()
 {
     export LCM_URL_DRC_DEFAULT="udpm://239.255.76.67:7667?ttl=1"
-    if [ "true" = ${DEBUG_NETWORK} ]
+    if [[ "true" = ${DEBUG_NETWORK} ]]
     then
 	export LCM_URL_DRC_RADIO=${LCM_URL_DRC_DEFAULT}
 	export LCM_URL_DRC_CONTROL=${LCM_URL_DRC_DEFAULT}
@@ -164,10 +133,16 @@ setup_lcm_communities()
 	export LCM_URL_DRC_ATLAS_0_2="udpm://239.255.76.82:7682?ttl=1"
 	export LCM_URL_DRC_ATLAS_1_2="udpm://239.255.76.83:7683?ttl=1"
     fi
+
+    if [[ "true" = ${NETWORK_PLAYBACK} ]];then
+        export LCM_URL_DRC_CONTROL=${LCM_URL_DRC_PERCEPTION}
+    fi
 }
 
 # remove this flag to run with isolated lcm communities
-export DEBUG_NETWORK="true"
+# export DEBUG_NETWORK="true"
+# export NETWORK_PLAYBACK="true"
+
 
 set_drc_base
 #setup_drcsim
