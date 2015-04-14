@@ -133,62 +133,65 @@ data = load('data.mat');
 robot = r_complete.getManipulator;
 v = robot.constructVisualizer;
 %% Plan Safe
-[qtraj_safe,q_safe] = dp.planSafe(q0);
+[qtraj_safe,q_safe] = dp.planSafe(struct(),q0);
 
 %% Plan Pre-grasp
 clear options;
 options.depth = 0.2;
 options.angle = 0;
-[qtraj_pre_grasp, q_pre_grasp] = dp.planPreGrasp(q_safe,options);
-v.draw(0,q_pre_grasp);
+[qtraj_pre_grasp, q_pre_grasp] = dp.planPreGrasp(options,q_safe);
 
-%% Plan Reach
+%% Plan Touch
 clear options;
 options.reach_depth = 0;
-[qtraj_reach,q_reach] = dp.planTouch(q_pre_grasp,options);
-v.draw(0,q_reach);
+[qtraj_touch,q_touch] = dp.planTouch(options,q_pre_grasp);
+
+%% Plan Turn
+clear options;
+options.turn_angle = pi/2;
+[qtraj_turn,q_turn] = dp.planTurn(options,q_touch);
 
 %% Plan retract
 clear options;
 options.depth = 0.2;
-[qtraj_retract,q_retract] = dp.planRetract(q_reach,options);
-v.draw(0,q_retract);
-%% Playback
-qtraj = qtraj_pre_grasp;
-qtraj = qtraj.setOutputFrame(robot.getPositionFrame);
-v.playback(qtraj,struct('slider',true));
+[qtraj_retract,q_retract] = dp.planRetract(options,q_turn);
 
-%%
+%% LCM Testing
 
 clear options;
 options.wheel_radius = radius;
 options.R = rpy2rotmat([0;0;0]);
 options.turn_radius = 0;
 q0 = xstar_complete(1:36);
-dp = drivingPlanner(r_complete,T_wheel_test,q0,options);
-v = r_complete.constructVisualizer;
-qtraj = dp.planReach(q0,options);
+dp = drivingPlanner(r_complete,T_wheel,q0,options);
+
+data = load('data.mat');
 robot = r_complete.getManipulator;
 v = robot.constructVisualizer;
-qtraj = qtraj.setOutputFrame(robot.getPositionFrame);
-v.playback(qtraj,struct('slider',true));
-keyboard;
+%% Plan Safe
+[qtraj_safe,q_safe] = dp.planSafe(struct());
 
-
-%% Test planning safe
+%% Plan Pre-grasp
 clear options;
-options.wheel_radius = radius;
-options.R = rpy2rotmat([0;0;0]);
-options.turn_radius = 0;
-q0 = xstar_complete(1:36);
-dp = drivingPlanner(r_complete,T_wheel_test,q0,options);
-v = r_complete.constructVisualizer;
-qtraj = dp.planReach(q0,options);
-robot = r_complete.getManipulator;
-v = robot.constructVisualizer;
-qtraj = qtraj.setOutputFrame(robot.getPositionFrame);
-v.playback(qtraj,struct('slider',true));
-keyboard;
+options.depth = 0.2;
+options.angle = 0;
+[qtraj_pre_grasp, q_pre_grasp] = dp.planPreGrasp(options);
+
+%% Plan Reach
+clear options;
+options.reach_depth = 0;
+[qtraj_touch,q_touch] = dp.planTouch(options);
+
+%% Plan Turn
+clear options;
+options.turn_angle = pi/2;
+[qtraj_turn,q_turn] = dp.planTurn(options);
+
+%% Plan retract
+clear options;
+options.depth = 0.2;
+[qtraj_retract,q_retract] = dp.planRetract(options);
+
 
 
 end

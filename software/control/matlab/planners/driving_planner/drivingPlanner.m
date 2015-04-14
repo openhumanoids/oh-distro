@@ -21,7 +21,11 @@ classdef drivingPlanner
     qd_max
     qstar
     data;
-    plan_publisher;
+    plan_publisher
+    lc
+    state_monitor
+    q_touch % stores the latest touch, so we can recenter the steering wheel
+    lwy_idx
   end
 
   methods
@@ -55,7 +59,6 @@ classdef drivingPlanner
       obj.non_arm_idx = setdiff([1:obj.nq],obj.arm_idx);
       S = load(r.fixed_point_file);
       obj.qstar = S.xstar(1:obj.nq);
-      obj = obj.setqdmax();
       obj.data = load([getenv('DRC_BASE'),'/software/control/matlab/planners/driving_planner/data.mat']);
 
 
@@ -75,22 +78,40 @@ classdef drivingPlanner
 
       %% plan publisher
       obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getManipulator.getPositionFrame.coordinates);
+
+      % Get a listener for robot state
+      obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
+      obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
+      obj.lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
+      obj = obj.setqdmax();
     end
 
-    function [qtraj,q_safe] = planSafe(obj,q0,options)
+    function [qtraj,q_safe] = planSafe(obj,options,q0)
+
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
+
       q_safe = obj.data.arm_safe;
       q_safe(obj.non_arm_idx) = q0(obj.non_arm_idx);
       qtraj = constructAndRescaleTrajectory([q0,q_safe],obj.qd_max);
       obj.publishTraj(qtraj,1);
     end
 
-    function [qtraj,q_pre_grasp] = planPreGrasp(obj,q0,options)
-      if nargin < 3
+    function [qtraj,q_pre_grasp] = planPreGrasp(obj,options,q0)
+      if nargin < 2
         options = struct();
       end
+
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
+
       % need to specify reach depth and orientation
       if ~isfield(options,'depth'), options.depth = 0.1; end
       if ~isfield(options,'angle') options.angle = 0; end
+      if ~isfield(options,'speed') options.speed = 1; end
       obj.q0 = q0;
 
       xyz_des = [0;options.depth;0];
@@ -108,19 +129,19 @@ classdef drivingPlanner
       info
       infeasible_constraint
       q_vals = [q0,q_pre_grasp];
-      v = obj.r.constructVisualizer;
-      v.draw(0,q_pre_grasp);
-      qtraj = constructAndRescaleTrajectory(q_vals, obj.qd_max);
+      qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
     end
 
-    function [qtraj, q_touch] = planTouch(obj,q0,options)
-      if nargin < 3
+    function [qtraj, q_touch, obj] = planTouch(obj,options,q0)
+      if nargin < 2
         options = struct();
       end
-      % need to specify reach depth and orientation
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
       if ~isfield(options,'depth'), options.depth = 0; end
-      obj.q0 = q0;
+      if ~isfield(options,'speed'), options.speed = 1; end
 
       xyz_des = [0;options.depth;0];
       if isfield(options,'xyz_des')
@@ -139,13 +160,24 @@ classdef drivingPlanner
       [q_touch,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
       infeasible_constraint
+      obj.q_touch = q_touch;
       q_vals = [q0,q_touch];
       qtraj = constructAndRescaleTrajectory(q_vals, obj.qd_max);
       obj.publishTraj(qtraj,info);
     end
 
-    function [qtraj, q_retract] = planRetract(obj,q0,options)
+    function [qtraj, q_retract] = planRetract(obj,options,q0)
+      if nargin < 2
+        options = struct();
+      end
+
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
+
       if ~isfield(options,'depth') options.depth = 0.2; end
+      if ~isfield(options, 'retract') options.speed = 1; end
+
       obj = obj.generateConstraints(q0,options);
       xyz_des = [0;options.depth;0];
       lb = xyz_des - obj.options.tol*ones(3,1);
@@ -159,7 +191,58 @@ classdef drivingPlanner
       info
       infeasible_constraint
       q_vals = [q0,q_retract];
-      qtraj = constructAndRescaleTrajectory(q_vals, obj.qd_max);
+      qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
+      obj.publishTraj(qtraj,info);
+    end
+
+    % just use lwy to do the turn
+    function [qtraj,q_turn] = planTurn(obj, options, q0)
+      if nargin < 2
+        options = struct();
+      end
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
+      if ~isfield(options,'turn_angle'), options.turn_angle = 0; end
+      if ~isfield(options, 'angle_from_touch'), options.angle_from_touch = 0; end
+      if ~isfield(options,'use_raw_angle'), options.use_raw_angle = 0; end
+      if ~isfield(options,'reset_to_touch'), options.reset_to_touch = 0; end
+      if ~isfield(options,'speed') options.speed = 1; end
+      if ~isfield(options,'scaling_factor'), options.acceleration_parameter = 2; end
+      if ~isfield(options,'t_acc'), options.t_acc = 0.4; end
+
+      lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
+      lwy_0 = q0(lwy_idx);
+      [jl_min,jl_max] = obj.r.getJointLimits();
+
+      % check to see if we would run into a joint limit, and don't
+      info = 1;
+      if options.reset_to_touch
+        lwy_des = obj.q_touch(lwy_idx);
+      elseif options.use_raw_angle
+        lwy_des = options.turn_angle;        
+      else
+        if options.angle_from_touch
+          lwy_des = obj.q_touch(lwy_idx) + options.turn_angle;
+        else
+          lwy_des = q0(lwy_idx) + options.turn_angle;
+        end
+        % make sure we aren't exceeding joint limits
+        if lwy_des > jl_max(lwy_idx)
+          disp('Would have hit joint limit, adjusting turn angle')
+          lwy_des = jl_max(lwy_idx);
+          info = 2;
+        elseif lwy_des < jl_min(lwy_idx)
+          disp('Would have hit joint limit, adjusting turn angle')
+          lwy_des = jl_min(lwy_idx);
+          info = 2;
+        end
+      end
+
+      q_turn = q0;
+      q_turn(lwy_idx) = lwy_des;
+      varargin = {options.acceleration_parameter,options.t_acc};
+      qtraj = constructAndRescaleTrajectory([q0,q_turn],options.speed*obj.qd_max,0,varargin);
       obj.publishTraj(qtraj,info);
     end
 
@@ -219,7 +302,18 @@ classdef drivingPlanner
       end
 
       max_degrees_per_second = 20;
+      max_wrist_degrees_per_second = 60;
       obj.qd_max = max_degrees_per_second*pi/180*ones(obj.nq,1);
+      obj.qd_max(obj.lwy_idx) = max_wrist_degrees_per_second*pi/180;
+    end
+
+    function [q0,x0] = getRobotState(obj)
+      data = [];
+      while isempty(data)
+        data = obj.state_monitor.getNextMessage(10);
+      end
+      [x0,t] = obj.r.getStateFrame().lcmcoder.decode(data);
+      q0 = x0(1:obj.nq);
     end
 
 

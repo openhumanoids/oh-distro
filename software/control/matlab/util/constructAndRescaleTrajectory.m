@@ -1,6 +1,9 @@
-function [qtraj_rescale,breaks] = constructAndRescaleTrajectory(q_vals,qd_max,add_pauses)
+function [qtraj,breaks] = constructAndRescaleTrajectory(q_vals,qd_max,add_pauses,scale_args)
   if nargin < 3
     add_pauses = 0;
+  end
+  if nargin < 4
+    scale_args = {};
   end
   N = size(q_vals,2);
   if add_pauses
@@ -19,7 +22,7 @@ function [qtraj_rescale,breaks] = constructAndRescaleTrajectory(q_vals,qd_max,ad
     end
   else
     qtraj = PPTrajectory(pchip([1:N],q_vals));
-    qtraj = rescalePlanTiming(qtraj,qd_max);
+    qtraj = rescalePlanTiming(qtraj,qd_max,scale_args{:});
     breaks = qtraj.tspan();
   end
 end
