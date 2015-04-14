@@ -180,12 +180,12 @@ while(~done)
   lcmInputBlock = LCMInputFromAtlasCommandBlock(r_complete,r_pure,options);
   sys = mimoFeedback(lcmInputBlock, sys, [], [], [], outs);
   % LCM interpret in for hand
-  if (right_hand) && right_hand < 4
+  if (right_hand > 0)
     %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
     lcmRobotiqInputBlock_right = getHandDriver(right_hand, r_complete, 'right', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_right, sys, [], [], [], outs);
   end
-  if (left_hand) && left_hand < 4
+  if (left_hand > 0)
     %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
     lcmRobotiqInputBlock_left = getHandDriver(right_hand, r_complete, 'left', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_left, sys, [], [], [], outs);
@@ -224,7 +224,7 @@ switch hand_id
     handString = 'robotiq_tendons';
   case 3
     handString = 'robotiq_simple';
-  case 4
+  case -1
     handString = 'robotiq_weight_only';
   otherwise
     handString = 'none';
