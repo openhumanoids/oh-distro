@@ -30,12 +30,14 @@ JointNames::JointNames()
     << "L_ARM_ELX"
     << "L_ARM_UWY"
     << "L_ARM_MWX"
+    << "L_ARM_LWY"
     << "R_ARM_USY"
     << "R_ARM_SHX"
     << "R_ARM_ELY"
     << "R_ARM_ELX"
     << "R_ARM_UWY"
-    << "R_ARM_MWX";
+    << "R_ARM_MWX"
+    << "R_ARM_LWY";
 }
 
 int JointNames::numberOfJoints()

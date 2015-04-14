@@ -92,7 +92,7 @@ classdef DRCPlanner
 
       if isa(obj.biped, 'Atlas')
         obj.iris_planner = IRISPlanner(obj.biped,...
-         Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 4)));
+         Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v5/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 5)));
       elseif isa(obj.biped, 'Valkyrie')
         obj.iris_planner = IRISPlanner(Valkyrie([], struct('floating', true)));
       else
@@ -174,19 +174,8 @@ classdef DRCPlanner
 
       qtraj = PPTrajectory(qtraj_pp);
       plan = QPLocomotionPlan.from_quasistatic_qtraj(obj.biped, qtraj);
-      plan = DRCQPLocomotionPlan.toLCM(plan);
-    end
 
-    function plan = configuration_traj_with_supports(obj,msg)
-      msg = drc.robot_plan_with_supports_t(msg);
-      nq = getNumPositions(obj.biped);
-      joint_names = obj.biped.getStateFrame.coordinates(1:nq);
-      [X,T,supports,support_times] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
-      qtraj = PPTrajectory(pchip(T,X));
-      clear options;
-      options.supports = supports;
-      options.support_times = support_times;
-      plan = QPLocomotionPlan.from_quasistatic_qtraj(obj.biped, qtraj,options);
+      
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end
 
@@ -218,11 +207,6 @@ classdef DRCPlanner
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_t, 'utime');
       obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN';
       obj.handlers{end+1} = @obj.configuration_traj;
-      obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
-
-      obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_with_supports_t, 'utime');
-      obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN_WITH_SUPPORTS';
-      obj.handlers{end+1} = @obj.configuration_traj_with_supports;
       obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
     end
 
@@ -259,4 +243,3 @@ classdef DRCPlanner
     end
   end
 end
-
