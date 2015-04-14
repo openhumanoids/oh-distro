@@ -18,6 +18,7 @@ pods_install_headers(
   LidarUtils.hpp
   PointerUtils.hpp
   ThreadSafeQueue.hpp
+  RansacGeneric.hpp
   PointConvert.h
   DESTINATION drc_utils)
 
