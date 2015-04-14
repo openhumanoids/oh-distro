@@ -53,7 +53,6 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
       msg.LIP_height = obj.LIP_height;
 
       msg.S = obj.V.S;
-
       msg.s1 = mxSerialize(obj.V.s1);
       msg.n_s1_bytes = length(msg.s1);
 
