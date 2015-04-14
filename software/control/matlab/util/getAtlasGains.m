@@ -525,7 +525,7 @@ switch atlas_version
     % k_qd_p(neck_ay)   = 0.1;
 
     % Trials values -------
-    k_qd_p(back_bkz)  = 0.85;
+    k_qd_p(back_bkz)  = 1.95;
     k_qd_p(back_bky)  = 5.0;
     k_qd_p(back_bkx)  = 5.0;
     k_qd_p(neck_ay)   = 0.1;
