@@ -1,14 +1,15 @@
-function drakeAtlasSimulation(atlas_version, visualize, add_hokuyo, right_hand, left_hand, world_name)
+function testDrivingPlanner(atlas_version, visualize, add_hokuyo, right_hand, left_hand, world_name)
 %NOTEST
 if nargin < 1, atlas_version = 4; end
 if nargin < 2, visualize = false; end
-if nargin < 3, add_hokuyo = true; end
+if nargin < 3, add_hokuyo = false; end
 if nargin < 4, right_hand = 0; end
 if nargin < 5, left_hand = 0; end
 if nargin < 6, world_name = ''; end
 
 right_hand = 4;
 left_hand = 4;
+atlas_version = 5;
 
 % IF YOU WANT MASS EST LOOK HERE
 % (when this is more fleshed out this will become
@@ -112,20 +113,81 @@ xstar_complete(1:length(xstar)) = xstar;
 xstar_complete = r_complete.resolveConstraints(xstar_complete);
 r_complete = r_complete.setInitialState(xstar_complete);
 
-T_wheel = [0.528863 6.31613e-10 0.848707 0.387817; 
-        9.23685e-08 1 -5.83027e-08 0.462541; 
-        -0.848707 1.09228e-07 0.528863 1.06883; 
-        0 0 0 1];
+T_wheel = [0.868966 -0.49047 -0.065855 0.371103
+        -0.0866524 -0.0197844 -0.996042 0.7011; 
+        0.487226 0.871233 -0.0596924 1.0874;
+        0 0 0 1]
 radius = 0.17;
 
 
-clear drivingPlanner;
+
 clear options;
 options.wheel_radius = radius;
 options.R = rpy2rotmat([0;0;0]);
+options.turn_radius = 0;
 q0 = xstar_complete(1:36);
 dp = drivingPlanner(r_complete,T_wheel,q0,options);
+
+
+data = load('data.mat');
+robot = r_complete.getManipulator;
+v = robot.constructVisualizer;
+%% Plan Safe
+[qtraj_safe,q_safe] = dp.planSafe(q0);
+
+%% Plan Pre-grasp
+clear options;
+options.depth = 0.2;
+options.angle = 0;
+[qtraj_pre_grasp, q_pre_grasp] = dp.planPreGrasp(q_safe,options);
+v.draw(0,q_pre_grasp);
+
+%% Plan Reach
+clear options;
+options.reach_depth = 0;
+[qtraj_reach,q_reach] = dp.planTouch(q_pre_grasp,options);
+v.draw(0,q_reach);
+
+%% Plan retract
+clear options;
+options.depth = 0.2;
+[qtraj_retract,q_retract] = dp.planRetract(q_reach,options);
+v.draw(0,q_retract);
+%% Playback
+qtraj = qtraj_pre_grasp;
+qtraj = qtraj.setOutputFrame(robot.getPositionFrame);
+v.playback(qtraj,struct('slider',true));
+
+%%
+
+clear options;
+options.wheel_radius = radius;
+options.R = rpy2rotmat([0;0;0]);
+options.turn_radius = 0;
+q0 = xstar_complete(1:36);
+dp = drivingPlanner(r_complete,T_wheel_test,q0,options);
 v = r_complete.constructVisualizer;
+qtraj = dp.planReach(q0,options);
+robot = r_complete.getManipulator;
+v = robot.constructVisualizer;
+qtraj = qtraj.setOutputFrame(robot.getPositionFrame);
+v.playback(qtraj,struct('slider',true));
+keyboard;
+
+
+%% Test planning safe
+clear options;
+options.wheel_radius = radius;
+options.R = rpy2rotmat([0;0;0]);
+options.turn_radius = 0;
+q0 = xstar_complete(1:36);
+dp = drivingPlanner(r_complete,T_wheel_test,q0,options);
+v = r_complete.constructVisualizer;
+qtraj = dp.planReach(q0,options);
+robot = r_complete.getManipulator;
+v = robot.constructVisualizer;
+qtraj = qtraj.setOutputFrame(robot.getPositionFrame);
+v.playback(qtraj,struct('slider',true));
 keyboard;
 
 
