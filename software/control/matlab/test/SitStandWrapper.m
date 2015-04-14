@@ -150,13 +150,8 @@ classdef SitStandWrapper
       options.speed = speed;
       options.chair_height = chair_height;
 
-      if obj.plan_options.use_new_planner
-        [qtraj,supports,support_times] = PlanSitStand_new.plan(obj.robot,x,plan_type,options);
-      else
-        [qtraj,supports,support_times] = PlanSitStand.plan(obj.robot,x,plan_type,options);
-      end
+      [qtraj,supports,support_times] = PlanSitStand.plan(obj.robot,x,plan_type,options);
       
-
       robot = r.getManipulator();
       handle_2 = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
       kpt = KinematicPoseTrajectory(robot,{});
