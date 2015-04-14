@@ -627,63 +627,7 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "hand-up-tuck", 
-      "joints": {
-        "r_arm_elx": -2.306710720062256, 
-        "r_arm_ely": 0.14479857683181763, 
-        "r_arm_mwx": 0.16161412000656128, 
-        "r_arm_shx": 0.7676129341125488, 
-        "r_arm_shz": 1.4311699866353502, 
-        "r_arm_uwy": 0.05235987755982989
-      }, 
-      "name": "hand-up-tuck", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "hand-up-pre-tuck", 
-      "joints": {
-        "l_arm_elx": 2.3066322803497314, 
-        "l_arm_ely": 0.14388775825500488, 
-        "l_arm_mwx": -0.16209596395492554, 
-        "l_arm_shx": -0.7677726745605469, 
-        "l_arm_shz": -0.041280344128608704, 
-        "l_arm_uwy": 1.7961766719818115
-      }, 
-      "name": "hand-up-pre-tuck", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "door handle reach", 
-      "joints": {
-        "r_arm_elx": -2.063115409659692, 
-        "r_arm_ely": 2.330105752812873, 
-        "r_arm_mwx": 0.4093050552179266, 
-        "r_arm_shx": 0.9123248971498815, 
-        "r_arm_shz": -0.4135643390238815, 
-        "r_arm_uwy": 1.10424662596658
-      }, 
-      "name": "door handle reach", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "door handle reach tuck", 
-      "joints": {
-        "r_arm_elx": -2.2195309799999996, 
-        "r_arm_ely": 2.693669557571411, 
-        "r_arm_mwx": 0.6126119999999999, 
-        "r_arm_shx": 0.9456216000000002, 
-        "r_arm_shz": -0.611039348, 
-        "r_arm_uwy": 1.1935871839523315
-      }, 
-      "name": "door handle reach tuck", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "door handle reach tuck2", 
+      "description": "door handle pre-reach", 
       "joints": {
         "r_arm_elx": -2.031704501456846, 
         "r_arm_ely": 2.606527343257825, 
@@ -692,12 +636,12 @@
         "r_arm_shz": -0.6965054370803534, 
         "r_arm_uwy": 1.313004251330258
       }, 
-      "name": "door handle reach tuck2", 
+      "name": "door handle pre-reach", 
       "nominal_handedness": "right"
     }, 
     {
       "allow_mirror": true, 
-      "description": "hand-up-tuck2", 
+      "description": "hand up tuck", 
       "joints": {
         "l_arm_elx": 2.2760796546936035, 
         "l_arm_ely": 0.3644244372844696, 
@@ -706,7 +650,7 @@
         "l_arm_shz": -1.4836206436157227, 
         "l_arm_uwy": 0.08796451985836029
       }, 
-      "name": "hand-up-tuck2", 
+      "name": "hand up tuck", 
       "nominal_handedness": "left"
     }
   ], 

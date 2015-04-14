@@ -82,7 +82,7 @@ def setDirectorConfigFile(filename):
     directorConfig = None
 
 def getDefaultDirectorConfigFile():
-    return os.path.join(os.environ['DRC_BASE'], 'software/models/atlas_v4/director_config.json')
+    return os.path.join(os.environ['DRC_BASE'], 'software/models/atlas_v5/director_config.json')
 
 def getDirectorConfig():
     global directorConfig, directorConfigFile
@@ -648,12 +648,7 @@ class MainWindow(QtGui.QWidget):
             self.setEnabled(False)
             return False
 
-        try:
-            json.load(open(configFile, 'r'))
-        except ValueError as exc:
-            self.showWarning('Parse error', 'Error parsing json file: %s' % str(exc))
-            self.setEnabled(False)
-            return False
+        json.load(open(configFile, 'r'))
 
         return True
 
