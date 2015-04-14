@@ -170,6 +170,88 @@
       }, 
       "name": "arm up pregrasp", 
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "safe nominal", 
+      "joints": {
+        "back_bkx": 0.00012852025975007564, 
+        "back_bky": 0.0004949619178660214, 
+        "back_bkz": 5.0203751015942544e-05, 
+        "l_arm_elx": 0.49981027841567993, 
+        "l_arm_ely": 2.0999765396118164, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_lwy": 0.0,
+        "l_arm_shx": -1.3241328001022339, 
+        "l_arm_shz": 0.2690238952636719, 
+        "l_arm_uwy": 0.0, 
+        "r_arm_elx": -0.5001758933067322, 
+        "r_arm_ely": 2.103093147277832, 
+        "r_arm_mwx": 0.0, 
+        "r_arm_lwy": 0.0,
+        "r_arm_shx": 1.3303475379943848, 
+        "r_arm_shz": -0.2682519555091858, 
+        "r_arm_uwy": 0.0
+      }, 
+      "name": "safe nominal", 
+      "nominal_handedness": "none"
+    } 
+  ], 
+  "door": [
+    {
+      "allow_mirror": true, 
+      "description": "narrow walking profile", 
+      "joints": {
+        "back_bkx": -0.0012335698120296001, 
+        "back_bky": -0.010241607204079628, 
+        "back_bkz": 6.361957639455795e-05, 
+        "l_arm_elx": 0.04901176691055298, 
+        "l_arm_ely": 2.09968900680542, 
+        "l_arm_mwx": -0.001135408878326416, 
+        "l_arm_lwy": 0.0,
+        "l_arm_shx": -1.3347748517990112, 
+        "l_arm_shz": 0.2725708484649658, 
+        "l_arm_uwy": 0.1728922724723816, 
+        "r_arm_elx": -0.04314535856246948, 
+        "r_arm_ely": 2.0999293327331543, 
+        "r_arm_mwx": 0.00019365549087524414, 
+        "r_arm_lwy": 0.0,
+        "r_arm_shx": 1.3254579305648804, 
+        "r_arm_shz": -0.2694024443626404, 
+        "r_arm_uwy": 0.17152655124664307
+      }, 
+      "name": "narrow walking profile", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "door handle pre-reach", 
+      "joints": {
+        "r_arm_elx": -2.031704501456846, 
+        "r_arm_ely": 2.606527343257825, 
+        "r_arm_mwx": 0.3996406679595866, 
+        "r_arm_lwy": 0.0,
+        "r_arm_shx": 1.047473562242328, 
+        "r_arm_shz": -0.6965054370803534, 
+        "r_arm_uwy": 1.313004251330258
+      }, 
+      "name": "door handle pre-reach", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hand up tuck", 
+      "joints": {
+        "l_arm_elx": 2.2760796546936035, 
+        "l_arm_ely": 0.3644244372844696, 
+        "l_arm_mwx": 0.784614622592926, 
+        "l_arm_lwy": 0.0,
+        "l_arm_shx": -1.3069056272506714, 
+        "l_arm_shz": -1.4836206436157227, 
+        "l_arm_uwy": 0.08796451985836029
+      }, 
+      "name": "hand up tuck", 
+      "nominal_handedness": "left"
     }
   ], 
   "drill": [
