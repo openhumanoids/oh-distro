@@ -22,6 +22,10 @@ const std::string kHeightMapChannel = "MAP_CONTROL_HEIGHT";
 const int kHeightMapViewId = 1000;
 const int kHeightMapDebugViewId = 9999;
 
+// to handle the global collection instance
+struct MapCollection;
+std::shared_ptr<MapCollection> gCollection;
+
 struct MapCollection {
   typedef std::unordered_map<int,std::shared_ptr<TerrainMap> > MapGroup;
   MapGroup mMaps;
@@ -77,9 +81,16 @@ struct MapCollection {
     return -1;
   }
 
-  static MapCollection& instance() {
-    static MapCollection theCollection;
-    return theCollection;
+  static std::shared_ptr<MapCollection> instance() {
+    if (gCollection == NULL) {
+      gCollection.reset(new MapCollection());
+      mexAtExit(MapCollection::cleanupGlobal);
+    }
+    return gCollection;
+  }
+
+  static void cleanupGlobal() {
+    gCollection.reset();
   }
 
 };
@@ -129,7 +140,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   // create instance
   if (command == "create") {
-    auto terrainMap = MapCollection::instance().createMap();
+    auto terrainMap = MapCollection::instance()->createMap();
     if (nrhs > 1) {
       if ((nrhs % 2) != 1) {
         mexErrMsgTxt("MapWrapper: wrong number of parameter args");
@@ -168,7 +179,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     // return index of terrainmap object
     plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
-    double id = MapCollection::instance().getMapId(terrainMap);
+    double id = MapCollection::instance()->getMapId(terrainMap);
     memcpy(mxGetData(plhs[0]),&id,sizeof(double));
     return;
   }
@@ -180,7 +191,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double val;
   memcpy(&val, mxGetData(prhs[1]), sizeof(double));
   int mapId = (int)(val+0.5);
-  auto terrainMap = MapCollection::instance().getMap(mapId);
+  auto terrainMap = MapCollection::instance()->getMap(mapId);
   if (terrainMap == NULL) {
     mexErrMsgTxt("MapWrapper: handle is invalid; did you clear mex?");
   }
@@ -190,7 +201,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (nrhs != 2) {
       mexErrMsgTxt("MapWrapper: too many arguments to destroy");
     }
-    MapCollection::instance().destroyMap(mapId);
+    MapCollection::instance()->destroyMap(mapId);
   }
 
   /* TODO: deprecated
