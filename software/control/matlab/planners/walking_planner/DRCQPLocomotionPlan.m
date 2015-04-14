@@ -28,6 +28,7 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
       obj.comtraj = mxDeserialize(msg.comtraj);
       obj.mu = double(msg.mu);
       obj.gain_set = char(msg.gain_set);
+      obj.constrained_dofs = double(msg.constrained_dofs);
     end
 
     function msg = toLCM(obj)
@@ -64,6 +65,9 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
 
       msg.mu = obj.mu;
       msg.gain_set = obj.gain_set;
+      
+      msg.num_constrained_dofs = length(obj.constrained_dofs);
+      msg.constrained_dofs = obj.constrained_dofs;
     end
   end
 end
