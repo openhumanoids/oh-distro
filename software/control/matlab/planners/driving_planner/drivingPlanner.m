@@ -68,11 +68,11 @@ classdef drivingPlanner
       obj = obj.setqdmax();
       
       %% compute wheel to pelvis transform
-      obj.T_wheel_2_world = xyz_quat_2_tform(options.wheel_xyzquat);
+      obj.T_wheel_2_world = jointTransform(struct('floating',2),options.wheel_xyzquat);
       q0 = obj.getRobotState();
       kinsol = obj.r.doKinematics(q0);
       pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
-      T_pelvis_2_world = xyz_quat_2_tform(pelvis_xyzquat);
+      T_pelvis_2_world = jointTransform(struct('floating',2),pelvis_xyzquat);
       obj.T_wheel_2_pelvis = invHT(T_pelvis_2_world)*obj.T_wheel_2_world;
 
       % set the iktraj options
@@ -334,7 +334,7 @@ classdef drivingPlanner
     function obj = update_wheel_2_world_tform(obj,q0)
       kinsol = obj.r.doKinematics(q0);
       pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
-      T_pelvis_2_world = xyz_quat_2_tform(pelvis_xyzquat);
+      T_pelvis_2_world = jointTransform(struct('floating',2),pelvis_xyzquat);
       obj.T_wheel_2_world = T_pelvis_2_world * obj.T_wheel_2_pelvis;
     end
 
