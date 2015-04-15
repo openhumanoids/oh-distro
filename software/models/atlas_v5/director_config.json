@@ -140,6 +140,12 @@
     "r_arm_shx",
     "r_arm_elx",
     "r_arm_mwx",
+    "l_leg_hpz",
+    "l_leg_hpx",
+    "l_leg_akx",
+    "r_leg_hpz",
+    "r_leg_hpx",
+    "r_leg_akx",
     "back_bkz"
   ],
 
