@@ -1,0 +1,10 @@
+package drc;
+
+struct support_element_t
+{
+	int64_t utime;
+
+	int32_t num_bodies;
+
+	support_body_t support_bodies[num_bodies];
+}

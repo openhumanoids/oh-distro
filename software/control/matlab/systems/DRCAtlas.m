@@ -7,7 +7,7 @@ classdef DRCAtlas < Atlas
         options = struct();
       end
       if ~isfield(options,'atlas_version') 
-        options.atlas_version = 4; 
+        options.atlas_version = 5; 
       end
 
       if ~any(options.atlas_version == [3,4,5])
@@ -97,17 +97,18 @@ classdef DRCAtlas < Atlas
         obj.getStateFrame().setMaxRate(obj.control_rate);
       end
       
-
-      obj.stateToBDIInd = 6+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
-      obj.BDIToStateInd = 6+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
-
   	  switch obj.atlas_version
         case 3
           obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
+          obj.stateToBDIInd = 6+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
+          obj.BDIToStateInd = 6+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
         case 4
           obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat');
+          obj.stateToBDIInd = 6+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
+          obj.BDIToStateInd = 6+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
         case 5
           obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_v5_fp.mat');
+          obj.stateToBDIInd = 6+[1 2 3 30 5 6 7 8 9 10 18 19 20 21 22 23 4 11 12 13 14 15 16 17 24 25 26 27 28 29]';
       end
       warning(S);
     end

@@ -24,6 +24,7 @@ set(python_files
   ddapp/debrisdemo.py
   ddapp/debugVis.py
   ddapp/depthimageprovider.py
+  ddapp/doordemo.py
   ddapp/drakevisualizer.py
   ddapp/drcargs.py
   ddapp/drilldemo.py
@@ -85,6 +86,7 @@ set(python_files
   ddapp/startup.py
   ddapp/statelistener.py
   ddapp/tabledemo.py
+  ddapp/tasklaunchpanel.py
   ddapp/tdx.py
   ddapp/teleoppanel.py
   ddapp/terrain.py
@@ -111,6 +113,7 @@ set(python_files
   ddapp/tasks/__init__.py
   ddapp/tasks/robottasks.py
   ddapp/tasks/taskmanagerwidget.py
+  ddapp/tasks/taskuserpanel.py
   ddapp/tasks/descriptions/__init__.py
   ddapp/tasks/descriptions/drillTask.py
   ddapp/tasks/descriptions/taskLibrary.py

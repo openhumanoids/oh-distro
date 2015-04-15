@@ -38,5 +38,8 @@ struct qp_locomotion_plan_t
   float mu; // friction coef
 
   string gain_set;
+
+  int16_t num_constrained_dofs;
+  int16_t constrained_dofs[num_constrained_dofs];
 }
 

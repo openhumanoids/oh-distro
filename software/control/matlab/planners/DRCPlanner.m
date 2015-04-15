@@ -92,7 +92,7 @@ classdef DRCPlanner
 
       if isa(obj.biped, 'Atlas')
         obj.iris_planner = IRISPlanner(obj.biped,...
-         Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 4)));
+         Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v5/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 5)));
       elseif isa(obj.biped, 'Valkyrie')
         obj.iris_planner = IRISPlanner(Valkyrie([], struct('floating', true)));
       else
@@ -172,39 +172,23 @@ classdef DRCPlanner
       [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
 
+      qtraj = PPTrajectory(qtraj_pp);
+      plan = QPLocomotionPlan.from_quasistatic_qtraj(obj.biped, qtraj);
 
-      bodies_to_track = [obj.biped.findLinkId('pelvis'),...
-                         obj.biped.foot_body_id.right,...
-                         obj.biped.foot_body_id.left];
-      body_poses = zeros([6, length(ts), length(bodies_to_track)]);
-      for i = 1:numel(ts)
-        kinsol = doKinematics(obj.biped,ppval(qtraj_pp,ts(i)));
-        for j = 1:numel(bodies_to_track)
-          body_poses(:,i,j) = obj.biped.forwardKin(kinsol, bodies_to_track(j), [0;0;0], 1);
-        end
-      end
-      for j = 1:numel(bodies_to_track)
-        for k = 4:6
-          body_poses(k,:,j) = unwrap(body_poses(k,:,j));
-        end
-      end
+      
+      plan = DRCQPLocomotionPlan.toLCM(plan);
+    end
 
-      link_constraints = struct('link_ndx', cell(1, numel(bodies_to_track)),...
-                                'pt', cell(1, numel(bodies_to_track)),...
-                                'ts', cell(1, numel(bodies_to_track)),...
-                                'coefs', cell(1, numel(bodies_to_track)),...
-                                'toe_off_allowed', cell(1, numel(bodies_to_track)));
-      for j = 1:numel(bodies_to_track)
-        link_constraints(j).link_ndx = bodies_to_track(j);
-        link_constraints(j).pt = [0;0;0];
-        pp = pchip(ts, body_poses(:,:,j));
-        [breaks, coefs, l, k, d] = unmkpp(pp);
-        link_constraints(j).ts = breaks;
-        link_constraints(j).coefs = reshape(coefs, [d, l, k]);
-        link_constraints(j).toe_off_allowed = false(1, numel(breaks));
-      end
-
-      plan = QPLocomotionPlan.from_configuration_traj(obj.biped,qtraj_pp,link_constraints);
+    function plan = configuration_traj_with_supports(obj,msg)
+      msg = drc.robot_plan_with_supports_t(msg);
+      nq = getNumPositions(obj.biped);
+      joint_names = obj.biped.getStateFrame.coordinates(1:nq);
+      [X,T,supports,support_times] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
+      qtraj = PPTrajectory(pchip(T,X));
+      clear options;
+      options.supports = supports;
+      options.support_times = support_times;
+      plan = QPLocomotionPlan.from_quasistatic_qtraj(obj.biped, qtraj,options);
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end
 
@@ -236,6 +220,11 @@ classdef DRCPlanner
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_t, 'utime');
       obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN';
       obj.handlers{end+1} = @obj.configuration_traj;
+      obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_with_supports_t, 'utime');
+      obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN_WITH_SUPPORTS';
+      obj.handlers{end+1} = @obj.configuration_traj_with_supports;
       obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
     end
 
@@ -272,4 +261,3 @@ classdef DRCPlanner
     end
   end
 end
-

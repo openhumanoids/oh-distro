@@ -127,18 +127,18 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   std::cout << "use_encoder_joint_sensors: " << cl_cfg_->use_encoder_joint_sensors << "\n";
 
   // encoder offsets if encoders are used
-  encoder_joint_offsets_.assign(28,0.0);
+  encoder_joint_offsets_.assign(Atlas::NUM_JOINTS,0.0);
   // Encoder now read from main cfg file and updates received via param server
   setEncodersFromParam();
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
   // if q < min_angle, use q + 2*pi
-  max_encoder_wrap_angle_.assign(28,100000000);
+  max_encoder_wrap_angle_.assign(Atlas::NUM_JOINTS,100000000);
   max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_UWY] = 4; // robot software v1.9
   max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_SHZ] = 0; // robot software v1.9
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
-  use_encoder_.assign(28,false);
+  use_encoder_.assign(Atlas::NUM_JOINTS,false);
   enableEncoders(true); // disable for now
 
 
@@ -286,16 +286,18 @@ void state_sync::enableEncoders(bool enable) {
   use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELX] = enable;
-  use_encoder_[Atlas::JOINT_R_ARM_UWY] = enable;
-  use_encoder_[Atlas::JOINT_R_ARM_MWX] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_UWY] = false; // always false for electric forearm
+  use_encoder_[Atlas::JOINT_R_ARM_MWX] = false;
+  use_encoder_[Atlas::JOINT_R_ARM_LWY] = false;
 
   use_encoder_[Atlas::JOINT_L_ARM_SHZ] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELX] = enable;
-  use_encoder_[Atlas::JOINT_L_ARM_UWY] = enable;
-  use_encoder_[Atlas::JOINT_L_ARM_MWX] = enable;
-  
+  use_encoder_[Atlas::JOINT_L_ARM_UWY] = false; // always false for electric forearm
+  use_encoder_[Atlas::JOINT_L_ARM_MWX] = false;
+  use_encoder_[Atlas::JOINT_L_ARM_LWY] = false;
+
   use_encoder_[Atlas::JOINT_NECK_AY] = false; // neck encoder is only position sensor now
 }
 
@@ -421,6 +423,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
               atlas_joints_.position[i] += 2*M_PI/3;
 
+            /*
             if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.11 && (msg->utime - utime_prev_ > 5000000)) {
               utime_prev_ = msg->utime;
 
@@ -439,7 +442,13 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
               std::cout << message.str() << std::endl; 
             }
 
+            */
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
+          }
+          else {
+
+            atlas_joints_.position[i] += encoder_joint_offsets_[i];
+
           }
         }
       }
@@ -612,7 +621,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
-  
+
   // Pelvis Pose:
   robot_state_msg.pose.translation.x =0;
   robot_state_msg.pose.translation.y =0;

@@ -15,7 +15,7 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
       obj.x0 = double(msg.x0);
       obj.support_times = double(msg.support_times);
       obj.supports = mxDeserialize(msg.supports);
-      obj.link_constraints = mxDeserialize(msg.link_constraints);
+      obj.body_motions = mxDeserialize(msg.link_constraints);
       obj.zmptraj = mxDeserialize(msg.zmptraj);
       if isnumeric(obj.zmptraj)
         obj.zmp_final = obj.zmptraj;
@@ -28,6 +28,7 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
       obj.comtraj = mxDeserialize(msg.comtraj);
       obj.mu = double(msg.mu);
       obj.gain_set = char(msg.gain_set);
+      obj.constrained_dofs = double(msg.constrained_dofs);
     end
 
     function msg = toLCM(obj)
@@ -44,7 +45,7 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
       msg.supports = mxSerialize(obj.supports);
       msg.n_supports_bytes = length(msg.supports);
 
-      msg.link_constraints = mxSerialize(obj.link_constraints);
+      msg.link_constraints = mxSerialize(obj.body_motions);
       msg.n_link_constraints_bytes = length(msg.link_constraints);
 
       msg.zmptraj = mxSerialize(obj.zmptraj);
@@ -64,6 +65,9 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
 
       msg.mu = obj.mu;
       msg.gain_set = obj.gain_set;
+      
+      msg.num_constrained_dofs = length(obj.constrained_dofs);
+      msg.constrained_dofs = obj.constrained_dofs;
     end
   end
 end

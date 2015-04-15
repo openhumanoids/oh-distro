@@ -149,8 +149,8 @@ message MinimalRobotStateDiff
   repeated float joint_pos_diff_r_arm_elx = 28 [(dccl.field) = { max_repeat: 127 codec: "_arithmetic" [arithmetic] { model: "joint_pos_25" } } ];
   repeated float joint_pos_diff_r_arm_uwy = 29 [(dccl.field) = { max_repeat: 127 codec: "_arithmetic" [arithmetic] { model: "joint_pos_26" } } ];
   repeated float joint_pos_diff_r_arm_mwx = 30 [(dccl.field) = { max_repeat: 127 codec: "_arithmetic" [arithmetic] { model: "joint_pos_27" } } ];
-  //  repeated float joint_pos_diff_l_arm_lwy = 31 [(dccl.field) = { max_repeat: 127 codec: "_arithmetic" [arithmetic] { model: "joint_pos_28" } }];
-  // repeated float joint_pos_diff_r_arm_lwy = 32 [(dccl.field) = { max_repeat: 127 codec: "_arithmetic" [arithmetic] { model: "joint_pos_29" } }];  
+  repeated float joint_pos_diff_l_arm_lwy = 31 [(dccl.field) = { max_repeat: 127 codec: "_arithmetic" [arithmetic] { model: "joint_pos_28" } }];
+  repeated float joint_pos_diff_r_arm_lwy = 32 [(dccl.field) = { max_repeat: 127 codec: "_arithmetic" [arithmetic] { model: "joint_pos_29" } }];  
   
 }
 

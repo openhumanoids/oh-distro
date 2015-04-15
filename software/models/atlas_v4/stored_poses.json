@@ -197,94 +197,8 @@
       }, 
       "name": "arm straight down", 
       "nominal_handedness": "left"
-    } 
-  ], 
-  "valve": [
-    {
-      "allow_mirror": true, 
-      "description": "retract 0", 
-      "joints": {
-        "l_arm_elx": 2.2313119299999995, 
-        "l_arm_ely": 0.0, 
-        "l_arm_mwx": -1.1781, 
-        "l_arm_shx": -1.0807104, 
-        "l_arm_shz": -1.52, 
-        "l_arm_uwy": 0.0
-      }, 
-      "name": "0 - retract 0", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "extend 0", 
-      "joints": {
-        "l_arm_elx": 0.0, 
-        "l_arm_ely": 0.05, 
-        "l_arm_mwx": 0.0, 
-        "l_arm_shx": 0.0, 
-        "l_arm_shz": -1.52, 
-        "l_arm_uwy": 0.05
-      }, 
-      "name": "1 - extend 0", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "extend 360", 
-      "joints": {
-        "l_arm_elx": 0.0, 
-        "l_arm_ely": 3.1, 
-        "l_arm_mwx": 0.0, 
-        "l_arm_shx": 0.0, 
-        "l_arm_shz": -1.52,
-        "l_arm_uwy": 3.14159
-      }, 
-      "name": "2 - extend 360", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "retract 360", 
-      "joints": {
-        "l_arm_elx": 2.0051176899999996, 
-        "l_arm_ely": 3.1, 
-        "l_arm_mwx": 0.9448361999999999, 
-        "l_arm_shx": 1.0115951999999997, 
-        "l_arm_shz": -1.52, 
-        "l_arm_uwy": 3.1
-      }, 
-      "name": "3 - retract 360", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "unwind 360", 
-      "joints": {
-        "l_arm_elx": 1.61399015, 
-        "l_arm_ely": 3.1, 
-        "l_arm_mwx": 0.05, 
-        "l_arm_shx": 0.05, 
-        "l_arm_shz": -1.52, 
-        "l_arm_uwy": 3.1
-      }, 
-      "name": "4 - unwind 360", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "unwind 0", 
-      "joints": {
-        "l_arm_elx": 1.6139901876449585, 
-        "l_arm_ely": 0.05, 
-        "l_arm_mwx": 0.05, 
-        "l_arm_shx": 0.05, 
-        "l_arm_shz": -1.52, 
-        "l_arm_uwy": 0.05
-      }, 
-      "name": "5 - unwind 0", 
-      "nominal_handedness": "left"
     }
-  ],
+  ], 
   "arm-calibration": [
     {
       "allow_mirror": true, 
@@ -713,30 +627,30 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "hand-up-tuck", 
+      "description": "door handle pre-reach", 
       "joints": {
-        "r_arm_elx": -2.306710720062256, 
-        "r_arm_ely": 0.14479857683181763, 
-        "r_arm_mwx": 0.16161412000656128, 
-        "r_arm_shx": 0.7676129341125488, 
-        "r_arm_shz": 1.5669173002243042, 
-        "r_arm_uwy": 3.141448974609375
+        "r_arm_elx": -2.031704501456846, 
+        "r_arm_ely": 2.606527343257825, 
+        "r_arm_mwx": 0.3996406679595866, 
+        "r_arm_shx": 1.047473562242328, 
+        "r_arm_shz": -0.6965054370803534, 
+        "r_arm_uwy": 1.313004251330258
       }, 
-      "name": "hand-up-tuck", 
+      "name": "door handle pre-reach", 
       "nominal_handedness": "right"
     }, 
     {
       "allow_mirror": true, 
-      "description": "hand-up-pre-tuck", 
+      "description": "hand up tuck", 
       "joints": {
-        "l_arm_elx": 2.3066322803497314, 
-        "l_arm_ely": 0.14388775825500488, 
-        "l_arm_mwx": -0.16209596395492554, 
-        "l_arm_shx": -0.7677726745605469, 
-        "l_arm_shz": -0.041280344128608704, 
-        "l_arm_uwy": 1.7961766719818115
+        "l_arm_elx": 2.2760796546936035, 
+        "l_arm_ely": 0.3644244372844696, 
+        "l_arm_mwx": 0.784614622592926, 
+        "l_arm_shx": -1.3069056272506714, 
+        "l_arm_shz": -1.4836206436157227, 
+        "l_arm_uwy": 0.08796451985836029
       }, 
-      "name": "hand-up-pre-tuck", 
+      "name": "hand up tuck", 
       "nominal_handedness": "left"
     }
   ], 
@@ -915,6 +829,92 @@
         "l_arm_uwy": 1.4124504327774048
       }, 
       "name": "test-2", 
+      "nominal_handedness": "left"
+    }
+  ], 
+  "valve": [
+    {
+      "allow_mirror": true, 
+      "description": "retract 0", 
+      "joints": {
+        "l_arm_elx": 2.2313119299999995, 
+        "l_arm_ely": 0.0, 
+        "l_arm_mwx": -1.1781, 
+        "l_arm_shx": -1.0807104, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "0 - retract 0", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "extend 0", 
+      "joints": {
+        "l_arm_elx": 0.0, 
+        "l_arm_ely": 0.05, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_shx": 0.0, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 0.05
+      }, 
+      "name": "1 - extend 0", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "extend 360", 
+      "joints": {
+        "l_arm_elx": 0.0, 
+        "l_arm_ely": 3.1, 
+        "l_arm_mwx": 0.0, 
+        "l_arm_shx": 0.0, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 3.14159
+      }, 
+      "name": "2 - extend 360", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retract 360", 
+      "joints": {
+        "l_arm_elx": 2.0051176899999996, 
+        "l_arm_ely": 3.1, 
+        "l_arm_mwx": 0.9448361999999999, 
+        "l_arm_shx": 1.0115951999999997, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 3.1
+      }, 
+      "name": "3 - retract 360", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "unwind 360", 
+      "joints": {
+        "l_arm_elx": 1.61399015, 
+        "l_arm_ely": 3.1, 
+        "l_arm_mwx": 0.05, 
+        "l_arm_shx": 0.05, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 3.1
+      }, 
+      "name": "4 - unwind 360", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "unwind 0", 
+      "joints": {
+        "l_arm_elx": 1.6139901876449585, 
+        "l_arm_ely": 0.05, 
+        "l_arm_mwx": 0.05, 
+        "l_arm_shx": 0.05, 
+        "l_arm_shz": -1.52, 
+        "l_arm_uwy": 0.05
+      }, 
+      "name": "5 - unwind 0", 
       "nominal_handedness": "left"
     }
   ]

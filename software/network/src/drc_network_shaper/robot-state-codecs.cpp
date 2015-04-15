@@ -94,8 +94,8 @@ RobotStateCodec::RobotStateCodec(const std::string loopback_channel, int frequen
 
     if(joint_names_.empty())
     {
-        
-        JointUtils utils(4);
+        const int atlas_version = 5;
+        JointUtils utils(atlas_version);
 
         int i = 0;        
         for(std::vector<std::string>::const_iterator it = utils.all_joint_names.begin(), end = utils.all_joint_names.end(); it != end; ++it)

@@ -82,7 +82,7 @@ def setDirectorConfigFile(filename):
     directorConfig = None
 
 def getDefaultDirectorConfigFile():
-    return os.path.join(os.environ['DRC_BASE'], 'software/models/atlas_v4/director_config.json')
+    return os.path.join(os.environ['DRC_BASE'], 'software/models/atlas_v5/director_config.json')
 
 def getDirectorConfig():
     global directorConfig, directorConfigFile
@@ -603,6 +603,7 @@ class MainWindow(QtGui.QWidget):
 
         self.setup()
         self.restoreSettings()
+        self.messageBoxWarning = functools.partial(QtGui.QMessageBox.warning, self)
 
     def setup(self):
         self.connect(QtGui.QShortcut(QtGui.QKeySequence('Ctrl+W'), self), QtCore.SIGNAL('activated()'), self.close)
@@ -612,7 +613,7 @@ class MainWindow(QtGui.QWidget):
         self.sendTrajPanel = SendEETrajPanel(self)
 
     def showWarning(self, title, message):
-        QtGui.QMessageBox.warning(self, title, message)
+        self.messageBoxWarning(title, message)
 
     def getSettings(self):
         return QtCore.QSettings('mitdrc', 'RobotPoseGUI')
@@ -648,12 +649,7 @@ class MainWindow(QtGui.QWidget):
             self.setEnabled(False)
             return False
 
-        try:
-            json.load(open(configFile, 'r'))
-        except ValueError as exc:
-            self.showWarning('Parse error', 'Error parsing json file: %s' % str(exc))
-            self.setEnabled(False)
-            return False
+        json.load(open(configFile, 'r'))
 
         return True
 

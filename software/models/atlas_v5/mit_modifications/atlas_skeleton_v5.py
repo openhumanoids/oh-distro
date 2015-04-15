@@ -61,6 +61,8 @@ mit.useObjMeshes(urdf)
 
 mit.addFrame(urdf, "l_foot_sole", "l_foot", "0.0426  0.0017 -0.07645", "0 0 0")
 mit.addFrame(urdf, "r_foot_sole", "r_foot", "0.0426 -0.0017 -0.07645", "0 0 0")
+mit.addFrame(urdf, "l_foot_toe", "l_foot", "0.1728 0.0017 -0.07645", "0 0 0")
+mit.addFrame(urdf, "r_foot_toe", "r_foot", "0.1728 -0.0017 -0.07645", "0 0 0")
 mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
 
 armLinkNames = ['clav', 'scap', 'uarm', 'larm', 'ufarm', 'lfarm', 'hand']

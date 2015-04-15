@@ -993,6 +993,7 @@ int64_t DRCShaperApp::get_current_utime()
 void DRCShaper::load_lzma_custom_codecs()
 {
     custom_codecs_.insert(std::make_pair("COMMITTED_FOOTSTEP_PLAN", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
+    custom_codecs_.insert(std::make_pair("WALKING_CONTROLLER_PLAN_REQUEST", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
 }
 
 

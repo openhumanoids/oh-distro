@@ -4,7 +4,7 @@
 x = -2*3.15:0.01:2*3.15;
 x_full = -2*3.142:0.001:2*3.142;
 
-n_joints=28
+n_joints=30
 
 n_all = NaN(n_joints+1, length(x_full));
 n_all(1,:) = x_full;
@@ -15,7 +15,7 @@ c=0.25;
 outside=10;
 
 for j = 1:n_joints
-    subplot(7,4,j);
+    subplot(6,5,j);
     n_all(j+1,:) = round(outside+ a*exp(-x_full.^2/(2*c^2)));
     plot(n_all(1,:), n_all(j+1,:))
     

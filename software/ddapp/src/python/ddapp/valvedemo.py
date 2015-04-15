@@ -32,6 +32,9 @@ from ddapp import planplayback
 from ddapp import propertyset
 from ddapp import asynctaskqueue as atq
 
+from ddapp.tasks.taskuserpanel import TaskUserPanel
+from ddapp.tasks.taskuserpanel import ImageBasedAffordanceFit
+
 import ddapp.tasks.robottasks as rt
 import ddapp.tasks.taskmanagerwidget as tmw
 
@@ -87,9 +90,9 @@ class ValvePlannerDemo(object):
         self.useLidar = True # else use stereo depth
 
         # IK server speed:
-        self.speedLow = 5
-        self.speedHigh = 30
-        self.speedTurn = 50
+        self.speedLow = 10
+        self.speedHigh = 60
+        self.speedTurn = 100
 
         if (useDevelopment): # for simulated dev
             self.speedLow = 60
@@ -105,6 +108,8 @@ class ValvePlannerDemo(object):
         self.coaxialGazeTol = 2
         self.shxMaxTorque = 40
         self.elxMaxTorque = 10
+
+        self.quasiStaticShrinkFactor = 0.5
 
         # top level switch between BDI (locked base) and MIT (moving base and back)
         self.lockBack = False
@@ -502,10 +507,14 @@ class ValvePlannerDemo(object):
 
     def coaxialGetPose(self, reachDepth, lockFeet=True, lockBack=None,
                        lockBase=None, resetBase=False,  wristAngleCW=0,
-                       startPose=None, verticalOffset=0.01):
+                       startPose=None, verticalOffset=0.01, constrainWristX=True):
+        oldQuasiStaticShrinkFactor = ik.QuasiStaticConstraint.shrinkFactor
+        ik.QuasiStaticConstraint.shrinkFactor = self.quasiStaticShrinkFactor
+
         _, _, zaxis = transformUtils.getAxesFromTransform(self.valveFrame)
         yawDesired = np.arctan2(zaxis[1], zaxis[0])
-        wristAngleCW = min(np.pi-0.01, max(0.01, wristAngleCW))
+        lowerWristAngleCW = min(np.radians(340)-0.01, max(0.01, wristAngleCW))
+        upperWristAngleCW = min(np.radians(340)-0.01, max(0.01, wristAngleCW-lowerWristAngleCW))
 
         if lockBase is None:
             lockBase = self.lockBase
@@ -518,21 +527,21 @@ class ValvePlannerDemo(object):
             mwxJoint = 'l_arm_mwx'
             elxJoint = 'l_arm_elx'
             shxJoint = 'l_arm_shx'
-            xJointLowerBound = [np.radians(45), -np.inf, 0];
-            xJointUpperBound = [np.inf, np.radians(-30), 0];
-            yJoints = ['l_arm_uwy']
-            yJointLowerBound = [wristAngleCW]
-            yJointUpperBound = [wristAngleCW]
+            yJoints = ['l_arm_uwy', 'l_arm_lwy']
+            yJointLowerBound = [-np.radians(170) + upperWristAngleCW - np.radians(10),
+                                -np.radians(170) + lowerWristAngleCW - np.radians(10)]
+            yJointUpperBound = [-np.radians(170) + upperWristAngleCW + np.radians(10),
+                                -np.radians(170) + lowerWristAngleCW + np.radians(10)]
         else:
             larmName = 'r_larm'
             mwxJoint = 'r_arm_mwx'
             elxJoint = 'r_arm_elx'
             shxJoint = 'r_arm_shx'
-            yJoints = ['r_arm_uwy']
-            xJointLowerBound = [-np.inf, np.radians(30), 0];
-            xJointUpperBound = [np.radians(-45), np.inf, 0];
-            yJointLowerBound = [np.pi - wristAngleCW]
-            yJointUpperBound = [np.pi - wristAngleCW]
+            yJoints = ['r_arm_uwy', 'r_arm_lwy']
+            yJointLowerBound = [np.radians(170) - upperWristAngleCW - np.radians(10),
+                                np.radians(170) - lowerWristAngleCW - np.radians(10)]
+            yJointUpperBound = [np.radians(170) - upperWristAngleCW + np.radians(10),
+                                np.radians(170) - lowerWristAngleCW + np.radians(10)]
 
         if startPose is None:
             startPose = self.getPlanningStartPose()
@@ -616,14 +625,16 @@ class ValvePlannerDemo(object):
             wristTol = self.coaxialTol
             gazeDegreesTol = self.coaxialGazeTol
 
-        p = ik.PostureConstraint()
-            #p.joints = [shxJoint, elxJoint, mwxJoint]
-            #p.jointsLowerBound = xJointLowerBound
-            #p.jointsUpperBound = xJointUpperBound
-        p.joints = [mwxJoint]
-        p.jointsLowerBound = [0]
-        p.jointsUpperBound = [0]
-        constraints.append(p)
+        if constrainWristX:
+            p = ik.PostureConstraint()
+                #p.joints = [shxJoint, elxJoint, mwxJoint]
+                #p.jointsLowerBound = xJointLowerBound
+                #p.jointsUpperBound = xJointUpperBound
+            p.joints = [mwxJoint]
+            p.jointsLowerBound = [0]
+            p.jointsUpperBound = [0]
+            constraints.append(p)
+
         elbowOnValveAxisConstraint = ik.PositionConstraint(linkName=larmName,
                                                             referenceFrame=self.clenchFrame.transform)
         elbowOnValveAxisConstraint.lowerBound = [elbowTol, -np.inf, elbowTol]
@@ -656,6 +667,7 @@ class ValvePlannerDemo(object):
 
         constraintSet.nominalPoseName = nominalPoseName;
         constraintSet.startPoseName = nominalPoseName;
+        ik.QuasiStaticConstraint.shrinkFactor = oldQuasiStaticShrinkFactor
         return constraintSet.runIk()
 
 
@@ -677,13 +689,16 @@ class ValvePlannerDemo(object):
         self.coaxialPlan(self.touchDepth, **kwargs)
         self.ikPlanner.ikServer.maxDegreesPerSecond = self.speedHigh
 
-    def coaxialPlanTurn(self, wristAngleCW=np.pi):
+    def coaxialPlanTurn(self, wristAngleCW=np.radians(680)):
         startPose = self.getPlanningStartPose()
-        wristAngleCW = min(np.pi-0.01, max(0.01, wristAngleCW))
+        lowerWristAngleCW = min(np.radians(340)-0.01, max(0.01, wristAngleCW))
+        upperWristAngleCW = min(np.radians(340)-0.01, max(0.01, wristAngleCW-lowerWristAngleCW))
         if self.graspingHand == 'left':
-            postureJoints = {'l_arm_uwy' : wristAngleCW}
+            postureJoints = {'l_arm_uwy' : -np.radians(170) + upperWristAngleCW,
+                             'l_arm_lwy' : -np.radians(170) + lowerWristAngleCW}
         else:
-            postureJoints = {'r_arm_uwy' : np.pi - wristAngleCW}
+            postureJoints = {'r_arm_uwy' : np.radians(170) - upperWristAngleCW,
+                             'r_arm_lwy' : np.radians(170) - lowerWristAngleCW}
 
         endPose = self.ikPlanner.mergePostures(startPose, postureJoints)
 
@@ -696,8 +711,18 @@ class ValvePlannerDemo(object):
 
     def coaxialPlanRetract(self, **kwargs):
         self.ikPlanner.ikServer.maxDegreesPerSecond = self.speedLow
-        self.coaxialPlan(self.retractDepth, **kwargs)
+        self.coaxialPlan(self.retractDepth, resetBase=True, lockBase=False, constrainWristX=False, **kwargs)
         self.ikPlanner.ikServer.maxDegreesPerSecond = self.speedHigh
+
+
+    def coaxialComputePelvisXYZ(self):
+        pose, info = self.coaxialGetPose(self.touchDepth, lockFeet=True,
+                                         lockBase=False, lockBack=False,
+                                         constrainWristX=False)
+        if info < 10:
+            self.nominalPelvisXYZ = pose[:3]
+
+
 
     def getStanceFrameCoaxial(self):
         xaxis, _, _ = transformUtils.getAxesFromTransform(self.valveFrame)
@@ -1099,38 +1124,6 @@ class ValvePlannerDemo(object):
 
 
 
-
-class ImageBasedAffordanceFit(object):
-
-    def __init__(self, imageView=None, numberOfPoints=1):
-
-        self.imageView = imageView or cameraview.CameraImageView(cameraview.imageManager, 'CAMERA_LEFT', 'image view')
-        self.imagePicker = ImagePointPicker(self.imageView, numberOfPoints=2)
-        self.imagePicker.connectDoubleClickEvent(self.onImageViewDoubleClick)
-        self.imagePicker.annotationFunc = self.onImageAnnotation
-        self.imagePicker.showCursor = False
-        self.imagePicker.start()
-
-    def getPointCloud(self):
-        return segmentation.getCurrentRevolutionData()
-
-    def onImageAnnotation(self, *points):
-        polyData = self.getPointCloud()
-        points = [self.getPointCloudLocationFromImage(p, self.imageView, polyData) for p in points]
-        self.fit(polyData, points)
-
-    @staticmethod
-    def getPointCloudLocationFromImage(imagePixel, imageView, polyData):
-        cameraPos, ray = imageView.getWorldPositionAndRay(imagePixel)
-        return segmentation.extractPointsAlongClickRay(cameraPos, ray, polyData, distanceToLineThreshold=0.05, nearestToLine=False)
-
-    def onImageViewDoubleClick(self, displayPoint, modifiers, imageView):
-        pass
-
-    def fit(self, pointData, points):
-        pass
-
-
 class ValveImageFitter(ImageBasedAffordanceFit):
 
     def __init__(self, valveDemo):
@@ -1145,60 +1138,37 @@ class ValveImageFitter(ImageBasedAffordanceFit):
         segmentation.segmentValveByRim(polyData, points[0], points[1])
 
 
-def addWidgetsToDict(widgets, d):
-
-    for widget in widgets:
-        if widget.objectName:
-            d[str(widget.objectName)] = widget
-        addWidgetsToDict(widget.children(), d)
-
-
-class WidgetDict(object):
-
-    def __init__(self, widgets):
-        addWidgetsToDict(widgets, self.__dict__)
-
-
-class ValveTaskPanel(object):
+class ValveTaskPanel(TaskUserPanel):
 
     def __init__(self, valveDemo):
 
+        TaskUserPanel.__init__(self, windowTitle='Valve Task')
+
         self.valveDemo = valveDemo
-        self.valveDemo.reachDepth = -0.1
-        self.valveDemo.speedLow = 10
 
         self.fitter = ValveImageFitter(self.valveDemo)
+        self.initImageView(self.fitter.imageView)
 
-        self.affordanceUpdater = affordanceupdater.AffordanceInCameraUpdater(segmentation.affordanceManager, self.fitter.imageView)
-        self.affordanceUpdater.timer.start()
+        self.addDefaultProperties()
+        self.addButtons()
+        self.addTasks()
 
 
-        loader = QtUiTools.QUiLoader()
-        uifile = QtCore.QFile(':/ui/ddValveTaskPanel.ui')
-        assert uifile.open(uifile.ReadOnly)
+    def addButtons(self):
 
-        self.widget = loader.load(uifile)
-        self.ui = WidgetDict(self.widget.children())
-
-        self.ui.startButton.connect('clicked()', self.onStartClicked)
-        self.ui.footstepsButton.connect('clicked()', self.valveDemo.planFootstepsToStance)
-        self.ui.raiseArmButton.connect('clicked()', self.valveDemo.planPreGrasp)
-        self.ui.reachButton.connect('clicked()', self.reach)
-        self.ui.touchButton.connect('clicked()', self.grasp)
-        self.ui.turnButton.connect('clicked()', self.turnValve)
-        self.ui.fingersButton.connect('clicked()', self.setFingers)
-        self.ui.retractButton.connect('clicked()', self.retract)
-        self.ui.nominalButton.connect('clicked()', self.valveDemo.planNominal)
-
-        l = QtGui.QVBoxLayout(self.ui.imageFrame)
-        l.addWidget(self.fitter.imageView.view)
-
-        self._setupParams()
-        self._setupPropertiesPanel()
-        self._syncProperties()
-
-        self._initTaskPanel()
-        self._initTasks()
+        self.addManualButton('Start', self.onStartClicked)
+        self.addManualSpacer()
+        self.addManualButton('Footsteps', self.valveDemo.planFootstepsToStance)
+        self.addManualSpacer()
+        self.addManualButton('Raise arm', self.valveDemo.planPreGrasp)
+        self.addManualButton('Set fingers', self.setFingers)
+        self.addManualSpacer()
+        self.addManualButton('Reach', self.reach)
+        self.addManualButton('Touch', self.grasp)
+        self.addManualButton('Turn', self.turnValve)
+        self.addManualButton('Retract', self.retract)
+        self.addManualSpacer()
+        self.addManualButton('Nominal', self.valveDemo.planNominal)
 
     def onStartClicked(self):
       self.valveDemo.findAffordance()
@@ -1232,23 +1202,12 @@ class ValveTaskPanel(object):
     def retract(self):
         self.valveDemo.coaxialPlanRetract()
 
-    def _setupParams(self):
-        self.params = om.ObjectModelItem('Valve Task Params')
+    def addDefaultProperties(self):
         self.params.addProperty('Hand', 1, attributes=om.PropertyAttributes(enumNames=['Left', 'Right']))
         self.params.addProperty('Turn direction', 0, attributes=om.PropertyAttributes(enumNames=['Clockwise', 'Counter clockwise']))
         self.params.addProperty('Touch angle (deg)', 0)
         #self.params.addProperty('Turn amount (deg)', 60)
-        self.params.properties.connectPropertyChanged(self.onPropertyChanged)
-
-    def _setupPropertiesPanel(self):
-        l = QtGui.QVBoxLayout(self.ui.propertyFrame)
-        l.setMargin(0)
-        self.propertiesPanel = PythonQt.dd.ddPropertiesPanel()
-        self.propertiesPanel.setBrowserModeToWidget()
-        l.addWidget(self.propertiesPanel)
-
-        self.panelConnector = propertyset.PropertyPanelConnector(self.params.properties, self.propertiesPanel)
-
+        self._syncProperties()
 
     def onPropertyChanged(self, propertySet, propertyName):
         self._syncProperties()
@@ -1263,163 +1222,7 @@ class ValveTaskPanel(object):
         #self.valveDemo.turnAngle = self.params.getProperty('Turn amount (deg)')
 
 
-
-    def onContinue(self):
-
-        self.completedTasks = []
-        self.taskQueue.reset()
-        for obj in self.taskTree.getSelectedTasks():
-            self.taskQueue.addTask(obj.task)
-
-        self.taskQueue.start()
-
-
-    def onStep(self):
-
-        assert not self.taskQueue.isRunning
-
-        tasks = self.taskTree.getSelectedTasks()
-        if not tasks:
-            return
-
-        task = tasks[0].task
-        self.nextStepTask = tasks[1].task if len(tasks) > 1 else None
-
-        self.completedTasks = []
-        self.taskQueue.reset()
-        self.taskQueue.addTask(task)
-        self.taskQueue.start()
-
-
-    def onPause(self):
-
-        if not self.taskQueue.isRunning:
-            return
-
-        self.nextStepTask = None
-        currentTask = self.taskQueue.currentTask
-        self.taskQueue.stop()
-        if currentTask:
-            currentTask.stop()
-
-        self.appendMessage('<font color="red">paused</font>')
-
-
-    def onTaskStarted(self, taskQueue, task):
-        msg = task.properties.getProperty('Name')  + ' ... <font color="green">start</font>'
-        self.appendMessage(msg)
-
-        self.taskTree.selectTask(task)
-        item = self.taskTree.findTaskItem(task)
-        if len(self.completedTasks) and item.getProperty('Visible'):
-            self.appendMessage('<font color="red">paused</font>')
-            raise atq.AsyncTaskQueue.PauseException()
-
-    def onTaskEnded(self, taskQueue, task):
-        msg = task.properties.getProperty('Name') + ' ... <font color="green">end</font>'
-        self.appendMessage(msg)
-
-        self.completedTasks.append(task)
-
-        if self.taskQueue.tasks:
-            self.taskTree.selectTask(self.taskQueue.tasks[0])
-        elif self.nextStepTask:
-            self.taskTree.selectTask(self.nextStepTask)
-        #else:
-        #    self.taskTree.selectTask(self.completedTasks[0])
-
-    def onTaskFailed(self, taskQueue, task):
-        msg = task.properties.getProperty('Name')  + ' ... <font color="red">failed: %s</font>' % task.failReason
-        self.appendMessage(msg)
-
-    def onTaskPaused(self, taskQueue, task):
-        msg = task.properties.getProperty('Name')  + ' ... <font color="red">paused</font>'
-        self.appendMessage(msg)
-
-    def onTaskException(self, taskQueue, task):
-        msg = task.properties.getProperty('Name')  + ' ... <font color="red">exception:\n\n%s</font>' % traceback.format_exc()
-        self.appendMessage(msg)
-
-
-    def appendMessage(self, msg):
-        if msg == self.lastStatusMessage:
-            return
-
-        self.lastStatusMessage = msg
-        self.ui.outputConsole.append(msg.replace('\n', '<br/>'))
-        #print msg
-
-    def updateTaskStatus(self):
-
-        currentTask = self.taskQueue.currentTask
-        if not currentTask or not currentTask.statusMessage:
-            return
-
-        name = currentTask.properties.getProperty('Name')
-        status = currentTask.statusMessage
-        msg = name + ': ' + status
-        self.appendMessage(msg)
-
-    def onAcceptPrompt(self):
-        self.promptTask.accept()
-        self.promptTask = None
-        self.ui.promptLabel.text = ''
-        self.ui.promptAcceptButton.enabled = False
-        self.ui.promptRejectButton.enabled = False
-
-    def onRejectPrompt(self):
-
-        self.promptTask.reject()
-        self.promptTask = None
-        self.ui.promptLabel.text = ''
-        self.ui.promptAcceptButton.enabled = False
-        self.ui.promptRejectButton.enabled = False
-
-    def onTaskPrompt(self, task, message):
-        self.promptTask = task
-        self.ui.promptLabel.text = message
-        self.ui.promptAcceptButton.enabled = True
-        self.ui.promptRejectButton.enabled = True
-
-    def _initTaskPanel(self):
-
-        self.lastStatusMessage = ''
-        self.nextStepTask = None
-        self.completedTasks = []
-        self.taskQueue = atq.AsyncTaskQueue()
-        self.taskQueue.connectTaskStarted(self.onTaskStarted)
-        self.taskQueue.connectTaskEnded(self.onTaskEnded)
-        self.taskQueue.connectTaskPaused(self.onTaskPaused)
-        self.taskQueue.connectTaskFailed(self.onTaskFailed)
-        self.taskQueue.connectTaskException(self.onTaskException)
-        self.completedTasks = []
-
-        self.timer = TimerCallback(targetFps=2)
-        self.timer.callback = self.updateTaskStatus
-        self.timer.start()
-
-        rt.UserPromptTask.promptFunction = self.onTaskPrompt
-        rt.PrintTask.printFunction = self.appendMessage
-
-        self.taskTree = tmw.TaskTree()
-        self.ui.taskFrame.layout().insertWidget(0, self.taskTree.treeWidget)
-
-        l = QtGui.QVBoxLayout(self.ui.taskPropertiesGroupBox)
-        l.addWidget(self.taskTree.propertiesPanel)
-        PythonQt.dd.ddGroupBoxHider(self.ui.taskPropertiesGroupBox)
-
-
-        self.ui.taskStepButton.connect('clicked()', self.onStep)
-        self.ui.taskContinueButton.connect('clicked()', self.onContinue)
-        self.ui.taskPauseButton.connect('clicked()', self.onPause)
-
-        self.ui.promptAcceptButton.connect('clicked()', self.onAcceptPrompt)
-        self.ui.promptRejectButton.connect('clicked()', self.onRejectPrompt)
-        self.ui.promptAcceptButton.enabled = False
-        self.ui.promptRejectButton.enabled = False
-
-
-    def _initTasks(self):
+    def addTasks(self):
 
         # some helpers
         def addTask(task, parent=None):
@@ -1429,9 +1232,9 @@ class ValveTaskPanel(object):
         def addLargeValveTurn(parent=None):
             group = self.taskTree.addGroup('Valve Turn', parent=parent)
 
-            initialWristAngleCW = 0 if v.scribeDirection == 1 else np.pi
-            touchWristAngleCW = np.radians(20) if v.scribeDirection == 1 else np.pi-np.radians(20)
-            finalWristAngleCW = np.pi if v.scribeDirection == 1 else 0
+            initialWristAngleCW = 0 if v.scribeDirection == 1 else np.radians(680)
+            touchWristAngleCW = np.radians(20) if v.scribeDirection == 1 else np.radians(680)-np.radians(20)
+            finalWristAngleCW = np.radians(680) if v.scribeDirection == 1 else 0
 
             # valve manip actions
             addFunc(functools.partial(v.coaxialPlanReach,
@@ -1466,8 +1269,8 @@ class ValveTaskPanel(object):
             group = self.taskTree.addGroup('Valve Turn', parent=parent)
             side = 'Right' if v.graspingHand == 'right' else 'Left'
 
-            initialWristAngleCW = 0 if v.scribeDirection == 1 else np.pi
-            finalWristAngleCW = np.pi if v.scribeDirection == 1 else 0
+            initialWristAngleCW = 0 if v.scribeDirection == 1 else np.radians(680)
+            finalWristAngleCW = np.radians(680) if v.scribeDirection == 1 else 0
 
             addFunc(functools.partial(v.coaxialPlanReach,
                                       wristAngleCW=initialWristAngleCW),
@@ -1549,10 +1352,10 @@ class ValveTaskPanel(object):
 
         # add valve turns
         if v.smallValve:
-            for i in range(0, 5):
+            for i in range(0, 2):
                 addSmallValveTurn()
 
         else:
-            for i in range(0, 5):
+            for i in range(0, 2):
                 addLargeValveTurn()
 

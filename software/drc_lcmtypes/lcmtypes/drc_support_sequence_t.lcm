@@ -1,0 +1,12 @@
+package drc;
+
+struct support_sequence_t
+{
+	int64_t utime;
+
+	int32_t num_ts;
+	double ts[num_ts];
+
+	support_element_t supports[num_ts];
+}
+
