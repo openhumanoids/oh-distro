@@ -17,7 +17,7 @@
 #define STEERING_AXIS 0
 #define ACCEL_AXIS 1
 #define BRAKE_AXIS 2
-#define MAX_STEERING_ANGLE M_PI_2
+#define MAX_STEERING_ANGLE 5.0*M_PI_2
 
 static int joystick_fd = -1;
 
