@@ -43,6 +43,14 @@ classdef RobotPlanPublisher
             end
         end
 
+        function publishPlanWithSupports(obj,X,T,supports,support_times,channel)
+            if nargin < 6
+                channel = obj.channel;
+            end
+            msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times);
+            obj.lc.publish(channel,msg);
+        end
+
 
         function msg = encodeRobotPlan(obj,X,T,t, snopt_info_vector)
             if nargin < 5
@@ -108,5 +116,35 @@ classdef RobotPlanPublisher
             msg.num_grasp_transitions = 0;
             msg.num_bytes = 0;
         end 
+
+        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times)
+            t = get_timestamp_now();
+            msg = drc.robot_plan_with_supports_t();
+            msg.utime = t;
+            msg.plan = obj.encodeRobotPlan(X,T);
+            support_sequence = drc.support_sequence_t();
+            support_sequence.num_ts = length(support_times);
+            support_sequence.ts = support_times;
+
+            support_element_array = javaArray('drc.support_element_t',numel(supports));
+            for j = 1:numel(supports)
+                support_element_array(j) = drc.support_element_t();
+                support_bodies = javaArray('drc.support_body_t',numel(supports(j).contact_pts));
+                for k = 1:numel(supports(j).contact_pts)
+                    support_bodies(k) = drc.support_body_t();
+                    support_bodies(k).utime = t;
+                    support_bodies(k).override_contact_pts = true;
+                    support_bodies(k).num_contact_pts = size(supports(j).contact_pts{k},2);
+                    support_bodies(k).contact_pts = supports(j).contact_pts{k};
+                    support_bodies(k).body_id = supports(j).bodies(k);
+                end
+               support_element_array(j).utime = t;
+               support_element_array(j).num_bodies = numel(supports(j).contact_pts);
+               support_element_array(j).support_bodies = support_bodies;
+            end
+            support_sequence.supports = support_element_array;
+            msg.support_sequence = support_sequence;
+        end
+
     end % end methods
 end

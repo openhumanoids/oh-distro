@@ -101,6 +101,26 @@ classdef RobotPlanListener
           CT.right_leg_control_type = msg.right_leg_control_type;  
             
         end	% end function
+
+        function [X,T,supports,support_times] = decodeRobotPlanWithSupports(msg,floating,joint_names)
+            [X,T,G,CT] = RobotPlanListener.decodeRobotPlan(msg.plan,floating,joint_names);
+            support_sequence = msg.support_sequence;
+            support_times = support_sequence.ts;
+
+            supports = struct('bodies',{},'contact_pts',{});
+
+            for j = 1:length(support_sequence.supports)
+                support_element = support_sequence.supports(j);
+                supports(j).bodies = zeros(support_element.num_bodies,1);
+                supports(j).contact_pts = cell(support_element.num_bodies,1);
+
+                for k = 1:support_element.num_bodies
+                    support_body = support_element.support_bodies(k);
+                    supports(j).bodies(k) = support_body.body_id;
+                    supports(j).contact_pts{k} = support_body.contact_pts;
+                end
+            end
+        end
         
     end % end methods(static)
 end

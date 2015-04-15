@@ -1,0 +1,10 @@
+package drc;
+
+struct robot_plan_with_supports_t
+{
+	int64_t utime;
+
+	robot_plan_t plan;
+
+	support_sequence_t support_sequence;
+}
