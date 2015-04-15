@@ -221,6 +221,7 @@ classdef drivingPlanner
       if ~isfield(options,'speed') options.speed = 1; end
       if ~isfield(options,'scaling_factor'), options.acceleration_parameter = 2; end
       if ~isfield(options,'t_acc'), options.t_acc = 0.4; end
+      if ~isfield(options,'force_execute',) options.force_execute = 0; end
 
       lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
       lwy_0 = q0(lwy_idx);
@@ -239,13 +240,14 @@ classdef drivingPlanner
           lwy_des = q0(lwy_idx) + options.turn_angle;
         end
         % make sure we aren't exceeding joint limits
+        safety_margin = 0.05;
         if lwy_des > jl_max(lwy_idx)
           disp('Would have hit joint limit, adjusting turn angle')
-          lwy_des = jl_max(lwy_idx);
+          lwy_des = jl_max(lwy_idx) - safety_margin;
           info = 2;
         elseif lwy_des < jl_min(lwy_idx)
           disp('Would have hit joint limit, adjusting turn angle')
-          lwy_des = jl_min(lwy_idx);
+          lwy_des = jl_min(lwy_idx) + safety_margin;
           info = 2;
         end
       end
