@@ -636,7 +636,7 @@ classdef PlanSitStand
         %% solve for standing pose
         clear options;
         options = obj.plan_options;
-        foot_on_ground_constraint = PlanSitStand_new.foot_on_ground_constraint(r,kpt,q0,foot_ground,foot_air);
+        foot_on_ground_constraint = PlanSitStand.foot_on_ground_constraint(r,kpt,q0,foot_ground,foot_air);
         options.constraints = {obj.back_gaze_constraint,foot_on_ground_constraint,obj.min_distance_constraint};
 
         options.qs_contacts = {'l_foot','r_foot'};
