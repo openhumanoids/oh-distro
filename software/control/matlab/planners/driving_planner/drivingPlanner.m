@@ -221,7 +221,6 @@ classdef drivingPlanner
       if ~isfield(options,'speed') options.speed = 1; end
       if ~isfield(options,'scaling_factor'), options.acceleration_parameter = 2; end
       if ~isfield(options,'t_acc'), options.t_acc = 0.4; end
-      if ~isfield(options,'force_execute',) options.force_execute = 0; end
 
       lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
       lwy_0 = q0(lwy_idx);
