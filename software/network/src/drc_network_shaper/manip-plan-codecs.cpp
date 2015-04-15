@@ -29,14 +29,14 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
         std::vector<double> x;
         for(int i = 0; i < xs.size(); ++i)
             x.push_back(goby::util::as<double>(xs[i]));
-    
-        for(int j = 0; j < 28; ++j)
+
+        int j = 0;
+        while(std::getline(model_file, line))
         {
             dccl::arith::protobuf::ArithmeticModel model;
 
             glog.is(VERBOSE) && glog << "Making joint_pos_" << j << " model" << std::endl;
 
-            std::getline(model_file, line);
             std::vector<std::string> ys;
             boost::split(ys, line, boost::is_any_of(","));
         
@@ -69,7 +69,7 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
             glog.is(VERBOSE) && glog << "Setting joint_pos_" << j << " model" << std::endl;
             dccl::arith::ModelManager::set_model(model);        
 //        std::cout << pb_to_short_string(model) << std::endl;
-    
+            ++j;
         }
     }
     
