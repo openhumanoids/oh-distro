@@ -2,6 +2,7 @@ classdef drivingPlanner
 
   properties
     T_wheel_2_world
+    T_wheel_2_pelvis
     turn_radius
     r
     options
@@ -29,18 +30,15 @@ classdef drivingPlanner
   end
 
   methods
-    function obj = drivingPlanner(r,T,q0,options)
-      if nargin < 3
+    function obj = drivingPlanner(r,options)
+      if nargin < 2
         options = struct();
       end
-      obj.q0 = q0;
       obj.r = r;
       obj.options = options;
       obj.hand = 'l_hand';
       obj.hand_pt = [0;-0.25;0];
-      obj.T_wheel_2_world = T;
       obj.N = 20;
-
       if obj.hand(1) == 'l'
         obj.arm_idx = obj.r.findPositionIndices('l_arm');
       else
@@ -52,20 +50,32 @@ classdef drivingPlanner
       if ~isfield(options,'reach_depth'), obj.options.reach_depth = 0; end
       if ~isfield(options,'quat_tol'), obj.options.quat_tol = 0.02; end
       if ~isfield(options,'tol'), obj.options.tol = 0.0; end
-
-      % need to allow to specify the turn radius
-
+      
       obj.nq = r.getNumPositions;
       obj.non_arm_idx = setdiff([1:obj.nq],obj.arm_idx);
       S = load(r.fixed_point_file);
       obj.qstar = S.xstar(1:obj.nq);
       obj.data = load([getenv('DRC_BASE'),'/software/control/matlab/planners/driving_planner/data.mat']);
+      
+      % construct a listener for robot state
+      obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
+      obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
+      obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getManipulator.getPositionFrame.coordinates);
 
+      % set joint velocity limits
+      obj.lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
+      obj = obj.setqdmax();
+      
+      %% compute wheel to pelvis transform
+      obj.T_wheel_2_world = xyz_quat_2_tform(options.wheel_xyzquat);
+      q0 = obj.getRobotState();
+      kinsol = obj.r.doKinematics(q0);
+      pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
+      T_pelvis_2_world = xyz_quat_2_tform(pelvis_xyzquat);
+      obj.T_wheel_2_pelvis = invHT(T_pelvis_2_world)*obj.T_wheel_2_world;
 
-      % options.R should be the hand rotation, specified in rpy from the frame aligned with
-      % the steering wheel
-      % reach_depth
-
+      % set the iktraj options
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
       Q = eye(obj.nq);
@@ -75,16 +85,8 @@ classdef drivingPlanner
       iktraj_options = iktraj_options.setMex(true);
       iktraj_options = iktraj_options.setMajorOptimalityTolerance(1e-5);
       obj.ik_options = iktraj_options;
-
-      %% plan publisher
-      obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getManipulator.getPositionFrame.coordinates);
-
-      % Get a listener for robot state
-      obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
-      obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
-      obj.lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
-      obj = obj.setqdmax();
+      
+      
     end
 
     function [qtraj,q_safe] = planSafe(obj,options,q0)
@@ -92,8 +94,9 @@ classdef drivingPlanner
       if nargin < 3
         q0 = obj.getRobotState();
       end
-
+      obj = obj.update_wheel_2_world_tform(q0);
       q_safe = obj.data.arm_safe;
+      q_safe(1:6) = q0(1:6);
       q_safe(obj.non_arm_idx) = q0(obj.non_arm_idx);
       qtraj = constructAndRescaleTrajectory([q0,q_safe],obj.qd_max);
       obj.publishTraj(qtraj,1);
@@ -107,6 +110,7 @@ classdef drivingPlanner
       if nargin < 3
         q0 = obj.getRobotState();
       end
+      obj = obj.update_wheel_2_world_tform(q0);
 
       % need to specify reach depth and orientation
       if ~isfield(options,'depth'), options.depth = 0.1; end
@@ -123,11 +127,12 @@ classdef drivingPlanner
 
       obj = obj.generateConstraints(q0, options);
       q_nom = obj.data.pre_grasp_2;
+      q_nom(1:6) = q0(1:6);
       position_constraint = WorldPositionInFrameConstraint(obj.r,obj.r.findLinkId(obj.hand),obj.hand_pt,obj.T_wheel_2_world,lb,ub);
       constraints = {obj.posture_constraint,obj.hand_orientation_constraint, position_constraint};
       [q_pre_grasp,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint
+      infeasible_constraint;
       q_vals = [q0,q_pre_grasp];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
@@ -140,6 +145,8 @@ classdef drivingPlanner
       if nargin < 3
         q0 = obj.getRobotState();
       end
+      obj = obj.update_wheel_2_world_tform(q0);
+
       if ~isfield(options,'depth'), options.depth = 0; end
       if ~isfield(options,'speed'), options.speed = 1; end
 
@@ -159,7 +166,7 @@ classdef drivingPlanner
       q_nom = q0;
       [q_touch,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint
+      infeasible_constraint;
       obj.q_touch = q_touch;
       q_vals = [q0,q_touch];
       qtraj = constructAndRescaleTrajectory(q_vals, obj.qd_max);
@@ -174,6 +181,7 @@ classdef drivingPlanner
       if nargin < 3
         q0 = obj.getRobotState();
       end
+      obj = obj.update_wheel_2_world_tform(q0);
 
       if ~isfield(options,'depth') options.depth = 0.2; end
       if ~isfield(options, 'retract') options.speed = 1; end
@@ -187,9 +195,10 @@ classdef drivingPlanner
       constraints = {position_constraint,hand_quat_constraint,obj.posture_constraint};
 
       q_nom = obj.data.pre_grasp_2;
+      q_nom(1:6) = q0(1:6);
       [q_retract,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint
+      infeasible_constraint;
       q_vals = [q0,q_retract];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
@@ -203,6 +212,8 @@ classdef drivingPlanner
       if nargin < 3
         q0 = obj.getRobotState();
       end
+      obj = obj.update_wheel_2_world_tform(q0);
+
       if ~isfield(options,'turn_angle'), options.turn_angle = 0; end
       if ~isfield(options, 'angle_from_touch'), options.angle_from_touch = 0; end
       if ~isfield(options,'use_raw_angle'), options.use_raw_angle = 0; end
@@ -210,6 +221,7 @@ classdef drivingPlanner
       if ~isfield(options,'speed') options.speed = 1; end
       if ~isfield(options,'scaling_factor'), options.acceleration_parameter = 2; end
       if ~isfield(options,'t_acc'), options.t_acc = 0.4; end
+      if ~isfield(options,'force_execute',) options.force_execute = 0; end
 
       lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
       lwy_0 = q0(lwy_idx);
@@ -228,13 +240,14 @@ classdef drivingPlanner
           lwy_des = q0(lwy_idx) + options.turn_angle;
         end
         % make sure we aren't exceeding joint limits
+        safety_margin = 0.05;
         if lwy_des > jl_max(lwy_idx)
           disp('Would have hit joint limit, adjusting turn angle')
-          lwy_des = jl_max(lwy_idx);
+          lwy_des = jl_max(lwy_idx) - safety_margin;
           info = 2;
         elseif lwy_des < jl_min(lwy_idx)
           disp('Would have hit joint limit, adjusting turn angle')
-          lwy_des = jl_min(lwy_idx);
+          lwy_des = jl_min(lwy_idx) + safety_margin;
           info = 2;
         end
       end
@@ -244,17 +257,6 @@ classdef drivingPlanner
       varargin = {options.acceleration_parameter,options.t_acc};
       qtraj = constructAndRescaleTrajectory([q0,q_turn],options.speed*obj.qd_max,0,varargin);
       obj.publishTraj(qtraj,info);
-    end
-
-
-    function xtraj = createSteeringPlan(obj,q0)
-      % a call to inverseKinTraj
-      obj = obj.generateConstraints(q0);
-      constraints = [{obj.posture_constraint,obj.hand_orientation_constraint},obj.steering_position_constraint];
-      ts = [1:obj.N];
-      [xtraj,info,infeasible_constraint] = inverseKinTraj(obj.r,t,q_seed_traj,q_nom_traj,constraints,obj.ik_options);
-      info 
-      infeasible_constraint
     end
 
     function obj = generateConstraints(obj, q0, options)
@@ -327,6 +329,13 @@ classdef drivingPlanner
       snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
       ts = ts - ts(1);
       obj.plan_publisher.publish(xtraj_atlas, ts, utime, snopt_info_vector);
+    end
+
+    function obj = update_wheel_2_world_tform(obj,q0)
+      kinsol = obj.r.doKinematics(q0);
+      pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
+      T_pelvis_2_world = xyz_quat_2_tform(pelvis_xyzquat);
+      obj.T_wheel_2_world = T_pelvis_2_world * obj.T_wheel_2_pelvis;
     end
 
   end

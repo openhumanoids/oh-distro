@@ -119,14 +119,18 @@ T_wheel = [0.868966 -0.49047 -0.065855 0.371103
         0 0 0 1]
 radius = 0.17;
 
+wheel_xyz = [ 0.66215564,  0.6501538 ,  1.14539285]';
+wheel_quat = [ 0.6360798 ,  0.65685298, -0.26696468,  0.30442817]';
+wheel_xyzquat = [wheel_xyz;wheel_quat];
+
 
 
 clear options;
 options.wheel_radius = radius;
-options.R = rpy2rotmat([0;0;0]);
+options.wheel_xyzquat = wheel_xyzquat;
 options.turn_radius = 0;
 q0 = xstar_complete(1:36);
-dp = drivingPlanner(r_complete,T_wheel,q0,options);
+dp = drivingPlanner(r_complete,options);
 
 
 data = load('data.mat');
