@@ -765,7 +765,7 @@ classdef PlanSitStand
   methods (Static)
 
     function [qtraj,supports,support_times] = plan(r,x0,plan_type,plan_options)
-      obj = PlanSitStand_new(r,plan_options);
+      obj = PlanSitStand(r,plan_options);
 
       if any(strcmp(plan_type,{'sit','stand','squat','stand_from_squat','sit_from_current',...
         'hold_with_pelvis_contact','hold_without_pelvis_contact'}))
