@@ -3,7 +3,7 @@
 
 #include "custom-codecs.h"
 
-#include "lcmtypes/drc/deprecated_footstep_plan_t.hpp"
+#include "lcmtypes/drc/walking_plan_request_t.hpp"
 
 #include "footstep-plan-analogs.pb.h"
 
@@ -16,8 +16,6 @@ class FootStepPlanCodec : public CustomChannelCodec
       
     bool decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data);
 
-    int set_bool_mask(const drc::footstep_goal_t& goal);
-    void read_bool_mask(int bool_mask, drc::footstep_goal_t * goal);
     
   private:
     goby::acomms::DCCLCodec* dccl_;

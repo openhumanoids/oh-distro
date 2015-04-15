@@ -993,7 +993,6 @@ int64_t DRCShaperApp::get_current_utime()
 void DRCShaper::load_lzma_custom_codecs()
 {
     custom_codecs_.insert(std::make_pair("COMMITTED_FOOTSTEP_PLAN", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
-    custom_codecs_.insert(std::make_pair("WALKING_CONTROLLER_PLAN_REQUEST", boost::shared_ptr<CustomChannelCodec>(new LZMACustomCodec)));
 }
 
 
@@ -1134,16 +1133,15 @@ void DRCShaper::load_robot_plan_custom_codecs()
         
         assert(plan.SerializeAsString() == plan_out.SerializeAsString());
     }
+
+    std::string footstep_plan_channel = "WALKING_CONTROLLER_PLAN_REQUEST";
+    custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK"))));
+    custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
     
 }
 
 void DRCShaper::load_custom_codecs()
-{
-    const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
-    custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
-    custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
-
-    
+{    
     const std::string& grasp_channel = "COMMITTED_GRASP";
     custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
     custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
