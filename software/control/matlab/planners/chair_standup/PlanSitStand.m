@@ -286,7 +286,8 @@ classdef PlanSitStand
       
       kinsol = r.doKinematics(q0);
       l_foot_pos = r.forwardKin(kinsol,kpt.linkId('l_foot'),kpt.c('l_foot'));
-      ground_height = l_foot_pos(3,1);
+      r_foot_pos = r.forwardKin(kinsol,kpt.linkId('r_foot'),kpt.c('r_foot'));
+      ground_height = 1/2*(mean(l_foot_pos(3,:)) + mean(r_foot_pos(3,:)));
       pelvis_height = obj.plan_options.chair_height + ground_height;
       
       %% Pelvis height constraints
