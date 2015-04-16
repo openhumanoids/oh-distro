@@ -168,7 +168,7 @@ classdef PlanSitStand
       obj.back_z_constraint = PostureConstraint(kpt.robot);
       obj.back_z_constraint = obj.back_z_constraint.setJointLimits(kpt.robot.findPositionIndices('back_bkz'),joint_min,joint_max);
 
-      joint_min = -0.3;
+      joint_min = -0.1;
       joint_max = 0;
       obj.back_z_constraint_soft = PostureConstraint(kpt.robot);
       obj.back_z_constraint_soft = obj.back_z_constraint_soft.setJointLimits(kpt.robot.findPositionIndices('back_bkz'),joint_min,joint_max);
@@ -309,7 +309,7 @@ classdef PlanSitStand
         %% Sitting with COM over feet
         clear options;
         options = obj.plan_options;
-        options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint,...
+        options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint,obj.back_z_constraint_soft,...
         obj.pelvis_gaze_constraint,yaw_constraint,obj.min_distance_constraint},x_position_constraints,hand_above_ground_constraints];
         options.no_movement.bodies = {'l_foot','r_foot'};
         options.no_movement.q = q0;
@@ -425,7 +425,8 @@ classdef PlanSitStand
         disp('solving for sitting with COM over feet');
         clear options;
         options = obj.plan_options;
-        options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint,obj.min_distance_constraint},x_hand_position_constraints,hand_above_ground_constraints];
+        options.constraints = [{obj.torque_constraint,obj.back_gaze_constraint,obj.min_distance_constraint,obj.back_z_constraint_soft},...
+        x_hand_position_constraints,hand_above_ground_constraints];
         options.no_movement.bodies = {'pelvis','l_foot','r_foot'};
         options.no_movement.q = q0;
         
