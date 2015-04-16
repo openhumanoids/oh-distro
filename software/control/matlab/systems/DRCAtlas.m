@@ -8,8 +8,7 @@ classdef DRCAtlas < Atlas
       end
       options = applyDefaults(options,...
                               struct('atlas_version', 5,...
-                                     'use_new_kinsol', true,...
-                                     'pelvis_wrench', []));
+                                     'use_new_kinsol', true));
 
       if ~any(options.atlas_version == [3,4,5])
         error('Atlas:badVersion','Invalid Atlas version. Valid values are 3, 4, and 5')
@@ -97,7 +96,7 @@ classdef DRCAtlas < Atlas
       else
         obj.getStateFrame().setMaxRate(obj.control_rate);
       end
-      
+
   	  switch obj.atlas_version
         case 3
           obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
@@ -172,7 +171,7 @@ classdef DRCAtlas < Atlas
       obj = obj.setStateFrame(state_frame);
       
       % Same bit of complexity for input frame to get hand inputs
-      if (obj.hand_right > 0 || obj.hand_left > 0 || obj.pelvis_wrench > 0)
+      if (obj.hand_right > 0 || obj.hand_left > 0 || obj.external_force > 0)
         input_frame = getInputFrame(obj);
         input_frame  = replaceFrameNum(input_frame,1,drcFrames.AtlasInput(obj));
       else
@@ -280,7 +279,5 @@ classdef DRCAtlas < Atlas
 
     foot_force_sensors = false;
     floating = true; % for backwards compatibility (floating is always true now)
-    
-    pelvis_wrench = 0;
   end
 end

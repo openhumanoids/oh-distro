@@ -35,19 +35,24 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     % debug visualization?
     DEBUG;
 
+    last_ts = [];
+    last_coefs = [];
+    t_start = [];
+    init_time = [];
+
   end
 
   properties (Constant)
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
     TERRAIN_CONTACT_THRESH = 0.003;
     SWING_SWITCH_MIN_TIME = 0.1;
-    HYST_MIN_CONTACT_TIME = 0.04; % Foot must be solidly, continuously in contact (or out) for this long
-    HYST_MIN_NONCONTACT_TIME = 0.01; % to be considered a support (or not a support).
+    HYST_MIN_CONTACT_TIME = 0.004; % Foot must be solidly, continuously in contact (or out) for this long
+    HYST_MIN_NONCONTACT_TIME = 0.001; % to be considered a support (or not a support).
     PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
     CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
     FOOT_HULL_COP_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
     MAX_CONSIDERABLE_FOOT_SWING = 0.15; % strides with extrema farther than this are ignored
-    U_MAX = 10;
+    U_MAX = 5;
   end
 
   methods
@@ -114,6 +119,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         foot_states.(foot).pose = pos;
         foot_states.(foot).velocity = vel;
         [foot_states.(foot).terrain_height, foot_states.(foot).terrain_normal] = obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2));
+
         if pos(3) < foot_states.(foot).terrain_height + obj.TERRAIN_CONTACT_THRESH
           foot_states.(foot).contact = true;
         end
@@ -133,11 +139,21 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         arm_and_neck_inds = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck')];
         obj.qtraj(arm_and_neck_inds) = x(arm_and_neck_inds);
         obj.last_used_swing = '';
+        obj.init_time = t_global;
         obj.initialized = 1;
         replan = true;
       else
         replan = false;
       end
+
+      % force right foot not useful for first N ms for testing purposes
+      %if (t_global - obj.init_time < 0.05)
+      %  foot_states.right.contact = false;
+      %  obj.r_foot_in_contact_lock = false;
+      %  foot_states_raw.right.contact = false;
+      %  replan = false;
+      %  r_ic = r_ic + [0; -0.1];
+      %end
 
       % Update and check against contact locks
       if (~foot_states.left.contact)
@@ -153,19 +169,27 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % State switching only when hysterisis thresholds are met
       % noncontact -> contact
       if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
+        disp('r foot in contact');
+        obj.l_foot_in_contact_lock
         replan = true;
         obj.r_foot_in_contact_lock = true;
       end
       if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
+        disp('l foot in contact');
+        obj.r_foot_in_contact_lock
         obj.l_foot_in_contact_lock = true;
         replan = true;
       end
       % contact -> noncontact
       if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
+        disp('r foot leaving contact');
+        obj.l_foot_in_contact_lock
         obj.r_foot_in_contact_lock = false;
         replan = true;
       end
       if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
+        disp('l foot leaving contact');
+        obj.r_foot_in_contact_lock
         obj.l_foot_in_contact_lock = false;
         replan = true;
       end
@@ -173,6 +197,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % commit contact from that filtering
       foot_states.right.contact = obj.r_foot_in_contact_lock;
       foot_states.left.contact = obj.l_foot_in_contact_lock;
+
+      % force terrain heights to come from the foot that's in contact (if either)
+     % if (foot_states.right.contact)
+     %   foot_states.right.terrain_height = foot_states.right.pose(3);
+     %   foot_states.left.terrain_height = foot_states.right.pose(3);
+     % elseif (foot_states.left.contact)
+     %   foot_states.right.terrain_height = foot_states.left.pose(3);
+     %   foot_states.left.terrain_height = foot_states.left.pose(3);
+     % end
 
       % warning('hard-coded for atlas foot shape');
       foot_vertices = struct('right', [-0.05, 0.05, 0.05, -0.05; 
@@ -185,117 +218,111 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      0.15, 0.15, 0.4, 0.4]);
 
       is_captured = obj.isICPCaptured(r_ic, foot_states_raw, foot_vertices);
-
-      if ~replan
-        qp_input = obj.last_qp_input;
+      if is_captured
+        qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
+        if (~isempty(obj.last_plan))
+          disp('captured')
+        end
+        obj.last_plan = [];
+        obj.last_ts = [];
+        obj.last_coefs = [];
+        obj.t_start = [];
       else
-        disp('Not not replanning');
-        if is_captured
-          qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
+        % if the last plan is about to finish, just finish it first.
+        % or if the current contact state equals the old contact state.
+        if ((~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
+              obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD) ...
+            || (~isempty(obj.last_plan) && ~replan)) % or if we're not replanning and have a plan
+          qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, obj.last_plan, rpc);
         else
-          
-          % if the last plan is about to finish, just finish it first.
-          % or if the current contact state equals the old contact state.
-          if (~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
-              obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD)
-            best_plan = obj.last_plan;
-          else
-          
-            U_MAX = obj.U_MAX;
-            intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
+          disp('Replanning');
+          U_MAX = obj.U_MAX;
+          intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
 
-            if isempty(intercept_plans)
-              disp('recovery is not possible');
-              qp_input = obj.last_qp_input;
-              return;
-            end
+          if isempty(intercept_plans)
+            disp('recovery is not possible');
+            qp_input = obj.last_qp_input;
+            obj.lcmgl.switchBuffers();
+            return;
+          end
 
-            % Add to the errors a new term reflecting distance of 
-            % foot from down-projected com of robot
+          % Add to the errors a new term reflecting distance of 
+          % foot from down-projected com of robot
+          for j=1:numel(intercept_plans)
+            com_to_foot_error = norm(intercept_plans(j).r_foot_new(1:2) - com(1:2));
+            intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
+          end
+          % Don't switch stance feet if possible
+          if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
             for j=1:numel(intercept_plans)
-              com_to_foot_error = norm(intercept_plans(j).r_foot_new(1:2) - com(1:2));
-              intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
-            end
-            % Don't switch stance feet if possible
-            if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
-              for j=1:numel(intercept_plans)
-                if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
-                  intercept_plans(j).error = Inf;
-                end
+              if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
+                intercept_plans(j).error = Inf;
               end
             end
-
-            best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
-
-            if isempty(best_plan)
-              best_plan = obj.last_plan;
-            else
-              obj.last_plan = best_plan;
-            end
-
-            if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
-              %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
-              obj.last_used_swing = best_plan.swing_foot;
-              obj.last_swing_switch = t_global;
-            end
           end
-          
-          qp_input = obj.getInterceptInput(t_global, foot_states, reachable_vertices, best_plan, rpc);
+
+          best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
+
+          if isempty(best_plan)
+            best_plan = obj.last_plan;
+          else
+            obj.last_plan = best_plan;
+          end
+
+          if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
+            %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
+            obj.last_used_swing = best_plan.swing_foot;
+            obj.last_swing_switch = t_global;
+          end
+          [obj.last_ts, obj.last_coefs] = obj.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
+          obj.t_start = t_global;
+          qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, best_plan, rpc);
         end
       end
       obj.lcmgl.switchBuffers();
-
       obj.last_qp_input = qp_input;
 
     end
 
-    function qp_input = getInterceptInput(obj, t_global, foot_states, reachable_vertices, best_plan, rpc)
+    function draw_plan(obj, pp, foot_states, reachable_vertices, plan)
+      ts = linspace(pp.breaks(1), pp.breaks(end), 50);
+      obj.lcmgl.glColor3f(1.0, 0.2, 0.2);
+      obj.lcmgl.glLineWidth(1);
+      obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+      ps = ppval(pp, ts);
+      for j = 1:length(ts)-1
+        obj.lcmgl.glVertex3f(ps(1,j), ps(2,j), ps(3,j));
+        obj.lcmgl.glVertex3f(ps(1,j+1), ps(2,j+1), ps(3,j+1));
+      end
+      obj.lcmgl.glEnd();
+
+      obj.lcmgl.glColor3f(0.2,1.0,0.2);
+      obj.lcmgl.sphere([plan.r_cop; 0], 0.01, 20, 20);
+
+      obj.lcmgl.glColor3f(0.9,0.2,0.2)
+      obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES)
+      obj.lcmgl.glVertex3f(plan.r_cop(1), plan.r_cop(2), 0);
+      obj.lcmgl.glVertex3f(plan.r_ic_new(1), plan.r_ic_new(2), 0);
+      obj.lcmgl.glEnd();
+
+      obj.lcmgl.glColor3f(1.0,1.0,0.3);
+      stance_foot = obj.OTHER_FOOT.(plan.swing_foot);
+      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).pose(6)) * reachable_vertices.(plan.swing_foot), foot_states.(stance_foot).pose(1:2));
+      obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINE_LOOP)
+      for j = 1:size(reachable_vertices_in_world_frame, 2)
+        obj.lcmgl.glVertex3f(reachable_vertices_in_world_frame(1,j),...
+                             reachable_vertices_in_world_frame(2,j),...
+                             0);
+      end
+      obj.lcmgl.glEnd();
+    end
+
+    function qp_input = getInterceptInput(obj, t_global, t_start, ts, coefs, foot_states, reachable_vertices, best_plan, rpc)
       DEBUG = obj.DEBUG > 0;
-      [ts, coefs] = obj.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
-      %ts
-      % TODO: rather than applying a transform to coefs, just send body_motion_data for the sole point, not the origin
-      %warning('this transform is incorrect if the foot is rotating');
-%       for j = 1:size(coefs, 2)
-%         T_sole_frame = obj.robot.getFrame(obj.robot.foot_frame_id.(best_plan.swing_foot)).T;
-%         T_sole = poseRPY2tform(coefs(:,j,end));
-%         T_origin = T_sole * inv(T_sole_frame);
-%         coefs(:,j,end) = tform2poseRPY(T_origin);
-%       end
 
       pp = mkpp(ts, coefs, 6);
-
       if DEBUG
-        ts = linspace(pp.breaks(1), pp.breaks(end), 50);
-        obj.lcmgl.glColor3f(1.0, 0.2, 0.2);
-        obj.lcmgl.glLineWidth(1);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        ps = ppval(pp, ts);
-        for j = 1:length(ts)-1
-          obj.lcmgl.glVertex3f(ps(1,j), ps(2,j), ps(3,j));
-          obj.lcmgl.glVertex3f(ps(1,j+1), ps(2,j+1), ps(3,j+1));
-        end
-        obj.lcmgl.glEnd();
-
-        obj.lcmgl.glColor3f(0.2,1.0,0.2);
-        obj.lcmgl.sphere([best_plan.r_cop; 0], 0.01, 20, 20);
-
-        obj.lcmgl.glColor3f(0.9,0.2,0.2)
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES)
-        obj.lcmgl.glVertex3f(best_plan.r_cop(1), best_plan.r_cop(2), 0);
-        obj.lcmgl.glVertex3f(best_plan.r_ic_new(1), best_plan.r_ic_new(2), 0);
-        obj.lcmgl.glEnd();
-
-        obj.lcmgl.glColor3f(1.0,1.0,0.3);
-        stance_foot = obj.OTHER_FOOT.(best_plan.swing_foot);
-        reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).pose(6)) * reachable_vertices.(best_plan.swing_foot), foot_states.(stance_foot).pose(1:2));
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINE_LOOP)
-        for j = 1:size(reachable_vertices_in_world_frame, 2)
-          obj.lcmgl.glVertex3f(reachable_vertices_in_world_frame(1,j),...
-                               reachable_vertices_in_world_frame(2,j),...
-                               0);
-        end
-        obj.lcmgl.glEnd();
-        
+        obj.draw_plan(pp, foot_states, reachable_vertices, best_plan);
       end
       
       qp_input = obj.default_qp_input;
@@ -318,9 +345,21 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'support_logic_map', obj.support_logic_maps.require_support,...
                                      'mu',obj.mu,...
                                      'contact_surfaces', 0);
+
+      % copied from BodyMotionData. we should eventually subclass QPLocomotionPlan
+      % where this logic already exists
+      t = t_global - t_start;
+      if t <= ts(1)
+        t_ind = 1;
+      elseif t >= ts(end)
+        t_ind = length(ts) - 1;
+      else
+        t_ind = find(ts < t, 1, 'last');
+      end
+      
       qp_input.body_motion_data = struct('body_id', obj.robot.foot_frame_id.(best_plan.swing_foot),...
-                                         'ts', t_global + ts(1:2),...
-                                         'coefs', coefs(:,1,:),...
+                                         'ts', t_start + ts(t_ind:t_ind+1),...
+                                         'coefs', coefs(:,t_ind,:),...
                                          'toe_off_allowed', false,...
                                          'in_floating_base_nullspace', true,...
                                          'control_pose_when_in_contact', false);
@@ -328,7 +367,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       pelvis_height = foot_states.(stance_foot).terrain_height + 0.84;
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
-                                                'ts', t_global + ts(1:2),...
+                                                'ts', t_start + ts(t_ind:t_ind+1),...
                                                 'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]),...
                                                 'toe_off_allowed', false,...
                                                 'in_floating_base_nullspace', false,...
@@ -526,43 +565,92 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     function [ts, coefs] = swingTraj(obj, intercept_plan, foot_state)
       DEBUG = obj.DEBUG > 1;
 
-      if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
-        disp('Asking for swing traj of very short step')
+      %if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
+      %  disp('Asking for swing traj of very short step')
         %if (foot_state.pose(3) < obj.robot.getTerrainHeight(foot_state.pose(1:2)) + obj.TERRAIN_CONTACT_THRESH)
           %disp('Foot seems to be in contact. Holding pose and planting foot')
           %intercept_plan.r_foot_new = foot_state.pose;
           %intercept_plan.r_foot_new(3) = obj.robot.getTerrainHeight(foot_state.pose(1:2));
         %end
-      end
+      %end
 
-      fprintf('0,%f,%f\n', intercept_plan.tswitch, intercept_plan.tf);
-      % long step that must go both up and down
-      if intercept_plan.tswitch > 0.05 && (intercept_plan.tf - intercept_plan.tswitch) > 0.05
+      %fprintf('0,%f,%f\n', intercept_plan.tswitch, intercept_plan.tf);
+      
+      % generate swing traj, which requires figuring out knot points to feed in
+      % which requries knowing roughly what the long-term plan is for a swing, so we can
+      % figure out what phase we're in
+      % phases:
+      %   last: if we can just descend to our goal point, do it, with knot points
+      %     along a quadratic arc down to the goal point. "Can just descend" means
+      %     "A*z^2 >= (ground distance to goal)"
+      %   second-to-last: if we can't just descend to our goal point, arc to it
+
+      dist_to_goal = norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2));
+      descend_coeff = (1/0.15)^2;
+      if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.025 && ...
+        (descend_coeff*((foot_state.pose(3)-obj.robot.getTerrainHeight(foot_state.pose(1:2)))^2) >= dist_to_goal)
+        % descend straight there
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
-        swing_height = 0.05;
-        slack = 10;
-        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0.
-        switch_ratio = intercept_plan.tswitch / intercept_plan.tf;
-        switch_angle = angleWeightedAverage(foot_state.pose(4:6), switch_ratio, intercept_plan.r_foot_new(4:6), 1-switch_ratio);
-        params = struct('r0', foot_state.pose,...
-                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
-                        'rf',intercept_plan.r_foot_new,...
-                        'rdf',[0;0;0;0;0;0],...
-                        'r_switch_lb', [foot_state.pose(1:2) - slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     switch_angle],...
-                        'r_switch_ub', [foot_state.pose(1:2) + slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     switch_angle],...
-                        'rd_switch_lb', [-slack * ones(2,1); zeros(4,1)],...
-                        'rd_switch_ub', [slack * ones(2,1); zeros(4,1)],...
-                        't_switch', intercept_plan.tswitch,...
-                        't_f', intercept_plan.tf);
-        settings = struct('verbose', 0);
-        [vars, status] = freeSplineMex(params, settings);
-        coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
-        ts = [0, intercept_plan.tswitch, intercept_plan.tf];
+        fraction_first = 0.4;
+        fraction_second = 0.6;
+        swing_height_first = foot_state.pose(3)*(1-fraction_first^2);
+        swing_height_second = foot_state.pose(3)*(1-fraction_second^2);
+
+        ts = [0 0 0 intercept_plan.tf];
+        xs = [foot_state.pose zeros(6, 2) intercept_plan.r_foot_new];
+        xd0 = foot_state.velocity;
+        xdf = zeros(6, 1);
+        % warning('Assuming foot not rotating')
+        xs(4:6, 2) = foot_state.pose(4:6);
+        xs(4:6, 3) = intercept_plan.r_foot_new(4:6);
+        xs(3, 2) = xs(3, 4) + swing_height_first;
+        xs(3, 3) = xs(3, 4) + swing_height_second;
+        % interp positio nbetween first and last
+        xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
+        xs(1:2, 3) = (1-fraction_second)*xs(1:2, 1) + fraction_second*xs(1:2, 4);
+
+        settings = struct('optimize_knot_times', true);
+        [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
         
+        obj.lcmgl.glColor3f(0.1,0.1,1.0);
+        for k=1:4
+          obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
+        end
+      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.025
+        swing_height_first = 0.05;
+        swing_height_second = 0.05;
+        fraction_first = 0.15;
+        fraction_second = 0.85;
+        if (foot_state.pose(3) > swing_height_first)
+          swing_height_first = swing_height_second + (foot_state.pose(3)-swing_height_first)*fraction_first/fraction_second;
+        end
+        ts = [0 0 0 intercept_plan.tf];
+        xs = [foot_state.pose zeros(6, 2) intercept_plan.r_foot_new];
+        xd0 = foot_state.velocity;
+        xdf = zeros(6, 1);
+        % warning('Assuming foot not rotating')
+        xs(4:6, 2) = foot_state.pose(4:6);
+        xs(4:6, 3) = intercept_plan.r_foot_new(4:6);
+        xs(3, 2) = obj.robot.getTerrainHeight(xs(1:2, 1)) + swing_height_first;
+        xs(3, 3) = xs(3, 4) + swing_height_second;
+        % interp positio nbetween first and last
+        xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
+        xs(1:2, 3) = (1-fraction_second)*xs(1:2, 1) + fraction_second*xs(1:2, 4);
+
+        settings = struct('optimize_knot_times', true);
+        [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
+        
+        obj.lcmgl.glColor3f(0.1,1.0,0.1);
+        for k=1:4
+          obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
+        end
+
+          tt = linspace(ts(1), ts(end));
+          pp = mkpp(ts, coefs, 6);
+          ps = ppval(pp, tt);
+          ps = ppval(fnder(pp, 2), tt);
+          fprintf('umax x:%f y: %f z:%f\n', max(ps(1, :)), max(ps(2, :)), max(ps(3, :)));
+
         if DEBUG
           tt = linspace(ts(1), ts(end));
           pp = mkpp(ts, coefs, 6);
@@ -570,40 +658,14 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           figure(10)
           clf
           subplot(311)
-          plot(tt, ps(1,:), tt, ps(2,:));
+          plot(tt, ps(1,:), tt, ps(2,:), tt, ps(3,:));
           subplot(312)
           ps = ppval(fnder(pp, 1), tt);
-          plot(tt, ps(1,:), tt, ps(2,:));
+          plot(tt, ps(1,:), tt, ps(2,:), tt, ps(3,:));
           subplot(313)
           ps = ppval(fnder(pp, 2), tt);
-          plot(tt, ps(1,:), tt, ps(2,:));
+          plot(tt, ps(1,:), tt, ps(2,:), tt, ps(3,:));
         end
-        
-      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.05
-        tswitch = intercept_plan.tf / 2;
-        swing_height = min([0.05, 0.25 * norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2))]);
-        slack = 10;
-        % Plan a one- or two-piece polynomial spline to get to intercept_plan.r_foot_new with final velocity 0. 
-        switch_ratio = tswitch / intercept_plan.tf;
-        switch_angle = angleWeightedAverage(foot_state.pose(4:6), switch_ratio, intercept_plan.r_foot_new(4:6), 1-switch_ratio);
-        params = struct('r0', foot_state.pose,...
-                        'rd0',foot_state.velocity + [0;0;0;0;0;0],...
-                        'rf',intercept_plan.r_foot_new,...
-                        'rdf',[0;0;0;0;0;0],...
-                        'r_switch_lb', [foot_state.pose(1:2) - slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     switch_angle],...
-                        'r_switch_ub', [foot_state.pose(1:2) + slack;
-                                     intercept_plan.r_foot_new(3) + swing_height;
-                                     switch_angle],...
-                        'rd_switch_lb', [-slack * ones(3,1); zeros(3,1)],...
-                        'rd_switch_ub', [slack * ones(3,1); zeros(3,1)],...
-                        't_switch', tswitch,...
-                        't_f', intercept_plan.tf);
-        settings = struct('verbose', 0);
-        [vars, status] = freeSplineMex(params, settings);
-        coefs = [cat(3, vars.C1_3, vars.C1_2, vars.C1_1, vars.C1_0), cat(3, vars.C2_3, vars.C2_2, vars.C2_1, vars.C2_0)];
-        ts = [0, tswitch, intercept_plan.tf];
       else
         ts = [0, intercept_plan.tf];
         coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.pose, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
