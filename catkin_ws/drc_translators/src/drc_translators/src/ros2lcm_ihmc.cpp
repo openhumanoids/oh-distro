@@ -145,6 +145,11 @@ App::~App()  {
 
 
 void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg){
+  if ( msg->name.size() > 1){
+    // ROS_ERROR("Error: Unrecognised multisense joint: %s",msg->name[0].c_str());
+    return;
+  }
+
   int64_t utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
   publishMultisenseState(utime, msg->position[0], msg->velocity[0]);
 
