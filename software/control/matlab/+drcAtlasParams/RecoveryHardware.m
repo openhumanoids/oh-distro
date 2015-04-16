@@ -25,9 +25,24 @@ classdef RecoveryHardware < atlasParams.Base
       obj.body_motion(r.foot_body_id.left).Kp = 48*ones(6,1);
       obj.body_motion(r.foot_body_id.left).damping_ratio = 0.8;
       obj.body_motion(r.foot_body_id.left).weight = 0.01;
-      obj.body_motion(r.findLinkId('pelvis')).Kp = [nan; nan; 20; 20; 20; 20];
+      obj.body_motion(r.findLinkId('pelvis')).Kp = [0; 0; 20; 20; 20; 20];
       obj.body_motion(r.findLinkId('pelvis')).damping_ratio = 0.6;
       obj.body_motion(r.findLinkId('pelvis')).weight = 0.07;
+
+      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).enabled = true;
+      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).lb = 0.5;
+      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).kp = 40;
+      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).damping_ratio = 0.5;
+      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).weight = 1e-4;
+      % obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).k_logistic = 10;
+      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).enabled = true;
+      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).lb = 0.5;
+      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).kp = 40;
+      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).damping_ratio = 0.5;
+      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).weight = 1e-4;
+      % obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).k_logistic = 10;
+      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).disable_when_body_in_support = r.foot_body_id.right;
+      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).disable_when_body_in_support = r.foot_body_id.left;
 
       obj.Kp_accel = 0;
 
