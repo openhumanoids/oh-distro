@@ -126,6 +126,26 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   cl_cfg_->use_encoder_joint_sensors = bot_param_get_boolean_or_fail(botparam_, "control.encoder_offsets.active" );
   std::cout << "use_encoder_joint_sensors: " << cl_cfg_->use_encoder_joint_sensors << "\n";
 
+  // explicitly identify encoder joints
+  encoder_joint_indices_ = {
+    Atlas::JOINT_R_ARM_SHZ,
+    Atlas::JOINT_R_ARM_SHX,
+    Atlas::JOINT_R_ARM_ELY,
+    Atlas::JOINT_R_ARM_ELX,
+    Atlas::JOINT_L_ARM_SHZ,
+    Atlas::JOINT_L_ARM_SHX,
+    Atlas::JOINT_L_ARM_ELY,
+    Atlas::JOINT_L_ARM_ELX,
+
+    // TODO: may not need these
+    Atlas::JOINT_R_ARM_UWY,
+    Atlas::JOINT_R_ARM_MWX,
+    Atlas::JOINT_R_ARM_LWY,
+    Atlas::JOINT_L_ARM_UWY,
+    Atlas::JOINT_L_ARM_MWX,
+    Atlas::JOINT_L_ARM_LWY,
+  };
+
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(Atlas::NUM_JOINTS,0.0);
   // Encoder now read from main cfg file and updates received via param server
@@ -140,18 +160,6 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
   use_encoder_.assign(Atlas::NUM_JOINTS,false);
   enableEncoders(true); // disable for now
-
-  // explicitly identify encoder joints
-  encoder_joint_indices_ = {
-    Atlas::JOINT_R_ARM_SHZ,
-    Atlas::JOINT_R_ARM_SHX,
-    Atlas::JOINT_R_ARM_ELY,
-    Atlas::JOINT_R_ARM_ELX,
-    Atlas::JOINT_L_ARM_SHZ,
-    Atlas::JOINT_L_ARM_SHX,
-    Atlas::JOINT_L_ARM_ELY,
-    Atlas::JOINT_L_ARM_ELX,
-  };
 
 
   /// 4. Joint Filtering
