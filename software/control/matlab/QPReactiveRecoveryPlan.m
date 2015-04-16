@@ -199,13 +199,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       foot_states.left.contact = obj.l_foot_in_contact_lock;
 
       % force terrain heights to come from the foot that's in contact (if either)
-     % if (foot_states.right.contact)
-     %   foot_states.right.terrain_height = foot_states.right.pose(3);
-     %   foot_states.left.terrain_height = foot_states.right.pose(3);
-     % elseif (foot_states.left.contact)
-     %   foot_states.right.terrain_height = foot_states.left.pose(3);
-     %   foot_states.left.terrain_height = foot_states.left.pose(3);
-     % end
+      if (foot_states.right.contact)
+        foot_states.right.terrain_height = foot_states.right.pose(3);
+        foot_states.left.terrain_height = foot_states.right.pose(3);
+      elseif (foot_states.left.contact)
+        foot_states.right.terrain_height = foot_states.left.pose(3);
+        foot_states.left.terrain_height = foot_states.left.pose(3);
+      end
 
       % warning('hard-coded for atlas foot shape');
       foot_vertices = struct('right', [-0.05, 0.05, 0.05, -0.05; 
