@@ -639,8 +639,8 @@ void StereoOdom::atlasStateHandler(const lcm::ReceiveBuffer* rbuf,
 int main(int argc, char **argv){
   CommandLineConfig cl_cfg;
   cl_cfg.camera_config = "CAMERA";
-  cl_cfg.input_channel = "CAMERA_BLACKENED";
-  cl_cfg.output_signal = "POSE_BODY_ALT";
+  cl_cfg.input_channel = "CAMERA";
+  cl_cfg.output_signal = "POSE_BODY";
   cl_cfg.feature_analysis = FALSE; 
   cl_cfg.fusion_mode = 0;
   cl_cfg.verbose = false;
