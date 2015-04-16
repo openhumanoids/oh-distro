@@ -28,6 +28,7 @@ options.floating = true;
 options.dt = 0.00333;
 options.hokuyo = false;
 options.foot_force_sensors = false; % This works (you'll have to change
+options.use_new_kinsol = true;
 % LCMBroadcastBlock to broadcast them)
 % but is slow right now.
 options.obstacles = false; % Replaced by step terrain, though the option still works...
