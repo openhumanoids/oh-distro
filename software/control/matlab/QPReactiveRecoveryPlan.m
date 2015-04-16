@@ -147,13 +147,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
 
       % force right foot not useful for first N ms for testing purposes
-      %if (t_global - obj.init_time < 0.05)
-      %  foot_states.right.contact = false;
-      %  obj.r_foot_in_contact_lock = false;
-      %  foot_states_raw.right.contact = false;
-      %  replan = false;
-      %  r_ic = r_ic + [0; -0.1];
-      %end
+      if (t_global - obj.init_time < 0.05)
+        foot_states.right.contact = false;
+        obj.r_foot_in_contact_lock = false;
+        foot_states_raw.right.contact = false;
+        replan = false;
+        r_ic = r_ic + [0; -0.1];
+      end
 
       % Update and check against contact locks
       if (~foot_states.left.contact)
