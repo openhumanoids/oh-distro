@@ -90,15 +90,20 @@ classdef drivingPlanner
     end
 
     function [qtraj,q_safe] = planSafe(obj,options,q0)
-
+      if  nargin < 2 
+        options = struct();
+      end
       if nargin < 3
         q0 = obj.getRobotState();
+      end
+      if ~isfield(options,'speed')
+        options.speed = 1;
       end
       obj = obj.update_wheel_2_world_tform(q0);
       q_safe = obj.data.arm_safe;
       q_safe(1:6) = q0(1:6);
       q_safe(obj.non_arm_idx) = q0(obj.non_arm_idx);
-      qtraj = constructAndRescaleTrajectory([q0,q_safe],obj.qd_max);
+      qtraj = constructAndRescaleTrajectory([q0,q_safe],options.speed*obj.qd_max);
       obj.publishTraj(qtraj,1);
     end
 
@@ -169,7 +174,7 @@ classdef drivingPlanner
       infeasible_constraint;
       obj.q_touch = q_touch;
       q_vals = [q0,q_touch];
-      qtraj = constructAndRescaleTrajectory(q_vals, obj.qd_max);
+      qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
     end
 
