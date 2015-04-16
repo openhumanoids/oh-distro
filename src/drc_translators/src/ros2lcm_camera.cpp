@@ -49,6 +49,7 @@ App::App(ros::NodeHandle node_) :
   }
 
   headLeftImageSub_ = node_.subscribe("/multisense/left/image_rect_color/compressed", 1, &App::headLeftImageCallback,this);
+  //headLeftImageSub_ = node_.subscribe("/left/image_rect_color", 1, &App::headLeftImageCallback,this);
 };
 
 App::~App()  {
@@ -84,6 +85,7 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg,string channel ){
     lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
     lcm_img.size = isize;
     cv::cvtColor(mat, mat, CV_RGB2BGR);
+    // cv::cvtColor(mat, mat, CV_BGR2RGB);
     lcm_img.data.resize(mat.step*mat.rows);
     std::copy(mat.data, mat.data + mat.step*mat.rows,
                 lcm_img.data.begin());

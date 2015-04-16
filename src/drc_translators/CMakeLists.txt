@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   ihmc_msgs
   tf
   trajectory_msgs
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
@@ -181,6 +182,10 @@ pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core
 add_executable(ros2lcm_camera src/ros2lcm_camera.cpp)
 target_link_libraries(ros2lcm_camera ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(ros2lcm_camera lcm bot2-core eigen3 opencv)
+
+add_executable(ros2lcm_stereo src/ros2lcm_stereo.cpp)
+target_link_libraries(ros2lcm_stereo ${catkin_LIBRARIES})
+pods_use_pkg_config_packages(ros2lcm_stereo lcm bot2-core eigen3 bot2-core eigen3 image_io_utils opencv)
 
 add_executable(lcm2ros_ihmc src/lcm2ros_ihmc.cpp)
 target_link_libraries(lcm2ros_ihmc ${catkin_LIBRARIES})
