@@ -289,9 +289,6 @@ void StereoOdom::multisenseHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
-
-
-
 void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
      const std::string& channel, const  bot_core::images_t* msg){
 
@@ -312,7 +309,7 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
 
   // TODO: support other modes (as in the renderer)
   if (msg->image_types[1] == bot_core::images_t::DISPARITY_ZIPPED) {
-    unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
+    unsigned long dlen = w*h*2;
     uncompress(decompress_disparity_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
   } else{
     std::cout << "StereoOdom depth type not understood\n";
@@ -366,7 +363,7 @@ void StereoOdom::multisenseLRHandler(const lcm::ReceiveBuffer* rbuf,
       break;
   }
 
-  return; // full estimator VO disabled for VRC competition, 8 june 2013
+  return;
 }
 
 
