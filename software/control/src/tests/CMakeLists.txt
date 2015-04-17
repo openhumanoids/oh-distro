@@ -1,0 +1,3 @@
+add_executable(testQPReactiveRecovery QPReactiveRecoveryTest.cpp)
+target_link_libraries(testQPReactiveRecovery QPReactiveRecoveryPlan)
+pods_install_executables(testQPReactiveRecovery)
