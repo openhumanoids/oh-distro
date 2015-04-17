@@ -17,10 +17,6 @@ int testClosestPointInConvexHull1() {
     return 1;
   }
 
-  y = QPReactiveRecoveryPlan::closestPointInConvexHullCVXGEN(x, V);
-  if (!y.isApprox(y_expected, 1e-4)) {
-    return 1;
-  }
   return 0;
 }
 
@@ -37,10 +33,6 @@ int testClosestPointInConvexHull2() {
 
   VectorXd y = QPReactiveRecoveryPlan::closestPointInConvexHull(x, V);
 
-  if (!y.isApprox(y_expected, 1e-4)) {
-    return 1;
-  }
-  y = QPReactiveRecoveryPlan::closestPointInConvexHullCVXGEN(x, V);
   if (!y.isApprox(y_expected, 1e-4)) {
     return 1;
   }
@@ -61,11 +53,6 @@ int testClosestPointInConvexHull3() {
 
   VectorXd y = QPReactiveRecoveryPlan::closestPointInConvexHull(x, V);
 
-  if (!y.isApprox(y_expected, 1e-4)) {
-    return 1;
-  }
-
-  y = QPReactiveRecoveryPlan::closestPointInConvexHullCVXGEN(x, V);
   if (!y.isApprox(y_expected, 1e-4)) {
     return 1;
   }

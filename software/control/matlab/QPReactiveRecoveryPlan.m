@@ -907,23 +907,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   methods(Static)
     function y = closestPointInConvexHull(x, V)
-      y = QPReactiveRecoveryPlanmex.closestPointInConvexHullCVXGEN(x, V);
-
-      t0 = tic();
-      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, V, x));
-      y_matlab = u + x;
-      fprintf(1, 'matlab+cvxgen: %fs\n', toc(t0));
-
-      t0 = tic();
       y = QPReactiveRecoveryPlanmex.closestPointInConvexHull(x, V);
-      fprintf(1, 'mex+gurobi: %fs\n', toc(t0));
-      valuecheck(y, y_matlab, 1e-3);
-
-      t0 = tic();
-      y = QPReactiveRecoveryPlanmex.closestPointInConvexHullCVXGEN(x, V);
-      fprintf(1, 'mex+cvxgen: %fs\n', toc(t0));
-      valuecheck(y, y_matlab, 1e-3);
-
     end
 
     function xf = bangbangXf(x0, xd0, tf, u)
