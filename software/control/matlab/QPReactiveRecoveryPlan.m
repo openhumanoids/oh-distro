@@ -460,6 +460,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % warning('probably not right pelvis height if feet height differ...')
       pelvis_height = 0.5 * (foot_states.left.terrain_height + foot_states.right.terrain_height) + 0.84;
 
+      foot_rpy = [quat2rpy(foot_states.right.xyz_quat(4:7)), quat2rpy(foot_states.left.xyz_quat(4:7))];
       pelvis_yaw = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
       pelvis_xyz_exp = [0; 0; pelvis_height; quat2expmap(rpy2quat([0;0;pelvis_yaw]))];
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
