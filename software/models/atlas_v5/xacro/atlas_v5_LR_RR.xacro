@@ -2,14 +2,17 @@
   <xacro:include filename="../components/atlas_v5_full_collision_geometry.urdf" />
   <xacro:include filename="../../common_components/multisense_sl/multisense_sl.urdf" />
   <xacro:include filename="./atlas_v5_common.xacro" />
-  <xacro:include filename="../../common_components/robotiq_hand_description/robotiq_hand.xacro" />
+  <xacro:include filename="../../common_components/robotiq_hand_description/robotiq_hand_no_collision.xacro" />
+  <xacro:include filename="../../common_components/robotiq_hand_description/robotiq_hand_convex_hull.xacro" />
 
   <xacro:robotiq_hand side="left" parent="l_hand_force_torque" reflect="1">
     <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
   </xacro:robotiq_hand>
-  <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="1">
+  <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="2">
     <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
   </xacro:robotiq_hand>
+  <xacro:robotiq_convex_hull side="left_convex"  is_open="1" use_visuals="0" parent="l_hand_force_torque"/>
+  <xacro:robotiq_convex_hull side="right_convex" is_open="1" use_visuals="0" parent="r_hand_force_torque"/>
 
   <xacro:robotiq_camera  side_letter="l" reflect="1" parent="l_hand_force_torque" >
     <origin xyz="0.0  0.0 0.0" rpy="0.0 0  0.0"/>
