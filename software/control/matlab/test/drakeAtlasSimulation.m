@@ -91,6 +91,7 @@ ftframe = RigidBodyFrame(ft_link_ind,[0;0;0],[0;0;0],'force_torque_sensor');
 r_complete = r_complete.addFrame(ftframe);
 r_complete = r_complete.compile();
 
+extra_height = 0;
 % Add world if relevant
 if (strcmp(world_name, 'valve_wall'))
   % Add valve DRC environment
@@ -116,6 +117,9 @@ elseif(strcmp(world_name, 'plug'))
   r_complete = r_complete.addRobotFromURDF('small_plug.urdf', [0.2; -1.2; 1.2], [], options_cyl);
 elseif(strcmp(world_name, 'stairs'))
   r_complete = r_complete.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0], [0 ; 0 ; pi]);
+elseif(strcmp(world_name, 'runningboard'))  
+  r_complete = r_complete.addRobotFromURDF('springboard.urdf', [0.0 ; 0.0; 0.1], [0 ; 0 ; pi]);
+  extra_height = 0.12;
 elseif(strcmp(world_name,'box'))
   box = RigidBodyBox([1;2;box_height;]);
   r_complete = r_complete.addCollisionGeometryToBody(1,box);
@@ -131,7 +135,7 @@ S = load(r_pure.fixed_point_file);
 xstar = S.xstar;
 xstar(1) = 0;
 xstar(2) = 0;
-xstar(3) = xstar(3) + 0.08;
+xstar(3) = xstar(3) + 0.08 + extra_height ;
 xstar(6) = 0;
 x0 = zeros(r_pure.getNumStates, 1);
 x0(1:length(xstar)) = xstar;

@@ -168,6 +168,11 @@ cmd "drakeAtlasSimulation Box" {
     host = "base";
 }
 
+cmd "drakeAtlasSimulation Runningboard" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 0, -1, -1, 'runningboard');\"";
+    host = "base";
+}
+
 cmd "systemwide-tests-valve" {
     exec = "drc-systemwide-tests valve";
     host = "localhost";
@@ -368,3 +373,19 @@ script "9.run_manip_ex" {
     start cmd "InstQPRightHand";
     start cmd "director";
 }
+
+script "10.runningboard_test" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Runningboard";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
