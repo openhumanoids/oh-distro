@@ -110,15 +110,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
 
 
-      foot_states = struct('right', struct('pose', [], 'velocity', [], 'contact', false),...
-                          'left', struct('pose', [], 'velocity', [], 'contact', false));
+      foot_states = struct('right', struct('xyz_quat', [], 'xyz_quatdot', [], 'contact', false),...
+                          'left', struct('xyz_quat', [], 'xyz_quatdot', [], 'contact', false));
       for f = {'right', 'left'}
         foot = f{1};
-        [pos, J] = obj.robot.forwardKin(kinsol, obj.robot.foot_frame_id.(foot), [0;0;0], 1);
+        [pos, J] = obj.robot.forwardKin(kinsol, obj.robot.foot_frame_id.(foot), [0;0;0], 2);
         vel = J * qd;
-        foot_states.(foot).pose = pos;
-        foot_states.(foot).velocity = vel;
-        [foot_states.(foot).terrain_height, foot_states.(foot).terrain_normal] = obj.robot.getTerrainHeight(foot_states.(foot).pose(1:2));
+        foot_states.(foot).xyz_quat = pos;
+        foot_states.(foot).xyz_quatdot = vel;
+        [foot_states.(foot).terrain_height, foot_states.(foot).terrain_normal] = obj.robot.getTerrainHeight(foot_states.(foot).xyz_quat(1:2));
 
         if pos(3) < foot_states.(foot).terrain_height + obj.TERRAIN_CONTACT_THRESH
           foot_states.(foot).contact = true;
@@ -200,11 +200,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       % force terrain heights to come from the foot that's in contact (if either)
       if (foot_states.right.contact)
-        foot_states.right.terrain_height = foot_states.right.pose(3);
-        foot_states.left.terrain_height = foot_states.right.pose(3);
+        foot_states.right.terrain_height = foot_states.right.xyz_quat(3);
+        foot_states.left.terrain_height = foot_states.right.xyz_quat(3);
       elseif (foot_states.left.contact)
-        foot_states.right.terrain_height = foot_states.left.pose(3);
-        foot_states.left.terrain_height = foot_states.left.pose(3);
+        foot_states.right.terrain_height = foot_states.left.xyz_quat(3);
+        foot_states.left.terrain_height = foot_states.left.xyz_quat(3);
       end
 
       % warning('hard-coded for atlas foot shape');
@@ -308,7 +308,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       obj.lcmgl.glColor3f(1.0,1.0,0.3);
       stance_foot = obj.OTHER_FOOT.(plan.swing_foot);
-      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).pose(6)) * reachable_vertices.(plan.swing_foot), foot_states.(stance_foot).pose(1:2));
+      R = quat2rotmat(foot_states.(stance_foot).xyz_quat(4:7));
+      rpy = rotmat2rpy(R);
+      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(rpy(3)) * reachable_vertices.(plan.swing_foot), foot_states.(stance_foot).xyz_quat(1:2));
       obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINE_LOOP)
       for j = 1:size(reachable_vertices_in_world_frame, 2)
         obj.lcmgl.glVertex3f(reachable_vertices_in_world_frame(1,j),...
@@ -328,9 +330,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       
       qp_input = obj.default_qp_input;
       qp_input.whole_body_data.q_des = obj.qtraj;
-      qp_input.zmp_data.x0 = [mean([foot_states.right.pose(1:2), foot_states.left.pose(1:2)], 2);
+      qp_input.zmp_data.x0 = [mean([foot_states.right.xyz_quat(1:2), foot_states.left.xyz_quat(1:2)], 2);
                               0; 0];
-      % qp_input.zmp_data.x0 = [0;0; 0; 0];
       qp_input.zmp_data.y0 = best_plan.r_cop;
       qp_input.zmp_data.S = obj.V.S;
       qp_input.zmp_data.D = -obj.LIP_height/obj.g * eye(2);
@@ -373,10 +374,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                          'weight_multiplier', [1;1;1;1;1;1]);
 
       pelvis_height = foot_states.(stance_foot).terrain_height + 0.84;
-      pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
+
+      foot_rpy = [quat2rpy(foot_states.right.xyz_quat(4:7)), quat2rpy(foot_states.left.xyz_quat(4:7))];
+      pelvis_yaw = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
+      pelvis_xyz_exp = [0; 0; pelvis_height; quat2expmap(rpy2quat([0;0;pelvis_yaw]))];
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
                                                 'ts', t_start + ts(t_ind:t_ind+1),...
-                                                'coefs', cat(3, zeros(6,1,3), [0;0;pelvis_height;0;0;pelvis_yaw]),...
+                                                'coefs', cat(3, zeros(6,1,3), pelvis_xyz_exp),...
                                                 'toe_off_allowed', false,...
                                                 'in_floating_base_nullspace', false,...
                                                 'control_pose_when_in_contact', false,...
@@ -393,7 +397,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     function qp_input = getCaptureInput(obj, t_global, r_ic, foot_states, rpc)
       qp_input = obj.default_qp_input;
       qp_input.whole_body_data.q_des = obj.qtraj;
-      qp_input.zmp_data.x0 = [mean([foot_states.right.pose(1:2), foot_states.left.pose(1:2)], 2);
+      qp_input.zmp_data.x0 = [mean([foot_states.right.xyz_quat(1:2), foot_states.left.xyz_quat(1:2)], 2);
                               0; 0];
       % qp_input.zmp_data.x0 = [0;0; 0; 0];
       qp_input.zmp_data.y0 = r_ic;
@@ -419,11 +423,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                                 rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel];
         qp_input.support_data(j).support_logic_map = obj.support_logic_maps.kinematic_or_sensed;
 
-        sole_pose = foot_states.(foot).pose;
-        sole_pose(3) = foot_states.(foot).terrain_height;
+        sole_pose_quat = foot_states.(foot).xyz_quat;
+        sole_xyz_exp = [sole_pose_quat(1:3); quat2expmap(sole_pose_quat(4:7))];
+        sole_xyz_exp(3) = foot_states.(foot).terrain_height;
         qp_input.body_motion_data(j).body_id = obj.robot.foot_frame_id.(foot);
         qp_input.body_motion_data(j).ts = [t_global, t_global];
-        qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(sole_pose, [6, 1, 1]));
+        qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(sole_xyz_exp, [6, 1, 1]));
         qp_input.body_motion_data(j).toe_off_allowed = false;
         qp_input.body_motion_data(j).in_floating_base_nullspace = true;
         qp_input.body_motion_data(j).control_pose_when_in_contact = false;
@@ -437,10 +442,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
       % warning('probably not right pelvis height if feet height differ...')
       pelvis_height = 0.5 * (foot_states.left.terrain_height + foot_states.right.terrain_height) + 0.84;
-      pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
+
+      foot_rpy = [quat2rpy(foot_states.right.xyz_quat(4:7)), quat2rpy(foot_states.left.xyz_quat(4:7))];
+      pelvis_yaw = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
+      pelvis_xyz_exp = [0; 0; pelvis_height; quat2expmap(rpy2quat([0;0;pelvis_yaw]))];
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
                                             'ts', t_global + [0, 0],...
-                                            'coefs', cat(3, zeros(6,1,3), [0;0;pelvis_height;0;0;pelvis_yaw]),...
+                                            'coefs', cat(3, zeros(6,1,3), pelvis_xyz_exp),...
                                             'toe_off_allowed', false,...
                                             'in_floating_base_nullspace', false,...
                                             'control_pose_when_in_contact', false,...
@@ -460,10 +468,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       for f = {'right', 'left'}
         foot = f{1};
         if (foot_states.(foot).contact)
-          R = rotmat(foot_states.(foot).pose(6));
+          rpy = quat2rpy(foot_states.(foot).xyz_quat(4:7));
+          R = rotmat(rpy(3));
           foot_vertices_in_world = bsxfun(@plus,...
                                           obj.CAPTURE_SHRINK_FACTOR * R * foot_vertices.(foot),...
-                                          foot_states.(foot).pose(1:2));
+                                          foot_states.(foot).xyz_quat(1:2));
           all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
         else
           % not captured unless both feet are down, for stability purposes
@@ -507,7 +516,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         % dxdt = v - u*t
         % integrate from 0 to v/u ( v - u*t) => v*tf - 1/2*u*tf^2
         % -> v^2 / u - 1/2 * v^2 / u = 1/2 v^2 / u
-        if (norm(foot_states.(swing_foot).velocity)^2/u/2 < obj.MAX_CONSIDERABLE_FOOT_SWING)
+        if (norm(foot_states.(swing_foot).xyz_quatdot(1:3))^2 / u / 2) < obj.MAX_CONSIDERABLE_FOOT_SWING
           new_plans = obj.getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reach_vertices.(swing_foot), r_ic, comd, omega, u);
           if ~isempty(new_plans)
             intercept_plans = [intercept_plans, new_plans];
@@ -520,9 +529,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       stance_foot = QPReactiveRecoveryPlan.OTHER_FOOT.(swing_foot);
 
       % Find the center of pressure, which we'll place as close as possible to the ICP
+      rpy = quat2rpy(foot_states.(stance_foot).xyz_quat(4:7));
+      R = rotmat(rpy(3));
       stance_foot_vertices_in_world = bsxfun(@plus,...
-                                             rotmat(foot_states.(stance_foot).pose(6)) * obj.FOOT_HULL_COP_SHRINK_FACTOR * foot_vertices.(stance_foot),...
-                                             foot_states.(stance_foot).pose(1:2));
+                                             R * obj.FOOT_HULL_COP_SHRINK_FACTOR * foot_vertices.(stance_foot),...
+                                             foot_states.(stance_foot).xyz_quat(1:2));
       r_cop = QPReactiveRecoveryPlan.closestPointInConvexHull(r_ic, stance_foot_vertices_in_world);
       % r_ic - r_cop
 
@@ -534,48 +545,53 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       foot_vertices_prime = foot_vertices;
       for f = fieldnames(foot_states)'
         foot = f{1};
-        foot_states_prime.(foot).pose(1:2) = R * (foot_states.(foot).pose(1:2) - r_cop);
-        foot_states_prime.(foot).velocity(1:2) = R * foot_states.(foot).velocity(1:2);
+        foot_states_prime.(foot).xyz_quat(1:2) = R * (foot_states.(foot).xyz_quat(1:2) - r_cop);
+        foot_states_prime.(foot).xyz_quatdot(1:2) = R * foot_states.(foot).xyz_quatdot(1:2);
         foot_vertices_prime.(foot) = R * foot_vertices_prime.(foot);
       end
       r_ic_prime = R * (r_ic - r_cop);
       assert(abs(r_ic_prime(2)) < 1e-6);
 
-      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(foot_states.(stance_foot).pose(6)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).pose(1:2));
+
+      rpy = quat2rpy(foot_states.(stance_foot).xyz_quat(4:7));
+      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(rpy(3)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).xyz_quat(1:2));
       reachable_vertices_prime = R * bsxfun(@minus, reachable_vertices_in_world_frame, r_cop);
       intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
 
-      Ri = inv(R);
-      foot_avg_direction = angleAverage(foot_states.left.pose(6), foot_states.right.pose(6));
-      % Desired foot direction is along direction of comd, or the opposite
-      % (so we either stumble forward along it or backward, not sideways).
-      % (strong preference for forward)
-      if (norm(comd(1:2)) > 0.25)
-        comd = comd / norm(comd);
-        desired_foot_direction = atan2(comd(2), comd(1));
-        if (abs(angleDiff(desired_foot_direction, foot_avg_direction)) > 3*pi/2)
-          desired_foot_direction = atan2(-comd(2), -comd(1));
-        end
-      else
-        desired_foot_direction = foot_avg_direction;
-      end
+      % Ri = inv(R);
+      % foot_rpy = [quat2rpy(foot_states.left.pose(4:7)), quat2rpy(foot_states.right.pose(4:7))];
+      % foot_avg_direction = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
+      % % Desired foot direction is along direction of comd, or the opposite
+      % % (so we either stumble forward along it or backward, not sideways).
+      % % (strong preference for forward)
+      % if (norm(comd(1:2)) > 0.25)
+      %   comd = comd / norm(comd);
+      %   desired_foot_direction = atan2(comd(2), comd(1));
+      %   if (abs(angleDiff(desired_foot_direction, foot_avg_direction)) > 3*pi/2)
+      %     desired_foot_direction = atan2(-comd(2), -comd(1));
+      %   end
+      % else
+      %   desired_foot_direction = foot_avg_direction;
+      % end
       
       for j = 1:length(intercept_plans)
-        % rotate foot to be pointing STEP degrees closer to desired foot
-        % dir
-        new_foot_dir_vec = [cos(foot_states.(stance_foot).pose(6)); sin(foot_states.(stance_foot).pose(6))];
-        err = angleDiff(foot_states.(stance_foot).pose(6), desired_foot_direction);
-        %warning('This may result in excessive inward steps. Also pull this value from obj.robot')
-        err = sign(err)*min(abs(err), pi/8);
-        new_foot_dir_vec = rotmat(err)*new_foot_dir_vec;
-        new_foot_yaw = atan2(new_foot_dir_vec(2), new_foot_dir_vec(1));
+        % TODO: This needs to be updated to use quaternions
 
-        intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; 
-                                         0;
-                                         foot_states.(stance_foot).pose(4:5);
-                                         foot_states.(stance_foot).pose(6)];
-        %                                 new_foot_yaw];
-        % make it conform to terrain
+        % % rotate foot to be pointing STEP degrees closer to desired foot
+        % % dir
+        % new_foot_dir_vec = [cos(foot_states.(stance_foot).pose(6)); sin(foot_states.(stance_foot).pose(6))];
+        % err = angleDiff(foot_states.(stance_foot).pose(6), desired_foot_direction);
+        % %warning('This may result in excessive inward steps. Also pull this value from obj.robot')
+        % err = sign(err)*min(abs(err), pi/8);
+        % new_foot_dir_vec = rotmat(err)*new_foot_dir_vec;
+        % new_foot_yaw = atan2(new_foot_dir_vec(2), new_foot_dir_vec(1));
+
+        % intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; 
+        %                                  0;
+        %                                  foot_states.(stance_foot).pose(4:5);
+        %                                  foot_states.(stance_foot).pose(6)];
+        % %                                 new_foot_yaw];
+        % % make it conform to terrain
 
         intercept_plans(j).r_foot_new(3) = foot_states.(swing_foot).terrain_height;
         % [intercept_plans(j).r_foot_new(3), normal] = obj.robot.getTerrainHeight(intercept_plans(j).r_foot_new(1:2));
@@ -614,28 +630,32 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       %     "A*z^2 >= (ground distance to goal)"
       %   second-to-last: if we can't just descend to our goal point, arc to it
 
-      dist_to_goal = norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2));
+      dist_to_goal = norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2));
       descend_coeff = (1/0.15)^2;
       if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.025 && ...
-        (descend_coeff*((foot_state.pose(3)-obj.robot.getTerrainHeight(foot_state.pose(1:2)))^2) >= dist_to_goal)
+        (descend_coeff*((foot_state.xyz_quat(3)-obj.robot.getTerrainHeight(foot_state.xyz_quat(1:2)))^2) >= dist_to_goal)
         disp('case1');
         % descend straight there
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
         fraction_first = 0.4;
         fraction_second = 0.6;
-        swing_height_first = foot_state.pose(3)*(1-fraction_first^2);
-        swing_height_second = foot_state.pose(3)*(1-fraction_second^2);
+        swing_height_first = foot_state.xyz_quat(3)*(1-fraction_first^2);
+        swing_height_second = foot_state.xyz_quat(3)*(1-fraction_second^2);
 
         ts = [0 0 0 intercept_plan.tf];
-        xs = [foot_state.pose zeros(6, 2) intercept_plan.r_foot_new];
-        xd0 = foot_state.velocity;
-        xdf = zeros(6, 1);
-        % warning('Assuming foot not rotating')
-        xs(4:6, 2) = foot_state.pose(4:6);
-        xs(4:6, 3) = intercept_plan.r_foot_new(4:6);
+        xs = zeros(6,4);
+        xs(1:3,1) = foot_state.xyz_quat(1:3);
+        xs(1:3,4) = intercept_plan.r_foot_new(1:3);
+        [xs(4:6,1), dw0] = quat2expmap(foot_state.xyz_quat(4:7));
+        xs(4:6,4) = quat2expmap(intercept_plan.r_foot_new(4:7));
+        xd0 = [foot_state.xyz_quatdot(1:3); dw0 * foot_state.xyz_quatdot(4:7)];
+        xdf = zeros(6,1);
+
+        xs(4:6, 2) = xs(4:6,1);
+        xs(4:6, 3) = xs(4:6,4);
         xs(3, 2) = xs(3, 4) + swing_height_first;
         xs(3, 3) = xs(3, 4) + swing_height_second;
-        % interp positio nbetween first and last
+        % interp position between first and last
         xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
         xs(1:2, 3) = (1-fraction_second)*xs(1:2, 1) + fraction_second*xs(1:2, 4);
 
