@@ -4,9 +4,9 @@
 #include <memory>
 #include <unordered_map>
 #include <sstream>
-#include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
+#include <drc_utils/Clock.hpp>
 #include <drc_utils/LcmWrapper.hpp>
 #include <drc_utils/BotWrapper.hpp>
 
@@ -22,10 +22,6 @@ const std::string kHeightMapChannel = "MAP_CONTROL_HEIGHT";
 const int kHeightMapViewId = 1000;
 const int kHeightMapDebugViewId = 9999;
 
-// to handle the global collection instance
-struct MapCollection;
-std::shared_ptr<MapCollection> gCollection;
-
 struct MapCollection {
   typedef std::unordered_map<int,std::shared_ptr<TerrainMap> > MapGroup;
   MapGroup mMaps;
@@ -36,6 +32,8 @@ struct MapCollection {
 
   MapCollection() {
     mLcm.reset(new lcm::LCM());
+    drc::Clock::instance()->setLcm(mLcm);
+    drc::Clock::instance()->setVerbose(false);
     mLcmWrapper.reset(new drc::LcmWrapper(mLcm));
     mBotWrapper.reset(new drc::BotWrapper(mLcm, NULL, NULL));
     mNextId = 1;
@@ -43,13 +41,21 @@ struct MapCollection {
 
   ~MapCollection() {
     cleanupAll();
+
+    // TODO: don't know why, but segfaults on exit without this line
+    //   crashes in clock destructor, internal reference count of
+    //   shared pointer to lcm object is invalid memory (from valgrind)
+    // valgrind shows no errors when this line is present
+    drc::Clock::instance()->setLcm(std::shared_ptr<lcm::LCM>());
   }
 
   void cleanupAll() {
     mLcmWrapper->stopHandleThread();
-    std::cout << "clearing " << mMaps.size() << " map handles" << std::endl;
+    if (mMaps.size() > 0) {
+      mexPrintf("destroying all map instances\n"); mexEvalString("drawnow");
+      mexPrintf("WARNING: all handles now invalid\n"); mexEvalString("drawnow");
+    }
     mMaps.clear();
-    std::cout << "warning: all terrain map handles are now invalid" << std::endl;
   }
 
   std::shared_ptr<TerrainMap> createMap() {
@@ -81,16 +87,9 @@ struct MapCollection {
     return -1;
   }
 
-  static std::shared_ptr<MapCollection> instance() {
-    if (gCollection == NULL) {
-      gCollection.reset(new MapCollection());
-      mexAtExit(MapCollection::cleanupGlobal);
-    }
-    return gCollection;
-  }
-
-  static void cleanupGlobal() {
-    gCollection.reset();
+  static MapCollection& instance() {
+    static MapCollection theCollection;
+    return theCollection;
   }
 
 };
@@ -140,7 +139,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   // create instance
   if (command == "create") {
-    auto terrainMap = MapCollection::instance()->createMap();
+    auto terrainMap = MapCollection::instance().createMap();
     if (nrhs > 1) {
       if ((nrhs % 2) != 1) {
         mexErrMsgTxt("MapWrapper: wrong number of parameter args");
@@ -172,14 +171,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       }
       terrainMap->startListening();
       if (terrainMap->getViewId() == kHeightMapViewId) {
-        terrainMap->sendSweepRequest(Eigen::Vector3d(-2,-5,-3),
-                                     Eigen::Vector3d(5,5,0.3), 0.03, 0.5);
+        terrainMap->sendRequest(Eigen::Vector3d(-2,-5,-3),
+                                Eigen::Vector3d(5,5,0.3), 0.03, 10, 0.5);
       }
     }
 
     // return index of terrainmap object
     plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
-    double id = MapCollection::instance()->getMapId(terrainMap);
+    double id = MapCollection::instance().getMapId(terrainMap);
     memcpy(mxGetData(plhs[0]),&id,sizeof(double));
     return;
   }
@@ -191,7 +190,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double val;
   memcpy(&val, mxGetData(prhs[1]), sizeof(double));
   int mapId = (int)(val+0.5);
-  auto terrainMap = MapCollection::instance()->getMap(mapId);
+  auto terrainMap = MapCollection::instance().getMap(mapId);
   if (terrainMap == NULL) {
     mexErrMsgTxt("MapWrapper: handle is invalid; did you clear mex?");
   }
@@ -201,7 +200,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (nrhs != 2) {
       mexErrMsgTxt("MapWrapper: too many arguments to destroy");
     }
-    MapCollection::instance()->destroyMap(mapId);
+    MapCollection::instance().destroyMap(mapId);
   }
 
   /* TODO: deprecated

@@ -2,6 +2,7 @@
 #define _LcmWrapper_hpp_
 
 #include <memory>
+#include <boost/shared_ptr.hpp>
 
 namespace lcm {
   class LCM;
@@ -25,6 +26,9 @@ public:
   // uses existing shared pointer
   LcmWrapper(const std::shared_ptr<lcm::LCM>& iLcm);
 
+  // uses existing boost pointer
+  LcmWrapper(const boost::shared_ptr<lcm::LCM>& iLcm);
+
   ~LcmWrapper();
 
   // start/stop messange handling thread
@@ -34,6 +38,9 @@ public:
 
   // get shared pointer to c++ object
   std::shared_ptr<lcm::LCM> get() const;
+
+  // get boost shared pointer to c++ object
+  boost::shared_ptr<lcm::LCM> getBoost() const;
 
   // get native c structure
   lcm_t* getC() const;

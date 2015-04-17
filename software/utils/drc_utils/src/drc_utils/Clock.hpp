@@ -3,6 +3,7 @@
 
 #include <string>
 #include <memory>
+#include <boost/shared_ptr.hpp>
 
 namespace lcm {
   class LCM;
@@ -23,6 +24,7 @@ public:
   static Clock* instance();
 
   void setLcm(const std::shared_ptr<lcm::LCM>& iLcm);
+  void setLcm(const boost::shared_ptr<lcm::LCM>& iLcm);
   void setLcm(const lcm_t* iLcm);
 
   void setChannel(const std::string& iChannelName);

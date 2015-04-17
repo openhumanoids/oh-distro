@@ -2,6 +2,12 @@
 # IMPORTANT NOTE!!
 # matlab has it's own boost libraries.  DO NOT let any mex file depend
 # on the system boost (directly nor indirectly), or you're asking for trouble.
+find_package( Boost COMPONENTS )
+
+if (Boost_FOUND)
+  include_directories ( ${Boost_INCLUDE_DIR} )
+  link_directories( ${Boost_LIBRARY_DIRS} )
+endif()
 
 add_executable(SteeringCommandPublisher SteeringCommandPublisher.cpp)
 pods_use_pkg_config_packages(SteeringCommandPublisher lcm)
@@ -20,7 +26,7 @@ install(TARGETS RobotStateMonitor AtlasCommandPublisher footstepPlanShiftmex DES
 add_mex(mxSerialize mxSerialize.cpp)
 add_mex(mxDeserialize mxDeserialize.cpp)
 
-pods_find_pkg_config(mini-maps)
+pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)
 
 add_mex(linearIKmex linearIKmex.cpp)
@@ -61,7 +67,7 @@ install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mx
 install(TARGETS RobotStateDriver AtlasCommandDriver FootContactDriver DESTINATION lib)
 
 
-if (mini-maps_FOUND AND opencv_FOUND)
+if (maps_FOUND AND opencv_FOUND)
 
   add_mex(HeightMapWrapper HeightMapWrapper.cpp)
   pods_use_pkg_config_packages(HeightMapWrapper terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)

@@ -17,8 +17,8 @@ int main() {
   TerrainMap terrainMap(botWrapper);
 
   terrainMap.setInfo(1000, "MAP_CONTROL_HEIGHT");
-  terrainMap.sendSweepRequest(Eigen::Vector3d(-2,-5,-3),
-                              Eigen::Vector3d(5,5,0.3), 0.03, 0.5);
+  terrainMap.sendRequest(Eigen::Vector3d(-2,-5,-3),
+                         Eigen::Vector3d(5,5,0.3), 0.03, 5, 0.5);
   terrainMap.setFillPlane(Eigen::Vector4d(0,0,1,-123));
   terrainMap.overrideHeights(true);
   terrainMap.useFootPose(false);

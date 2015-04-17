@@ -2,7 +2,6 @@
 #include <memory>
 #include <thread>
 #include <chrono>
-#include <cmath>
 
 #include <ConciseArgs>
 #include <lcm/lcm-cpp.hpp>
