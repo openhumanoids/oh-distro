@@ -55,7 +55,7 @@ target_link_libraries(RobotStateDriver drakeGeometryUtil)
 add_mex(FootContactDriver SHARED FootContactDriver.cpp)
 
 add_library(QPReactiveRecoveryPlan SHARED QPReactiveRecoveryPlan.cpp)
-target_link_libraries(QPReactiveRecoveryPlan gurobi_c++ gurobi56)
+target_link_libraries(QPReactiveRecoveryPlan gurobi_c++ gurobi56 iris_ldp)
 pods_install_libraries(QPReactiveRecoveryPlan)
 pods_install_headers(QPReactiveRecoveryPlan.hpp DESTINATION control)
 

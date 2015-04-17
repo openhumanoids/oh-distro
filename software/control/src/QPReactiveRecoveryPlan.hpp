@@ -3,5 +3,6 @@
 class QPReactiveRecoveryPlan {
 
 	public:
-		static VectorXd closestPointInConvexHull(VectorXd &x, MatrixXd &V);
+		static VectorXd closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
+    static VectorXd closestPointInConvexHullCVXGEN(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
 };

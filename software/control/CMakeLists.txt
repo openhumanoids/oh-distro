@@ -49,6 +49,7 @@ add_subdirectory(src)
 add_subdirectory(contact_monitor)
 add_subdirectory(fall_detector)
 add_subdirectory(joint_monitor)
+add_subdirectory(matlab/+QPReactiveRecoveryPlanmex)
 
 message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab")
 
