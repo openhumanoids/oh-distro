@@ -67,16 +67,12 @@ public:
 
 
   // send a height map request to the maps server
-  bool sendTimeRequest(const Eigen::Vector3d& iBoxMin,
-                       const Eigen::Vector3d& iBoxMax,
-                       const double iResolutionMeters,
-                       const double iTimeWindowSeconds,
-                       const double iFrequencyHz);
-  bool sendSweepRequest(const Eigen::Vector3d& iBoxMin,
-                        const Eigen::Vector3d& iBoxMax,
-                        const double iResolutionMeters,
-                        const double iFrequencyHz);
-
+  bool sendRequest(const Eigen::Vector3d& iBoxMin,
+                   const Eigen::Vector3d& iBoxMax,
+                   const double iResolutionMeters,
+                   const double iTimeWindowSeconds,
+                   const double iFrequencyHz);
+                   
 
   // get internal depth image data
   std::shared_ptr<TerrainData> getData() const;

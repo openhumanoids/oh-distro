@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <math.h>
 
+#include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 
@@ -32,6 +33,7 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <drc_utils/Clock.hpp>
+#include <drc_utils/PointerUtils.hpp>
 
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <camera_params/camera_params.hpp>     // Camera Parameters
@@ -42,14 +44,14 @@ using namespace maps;
 
 class State {
 public:
-  std::shared_ptr<lcm::LCM> mLcm;
+  boost::shared_ptr<lcm::LCM> mLcm;
   BotWrapper::Ptr mBotWrapper;
-  std::shared_ptr<Collector> mCollector;
+  boost::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
   
-  State( std::shared_ptr<lcm::LCM> &mLcm ): mLcm(mLcm) {
-    mBotWrapper.reset(new BotWrapper(mLcm));
+  State( boost::shared_ptr<lcm::LCM> &mLcm ): mLcm(mLcm) {
+    mBotWrapper.reset(new BotWrapper(drc::PointerUtils::stdPtr(mLcm)));
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
     mActiveMapId = 0;
@@ -65,12 +67,12 @@ public:
 
 class Pass{
   public:
-    Pass(std::shared_ptr<lcm::LCM> &lcm_, State* iState);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_, State* iState);
     
     ~Pass(){
     }    
   private:
-    std::shared_ptr<lcm::LCM> lcm_;
+    boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
@@ -120,7 +122,7 @@ class Pass{
     State* mState;
 };
 
-Pass::Pass(std::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_), 
+Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_), 
     mState(iState){
 
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -423,7 +425,7 @@ int main(int argc, char ** argv) {
   opt.parse();
   std::cout << "lidar_channel: " << lidar_channel << "\n"; 
 
-  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
+  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }

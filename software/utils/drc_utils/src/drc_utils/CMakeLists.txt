@@ -18,7 +18,6 @@ pods_install_headers(
   LidarUtils.hpp
   PointerUtils.hpp
   ThreadSafeQueue.hpp
-  RansacGeneric.hpp
   PointConvert.h
   DESTINATION drc_utils)
 
@@ -33,6 +32,6 @@ pods_use_pkg_config_packages(drc-utils ${REQUIRED_PACKAGES})
 # software to use.
 pods_install_pkg_config_file(drc-utils
     CFLAGS
-    LIBS -ldrc-utils
+    LIBS -ldrc-utils -lboost_system
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)

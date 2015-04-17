@@ -99,14 +99,6 @@ getBotFrames() const {
 }
 
 int64_t BotWrapper::
-getCurrentTime() const {
-  int64_t curRealTime = bot_timestamp_now();
-  // TODO: could replicate Clock functionality
-  // and subscribe to a message like est robot state
-  return curRealTime;
-}
-
-int64_t BotWrapper::
 getLatestTime(const std::string& iFrom, const std::string& iTo) const {
   if (mBotFrames == NULL) return -1;
   int64_t latestTime;

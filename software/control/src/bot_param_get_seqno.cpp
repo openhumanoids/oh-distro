@@ -1,4 +1,5 @@
 #include <mex.h>
+#include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
@@ -12,9 +13,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     mexErrMsgIdAndTxt("drc:bot_param_get_seqno:arguments","Too many output arguments");
   }
 
-  lcm::LCM lcm;
+  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   BotParam* botparam_;
-  botparam_ = bot_param_new_from_server(lcm.getUnderlyingLCM(), 0);
+  botparam_ = bot_param_new_from_server(lcm->getUnderlyingLCM(), 0);
   int sequence_number;
   if (botparam_==NULL) {
     mexPrintf("bot-param server doesn't seem to be running... returning 0.");
