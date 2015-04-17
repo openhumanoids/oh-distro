@@ -49,13 +49,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     HYST_MIN_CONTACT_TIME = 0.005; % Foot must be solidly, continuously in contact (or out) for this long
     HYST_MIN_NONCONTACT_TIME = 0.2; % to be considered a support (or not a support).
     PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
-    CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
-    FOOT_HULL_COP_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
+    CAPTURE_SHRINK_FACTOR = 0.8; % liberal to prevent foot-roll
+    FOOT_HULL_COP_SHRINK_FACTOR = 0.5; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
     MAX_CONSIDERABLE_FOOT_SWING = 0.15; % strides with extrema farther than this are ignored
-    U_MAX = 10;
+    U_MAX = 5;
 
     MIN_STEP_DURATION = 0.4;
-    DEBUG_RIGHT_FOOT_IGNORE_DURATION = 0.3;
+    DEBUG_RIGHT_FOOT_IGNORE_DURATION = -0.3;
 
     CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
 
@@ -364,6 +364,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'support_logic_map', obj.support_logic_maps.require_support,...
                                      'mu',obj.mu,...
                                      'contact_surfaces', 0);
+      qp_input.support_data(end+1) = struct('body_id', obj.robot.foot_body_id.(best_plan.swing_foot),...
+                                     'contact_pts', [rpc.contact_groups{obj.robot.foot_body_id.(best_plan.swing_foot)}.toe,...
+                                                     rpc.contact_groups{obj.robot.foot_body_id.(best_plan.swing_foot)}.heel],...
+                                     'support_logic_map', obj.support_logic_maps.only_if_force_sensed,...
+                                     'mu',obj.mu,...
+                                     'contact_surfaces', 0);
 
       % copied from BodyMotionData. we should eventually subclass QPLocomotionPlan
       % where this logic already exists
@@ -438,7 +444,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         qp_input.support_data(j).body_id = obj.robot.foot_body_id.(foot);
         qp_input.support_data(j).contact_pts = [rpc.contact_groups{obj.robot.foot_body_id.(foot)}.toe,...
                                                 rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel];
-        qp_input.support_data(j).support_logic_map = obj.support_logic_maps.kinematic_or_sensed;
+        qp_input.support_data(j).support_logic_map = obj.support_logic_maps.require_support;
 
         sole_pose_quat = foot_states.(foot).xyz_quat;
         sole_xyz_exp = [sole_pose_quat(1:3); quat2expmap(sole_pose_quat(4:7))];
