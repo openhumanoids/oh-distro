@@ -1,15 +1,26 @@
-set(LIB_NAME "terrain-map")
+set(LIB_NAME "mini-maps")
 
 # Create a shared library
 add_library(${LIB_NAME} SHARED
-  TerrainMap.cpp
-  FillMethods.cpp
+  ViewBase.cpp
+  DataBlob.cpp
+  Utils.cpp
+  LcmTranslator.cpp
+  DepthImage.cpp
+  DepthImageView.cpp
+  ViewClient.cpp
 )
 
 # make the header public
 # install it to include/maps
 pods_install_headers(
-  TerrainMap.hpp
+  ViewBase.hpp
+  DataBlob.hpp
+  Utils.hpp
+  LcmTranslator.hpp
+  ViewClient.hpp
+  DepthImage.hpp
+  DepthImageView.hpp
   DESTINATION ${LIB_NAME}
 )
 
@@ -17,7 +28,8 @@ pods_install_headers(
 pods_install_libraries(${LIB_NAME})
 
 set(REQUIRED_PACKAGES
-  mini-maps
+  drc-utils
+  zlib
 )
 pods_use_pkg_config_packages(${LIB_NAME} ${REQUIRED_PACKAGES})
 
@@ -26,12 +38,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall")
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
 pods_install_pkg_config_file(${LIB_NAME}
-    CFLAGS -std=c++0x -Wall
+    CFLAGS ${CMAKE_CXX_FLAGS}
     LIBS -l${LIB_NAME}
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)
 
 
-add_executable(terrain-map-test TestMain.cpp)
-pods_use_pkg_config_packages(terrain-map-test terrain-map)
-pods_install_executables(terrain-map-test)
+add_executable(mini-maps-test TestMain.cpp)
+pods_use_pkg_config_packages(mini-maps-test mini-maps)
+pods_install_executables(mini-maps-test)

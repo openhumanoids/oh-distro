@@ -7,6 +7,7 @@
 
 namespace lcm {
   class LCM;
+  class Subscription;
 }
 
 typedef struct _BotParam BotParam;
@@ -35,6 +36,8 @@ public:
   std::shared_ptr<lcm::LCM> getLcm() const;
   BotParam* getBotParam() const;
   BotFrames* getBotFrames() const;
+
+  int64_t getCurrentTime() const;
 
   // for bot frames
   int64_t getLatestTime(const std::string& iFrom, const std::string& iTo) const;
@@ -71,6 +74,7 @@ protected:
   std::shared_ptr<lcm::LCM> mLcm;
   BotParam* mBotParam;
   BotFrames* mBotFrames;
+  lcm::Subscription* mTimeSubscription;
 };
 
 }

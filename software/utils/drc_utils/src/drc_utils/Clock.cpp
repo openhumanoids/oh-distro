@@ -5,7 +5,6 @@
 #include <bot_core/timestamp.h>
 #include <lcmtypes/drc/utime_t.hpp>
 #include <lcmtypes/drc/robot_state_t.hpp>
-#include "PointerUtils.hpp"
 
 using namespace drc;
 
@@ -122,11 +121,6 @@ instance() {
 void Clock::
 setLcm(const std::shared_ptr<lcm::LCM>& iLcm) {
   mImpl->setLcm(iLcm);
-}
-
-void Clock::
-setLcm(const boost::shared_ptr<lcm::LCM>& iLcm) {
-  mImpl->setLcm(PointerUtils::stdPtr(iLcm));
 }
 
 void Clock::
