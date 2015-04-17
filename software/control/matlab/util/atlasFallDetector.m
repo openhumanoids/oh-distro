@@ -101,7 +101,7 @@ while true
         end
       end
     end
-    lc.publish('ATLAS_FALLING_ESTIMATE',msg);
+    lc.publish('ATLAS_FALL_STATE',msg);
 
     if publish_lcmgl
       lcmgl.glColor3f(color(1), color(2), color(3));
