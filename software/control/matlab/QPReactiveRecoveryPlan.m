@@ -46,8 +46,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
     TERRAIN_CONTACT_THRESH = 0.003;
     SWING_SWITCH_MIN_TIME = 0.1;
-    HYST_MIN_CONTACT_TIME = 0.004; % Foot must be solidly, continuously in contact (or out) for this long
-    HYST_MIN_NONCONTACT_TIME = 0.001; % to be considered a support (or not a support).
+    HYST_MIN_CONTACT_TIME = 0.005; % Foot must be solidly, continuously in contact (or out) for this long
+    HYST_MIN_NONCONTACT_TIME = 0.1; % to be considered a support (or not a support).
     PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
     CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
     FOOT_HULL_COP_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
@@ -86,7 +86,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
-      
+      disp('entering getqpcontrollerinput');
       DEBUG = obj.DEBUG > 0;
 
 
@@ -147,7 +147,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
 
       % force right foot not useful for first N ms for testing purposes
-      if (t_global - obj.init_time < 0.05)
+      if (t_global - obj.init_time < 0.3)
         foot_states.right.contact = false;
         obj.r_foot_in_contact_lock = false;
         foot_states_raw.right.contact = false;
@@ -220,9 +220,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       is_captured = obj.isICPCaptured(r_ic, foot_states, foot_vertices);
       if (is_captured) % && ~(~isempty(obj.last_plan) && t_global < (obj.t_start + obj.last_plan.tf)))
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
-        if (~isempty(obj.last_plan))
+        %if (~isempty(obj.last_plan))
           disp('captured')
-        end
+        %end
         obj.last_plan = [];
         obj.last_ts = [];
         obj.last_coefs = [];
@@ -233,6 +233,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         if ((~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
               obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD) ...
             || (~isempty(obj.last_plan) && ~replan)) % or if we're not replanning and have a plan
+          disp('Continuing');
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, obj.last_plan, rpc);
         else
           disp('Replanning');
@@ -439,7 +440,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       pelvis_yaw = angleAverage(foot_states.right.pose(6), foot_states.left.pose(6));
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
                                             'ts', t_global + [0, 0],...
-                                            'coefs', cat(3, zeros(6,1,3), [nan;nan;pelvis_height;0;0;pelvis_yaw]),...
+                                            'coefs', cat(3, zeros(6,1,3), [0;0;pelvis_height;0;0;pelvis_yaw]),...
                                             'toe_off_allowed', false,...
                                             'in_floating_base_nullspace', false,...
                                             'control_pose_when_in_contact', false,...
@@ -617,6 +618,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       descend_coeff = (1/0.15)^2;
       if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.025 && ...
         (descend_coeff*((foot_state.pose(3)-obj.robot.getTerrainHeight(foot_state.pose(1:2)))^2) >= dist_to_goal)
+        disp('case1');
         % descend straight there
         sizecheck(intercept_plan.r_foot_new, [6, 1]);
         fraction_first = 0.4;
@@ -645,11 +647,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
         end
       elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.025
-        swing_height_first = 0.05;
-        swing_height_second = 0.05;
+        disp('case2');
+        swing_height_first = 0.03;
+        swing_height_second = 0.03;
         fraction_first = 0.15;
         fraction_second = 0.85;
-        if (foot_state.pose(3) > swing_height_first)
+        if (foot_state.pose(3) > swing_height_first+foot_state.terrain_height)
           swing_height_first = swing_height_second + (foot_state.pose(3)-swing_height_first)*fraction_first/fraction_second;
         end
         ts = [0 0 0 intercept_plan.tf];
@@ -696,6 +699,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         end
       else
         ts = [0, intercept_plan.tf];
+        disp('case3');
         coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.pose, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
       end
 
@@ -743,7 +747,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                                    foot_states.(swing_foot).velocity(2),...
                                                    0,...
                                                    u_max);
-      min_time_to_xprime_axis = min([xprime_axis_intercepts.tf]);
+      min_time_to_xprime_axis = max(min([xprime_axis_intercepts.tf]), 0.5);
 
       % subplot(211)
       % hold on

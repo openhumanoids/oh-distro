@@ -20,8 +20,11 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     pause_state = 0;
     recovery_state = 0;
     reactive_recovery_planner;
+    warmup_reactive_recovery_planner;
     contact_force_detected;
     last_status_msg_time;
+
+    reactive_recovery_planner_warmstarted = 0;
   end
 
 
@@ -45,6 +48,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
       obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
+      obj.warmup_reactive_recovery_planner = QPReactiveRecoveryPlan(r); %whyyy
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -243,11 +247,15 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           % t0 = tic();
 
           % Generate a recovery plan if requested and stick it on the queue
+
           if (obj.t > 0 && obj.recovery_state == obj.RECOVERY_NOW)
             %fprintf('Recovery planner doing its thing!\n');
             obj.switchToPlan(obj.reactive_recovery_planner);
             %obj.reactive_recovery_planner.getQPControllerInput(obj.t, obj.x, obj.robot_property_cache, obj.contact_force_detected);
+          elseif (obj.t > 0)
+            obj.warmup_reactive_recovery_planner.getQPControllerInput(obj.t, obj.x, obj.robot_property_cache, obj.contact_force_detected);
           end
+            
 
           obj.pauseIfRequested();
           % fprintf(1, 'pause: %fs\n', toc(t0))
