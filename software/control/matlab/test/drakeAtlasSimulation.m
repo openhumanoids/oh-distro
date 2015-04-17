@@ -164,6 +164,7 @@ end
 xstar_complete = zeros(r_complete.getNumStates(), 1);
 xstar_complete(1:length(xstar)) = xstar;
 xstar_complete = r_complete.resolveConstraints(xstar_complete);
+xstar_complete(1) = xstar_complete(1) + 0.03;
 r_complete = r_complete.setInitialState(xstar_complete);
 
 done = 0;
