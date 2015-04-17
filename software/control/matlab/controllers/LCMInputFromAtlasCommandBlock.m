@@ -160,7 +160,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       obj.nu = getNumInputs(r);
 
       standing_plan = QPLocomotionPlan.from_standing_state(x0, r);
-      %standing_plan.planned_support_command = QPControllerPlan.support_logic_maps.kinematic_or_sensed;
+      standing_plan.planned_support_command = QPControllerPlan.support_logic_maps.kinematic_or_sensed;
       plan_eval = atlasControllers.AtlasPlanEval(r, standing_plan);
       control = atlasControllers.InstantaneousQPController(r);
       obj.plan_eval_and_control = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, plan_eval);
