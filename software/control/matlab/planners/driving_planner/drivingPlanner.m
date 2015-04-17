@@ -5,6 +5,7 @@ classdef drivingPlanner
     T_wheel_2_pelvis
     turn_radius
     r
+    r_original
     options
     R_hand
     hand
@@ -35,6 +36,7 @@ classdef drivingPlanner
         options = struct();
       end
       obj.r = r;
+      obj.r_original = r;
       obj.options = options;
       obj.hand = 'l_hand';
       obj.hand_pt = [0;-0.25;0];
@@ -116,6 +118,7 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       % need to specify reach depth and orientation
       if ~isfield(options,'depth'), options.depth = 0.1; end
@@ -151,6 +154,7 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       if ~isfield(options,'depth'), options.depth = 0; end
       if ~isfield(options,'speed'), options.speed = 1; end
@@ -187,6 +191,7 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       if ~isfield(options,'depth') options.depth = 0.2; end
       if ~isfield(options, 'retract') options.speed = 1; end
@@ -218,6 +223,7 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       if ~isfield(options,'turn_angle'), options.turn_angle = 0; end
       if ~isfield(options, 'angle_from_touch'), options.angle_from_touch = 0; end
@@ -340,6 +346,15 @@ classdef drivingPlanner
       pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
       T_pelvis_2_world = jointTransform(struct('floating',2),pelvis_xyzquat);
       obj.T_wheel_2_world = T_pelvis_2_world * obj.T_wheel_2_pelvis;
+    end
+
+    function obj = updateJointLimits(obj,q0)
+      obj.r = obj.r_original;
+      [lb,ub] = obj.r.getJointLimits();
+      lb = min(lb,q0);
+      ub = max(ub,q0);
+      obj.r = obj.r.setJointLimits(lb,ub);
+      obj.r = compile(obj.r);
     end
 
   end
