@@ -1,27 +1,20 @@
 <robot name="robotiq" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="robotiq_convex_hull" params="is_left is_open parent">
-    <xacro:if value="${is_left}">
-      <xacro:robotiq_convex_hull_local prefix="left" is_open="${is_open}" parent="${parent}"/>
-    </xacro:if>
-    <xacro:unless value="${is_left}">
-      <xacro:robotiq_convex_hull_local prefix="right" is_open="${is_open}" parent="${parent}"/>
-    </xacro:unless>
-  </xacro:macro>
-
-  <xacro:macro name="robotiq_convex_hull_local" params="prefix is_open parent">
-    <link name="${prefix}_palm">
-      <visual>
-        <origin rpy="-1.57079 -1.57079 0" xyz="0 0.1725 0"/>
-        <geometry>
-          <xacro:if value="${is_open}">
-            <mesh filename="package://robotiq_hand_description/meshes/s-model/visual/GRIPPER_OPEN.obj" scale="1 1 1"/>
-          </xacro:if>
-          <xacro:unless value="${is_open}">
-            <mesh filename="package://robotiq_hand_description/meshes/s-model/visual/GRIPPER_CLOSED.obj" scale="1 1 1"/>
-          </xacro:unless>
-        </geometry>
-      </visual>
-      <collision group="${prefix}_hand_robotiq">
+  <xacro:macro name="robotiq_convex_hull" params="side is_open use_visuals parent">
+    <link name="${side}_palm">
+      <xacro:if value="${use_visuals}">
+        <visual>
+          <origin rpy="-1.57079 -1.57079 0" xyz="0 0.1725 0"/>
+          <geometry>
+            <xacro:if value="${is_open}">
+              <mesh filename="package://robotiq_hand_description/meshes/s-model/visual/GRIPPER_OPEN.obj" scale="1 1 1"/>
+            </xacro:if>
+            <xacro:unless value="${is_open}">
+              <mesh filename="package://robotiq_hand_description/meshes/s-model/visual/GRIPPER_CLOSED.obj" scale="1 1 1"/>
+            </xacro:unless>
+          </geometry>
+        </visual>
+      </xacro:if>
+      <collision group="${side}_hand_robotiq">
         <origin rpy="-1.57079 -1.57079 0" xyz="0 0.1725 0"/>
         <geometry>
           <xacro:if value="${is_open}">
@@ -33,9 +26,9 @@
         </geometry>
       </collision>
     </link>
-    <joint name="${prefix}_palm_joint" type="fixed">
+    <joint name="${side}_palm_joint" type="fixed">
       <parent link="${parent}"/>
-      <child link="${prefix}_palm"/>
+      <child link="${side}_palm"/>
     </joint>
   </xacro:macro>
 </robot>
