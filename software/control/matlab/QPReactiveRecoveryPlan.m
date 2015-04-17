@@ -30,8 +30,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     % And which-foot-I'm-using-as-stance lock. Only allowed to switch this
     % slowly to prevent bouncing
-    last_used_swing = '';
-    last_swing_switch = 0;
+    %last_used_swing = '';
+    %last_swing_switch = 0;
     % debug visualization?
     DEBUG;
 
@@ -44,15 +44,21 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   properties (Constant)
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
-    TERRAIN_CONTACT_THRESH = 0.003;
-    SWING_SWITCH_MIN_TIME = 0.1;
+    TERRAIN_CONTACT_THRESH = 0.01;
+    %SWING_SWITCH_MIN_TIME = 0.1;
     HYST_MIN_CONTACT_TIME = 0.005; % Foot must be solidly, continuously in contact (or out) for this long
-    HYST_MIN_NONCONTACT_TIME = 0.1; % to be considered a support (or not a support).
+    HYST_MIN_NONCONTACT_TIME = 0.2; % to be considered a support (or not a support).
     PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
     CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
     FOOT_HULL_COP_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
     MAX_CONSIDERABLE_FOOT_SWING = 0.15; % strides with extrema farther than this are ignored
-    U_MAX = 5;
+    U_MAX = 10;
+
+    MIN_STEP_DURATION = 0.4;
+    DEBUG_RIGHT_FOOT_IGNORE_DURATION = 0.3;
+
+    CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
+
   end
 
   methods
@@ -79,6 +85,20 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     function obj = resetInitialization(obj)
       obj.initialized = 0;
+      obj.last_plan = [];
+      obj.last_qp_input = [];
+      obj.l_foot_last_noncontact = 0;
+      obj.r_foot_last_noncontact = 0;
+      obj.l_foot_last_contact = 0;
+      obj.r_foot_last_contact = 0;
+      obj.l_foot_in_contact_lock = 0;
+      obj.r_foot_in_contact_lock = 0;
+      %obj.last_used_swing = '';
+      %obj.last_swing_switch = 0;
+      obj.last_ts = [];
+      obj.last_coefs = [];
+      obj.t_start = [];
+      obj.init_time = [];
     end
 
     function next_plan = getSuccessor(obj, t, x)
@@ -86,9 +106,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
-      disp('entering getqpcontrollerinput');
       DEBUG = obj.DEBUG > 0;
-
 
       q = x(1:rpc.nq);
       qd = x(rpc.nq + (1:rpc.nv));
@@ -138,7 +156,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         % Record current state of arm, neck to hold (roughly) throughout recovery
         arm_and_neck_inds = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck')];
         obj.qtraj(arm_and_neck_inds) = x(arm_and_neck_inds);
-        obj.last_used_swing = '';
+        %obj.last_used_swing = '';
         obj.init_time = t_global;
         obj.initialized = 1;
         replan = true;
@@ -147,7 +165,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       end
 
       % force right foot not useful for first N ms for testing purposes
-      if (t_global - obj.init_time < 0.3)
+      if (t_global - obj.init_time < obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION)
         foot_states.right.contact = false;
         obj.r_foot_in_contact_lock = false;
         foot_states_raw.right.contact = false;
@@ -218,11 +236,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      0.15, 0.15, 0.4, 0.4]);
 
       is_captured = obj.isICPCaptured(r_ic, foot_states, foot_vertices);
-      if (is_captured) % && ~(~isempty(obj.last_plan) && t_global < (obj.t_start + obj.last_plan.tf)))
+      if (t_global - obj.init_time >= obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION && is_captured) % && ~(~isempty(obj.last_plan) && t_global < (obj.t_start + obj.last_plan.tf)))
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
-        %if (~isempty(obj.last_plan))
+        if (~isempty(obj.last_plan))
           disp('captured')
-        %end
+        end
         obj.last_plan = [];
         obj.last_ts = [];
         obj.last_coefs = [];
@@ -233,7 +251,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         if ((~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
               obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD) ...
             || (~isempty(obj.last_plan) && ~replan)) % or if we're not replanning and have a plan
-          disp('Continuing');
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, obj.last_plan, rpc);
         else
           disp('Replanning');
@@ -254,13 +271,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
           end
           % Don't switch stance feet if possible
-          if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
-            for j=1:numel(intercept_plans)
-              if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
-                intercept_plans(j).error = Inf;
-              end
-            end
-          end
+          %if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
+          %  for j=1:numel(intercept_plans)
+          %    if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
+          %      intercept_plans(j).error = Inf;
+          %    end
+          %  end
+          %end
 
           best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
 
@@ -270,11 +287,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             obj.last_plan = best_plan;
           end
 
-          if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
-            %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
-            obj.last_used_swing = best_plan.swing_foot;
-            obj.last_swing_switch = t_global;
-          end
+          %if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
+          %  %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
+          %  obj.last_used_swing = best_plan.swing_foot;
+          %  obj.last_swing_switch = t_global;
+          %end
           [obj.last_ts, obj.last_coefs] = obj.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
           obj.t_start = t_global;
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, best_plan, rpc);
@@ -443,7 +460,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % warning('probably not right pelvis height if feet height differ...')
       pelvis_height = 0.5 * (foot_states.left.terrain_height + foot_states.right.terrain_height) + 0.84;
 
-      foot_rpy = [quat2rpy(foot_states.right.xyz_quat(4:7)), quat2rpy(foot_states.left.xyz_quat(4:7))];
       pelvis_yaw = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
       pelvis_xyz_exp = [0; 0; pelvis_height; quat2expmap(rpy2quat([0;0;pelvis_yaw]))];
       qp_input.body_motion_data(3) = struct('body_id', rpc.body_ids.pelvis,...
@@ -467,7 +483,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       for f = {'right', 'left'}
         foot = f{1};
-        if (foot_states.(foot).contact)
+        if (foot_states.(foot).contact || ...
+          (foot_states.(foot).xyz_quat(3)-foot_states.(foot).terrain_height < obj.CAPTURE_MAX_FLYFOOT_HEIGHT))
           rpy = quat2rpy(foot_states.(foot).xyz_quat(4:7));
           R = rotmat(rpy(3));
           foot_vertices_in_world = bsxfun(@plus,...
@@ -475,7 +492,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                           foot_states.(foot).xyz_quat(1:2));
           all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
         else
-          % not captured unless both feet are down, for stability purposes
+          % not captured unless both feet are down (or almost down), for stability purposes
           is_captured = false;
           return;
         end
@@ -556,7 +573,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       rpy = quat2rpy(foot_states.(stance_foot).xyz_quat(4:7));
       reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(rpy(3)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).xyz_quat(1:2));
       reachable_vertices_prime = R * bsxfun(@minus, reachable_vertices_in_world_frame, r_cop);
-      intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
+      intercept_plans = obj.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
 
       Ri = inv(R);
       % foot_rpy = [quat2rpy(foot_states.left.pose(4:7)), quat2rpy(foot_states.right.pose(4:7))];
@@ -669,14 +686,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         for k=1:4
           obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
         end
-      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2)) > 0.025
+      else
         disp('case2');
         swing_height_first = 0.03;
         swing_height_second = 0.03;
         fraction_first = 0.15;
         fraction_second = 0.85;
         if (foot_state.xyz_quat(3) > swing_height_first+foot_state.terrain_height)
-          swing_height_first = swing_height_second + (foot_state.xyz_quat(3)-swing_height_first)*fraction_first/fraction_second;
+          % interpolate between current foot height and second swing height
+          swing_height_first = swing_height_second*(fraction_first/fraction_second) + (foot_state.xyz_quat(3)*(1-fraction_first/fraction_second));
         end
         ts = [0 0 0 intercept_plan.tf];
         xs = zeros(6,4);
@@ -723,19 +741,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           ps = ppval(fnder(pp, 2), tt);
           plot(tt, ps(1,:), tt, ps(2,:), tt, ps(3,:));
         end
-      else
-        ts = [0, intercept_plan.tf];
-        disp('case3');
-        x0 = zeros(6,1);
-        x0(1:3) = foot_state.xyz_quat(1:3);
-        [x0(4:6), dw0] = quat2expmap(foot_state.xyz_quat(4:7));
-        xd0 = [foot_state.xyz_quatdot(1:3); dw0 * foot_state.xyz_quatdot(4:7)];
-        xdf = zeros(6,1);
-
-        xf = [intercept_plan.r_foot_new(1:3); quat2expmap(intercept_plan.r_foot_new(4:7))];
-        xf(4:6) = unwrapExpmap(x0(4:6), xf(4:6));
-
-        coefs = cubicSplineCoefficients(intercept_plan.tf, x0, xf, xd0, xdf);
       end
 
       % pp = mkpp(ts, coefs, 6);
@@ -754,21 +759,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % end
     end
 
-  end
-
-  methods(Static)
-    function y = closestPointInConvexHull(x, V)
-      if size(V, 1) > 3 || size(V, 2) > 8
-        error('V is too large for our custom solver')
-      end
-
-      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, V, x));
-      y = u + x;
-    end
-
-    function intercept_plans = getLocalFrameIntercepts(foot_states, swing_foot, foot_vertices, reachable_vertices, r_ic_prime, u_max, omega)
+    function intercept_plans = getLocalFrameIntercepts(obj, foot_states, swing_foot, foot_vertices, reachable_vertices, r_ic_prime, u_max, omega)
       OFFSET = 0.1;
-      MIN_SWING_DURATION = 0.5;
 
       % r_ic(t) = (r_ic(0) - r_cop) e^(t*omega) + r_cop
 
@@ -777,13 +769,13 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       r_cop_prime = [0;0];
 
-
       % subplot(212)
       xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).xyz_quat(2),...
                                                    foot_states.(swing_foot).xyz_quatdot(2),...
                                                    0,...
                                                    u_max);
-      min_time_to_xprime_axis = max(min([xprime_axis_intercepts.tf]), MIN_SWING_DURATION);
+
+      min_time_to_xprime_axis = max(min([xprime_axis_intercepts.tf]), obj.MIN_STEP_DURATION);
 
       % subplot(211)
       % hold on
@@ -798,13 +790,14 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       t_int = min_time_to_xprime_axis;
       x_ic = r_ic_prime(1);
       x_cop = r_cop_prime(1);
-      x_ic_int = QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_int, omega) + OFFSET;
+      % don't narrow our stance to intercept if possible 
+      x_ic_int = max(QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_int, omega) + OFFSET, x0);
+
       x_foot_int = [QPReactiveRecoveryPlan.bangbangXf(x0, xd0, t_int, u_max),...
                   QPReactiveRecoveryPlan.bangbangXf(x0, xd0, t_int, -u_max)];
 
       if x_ic_int >= min(x_foot_int) && x_ic_int <= max(x_foot_int)
         % The time to get onto the xprime axis dominates, and we can hit the ICP as soon as we get to that axis
-
         intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, x_ic_int, u_max);
 
         if ~isempty(intercepts)
@@ -902,7 +895,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       for j = 1:length(intercept_plans)
         intercept_plans(j).error = norm(intercept_plans(j).r_foot_new - (intercept_plans(j).r_ic_new + [OFFSET; 0]));
       end
+    end
+  end
 
+  methods(Static)
+    function y = closestPointInConvexHull(x, V)
+      if size(V, 1) > 3 || size(V, 2) > 8
+        error('V is too large for our custom solver')
+      end
+
+      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, V, x));
+      y = u + x;
     end
 
     function xf = bangbangXf(x0, xd0, tf, u)

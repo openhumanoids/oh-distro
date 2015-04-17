@@ -252,8 +252,13 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
             %fprintf('Recovery planner doing its thing!\n');
             obj.switchToPlan(obj.reactive_recovery_planner);
             %obj.reactive_recovery_planner.getQPControllerInput(obj.t, obj.x, obj.robot_property_cache, obj.contact_force_detected);
-          elseif (obj.t > 0)
+          elseif (obj.t > 0 && obj.reactive_recovery_planner_warmstarted < 10)
             obj.warmup_reactive_recovery_planner.getQPControllerInput(obj.t, obj.x, obj.robot_property_cache, obj.contact_force_detected);
+            obj.reactive_recovery_planner_warmstarted = obj.reactive_recovery_planner_warmstarted + 1;
+          end
+          if (obj.t > 0 && obj.reactive_recovery_planner_warmstarted == 10)
+            disp('Warmstart of reactive recovery planner completed');
+            obj.reactive_recovery_planner_warmstarted = obj.reactive_recovery_planner_warmstarted + 1;
           end
             
 
