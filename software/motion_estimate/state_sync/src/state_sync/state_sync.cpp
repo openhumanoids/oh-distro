@@ -126,6 +126,26 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   cl_cfg_->use_encoder_joint_sensors = bot_param_get_boolean_or_fail(botparam_, "control.encoder_offsets.active" );
   std::cout << "use_encoder_joint_sensors: " << cl_cfg_->use_encoder_joint_sensors << "\n";
 
+  // explicitly identify encoder joints
+  encoder_joint_indices_ = {
+    Atlas::JOINT_R_ARM_SHZ,
+    Atlas::JOINT_R_ARM_SHX,
+    Atlas::JOINT_R_ARM_ELY,
+    Atlas::JOINT_R_ARM_ELX,
+    Atlas::JOINT_L_ARM_SHZ,
+    Atlas::JOINT_L_ARM_SHX,
+    Atlas::JOINT_L_ARM_ELY,
+    Atlas::JOINT_L_ARM_ELX,
+
+    // TODO: may not need these
+    Atlas::JOINT_R_ARM_UWY,
+    Atlas::JOINT_R_ARM_MWX,
+    Atlas::JOINT_R_ARM_LWY,
+    Atlas::JOINT_L_ARM_UWY,
+    Atlas::JOINT_L_ARM_MWX,
+    Atlas::JOINT_L_ARM_LWY,
+  };
+
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(Atlas::NUM_JOINTS,0.0);
   // Encoder now read from main cfg file and updates received via param server
@@ -252,10 +272,17 @@ void state_sync::setEncodersFromParam() {
   std::vector<double> indices(indices_in, indices_in + n_indices);
   std::vector<double> offsets(offsets_in, offsets_in + n_offsets);
   
+  extra_offsettable_joint_indices_.clear();
   for (size_t i=0; i < indices.size() ; i++){
     // encoder_joint_offsets_[jindex] = offset;
     encoder_joint_offsets_[ indices[i] ] = offsets[i];
     std::cout << i << ": " << indices[i] << " " << offsets[i] << "\n";
+
+    // if this is not an encoder joint that can be disabled,
+    // add it to the list of offsettable joints
+    if (std::find(encoder_joint_indices_.begin(), encoder_joint_indices_.end(), indices[i]) == encoder_joint_indices_.end()) {
+      extra_offsettable_joint_indices_.push_back(indices[i]);
+    }
   }
   std::cout << "Finished updating encoder offsets (from param)\n";  
 }
@@ -286,19 +313,22 @@ void state_sync::enableEncoders(bool enable) {
   use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_ELX] = enable;
+  /* don't need to actually set these
   use_encoder_[Atlas::JOINT_R_ARM_UWY] = false; // always false for electric forearm
   use_encoder_[Atlas::JOINT_R_ARM_MWX] = false;
   use_encoder_[Atlas::JOINT_R_ARM_LWY] = false;
+  */
 
   use_encoder_[Atlas::JOINT_L_ARM_SHZ] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_SHX] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELY] = enable;
   use_encoder_[Atlas::JOINT_L_ARM_ELX] = enable;
+  /* don't need to actually set these
   use_encoder_[Atlas::JOINT_L_ARM_UWY] = false; // always false for electric forearm
   use_encoder_[Atlas::JOINT_L_ARM_MWX] = false;
   use_encoder_[Atlas::JOINT_L_ARM_LWY] = false;
+  */
 
-  use_encoder_[Atlas::JOINT_NECK_AY] = false; // neck encoder is only position sensor now
 }
 
 
@@ -445,21 +475,19 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             */
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
           }
-          else {
-
-            atlas_joints_.position[i] += encoder_joint_offsets_[i];
-
-          }
         }
       }
     }
   }
-  
-  if (cl_cfg_->apply_back_offsets){ // because LVDT calibration isn't good...
-    atlas_joints_.position[Atlas::JOINT_BACK_BKX] = atlas_joints_.position[Atlas::JOINT_BACK_BKX] + 1.2*M_PI/180.0;
-    atlas_joints_.position[Atlas::JOINT_BACK_BKY] = atlas_joints_.position[Atlas::JOINT_BACK_BKY] - 1.2*M_PI/180.0;
-  }
 
+  // apply cfg offsets to special joints
+  for (auto idx : extra_offsettable_joint_indices_) {
+    atlas_joints_.position[idx] += encoder_joint_offsets_[idx];
+    if (atlas_joints_.position[idx] > max_encoder_wrap_angle_[idx]) {
+      atlas_joints_.position[idx] -= 2*M_PI;
+    }
+  }
+  
   if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
   }
@@ -695,7 +723,6 @@ main(int argc, char ** argv){
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
   opt.add(cl_cfg->atlas_version, "a", "atlas_version", "Atlas version to use");
-  opt.add(cl_cfg->apply_back_offsets, "k", "apply_back_offsets", "Apply back position offsets");
   opt.parse();
   
   std::cout << "standalone_head: " << cl_cfg->standalone_head << "\n";
