@@ -20,11 +20,6 @@ dur = float(sys.argv[4])
 
 lc = lcm.LCM()
 
-msg = utime_t()
-msg.utime = 0;
-lc = lcm.LCM()
-lc.publish("RECOVERY_TRIGGER_ON", msg.encode())
-
 msg = lcmt_force_torque();
 msg.timestamp = 0;
 msg.fx = x;
@@ -48,3 +43,8 @@ msg.fx = 0;
 msg.fy = 0;
 msg.fz = 0;
 lc.publish("SIM_WRENCH_INPUT", msg.encode())
+
+msg = utime_t()
+msg.utime = 0;
+lc = lcm.LCM()
+lc.publish("RECOVERY_TRIGGER_ON", msg.encode())
