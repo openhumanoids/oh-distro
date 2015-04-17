@@ -49,14 +49,14 @@ x_calib.r_arm_shx = jlmax(joint_index_map.r_arm_shx) + delta;
 x_calib.r_arm_ely = jlmin(joint_index_map.r_arm_ely) - delta;
 x_calib.r_arm_elx = jlmax(joint_index_map.r_arm_elx) + delta;
 x_calib.r_arm_uwy = 0; % we dont calibrate these joints anymore
-x_calib.r_arm_mwx = 0;
+x_calib.r_arm_mwx = jlmin(joint_index_map.r_arm_elx) + delta; % just get the hand out of the way
 x_calib.r_arm_lwy = 0;
 x_calib.l_arm_shz = jlmax(joint_index_map.l_arm_shz) + delta;
 x_calib.l_arm_shx = jlmin(joint_index_map.l_arm_shx) - delta;
 x_calib.l_arm_ely = jlmin(joint_index_map.l_arm_ely) - delta;
 x_calib.l_arm_elx = jlmin(joint_index_map.l_arm_elx) - delta;
 x_calib.l_arm_uwy = 0;
-x_calib.l_arm_mwx = 0;
+x_calib.l_arm_mwx = jlmax(joint_index_map.l_arm_elx) - delta; % just get the hand out of the way
 x_calib.l_arm_lwy = 0;
 x_calib = double(x_calib);
 q_calib = x_calib(1:nq);
@@ -250,5 +250,3 @@ function send_controller_state(lc, state_name)
   msg.state = msg.(state_name);
   lc.publish('CONTROLLER_STATUS', msg);
 end
-
-
