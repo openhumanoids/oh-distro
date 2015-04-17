@@ -558,7 +558,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       reachable_vertices_prime = R * bsxfun(@minus, reachable_vertices_in_world_frame, r_cop);
       intercept_plans = QPReactiveRecoveryPlan.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
 
-      % Ri = inv(R);
+      Ri = inv(R);
       % foot_rpy = [quat2rpy(foot_states.left.pose(4:7)), quat2rpy(foot_states.right.pose(4:7))];
       % foot_avg_direction = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
       % % Desired foot direction is along direction of comd, or the opposite
@@ -586,18 +586,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         % new_foot_dir_vec = rotmat(err)*new_foot_dir_vec;
         % new_foot_yaw = atan2(new_foot_dir_vec(2), new_foot_dir_vec(1));
 
-        % intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; 
-        %                                  0;
-        %                                  foot_states.(stance_foot).pose(4:5);
-        %                                  foot_states.(stance_foot).pose(6)];
-        % %                                 new_foot_yaw];
-        % % make it conform to terrain
+        intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; 
+                                         0;
+                                         foot_states.(stance_foot).xyz_quat(4:7)];
 
+        % make it conform to terrain
         intercept_plans(j).r_foot_new(3) = foot_states.(swing_foot).terrain_height;
-        % [intercept_plans(j).r_foot_new(3), normal] = obj.robot.getTerrainHeight(intercept_plans(j).r_foot_new(1:2));
         normal = foot_states.(swing_foot).terrain_normal;
         normal(3,normal(3,:) < 0) = -normal(3,normal(3,:) < 0);
-        intercept_plans(j).r_foot_new = fitPoseToNormal(intercept_plans(j).r_foot_new, normal);
+        pose_rpy = [intercept_plans(j).r_foot_new(1:3); quat2rpy(intercept_plans(j).r_foot_new(4:7))];
+        pose_rpy = fitPoseToNormal(pose_rpy, normal);
+        intercept_plans(j).r_foot_new = [pose_rpy(1:3); rpy2quat(pose_rpy(4:6))];
         assert(~any(isnan(intercept_plans(j).r_foot_new)));
 
         intercept_plans(j).r_ic_new = Ri * intercept_plans(j).r_ic_new + r_cop;
@@ -632,11 +631,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       dist_to_goal = norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2));
       descend_coeff = (1/0.15)^2;
-      if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.025 && ...
+      if norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2)) > 0.025 && ...
         (descend_coeff*((foot_state.xyz_quat(3)-obj.robot.getTerrainHeight(foot_state.xyz_quat(1:2)))^2) >= dist_to_goal)
         disp('case1');
         % descend straight there
-        sizecheck(intercept_plan.r_foot_new, [6, 1]);
+        sizecheck(intercept_plan.r_foot_new, [7, 1]);
         fraction_first = 0.4;
         fraction_second = 0.6;
         swing_height_first = foot_state.xyz_quat(3)*(1-fraction_first^2);
@@ -659,6 +658,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
         xs(1:2, 3) = (1-fraction_second)*xs(1:2, 1) + fraction_second*xs(1:2, 4);
 
+        for j = 2:4
+          xs(4:6,j) = unwrapExpmap(xs(4:6,j-1), xs(4:6,j));
+        end
+
         settings = struct('optimize_knot_times', true);
         [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
         
@@ -666,25 +669,29 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         for k=1:4
           obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
         end
-      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) > 0.025
+      elseif norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2)) > 0.025
         disp('case2');
         swing_height_first = 0.03;
         swing_height_second = 0.03;
         fraction_first = 0.15;
         fraction_second = 0.85;
-        if (foot_state.pose(3) > swing_height_first+foot_state.terrain_height)
-          swing_height_first = swing_height_second + (foot_state.pose(3)-swing_height_first)*fraction_first/fraction_second;
+        if (foot_state.xyz_quat(3) > swing_height_first+foot_state.terrain_height)
+          swing_height_first = swing_height_second + (foot_state.xyz_quat(3)-swing_height_first)*fraction_first/fraction_second;
         end
         ts = [0 0 0 intercept_plan.tf];
-        xs = [foot_state.pose zeros(6, 2) intercept_plan.r_foot_new];
-        xd0 = foot_state.velocity;
-        xdf = zeros(6, 1);
-        % warning('Assuming foot not rotating')
-        xs(4:6, 2) = foot_state.pose(4:6);
-        xs(4:6, 3) = intercept_plan.r_foot_new(4:6);
+        xs = zeros(6,4);
+        xs(1:3,1) = foot_state.xyz_quat(1:3);
+        xs(1:3,4) = intercept_plan.r_foot_new(1:3);
+        [xs(4:6,1), dw0] = quat2expmap(foot_state.xyz_quat(4:7));
+        xs(4:6,4) = quat2expmap(intercept_plan.r_foot_new(4:7));
+        xd0 = [foot_state.xyz_quatdot(1:3); dw0 * foot_state.xyz_quatdot(4:7)];
+        xdf = zeros(6,1);
+
+        xs(4:6, 2) = xs(4:6,1);
+        xs(4:6, 3) = xs(4:6,4);
         xs(3, 2) = obj.robot.getTerrainHeight(xs(1:2, 1)) + swing_height_first;
         xs(3, 3) = xs(3, 4) + swing_height_second;
-        % interp positio nbetween first and last
+        % interp position between first and last
         xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
         xs(1:2, 3) = (1-fraction_second)*xs(1:2, 1) + fraction_second*xs(1:2, 4);
 
@@ -698,7 +705,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
           tt = linspace(ts(1), ts(end));
           pp = mkpp(ts, coefs, 6);
-          ps = ppval(pp, tt);
           ps = ppval(fnder(pp, 2), tt);
           fprintf('umax x:%f y: %f z:%f\n', max(ps(1, :)), max(ps(2, :)), max(ps(3, :)));
 
@@ -720,7 +726,16 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       else
         ts = [0, intercept_plan.tf];
         disp('case3');
-        coefs = cubicSplineCoefficients(intercept_plan.tf, foot_state.pose, intercept_plan.r_foot_new, foot_state.velocity, zeros(6,1));
+        x0 = zeros(6,1);
+        x0(1:3) = foot_state.xyz_quat(1:3);
+        [x0(4:6), dw0] = quat2expmap(foot_state.xyz_quat(4:7));
+        xd0 = [foot_state.xyz_quatdot(1:3); dw0 * foot_state.xyz_quatdot(4:7)];
+        xdf = zeros(6,1);
+
+        xf = [intercept_plan.r_foot_new(1:3); quat2expmap(intercept_plan.r_foot_new(4:7))];
+        xf(4:6) = unwrapExpmap(x0(4:6), xf(4:6));
+
+        coefs = cubicSplineCoefficients(intercept_plan.tf, x0, xf, xd0, xdf);
       end
 
       % pp = mkpp(ts, coefs, 6);
@@ -753,6 +768,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     function intercept_plans = getLocalFrameIntercepts(foot_states, swing_foot, foot_vertices, reachable_vertices, r_ic_prime, u_max, omega)
       OFFSET = 0.1;
+      MIN_SWING_DURATION = 0.5;
 
       % r_ic(t) = (r_ic(0) - r_cop) e^(t*omega) + r_cop
 
@@ -763,19 +779,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
 
       % subplot(212)
-      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).pose(2),...
-                                                   foot_states.(swing_foot).velocity(2),...
+      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).xyz_quat(2),...
+                                                   foot_states.(swing_foot).xyz_quatdot(2),...
                                                    0,...
                                                    u_max);
-      min_time_to_xprime_axis = max(min([xprime_axis_intercepts.tf]), 0.5);
+      min_time_to_xprime_axis = max(min([xprime_axis_intercepts.tf]), MIN_SWING_DURATION);
 
       % subplot(211)
       % hold on
 %       tt = linspace(0, 1);
       % plot(tt, QPReactiveRecoveryPlan.icpUpdate(r_ic_prime(1), r_cop_prime(1), tt, omega) + OFFSET, 'r-')
 
-      x0 = foot_states.(swing_foot).pose(1);
-      xd0 = foot_states.(swing_foot).velocity(1);
+      x0 = foot_states.(swing_foot).xyz_quat(1);
+      xd0 = foot_states.(swing_foot).xyz_quatdot(1);
 
       intercept_plans = struct('tf', {}, 'tswitch', {}, 'r_foot_new', {}, 'r_ic_new', {});
 
