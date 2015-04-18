@@ -54,8 +54,13 @@ target_link_libraries(RobotStateDriver drakeGeometryUtil)
 
 add_mex(FootContactDriver SHARED FootContactDriver.cpp)
 
+add_library(ExponentialForm SHARED ExponentialForm.cpp)
+target_link_libraries(ExponentialForm drakePolynomial)
+pods_install_libraries(ExponentialForm)
+pods_install_headers(ExponentialForm.hpp DESTINATION control)
+
 add_library(QPReactiveRecoveryPlan SHARED QPReactiveRecoveryPlan.cpp)
-target_link_libraries(QPReactiveRecoveryPlan iris_ldp drakePolynomial)
+target_link_libraries(QPReactiveRecoveryPlan iris_ldp drakePolynomial ExponentialForm)
 pods_install_libraries(QPReactiveRecoveryPlan)
 pods_install_headers(QPReactiveRecoveryPlan.hpp DESTINATION control)
 

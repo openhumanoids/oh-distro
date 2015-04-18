@@ -993,41 +993,17 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function p = expTaylor(a, b, c, n)
-      p_mex = zeros(n+1, length(a));
+      % Taylor expand f(x) = a*exp(b*x) + c about x=0 up to degree n
+      p = zeros(n+1, length(a));
       for j = 1:length(a)
-        p_mex(:,j) = QPReactiveRecoveryPlanmex.expTaylor(a(j), b(j), c(j), n);
+        p(:,j) = QPReactiveRecoveryPlanmex.expTaylor(a(j), b(j), c(j), n);
       end
     end
 
     function [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n)
-      DEBUG = false;
-
-      % Find the t >= 0 solutions to a*e^(b*t) + c == l0 + 1/2*ld0*t + 1/4*u*t^2 - 1/4*ld0^2/u
-      % using a taylor expansion up to power n
-      p = QPReactiveRecoveryPlan.expTaylor(a, b, c, n);
-      p_spline = [zeros(n-2, 1);
-                  0.25 * u;
-                  0.5 * ld0;
-                  l0 - 0.25 * ld0.^2 / u];
-      t_int = roots(p - p_spline);
-      mask = false(size(t_int));
-      for j = 1:size(t_int)
-        mask(j) = isreal(t_int(j)) && t_int(j) > 0;
-      end
-      t_int = t_int(mask)';
-      l_int = polyval(p_spline, t_int);
-
-      if DEBUG
-        figure(1)
-        clf
-        hold on
-        tt = linspace(0, max([t_int, 0.5]));
-        plot(tt, polyval(p, tt), 'g--');
-        plot(tt, a.*exp(b.*tt) + c, 'g-');
-        plot(tt, polyval(p_spline, tt), 'r-');
-        plot(t_int, polyval(p_spline, t_int), 'ro');
-      end
+      [t_int, l_int] = QPReactiveRecoveryPlanmex.expIntercept(a, b, c, l0, ld0, u, n);
     end
+
   end
 end
 

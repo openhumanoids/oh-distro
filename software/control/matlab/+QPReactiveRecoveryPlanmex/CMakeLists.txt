@@ -5,3 +5,7 @@ target_link_libraries(closestPointInConvexHull QPReactiveRecoveryPlan)
 add_mex(expTaylor expTaylor.cpp)
 pods_use_pkg_config_packages(expTaylor eigen3 drake-util)
 target_link_libraries(expTaylor QPReactiveRecoveryPlan)
+
+add_mex(expIntercept expIntercept.cpp)
+pods_use_pkg_config_packages(expIntercept eigen3 drake-util)
+target_link_libraries(expIntercept QPReactiveRecoveryPlan)

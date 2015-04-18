@@ -1,4 +1,5 @@
 #include "QPReactiveRecoveryPlan.hpp"
+#include <unsupported/Eigen/Polynomials>
 extern "C" {
   #include "iris_ldp/solver.h"
 }
@@ -70,17 +71,42 @@ VectorXd QPReactiveRecoveryPlan::closestPointInConvexHull(const Ref<const Vector
   return y.head(dim);
 }
 
-Polynomial QPReactiveRecoveryPlan::expTaylor(double a, double b, double c, int degree) {
-  // Taylor expansion of a*exp(b*x) + c about x=0 up to degree [degree]
+std::set<double> QPReactiveRecoveryPlan::expIntercept(const ExponentialForm &expform, double l0, double ld0, double u, int degree) {
+  // Find the t >= 0 solutions to a*e^(b*t) + c == l0 + 1/2*ld0*t + 1/4*u*t^2 - 1/4*ld0^2/u
+  // using a taylor expansion up to power [degree]
 
-  VectorXd coefs = VectorXd::Zero(degree+1);
-  coefs(0) = a + c;
+  Polynomial p = expform.taylorExpand(degree);
+  VectorXd coefs_int_neg = VectorXd::Zero(degree+1);
+  coefs_int_neg(0) = -(l0 - 0.25*ld0*ld0/u);
+  coefs_int_neg(1) = -0.5*ld0;
+  coefs_int_neg(2) = -0.25*u;
 
-  double factorial = 1.0;
-  for (int d=1; d < degree + 1; d++) {
-    factorial *= d;
-    coefs(d) = a * std::pow(b, d) / factorial;
+  Polynomial p_int = p + Polynomial(coefs_int_neg);
+
+  PolynomialSolver<double, Dynamic> poly_solver(p_int.getCoefficients());
+
+  std::vector<double> roots;
+  poly_solver.realRoots(roots);
+
+  // for (std::vector<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
+  //   std::cout << "root: " << *it << std::endl;
+  //   std::cout << "value: " << p_int.value(*it) << std::endl;
+  //   std::cout << "exp poly: " << p.value(*it) << std::endl;
+  //   std::cout << "int neg: " << Polynomial(coefs_int_neg).value(*it) << std::endl;
+  // }
+
+  std::set<double> nonneg_roots(roots.begin(), roots.end());
+
+  for (std::set<double>::iterator it = nonneg_roots.begin(); it != nonneg_roots.end(); ++it) {
+    if (*it < 0) {
+      // std::cout << "erasing: " << *it << std::endl;
+      nonneg_roots.erase(it);
+    } 
+    // else {
+    //   std::cout << "keeping: " << *it << std::endl;
+    // }
   }
 
-  return Polynomial(coefs);
+  return nonneg_roots;
 }
+

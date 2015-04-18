@@ -14,8 +14,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double b = mxGetScalar(prhs[1]);
   double c = mxGetScalar(prhs[2]);
   int degree = static_cast<int> (mxGetScalar(prhs[3]));
-
-  Polynomial p = QPReactiveRecoveryPlan::expTaylor(a, b, c, degree);
+  Polynomial p = ExponentialForm(a, b, c).taylorExpand(degree);
   VectorXd coefs = p.getCoefficients();
   coefs.reverseInPlace();
   plhs[0] = eigenToMatlab(coefs);

@@ -65,23 +65,50 @@ int testExpTaylor() {
   double a = 0.5;
   double b = 0.6;
   double c = 0.7;
-  Polynomial p = QPReactiveRecoveryPlan::expTaylor(a, b, c, d);
+  ExponentialForm expform(a, b, c);
+  Polynomial p = expform.taylorExpand(d);
   if (std::abs(p.value(0) - (a + c)) > 1e-5) {
     std::cout << p.value(0) << std::endl;
     return 1;
   }
-  if (std::abs(p.value(0.5) - (a * exp(b*0.5) + c)) > 1e-5) {
+  if (std::abs(p.value(0.5) - expform.value(0.5)) > 1e-5) {
     return 1;
   }
-  if (std::abs(p.value(1.5) - (a * exp(b*1.5) + c)) > 1e-3) {
+  if (std::abs(p.value(1.5) - expform.value(1.5)) > 1e-3) {
     return 1;
   }
-  if (std::abs(p.value(5) - (a * exp(b*5) + c)) > 1) {
+  if (std::abs(p.value(5) - expform.value(5)) > 1) {
     return 1;
   }
   return 0;
 }
 
+int testExpIntercept() {
+  int d = 5;
+  double a = 0.5;
+  double b = 0.6;
+  double c = 0.7;
+
+  double l0 = 0.1;
+  double ld0 = 0.5;
+
+  double u = 10;
+
+  ExponentialForm expform(a, b, c);
+  std::set<double> roots = QPReactiveRecoveryPlan::expIntercept(expform, l0, ld0, u, d);
+
+  Polynomial p_exp = expform.taylorExpand(d);
+  // l0 + 1/2*ld0*t + 1/4*u*t^2 - 1/4*ld0^2/u
+  VectorXd coefs_int(3);
+  coefs_int << l0 - 0.25*ld0*ld0/u, 0.5*ld0, 0.25*u;
+  Polynomial p_int(coefs_int);
+  for (std::set<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
+    double val_exp = p_exp.value(*it);
+    double val_int = p_int.value(*it);
+    if (std::abs(val_exp - val_int) > 1e-3) return 1;
+  }
+  return 0;
+}
 
 int main() {
   bool failed = false;
@@ -105,6 +132,11 @@ int main() {
   error = testExpTaylor();
   if (error) {
     std::cout << "testExpTaylor failed" << std::endl;
+    failed = true;
+  }
+  error = testExpIntercept();
+  if (error) {
+    std::cout << "testExpIntercept failed" << std::endl;
     failed = true;
   }
 
