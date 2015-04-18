@@ -69,3 +69,18 @@ VectorXd QPReactiveRecoveryPlan::closestPointInConvexHull(const Ref<const Vector
   y = y + x.head(dim);
   return y.head(dim);
 }
+
+Polynomial QPReactiveRecoveryPlan::expTaylor(double a, double b, double c, int degree) {
+  // Taylor expansion of a*exp(b*x) + c about x=0 up to degree [degree]
+
+  VectorXd coefs = VectorXd::Zero(degree+1);
+  coefs(0) = a + c;
+
+  double factorial = 1.0;
+  for (int d=1; d < degree + 1; d++) {
+    factorial *= d;
+    coefs(d) = a * std::pow(b, d) / factorial;
+  }
+
+  return Polynomial(coefs);
+}

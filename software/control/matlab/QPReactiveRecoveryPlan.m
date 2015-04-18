@@ -980,15 +980,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function p = expTaylor(a, b, c, n)
-      % Taylor expansion of a*exp(b*x) + c about x=0 up to degree n
-      p = zeros(n+1, length(a));
-      for j = 1:n+1
-        d = (n+1) - j;
-        p(j,:) = a.*b.^d;
-        if d == 0
-          p(j,:) = p(j,:) + c;
-        end
-        p(j,:) = p(j,:) / factorial(d);
+      p_mex = zeros(n+1, length(a));
+      for j = 1:length(a)
+        p_mex(:,j) = QPReactiveRecoveryPlanmex.expTaylor(a(j), b(j), c(j), n);
       end
     end
 

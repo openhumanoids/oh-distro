@@ -1,3 +1,7 @@
 add_mex(closestPointInConvexHull closestPointInConvexHull.cpp)
 pods_use_pkg_config_packages(closestPointInConvexHull eigen3 drake-util)
 target_link_libraries(closestPointInConvexHull QPReactiveRecoveryPlan)
+
+add_mex(expTaylor expTaylor.cpp)
+pods_use_pkg_config_packages(expTaylor eigen3 drake-util)
+target_link_libraries(expTaylor QPReactiveRecoveryPlan)

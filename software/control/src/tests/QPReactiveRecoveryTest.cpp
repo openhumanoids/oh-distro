@@ -60,6 +60,29 @@ int testClosestPointInConvexHull3() {
   return 0;
 }
 
+int testExpTaylor() {
+  int d = 5;
+  double a = 0.5;
+  double b = 0.6;
+  double c = 0.7;
+  Polynomial p = QPReactiveRecoveryPlan::expTaylor(a, b, c, d);
+  if (std::abs(p.value(0) - (a + c)) > 1e-5) {
+    std::cout << p.value(0) << std::endl;
+    return 1;
+  }
+  if (std::abs(p.value(0.5) - (a * exp(b*0.5) + c)) > 1e-5) {
+    return 1;
+  }
+  if (std::abs(p.value(1.5) - (a * exp(b*1.5) + c)) > 1e-3) {
+    return 1;
+  }
+  if (std::abs(p.value(5) - (a * exp(b*5) + c)) > 1) {
+    return 1;
+  }
+  return 0;
+}
+
+
 int main() {
   bool failed = false;
   int error;
@@ -77,6 +100,11 @@ int main() {
   error = testClosestPointInConvexHull3();
   if (error) {
     std::cout << "testClosestPointInConvexHull3 failed" << std::endl;
+    failed = true;
+  }
+  error = testExpTaylor();
+  if (error) {
+    std::cout << "testExpTaylor failed" << std::endl;
     failed = true;
   }
 
