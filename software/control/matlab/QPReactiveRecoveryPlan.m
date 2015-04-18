@@ -138,15 +138,30 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         foot_states.(foot).xyz_quatdot = vel;
         [foot_states.(foot).terrain_height, foot_states.(foot).terrain_normal] = obj.robot.getTerrainHeight(foot_states.(foot).xyz_quat(1:2));
 
-        if pos(3) < foot_states.(foot).terrain_height + obj.TERRAIN_CONTACT_THRESH
+        if contact_force_detected(obj.robot.foot_body_id.(foot))
           foot_states.(foot).contact = true;
         end
-        if contact_force_detected(obj.robot.foot_body_id.(foot))
+      end
+      % force terrain heights to come from the foot that's in contact (if either)
+      if (foot_states.right.contact)
+        foot_states.right.terrain_height = foot_states.right.xyz_quat(3);
+        foot_states.left.terrain_height = foot_states.right.xyz_quat(3);
+      elseif (foot_states.left.contact)
+        foot_states.right.terrain_height = foot_states.left.xyz_quat(3);
+        foot_states.left.terrain_height = foot_states.left.xyz_quat(3);
+      end
+      % finally check foot contacts against the most reasonable terrain
+      % heights we've been able to find
+      for f = {'right', 'left'}
+        foot = f{1};
+        [pos, ~] = obj.robot.forwardKin(kinsol, obj.robot.foot_frame_id.(foot), [0;0;0], 2);
+        if pos(3) < foot_states.(foot).terrain_height + obj.TERRAIN_CONTACT_THRESH
           foot_states.(foot).contact = true;
         end
       end
       foot_states_raw = foot_states;
 
+      
       % Initialize if we haven't, to get foot lock into a known state
       % and capture upper body pose to hold it through the plan
       if (~obj.initialized) 
@@ -216,14 +231,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       foot_states.right.contact = obj.r_foot_in_contact_lock;
       foot_states.left.contact = obj.l_foot_in_contact_lock;
 
-      % force terrain heights to come from the foot that's in contact (if either)
-      if (foot_states.right.contact)
-        foot_states.right.terrain_height = foot_states.right.xyz_quat(3);
-        foot_states.left.terrain_height = foot_states.right.xyz_quat(3);
-      elseif (foot_states.left.contact)
-        foot_states.right.terrain_height = foot_states.left.xyz_quat(3);
-        foot_states.left.terrain_height = foot_states.left.xyz_quat(3);
-      end
 
       % warning('hard-coded for atlas foot shape');
       foot_vertices = struct('right', [-0.05, 0.05, 0.05, -0.05; 
@@ -381,6 +388,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       else
         t_ind = find(ts < t, 1, 'last');
       end
+      %fprintf('%f -> %f [%f, %f]\n', t, t_ind, ts(t_ind), ts(t_ind+1));
       
       qp_input.body_motion_data = struct('body_id', obj.robot.foot_frame_id.(best_plan.swing_foot),...
                                          'ts', t_start + ts(t_ind:t_ind+1),...
@@ -689,6 +697,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         settings = struct('optimize_knot_times', true);
         [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
         
+          tt = linspace(ts(1), ts(end));
+          pp = mkpp(ts, coefs, 6);
+          ps = ppval(fnder(pp, 2), tt);
+          fprintf('umax x:%f y: %f z:%f\n', max(ps(1, :)), max(ps(2, :)), max(ps(3, :)));
+           
         obj.lcmgl.glColor3f(0.1,0.1,1.0);
         for k=1:4
           obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
