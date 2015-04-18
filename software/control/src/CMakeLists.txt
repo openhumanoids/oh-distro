@@ -54,9 +54,10 @@ target_link_libraries(RobotStateDriver drakeGeometryUtil)
 
 add_mex(FootContactDriver SHARED FootContactDriver.cpp)
 
-# add_mex(threadedController SHARED threadedController.cpp)
-# pods_use_pkg_config_packages(threadedController drake-qp-common)
-# target_link_libraries(threadedController RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
+add_library(QPReactiveRecoveryPlan SHARED QPReactiveRecoveryPlan.cpp)
+target_link_libraries(QPReactiveRecoveryPlan iris_ldp)
+pods_install_libraries(QPReactiveRecoveryPlan)
+pods_install_headers(QPReactiveRecoveryPlan.hpp DESTINATION control)
 
 add_mex(threadedControllermex threadedControllermex.cpp)
 pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-util)
@@ -128,3 +129,5 @@ endif()
 add_jar(drc_control ${java_src_files})
 
 install_jar(drc_control share/java)
+
+add_subdirectory(tests)

@@ -920,12 +920,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   methods(Static)
     function y = closestPointInConvexHull(x, V)
-      if size(V, 1) > 3 || size(V, 2) > 8
-        error('V is too large for our custom solver')
-      end
-
-      u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, V, x));
-      y = u + x;
+      y = QPReactiveRecoveryPlanmex.closestPointInConvexHull(x, V);
     end
 
     function xf = bangbangXf(x0, xd0, tf, u)
