@@ -1,62 +1,8 @@
 #include "DepthImage.hpp"
 
-#include <pcl/range_image/range_image_planar.h>
-
 #include "Utils.hpp"
 
-namespace pcl {
-class RangeImageProjective : public RangeImagePlanar {
-public:
-  RangeImage* getNew() const { return new RangeImageProjective(); }
-  Ptr makeShared() { return Ptr(new RangeImageProjective(*this)); }
-
-  void setPose(const Eigen::Isometry3f& iPose) {
-    to_world_system_ = iPose;
-    to_range_image_system_ = iPose.inverse();
-  }
-};
-
-class RangeImageOrthographic : public RangeImageProjective {
-public:
-  RangeImage* getNew() const { return new RangeImageOrthographic(); }
-  Ptr makeShared() { return Ptr(new RangeImageOrthographic(*this)); }
-
-  inline void calculate3DPoint(float iX, float iY, float iDepth,
-                               Eigen::Vector3f& oPoint) const {
-    oPoint = mProjectorInv*Eigen::Vector3f(iX, iY, iDepth);
-  }
-
-  inline void getImagePoint(const Eigen::Vector3f& iPoint,
-                            float& oX, float& oY, float& oDepth) const {
-    Eigen::Vector3f pt = mProjector*iPoint;
-    oX = pt[0];
-    oY = pt[1];
-    oDepth = pt[2];
-  }
-
-  void setDepthImage(const float* iDepth, int iWidth, int iHeight,
-                     float iCenterX, float iCenterY,
-                     float iFocalX, float iFocalY, float iAngRes=-1) {
-    RangeImagePlanar::setDepthImage(iDepth, iWidth, iHeight, iCenterX,
-                                    iCenterY, iFocalX, iFocalY, iAngRes);
-    Eigen::Affine3f calib = Eigen::Affine3f::Identity();
-    calib(0,0) = focal_length_x_;
-    calib(1,1) = focal_length_y_;
-    calib(0,3) = center_x_;
-    calib(1,3) = center_y_;
-    mProjector = calib*to_range_image_system_;
-    mProjectorInv = mProjector.inverse();
-  }
-
-protected:
-  Eigen::Affine3f mProjector;
-  Eigen::Affine3f mProjectorInv;
-};
-
-}
-
 using namespace maps;
-
 
 struct DepthImage::Helper {
   int mWidth;
@@ -95,7 +41,7 @@ struct DepthImage::Helper {
   }
 
   void invalidateData() {
-    for (int i = 0; i < mDataNeedsUpdate.size(); ++i) {
+    for (int i = 0; i < (int)mDataNeedsUpdate.size(); ++i) {
       mDataNeedsUpdate[i] = true;
     }
     mDataNeedsUpdate[TypeDisparity] = false;
@@ -138,14 +84,14 @@ getInvalidValue(const Type iType) const {
 
 bool DepthImage::
 setData(const std::vector<float>& iData, const Type iType) {
-  if (iData.size() != mHelper->mWidth * mHelper->mHeight) return false;
+  if ((int)iData.size() != mHelper->mWidth * mHelper->mHeight) return false;
 
   if (mHelper->mIsOrthographic || (iType == TypeDisparity)) {
     mHelper->mData = iData;
   }
   else {
     if (iType == TypeDepth) {
-      for (int i = 0; i < iData.size(); ++i) {
+      for (int i = 0; i < (int)iData.size(); ++i) {
         mHelper->mData[i] = 1/iData[i];
       }
     }
@@ -190,8 +136,7 @@ getData(const Type iType) const {
         for (int j = 0; j < mHelper->mWidth; ++j, ++idx) {
           Eigen::Vector3f pt = mHelper->mCalibInv*Eigen::Vector3f(j,i,1);
           if (mHelper->mData[idx] == invalidDisparity) data[idx] = invalidValue;
-          else data[idx] = (mHelper->mCalibInv*Eigen::Vector3f(j,i,1) /
-                            mHelper->mData[idx]).norm();
+          else data[idx] = (pt / mHelper->mData[idx]).norm();
         }
       }
     }
@@ -251,116 +196,6 @@ getProjector() const {
 void DepthImage::
 setAccumulationMethod(const AccumulationMethod iMethod) {
   mHelper->mAccumulationMethod = iMethod;
-}
-
-
-void DepthImage::
-create(const maps::PointCloud::Ptr& iCloud) {
-  float invalidValue = getInvalidValue(TypeDisparity);
-  std::fill(mHelper->mData.begin(), mHelper->mData.end(), invalidValue);
-  
-  std::vector<std::vector<float> > lists;
-  AccumulationMethod method = mHelper->mAccumulationMethod;
-  lists.resize(mHelper->mWidth * mHelper->mHeight);
-
-  for (int i = 0; i < iCloud->size(); ++i) {
-    maps::PointCloud::PointType& ptCur = (*iCloud)[i];
-    Eigen::Vector4f pt(ptCur.x, ptCur.y, ptCur.z, 1);
-    pt = mHelper->mProjector*pt;
-    Eigen::Vector3f proj = pt.head<3>()/pt[3];
-    int x(proj[0]+0.5f), y(proj[1]+0.5f);
-    if ((x < 0) || (x >= mHelper->mWidth) ||
-        (y < 0) || (y >= mHelper->mHeight)) continue;
-    int idx = y*mHelper->mWidth + x;
-    float z = proj[2];
-    if (!mHelper->mIsOrthographic && (z <= 0)) continue;
-    lists[idx].push_back(z);
-  }
-
-  // sort z lists if necessary
-  if (method != AccumulationMethodMean) {
-    for (auto& list : lists) std::sort(list.begin(), list.end());
-  }
-
-  float percentile;
-  switch (method) {
-  case AccumulationMethodClosest: percentile = 0.0f;  break;
-  case AccumulationMethodFurthest: percentile = 1.0f;  break;
-  case AccumulationMethodMedian: percentile = 0.5f;  break;
-  case AccumulationMethodClosestPercentile: percentile = 0.1f;  break;
-  case AccumulationMethodRobustBlend: percentile = 0.1f;  break;
-  default: percentile = 0.5f;  break;
-  }
-  //if (mHelper->mIsOrthographic) percentile = 1.0f-percentile;
-
-  // take the mean of the z list
-  if (method == AccumulationMethodMean) {
-    for (int i = 0; i < lists.size(); ++i) {
-      const int n = lists[i].size();
-      if (n == 0) continue;
-      mHelper->mData[i] =
-        (std::accumulate(lists[i].begin(), lists[i].end(), 0.0f))/n;
-    }
-  }
-
-  // choose either mean or percentile z
-  else if (method == AccumulationMethodRobustBlend) {
-    for (int i = 0; i < lists.size(); ++i) {
-      const auto& list = lists[i];
-      const int n = list.size();
-      if (n == 0) continue;
-      float dz = list.back()-list.front();
-      if (dz < 0.05) {
-        mHelper->mData[i] = (std::accumulate(list.begin(), list.end(), 0.0f))/n;
-      }
-      else {
-        mHelper->mData[i] = list[(int)(percentile*(n-1))];
-      }
-    }
-  }
-
-  // choose z at particular percentile in list
-  else {
-    for (int i = 0; i < lists.size(); ++i) {
-      const int n = lists[i].size();
-      if (n == 0) continue;
-      mHelper->mData[i] = lists[i][(int)(percentile*(n-1))];
-    }
-  }
-
-  mHelper->invalidateData();
-}
-
-maps::PointCloud::Ptr DepthImage::
-getAsPointCloud() const {
-  maps::PointCloud::Ptr cloud(new maps::PointCloud());
-  cloud->reserve(mHelper->mWidth * mHelper->mHeight);
-  float invalidValue = getInvalidValue(TypeDisparity);
-  for (int i = 0, idx = 0; i < mHelper->mHeight; ++i) {
-    for (int j = 0; j < mHelper->mWidth; ++j, ++idx) {
-      float z = mHelper->mData[idx];
-      if (z == invalidValue) continue;
-      Eigen::Vector3f pt(j,i,z);
-      pt = unproject(pt, TypeDisparity);
-      maps::PointCloud::PointType p;
-      p.getVector3fMap() = pt;
-      cloud->push_back(p);
-    }
-  }
-  return cloud;
-}
-
-pcl::RangeImage::Ptr DepthImage::
-getAsRangeImage() const {
-  const std::vector<float> depths = getData(TypeDepth);
-  pcl::RangeImageProjective* rangeImage;
-  if (mHelper->mIsOrthographic) rangeImage = new pcl::RangeImageOrthographic();
-  else rangeImage = new pcl::RangeImageProjective();
-  rangeImage->setPose(mHelper->mPose);
-  rangeImage->setDepthImage(&depths[0], mHelper->mWidth, mHelper->mHeight,
-                            mHelper->mCalib(0,2), mHelper->mCalib(1,2),
-                            mHelper->mCalib(0,0), mHelper->mCalib(1,1));
-  return pcl::RangeImage::Ptr(rangeImage);
 }
 
 Eigen::Vector3f DepthImage::
