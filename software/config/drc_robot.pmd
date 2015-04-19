@@ -42,9 +42,15 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
-    cmd "contact_monitor" {
+    cmd "ContactMonitor" {
     	exec = "drc-contact-monitor";
         host = "atlas2";
+    }
+
+    cmd "FallDetector" {
+      exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasFallDetector;\"";
+      host = "atlas2";
+      stop_signal = 15;
     }
 
     cmd "BasePlanner" {
