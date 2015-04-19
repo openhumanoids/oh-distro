@@ -52,7 +52,6 @@ class CommandLineConfig{
       publish_pose_body = true;
       output_channel = "EST_ROBOT_STATE";
       atlas_version = 4;
-      apply_back_offsets = false;
 
       // Defaults - not read from command line:
       use_encoder_joint_sensors = false;
@@ -69,7 +68,6 @@ class CommandLineConfig{
     bool publish_pose_body;
     std::string output_channel;
     int atlas_version;
-    bool apply_back_offsets;
 
     bool use_encoder_joint_sensors;
     bool use_joint_kalman_filter;
@@ -138,6 +136,8 @@ class state_sync{
     std::vector<float> encoder_joint_offsets_;
     std::vector<float> max_encoder_wrap_angle_;
     std::vector<bool> use_encoder_;
+    std::vector<int> encoder_joint_indices_;
+    std::vector<int> extra_offsettable_joint_indices_;
 
     void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);

@@ -592,15 +592,15 @@ switch atlas_version
     ff_qd_d(back_bky)  = 3.0;
     ff_qd_d(back_bkx)  = 1.0;
     ff_qd_d(l_leg_hpz) = 1.0; % 03-24-14, f+v 
-    ff_qd_d(l_leg_hpx) = 4.0; % 03-24-14, f+v 
-    ff_qd_d(l_leg_hpy) = 5.25;
-    ff_qd_d(l_leg_kny) = 5.5; % 03-24-14, f+v
+    ff_qd_d(l_leg_hpx) = 3.0; % 03-24-14, f+v 
+    ff_qd_d(l_leg_hpy) = 3.25;
+    ff_qd_d(l_leg_kny) = 3.5; % 03-24-14, f+v
     ff_qd_d(l_leg_aky) = 100.0; 
     ff_qd_d(l_leg_akx) = 100.0; 
     ff_qd_d(r_leg_hpz) = 1.0; % 03-24-14, f+v 
-    ff_qd_d(r_leg_hpx) = 4.0; % 03-24-14, f+v  
-    ff_qd_d(r_leg_hpy) = 5.25; 
-    ff_qd_d(r_leg_kny) = 5.5; % 03-24-14, f+v
+    ff_qd_d(r_leg_hpx) = 3.0; % 03-24-14, f+v  
+    ff_qd_d(r_leg_hpy) = 3.25; 
+    ff_qd_d(r_leg_kny) = 3.5; % 03-24-14, f+v
     ff_qd_d(r_leg_aky) = 100.0; 
     ff_qd_d(r_leg_akx) = 100.0; 
 

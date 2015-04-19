@@ -1,5 +1,6 @@
 import os
 import tempfile
+import copy
 drc_base_path = os.getenv("DRC_BASE")
 
 import sys
@@ -22,6 +23,7 @@ original_urdf_path = "../cfg/robotiq_hand.urdf.xacro"
 urdf_path = "../robotiq_hand.xacro"
 no_joint_urdf_path = "../robotiq_hand_no_joint.xacro"
 no_collision_urdf_path = "../robotiq_hand_no_collision.xacro"
+no_joint_no_collision_urdf_path = "../robotiq_hand_no_joint_no_collision.xacro"
 
 # Convert meshes
 for directory in [visualMeshesDirectory,
@@ -63,6 +65,11 @@ mit.useConvexHullMeshes(urdf)
 # Generate full urdf
 urdf.write(urdf_path, pretty_print=True)
 
+# Generate no-collision urdf
+no_collision_urdf = copy.deepcopy(urdf)
+mit.removeAllCollisions(no_collision_urdf)
+no_collision_urdf.write(no_collision_urdf_path, pretty_print=True)
+
 # Generate no-joint urdf
 for joint in urdf.findall("//joint"):
     joint.set("type", "fixed")
@@ -71,7 +78,7 @@ urdf.write(no_joint_urdf_path, pretty_print=True)
 
 # Generate no-joint, no-collision urdf
 mit.removeAllCollisions(urdf)
-urdf.write(no_collision_urdf_path, pretty_print=True)
+urdf.write(no_joint_no_collision_urdf_path, pretty_print=True)
 
 # Copy over convex-hull hand
 shutil.copy("robotiq_hand_convex_hull.xacro", "../")
