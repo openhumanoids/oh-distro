@@ -238,9 +238,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                              'left', [-0.05, 0.05, 0.05, -0.05; 
                                        -0.02, -0.02, 0.02, 0.02]);
       reachable_vertices = struct('right', [-0.4, 0.4, 0.4, -0.4;
-                                     -0.15, -0.15, -0.4, -0.4],...
+                                     -0.2, -0.2, -0.4, -0.4],...
                             'left', [-0.4, 0.4, 0.4, -0.4;
-                                     0.15, 0.15, 0.4, 0.4]);
+                                     0.2, 0.2, 0.4, 0.4]);
 
       is_captured = obj.isICPCaptured(r_ic, foot_states, foot_vertices);
       if (t_global - obj.init_time >= obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION && is_captured) % && ~(~isempty(obj.last_plan) && t_global < (obj.t_start + obj.last_plan.tf)))
@@ -349,7 +349,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       pp = mkpp(ts, coefs, 6);
       if DEBUG
-        obj.draw_plan(pp, foot_states, reachable_vertices, best_plan);
+        % obj.draw_plan(pp, foot_states, reachable_vertices, best_plan);
       end
       
       qp_input = obj.default_qp_input;

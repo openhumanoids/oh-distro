@@ -107,6 +107,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function handle_locomotion_plan(obj, msg)
       disp('Got a locomotion plan')
+      obj.recovery_state = obj.RECOVERY_NONE;
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
       obj.switchToPlan(obj.smoothPlanTransition(new_plan));
       % if isa(new_plan.qtraj, 'Trajectory')
@@ -140,9 +141,11 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_recovery_trigger_on(obj, msg)
-      disp('Entering reactive recovery mode!');
-      obj.reactive_recovery_planner = obj.reactive_recovery_planner.resetInitialization();
-      obj.recovery_state = obj.RECOVERY_NOW;
+      if obj.recovery_state ~= obj.RECOVERY_NOW
+        disp('Entering reactive recovery mode!');
+        obj.reactive_recovery_planner = obj.reactive_recovery_planner.resetInitialization();
+        obj.recovery_state = obj.RECOVERY_NOW;
+      end
     end
     function handle_recovery_trigger_off(obj, msg)
       disp('Exiting reactive recovery mode!');

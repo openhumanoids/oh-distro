@@ -59,6 +59,7 @@ classdef RecoveryHardware < atlasParams.Base
       obj.whole_body.integrator.clamps = integral_clamps;
 
       obj.vref_integrator.eta = 0.0;
+      obj.vref_integrator.zero_ankles_on_contact = 1;
 
       obj = obj.updateKd();
 
