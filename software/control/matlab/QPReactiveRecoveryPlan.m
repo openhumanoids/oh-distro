@@ -790,7 +790,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       r_cop_prime = [0;0];
 
       % subplot(212)
-      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangbang(foot_states.(swing_foot).xyz_quat(2),...
+      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangBangIntercept(foot_states.(swing_foot).xyz_quat(2),...
                                                    foot_states.(swing_foot).xyz_quatdot(2),...
                                                    0,...
                                                    u_max);
@@ -813,12 +813,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % don't narrow our stance to intercept if possible 
       x_ic_int = max(QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_int, omega) + OFFSET, x0);
 
-      x_foot_int = [QPReactiveRecoveryPlan.bangbangXf(x0, xd0, t_int, u_max),...
-                  QPReactiveRecoveryPlan.bangbangXf(x0, xd0, t_int, -u_max)];
+      x_foot_int = [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_int, u_max),...
+                  QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_int, -u_max)];
 
       if x_ic_int >= min(x_foot_int) && x_ic_int <= max(x_foot_int)
         % The time to get onto the xprime axis dominates, and we can hit the ICP as soon as we get to that axis
-        intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, x_ic_int, u_max);
+        intercepts = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, x_ic_int, u_max);
 
         if ~isempty(intercepts)
           [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
@@ -875,7 +875,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
             % r_foot_reach = r_foot_int;
 
-            intercepts = QPReactiveRecoveryPlan.bangbang(x0, xd0, r_foot_reach(1), u_max);
+            intercepts = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, r_foot_reach(1), u_max);
             if ~isempty(intercepts)
               [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
               intercept = intercepts(i);
@@ -898,14 +898,14 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       % for u = [u_max, -u_max]
       %   tt = linspace(abs(xd0 / u), abs(xd0 / u) + 1);
-      %   plot(tt, QPReactiveRecoveryPlan.bangbangXf(x0, xd0, tt, u), 'g-');
+      %   plot(tt, QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, tt, u), 'g-');
 
       % end
 
       % plot([min_time_to_xprime_axis,...
       %       min_time_to_xprime_axis], ...
-      %      [QPReactiveRecoveryPlan.bangbangXf(x0, xd0, min_time_to_xprime_axis, u_max),...
-      %       QPReactiveRecoveryPlan.bangbangXf(x0, xd0, min_time_to_xprime_axis, -u_max)], 'r-')
+      %      [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, min_time_to_xprime_axis, u_max),...
+      %       QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, min_time_to_xprime_axis, -u_max)], 'r-')
 
       % for j = 1:length(intercept_plans)
       %   plot(intercept_plans(j).tf, intercept_plans(j).r_foot_new(1), 'ro');
@@ -923,68 +923,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       y = QPReactiveRecoveryPlanmex.closestPointInConvexHull(x, V);
     end
 
-    function xf = bangbangXf(x0, xd0, tf, u)
-      xf = x0 + 0.5 * xd0 .* tf + 0.25 * u * tf.^2 - 0.25 * xd0.^2 / u;
+    function xf = bangBangUpdate(x0, xd0, tf, u)
+      xf = QPReactiveRecoveryPlanmex.bangBangUpdate(x0, xd0, tf, u);
     end
 
     function x_ic_new = icpUpdate(x_ic, x_cop, dt, omega)
-      x_ic_new = (x_ic - x_cop) * exp(dt*omega) + x_cop;
+      x_ic_new = QPReactiveRecoveryPlanmex.icpUpdate(x_ic, x_cop, dt, omega);
     end
 
-    function intercepts = bangbang(x0, xd0, xf, u_max)
-      % xf = x0 + 1/2 xd0 tf + 1/4 u tf^2 - 1/4 xd0^2 / u
-      % 1/4 u tf^2 + 1/2 xd0 tf + x0 - xf - 1/4 xd0^2 / u = 0
-      % a = 1/4 u
-      % b = 1/2 xd0
-      % c = x0 - xf - 1/4 xd0^2 / u
-      intercepts = struct('tf', {}, 'tswitch', {}, 'u', {});
-
-      % hold on
-
-      for u = [u_max, -u_max]
-        a = 0.25 * u;
-        b = 0.5 * xd0;
-        c = x0 - xf - 0.25 * xd0^2 / u;
-
-
-        t_roots = [(-b + sqrt(b^2 - 4*a*c)) / (2*a), (-b - sqrt(b^2 - 4*a*c)) / (2*a)];
-        mask = false(size(t_roots));
-        tf = [];
-        for j = 1:numel(t_roots)
-          if isreal(t_roots(j)) && t_roots(j) >= abs(xd0 / u)
-            tf = t_roots(j);
-            break;
-          end
-        end
-
-        % if numel(tf) > 1
-        %   error('i don''t think there should ever be more than one feasible root');
-        % end
-
-        if ~isempty(tf)
-%           valuecheck(x0 + 1/2 * xd0 * tf + 1/4 * u * tf^2 - 1/4 * xd0^2 / u, xf, 1e-6);
-          tswitch = 0.5 * (tf - xd0 / u);
-          intercepts(end+1) = struct('tf', tf, 'tswitch', tswitch, 'u', u);
-        end
-
-        % tt = linspace(abs(xd0 / u), max([abs(xd0/u) + 0.3, tf]));
-
-        % plot(tt, a*tt.^2 + b*tt + c + xf, 'g-')
-
-        % roots([a; b; c])
-        % xswitch = x0 + xd0 * tswitch + 0.5 * u * tswitch.^2;
-        % xdswitch = xd0 + u * tswitch;
-
-        % for j = 1:numel(tswitch)
-        %   tt = linspace(0, tswitch(j));
-        %   plot(tt, x0 + xd0 * tt + 0.5 * u * tt.^2);
-
-        %   tt = linspace(tswitch(j), tf(j));
-        %   plot(tt, xswitch + xdswitch * (tt - tswitch(j)) + 0.5 * -1 * u * (tt - tswitch(j)).^2);
-
-        %   plot(tf(j), xf, 'ro');
-        % end
-      end
+    function intercepts = bangBangIntercept(x0, xd0, xf, u_max)
+      [tf, tswitch, u] = QPReactiveRecoveryPlanmex.bangBangIntercept(x0, xd0, xf, u_max);
+      intercepts = struct('tf', num2cell(tf),...
+                          'tswitch', num2cell(tswitch),...
+                          'u', num2cell(u));
     end
 
     function best_plan = chooseBestIntercept(intercept_plans)
@@ -994,10 +945,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     function p = expTaylor(a, b, c, n)
       % Taylor expand f(x) = a*exp(b*x) + c about x=0 up to degree n
-      p = zeros(n+1, length(a));
-      for j = 1:length(a)
-        p(:,j) = QPReactiveRecoveryPlanmex.expTaylor(a(j), b(j), c(j), n);
-      end
+      p = QPReactiveRecoveryPlanmex.expTaylor(a, b, c, n);
     end
 
     function [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n)

@@ -71,42 +71,82 @@ VectorXd QPReactiveRecoveryPlan::closestPointInConvexHull(const Ref<const Vector
   return y.head(dim);
 }
 
-std::set<double> QPReactiveRecoveryPlan::expIntercept(const ExponentialForm &expform, double l0, double ld0, double u, int degree) {
+Polynomial QPReactiveRecoveryPlan::bangBangPolynomial(double x0, double xd0, double u) {
+  VectorXd coefs(3);
+  coefs << x0 - 0.25*xd0*xd0/u,
+           0.5*xd0,
+           0.25*u;
+  Polynomial p(coefs);
+  return p;
+}
+
+std::vector<double> realRoots(Polynomial p) {
+  VectorXd coefs = p.getCoefficients();
+  double order = p.getOrder();
+  std::vector<double> roots;
+  if (order == 1) {
+    // c0 + c1*t = 0;
+    // t = -c0/c1
+    roots.push_back(-coefs(0) / coefs(1));
+  } else if (order == 2) {
+    // c0 + c1*t + c2*t^2 = 0;
+    // t = (-c1 +- sqrt(c1^2 - 4*c2*c0)) / (2*c2)
+    double discriminant = pow(coefs(1), 2) - 4*coefs(2)*coefs(0);
+    if (discriminant >= 0) {
+      roots.push_back((-coefs(1) + sqrt(discriminant)) / (2*coefs(2)));
+      roots.push_back((-coefs(1) - sqrt(discriminant)) / (2*coefs(2)));
+    }
+  } else {
+    PolynomialSolver<double, Dynamic> poly_solver(coefs);
+    poly_solver.realRoots(roots);
+  }
+  return roots;
+}
+
+std::vector<double> QPReactiveRecoveryPlan::expIntercept(const ExponentialForm &expform, double l0, double ld0, double u, int degree) {
   // Find the t >= 0 solutions to a*e^(b*t) + c == l0 + 1/2*ld0*t + 1/4*u*t^2 - 1/4*ld0^2/u
   // using a taylor expansion up to power [degree]
 
-  Polynomial p = expform.taylorExpand(degree);
-  VectorXd coefs_int_neg = VectorXd::Zero(degree+1);
-  coefs_int_neg(0) = -(l0 - 0.25*ld0*ld0/u);
-  coefs_int_neg(1) = -0.5*ld0;
-  coefs_int_neg(2) = -0.25*u;
+  Polynomial p_taylor = expform.taylorExpand(degree);
+  VectorXd coefs = -QPReactiveRecoveryPlan::bangBangPolynomial(l0, ld0, u).getCoefficients();
+  coefs.conservativeResize(6);
+  coefs.tail(3).setZero();
+  Polynomial p_bang(coefs);
+  Polynomial p_int = p_taylor + p_bang;
 
-  Polynomial p_int = p + Polynomial(coefs_int_neg);
+  std::vector<double> roots = realRoots(p_int);
+  std::vector<double> nonneg_roots;
 
-  PolynomialSolver<double, Dynamic> poly_solver(p_int.getCoefficients());
-
-  std::vector<double> roots;
-  poly_solver.realRoots(roots);
-
-  // for (std::vector<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
-  //   std::cout << "root: " << *it << std::endl;
-  //   std::cout << "value: " << p_int.value(*it) << std::endl;
-  //   std::cout << "exp poly: " << p.value(*it) << std::endl;
-  //   std::cout << "int neg: " << Polynomial(coefs_int_neg).value(*it) << std::endl;
-  // }
-
-  std::set<double> nonneg_roots(roots.begin(), roots.end());
-
-  for (std::set<double>::iterator it = nonneg_roots.begin(); it != nonneg_roots.end(); ++it) {
-    if (*it < 0) {
-      // std::cout << "erasing: " << *it << std::endl;
-      nonneg_roots.erase(it);
+  for (std::vector<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
+    if (*it > 0) {
+      nonneg_roots.push_back(*it);
     } 
-    // else {
-    //   std::cout << "keeping: " << *it << std::endl;
-    // }
   }
 
   return nonneg_roots;
 }
+
+std::vector<BangBangIntercept> QPReactiveRecoveryPlan::bangBangIntercept(double x0, double xd0, double xf, double u_max) {
+  std::vector<BangBangIntercept> intercepts;
+
+  double us[2] = {u_max, -u_max};
+  for (int i=0; i<2; i++) {
+    double u = us[i];
+    Polynomial p = QPReactiveRecoveryPlan::bangBangPolynomial(x0 - xf, xd0, u);
+    std::vector<double> roots = realRoots(p);
+    for (std::vector<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
+      double t = *it;
+      if (t >= std::abs(xd0 / u)) {
+        BangBangIntercept inter;
+        inter.tf = t;
+        inter.tswitch = 0.5 * (t - xd0 / u);
+        inter.u = u;
+        intercepts.push_back(inter);
+        break;
+      }
+    }
+  }
+  return intercepts;
+}
+
 

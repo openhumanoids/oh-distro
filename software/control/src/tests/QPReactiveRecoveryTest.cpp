@@ -95,17 +95,66 @@ int testExpIntercept() {
   double u = 10;
 
   ExponentialForm expform(a, b, c);
-  std::set<double> roots = QPReactiveRecoveryPlan::expIntercept(expform, l0, ld0, u, d);
+  std::vector<double> roots = QPReactiveRecoveryPlan::expIntercept(expform, l0, ld0, u, d);
 
   Polynomial p_exp = expform.taylorExpand(d);
   // l0 + 1/2*ld0*t + 1/4*u*t^2 - 1/4*ld0^2/u
   VectorXd coefs_int(3);
   coefs_int << l0 - 0.25*ld0*ld0/u, 0.5*ld0, 0.25*u;
   Polynomial p_int(coefs_int);
-  for (std::set<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
+  for (std::vector<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
     double val_exp = p_exp.value(*it);
     double val_int = p_int.value(*it);
     if (std::abs(val_exp - val_int) > 1e-3) return 1;
+  }
+  return 0;
+}
+
+int testBangBangIntercept() {
+  double x0 = -1.5;
+  double xd0 = 2.0;
+  double xf = 5.0;
+  double u_max = 10;
+
+  std::vector<BangBangIntercept> intercepts = QPReactiveRecoveryPlan::bangBangIntercept(x0, xd0, xf, u_max);
+  if (intercepts.size() != 1) {
+    std::cout << "intercepts wrong size" << std::endl;
+    return 1;
+  }
+  if (std::abs(intercepts[0].tf - 1.4371) > 1e-4) {
+    std::cout << "tf wrong" << std::endl;
+    return 1;
+  }
+  if (std::abs(intercepts[0].tswitch - 0.6185) > 1e-4) {
+    std::cout << "tswitch wrong" << std::endl;
+    return 1;
+  }
+  if (std::abs(intercepts[0].u - 10) > 1e-14) {
+    std::cout << "u wrong" << std::endl;
+    return 1;
+  }
+
+  x0 = -1.5;
+  xd0 = 2.0;
+  xf = -5.0;
+  u_max = 10;
+
+  intercepts = QPReactiveRecoveryPlan::bangBangIntercept(x0, xd0, xf, u_max);
+  if (intercepts.size() != 1) {
+    std::cout << "intercepts wrong size" << std::endl;
+    return 1;
+  }
+  if (std::abs(intercepts[0].tf - 1.4166) > 1e-4) {
+    std::cout << "tf wrong" << std::endl;
+    return 1;
+  }
+  if (std::abs(intercepts[0].tswitch - 0.8083) > 1e-4) {
+    std::cout << "tswitch wrong" << std::endl;
+    return 1;
+  }
+  if (std::abs(intercepts[0].u - -10) > 1e-14) {
+    std::cout << "u wrong: " << intercepts[0].u << std::endl;
+    return 1;
   }
   return 0;
 }
@@ -137,6 +186,11 @@ int main() {
   error = testExpIntercept();
   if (error) {
     std::cout << "testExpIntercept failed" << std::endl;
+    failed = true;
+  } 
+  error = testBangBangIntercept();
+  if (error) {
+    std::cout << "testBangBangIntercept failed" << std::endl;
     failed = true;
   }
 

@@ -21,13 +21,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   int degree = static_cast<int> (mxGetScalar(prhs[6]));
 
   ExponentialForm expform(a, b, c);
-  std::set<double> roots = QPReactiveRecoveryPlan::expIntercept(expform, l0, ld0, u, degree);
+  std::vector<double> roots = QPReactiveRecoveryPlan::expIntercept(expform, l0, ld0, u, degree);
 
 
   VectorXd t_int(roots.size());
   VectorXd x_int(roots.size());
   int i=0;
-  for (std::set<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
+  for (std::vector<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
     t_int(i) = *it;
   }
   plhs[0] = eigenToMatlab(t_int.transpose());

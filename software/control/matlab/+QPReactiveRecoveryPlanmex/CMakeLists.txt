@@ -9,3 +9,16 @@ target_link_libraries(expTaylor QPReactiveRecoveryPlan)
 add_mex(expIntercept expIntercept.cpp)
 pods_use_pkg_config_packages(expIntercept eigen3 drake-util)
 target_link_libraries(expIntercept QPReactiveRecoveryPlan)
+
+add_mex(bangBangIntercept bangBangIntercept.cpp)
+pods_use_pkg_config_packages(bangBangIntercept eigen3 drake-util)
+target_link_libraries(bangBangIntercept QPReactiveRecoveryPlan)
+
+add_mex(bangBangUpdate bangBangUpdate.cpp)
+pods_use_pkg_config_packages(bangBangUpdate eigen3 drake-util)
+target_link_libraries(bangBangUpdate QPReactiveRecoveryPlan)
+
+add_mex(icpUpdate icpUpdate.cpp)
+pods_use_pkg_config_packages(icpUpdate eigen3 drake-util)
+target_link_libraries(icpUpdate QPReactiveRecoveryPlan)
+
