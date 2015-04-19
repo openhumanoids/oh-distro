@@ -1,0 +1,12 @@
+package drc;
+
+struct atlas_fall_detector_status_t
+{
+  int64_t utime;
+  
+  boolean falling;
+
+  // interesting quantities
+  double icp[3];
+  double measured_cop[3];
+}

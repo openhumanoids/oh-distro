@@ -41,8 +41,14 @@ cmd "AtlasControllerNoHands" {
         stop_signal = 15;
     }
 
-   cmd "PlanEval" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; try pelvisMotionControlmex; catch disp('derp'); end; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
+    cmd "FallDetector" {
+      exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasFallDetector;\"";
+      host = "base";
+      stop_signal = 15;
+    }
+    
+    cmd "PlanEval" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
     }
     cmd "InstQP" {
@@ -388,4 +394,3 @@ script "10.runningboard_test" {
     start cmd "InstQPRightHand";
     start cmd "director";
 }
-
