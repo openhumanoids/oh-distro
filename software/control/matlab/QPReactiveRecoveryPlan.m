@@ -494,31 +494,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices)
-      all_vertices_in_world = zeros(2,0);
-
-      for f = {'right', 'left'}
-        foot = f{1};
-        if (foot_states.(foot).contact || ...
-          (foot_states.(foot).xyz_quat(3)-foot_states.(foot).terrain_height < obj.CAPTURE_MAX_FLYFOOT_HEIGHT))
-          rpy = quat2rpy(foot_states.(foot).xyz_quat(4:7));
-          R = rotmat(rpy(3));
-          foot_vertices_in_world = bsxfun(@plus,...
-                                          obj.CAPTURE_SHRINK_FACTOR * R * foot_vertices.(foot),...
-                                          foot_states.(foot).xyz_quat(1:2));
-          all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
-        else
-          % not captured unless both feet are down (or almost down), for stability purposes
-          is_captured = false;
-          return;
-        end
-      end
-
-      if (isempty(all_vertices_in_world))
-        is_captured = 0;
-      else
-        u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, all_vertices_in_world, r_ic));
-        is_captured = norm(u) < 1e-2;
-      end
+      is_captured = QPReactiveRecoveryPlanmex.isICPCaptured(obj, r_ic, foot_states, foot_vertices);
     end
 
     function intercept_plans = getInterceptPlans(obj, foot_states, foot_vertices, reach_vertices, r_ic, comd, omega, u)
