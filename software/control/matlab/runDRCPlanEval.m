@@ -27,7 +27,7 @@ atlas_options.run_in_simul_mode = run_in_simul_mode;
 
 r = DRCAtlas([],atlas_options);
 r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
-r = r.removeCollisionGroupsExcept({'heel','toe'});
+r = r.removeCollisionGroupsExcept({'heel','toe','midfoot'});
 r = compile(r);
 
 if run_in_simul_mode
