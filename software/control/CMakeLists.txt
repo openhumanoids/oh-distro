@@ -6,7 +6,7 @@ include(cmake/pods.cmake)
 
 # set up matlab build
 include(cmake/mex.cmake)
-mex_setup()
+mex_setup(REQUIRED)
 
 find_file(ROS_MODEL_PKG mit_drcsim_scripts PATHS ${CMAKE_INSTALL_PREFIX}/.. $ENV{HOME} $ENV{DRC_BASE}/ros_workspace)
 if (NOT ROS_MODEL_PKG)
@@ -38,9 +38,9 @@ if (CMAKE_COMPILER_IS_GNUCC)
    endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
- if (APPLE) 
+ if (APPLE)
    # http://stackoverflow.com/questions/13445742/apple-and-shared-ptr
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")  
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   endif()
 endif()
 
@@ -50,7 +50,7 @@ add_subdirectory(contact_monitor)
 add_subdirectory(fall_detector)
 add_subdirectory(joint_monitor)
 
-message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab") 
+message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab")
 
 file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/addpath_control.m
 	   "function addpath_control()\n"
@@ -79,7 +79,7 @@ include(CTest)
 
 #find_program(matlab matlab)
 #if (NOT matlab-NOTFOUND)
-#   add_test(NAME MATLAB_Unit_Tests 
+#   add_test(NAME MATLAB_Unit_Tests
 #   		 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 #  		 COMMAND ${matlab} -nosplash -nodesktop -logfile /tmp/matlab.out -r "addpath(fullfile('${CMAKE_INSTALL_PREFIX}','matlab'));addpath_drake; addpath_control; set(0,'DefaultFigureVisible','off'); options.gui=false; options.autorun=true;options.logfile='/tmp/unit.log'; d=unitTest(options); exit(d.fail)")
 #endif()

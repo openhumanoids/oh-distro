@@ -6,9 +6,10 @@ classdef DRCAtlas < Atlas
       if nargin < 2
         options = struct();
       end
-      options = applyDefaults(options, struct('atlas_version', 5,...
-                                              'use_new_kinsol', true));
-      
+      options = applyDefaults(options,...
+                              struct('atlas_version', 5,...
+                                     'use_new_kinsol', true));
+
       if ~any(options.atlas_version == [3,4,5])
         error('Atlas:badVersion','Invalid Atlas version. Valid values are 3, 4, and 5')
       end
