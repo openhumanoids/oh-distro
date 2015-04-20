@@ -1,5 +1,7 @@
 <launch>
-  <node name="ros2lcm" type="ros2lcm_ihmc" pkg="drc_translators" output="screen" args="mode_passthrough" />
+  <arg name="robot_name" default="valkyrie" />
+  <arg name="mode" default="passthrough" />
+  <node name="ros2lcm" type="ros2lcm_ihmc" pkg="drc_translators" output="screen" args="$(arg mode) $(arg robot_name)" />
   <node name="ros2lcm_camera" type="ros2lcm_camera" pkg="drc_translators" output="screen"/>
-  <node name="lcm2ros" type="lcm2ros_ihmc" pkg="drc_translators" /> 
+  <node name="lcm2ros" type="lcm2ros_ihmc" pkg="drc_translators" output="screen" args="$(arg robot_name)"/>
 </launch>

@@ -107,8 +107,7 @@ int main(int argc, char **argv){
   ros::init(argc, argv, "ros2lcm_camera");
   ros::NodeHandle nh;
   new App(nh);
-  std::cout << "ros2lcm translator ready\n";
-  ROS_ERROR("ROS2LCM Translator Ready");
+  ROS_ERROR("ROS2LCM Camera Translator Ready");
   ros::spin();
   return 0;
 }

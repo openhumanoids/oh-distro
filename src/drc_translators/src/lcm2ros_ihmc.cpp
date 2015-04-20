@@ -32,13 +32,14 @@ using namespace std;
 
 class LCM2ROS{
   public:
-    LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_);
+    LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_);
     ~LCM2ROS() {}
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     ros::NodeHandle nh_;
-    ros::NodeHandle* rosnode;    
+    ros::NodeHandle* node_;
+    string robotName_;
 
     void footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::walking_plan_request_t* msg);
     void footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::footstep_plan_t* msg);
@@ -57,24 +58,25 @@ class LCM2ROS{
     ros::Publisher hand_pose_pub_;
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_):
+    lcm_(lcm_),nh_(nh_), robotName_(robotName_) {
   // If pronto is running never send plans like this:
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST",&LCM2ROS::footstepPlanHandler, this);
     // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into BDI/IHMC frame:
   lcm_->subscribe("BDI_ADJUSTED_FOOTSTEP_PLAN",&LCM2ROS::footstepPlanBDIModeHandler, this);
-  walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/ihmc_ros/atlas/control/footstep_list",10);
+  walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/ihmc_ros/" + robotName_ + "/control/footstep_list",10);
 
   lcm_->subscribe("VAL_COMMAND_COM_HEIGHT",&LCM2ROS::comHeightHandler, this);
-  com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/ihmc_ros/atlas/control/com_height",10);
+  com_height_pub_ =  nh_.advertise<ihmc_msgs::ComHeightPacketMessage>("/ihmc_ros/" + robotName_ + "/control/com_height",10);
 
   lcm_->subscribe("VAL_COMMAND_PAUSE",&LCM2ROS::pauseHandler, this);
   lcm_->subscribe("STOP_WALKING",&LCM2ROS::stopHandler, this); // from drake-designer
-  pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/atlas/control/pause_footstep_exec",10);
+  pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/" + robotName_ + "/control/pause_footstep_exec",10);
 
   lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
-  hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/atlas/control/hand_pose",10);
+  hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
 
-  rosnode = new ros::NodeHandle();
+  node_ = new ros::NodeHandle();
 }
 
 ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos, double orient_w, double orient_x, double orient_y, double orient_z){
@@ -175,6 +177,16 @@ void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string 
 }
 
 int main(int argc,char** argv) {
+  std::string robotName;// = "valkyrie"; // "atlas"
+
+  if (argc >= 2){
+     ROS_ERROR("meah %s", argv[1] );
+     robotName = argv[1];
+  }else {
+    ROS_ERROR("Need to have an argument: robot name");
+    exit(-1);
+  }
+
   ros::init(argc,argv,"lcm2ros",ros::init_options::NoSigintHandler);
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
@@ -182,9 +194,8 @@ int main(int argc,char** argv) {
   }  
   ros::NodeHandle nh;
   
-  LCM2ROS handlerObject(lcm, nh);
-  cout << "\nlcm2ros translator ready\n";
-  ROS_ERROR("LCM2ROS Translator Ready");
+  LCM2ROS handlerObject(lcm, nh, robotName);
+  ROS_ERROR("LCM2ROS Translator Ready [robotName: %s]", robotName.c_str() );
   
   while(0 == lcm->handle());
   return 0;
