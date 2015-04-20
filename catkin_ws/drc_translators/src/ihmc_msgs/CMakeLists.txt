@@ -1,24 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
-# needed for string arrays
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
-
-include(cmake/pods.cmake)
-set(POD_NAME drc_translators)
-
-project(drc_translators)
+project(ihmc_msgs)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rospy
   std_msgs
-#  ipab_msgs
-  ihmc_msgs
-  tf
-  trajectory_msgs
-  image_transport
+  message_generation
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -55,11 +44,27 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+ add_message_files(
+   FILES
+   ChestOrientationPacketMessage.msg
+   ComHeightPacketMessage.msg
+   FootPosePacketMessage.msg
+   FootstepDataListMessage.msg
+   FootstepDataMessage.msg
+   FootstepStatusMessage.msg
+   HandPosePacketMessage.msg
+   HeadOrientationPacketMessage.msg
+   PauseCommandMessage.msg
+   HighLevelStatePacketMessage.msg
+   ArmJointTrajectoryPacketMessage.msg
+   JointTrajectoryPointMessage.msg
+   JointAnglesPacketMessage.msg
+   AtlasDesiredPumpPSIPacketMessage.msg
+   AtlasElectricMotorEnablePacketMessage.msg
+   AtlasWristSensorCalibrationRequestPacketMessage.msg
+   RawImuData.msg
+   BatchRawImuData.msg   
+ )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -76,12 +81,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
+ generate_messages(
    DEPENDENCIES
    std_msgs
-   ipab_msgs
-   ihmc_msgs
-)
+   geometry_msgs
+ )
 
 ###################################
 ## catkin specific configuration ##
@@ -94,8 +98,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES beginner_tutorials
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  LIBRARIES ihmc_msgs
+#  CATKIN_DEPENDS std_msgs
 #  DEPENDS system_lib
 )
 
@@ -111,19 +115,19 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(beginner_tutorials
-#   src/${PROJECT_NAME}/beginner_tutorials.cpp
+# add_library(ihmc_msgs
+#   src/${PROJECT_NAME}/ihmc_msgs.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(beginner_tutorials_node src/beginner_tutorials_node.cpp)
+# add_executable(ihmc_msgs_node src/ihmc_msgs_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(beginner_tutorials_node beginner_tutorials_generate_messages_cpp)
+# add_dependencies(ihmc_msgs_node ihmc_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(beginner_tutorials_node
+# target_link_libraries(ihmc_msgs_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -142,7 +146,7 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS beginner_tutorials beginner_tutorials_node
+# install(TARGETS ihmc_msgs ihmc_msgs_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -167,47 +171,10 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_beginner_tutorials.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_ihmc_msgs.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-
-include_directories(include ${catkin_INCLUDE_DIRS})
-
-add_executable(ros2lcm_ihmc src/ros2lcm_ihmc.cpp)
-target_link_libraries(ros2lcm_ihmc ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core eigen3)
-
-add_executable(ros2lcm_camera src/ros2lcm_camera.cpp)
-target_link_libraries(ros2lcm_camera ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_camera lcm bot2-core eigen3 opencv)
-
-add_executable(ros2lcm_stereo src/ros2lcm_stereo.cpp)
-target_link_libraries(ros2lcm_stereo ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_stereo lcm bot2-core eigen3 bot2-core eigen3 image_io_utils opencv)
-
-add_executable(lcm2ros_ihmc src/lcm2ros_ihmc.cpp)
-target_link_libraries(lcm2ros_ihmc ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(lcm2ros_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core)
-
-add_executable(ros2lcm_test src/ros2lcm_test.cpp)
-target_link_libraries(ros2lcm_test ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_test lcm lcmtypes_pronto-lcmtypes bot2-core)
-######################################################
-add_executable(lcm2ros_kuka src/lcm2ros_kuka.cpp)
-target_link_libraries(lcm2ros_kuka ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(lcm2ros_kuka lcm lcmtypes_pronto-lcmtypes bot2-core)
-
-add_executable(ros2lcm_kuka src/ros2lcm_kuka.cpp)
-target_link_libraries(ros2lcm_kuka ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_kuka lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils)
-
-add_executable(ros2lcm_kinect src/ros2lcm_kinect.cpp)
-target_link_libraries(ros2lcm_kinect ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils opencv)
-
-

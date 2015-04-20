@@ -61,13 +61,14 @@ struct Joints {
 
 class App{
 public:
-  App(ros::NodeHandle node_, int mode_);
+  App(ros::NodeHandle node_, int mode_, std::string robotName_);
   ~App();
 
 private:
   lcm::LCM lcmPublish_ ;
   ros::NodeHandle node_;
   int mode_;
+  string robotName_;
 
 //  tf::TransformListener listener_;
   
@@ -101,8 +102,8 @@ private:
   bool verbose_;
 };
 
-App::App(ros::NodeHandle node_, int mode_) :
-    node_(node_), mode_(mode_){
+App::App(ros::NodeHandle node_, int mode_, std::string robotName_) :
+    node_(node_), mode_(mode_), robotName_(robotName_){
   ROS_INFO("Initializing Translator");
   if(!lcmPublish_.good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
@@ -123,17 +124,18 @@ App::App(ros::NodeHandle node_, int mode_) :
   int queue_size = 100;
 
   // Robot joint angles
-  jointStatesSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/joint_states"), queue_size, &App::jointStatesCallback,this);
+  jointStatesSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/joint_states"), queue_size, &App::jointStatesCallback,this);
+  poseSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/robot_pose"), queue_size, &App::poseCallBack,this);
+  imuBatchSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/batch_raw_imu"), queue_size, &App::imuBatchCallback,this);
+  leftFootSensorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/left"), queue_size, &App::leftFootSensorCallback,this);
+  rightFootSensorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/right"), queue_size, &App::rightFootSensorCallback,this);
+  // using previously used queue_size for scan:
+  behaviorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/behavior"), 100, &App::behaviorCallback,this);
+
   // Multisense Joint Angles:
   if (mode_ == MODE_STATE_ESTIMATION){
     headJointStatesSub_ = node_.subscribe(string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,this);
   }
-  poseSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/robot_pose"), queue_size, &App::poseCallBack,this);
-  imuBatchSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/batch_raw_imu"), queue_size, &App::imuBatchCallback,this);
-  leftFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/left"), queue_size, &App::leftFootSensorCallback,this);
-  rightFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/right"), queue_size, &App::rightFootSensorCallback,this);
-  // using previously used queue_size for scan:
-  behaviorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/behavior"), 100, &App::behaviorCallback,this);
   laserScanSub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::laserScanCallback,this);
 
   verbose_ = false;
@@ -420,6 +422,11 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg){
     filterJointNames(joints.name);
     // joints = reorderJoints(joints); don't reorder in passthrough mode
 
+    if(robotName_.compare("valkyrie")==0){
+      // temporary:
+      joints.name = {"l_leg_hpz", "l_leg_hpx", "l_leg_hpy", "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", "r_leg_akx", "back_bkz", "back_bky", "back_bkx", "l_arm_shz", "l_arm_shx", "l_arm_ely", "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "l_arm_lwy", "neck_ay", "neck_by", "neck_cy", "r_arm_shz", "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx", "r_arm_lwy"};
+    }
+
     pronto::robot_state_t msg_out;
     msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
     int n_joints = joints.position.size();
@@ -476,31 +483,31 @@ void App::appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wren
 
 
 int main(int argc, char **argv){
-  int mode = MODE_PASSTHROUGH;
+  std::string robotName;// = "valkyrie"; // "atlas"
+  std::string modeArgument;
 
-  std::string mode_argument;
-  if (argc >= 2){
-     mode_argument = argv[1];
+  if (argc >= 3){
+     modeArgument = argv[1];
+     robotName = argv[2];
   }else {
-    ROS_ERROR("Need to have another argument in the launch file");
-  }
-
-  if (mode_argument.compare("mode_passthrough") == 0){
-    mode = MODE_PASSTHROUGH;
-  }else if (mode_argument.compare("mode_state_estimation") == 0){
-    mode = MODE_STATE_ESTIMATION;
-  }else {
-    ROS_ERROR("mode_argument not understood");
-    std::cout << mode_argument << " is not understood\n";
+    ROS_ERROR("Need to have two arguments: mode and robot name");
     exit(-1);
   }
 
+  int mode; // MODE_PASSTHROUGH or MODE_STATE_ESTIMATION
+  if (modeArgument.compare("passthrough") == 0){
+    mode = MODE_PASSTHROUGH;
+  }else if (modeArgument.compare("state_estimation") == 0){
+    mode = MODE_STATE_ESTIMATION;
+  }else {
+    ROS_ERROR("modeArgument not understood: use passthrough or state_estimation");
+    exit(-1);
+  }
 
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
-  new App(nh, mode);
-  std::cout << "ros2lcm translator ready\n";
-  ROS_ERROR("ROS2LCM Translator Ready [mode: %d, %s]", mode, mode_argument.c_str());
+  new App(nh, mode, robotName);
+  ROS_ERROR("ROS2LCM Translator Ready [mode: %d, %s] [robotName: %s]", mode, modeArgument.c_str(), robotName.c_str());
   ros::spin();
   return 0;
 }

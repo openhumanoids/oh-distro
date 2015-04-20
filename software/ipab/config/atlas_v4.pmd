@@ -10,7 +10,7 @@ group "0.params_and_model_pub" {
     }
 
     cmd "ihmc_bridge" {
-        exec = "roslaunch drc_translators ihmc_bridge.launch";
+        exec = "roslaunch drc_translators ihmc_bridge.launch robot_name:=atlas";
         host = "localhost";
     }
 }

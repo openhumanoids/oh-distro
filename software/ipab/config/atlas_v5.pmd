@@ -1,10 +1,10 @@
 group "0.ros_bridge" {
     cmd "ros_bridge_without_pronto" {
-        exec = "roslaunch drc_translators ihmc_bridge.launch";
+        exec = "roslaunch drc_translators ihmc_bridge.launch robot_name:=atlas";
         host = "localhost";
     }
     cmd "ros_bridge_with_pronto" {
-        exec = "roslaunch drc_translators ihmc_bridge_with_pronto.launch";
+        exec = "roslaunch drc_translators ihmc_bridge.launch robot_name:=atlas mode:=state_estimation";
         host = "localhost";
     }
 }
