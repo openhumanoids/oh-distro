@@ -1,0 +1,15 @@
+package drc;
+
+struct reactive_recovery_debug_t
+{
+    int64_t utime;
+
+    double com[3];
+    double icp[2];
+
+    // cubic spline segments
+    int32_t num_spline_ts;
+    int32_t num_spline_segments; //= num_spline_ts-1
+    double ts[num_spline_ts];
+    double coefs[6][num_spline_segments][4];
+}
