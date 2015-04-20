@@ -48,7 +48,7 @@ classdef StatelessFootstepPlanner
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
-      if request.num_iris_regions > 0
+      if request.num_iris_regions > 0 && length(plan.footsteps) > 2
         plan = StatelessFootstepPlanner.snapToIRISRegions(biped, plan);
       else
         plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
