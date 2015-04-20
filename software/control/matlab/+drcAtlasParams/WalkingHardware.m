@@ -25,7 +25,7 @@ classdef WalkingHardware < atlasParams.Base
       obj.body_motion(r.foot_body_id.left).Kp = 48*ones(6,1);
       obj.body_motion(r.foot_body_id.left).damping_ratio = 0.8;
       obj.body_motion(r.foot_body_id.left).weight = 0.01;
-      obj.body_motion(r.findLinkId('pelvis')).Kp = [nan; nan; 20; 20; 20; 20];
+      obj.body_motion(r.findLinkId('pelvis')).Kp = [0; 0; 20; 20; 20; 20];
       obj.body_motion(r.findLinkId('pelvis')).damping_ratio = 0.6;
       obj.body_motion(r.findLinkId('pelvis')).weight = 0.07;
 
