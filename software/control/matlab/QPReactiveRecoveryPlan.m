@@ -34,11 +34,14 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     %last_swing_switch = 0;
     % debug visualization?
     DEBUG;
+    SLOW_DRAW;
 
     last_ts = [];
     last_coefs = [];
     t_start = [];
     init_time = [];
+
+    lc;
 
   end
 
@@ -67,9 +70,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if nargin < 2
         options = struct();
       end
-      options = applyDefaults(options, struct('g', 9.81, 'debug', 1));
+      options = applyDefaults(options, struct('g', 9.81, 'debug', 1, 'slow_draw', 0));
+      obj.lc = lcm.lcm.LCM.getSingleton();
       obj.robot = robot;
       obj.DEBUG = options.debug;
+      obj.SLOW_DRAW = options.slow_draw;
       % obj.qtraj = qtraj;
       % obj.LIP_height = LIP_height;
       S = load(obj.robot.fixed_point_file);
@@ -119,7 +124,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       r_ic = com(1:2) + comd(1:2) / obj.point_mass_biped.omega;
 
 
-      if DEBUG
+      if obj.SLOW_DRAW
         obj.lcmgl.glColor3f(0.2,0.2,1.0);
         obj.lcmgl.sphere([com(1:2); 0], 0.01, 20, 20);
 
@@ -267,7 +272,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           if isempty(intercept_plans)
             disp('recovery is not possible');
             qp_input = obj.last_qp_input;
-            obj.lcmgl.switchBuffers();
+            if (obj.SLOW_DRAW)
+              obj.lcmgl.switchBuffers();
+            end
             return;
           end
 
@@ -301,10 +308,18 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           %end
           [obj.last_ts, obj.last_coefs] = obj.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
           obj.t_start = t_global;
+          if (obj.DEBUG > 0)
+            fprintf('starting publish for vis: ');
+            t0 = tic();
+            obj.publishForVisualization(t_global, com, r_ic, obj.last_ts, obj.last_coefs);
+            toc(t0);
+          end
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, best_plan, rpc);
         end
       end
-      obj.lcmgl.switchBuffers();
+      if (obj.SLOW_DRAW)
+        obj.lcmgl.switchBuffers();
+      end
       obj.last_qp_input = qp_input;
 
     end
@@ -348,8 +363,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       DEBUG = obj.DEBUG > 0;
 
       pp = mkpp(ts, coefs, 6);
-      if DEBUG
-        % obj.draw_plan(pp, foot_states, reachable_vertices, best_plan);
+      if obj.SLOW_DRAW
+        obj.draw_plan(pp, foot_states, reachable_vertices, best_plan);
       end
       
       qp_input = obj.default_qp_input;
@@ -702,9 +717,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           ps = ppval(fnder(pp, 2), tt);
           fprintf('umax x:%f y: %f z:%f\n', max(ps(1, :)), max(ps(2, :)), max(ps(3, :)));
            
-        obj.lcmgl.glColor3f(0.1,0.1,1.0);
-        for k=1:4
-          obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
+        if (obj.SLOW_DRAW)
+          obj.lcmgl.glColor3f(0.1,0.1,1.0);
+          for k=1:4
+            obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
+          end
         end
       else
         disp('case2');
@@ -736,9 +753,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         settings = struct('optimize_knot_times', true);
         [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
         
-        obj.lcmgl.glColor3f(0.1,1.0,0.1);
-        for k=1:4
-          obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
+        if (obj.SLOW_DRAW)
+          obj.lcmgl.glColor3f(0.1,1.0,0.1);
+          for k=1:4
+            obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
+          end
         end
 
           tt = linspace(ts(1), ts(end));
@@ -916,6 +935,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         intercept_plans(j).error = norm(intercept_plans(j).r_foot_new - (intercept_plans(j).r_ic_new + [OFFSET; 0]));
       end
     end
+
+    function publishForVisualization(obj, t, com, r_ic, ts, coefs)
+      msg = drc.reactive_recovery_debug_t;
+      msg.utime = t*1E9;
+      msg.com = com;
+      msg.icp = r_ic;
+      msg.num_spline_ts = numel(ts);
+      msg.num_spline_segments = msg.num_spline_ts - 1;
+      msg.ts = ts;
+      msg.coefs = coefs;
+      obj.lc.publish('REACTIVE_RECOVERY_DEBUG', msg);
+    end
+
   end
 
   methods(Static)
@@ -951,7 +983,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     function [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n)
       [t_int, l_int] = QPReactiveRecoveryPlanmex.expIntercept(a, b, c, l0, ld0, u, n);
     end
-
   end
 end
 
