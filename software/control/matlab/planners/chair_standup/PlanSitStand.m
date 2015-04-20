@@ -5,6 +5,7 @@ classdef PlanSitStand
     plan_options
     back_gaze_constraint
     back_gaze_constraint_tight
+    back_vertical_gaze_constraint
     pelvis_gaze_constraint
     torque_constraint
     pelvis_contacts
@@ -13,7 +14,6 @@ classdef PlanSitStand
     back_z_constraint_soft
     back_y_constraint
     hand_up_tuck_constraint
-    back_straight_posture_constraint
     arm_nominal_posture_constraint
     elbow_ind
     elbow_angles
@@ -119,6 +119,11 @@ classdef PlanSitStand
       theta = obj.plan_options.back_gaze_tight.angle;
       direction = [sin(theta);0;cos(theta)];
       obj.back_gaze_constraint_tight = WorldGazeDirConstraint(kpt.robot,kpt.robot.findLinkId('utorso'),[0;0;1],direction,obj.plan_options.back_gaze_tight.bound);
+
+      %% Vertical back gaze constraint
+      direction = [0;0;1];
+      obj.back_vertical_gaze_constraint = WorldGazeDirConstraint(kpt.robot,kpt.robot.findLinkId('utorso'),[0;0;1],direction,0.01);
+
       %% Back gaze constraint
       theta = obj.plan_options.pelvis_gaze_angle;
       direction = [sin(theta);0;cos(theta)];
@@ -192,10 +197,6 @@ classdef PlanSitStand
       obj.Q(1:6) = 0;
       obj.back_idx = obj.r.findPositionIndices('back');
       obj.arm_idx = obj.r.findPositionIndices('arm');
-
-      %% Standing posture constraint
-      obj.back_straight_posture_constraint = PostureConstraint(kpt.robot);
-      obj.back_straight_posture_constraint = obj.back_straight_posture_constraint.setJointLimits(kpt.robot.findPositionIndices('back'),zeros(3,1),zeros(3,1));
 
       % arm nominal posture constraint
       obj.arm_nominal_posture_constraint = PostureConstraint(kpt.robot);
@@ -448,7 +449,7 @@ classdef PlanSitStand
         clear options;
         disp('solving for standing pose')
         contacts = {'l_foot','r_foot'};
-        options.constraints = {obj.back_straight_posture_constraint,obj.min_distance_constraint};
+        options.constraints = {obj.back_vertical_gaze_constraint,obj.min_distance_constraint};
         options.no_movement.bodies = {'l_foot','r_foot'};
         options.no_movement.q = q0;
         options.qs_contacts = {'l_foot','r_foot'};
