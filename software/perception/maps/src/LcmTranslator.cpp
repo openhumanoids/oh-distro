@@ -407,7 +407,7 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
       bits = std::min(bits, 16);
       bits = std::max(bits, 0);
     }
-    zScale /= ((1 << bits) - 1);
+    zScale /= ((1 << bits) - 2);  // leave room for max int value (for invalid)
   }
   for (int i = 0; i < numDepths; ++i) {
     float val = outDepths[i];
@@ -468,8 +468,8 @@ fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView) {
   // convert to depth image
   float maxVal;
   switch(blob.getSpec().mDataType) {
-  case DataBlob::DataTypeUint8: maxVal = 254; break;
-  case DataBlob::DataTypeUint16: maxVal = 65534; break;
+  case DataBlob::DataTypeUint8: maxVal = 255; break;
+  case DataBlob::DataTypeUint16: maxVal = 65535; break;
   default: maxVal = std::numeric_limits<float>::infinity(); break;
   }
   blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32); 

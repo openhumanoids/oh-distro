@@ -6,7 +6,6 @@
 #include <signal.h>
 #include <math.h>
 
-#include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 
@@ -27,7 +26,6 @@
 #include <maps/DepthImage.hpp>
 
 #include <drc_utils/Clock.hpp>
-#include <drc_utils/PointerUtils.hpp>
 
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
@@ -37,14 +35,14 @@ using namespace maps;
 
 class State {
 public:
-  boost::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<lcm::LCM> mLcm;
   BotWrapper::Ptr mBotWrapper;
-  boost::shared_ptr<Collector> mCollector;
+  std::shared_ptr<Collector> mCollector;
   int mActiveMapId;
   bot_lcmgl_t* mLcmGl;
   
-  State( boost::shared_ptr<lcm::LCM> &mLcm ): mLcm(mLcm) {
-    mBotWrapper.reset(new BotWrapper(drc::PointerUtils::stdPtr(mLcm)));
+  State( std::shared_ptr<lcm::LCM> &mLcm ): mLcm(mLcm) {
+    mBotWrapper.reset(new BotWrapper(mLcm));
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
     mActiveMapId = 0;
@@ -60,12 +58,12 @@ public:
 
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_, State* iState);
+    Pass(std::shared_ptr<lcm::LCM> &lcm_, State* iState);
     
     ~Pass(){
     }    
   private:
-    boost::shared_ptr<lcm::LCM> lcm_;
+    std::shared_ptr<lcm::LCM> lcm_;
 
     BotParam* botparam_;
     BotFrames* botframes_;
@@ -93,7 +91,7 @@ class Pass{
     State* mState;
 };
 
-Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_), 
+Pass::Pass(std::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_), 
     mState(iState){
 
   lcm_->subscribe("SCAN",&Pass::lidarHandler,this);  
@@ -212,7 +210,7 @@ int main(int argc, char ** argv) {
   opt.parse();
   std::cout << "lidar_channel: " << lidar_channel << "\n"; 
 
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
+  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
