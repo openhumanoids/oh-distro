@@ -134,6 +134,7 @@ useLoggingWidget = True
 useDrakeVisualizer = True
 useNavigationPanel = True
 useFootContactVis = True
+useFallDetectorVis = True
 useImageWidget = False
 useImageViewDemo = True
 useControllerRate = True
@@ -477,7 +478,7 @@ if useForceDisplay:
 
     class LCMForceDisplay(object):
         '''
-        Displays an feet force sensor signals in a status bar widget or label widget
+        Displays foot force sensor signals in a status bar widget or label widget
         '''
 
 
@@ -525,7 +526,7 @@ if useFootContactVis:
         leftInContact = msg.left_contact > 0.0
         rightInContact = msg.right_contact > 0.0
 
-        contactColor = QtGui.QColor(255,0,0)
+        contactColor = QtGui.QColor(0,0,255)
         noContactColor = QtGui.QColor(180, 180, 180)
 
         robotStateModel.model.setLinkColor('l_foot', contactColor if leftInContact else noContactColor)
@@ -533,6 +534,37 @@ if useFootContactVis:
 
     footContactSub = lcmUtils.addSubscriber('FOOT_CONTACT_ESTIMATE', lcmdrc.foot_contact_estimate_t, onFootContact)
     footContactSub.setSpeedLimit(60)
+
+
+if useFallDetectorVis:
+
+    class FallDetectorDisplay(object):
+
+        def __init__(self):
+
+            self.sub = lcmUtils.addSubscriber('ATLAS_FALL_STATE', lcmdrc.atlas_fall_detector_status_t, self.onFallState)
+            self.sub.setSpeedLimit(300)
+
+            self.fallDetectorTriggerTime = 0.0 
+            self.fallDetectorVisResetTime = 3.0 # seconds
+            self.color = QtGui.QColor(180, 180, 180)
+    
+        def __del__(self):
+            lcmUtils.removeSubscriber(self.sub)
+
+        def onFallState(self,msg):
+            isFalling = msg.falling
+            t = msg.utime / 10.0e6
+            if not isFalling and (t-self.fallDetectorTriggerTime > self.fallDetectorVisResetTime or t-self.fallDetectorTriggerTime<0):
+                self.color = QtGui.QColor(180, 180, 180)
+            elif isFalling:
+                self.color = QtGui.QColor(255,0,0)
+                self.fallDetectorTriggerTime = t
+
+            robotStateModel.model.setLinkColor('pelvis', self.color)
+            robotStateModel.model.setLinkColor('utorso', self.color)
+
+    fallDetectDisp = FallDetectorDisplay()
 
 
 if useDataFiles:
