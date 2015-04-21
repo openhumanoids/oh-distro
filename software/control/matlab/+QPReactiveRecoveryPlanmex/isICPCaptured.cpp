@@ -1,0 +1,66 @@
+#include "mex.h"
+#include "control/QPReactiveRecoveryPlan.hpp"
+#include "drake/drakeUtil.h"
+
+void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+  if (nrhs != 4 || nlhs != 1) mexErrMsgTxt("usage: is_captured=isICPCaptured(obj, r_ic, foot_states, foot_vertices)");
+
+  sizecheck(prhs[0], 1, 1);
+  const mxArray *obj = prhs[0];
+  QPReactiveRecoveryPlan plan;
+  plan.capture_max_flyfoot_height = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_MAX_FLYFOOT_HEIGHT"));
+  plan.capture_shrink_factor = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_SHRINK_FACTOR"));
+
+  sizecheck(prhs[1], 2, 1);
+  Map<Vector2d> r_ic(mxGetPrSafe(prhs[1]));
+
+  sizecheck(prhs[2], 1, 1);
+  const mxArray *foot_states_obj = prhs[2];
+  std::map<std::string, FootState> foot_states;
+
+  sizecheck(prhs[3], 1, 1);
+  const mxArray *foot_vertices_obj = prhs[3];
+  std::map<std::string, Matrix<double, 2, 4>> foot_vertices;
+
+  const mxArray *pobj;
+
+  std::set<std::string> foot_names;
+  foot_names.insert("right");
+  foot_names.insert("left");
+
+  for (std::set<std::string>::iterator foot_name = foot_names.begin(); foot_name != foot_names.end(); ++foot_name) {
+    const mxArray *state_obj = mxGetFieldSafe(foot_states_obj, *foot_name);
+
+    FootState state;
+    state.pose.setIdentity();
+
+    pobj = mxGetFieldSafe(state_obj, "xyz_quat");
+    sizecheck(pobj, 7, 1);
+    Map<XYZQuat> xyz_quat(mxGetPrSafe(pobj));
+    state.pose.translate(Vector3d(xyz_quat.head(3))).rotate(Quaternion<double>(Vector4d(xyz_quat.tail(4))));
+
+    pobj = mxGetFieldSafe(state_obj, "xyz_quatdot");
+    sizecheck(pobj, 7, 1);
+    Map<XYZQuat> xyz_quatdot(mxGetPrSafe(pobj));
+    state.velocity = xyz_quatdot;
+
+    pobj = mxGetFieldSafe(state_obj, "contact");
+    sizecheck(pobj, 1, 1);
+    state.contact = static_cast<bool> (mxGetScalar(pobj));
+
+    pobj = mxGetFieldSafe(state_obj, "terrain_height");
+    sizecheck(pobj, 1, 1);
+    state.terrain_height = mxGetScalar(pobj);
+
+    foot_states[*foot_name] = state;
+
+    const mxArray *vert_obj = mxGetFieldSafe(foot_vertices_obj, *foot_name);
+    sizecheck(vert_obj, 2, 4);
+    Map<Matrix<double, 2, 4>> V(mxGetPrSafe(vert_obj));
+    foot_vertices[*foot_name] = V;
+  }
+
+  Matrix<double, 1, 1> is_captured;
+  is_captured(0) = static_cast<double> (plan.isICPCaptured(r_ic, foot_states, foot_vertices));
+  plhs[0] = eigenToMatlab(is_captured);
+}

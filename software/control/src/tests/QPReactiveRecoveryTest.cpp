@@ -1,3 +1,4 @@
+#include <math.h>
 #include "control/QPReactiveRecoveryPlan.hpp"
 
 int testClosestPointInConvexHull1() {
@@ -159,6 +160,75 @@ int testBangBangIntercept() {
   return 0;
 }
 
+int testisICPCaptured() {
+  QPReactiveRecoveryPlan plan;
+  plan.capture_shrink_factor = 0.8;
+  plan.capture_max_flyfoot_height = 0.025;
+
+  std::map<std::string, FootState> foot_states;
+  std::map<std::string, Matrix<double, 2, 4>> foot_vertices;
+  Vector2d r_ic;
+  FootState rstate;
+  rstate.pose.setIdentity();
+  FootState lstate;
+  lstate.pose.setIdentity();
+  bool captured;
+
+  Matrix<double, 2, 4> V;
+  V << -.1, .1, .1, -.1,
+        -.05, -.05, .05, .05;
+  foot_vertices.insert(std::pair<std::string, Matrix<double, 2, 4>>("right", V));
+  foot_vertices["right"] = V;
+  foot_vertices["left"] = V;
+
+  rstate.pose.translate(Vector3d(1.13, 2, 0)).rotate(AngleAxis<double>(M_PI/2, Vector3d(0, 0, 1)));
+  rstate.contact = true;
+  rstate.terrain_height = 0;
+  foot_states["right"] = rstate;
+
+  lstate.pose.translate(Vector3d(0.87, 2, 0)).rotate(AngleAxis<double>(M_PI/2, Vector3d(0, 0, 1)));
+  lstate.contact = true;
+  lstate.terrain_height = 0;
+  foot_states["left"] = lstate;
+
+  r_ic << 1.0, 2.0;
+
+  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  if (!captured) {
+    std::cout << "should be captured" << std::endl;
+    return 1;
+  }
+
+  foot_states["left"].contact = false;
+  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  if (!captured) {
+    // should still be captured because lfoot is close to the terrain
+    std::cout << "should be captured" << std::endl;
+    return 1;
+  }
+
+  foot_states["left"].terrain_height = -0.1;
+  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  if (captured) {
+    // should not be captured, because terrain is too low 
+    std::cout << "should not be captured" << std::endl;
+    return 1;
+  }
+
+  foot_states["left"].contact = true;
+  r_ic << 1.0, 2.1;
+  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  if (captured) {
+    // should not be captured because r_ic is out of support
+    std::cout << "should not be captured" << std::endl;
+    return 1;
+  }
+
+
+  return 0;
+
+}
+
 int main() {
   bool failed = false;
   int error;
@@ -167,33 +237,51 @@ int main() {
   if (error) {
     std::cout << "testClosestPointInConvexHull1 failed" << std::endl;
     failed = true;
+  } else {
+    std::cout << "testClosestPointInConvexHull1 passed" << std::endl;
   }
   error = testClosestPointInConvexHull2();
   if (error) {
     std::cout << "testClosestPointInConvexHull2 failed" << std::endl;
     failed = true;
+  } else {
+    std::cout << "testClosestPointInConvexHull2 passed" << std::endl;
   }
   error = testClosestPointInConvexHull3();
   if (error) {
     std::cout << "testClosestPointInConvexHull3 failed" << std::endl;
     failed = true;
+  } else {
+    std::cout << "testClosestPointInConvexHull3 passed" << std::endl;
   }
   error = testExpTaylor();
   if (error) {
     std::cout << "testExpTaylor failed" << std::endl;
     failed = true;
+  } else {
+    std::cout << "testExpTaylor passed" << std::endl;
   }
   error = testExpIntercept();
   if (error) {
     std::cout << "testExpIntercept failed" << std::endl;
     failed = true;
+  } else {
+    std::cout << "testExpIntercept passed" << std::endl;
   } 
   error = testBangBangIntercept();
   if (error) {
     std::cout << "testBangBangIntercept failed" << std::endl;
     failed = true;
+  } else {
+    std::cout << "testBangBangIntercept passed" << std::endl;
   }
-
+  error = testisICPCaptured();
+  if (error) {
+    std::cout << "testisICPCaptured failed" << std::endl;
+    failed = true;
+  } else {
+    std::cout << "testisICPCaptured passed" << std::endl;
+  }
   if (!failed) {
     std::cout << "Reactive recovery tests passed" << std::endl;
   } else {
