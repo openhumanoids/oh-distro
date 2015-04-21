@@ -386,28 +386,26 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'support_logic_map', obj.support_logic_maps.require_support,...
                                      'mu',obj.mu,...
                                      'contact_surfaces', 0);
+
+      % Don't allow support if we are less than halfway through the plan
+      t = t_global - t_start;
+      if t <= (ts(end)/2)
+        support_for_swing = obj.support_logic_maps.prevent_support;
+      else
+        support_for_swing = obj.support_logic_maps.only_if_force_sensed;
+      end
+      
       qp_input.support_data(end+1) = struct('body_id', obj.robot.foot_body_id.(best_plan.swing_foot),...
                                      'contact_pts', [rpc.contact_groups{obj.robot.foot_body_id.(best_plan.swing_foot)}.toe,...
                                                      rpc.contact_groups{obj.robot.foot_body_id.(best_plan.swing_foot)}.heel],...
-                                     'support_logic_map', obj.support_logic_maps.only_if_force_sensed,...
+                                     'support_logic_map', support_for_swing,...
                                      'mu',obj.mu,...
                                      'contact_surfaces', 0);
 
-      % copied from BodyMotionData. we should eventually subclass QPLocomotionPlan
-      % where this logic already exists
-      t = t_global - t_start;
-      if t <= ts(1)
-        t_ind = 1;
-      elseif t >= ts(end)
-        t_ind = length(ts) - 1;
-      else
-        t_ind = find(ts < t, 1, 'last');
-      end
-      %fprintf('%f -> %f [%f, %f]\n', t, t_ind, ts(t_ind), ts(t_ind+1));
-      
+      % swing foot
       qp_input.body_motion_data = struct('body_id', obj.robot.foot_frame_id.(best_plan.swing_foot),...
-                                         'ts', t_start + ts(t_ind:t_ind+1),...
-                                         'coefs', coefs(:,t_ind,:),...
+                                         'ts', t_start+ts,...
+                                         'coefs', coefs,...
                                          'toe_off_allowed', false,...
                                          'in_floating_base_nullspace', true,...
                                          'control_pose_when_in_contact', false,...
@@ -424,9 +422,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       foot_rpy = [quat2rpy(foot_states.right.xyz_quat(4:7)), quat2rpy(foot_states.left.xyz_quat(4:7))];
       pelvis_yaw = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
       pelvis_xyz_exp = [0; 0; pelvis_height; quat2expmap(rpy2quat([0;0;pelvis_yaw]))];
+      coefs_pelvis = cat(3, zeros(6,1,3), pelvis_xyz_exp);
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
-                                                'ts', t_start + ts(t_ind:t_ind+1),...
-                                                'coefs', cat(3, zeros(6,1,3), pelvis_xyz_exp),...
+                                                'ts',  t_start+ts,...
+                                                'coefs', repmat(coefs_pelvis, [1, length(ts)-1, 1]),...
                                                 'toe_off_allowed', false,...
                                                 'in_floating_base_nullspace', false,...
                                                 'control_pose_when_in_contact', false,...
@@ -683,8 +682,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         disp('case1');
         % descend straight there
         sizecheck(intercept_plan.r_foot_new, [7, 1]);
-        fraction_first = 0.4;
-        fraction_second = 0.6;
+        fraction_first = 0.7;
+        fraction_second = 0.9;
         swing_height_first = foot_state.xyz_quat(3)*(1-fraction_first^2);
         swing_height_second = foot_state.xyz_quat(3)*(1-fraction_second^2);
 
@@ -717,7 +716,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           ps = ppval(fnder(pp, 2), tt);
           fprintf('umax x:%f y: %f z:%f\n', max(ps(1, :)), max(ps(2, :)), max(ps(3, :)));
            
-        if (obj.SLOW_DRAW)
+        if (1 || obj.SLOW_DRAW)
           obj.lcmgl.glColor3f(0.1,0.1,1.0);
           for k=1:4
             obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
@@ -753,7 +752,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         settings = struct('optimize_knot_times', true);
         [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
         
-        if (obj.SLOW_DRAW)
+        if (1 || obj.SLOW_DRAW)
           obj.lcmgl.glColor3f(0.1,1.0,0.1);
           for k=1:4
             obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
@@ -781,7 +780,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           plot(tt, ps(1,:), tt, ps(2,:), tt, ps(3,:));
         end
       end
-
+obj.lcmgl.switchBuffers();
       % pp = mkpp(ts, coefs, 6);
 
       % tt = linspace(0, intercept_plan.tf);
