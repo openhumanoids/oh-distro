@@ -180,19 +180,19 @@ classdef SitStandWrapper
       obj.plan_options.use_mex = 1;
       obj.plan_options.pelvis_contact_angle = 0;
       obj.plan_options.use_new_planner = 1;
-      obj.plan_options.back_gaze_bound = 0.3;
+      obj.plan_options.back_gaze_bound = 0.4;
       obj.plan_options.shrink_factor = 0.6;
       obj.plan_options.back_gaze_bound_tight = 0.01;
-      obj.plan_options.sit_back_distance = 0.15;
+      obj.plan_options.sit_back_distance = 0.2;
       obj.plan_options.back_gaze_tight.bound = 0.01;
-      obj.plan_options.back_gaze_tight.angle = 0;
+      obj.plan_options.back_gaze_tight.angle = 0.2;
       obj.plan_options.pelvis_gaze_bound = 0.05;
       obj.plan_options.pelvis_gaze_angle = 0;
       obj.plan_options.bky_angle = -0.2;
     end
 
 
-    function computeGravityTorqueConstraint(obj)
+    function computeGravityTorqueConstraint(obj,q0)
       %% Torque Constraint
       robot = obj.robot.getManipulator;
       r = obj.robot;
@@ -237,13 +237,15 @@ classdef SitStandWrapper
 
       nq = robot.getNumPositions();
 
-      data = [];
-      while isempty(data)
-          data = obj.state_monitor.getNextMessage(10);
-      end
-      [x, t] = obj.r.getStateFrame().lcmcoder.decode(data);
+      if nargin < 2
+        data = [];
+        while isempty(data)
+            data = obj.state_monitor.getNextMessage(10);
+        end
+        [x, t] = obj.r.getStateFrame().lcmcoder.decode(data);
 
-      q0 = x(1:nq);
+        q0 = x(1:nq);
+      end
       kinsol = robot.doKinematics(q0);
       c = gct.eval(0,kinsol);
 
