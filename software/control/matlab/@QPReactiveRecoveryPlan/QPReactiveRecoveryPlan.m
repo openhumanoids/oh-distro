@@ -664,7 +664,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       dist_to_goal = norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2));
       descend_coeff = (1/0.15)^2;
       if norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2)) > 0.025 && ...
-        (descend_coeff*((foot_state.xyz_quat(3)-obj.robot.getTerrainHeight(foot_state.xyz_quat(1:2)))^2) >= dist_to_goal)
+        (descend_coeff*((foot_state.xyz_quat(3) - foot_state.terrain_height)^2) >= dist_to_goal)
         disp('case1');
         % descend straight there
         sizecheck(intercept_plan.r_foot_new, [7, 1]);
@@ -727,7 +727,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
         xs(4:6, 2) = xs(4:6,1);
         xs(4:6, 3) = xs(4:6,4);
-        xs(3, 2) = obj.robot.getTerrainHeight(xs(1:2, 1)) + swing_height_first;
+        xs(3, 2) = foot_state.terrain_height + swing_height_first;
         xs(3, 3) = xs(3, 4) + swing_height_second;
         % interp position between first and last
         xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
