@@ -507,34 +507,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       qp_input.param_set_name = 'recovery';
     end
 
-    function is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices)
-      all_vertices_in_world = zeros(2,0);
-
-      for f = {'right', 'left'}
-        foot = f{1};
-        if (foot_states.(foot).contact || ...
-          (foot_states.(foot).xyz_quat(3)-foot_states.(foot).terrain_height < obj.CAPTURE_MAX_FLYFOOT_HEIGHT))
-          rpy = quat2rpy(foot_states.(foot).xyz_quat(4:7));
-          R = rotmat(rpy(3));
-          foot_vertices_in_world = bsxfun(@plus,...
-                                          obj.CAPTURE_SHRINK_FACTOR * R * foot_vertices.(foot),...
-                                          foot_states.(foot).xyz_quat(1:2));
-          all_vertices_in_world = [all_vertices_in_world, foot_vertices_in_world];
-        else
-          % not captured unless both feet are down (or almost down), for stability purposes
-          is_captured = false;
-          return;
-        end
-      end
-
-      if (isempty(all_vertices_in_world))
-        is_captured = 0;
-      else
-        u = iris.least_distance.cvxgen_ldp(bsxfun(@minus, all_vertices_in_world, r_ic));
-        is_captured = norm(u) < 1e-2;
-      end
-    end
-
     function intercept_plans = getInterceptPlans(obj, foot_states, foot_vertices, reach_vertices, r_ic, comd, omega, u)
       intercept_plans = struct('tf', {},...
                                'tswitch', {},...
@@ -946,17 +918,9 @@ obj.lcmgl.switchBuffers();
       msg.coefs = coefs;
       obj.lc.publish('REACTIVE_RECOVERY_DEBUG', msg);
     end
-
   end
 
   methods(Static)
-    y = closestPointInConvexHull(x, V);
-    xf = bangBangUpdate(x0, xd0, tf, u);
-    x_ic_new = icpUpdate(x_ic, x_cop, dt, omega);
-    [tf, tswitch, u] = bangBangIntercept(x0, xd0, xf, u_max);
-    p = expTaylor(a, b, c, n);
-    [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n);
-
     function intercepts = bangBangInterceptStruct(x0, xd0, xf, u_max)
       [tf, tswitch, u] = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, xf, u_max);
       intercepts = struct('tf', num2cell(tf),...
@@ -968,6 +932,20 @@ obj.lcmgl.switchBuffers();
       [min_error, idx] = min([intercept_plans.error]);
       best_plan = intercept_plans(idx);
     end
+  end
+
+  methods
+    is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices);
+  end
+
+  methods(Static)
+    y = closestPointInConvexHull(x, V);
+    xf = bangBangUpdate(x0, xd0, tf, u);
+    x_ic_new = icpUpdate(x_ic, x_cop, dt, omega);
+    [tf, tswitch, u] = bangBangIntercept(x0, xd0, xf, u_max);
+    p = expTaylor(a, b, c, n);
+    [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n);
+
   end
 end
 
