@@ -151,25 +151,13 @@ classdef SitStandWrapper
       options.chair_height = chair_height;
 
       [qtraj,supports,support_times] = PlanSitStand.plan(obj.robot,x,plan_type,options);
-      
-      robot = r.getManipulator();
-      handle_2 = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
-      kpt = KinematicPoseTrajectory(robot,{});
-      robot = kpt.addVisualContactPoints(robot);
-      v = robot.constructVisualizer();
-      qtraj = qtraj.setOutputFrame(robot.getPositionFrame());
-      v.playback(qtraj,struct('slider',true));
 
       % handles the publishing of the message
       T = qtraj.getBreaks();
-      X = qtraj.eval(T);
-      rpp = RobotPlanPublisher('COMMITTED_ROBOT_PLAN_WITH_SUPPORTS',true,r.getStateFrame.coordinates(1:obj.nq));      
-      if execute_flag
-        disp('do you want to publish this plan?')
-        keyboard;
-        rpp.publishPlanWithSupports(X,T,supports,support_times);
-      end
-      
+      Q = qtraj.eval(T);
+      X = [Q;0*Q]; % give it zero velocity
+      rpp = RobotPlanPublisher('CANDIDATE_ROBOT_PLAN_WITH_SUPPORTS',true,r.getStateFrame.coordinates(1:obj.nq));
+      rpp.publishPlanWithSupports(X,T,supports,support_times);            
     end
 
     function obj = useMex(obj,flag)
@@ -180,19 +168,19 @@ classdef SitStandWrapper
       obj.plan_options.use_mex = 1;
       obj.plan_options.pelvis_contact_angle = 0;
       obj.plan_options.use_new_planner = 1;
-      obj.plan_options.back_gaze_bound = 0.3;
+      obj.plan_options.back_gaze_bound = 0.4;
       obj.plan_options.shrink_factor = 0.6;
       obj.plan_options.back_gaze_bound_tight = 0.01;
-      obj.plan_options.sit_back_distance = 0.15;
+      obj.plan_options.sit_back_distance = 0.2;
       obj.plan_options.back_gaze_tight.bound = 0.01;
-      obj.plan_options.back_gaze_tight.angle = 0;
+      obj.plan_options.back_gaze_tight.angle = 0.2;
       obj.plan_options.pelvis_gaze_bound = 0.05;
       obj.plan_options.pelvis_gaze_angle = 0;
       obj.plan_options.bky_angle = -0.2;
     end
 
 
-    function computeGravityTorqueConstraint(obj)
+    function computeGravityTorqueConstraint(obj,q0)
       %% Torque Constraint
       robot = obj.robot.getManipulator;
       r = obj.robot;
@@ -237,13 +225,15 @@ classdef SitStandWrapper
 
       nq = robot.getNumPositions();
 
-      data = [];
-      while isempty(data)
-          data = obj.state_monitor.getNextMessage(10);
-      end
-      [x, t] = obj.r.getStateFrame().lcmcoder.decode(data);
+      if nargin < 2
+        data = [];
+        while isempty(data)
+            data = obj.state_monitor.getNextMessage(10);
+        end
+        [x, t] = obj.r.getStateFrame().lcmcoder.decode(data);
 
-      q0 = x(1:nq);
+        q0 = x(1:nq);
+      end
       kinsol = robot.doKinematics(q0);
       c = gct.eval(0,kinsol);
 

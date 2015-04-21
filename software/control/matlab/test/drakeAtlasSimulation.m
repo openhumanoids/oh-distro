@@ -6,7 +6,7 @@ if nargin < 3, add_hokuyo = true; end
 if nargin < 4, right_hand = 0; end
 if nargin < 5, left_hand = 0; end
 if nargin < 6, world_name = ''; end
-if nargin < 7, box_height = 1.2; end
+if nargin < 7, box_height = 1.10; end
 
 % IF YOU WANT MASS EST LOOK HERE
 % (when this is more fleshed out this will become
@@ -154,6 +154,7 @@ if strcmp(world_name,'box')
   qstar = chair_data.q_sol(:,3);
   xstar = [qstar;0*qstar];
   xstar(3) = xstar(3) + 0.08;
+  xstar(1) = xstar(1) + 0.03;
   x0 = zeros(r_pure.getNumStates, 1);
   x0(1:length(xstar)) = xstar;
   r_pure = r_pure.setInitialState(x0);

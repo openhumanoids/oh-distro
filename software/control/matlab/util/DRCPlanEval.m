@@ -20,6 +20,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     pause_state = 0;
     contact_force_detected;
     last_status_msg_time;
+    last_plan_msg_utime = 0;
   end
 
 
@@ -88,26 +89,22 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     
     function handle_stand_default(obj, msg)
       disp('Got a default stand plan')
+      obj.last_plan_msg_utime = msg.utime;
       new_plan = DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot);
       obj.switchToPlan(new_plan);
     end
 
     function handle_locomotion_plan(obj, msg)
       disp('Got a locomotion plan')
+      obj.last_plan_msg_utime = msg.utime;
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
       obj.switchToPlan(obj.smoothPlanTransition(new_plan));
-      % if isa(new_plan.qtraj, 'Trajectory')
-      %   disp('Automatically generating a standing plan from the end of this plan.')
-      %   obj.appendPlan(QPLocomotionPlan.from_standing_state(new_plan.qtraj.eval(new_plan.qtraj.tspan(end)),...
-      %                                                       obj.robot,...
-      %                                                       new_plan.supports(end),...
-      %                                                       struct('center_pelvis', false)));
-      % end
     end
 
     function handle_atlas_behavior_command(obj, msg)
       if strcmp(char(msg.command), 'stop') || strcmp(char(msg.command), 'freeze')
         disp('Got an atlas behavior command...going into silent mode');
+        obj.last_plan_msg_utime = msg.utime;
         obj.switchToPlan(SilentPlan(obj.robot));
       end
     end
@@ -184,27 +181,76 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       end
     end
 
+    function obj = switchToPlan(obj, new_plan)
+      obj = switchToPlan@atlasControllers.AtlasPlanEval(obj, new_plan);
+      obj.sendStatus();
+    end
+
+    function current_plan = getCurrentPlan(obj, t, x)
+      while true
+        current_plan = obj.plan_queue{1};
+        if ~current_plan.isFinished(t, x);
+          break
+        end
+        disp('current plan is finished')
+        if length(obj.plan_queue) == 1
+          obj.plan_queue{1} = current_plan.getSuccessor(t, x);
+        else
+          obj.plan_queue(1) = [];
+        end
+        obj.plan_queue{1}.start_time = t;
+        obj.sendStatus();
+      end
+    end
+
     function sendStatus(obj)
       if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2
         if ~isempty(obj.plan_queue)
           current_plan = obj.plan_queue{1};
-          if strcmp(current_plan.gain_set, 'standing')
-            state_flag = drc.controller_status_t.STANDING;
-          elseif strcmp(current_plan.gain_set, 'walking')
-            state_flag = drc.controller_status_t.WALKING;
-          elseif strcmp(current_plan.gain_set, 'manip')
-            state_flag = drc.controller_status_t.MANIPULATING;
+          if isa(current_plan, 'QPLocomotionPlan')
+            if strcmp(current_plan.gain_set, 'standing')
+              execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
+              plan_type = drc.plan_status_t.STANDING;
+            elseif strcmp(current_plan.gain_set, 'walking')
+              execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+              plan_type = drc.plan_status_t.WALKING;
+            elseif strcmp(current_plan.gain_set, 'manip')
+              execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+              plan_type = drc.plan_status_t.MANIPULATING;
+            else
+              execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+              plan_type = drc.plan_status_t.UNKNOWN;
+            end
+          elseif isa(current_plan, 'FrozenPlan')
+            execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
+            plan_type = drc.plan_status_t.STANDING;
           else
-            state_flag = drc.controller_status_t.UNKNOWN;
+            execution_flag = drc.plan_status_t.EXECUTION_STATUS_NO_PLAN;
+            plan_type = drc.plan_status_t.DUMMY;
           end
         else
-          state_flag = drc.controller_status_t.DUMMY;
+          execution_flag = drc.plan_status_t.EXECUTION_STATUS_NO_PLAN;
+          plan_type = drc.plan_status_t.DUMMY;
+          current_plan = [];
         end
         obj.last_status_msg_time = obj.t;
         status_msg = drc.controller_status_t();
         status_msg.utime = obj.t * 1e6;
-        status_msg.state = state_flag;
+        status_msg.state = plan_type;
         obj.lc.publish('CONTROLLER_STATUS', status_msg);
+
+        plan_status_msg = drc.plan_status_t();
+        plan_status_msg.utime = obj.t * 1e6;
+        plan_status_msg.plan_type = plan_type;
+        plan_status_msg.execution_status = execution_flag;
+        plan_status_msg.last_plan_msg_utime = obj.last_plan_msg_utime;
+        if isempty(current_plan)
+          plan_status_msg.last_plan_start_utime = 0;
+        else
+          plan_status_msg.last_plan_start_utime = current_plan.start_time * 1e6;
+        end
+        obj.lc.publish('PLAN_EXECUTION_STATUS', plan_status_msg);
+
       end
     end
 

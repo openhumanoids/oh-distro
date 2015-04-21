@@ -210,6 +210,21 @@
       },
       "name": "hands-forward",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "sitting with lean back, seat height 55cm",
+      "joints": {
+        "l_arm_elx": 2.2722370624542236,
+        "l_arm_ely": 0.36549726128578186,
+        "l_arm_lwy": 0.0004052989825140685,
+        "l_arm_mwx": 0.7940353155136108,
+        "l_arm_shx": -1.3077927827835083,
+        "l_arm_shz": -1.4827206134796143,
+        "l_arm_uwy": 0.08833818137645721
+      },
+      "name": "sitting",
+      "nominal_handedness": "left"
     }
   ],
   "door": [
