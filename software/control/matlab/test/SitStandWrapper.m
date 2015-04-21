@@ -151,25 +151,13 @@ classdef SitStandWrapper
       options.chair_height = chair_height;
 
       [qtraj,supports,support_times] = PlanSitStand.plan(obj.robot,x,plan_type,options);
-      
-      robot = r.getManipulator();
-      handle_2 = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
-      kpt = KinematicPoseTrajectory(robot,{});
-      robot = kpt.addVisualContactPoints(robot);
-      v = robot.constructVisualizer();
-      qtraj = qtraj.setOutputFrame(robot.getPositionFrame());
-      v.playback(qtraj,struct('slider',true));
 
       % handles the publishing of the message
       T = qtraj.getBreaks();
-      X = qtraj.eval(T);
-      rpp = RobotPlanPublisher('COMMITTED_ROBOT_PLAN_WITH_SUPPORTS',true,r.getStateFrame.coordinates(1:obj.nq));      
-      if execute_flag
-        disp('do you want to publish this plan?')
-        keyboard;
-        rpp.publishPlanWithSupports(X,T,supports,support_times);
-      end
-      
+      Q = qtraj.eval(T);
+      X = [Q;0*Q]; % give it zero velocity
+      rpp = RobotPlanPublisher('CANDIDATE_ROBOT_PLAN_WITH_SUPPORTS',true,r.getStateFrame.coordinates(1:obj.nq));
+      rpp.publishPlanWithSupports(X,T,supports,support_times);            
     end
 
     function obj = useMex(obj,flag)

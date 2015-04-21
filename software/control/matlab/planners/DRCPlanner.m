@@ -184,7 +184,9 @@ classdef DRCPlanner
       nq = getNumPositions(obj.biped);
       joint_names = obj.biped.getStateFrame.coordinates(1:nq);
       [X,T,supports,support_times] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
-      qtraj = PPTrajectory(pchip(T,X));
+      nq = obj.biped.getNumPositions();
+      Q = X(1:nq,:); % extract just the q poses
+      qtraj = PPTrajectory(pchip(T,Q));
       clear options;
       options.supports = supports;
       options.support_times = support_times;
