@@ -27,17 +27,18 @@ def handle_qp_controller_input_msg(channel, data):
   for i in range(0, msg.num_tracked_bodies):
     bmd = msg.body_motion_data[i]
     ts = bmd.ts;
-    tsdense = np.linspace(ts[0], ts[-1], 20);
-    coefs = np.array(bmd.coefs);
     color = color_order[i%len(color_order)];
-    gl.glColor3f(color[0], color[1], color[2]);
-    gl.glLineWidth(5);
-    gl.glBegin(GL_LINES);
-    ps = np.array([pval(coefs, t-ts[0]) for t in tsdense]);
-    for j in range(0,tsdense.size-1):
-      gl.glVertex3f(ps[j,0], ps[j,1], ps[j,2]);
-      gl.glVertex3f(ps[j+1,0], ps[j+1,1], ps[j+1,2]);
-    gl.glEnd();
+    for j in range(0, msg.body_motion_data[i].num_spline_coefs):
+      tsdense = np.linspace(ts[j], ts[j+1], 20);
+      coefs = np.array(bmd.coefs[j].coefs);
+      gl.glColor3f(color[0], color[1], color[2]);
+      gl.glLineWidth(5);
+      gl.glBegin(GL_LINES);
+      ps = np.array([pval(coefs, t-ts[j]) for t in tsdense]);
+      for j in range(0,tsdense.size-1):
+        gl.glVertex3f(ps[j,0], ps[j,1], ps[j,2]);
+        gl.glVertex3f(ps[j+1,0], ps[j+1,1], ps[j+1,2]);
+      gl.glEnd();
   gl.switch_buffer()
   
 
