@@ -1,9 +1,0 @@
-- ran the rename python script to rename all V1 joints to atlas
-
-Drake required a few manual changes:
-- copied the result from above
-- changed .stl to .wrl
-- made dummy wrl files
-- removed all of the transmission components as drake did not parse them
-- added collision groups on the r_foot and l_foot to match atlas
-- TODO: place these points on the heels of the robot
