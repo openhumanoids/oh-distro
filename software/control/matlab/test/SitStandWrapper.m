@@ -183,7 +183,7 @@ classdef SitStandWrapper
       obj.plan_options.back_gaze_bound = 0.4;
       obj.plan_options.shrink_factor = 0.6;
       obj.plan_options.back_gaze_bound_tight = 0.01;
-      obj.plan_options.sit_back_distance = 0.25;
+      obj.plan_options.sit_back_distance = 0.2;
       obj.plan_options.back_gaze_tight.bound = 0.01;
       obj.plan_options.back_gaze_tight.angle = 0.2;
       obj.plan_options.pelvis_gaze_bound = 0.05;
