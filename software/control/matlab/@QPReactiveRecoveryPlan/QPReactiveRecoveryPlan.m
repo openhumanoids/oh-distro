@@ -399,9 +399,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                          'quat_task_to_world', [1;0;0;0], ...
                                          'translation_task_to_world', [0;0;0], ...
                                          'xyz_kp_multiplier', [1;1;1], ...
-                                         'xyz_kd_multiplier', [1;1;1], ...
+                                         'xyz_damping_ratio_multiplier', [1;1;1], ...
                                          'expmap_kp_multiplier', 1, ...
-                                         'expmap_kd_multiplier', 1, ...
+                                         'expmap_damping_ratio_multiplier', 1, ...
                                          'weight_multiplier', [1;1;1;1;1;1]);
 
       pelvis_height = foot_states.(stance_foot).terrain_height + 0.84;
@@ -418,9 +418,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                                 'quat_task_to_world', [1;0;0;0], ...
                                                 'translation_task_to_world', [0;0;0], ...
                                                 'xyz_kp_multiplier', [1;1;1], ...
-                                                'xyz_kd_multiplier', [1;1;1], ...
+                                                'xyz_damping_ratio_multiplier', [1;1;1], ...
                                                 'expmap_kp_multiplier', 1, ...
-                                                'expmap_kd_multiplier', 1, ...
+                                                'expmap_damping_ratio_multiplier', 1, ...
                                                 'weight_multiplier', [1;1;1;0;0;1]);
       qp_input.param_set_name = 'recovery';
     end
@@ -466,9 +466,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         qp_input.body_motion_data(j).quat_task_to_world =  [1;0;0;0];
         qp_input.body_motion_data(j).translation_task_to_world =  [0;0;0];
         qp_input.body_motion_data(j).xyz_kp_multiplier =  [1;1;1];
-        qp_input.body_motion_data(j).xyz_kd_multiplier =  [1;1;1];
+        qp_input.body_motion_data(j).xyz_damping_ratio_multiplier =  [1;1;1];
         qp_input.body_motion_data(j).expmap_kp_multiplier =  1;
-        qp_input.body_motion_data(j).expmap_kd_multiplier =  1;
+        qp_input.body_motion_data(j).expmap_damping_ratio_multiplier =  1;
         qp_input.body_motion_data(j).weight_multiplier =  [1;1;1;1;1;1];
       end
       % warning('probably not right pelvis height if feet height differ...')
@@ -486,9 +486,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                             'quat_task_to_world', [1;0;0;0], ...
                                             'translation_task_to_world', [0;0;0], ...
                                             'xyz_kp_multiplier', [1;1;1], ...
-                                            'xyz_kd_multiplier', [1;1;1], ...
+                                            'xyz_damping_ratio_multiplier', [1;1;1], ...
                                             'expmap_kp_multiplier', 1, ...
-                                            'expmap_kd_multiplier', 1, ...
+                                            'expmap_damping_ratio_multiplier', 1, ...
                                             'weight_multiplier', [1;1;1;0;0;1]);
       qp_input.param_set_name = 'recovery';
     end
@@ -790,7 +790,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       r_cop_prime = [0;0];
 
       % subplot(212)
-      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangBangIntercept(foot_states.(swing_foot).xyz_quat(2),...
+      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangBangInterceptStruct(foot_states.(swing_foot).xyz_quat(2),...
                                                    foot_states.(swing_foot).xyz_quatdot(2),...
                                                    0,...
                                                    u_max);
@@ -818,7 +818,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
       if x_ic_int >= min(x_foot_int) && x_ic_int <= max(x_foot_int)
         % The time to get onto the xprime axis dominates, and we can hit the ICP as soon as we get to that axis
-        intercepts = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, x_ic_int, u_max);
+        intercepts = QPReactiveRecoveryPlan.bangBangInterceptStruct(x0, xd0, x_ic_int, u_max);
 
         if ~isempty(intercepts)
           [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
@@ -875,7 +875,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
             % r_foot_reach = r_foot_int;
 
-            intercepts = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, r_foot_reach(1), u_max);
+            intercepts = QPReactiveRecoveryPlan.bangBangInterceptStruct(x0, xd0, r_foot_reach(1), u_max);
             if ~isempty(intercepts)
               [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
               intercept = intercepts(i);
@@ -919,20 +919,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
   end
 
   methods(Static)
-    function y = closestPointInConvexHull(x, V)
-      y = QPReactiveRecoveryPlanmex.closestPointInConvexHull(x, V);
-    end
+    y = closestPointInConvexHull(x, V);
+    xf = bangBangUpdate(x0, xd0, tf, u);
+    x_ic_new = icpUpdate(x_ic, x_cop, dt, omega);
+    [tf, tswitch, u] = bangBangIntercept(x0, xd0, xf, u_max);
+    p = expTaylor(a, b, c, n);
+    [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n);
 
-    function xf = bangBangUpdate(x0, xd0, tf, u)
-      xf = QPReactiveRecoveryPlanmex.bangBangUpdate(x0, xd0, tf, u);
-    end
-
-    function x_ic_new = icpUpdate(x_ic, x_cop, dt, omega)
-      x_ic_new = QPReactiveRecoveryPlanmex.icpUpdate(x_ic, x_cop, dt, omega);
-    end
-
-    function intercepts = bangBangIntercept(x0, xd0, xf, u_max)
-      [tf, tswitch, u] = QPReactiveRecoveryPlanmex.bangBangIntercept(x0, xd0, xf, u_max);
+    function intercepts = bangBangInterceptStruct(x0, xd0, xf, u_max)
+      [tf, tswitch, u] = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, xf, u_max);
       intercepts = struct('tf', num2cell(tf),...
                           'tswitch', num2cell(tswitch),...
                           'u', num2cell(u));
@@ -942,16 +937,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       [min_error, idx] = min([intercept_plans.error]);
       best_plan = intercept_plans(idx);
     end
-
-    function p = expTaylor(a, b, c, n)
-      % Taylor expand f(x) = a*exp(b*x) + c about x=0 up to degree n
-      p = QPReactiveRecoveryPlanmex.expTaylor(a, b, c, n);
-    end
-
-    function [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n)
-      [t_int, l_int] = QPReactiveRecoveryPlanmex.expIntercept(a, b, c, l0, ld0, u, n);
-    end
-
   end
 end
 
