@@ -193,7 +193,7 @@ classdef StatelessFootstepPlanner
         R_step = rpy2rotmat(plan.footsteps(j).pos(4:6));
         step_normal = R_step * [0;0;1];
 
-        ax = reshape(cross(region.normal, step_normal), 3, 1);
+        ax = reshape(cross(step_normal, region.normal), 3, 1);
         if norm(ax) > 1e-3
           theta = asin(norm(ax) / (norm(region.normal) * norm(step_normal)));
           R_snap = axis2rotmat([ax; theta]);
