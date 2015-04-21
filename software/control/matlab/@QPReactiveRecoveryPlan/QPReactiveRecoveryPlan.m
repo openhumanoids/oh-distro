@@ -508,10 +508,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       qp_input.param_set_name = 'recovery';
     end
 
-    function is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices)
-      is_captured = QPReactiveRecoveryPlanmex.isICPCaptured(obj, r_ic, foot_states, foot_vertices);
-    end
-
     function intercept_plans = getInterceptPlans(obj, foot_states, foot_vertices, reach_vertices, r_ic, comd, omega, u)
       intercept_plans = struct('tf', {},...
                                'tswitch', {},...
@@ -923,17 +919,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       msg.coefs = coefs;
       obj.lc.publish('REACTIVE_RECOVERY_DEBUG', msg);
     end
-
   end
 
   methods(Static)
-    y = closestPointInConvexHull(x, V);
-    xf = bangBangUpdate(x0, xd0, tf, u);
-    x_ic_new = icpUpdate(x_ic, x_cop, dt, omega);
-    [tf, tswitch, u] = bangBangIntercept(x0, xd0, xf, u_max);
-    p = expTaylor(a, b, c, n);
-    [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n);
-
     function intercepts = bangBangInterceptStruct(x0, xd0, xf, u_max)
       [tf, tswitch, u] = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, xf, u_max);
       intercepts = struct('tf', num2cell(tf),...
@@ -945,6 +933,20 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       [min_error, idx] = min([intercept_plans.error]);
       best_plan = intercept_plans(idx);
     end
+  end
+
+  methods
+    is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices);
+  end
+
+  methods(Static)
+    y = closestPointInConvexHull(x, V);
+    xf = bangBangUpdate(x0, xd0, tf, u);
+    x_ic_new = icpUpdate(x_ic, x_cop, dt, omega);
+    [tf, tswitch, u] = bangBangIntercept(x0, xd0, xf, u_max);
+    p = expTaylor(a, b, c, n);
+    [t_int, l_int] = expIntercept(a, b, c, l0, ld0, u, n);
+
   end
 end
 
