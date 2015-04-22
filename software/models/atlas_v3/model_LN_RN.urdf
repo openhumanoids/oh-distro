@@ -826,6 +826,10 @@
     <child link="r_situational_awareness_camera_optical_frame"/>
   </joint>
   <link name="r_situational_awareness_camera_optical_frame"/>
+  <frame link="l_foot" name="l_foot_sole" rpy="0 0 0" xyz="0.0426  0.0017 -0.07645"/>
+  <frame link="r_foot" name="r_foot_sole" rpy="0 0 0" xyz="0.0426 -0.0017 -0.07645"/>
+  <frame link="l_foot" name="l_foot_toe" rpy="0 0 0" xyz="0.1728 0.0017 -0.07645"/>
+  <frame link="r_foot" name="r_foot_toe" rpy="0 0 0" xyz="0.1728 -0.0017 -0.07645"/>
   <link name="l_situational_awareness_camera_link">
     <inertial>
       <mass value="0.1"/>
@@ -1019,7 +1023,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_camera_optical_joint" type="continuous">
+  <joint name="left_camera_optical_joint" type="fixed">
     <origin rpy="-0.00903666 -0.00460568 -0.00953286" xyz="0.037817599268810 -0.091862694985753 -0.008823379197658"/>
     <parent link="left_camera_optical_frame"/>
     <child link="motor"/>
@@ -1032,7 +1036,7 @@
     <child link="spindle"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="spindle_joint" type="continuous">
+  <joint name="spindle_joint" type="fixed">
     <parent link="spindle"/>
     <child link="hokuyo_link"/>
   </joint>
@@ -1314,4 +1318,3 @@
     <child link="r_hand_force_torque"/>
   </joint>
 </robot>
-

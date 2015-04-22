@@ -826,6 +826,10 @@
     <child link="r_situational_awareness_camera_optical_frame"/>
   </joint>
   <link name="r_situational_awareness_camera_optical_frame"/>
+  <frame link="l_foot" name="l_foot_sole" rpy="0 0 0" xyz="0.0426  0.0017 -0.07645"/>
+  <frame link="r_foot" name="r_foot_sole" rpy="0 0 0" xyz="0.0426 -0.0017 -0.07645"/>
+  <frame link="l_foot" name="l_foot_toe" rpy="0 0 0" xyz="0.1728 0.0017 -0.07645"/>
+  <frame link="r_foot" name="r_foot_toe" rpy="0 0 0" xyz="0.1728 -0.0017 -0.07645"/>
   <link name="l_situational_awareness_camera_link">
     <inertial>
       <mass value="0.1"/>
@@ -1019,7 +1023,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_camera_optical_joint" type="continuous">
+  <joint name="left_camera_optical_joint" type="fixed">
     <origin rpy="-0.00903666 -0.00460568 -0.00953286" xyz="0.037817599268810 -0.091862694985753 -0.008823379197658"/>
     <parent link="left_camera_optical_frame"/>
     <child link="motor"/>
@@ -1032,7 +1036,7 @@
     <child link="spindle"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="spindle_joint" type="continuous">
+  <joint name="spindle_joint" type="fixed">
     <parent link="spindle"/>
     <child link="hokuyo_link"/>
   </joint>
@@ -1421,7 +1425,7 @@
     <collision>
       <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0_chull.obj"/>
       </geometry>
       <material name="yellow">
         <color rgba="0 1 1 1"/>
@@ -1439,7 +1443,7 @@
     <collision>
       <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1460,7 +1464,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1476,7 +1480,7 @@
     <collision>
       <origin rpy="0 0 0.52" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1515,7 +1519,7 @@
     <collision>
       <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0_chull.obj"/>
       </geometry>
       <material name="yellow">
         <color rgba="0 1 1 1"/>
@@ -1533,7 +1537,7 @@
     <collision>
       <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1554,7 +1558,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1570,7 +1574,7 @@
     <collision>
       <origin rpy="0 0 0.52" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1609,7 +1613,7 @@
     <collision>
       <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0_chull.obj"/>
       </geometry>
       <material name="yellow">
         <color rgba="0 1 1 1"/>
@@ -1627,7 +1631,7 @@
     <collision>
       <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1648,7 +1652,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1664,7 +1668,7 @@
     <collision>
       <origin rpy="0 0 0.52" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3_chull.obj"/>
       </geometry>
       <material name="yellow"/>
     </collision>
@@ -1701,7 +1705,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/palm.obj"/>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/palm_chull.obj"/>
       </geometry>
       <material name="yellow">
         <color rgba="0 1 1 1"/>
@@ -1798,4 +1802,3 @@
     </sensor>
   </gazebo>
 </robot>
-
