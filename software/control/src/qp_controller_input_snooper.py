@@ -34,6 +34,7 @@ def handle_qp_controller_input_msg(channel, data):
   for i in range(0, msg.num_tracked_bodies):
     bmd = msg.body_motion_data[i]
     ts = bmd.ts;
+    t_clamped = max(min(t_global, ts[-1]), ts[0]);
     color = color_order[i%len(color_order)];
     for j in range(0, msg.body_motion_data[i].num_spline_coefs):
       tsdense = np.linspace(ts[j], ts[j+1], 20);
@@ -46,10 +47,10 @@ def handle_qp_controller_input_msg(channel, data):
         gl.glVertex3f(ps[k,0], ps[k,1], ps[k,2]);
         gl.glVertex3f(ps[k+1,0], ps[k+1,1], ps[k+1,2]);
       gl.glEnd();
-      if (t_global > tsdense[0] and t_global < tsdense[-1]):
+      if (t_clamped >= tsdense[0] and t_clamped <= tsdense[-1]):
         # make marker indicating current tracking position
         gl.glColor3f(0.9,0.2,0.9);
-        ctp = pval(coefs, t_global-ts[j])
+        ctp = pval(coefs, t_clamped-ts[j])
         gl.sphere(ctp[0], ctp[1], ctp[2], 0.005, 20, 20);
   gl.switch_buffer()
   

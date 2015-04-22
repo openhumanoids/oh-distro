@@ -41,7 +41,6 @@ lfoot_poses = [lfoot_pose,...
                lfoot_pose,...
                lfoot_pose + [0;0;0.05;0;0;0;0]];
 
-dt = 10;
 foot_ts = [0, 1, 2];
 nposes = length(foot_ts);
 lfoot_motion = BodyMotionData.from_body_xyzquat(r.foot_frame_id.left, foot_ts, lfoot_poses);
