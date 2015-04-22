@@ -6,9 +6,9 @@ classdef BracingSim < atlasParams.Base
 
       obj.hardware = drcAtlasParams.getBracingParams(r);
 
-      obj.whole_body.Kp = 110*ones(r.getNumPositions(), 1);
+      obj.whole_body.Kp = 170*ones(r.getNumPositions(), 1);
       obj.whole_body.Kp(1:6) = zeros(6, 1);
-      obj.whole_body.damping_ratio = 1.2;
+      obj.whole_body.damping_ratio = 1.1;
 
       obj.whole_body.w_qdd = ones(r.getNumVelocities(), 1);
 
