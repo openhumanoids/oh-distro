@@ -160,6 +160,7 @@ classdef StatelessFootstepPlanner
         end
         assert(goal_step.frame_id == plan.footsteps(end).frame_id);
         plan.footsteps(end) = goal_step;
+        plan.region_order(end) = nan;
       else
         for j = 1:request.num_goal_steps
           goal_step = Footstep.from_footstep_t(request.goal_steps(j), biped);
@@ -170,6 +171,7 @@ classdef StatelessFootstepPlanner
           end
           k = n_unmodified_steps + j;
           plan.footsteps(k) = goal_step;
+          plan.region_order(k) = nan;
         end
       end
     end
