@@ -6,11 +6,11 @@ drc_lcmtypes
 latency
 drivers
 utils
+drake
 perception
 motion_estimate
 network
 tools
-drake
 control
 bdi_walking
 ddapp
