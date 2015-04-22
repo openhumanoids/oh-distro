@@ -103,7 +103,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_bracing_plan(obj, msg)
-      disp('Got a bracing plan')
+      % disp('Got a bracing plan')
       new_plan = BracingPlan(obj.robot);
       obj.switchToPlan(obj.smoothPlanTransition(new_plan));
     end
