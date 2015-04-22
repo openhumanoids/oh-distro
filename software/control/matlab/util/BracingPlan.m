@@ -28,7 +28,7 @@ classdef BracingPlan < QPControllerPlan
                         's2', 0,... 
                         's2dot', 0);
       obj.duration = inf;
-      gain_set = 'bracing';
+      obj.qp_input.param_set_name = 'bracing';
     end
 
     function qp_input = getQPControllerInput(obj, varargin)
