@@ -16,7 +16,7 @@ group "1.params_and_model_pub" {
     }
 
     cmd "model_LR_RR" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/valkyrie/V1_sim_mit.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/valkyrie/V1_sim_shells_reduced_polygon_count_mit.urdf";
         host = "localhost";
     }
 

@@ -14,7 +14,7 @@ from valkyrie.hand_pose_packet_message_t import hand_pose_packet_message_t
 
 def timestamp_now (): return int (time.time () * 1000000)
 
-def on_bw(channel, data):
+def on_plan(channel, data):
   global atlas_version
   m = robot_plan_t.decode(data)
   estate =  m.plan[m.num_states-1]
@@ -22,10 +22,17 @@ def on_bw(channel, data):
   estate_time = estate.utime*1E-6
   print estate_time
 
-  regex = re.compile('l_arm*')
-  l_arm_names = [string for string in estate.joint_name if re.match(regex,string)]
-  regex = re.compile('r_arm*')
-  r_arm_names = [string for string in estate.joint_name if re.match(regex,string)]
+  if ('LeftShoulderExtensor' in estate.joint_name):
+    print('received plan for valkyrie')
+    l_arm_names = ['LeftShoulderExtensor','LeftShoulderAdductor','LeftShoulderSupinator','LeftElbowExtensor','LeftForearmSupinator','LeftWristExtensor','LeftWrist']
+    r_arm_names = ['RightShoulderExtensor','RightShoulderAdductor','RightShoulderSupinator','RightElbowExtensor','RightForearmSupinator','RightWristExtensor','RightWrist']
+  else:
+    regex = re.compile('l_arm*')
+    l_arm_names = [string for string in estate.joint_name if re.match(regex,string)]
+    regex = re.compile('r_arm*')
+    r_arm_names = [string for string in estate.joint_name if re.match(regex,string)]
+
+
 
   print 'sending' , len(l_arm_names) , 'left and' , len(r_arm_names) , 'right joints'
   l_arm_angles = []
@@ -85,7 +92,7 @@ def on_bw(channel, data):
 
 
 lc = lcm.LCM()
-sub1 = lc.subscribe("COMMITTED_ROBOT_PLAN", on_bw) # required
+sub1 = lc.subscribe("COMMITTED_ROBOT_PLAN", on_plan) # required
 while True:
   ## Handle LCM if new messages have arrived.
   lc.handle()

@@ -192,7 +192,7 @@ pods_use_pkg_config_packages(ros2lcm_stereo lcm bot2-core eigen3 bot2-core eigen
 
 add_executable(lcm2ros_ihmc src/lcm2ros_ihmc.cpp)
 target_link_libraries(lcm2ros_ihmc ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(lcm2ros_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core)
+pods_use_pkg_config_packages(lcm2ros_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core pronto_vis)
 
 add_executable(ros2lcm_test src/ros2lcm_test.cpp)
 target_link_libraries(ros2lcm_test ${catkin_LIBRARIES})
