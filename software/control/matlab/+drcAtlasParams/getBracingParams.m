@@ -1,4 +1,4 @@
-function params = getHardwareParams(r)
+function params = getBracingParams(r)
 typecheck(r, 'DRCAtlas');
 
 force_controlled_joints = [];
@@ -47,18 +47,18 @@ r_leg_hpz  = 30;
 
 % position, proportunal
 gains.k_q_p(back_bkz)  = 10.0;
-gains.k_q_p(back_bky)  = 25.0;
-gains.k_q_p(back_bkx)  = 25.0;
-gains.k_q_p(l_leg_hpz) = 20.0;
-gains.k_q_p(l_leg_hpx) = 15.0;
-gains.k_q_p(l_leg_hpy) = 30.0;
-gains.k_q_p(l_leg_kny) = 30.0;
-gains.k_q_p(l_leg_aky) = 500.0;
-gains.k_q_p(l_leg_akx) = 500.0;
-gains.k_q_p(l_arm_shz) = 5.0;
-gains.k_q_p(l_arm_shx) = 5.0; 
-gains.k_q_p(l_arm_ely) = 5.0; 
-gains.k_q_p(l_arm_elx) = 15.0;
+gains.k_q_p(back_bky)  = 20.0;
+gains.k_q_p(back_bkx)  = 20.0;
+gains.k_q_p(l_leg_hpz) = 10.0;
+gains.k_q_p(l_leg_hpx) = 10.0;
+gains.k_q_p(l_leg_hpy) = 10.0;
+gains.k_q_p(l_leg_kny) = 10.0;
+gains.k_q_p(l_leg_aky) = 100.0;
+gains.k_q_p(l_leg_akx) = 100.0;
+gains.k_q_p(l_arm_shz) = 2.0;
+gains.k_q_p(l_arm_shx) = 2.0; 
+gains.k_q_p(l_arm_ely) = 2.0; 
+gains.k_q_p(l_arm_elx) = 2.0;
 gains.k_q_p(l_arm_uwy) = 10; 
 gains.k_q_p(l_arm_mwx) = 10.0; 
 gains.k_q_p(l_arm_lwy) = 10.0; 
@@ -87,10 +87,10 @@ gains.k_qd_p(l_leg_hpy) = 0.2;
 gains.k_qd_p(l_leg_kny) = 0.2;
 gains.k_qd_p(l_leg_aky) = 2.5;
 gains.k_qd_p(l_leg_akx) = 0.1;
-gains.k_qd_p(l_arm_shz) = 0.45; 
-gains.k_qd_p(l_arm_shx) = 0.65;  
-gains.k_qd_p(l_arm_ely) = 0.25; 
-gains.k_qd_p(l_arm_elx) = 0.75;
+gains.k_qd_p(l_arm_shz) = 0.5; 
+gains.k_qd_p(l_arm_shx) = 0.5;  
+gains.k_qd_p(l_arm_ely) = 0.5; 
+gains.k_qd_p(l_arm_elx) = 0.5;
 gains.k_qd_p(l_arm_uwy) = 0.25; 
 gains.k_qd_p(l_arm_mwx) = 0.25; 
 gains.k_qd_p(l_arm_lwy) = 0.25; 
