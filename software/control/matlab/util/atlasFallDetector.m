@@ -28,8 +28,8 @@ contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'uti
 lc = lcm.lcm.LCM.getSingleton();
 lc.subscribe('FOOT_CONTACT_ESTIMATE',contact_est_monitor);
 
-atlas_status_monitor = drake.util.MessageMonitor(drc.atlas_status_t, 'utime');
-lc.subscribe('ATLAS_STATUS', atlas_status_monitor);
+controller_status_monitor = drake.util.MessageMonitor(drc.controller_status_t, 'utime');
+lc.subscribe('CONTROLLER_STATUS', controller_status_monitor);
 
 foot_indices_struct.l_foot_fz_idx = find(strcmp('l_foot_fz',force_torque_frame.coordinates));
 foot_indices_struct.l_foot_tx_idx = find(strcmp('l_foot_tx',force_torque_frame.coordinates));
@@ -79,10 +79,10 @@ while true
     % end    
     cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
 
-    atlas_status_msg_data = getMessage(atlas_status_monitor);
-    if ~isempty(atlas_status_msg_data)
-      atlas_status_msg = drc.atlas_status_t(atlas_status_msg_data);
-      if atlas_status_msg.behavior == atlas_status_msg.BEHAVIOR_USER
+    controller_status_msg_data = getMessage(controller_status_monitor);
+    if ~isempty(controller_status_msg_data)
+      controller_status_msg = drc.controller_status_t(controller_status_msg_data);
+      if controller_status_msg.state ~= controller_status_msg.DUMMY
         force_torque = getMessage(force_torque_frame);  
         cop = getMeasuredCOP(r,force_torque,kinsol,foot_indices_struct);
           
