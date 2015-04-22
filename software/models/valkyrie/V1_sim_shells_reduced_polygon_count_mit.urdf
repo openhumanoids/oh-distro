@@ -2710,7 +2710,58 @@
                 <box size="0.082 0.128 0.3"/>
             </geometry>
         </collision>
+
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.075 0.0624435 -0.0775"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="0.075 0.0624435 -0.0775"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.075 -0.0624435 -0.0775"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="0.075 -0.0624435 -0.0775"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.11 0.0624435 0.22"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
+      <origin rpy="0 0 0" xyz="0.11 0.0624435 0.22"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.11 -0.0624435 0.22"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
+      <origin rpy="0 0 0" xyz="0.11 -0.0624435 0.22"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+
     </link>
+  <frame name="r_foot_sole" xyz="0.082 0 0.14" rpy="0 -1.5708 0" link="r_foot"/>
     <gazebo reference="r_foot">
         <material>Gazebo/White</material>
     </gazebo>
@@ -3170,7 +3221,58 @@
                 <box size="0.082 0.128 0.3"/>
             </geometry>
         </collision>
+
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.075 0.0624435 0.0775"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="0.075 0.0624435 0.0775"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="heel">
+      <origin rpy="0 0 0" xyz="0.075 -0.0624435 0.0775"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="heel">
+      <origin rpy="0 0 0" xyz="0.075 -0.0624435 0.0775"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.11 0.0624435 -0.22"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
+      <origin rpy="0 0 0" xyz="0.11 0.0624435 -0.22"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="toe">
+      <origin rpy="0 0 0" xyz="0.11 -0.0624435 -0.22"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="toe">
+      <origin rpy="0 0 0" xyz="0.11 -0.0624435 -0.22"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+
     </link>
+  <frame name="l_foot_sole" xyz="0.082 0 -0.14" rpy="3.1416 1.5708 0" link="l_foot"/>
     <gazebo reference="l_foot">
         <material>Gazebo/White</material>
     </gazebo>

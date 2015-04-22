@@ -23,9 +23,9 @@
 
       { "name" : "Back",
         "joints" : [
-          "WaistRotator",
+          "WaistLateralExtensor",
           "WaistExtensor",
-          "WaistLateralExtensor"
+          "WaistRotator"
           ],
         "labels" : ["roll (x)", "pitch (y)", "yaw (z)"]
       },
@@ -63,7 +63,32 @@
           "UpperNeckExtensor"
           ],
         "labels" : ["ay", "by", "cy"]
+      },
+
+      { "name" : "Left Leg",
+        "joints" : [
+          "LeftHipRotator",
+          "LeftHipAdductor",
+          "LeftHipExtensor",
+          "LeftKneeExtensor",
+          "LeftAnkleExtensor",
+          "LeftAnkle"
+          ],
+        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
+      },
+
+      { "name" : "Right Leg",
+        "joints" : [
+          "RightHipRotator",
+          "RightHipAdductor",
+          "RightHipExtensor",
+          "RightKneeExtensor",
+          "RightAnkleExtensor",
+          "RightAnkle"
+          ],
+        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
       }
+
     ],
 
   "drakeJointNames": [
@@ -151,6 +176,10 @@
   "rightFootMeshFiles" : ["meshes/lj6_Right.stl"],
   "postureDatabaseFile" : "./stored_poses.json",
   "mirrorJointSignFlips" : ["WaistRotator"],
+
+  "pelvisLink" : "Pelvis",
+  "kneeJoints" : ["LeftKneeExtensor", "RightKneeExtensor"],
+  "kneeJointLimits" : [-1.9,-0.6],
 
   "handCombinations": [
       { "side" : "left",
