@@ -25,6 +25,10 @@
 #include <std_msgs/Float64.h>
 #include <map>
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
+
 #define LEFT 0
 #define RIGHT 1
 
@@ -56,6 +60,8 @@ class LCM2ROS{
 
     void handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::hand_pose_packet_message_t* msg);
     ros::Publisher hand_pose_pub_;
+
+    pronto_vis* pc_vis_;
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_):
@@ -77,6 +83,10 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
   hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
 
   node_ = new ros::NodeHandle();
+
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(9995,"Output step positions",5,1) );
+
 }
 
 ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos, double orient_w, double orient_x, double orient_y, double orient_z){
@@ -112,9 +122,78 @@ void LCM2ROS::sendBasicSteps(){
 }
 
 
+Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
+
+  // This conversion function introduces a NaN in Eigen Rotations when:
+  // roll == pi , pitch,yaw =0    ... or other combinations.
+  // cos(pi) ~=0 but not exactly 0
+  // Post DRC Trails: replace these with Eigen's own conversions
+  if ( ((roll==M_PI) && (pitch ==0)) && (yaw ==0)){
+    return  Eigen::Quaterniond(0,1,0,0);
+  }else if( ((pitch==M_PI) && (roll ==0)) && (yaw ==0)){
+    return  Eigen::Quaterniond(0,0,1,0);
+  }else if( ((yaw==M_PI) && (roll ==0)) && (pitch ==0)){
+    return  Eigen::Quaterniond(0,0,0,1);
+  }
+
+  double sy = sin(yaw*0.5);
+  double cy = cos(yaw*0.5);
+  double sp = sin(pitch*0.5);
+  double cp = cos(pitch*0.5);
+  double sr = sin(roll*0.5);
+  double cr = cos(roll*0.5);
+  double w = cr*cp*cy + sr*sp*sy;
+  double x = sr*cp*cy - cr*sp*sy;
+  double y = cr*sp*cy + sr*cp*sy;
+  double z = cr*cp*sy - sr*sp*cy;
+  return Eigen::Quaterniond(w,x,y,z);
+}
+
 void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::walking_plan_request_t* msg) {
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
   // sendBasicSteps();
+
+  // Note:
+  // TODO: remove pc_vis_
+
+  std::vector< Eigen::Isometry3d > steps;
+  std::vector<Isometry3dTime> stepsT;
+  for (int i=0; i < msg->footstep_plan.num_steps; i++){ // skip the first two standing steps
+      drc::footstep_t s = msg->footstep_plan.footsteps[i];
+
+      Eigen::Isometry3d step;
+      step.setIdentity();
+      step.translation().x() = s.pos.translation.x;
+      step.translation().y() = s.pos.translation.y;
+      step.translation().z() = s.pos.translation.z;
+      step.rotate(Eigen::Quaterniond(s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z));
+
+      if(robotName_.compare("valkyrie")==0){
+        if (s.is_right_foot){
+          Eigen::Isometry3d fix_transform;
+          fix_transform.setIdentity();
+          fix_transform.translation().x() = 0;
+          fix_transform.translation().y() = 0;
+          fix_transform.translation().z() = 0;
+          fix_transform.rotate(euler_to_quat( 0*M_PI/180, -90*M_PI/180, 0 )) ;
+          step = step*fix_transform;
+        }else{
+          Eigen::Isometry3d fix_transform;
+          fix_transform.setIdentity();
+          fix_transform.translation().x() = 0;
+          fix_transform.translation().y() = 0;
+          fix_transform.translation().z() = 0;
+          fix_transform.rotate(euler_to_quat( 180*M_PI/180, 90*M_PI/180, 0 )) ;
+          step = step*fix_transform;
+        }
+      }
+
+      Isometry3dTime stepT = Isometry3dTime(i, step);
+      stepsT.push_back(stepT);
+      steps.push_back(step);
+
+  }
+  pc_vis_->pose_collection_to_lcm_from_list(9995, stepsT);
 
   ihmc_msgs::FootstepDataListMessage mout;
   mout.transfer_time = 1.2;
@@ -122,9 +201,13 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   // mout.trajectoryWaypointGenerationMethod = 0;
   for (int i=2; i < msg->footstep_plan.num_steps; i++){ // skip the first two standing steps
     drc::footstep_t s = msg->footstep_plan.footsteps[i];
-    mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z, 
-                                                        s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z) );    
-  } 
+    //mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
+    //                                                    s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z) );
+
+    Eigen::Quaterniond r(steps[i].rotation());
+    Eigen::Vector3d t(steps[i].translation());
+    mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , t[0], t[1], t[2], r.w(),r.x(),r.y(),r.z() ));
+  }
   walking_plan_pub_.publish(mout);
 }
 
