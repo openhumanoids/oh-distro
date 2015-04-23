@@ -368,6 +368,10 @@ int testClosestPoseInConvexHull() {
   return 0;
 }
 
+int testGetInterceptsWithCoP() {
+  return 0;
+  }
+
 int main() {
   bool failed = false;
   int error;
@@ -441,6 +445,13 @@ int main() {
     failed = true;
   } else {
     std::cout << "testClosestPoseInConvexHull passed" << std::endl;
+  }
+  error = testGetInterceptsWithCoP();
+  if (error) {
+    std::cout << "testGetInterceptsWithCoP failed" << std::endl;
+    failed = true;
+  } else {
+    std::cout << "testGetInterceptsWithCoP passed" << std::endl;
   }
 
 

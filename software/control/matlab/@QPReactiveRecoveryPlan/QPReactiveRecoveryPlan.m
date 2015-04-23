@@ -796,8 +796,7 @@ obj.lcmgl.switchBuffers();
       x_ic = r_ic_prime(1);
       x_cop = r_cop_prime(1);
       % don't narrow our stance to intercept if possible 
-      % x_ic_int = max(QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega) + OFFSET, x0);
-      x_ic_int = QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega) + OFFSET;
+      x_ic_int = max(QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega) + OFFSET, x0);
 
       x_foot_int = [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, u_max),...
                   QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, -u_max)];
