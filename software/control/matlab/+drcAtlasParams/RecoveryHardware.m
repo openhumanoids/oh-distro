@@ -16,7 +16,7 @@ classdef RecoveryHardware < atlasParams.Base
       if (r.getNumVelocities() ~= r.getNumPositions())
         error('this code calls findPositionIndices, which is no longer equivalent to findVelocityIndices');
       end
-      obj.whole_body.w_qdd(r.findPositionIndices('back_bkx')) = 0.00025;
+      obj.whole_body.w_qdd(r.findPositionIndices('back_bkx')) = 0.0005;
       obj.whole_body.w_qdd(r.findPositionIndices('leg')) = 1e-6;
 
       obj.body_motion(r.foot_body_id.right).Kp = 48*ones(6,1);
