@@ -225,6 +225,21 @@
       },
       "name": "sitting",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "safe arm pose to enter car", 
+      "joints": {
+        "l_arm_elx": 1.8495821952819824, 
+        "l_arm_ely": 3.073181629180908, 
+        "l_arm_lwy": 0.06462918221950531, 
+        "l_arm_mwx": 1.0717439651489258, 
+        "l_arm_shx": 1.2634254693984985, 
+        "l_arm_shz": 0.43667125701904297, 
+        "l_arm_uwy": 0.03604685515165329
+      }, 
+      "name": "car entry arm", 
+      "nominal_handedness": "left"
     }
   ],
   "door": [
