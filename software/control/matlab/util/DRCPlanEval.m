@@ -43,6 +43,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
+      obj = obj.addLCMInterface('bracing_plan', 'BRACE_FOR_FALL', @drc.utime_t, 0, @obj.handle_bracing_plan);
       obj = obj.addLCMInterface('start_stand', 'START_MIT_STAND', @drc.utime_t, 0, @obj.handle_stand_default);
       obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @drc.atlas_behavior_command_t, 0, @obj.handle_atlas_behavior_command);
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
@@ -101,6 +102,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.switchToPlan(obj.smoothPlanTransition(new_plan));
     end
 
+    function handle_bracing_plan(obj, msg)
+      % disp('Got a bracing plan')
+      new_plan = BracingPlan(obj.robot);
+      obj.switchToPlan(obj.smoothPlanTransition(new_plan));
+    end
+    
     function handle_atlas_behavior_command(obj, msg)
       if strcmp(char(msg.command), 'stop') || strcmp(char(msg.command), 'freeze')
         disp('Got an atlas behavior command...going into silent mode');

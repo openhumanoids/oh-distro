@@ -28,6 +28,9 @@ contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'uti
 lc = lcm.lcm.LCM.getSingleton();
 lc.subscribe('FOOT_CONTACT_ESTIMATE',contact_est_monitor);
 
+controller_status_monitor = drake.util.MessageMonitor(drc.controller_status_t, 'utime');
+lc.subscribe('CONTROLLER_STATUS', controller_status_monitor);
+
 foot_indices_struct.l_foot_fz_idx = find(strcmp('l_foot_fz',force_torque_frame.coordinates));
 foot_indices_struct.l_foot_tx_idx = find(strcmp('l_foot_tx',force_torque_frame.coordinates));
 foot_indices_struct.l_foot_ty_idx = find(strcmp('l_foot_ty',force_torque_frame.coordinates));
@@ -47,6 +50,7 @@ end
 debounce_threshold = 0.01; % seconds
 icp_exit_time = -1; % seconds
 
+falling_msg = drc.utime_t();
 while true
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
@@ -74,42 +78,49 @@ while true
     %   cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
     % end    
     cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
-      
-    force_torque = getMessage(force_torque_frame);  
-    cop = getMeasuredCOP(r,force_torque,kinsol,foot_indices_struct);
-      
-    icp = getInstantaneousCapturePoint(r,com,J,qd);
-    icp = [icp;min(cpos(3,:))]; % ground projection
 
-    icpIsOK = inSupportPolygon(r,icp,cpos);
-    
-    msg = drc.atlas_fall_detector_status_t();
-    msg.utime = t*10e6;
-    msg.icp = icp;
-    msg.measured_cop = cop;
-    msg.falling=false;
-    if icpIsOK
-      color = [0 1 0];
-      icp_exit_time = -1;
-    else
-      if icp_exit_time == -1
-        icp_exit_time = t;
-      else
-        if t-icp_exit_time > debounce_threshold
-          color = [1 0 0];
-          msg.falling=true;
+    controller_status_msg_data = getMessage(controller_status_monitor);
+    if ~isempty(controller_status_msg_data)
+      controller_status_msg = drc.controller_status_t(controller_status_msg_data);
+      if controller_status_msg.state ~= controller_status_msg.DUMMY
+        force_torque = getMessage(force_torque_frame);  
+        cop = getMeasuredCOP(r,force_torque,kinsol,foot_indices_struct);
+          
+        icp = getInstantaneousCapturePoint(r,com,J,qd);
+        icp = [icp;min(cpos(3,:))]; % ground projection
+
+        icpIsOK = inSupportPolygon(r,icp,cpos);
+        
+        msg = drc.atlas_fall_detector_status_t();
+        msg.utime = t*10e6;
+        msg.icp = icp;
+        msg.measured_cop = cop;
+        msg.falling=false;
+        if icpIsOK
+          color = [0 1 0];
+          icp_exit_time = -1;
+        else
+          if icp_exit_time == -1
+            icp_exit_time = t;
+          else
+            if t-icp_exit_time > debounce_threshold
+              color = [1 0 0];
+              msg.falling=true;
+              falling_msg.utime = msg.utime;
+              % lc.publish('BRACE_FOR_FALL',falling_msg);
+            end
+          end
+        end
+        lc.publish('ATLAS_FALL_STATE',msg);
+
+        if publish_lcmgl
+          lcmgl.glColor3f(color(1), color(2), color(3));
+          lcmgl.sphere(icp, 0.03, 20, 20);
+          lcmgl.switchBuffers();
         end
       end
     end
-    lc.publish('ATLAS_FALL_STATE',msg);
-
-    if publish_lcmgl
-      lcmgl.glColor3f(color(1), color(2), color(3));
-      lcmgl.sphere(icp, 0.03, 20, 20);
-      lcmgl.switchBuffers();
-    end
-end
-
+  end
 end
 
 function cop=getMeasuredCOP(r,force_torque,kinsol,foot_indices_struct)
