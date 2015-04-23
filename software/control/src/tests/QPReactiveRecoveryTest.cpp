@@ -166,7 +166,7 @@ int testisICPCaptured() {
   plan.capture_max_flyfoot_height = 0.025;
 
   std::map<FootID, FootState> foot_states;
-  std::map<FootID, Matrix<double, 2, 4>> foot_vertices;
+  std::map<FootID, Matrix<double, 3, 4>> foot_vertices;
   Vector2d r_ic;
   FootState rstate;
   rstate.pose.setIdentity();
@@ -174,9 +174,10 @@ int testisICPCaptured() {
   lstate.pose.setIdentity();
   bool captured;
 
-  Matrix<double, 2, 4> V;
+  Matrix<double, 3, 4> V;
   V << -.1, .1, .1, -.1,
-        -.05, -.05, .05, .05;
+        -.05, -.05, .05, .05,
+        0, 0, 0, 0;
   foot_vertices[RIGHT] = V;
   foot_vertices[LEFT] = V;
 
@@ -369,6 +370,15 @@ int testClosestPoseInConvexHull() {
 }
 
 int testGetInterceptsWithCoP() {
+  FootID swing_foot = RIGHT;
+  std::map<FootID, FootState> foot_states;
+  BipedDescription biped = getAtlasDefaults();
+  Isometry3d icp = Isometry3d::Identity();
+  Isometry3d cop = Isometry3d::Identity();
+
+  // foot_states[LEFT] 
+
+
   return 0;
   }
 

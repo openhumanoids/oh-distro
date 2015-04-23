@@ -34,7 +34,7 @@ struct InterceptPlan {
   double tf;
   double tswitch;
   Isometry3d pose_next;
-  Isometry3d icp_plus_offset_next;
+  Isometry3d icp_next;
   Isometry3d cop;
   FootID swing_foot;
   FootID stance_foot;
@@ -43,11 +43,11 @@ struct InterceptPlan {
 
 
 typedef std::map<FootID, FootState> FootStateMap;
-typedef std::map<FootID, Matrix<double, 2, 4>> VertMap;
+typedef std::map<FootID, Matrix<double, 3, 4>> VertMap;
 
 struct BipedDescription {
-  std::map<FootID, Matrix<double, 2, 4>> reachable_vertices;
-  std::map<FootID, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
+  std::map<FootID, Matrix<double, 3, 4>> reachable_vertices;
+  std::map<FootID, Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
   double u_max; // foot acceleration bounds used for computing ICP intercepts
   double omega; // characteristic frequency of the linear inverted pendulum system. Defined as sqrt(g / height)
 };
@@ -55,13 +55,17 @@ struct BipedDescription {
 BipedDescription getAtlasDefaults() {
   BipedDescription biped;
   biped.reachable_vertices[RIGHT] << -0.4, 0.4, 0.4, -0.4,
-                                    -0.2, -0.2, -0.45, -0.45;
+                                    -0.2, -0.2, -0.45, -0.45,
+                                    0, 0, 0, 0;
   biped.reachable_vertices[LEFT] << -0.4, 0.4, 0.4, -0.4,
-                                    0.2, 0.2, 0.45, 0.45;
+                                    0.2, 0.2, 0.45, 0.45,
+                                    0, 0, 0, 0;
   biped.foot_vertices[RIGHT] << -0.05, 0.05, 0.05, -0.05,
-                               -0.02, -0.02, 0.02, 0.02;
+                               -0.02, -0.02, 0.02, 0.02,
+                               0, 0, 0, 0;
   biped.foot_vertices[LEFT] << -0.05, 0.05, 0.05, -0.05,
-                              -0.02, -0.02, 0.02, 0.02;
+                              -0.02, -0.02, 0.02, 0.02,
+                              0, 0, 0, 0;
   biped.omega = sqrt(9.81 / 1.098);
   biped.u_max = 5;
   return biped;

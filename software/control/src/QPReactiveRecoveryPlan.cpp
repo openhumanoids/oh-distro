@@ -68,7 +68,7 @@ VectorXd QPReactiveRecoveryPlan::closestPointInConvexHull(const Ref<const Vector
   Map<VectorXd>y(vars.v, CVXGEN_MAX_ROWS);
   Map<VectorXd>w(vars.w, CVXGEN_MAX_PTS);
 
-  y = y + x.head(dim);
+  y.head(dim) = y.head(dim) + x.head(dim);
   return y.head(dim);
 }
 
@@ -157,32 +157,26 @@ std::vector<BangBangIntercept> QPReactiveRecoveryPlan::bangBangIntercept(double 
   return intercepts;
 }
 
-bool QPReactiveRecoveryPlan::isICPCaptured(Vector2d r_ic, std::map<FootID, FootState> foot_states, std::map<FootID, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices) {
+bool QPReactiveRecoveryPlan::isICPCaptured(Vector2d r_ic, std::map<FootID, FootState> foot_states, std::map<FootID, Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices) {
 
   if (foot_states.size() != 2) {
     fprintf(stderr, "isICPCaptured doesn't yet support more than 2 feet\n");
     exit(1);
   }
-  Matrix<double, 2, 8> all_vertices_in_world;
+  Matrix<double, 3, 8> all_vertices_in_world;
 
   int foot_count = 0;
   for (std::map<FootID, FootState>::iterator state = foot_states.begin(); state != foot_states.end(); ++state) {
     if (state->second.contact || 
         (state->second.pose.translation()(2) - state->second.terrain_height < this->capture_max_flyfoot_height)) {
-      Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT> foot_vertices_3d;
       auto vert_it = foot_vertices.find(state->first);
       if (vert_it == foot_vertices.end()) {
         fprintf(stderr, "Cannot find foot name: %s in foot_vertices\n", footIDToName[state->first].c_str());
         exit(1);
       }
-      foot_vertices_3d.block(0,0,2,QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT) = vert_it->second;
-      foot_vertices_3d.row(2).setZero();
-      foot_vertices_3d = foot_vertices_3d.array() * this->capture_shrink_factor;
-      Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT> foot_vertices_in_world;
-      for (int i=0; i < 4; ++i) {
-        foot_vertices_in_world.col(i) = state->second.pose * foot_vertices_3d.col(i);
-      }
-      all_vertices_in_world.block(0, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT*foot_count, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT) = foot_vertices_in_world.block(0,0,2,QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT);
+
+      Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT> foot_vertices_in_world = state->second.pose * (this->capture_shrink_factor * vert_it->second);
+      all_vertices_in_world.block(0, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT*foot_count, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT) = foot_vertices_in_world.block(0,0,3,QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT);
     } else {
       // not captured unless both feet are down (or almost down), for stability purposes
       return false;
@@ -190,7 +184,7 @@ bool QPReactiveRecoveryPlan::isICPCaptured(Vector2d r_ic, std::map<FootID, FootS
     ++foot_count;
   }
 
-  VectorXd r_ic_near = QPReactiveRecoveryPlan::closestPointInConvexHull(r_ic, all_vertices_in_world);
+  VectorXd r_ic_near = QPReactiveRecoveryPlan::closestPointInConvexHull(r_ic, all_vertices_in_world.topRows(2));
   if ((r_ic - r_ic_near).norm() < 1e-2) {
     return true;
   }
@@ -227,8 +221,16 @@ double QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(const FootState foot_state
   return times_to_xprime_axis.minCoeff();
 }
 
-double interceptPlanError(InterceptPlan &plan) {
-  return (plan.pose_next.translation().head(2) - plan.icp_plus_offset_next.translation().head(2)).norm();
+double interceptPlanError(const InterceptPlan &plan, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped) {
+  Matrix<double, 3, 2*QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT> foot_vertices_in_world;
+  foot_vertices_in_world.block(0, 0, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT) = plan.pose_next * biped.foot_vertices.find(plan.swing_foot)->second;
+  foot_vertices_in_world.block(0, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT) = foot_states.find(plan.stance_foot)->second.pose * biped.foot_vertices.find(plan.stance_foot)->second;
+
+  Vector2d icp_projected_onto_support_polygon = QPReactiveRecoveryPlan::closestPointInConvexHull(plan.icp_next.translation().head(2),
+                                                                                                 foot_vertices_in_world.topRows(2));
+  return (icp_projected_onto_support_polygon - plan.icp_next.translation().head(2)).norm();
+
+  // return (plan.pose_next.translation().head(2) - plan.icp_plus_offset_next.translation().head(2)).norm();
 }
 
 
@@ -236,11 +238,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
 
   Isometry3d T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
 
-  Matrix<double, 2, 4> reachable_vertices_in_stance = biped.reachable_vertices.find(swing_foot)->second;
-  Matrix<double, 2, 4> reachable_vertices_in_world;
-  for (int i=0; i < reachable_vertices_in_stance.cols(); ++i) {
-    reachable_vertices_in_world.col(i) = (foot_states[otherFoot[swing_foot]].pose * Vector3d(reachable_vertices_in_stance(0, i), reachable_vertices_in_stance(1, i), 0)).head(2);
-  }
+  Matrix<double, 3, 4> reachable_vertices_in_world = foot_states[otherFoot[swing_foot]].pose * biped.reachable_vertices.find(swing_foot)->second;
 
   double t_min_to_xprime = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_states.find(swing_foot)->second, biped, T_world_to_local);
 
@@ -255,27 +253,25 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   ExponentialForm icp_traj_in_local = QPReactiveRecoveryPlan::icpTrajectory(x_ic, x_cop, biped.omega);
   double x_ic_int = icp_traj_in_local.value(t_min_to_xprime) + this->desired_icp_offset;
   // Don't narrow our stance to intercept if possible
-  x_ic_int = std::max(x_ic_int, x0);
+  double x_ic_target = std::max(x_ic_int, x0);
 
   Polynomial x_foot_poly_plus = QPReactiveRecoveryPlan::bangBangPolynomial(x0, xd0, biped.u_max);
   Polynomial x_foot_poly_minus = QPReactiveRecoveryPlan::bangBangPolynomial(x0, xd0, -biped.u_max);
   Vector2d x_foot_int(x_foot_poly_plus.value(t_min_to_xprime), x_foot_poly_minus.value(t_min_to_xprime));
 
-  if ((x_ic_int >= x_foot_int.minCoeff()) && (x_ic_int <= x_foot_int.maxCoeff())) {
+  if ((x_ic_target >= x_foot_int.minCoeff()) && (x_ic_target <= x_foot_int.maxCoeff())) {
     // The time to get onto the xprime axis dominates, and we can hit the ICP (plus offset) as soon as we get to that axis
-    std::vector<BangBangIntercept> intercepts = QPReactiveRecoveryPlan::bangBangIntercept(x0, xd0, x_ic_int, biped.u_max);
+    std::vector<BangBangIntercept> intercepts = QPReactiveRecoveryPlan::bangBangIntercept(x0, xd0, x_ic_target, biped.u_max);
     if (intercepts.size() > 0) {
       // if there are multiple options, take the one that switches sooner
       std::vector<BangBangIntercept>::iterator it_min = std::min_element(intercepts.begin(), intercepts.end(), tswitchComp);
-      Isometry3d intercept_pose_in_local = Isometry3d::Identity();
-      intercept_pose_in_local.translate(Vector3d(x_ic_int, 0, 0));
-      Isometry3d intercept_pose_in_world = T_world_to_local.inverse() * intercept_pose_in_local;
+      Isometry3d intercept_pose_in_world = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(x_ic_target, 0, 0)));
       intercept_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(intercept_pose_in_world, reachable_vertices_in_world);
       InterceptPlan intercept_plan;
       intercept_plan.tf = t_min_to_xprime;
       intercept_plan.tswitch = it_min->tswitch;
       intercept_plan.pose_next = intercept_pose_in_world;
-      intercept_plan.icp_plus_offset_next = intercept_pose_in_world;
+      intercept_plan.icp_next = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(x_ic_int, 0, 0)));
       intercept_plan.cop = T_world_to_local.inverse();
       intercept_plan.swing_foot = swing_foot;
       intercept_plan.stance_foot = otherFoot[swing_foot];
@@ -322,10 +318,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
           intercept_plan.tf = it_min->tf;
           intercept_plan.tswitch = it_min->tswitch;
           intercept_plan.pose_next = *reachable_pose;
-          Isometry3d icp_plus_offset_next = Isometry3d::Identity();
-          icp_plus_offset_next.translate(Vector3d(icp_traj_in_local.value(it_min->tf) + this->desired_icp_offset, 0, 0));
-          icp_plus_offset_next = T_world_to_local.inverse() * icp_plus_offset_next;
-          intercept_plan.icp_plus_offset_next = icp_plus_offset_next;
+          intercept_plan.icp_next = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(icp_traj_in_local.value(it_min->tf), 0, 0)));
           intercept_plan.swing_foot = swing_foot;
           intercept_plan.stance_foot = otherFoot[swing_foot];
           intercept_plan.error = 0; // to be filled in later
@@ -335,7 +328,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   }
 
   for (std::vector<InterceptPlan>::iterator it = intercept_plans.begin(); it != intercept_plans.end(); ++it) {
-    it->error = interceptPlanError(*it);
+    it->error = interceptPlanError(*it, foot_states, biped);
   }
 
   return intercept_plans;
