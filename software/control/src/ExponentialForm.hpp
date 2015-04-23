@@ -18,6 +18,15 @@ class ExponentialForm {
 
     Polynomial taylorExpand(int degree) const;
 
+    ExponentialForm operator+(const double x) {
+      ExponentialForm expform(this->m_a, this->m_b, this->m_c + x);
+      return expform;
+    }
+    ExponentialForm operator-(const double x) {
+      ExponentialForm expform(this->m_a, this->m_b, this->m_c - x);
+      return expform;
+    };
+
     double value(double t) const;
 };
 
