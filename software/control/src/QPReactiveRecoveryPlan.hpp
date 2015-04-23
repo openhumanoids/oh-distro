@@ -4,6 +4,14 @@
 
 #define QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT 4
 
+enum FootID {RIGHT, LEFT};
+
+std::map<FootID, std::string> footIDToName = {std::make_pair(RIGHT, "right"),
+                                                    std::make_pair(LEFT, "left")};
+
+std::map<std::string, FootID> footNameToID = {std::make_pair("right", RIGHT),
+                                              std::make_pair("left", LEFT)};
+
 struct BangBangIntercept {
   double tf;
   double tswitch;
@@ -17,6 +25,17 @@ struct FootState {
   XYZQuat velocity;
   bool contact;
   double terrain_height;
+};
+
+struct InterceptPlan {
+  double tf;
+  double tswitch;
+  Isometry3d pose_next;
+  Vector2d icp_next;
+  Vector2d cop;
+  FootID swing_foot;
+  FootID stance_foot;
+  double error;
 };
 
 class QPReactiveRecoveryPlan {
@@ -35,6 +54,6 @@ class QPReactiveRecoveryPlan {
     // bang-bang policy intercepts from initial state [x0, xd0] to final state [xf, 0] at max acceleration u_max
     static std::vector<BangBangIntercept> bangBangIntercept(double x0, double xd0, double xf, double u_max);
 
-    bool isICPCaptured(Vector2d r_ic, std::map<std::string, FootState> foot_states, std::map<std::string, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices);
+    bool isICPCaptured(Vector2d r_ic, std::map<FootID, FootState> foot_states, std::map<FootID, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices);
 };
 

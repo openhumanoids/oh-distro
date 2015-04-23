@@ -149,7 +149,7 @@ std::vector<BangBangIntercept> QPReactiveRecoveryPlan::bangBangIntercept(double 
   return intercepts;
 }
 
-bool QPReactiveRecoveryPlan::isICPCaptured(Vector2d r_ic, std::map<std::string, FootState> foot_states, std::map<std::string, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices) {
+bool QPReactiveRecoveryPlan::isICPCaptured(Vector2d r_ic, std::map<FootID, FootState> foot_states, std::map<FootID, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices) {
 
   if (foot_states.size() != 2) {
     fprintf(stderr, "isICPCaptured doesn't yet support more than 2 feet\n");
@@ -158,13 +158,13 @@ bool QPReactiveRecoveryPlan::isICPCaptured(Vector2d r_ic, std::map<std::string, 
   Matrix<double, 2, 8> all_vertices_in_world;
 
   int foot_count = 0;
-  for (std::map<std::string, FootState>::iterator state = foot_states.begin(); state != foot_states.end(); ++state) {
+  for (std::map<FootID, FootState>::iterator state = foot_states.begin(); state != foot_states.end(); ++state) {
     if (state->second.contact || 
         (state->second.pose.translation()(2) - state->second.terrain_height < this->capture_max_flyfoot_height)) {
       Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT> foot_vertices_3d;
       auto vert_it = foot_vertices.find(state->first);
       if (vert_it == foot_vertices.end()) {
-        fprintf(stderr, "Cannot find foot name: %s in foot_vertices\n", state->first.c_str());
+        fprintf(stderr, "Cannot find foot name: %s in foot_vertices\n", footIDToName[state->first].c_str());
         exit(1);
       }
       foot_vertices_3d.block(0,0,2,QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT) = vert_it->second;

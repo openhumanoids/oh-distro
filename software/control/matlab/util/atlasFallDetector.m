@@ -56,24 +56,24 @@ while true
     kinsol = doKinematics(r,q);
     [com,J] = getCOM(r,kinsol);
     
-    % fc = getMessage(contact_est_monitor);
-    % if ~isempty(fc)
-    %   msg = drc.foot_contact_estimate_t(fc);
-    %   left_foot_in_contact = msg.left_contact > 0.5;
-    %   right_foot_in_contact = msg.right_contact > 0.5;
-    %   if left_foot_in_contact && right_foot_in_contact
-    %     cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
-    %   elseif left_foot_in_contact
-    %     cpos = terrainContactPositions(r,kinsol,foot_indices_struct.lfoot_ind); 
-    %   elseif right_foot_in_contact
-    %     cpos = terrainContactPositions(r,kinsol,foot_indices_struct.rfoot_ind); 
-    %   else
-    %     continue
-    %   end
-    % else
-    %   cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
-    % end    
-    cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
+    fc = getMessage(contact_est_monitor);
+    if ~isempty(fc)
+      msg = drc.foot_contact_estimate_t(fc);
+      left_foot_in_contact = msg.left_contact > 0.5;
+      right_foot_in_contact = msg.right_contact > 0.5;
+      if left_foot_in_contact && right_foot_in_contact
+        cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
+      elseif left_foot_in_contact
+        cpos = terrainContactPositions(r,kinsol,foot_indices_struct.lfoot_ind); 
+      elseif right_foot_in_contact
+        cpos = terrainContactPositions(r,kinsol,foot_indices_struct.rfoot_ind); 
+      else
+        continue
+      end
+    else
+      cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
+    end    
+    % cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
       
     force_torque = getMessage(force_torque_frame);  
     cop = getMeasuredCOP(r,force_torque,kinsol,foot_indices_struct);
@@ -102,6 +102,9 @@ while true
       end
     end
     lc.publish('ATLAS_FALL_STATE',msg);
+    if msg.falling
+      lc.publish('RECOVERY_TRIGGER_ON', drc.utime_t());
+    end
 
     if publish_lcmgl
       lcmgl.glColor3f(color(1), color(2), color(3));

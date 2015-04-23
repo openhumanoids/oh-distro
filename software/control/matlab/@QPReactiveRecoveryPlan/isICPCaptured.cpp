@@ -16,11 +16,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   sizecheck(prhs[2], 1, 1);
   const mxArray *foot_states_obj = prhs[2];
-  std::map<std::string, FootState> foot_states;
+  std::map<FootID, FootState> foot_states;
 
   sizecheck(prhs[3], 1, 1);
   const mxArray *foot_vertices_obj = prhs[3];
-  std::map<std::string, Matrix<double, 2, 4>> foot_vertices;
+  std::map<FootID, Matrix<double, 2, 4>> foot_vertices;
 
   const mxArray *pobj;
 
@@ -52,12 +52,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     sizecheck(pobj, 1, 1);
     state.terrain_height = mxGetScalar(pobj);
 
-    foot_states[*foot_name] = state;
+    foot_states[footNameToID[*foot_name]] = state;
 
     const mxArray *vert_obj = mxGetFieldSafe(foot_vertices_obj, *foot_name);
     sizecheck(vert_obj, 2, 4);
     Map<Matrix<double, 2, 4>> V(mxGetPrSafe(vert_obj));
-    foot_vertices[*foot_name] = V;
+    foot_vertices[footNameToID[*foot_name]] = V;
   }
 
   Matrix<double, 1, 1> is_captured;

@@ -165,8 +165,8 @@ int testisICPCaptured() {
   plan.capture_shrink_factor = 0.8;
   plan.capture_max_flyfoot_height = 0.025;
 
-  std::map<std::string, FootState> foot_states;
-  std::map<std::string, Matrix<double, 2, 4>> foot_vertices;
+  std::map<FootID, FootState> foot_states;
+  std::map<FootID, Matrix<double, 2, 4>> foot_vertices;
   Vector2d r_ic;
   FootState rstate;
   rstate.pose.setIdentity();
@@ -177,19 +177,18 @@ int testisICPCaptured() {
   Matrix<double, 2, 4> V;
   V << -.1, .1, .1, -.1,
         -.05, -.05, .05, .05;
-  foot_vertices.insert(std::pair<std::string, Matrix<double, 2, 4>>("right", V));
-  foot_vertices["right"] = V;
-  foot_vertices["left"] = V;
+  foot_vertices[RIGHT] = V;
+  foot_vertices[LEFT] = V;
 
   rstate.pose.translate(Vector3d(1.13, 2, 0)).rotate(AngleAxis<double>(M_PI/2, Vector3d(0, 0, 1)));
   rstate.contact = true;
   rstate.terrain_height = 0;
-  foot_states["right"] = rstate;
+  foot_states[RIGHT] = rstate;
 
   lstate.pose.translate(Vector3d(0.87, 2, 0)).rotate(AngleAxis<double>(M_PI/2, Vector3d(0, 0, 1)));
   lstate.contact = true;
   lstate.terrain_height = 0;
-  foot_states["left"] = lstate;
+  foot_states[LEFT] = lstate;
 
   r_ic << 1.0, 2.0;
 
@@ -199,7 +198,7 @@ int testisICPCaptured() {
     return 1;
   }
 
-  foot_states["left"].contact = false;
+  foot_states[LEFT].contact = false;
   captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
   if (!captured) {
     // should still be captured because lfoot is close to the terrain
@@ -207,7 +206,7 @@ int testisICPCaptured() {
     return 1;
   }
 
-  foot_states["left"].terrain_height = -0.1;
+  foot_states[LEFT].terrain_height = -0.1;
   captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
   if (captured) {
     // should not be captured, because terrain is too low 
@@ -215,7 +214,7 @@ int testisICPCaptured() {
     return 1;
   }
 
-  foot_states["left"].contact = true;
+  foot_states[LEFT].contact = true;
   r_ic << 1.0, 2.1;
   captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
   if (captured) {
