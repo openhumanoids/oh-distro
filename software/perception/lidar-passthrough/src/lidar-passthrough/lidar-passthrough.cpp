@@ -126,9 +126,11 @@ class Pass{
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
          std::string lidar_channel_, double collision_threshold_,
          bool simulated_data_, double delta_threshold_):
-    lcm_(lcm_), verbose_(verbose_), 
+    lcm_(lcm_), verbose_(verbose_),
     lidar_channel_(lidar_channel_),urdf_parsed_(false),
-    simulated_data_(simulated_data_), delta_threshold_(delta_threshold_){
+    simulated_data_(simulated_data_),
+    collision_threshold_(collision_threshold_),
+    delta_threshold_(delta_threshold_){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
   
@@ -261,7 +263,9 @@ void Pass::DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_c
   if (which==0){
     for( unsigned int i = 0; i < scan_cloud_s2l->points.size() ; i++ ){
       if ( (msg->ranges[i] > ASSUMED_HEAD  ) &&(msg->ranges[i] < ASSUMED_FAR )){
-        Vector3d point(scan_cloud_s2l->points[i].x, scan_cloud_s2l->points[i].y, scan_cloud_s2l->points[i].z );
+        Vector3d point(static_cast<double>(scan_cloud_s2l->points[i].x), 
+                       static_cast<double>(scan_cloud_s2l->points[i].y), 
+                       static_cast<double>(scan_cloud_s2l->points[i].z));
         points.push_back( point );
         possible_indices.push_back(i);
       }
