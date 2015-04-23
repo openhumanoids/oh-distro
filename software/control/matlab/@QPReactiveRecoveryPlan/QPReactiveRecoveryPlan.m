@@ -697,7 +697,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         fraction_second = 0.85;
         if (foot_state.xyz_quat(3) > swing_height_first+foot_state.terrain_height)
           % interpolate between current foot height and second swing height
-          swing_height_first = swing_height_second*(fraction_first/fraction_second) + (foot_state.xyz_quat(3)*(1-fraction_first/fraction_second));
+          swing_height_first = swing_height_second*(fraction_first/fraction_second) + ((foot_state.xyz_quat(3)-foot_state.terrain_height)*(1-fraction_first/fraction_second));
         end
         ts = [0 0 0 intercept_plan.tf];
         xs = zeros(6,4);
