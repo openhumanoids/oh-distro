@@ -94,9 +94,6 @@ class Pass{
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
 
-    //Collision_Object_GFE* collision_object_gfe_;
-    //Collision_Object_Point_Cloud* collision_object_point_cloud_;
-    //Collision_Detector* collision_detector_;
     int n_collision_points_;
     
   void DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_cloud_s2l,
@@ -115,7 +112,7 @@ class Pass{
     bool urdf_parsed_;
     bool urdf_subscription_on_;
     lcm::Subscription *urdf_subscription_; //valid as long as urdf_parsed_ == false
-    // Last robot state: this is used as the collision gfe/robot
+    // Last robot state: this is used as the collision robot
     drc::robot_state_t last_rstate_;
     bool init_rstate_;
 
@@ -141,18 +138,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   drake_model_.compile();
   dofMap_ = drake_model_.computeDofMap();
 
-  // DEPRECATED
-  //collision_object_gfe_ = new Collision_Object_GFE( "collision-object-gfe", model_->getURDFString(), COLLISION_OBJECT_GFE_COLLISION_OBJECT_COLLISION, atlas_version_ );
-  //n_collision_points_ = 1081; // was 1000, real lidar from sensor head has about 1081 returns (varies)
-  
-  //collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , collision_threshold_);
-  // create the collision detector
-  //collision_detector_ = new Collision_Detector();
-  // add the two collision objects to the collision detector with different groups and filters (to prevent checking of self collisions)
-  //collision_detector_->add_collision_object( collision_object_gfe_, COLLISION_DETECTOR_GROUP_1, COLLISION_DETECTOR_GROUP_2 );
-  //collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 );   
-  // END_DEPRECATED
-  
   worker_thread_ = std::thread(std::ref(*this));
   
   lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
@@ -303,33 +288,18 @@ void Pass::DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_c
   }
   
   
-  // 2. Do the filtering:
-  // DEPRECATED
-  // set the state of the collision objects
-  //collision_object_gfe_->set(rstate);
-  //cout << "gfe obj size: " << collision_object_gfe_->bt_collision_objects().size() << "\n";
-  //collision_object_point_cloud_->set( points );
-  // get the vector of collisions by running collision detection
-  //int64_t tic = _timestamp_now();
-  //vector< Collision > collisions = collision_detector_->get_collisions();
-  //cout << msg->ranges.size() << " and " << points.size() << " and " << scan_cloud_s2l->points.size() << " " <<  (_timestamp_now() - tic)*1e-6 << " dt\n";;
-  // END_DEPRECATED
-  
+  // 2. Extract the indices of the points in collision:
   VectorXd q(robotStateToDrakePosition(rstate, dofMap_, drake_model_.num_positions));
   drake_model_.doKinematics(q);
   
   vector<size_t> filtered_point_indices = drake_model_.collidingPoints(points, collision_threshold_);
   
-  // 3. Extract the indices of the points in collision and modify the outgoing ranges as a result:
+  // 3. Modify the outgoing ranges of the colliding points:
   std::vector<float> original_ranges =  msg->ranges;
   
   
   vector< Vector3d > free_points;
   vector< Vector3d > colliding_points;      
-  //vector< unsigned int > filtered_point_indices;
-  //for( unsigned int j = 0; j < collisions.size(); j++ ){
-    //filtered_point_indices.push_back( atoi( collisions[ j ].second_id().c_str() ) );
-  //}
   for( unsigned int j = 0; j < points.size(); j++ ){
     for( unsigned int k = 0; k < filtered_point_indices.size(); k++ ){
       if( j == filtered_point_indices[ k ] ){
