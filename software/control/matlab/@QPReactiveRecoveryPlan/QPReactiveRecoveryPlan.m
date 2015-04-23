@@ -780,7 +780,7 @@ obj.lcmgl.switchBuffers();
                                                    0,...
                                                    u_max);
 
-      min_time_to_xprime_axis = max(min([xprime_axis_intercepts.tf]), obj.MIN_STEP_DURATION);
+      t_min = max(min([xprime_axis_intercepts.tf]), obj.MIN_STEP_DURATION);
 
       % subplot(211)
       % hold on
@@ -792,14 +792,15 @@ obj.lcmgl.switchBuffers();
 
       intercept_plans = struct('tf', {}, 'tswitch', {}, 'r_foot_new', {}, 'r_ic_new', {});
 
-      t_int = min_time_to_xprime_axis;
+      % t_min = min_time_to_xprime_axis;
       x_ic = r_ic_prime(1);
       x_cop = r_cop_prime(1);
       % don't narrow our stance to intercept if possible 
-      x_ic_int = max(QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_int, omega) + OFFSET, x0);
+      % x_ic_int = max(QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega) + OFFSET, x0);
+      x_ic_int = QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega) + OFFSET;
 
-      x_foot_int = [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_int, u_max),...
-                  QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_int, -u_max)];
+      x_foot_int = [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, u_max),...
+                  QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, -u_max)];
 
       if x_ic_int >= min(x_foot_int) && x_ic_int <= max(x_foot_int)
         % The time to get onto the xprime axis dominates, and we can hit the ICP as soon as we get to that axis
@@ -814,10 +815,10 @@ obj.lcmgl.switchBuffers();
           % r_foot_reach = r_foot_int;
 
 
-          intercept_plans(end+1) = struct('tf', t_int,...
+          intercept_plans(end+1) = struct('tf', t_min,...
                                           'tswitch', intercept.tswitch,...
                                           'r_foot_new', r_foot_reach,...
-                                          'r_ic_new', [x_ic_int; 0]);
+                                          'r_ic_new', [x_ic_int - OFFSET; 0]);
         end
       else
         for u = [u_max, -u_max]
