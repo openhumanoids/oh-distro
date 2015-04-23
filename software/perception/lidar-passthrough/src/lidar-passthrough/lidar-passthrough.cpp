@@ -136,7 +136,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   // TODO: get the urdf model from LCM:
   drake_model_.addRobotFromURDFString(model_->getURDFString());
   drake_model_.compile();
-  dofMap_ = drake_model_.computeDofMap();
+  dofMap_ = drake_model_.computePositionNameToIndexMap();
 
   worker_thread_ = std::thread(std::ref(*this));
   
