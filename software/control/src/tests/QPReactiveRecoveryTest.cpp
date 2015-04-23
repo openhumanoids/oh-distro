@@ -222,11 +222,134 @@ int testisICPCaptured() {
     std::cout << "should not be captured" << std::endl;
     return 1;
   }
+  return 0;
+}
 
+int testGetTWorldToLocal() {
+  Isometry3d icp = Isometry3d::Identity();
+  Isometry3d cop = Isometry3d::Identity();
+  Isometry3d T_world_to_local;
+
+  icp.translate(Vector3d(1, 0, 0));
+  T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
+  if (!T_world_to_local.isApprox(Isometry3d::Identity())) {
+    std::cout << "transform 1 should be the identity" << std::endl;
+    return 1;
+  }
+
+  cop.translate(Vector3d(0.5, 0, 0));
+  T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
+  if (!(T_world_to_local * cop).isApprox(Isometry3d::Identity())) {
+    std::cout << "cop should always be at the origin" << std::endl;
+    return 1;
+  }
+  if (!(std::abs((T_world_to_local * icp).translation().y()) < 1e-10)) {
+    std::cout << "icp should always be along the x axis in the local frame" << std::endl;
+    return 1;
+  }
+
+  icp = Isometry3d::Identity();
+  cop = Isometry3d::Identity();
+  cop.translate(Vector3d(0.5, 0.5, 0));
+  T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
+  if (!(T_world_to_local * cop).translation().isApprox(Vector3d(0,0,0))) {
+    std::cout << (T_world_to_local * cop).matrix() << std::endl;
+    std::cout << "cop should always be at the origin" << std::endl;
+    return 1;
+  }
+  if (!(std::abs((T_world_to_local * icp).translation().y()) < 1e-10)) {
+    std::cout << "icp should always be along the x axis in the local frame" << std::endl;
+    return 1;
+  }
+  if (!(std::abs((T_world_to_local * icp).translation().x() - (1.0 / std::sqrt(2))) < 1e-10)) {
+    std::cout << (T_world_to_local * icp).translation() << std::endl;
+    std::cout << "icp should be along the positive x axis" << std::endl;
+    return 1;
+  }
+  if (!(T_world_to_local.inverse() * T_world_to_local * cop).isApprox(cop)) {
+    std::cout << "inverse should give us back the original pose" << std::endl;
+    return 1;
+  }
 
   return 0;
-
 }
+
+int testMinTimeToXprime() {
+  double t_min;
+  Isometry3d T_world_to_local;
+  BipedDescription biped = getAtlasDefaults();
+  FootState foot_state;
+  foot_state.pose = Isometry3d::Identity();
+  foot_state.velocity = XYZQuat::Zero();
+
+  foot_state.pose.translate(Vector3d(1, 0, 0));
+
+  Isometry3d icp = Isometry3d::Identity();
+  Isometry3d cop = Isometry3d::Identity();
+
+  icp.translate(Vector3d(0.1, 0, 0));
+
+  T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
+
+  // xprime axis should be the same as the x axis here
+  t_min = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_state, biped, T_world_to_local);
+  if (std::abs(t_min) > 1e-10) {
+    std::cout << "time to xprime should be zero here" << std::endl;
+    return 1;
+  }
+
+  foot_state.velocity(0) = 10;
+  t_min = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_state, biped, T_world_to_local);
+  if (std::abs(t_min) > 1e-10) {
+    std::cout << "velocity along xprime should have no effect on intercept time" << std::endl;
+    return 1;
+  }
+
+  foot_state.velocity(0) = 10;
+  t_min = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_state, biped, T_world_to_local);
+  if (std::abs(t_min) > 1e-10) {
+    std::cout << "velocity along xprime should have no effect on intercept time" << std::endl;
+    return 1;
+  }
+
+  // x = x0 + xd0*t + 1/2*u*t^2
+  // x = x0 - u*t + 1/2*u*t^2; let t=1;
+  // x = x0 - u + 1/2*u
+  foot_state.velocity = XYZQuat::Zero();
+  foot_state.velocity(1) = -biped.u_max;
+  foot_state.pose.translate(Vector3d(0, 0.5 * biped.u_max, 0));
+  t_min = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_state, biped, T_world_to_local);
+  if (std::abs(t_min - 1) > 1e-10) {
+    std::cout << "should take exactly 1 second to get to xprime from this state" << std::endl;
+    return 1;
+  }
+
+  icp = Isometry3d::Identity();
+  cop = Isometry3d::Identity();
+  foot_state.velocity = XYZQuat::Zero();
+  foot_state.pose = Isometry3d::Identity();
+  cop.translate(Vector3d(-1, 0.5, 0));
+  icp.translate(Vector3d(-1, 1, 0));
+  T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
+
+  foot_state.pose.translate(Vector3d(-0.5, 0, 0));
+
+  // dx = 1/2 * u * (t/2)^2 + 1/2 * u * (t/2)^2 = 0.5;
+  // u * t^2/4 = 0.5;
+  // u * t^2 = 2;
+  // t = sqrt(2 / u)
+  t_min = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_state, biped, T_world_to_local);
+  if (std::abs(t_min - std::sqrt(2.0 / biped.u_max)) > 1e-10) {
+    std::cout << "t_min: " << t_min << std::endl;
+    std::cout << "sqrt(2/u): " << std::sqrt(2.0 / biped.u_max) << std::endl;
+    std::cout << "should take sqrt(2/u) seconds to get to xprime axis" << std::endl;
+    return 1;
+  }
+
+  return 0;
+}
+
+
 
 int main() {
   bool failed = false;
@@ -281,6 +404,22 @@ int main() {
   } else {
     std::cout << "testisICPCaptured passed" << std::endl;
   }
+  error = testGetTWorldToLocal();
+  if (error) {
+    std::cout << "testGetTWorldToLocal failed" << std::endl;
+    failed = true;
+  } else {
+    std::cout << "testGetTWorldToLocal passed" << std::endl;
+  }
+  error = testMinTimeToXprime();
+  if (error) {
+    std::cout << "testMinTimeToXprime failed" << std::endl;
+    failed = true;
+  } else {
+    std::cout << "testMinTimeToXprime passed" << std::endl;
+  }
+
+
   if (!failed) {
     std::cout << "Reactive recovery tests passed" << std::endl;
   } else {
