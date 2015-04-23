@@ -81,8 +81,6 @@ mit.setJointOriginRPY(urdf, 'l_arm_shz', [0, 0, math.pi])
 mit.setJointOriginRPY(urdf, 'l_arm_uwy', [0, math.pi, 0])
 mit.setJointOriginRPY(urdf, 'l_arm_lwy', [0, math.pi, 0])
 
-urdf.write(full_mesh_urdf_path, pretty_print=True)
-
 # Create minimal contact skeleton
 mit.removeAllCollisions(urdf)
 
@@ -144,3 +142,12 @@ mit.addCollisionFilterGroup(urdf, 'l_arm',
                             ['l_arm'])
 
 urdf.write(convex_hull_urdf_path, pretty_print=True)
+
+# Add a geometry to represent the hose for lidar filtering to full collision model
+for link in urdf.xpath("//link[contains(@name,'larm')]"):
+    collision = mit.addCollision(link)
+    mit.addOrigin(collision, xyz=[0.0, 0.15, 0.0])
+    geometry = mit.addGeometry(collision)
+    mit.addBox(geometry, size=[0.15, 0.20, 0.15])
+
+urdf.write(full_mesh_urdf_path, pretty_print=True)
