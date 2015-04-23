@@ -349,7 +349,24 @@ int testMinTimeToXprime() {
   return 0;
 }
 
+int testClosestPoseInConvexHull() {
+  Isometry3d pose = Isometry3d::Identity();
+  Isometry3d pose_closest;
 
+
+  Matrix<double, 2, 4> verts;
+  verts << -2, -1, -1, -2, 
+           -3, -2, -2, -3;
+
+  pose_closest = QPReactiveRecoveryPlan::closestPoseInConvexHull(pose, verts);
+  if (!pose_closest.isApprox(Isometry3d(Translation<double, 3>(Vector3d(-1, -2, 0))), 1e-3)) {
+    std::cout << pose_closest.matrix() << std::endl;
+    std::cout << Isometry3d(Translation<double, 3>(Vector3d(-1, -2, 0))).matrix() << std::endl;
+    std::cout << "should be at -1, -2, 0" << std::endl;
+    return 1;
+  }
+  return 0;
+}
 
 int main() {
   bool failed = false;
@@ -417,6 +434,13 @@ int main() {
     failed = true;
   } else {
     std::cout << "testMinTimeToXprime passed" << std::endl;
+  }
+  error = testClosestPoseInConvexHull();
+  if (error) {
+    std::cout << "testClosestPoseInConvexHull failed" << std::endl;
+    failed = true;
+  } else {
+    std::cout << "testClosestPoseInConvexHull passed" << std::endl;
   }
 
 

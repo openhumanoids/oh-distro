@@ -227,10 +227,20 @@ double QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(const FootState foot_state
   return times_to_xprime_axis.minCoeff();
 }
 
+double interceptPlanError(InterceptPlan &plan) {
+  return (plan.pose_next.translation().head(2) - plan.icp_plus_offset_next.translation().head(2)).norm();
+}
+
 
 std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const FootID &swing_foot, std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop) {
 
   Isometry3d T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
+
+  Matrix<double, 2, 4> reachable_vertices_in_stance = biped.reachable_vertices.find(swing_foot)->second;
+  Matrix<double, 2, 4> reachable_vertices_in_world;
+  for (int i=0; i < reachable_vertices_in_stance.cols(); ++i) {
+    reachable_vertices_in_world.col(i) = (foot_states[otherFoot[swing_foot]].pose * Vector3d(reachable_vertices_in_stance(0, i), reachable_vertices_in_stance(1, i), 0)).head(2);
+  }
 
   double t_min_to_xprime = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_states.find(swing_foot)->second, biped, T_world_to_local);
 
@@ -258,7 +268,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
       Isometry3d intercept_pose_in_local = Isometry3d::Identity();
       intercept_pose_in_local.translate(Vector3d(x_ic_int, 0, 0));
       Isometry3d intercept_pose_in_world = T_world_to_local.inverse() * intercept_pose_in_local;
-      intercept_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(intercept_pose_in_world, biped.reachable_vertices.find(swing_foot)->second);
+      intercept_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(intercept_pose_in_world, reachable_vertices_in_world);
       InterceptPlan intercept_plan;
       intercept_plan.tf = t_min_to_xprime;
       intercept_plan.tswitch = it_min->tswitch;
@@ -287,14 +297,14 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
         Isometry3d reachable_pose_in_world = Isometry3d::Identity();
         reachable_pose_in_world.translate(Vector3d(x_ic + this->desired_icp_offset, 0, 0));
         reachable_pose_in_world = T_world_to_local.inverse() * reachable_pose_in_world;
-        reachable_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(reachable_pose_in_world, biped.reachable_vertices.find(swing_foot)->second);
+        reachable_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(reachable_pose_in_world, reachable_vertices_in_world);
         reachable_poses.push_back(reachable_pose_in_world);
       } else {
         for (std::vector<double>::iterator t = t_int_feasible.begin(); t != t_int_feasible.end(); ++t) {
           Isometry3d reachable_pose_in_world = Isometry3d::Identity();
           reachable_pose_in_world.translate(Vector3d(icp_traj_in_local.value(*t) + this->desired_icp_offset, 0, 0));
           reachable_pose_in_world = T_world_to_local.inverse() * reachable_pose_in_world;
-          reachable_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(reachable_pose_in_world, biped.reachable_vertices.find(swing_foot)->second);
+          reachable_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(reachable_pose_in_world, reachable_vertices_in_world);
           reachable_poses.push_back(reachable_pose_in_world);
         }
       }
@@ -323,7 +333,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   }
 
   for (std::vector<InterceptPlan>::iterator it = intercept_plans.begin(); it != intercept_plans.end(); ++it) {
-    it->error = (it->pose_next.translation().head(2) - it->icp_plus_offset_next.translation().head(2)).norm();
+    it->error = interceptPlanError(*it);
   }
 
   return intercept_plans;
