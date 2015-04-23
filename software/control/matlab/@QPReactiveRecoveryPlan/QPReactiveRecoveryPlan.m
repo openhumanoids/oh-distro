@@ -655,34 +655,29 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         % descend straight there
         sizecheck(intercept_plan.r_foot_new, [7, 1]);
         fraction_first = 0.7;
-        fraction_second = 0.9;
         swing_height_first = foot_state.xyz_quat(3)*(1-fraction_first^2);
-        swing_height_second = foot_state.xyz_quat(3)*(1-fraction_second^2);
 
         ts = [0 0 0 intercept_plan.tf];
-        xs = zeros(6,4);
+        xs = zeros(6,3); % only plan one middle knot point
         xs(1:3,1) = foot_state.xyz_quat(1:3);
-        xs(1:3,4) = intercept_plan.r_foot_new(1:3);
+        xs(1:3,3) = intercept_plan.r_foot_new(1:3);
         [xs(4:6,1), dw0] = quat2expmap(foot_state.xyz_quat(4:7));
-        xs(4:6,4) = quat2expmap(intercept_plan.r_foot_new(4:7));
+        xs(4:6,3) = quat2expmap(intercept_plan.r_foot_new(4:7));
         xd0 = [foot_state.xyz_quatdot(1:3); dw0 * foot_state.xyz_quatdot(4:7)];
         xdf = zeros(6,1);
 
         xs(4:6, 2) = xs(4:6,1);
-        xs(4:6, 3) = xs(4:6,4);
-        xs(3, 2) = xs(3, 4) + swing_height_first;
-        xs(3, 3) = xs(3, 4) + swing_height_second;
+        xs(3, 2) = xs(3, 3) + swing_height_first;
         % interp position between first and last
-        xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
-        xs(1:2, 3) = (1-fraction_second)*xs(1:2, 1) + fraction_second*xs(1:2, 4);
+        xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 3);
 
-        for j = 2:4
+        for j = 2:3
           xs(4:6,j) = unwrapExpmap(xs(4:6,j-1), xs(4:6,j));
         end
 
         settings = struct('optimize_knot_times', true);
-        [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
-        
+        [coefs, ts, objval] = nWaypointCubicSplineFreeKnotTimesmex(ts(1), ts(end), xs, xd0, xdf);
+
           tt = linspace(ts(1), ts(end));
           pp = mkpp(ts, coefs, 6);
           ps = ppval(fnder(pp, 2), tt);
@@ -690,7 +685,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
            
         if (1 || obj.SLOW_DRAW)
           obj.lcmgl.glColor3f(0.1,0.1,1.0);
-          for k=1:4
+          for k=1:3
             obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
           end
         end
