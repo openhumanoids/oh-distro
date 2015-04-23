@@ -181,6 +181,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
     double id = MapCollection::instance()->getMapId(terrainMap);
     memcpy(mxGetData(plhs[0]),&id,sizeof(double));
+
+    mexLock();
     return;
   }
 
@@ -202,6 +204,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       mexErrMsgTxt("MapWrapper: too many arguments to destroy");
     }
     MapCollection::instance()->destroyMap(mapId);
+    mexUnlock();
   }
 
   /* TODO: deprecated
