@@ -47,8 +47,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
-      obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
-      obj.warmup_reactive_recovery_planner = QPReactiveRecoveryPlan(r); %whyyy
+      recovery_options = struct('sim_mode', strcmp(obj.mode, 'sim'));
+      obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r, recovery_options);
+      obj.warmup_reactive_recovery_planner = QPReactiveRecoveryPlan(r, recovery_options); %whyyy
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
