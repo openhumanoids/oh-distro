@@ -510,123 +510,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       qp_input.param_set_name = 'recovery';
     end
 
-    function intercept_plans = getInterceptPlans(obj, foot_states, foot_vertices, reach_vertices, r_ic, comd, omega, u)
-      intercept_plans = struct('tf', {},...
-                               'tswitch', {},...
-                               'r_foot_new', {},...
-                               'r_ic_new', {},...
-                               'error', {},...
-                               'swing_foot', {},...
-                               'r_cop', {});
-      if foot_states.right.contact && foot_states.left.contact
-        available_feet = struct('stance', {'right', 'left'},...
-                                'swing', {'left', 'right'});
-      elseif ~foot_states.right.contact
-        available_feet = struct('stance', {'left'},...
-                                'swing', {'right'});
-      else
-        available_feet = struct('stance', {'right'},...
-                                'swing', {'left'});
-      end
-
-      for j = 1:length(available_feet)
-        swing_foot = available_feet(j).swing;
-        % ignore this foot if the foot velocity is abnormally high -- 
-        % given our u-limit, the foot would travel farther than
-        % a threshold
-        % dxdt = v - u*t
-        % integrate from 0 to v/u ( v - u*t) => v*tf - 1/2*u*tf^2
-        % -> v^2 / u - 1/2 * v^2 / u = 1/2 v^2 / u
-        if (norm(foot_states.(swing_foot).xyz_quatdot(1:3))^2 / u / 2) < obj.MAX_CONSIDERABLE_FOOT_SWING
-          new_plans = obj.getInterceptPlansForFoot(foot_states, swing_foot, foot_vertices, reach_vertices.(swing_foot), r_ic, comd, omega, u);
-          if ~isempty(new_plans)
-            intercept_plans = [intercept_plans, new_plans];
-          end
-        end
-      end
-    end
-
-    function intercept_plans = getInterceptPlansForFoot(obj, foot_states, swing_foot, foot_vertices, reachable_vertices_in_stance_frame, r_ic, comd, omega, u)
-      stance_foot = QPReactiveRecoveryPlan.OTHER_FOOT.(swing_foot);
-
-      % Find the center of pressure, which we'll place as close as possible to the ICP
-      rpy = quat2rpy(foot_states.(stance_foot).xyz_quat(4:7));
-      R = rotmat(rpy(3));
-      stance_foot_vertices_in_world = bsxfun(@plus,...
-                                             R * obj.FOOT_HULL_COP_SHRINK_FACTOR * foot_vertices.(stance_foot),...
-                                             foot_states.(stance_foot).xyz_quat(1:2));
-      r_cop = QPReactiveRecoveryPlan.closestPointInConvexHull(r_ic, stance_foot_vertices_in_world);
-      % r_ic - r_cop
-
-      % Now transform the problem so that the x axis is aligned with (r_ic - r_cop)
-      xprime = (r_ic - r_cop) / norm(r_ic - r_cop);
-      yprime = [0, -1; 1, 0] * xprime;
-      R = [xprime'; yprime'];
-      foot_states_prime = foot_states;
-      foot_vertices_prime = foot_vertices;
-      for f = fieldnames(foot_states)'
-        foot = f{1};
-        foot_states_prime.(foot).xyz_quat(1:2) = R * (foot_states.(foot).xyz_quat(1:2) - r_cop);
-        foot_states_prime.(foot).xyz_quatdot(1:2) = R * foot_states.(foot).xyz_quatdot(1:2);
-        foot_vertices_prime.(foot) = R * foot_vertices_prime.(foot);
-      end
-      r_ic_prime = R * (r_ic - r_cop);
-      assert(abs(r_ic_prime(2)) < 1e-6);
-
-
-      rpy = quat2rpy(foot_states.(stance_foot).xyz_quat(4:7));
-      reachable_vertices_in_world_frame = bsxfun(@plus, rotmat(rpy(3)) * reachable_vertices_in_stance_frame, foot_states.(stance_foot).xyz_quat(1:2));
-      reachable_vertices_prime = R * bsxfun(@minus, reachable_vertices_in_world_frame, r_cop);
-      intercept_plans = obj.getLocalFrameIntercepts(foot_states_prime, swing_foot, foot_vertices_prime, reachable_vertices_prime, r_ic_prime, u, omega);
-
-      Ri = inv(R);
-      % foot_rpy = [quat2rpy(foot_states.left.pose(4:7)), quat2rpy(foot_states.right.pose(4:7))];
-      % foot_avg_direction = angleAverage(foot_rpy(3,1), foot_rpy(3,2));
-      % % Desired foot direction is along direction of comd, or the opposite
-      % % (so we either stumble forward along it or backward, not sideways).
-      % % (strong preference for forward)
-      % if (norm(comd(1:2)) > 0.25)
-      %   comd = comd / norm(comd);
-      %   desired_foot_direction = atan2(comd(2), comd(1));
-      %   if (abs(angleDiff(desired_foot_direction, foot_avg_direction)) > 3*pi/2)
-      %     desired_foot_direction = atan2(-comd(2), -comd(1));
-      %   end
-      % else
-      %   desired_foot_direction = foot_avg_direction;
-      % end
-      
-      for j = 1:length(intercept_plans)
-        % TODO: This needs to be updated to use quaternions
-
-        % % rotate foot to be pointing STEP degrees closer to desired foot
-        % % dir
-        % new_foot_dir_vec = [cos(foot_states.(stance_foot).pose(6)); sin(foot_states.(stance_foot).pose(6))];
-        % err = angleDiff(foot_states.(stance_foot).pose(6), desired_foot_direction);
-        % %warning('This may result in excessive inward steps. Also pull this value from obj.robot')
-        % err = sign(err)*min(abs(err), pi/8);
-        % new_foot_dir_vec = rotmat(err)*new_foot_dir_vec;
-        % new_foot_yaw = atan2(new_foot_dir_vec(2), new_foot_dir_vec(1));
-
-        intercept_plans(j).r_foot_new = [Ri * intercept_plans(j).r_foot_new + r_cop; 
-                                         0;
-                                         foot_states.(stance_foot).xyz_quat(4:7)];
-
-        % make it conform to terrain
-        intercept_plans(j).r_foot_new(3) = foot_states.(swing_foot).terrain_height;
-        normal = foot_states.(swing_foot).terrain_normal;
-        normal(:,normal(3,:) < 0) = -normal(:,normal(3,:) < 0);
-        pose_rpy = [intercept_plans(j).r_foot_new(1:3); quat2rpy(intercept_plans(j).r_foot_new(4:7))];
-        pose_rpy = fitPoseToNormal(pose_rpy, normal);
-        intercept_plans(j).r_foot_new = [pose_rpy(1:3); rpy2quat(pose_rpy(4:6))];
-        assert(~any(isnan(intercept_plans(j).r_foot_new)));
-
-        intercept_plans(j).r_ic_new = Ri * intercept_plans(j).r_ic_new + r_cop;
-        intercept_plans(j).swing_foot = swing_foot;
-        intercept_plans(j).r_cop = r_cop;
-      end
-      
-    end
-
     function [ts, coefs] = swingTraj(obj, intercept_plan, foot_state)
       DEBUG = obj.DEBUG > 1;
 
@@ -767,128 +650,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % end
     end
 
-    function intercept_plans = getLocalFrameIntercepts(obj, foot_states, swing_foot, foot_vertices, reachable_vertices, r_ic_prime, u_max, omega)
-      OFFSET = 0.1;
-
-      % r_ic(t) = (r_ic(0) - r_cop) e^(t*omega) + r_cop
-
-      % figure(7)
-      % clf
-
-      r_cop_prime = [0;0];
-
-      % subplot(212)
-      xprime_axis_intercepts = QPReactiveRecoveryPlan.bangBangInterceptStruct(foot_states.(swing_foot).xyz_quat(2),...
-                                                   foot_states.(swing_foot).xyz_quatdot(2),...
-                                                   0,...
-                                                   u_max);
-
-      t_min = max(min([xprime_axis_intercepts.tf]), obj.MIN_STEP_DURATION);
-
-      % subplot(211)
-      % hold on
-%       tt = linspace(0, 1);
-      % plot(tt, QPReactiveRecoveryPlan.icpUpdate(r_ic_prime(1), r_cop_prime(1), tt, omega) + OFFSET, 'r-')
-
-      x0 = foot_states.(swing_foot).xyz_quat(1);
-      xd0 = foot_states.(swing_foot).xyz_quatdot(1);
-
-      intercept_plans = struct('tf', {}, 'tswitch', {}, 'r_foot_new', {}, 'r_ic_new', {});
-
-      t_min = max(min([xprime_axis_intercepts.tf]), obj.MIN_STEP_DURATION);
-      x_ic = r_ic_prime(1);
-      x_cop = r_cop_prime(1);
-      % don't narrow our stance to intercept if possible 
-      x_predicted_ic = QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega);
-      x_ic_int = max(x_predicted_ic + OFFSET, x0);
-
-      x_foot_int = [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, u_max),...
-                  QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, -u_max)];
-
-      if x_ic_int >= min(x_foot_int) && x_ic_int <= max(x_foot_int)
-        % The time to get onto the xprime axis dominates, and we can hit the ICP as soon as we get to that axis
-        intercepts = QPReactiveRecoveryPlan.bangBangInterceptStruct(x0, xd0, x_ic_int, u_max);
-
-        if ~isempty(intercepts)
-          [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
-          intercept = intercepts(i);
-
-          r_foot_int = [x_ic_int; 0];
-          r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
-          % r_foot_reach = r_foot_int;
-
-
-          intercept_plans(end+1) = struct('tf', t_min,...
-                                          'tswitch', intercept.tswitch,...
-                                          'r_foot_new', r_foot_reach,...
-                                          'r_ic_new', [x_predicted_ic; 0]);
-        end
-      else
-        for u = [u_max, -u_max]
-          [t_int, x_int] = QPReactiveRecoveryPlan.expIntercept((x_ic - x_cop), omega, x_cop + OFFSET, x0, xd0, u, 7);
-          mask = false(size(t_int));
-          for j = 1:numel(t_int)
-            if isreal(t_int(j)) && t_int(j) >= t_min && t_int(j) >= abs(xd0 / u)
-              mask(j) = true;
-            end
-          end
-          t_int = t_int(mask);
-          x_int = x_int(mask);
-          
-          % Pre-generate r_foot_reaches
-          
-          % If there are no intercepts, get as close to our desired capture
-          % as possible in our current reachable set
-          % note: this might be off of the xcop->xic line
-          if isempty(t_int)
-            r_foot_reaches = QPReactiveRecoveryPlan.closestPointInConvexHull([x_ic + OFFSET; 0], reachable_vertices);
-            x_int = r_foot_reaches(1);
-          else
-            r_foot_reaches = zeros( 2, min(1, numel(x_int)) );
-            for j = 1:numel(x_int)
-              r_foot_int = [x_int(j); 0];
-              y = iris.least_distance.cvxgen_ldp(bsxfun(@minus, reachable_vertices, r_foot_int));
-              if norm(y) < 1e-3
-                r_foot_reaches(:, j) = r_foot_int;
-              else
-                % we could theoretically catch it, but not reachably.
-                % so go as close as possible.
-                r_foot_reaches(:, j) = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
-              end
-            end
-          end
-         
-          for j = 1:numel(x_int)
-            r_foot_reach = r_foot_reaches(:, j);
-
-            % r_foot_reach = QPReactiveRecoveryPlan.closestPointInConvexHull(r_foot_int, reachable_vertices);
-            % r_foot_reach = r_foot_int;
-
-            intercepts = QPReactiveRecoveryPlan.bangBangInterceptStruct(x0, xd0, r_foot_reach(1), u_max);
-            if ~isempty(intercepts)
-              [~, i] = min([intercepts.tswitch]); % if there are multiple options, take the one that switches sooner
-              intercept = intercepts(i);
-
-              if ~valuecheck(x0 + 0.5 * xd0 * intercept.tf + 0.25 * intercept.u * intercept.tf^2 - 0.25 * xd0^2 / intercept.u, r_foot_reach(1))
-                warning('Unhandled bad value check')
-              end
-
-              intercept.tf = max([intercept.tf, t_min]);
-              intercept_plans(end+1) = struct('tf', intercept.tf,...
-                                              'tswitch', intercept.tswitch,...
-                                              'r_foot_new', r_foot_reach,...
-                                              'r_ic_new', [x_predicted_ic;
-                                                           0]);
-            end
-          end
-        end
-      end
-
-      for j = 1:length(intercept_plans)
-        intercept_plans(j).error = norm(intercept_plans(j).r_foot_new - (intercept_plans(j).r_ic_new + [OFFSET; 0]));
-      end
-    end
-
     function publishForVisualization(obj, t, com, r_ic, ts, coefs)
       msg = drc.reactive_recovery_debug_t;
       msg.utime = t*1E9;
@@ -903,13 +664,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
   end
 
   methods(Static)
-    function intercepts = bangBangInterceptStruct(x0, xd0, xf, u_max)
-      [tf, tswitch, u] = QPReactiveRecoveryPlan.bangBangIntercept(x0, xd0, xf, u_max);
-      intercepts = struct('tf', num2cell(tf),...
-                          'tswitch', num2cell(tswitch),...
-                          'u', num2cell(u));
-    end
-
     function best_plan = chooseBestIntercept(intercept_plans)
       [min_error, idx] = min([intercept_plans.error]);
       best_plan = intercept_plans(idx);
@@ -918,6 +672,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   methods
     is_captured = isICPCaptured(obj, r_ic, foot_states, foot_vertices);
+    intercept_plans = getInterceptPlansmex(obj, foot_states, foot_vertices, reachable_vertices, r_ic, comd, omega, u_max);
   end
 
   methods(Static)
