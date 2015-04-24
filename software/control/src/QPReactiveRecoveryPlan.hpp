@@ -28,6 +28,7 @@ struct FootState {
   XYZQuat velocity;
   bool contact;
   double terrain_height;
+  Vector3d terrain_normal;
 };
 
 struct InterceptPlan {
@@ -81,7 +82,7 @@ class QPReactiveRecoveryPlan {
 
 		static VectorXd closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
 
-    static Isometry3d closestPoseInConvexHull(const Isometry3d &pose, const Ref<const Matrix<double, 2, Dynamic>> &V);
+    static Isometry3d closestPoseInConvexHull(const Isometry3d &pose, const Ref<const MatrixXd> &V);
 
     static std::vector<double> expIntercept(const ExponentialForm &expform, double l0, double ld0, double u, int degree);
 
@@ -99,7 +100,7 @@ class QPReactiveRecoveryPlan {
 
     bool isICPCaptured(Vector2d r_ic, FootStateMap foot_states, VertMap foot_vertices);
 
-    std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop);
+    std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop);
 
 };
 
