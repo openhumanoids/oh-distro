@@ -122,3 +122,5 @@ endif()
 add_jar(drc_control ${java_src_files})
 
 install_jar(drc_control share/java)
+
+pods_install_python_script(drc-qp-input-snooper python/qp_controller_input_snooper.py)

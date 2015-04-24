@@ -11,7 +11,10 @@ import sys
 import time
 from bot_lcmgl import lcmgl, GL_LINES
 import numpy as np
- 
+
+lc = lcm.LCM()
+gl = lcmgl('qp input bmd snoop', lc);
+
 color_order = [[1.0, 0.1, 0.1], [0.1, 1.0, 0.1], [0.1, 0.1, 1.0], [1.0, 1.0, 0.1], [1.0, 0.1, 1.0], [0.1, 1.0, 1.0]];
 
 def pval(coefs, t_off):
@@ -39,16 +42,18 @@ def handle_qp_controller_input_msg(channel, data):
       gl.glVertex3f(ps[j+1,0], ps[j+1,1], ps[j+1,2]);
     gl.glEnd();
   gl.switch_buffer()
-  
 
 
-lc = lcm.LCM()
-gl = lcmgl('qp input bmd snoop', lc);
-subscription = lc.subscribe("QP_CONTROLLER_INPUT", handle_qp_controller_input_msg)
-subscription.set_queue_capacity(1);
+def main():
+  subscription = lc.subscribe("QP_CONTROLLER_INPUT", handle_qp_controller_input_msg)
+  subscription.set_queue_capacity(1);
+  print "snooper ready"
 
-try:
+  try:
     while True:
-        lc.handle()
-except KeyboardInterrupt:
+      lc.handle()
+  except KeyboardInterrupt:
     pass
+
+if __name__ == '__main__':
+  main()
