@@ -55,6 +55,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     % nonconstant as it will be reassigned if we're in sim mode
     CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
+
+    capture_trigger = SchmittTrigger(0, 1, 0.01, 0.05);
   end
 
   properties (Constant)
@@ -178,8 +180,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           foot_states.(foot).contact = true;
         end
       end
-      foot_states_raw = foot_states;
-
       
       % Initialize if we haven't, to get foot lock into a known state
       % and capture upper body pose to hold it through the plan
@@ -196,59 +196,70 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         replan = false;
       end
 
-      % force right foot not useful for first N ms for testing purposes
-      if (t_global - obj.init_time < obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION)
-        foot_states.right.contact = false;
-        obj.r_foot_in_contact_lock = false;
-        foot_states_raw.right.contact = false;
-        replan = false;
-        r_ic = r_ic + [0; -0.1];
-      end
+      % % force right foot not useful for first N ms for testing purposes
+      % if (t_global - obj.init_time < obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION)
+      %   foot_states.right.contact = false;
+      %   obj.r_foot_in_contact_lock = false;
+      %   replan = false;
+      %   r_ic = r_ic + [0; -0.1];
+      % end
 
-      % Update and check against contact locks
-      if (~foot_states.left.contact)
-        obj.l_foot_last_noncontact = t_global;
-      else
-        obj.l_foot_last_contact = t_global;
-      end
-      if (~foot_states.right.contact)
-        obj.r_foot_last_noncontact = t_global;
-      else
-        obj.r_foot_last_contact = t_global;
-      end
-      % State switching only when hysterisis thresholds are met
-      % noncontact -> contact
-      if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
-        disp('r foot in contact');
-        obj.l_foot_in_contact_lock
-        replan = true;
-        obj.r_foot_in_contact_lock = true;
-      end
-      if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
-        disp('l foot in contact');
-        obj.r_foot_in_contact_lock
-        obj.l_foot_in_contact_lock = true;
-        replan = true;
-      end
-      % contact -> noncontact
-      if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
-        disp('r foot leaving contact');
-        obj.l_foot_in_contact_lock
-        obj.r_foot_in_contact_lock = false;
-        replan = true;
-      end
-      if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
-        disp('l foot leaving contact');
-        obj.r_foot_in_contact_lock
-        obj.l_foot_in_contact_lock = false;
-        replan = true;
-      end
+      % % Update and check against contact locks
+      % if (~foot_states.left.contact)
+      %   obj.l_foot_last_noncontact = t_global;
+      % else
+      %   obj.l_foot_last_contact = t_global;
+      % end
+      % if (~foot_states.right.contact)
+      %   obj.r_foot_last_noncontact = t_global;
+      % else
+      %   obj.r_foot_last_contact = t_global;
+      % end
+      % % State switching only when hysterisis thresholds are met
+      % % noncontact -> contact
+      % if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
+      %   disp('r foot in contact');
+      %   obj.l_foot_in_contact_lock
+      %   replan = true;
+      %   obj.r_foot_in_contact_lock = true;
+      % end
+      % if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
+      %   disp('l foot in contact');
+      %   obj.r_foot_in_contact_lock
+      %   obj.l_foot_in_contact_lock = true;
+      %   replan = true;
+      % end
+      % % contact -> noncontact
+      % if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
+      %   disp('r foot leaving contact');
+      %   obj.l_foot_in_contact_lock
+      %   obj.r_foot_in_contact_lock = false;
+      %   replan = true;
+      % end
+      % if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
+      %   disp('l foot leaving contact');
+      %   obj.r_foot_in_contact_lock
+      %   obj.l_foot_in_contact_lock = false;
+      %   replan = true;
+      % end
 
-      % commit contact from that filtering
-      foot_states.right.contact = obj.r_foot_in_contact_lock;
-      foot_states.left.contact = obj.l_foot_in_contact_lock;
+      % % commit contact from that filtering
+      % foot_states.right.contact = obj.r_foot_in_contact_lock;
+      % foot_states.left.contact = obj.l_foot_in_contact_lock;
 
-      is_captured = obj.isICPCaptured(r_ic, foot_states, obj.foot_vertices);
+
+      if foot_states.right.contact ~= obj.r_foot_in_contact_lock
+        replan = true;
+      elseif foot_states.left.contact ~= obj.l_foot_in_contact_lock
+        replan = true;
+      end
+      obj.r_foot_in_contact_lock = foot_states.right.contact;
+      obj.l_foot_in_contact_lock = foot_states.left.contact;
+
+
+      icp_outside_support = obj.capture_trigger.update(obj.icpError(r_ic, foot_states, obj.foot_vertices));
+      % is_captured = obj.isICPCaptured(r_ic, foot_states, obj.foot_vertices);
+      is_captured = ~icp_outside_support;
       if (t_global - obj.init_time >= obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION && is_captured) 
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
         if (~isempty(obj.last_plan))
@@ -461,14 +472,19 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       feet = {'right', 'left'};
       for j = 1:2
         foot = feet{j};
-        qp_input.support_data(j).body_id = obj.robot.foot_body_id.(foot);
-        qp_input.support_data(j).contact_pts = [rpc.contact_groups{obj.robot.foot_body_id.(foot)}.toe,...
-                                                rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel];
-        qp_input.support_data(j).support_logic_map = obj.support_logic_maps.require_support;
-
         sole_pose_quat = foot_states.(foot).xyz_quat;
         sole_xyz_exp = [sole_pose_quat(1:3); quat2expmap(sole_pose_quat(4:7))];
         sole_xyz_exp(3) = foot_states.(foot).terrain_height;
+
+        qp_input.support_data(j).body_id = obj.robot.foot_body_id.(foot);
+        qp_input.support_data(j).contact_pts = [rpc.contact_groups{obj.robot.foot_body_id.(foot)}.toe,...
+                                                rpc.contact_groups{obj.robot.foot_body_id.(foot)}.heel];
+        if foot_states.(foot).xyz_quat(3) - foot_states.(foot).terrain_height < obj.CAPTURE_MAX_FLYFOOT_HEIGHT
+          qp_input.support_data(j).support_logic_map = obj.support_logic_maps.require_support;
+        else
+          qp_input.support_data(j).support_logic_map = obj.support_logic_maps.only_if_force_sensed;
+        end
+
         qp_input.body_motion_data(j).body_id = obj.robot.foot_frame_id.(foot);
         qp_input.body_motion_data(j).ts = [t_global, t_global];
         qp_input.body_motion_data(j).coefs = cat(3, zeros(6,1,3), reshape(sole_xyz_exp, [6, 1, 1]));

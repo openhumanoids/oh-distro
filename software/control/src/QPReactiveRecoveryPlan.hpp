@@ -103,7 +103,9 @@ class QPReactiveRecoveryPlan {
 
     static PiecewisePolynomial swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
 
-    bool isICPCaptured(Vector2d r_ic, FootStateMap foot_states, VertMap foot_vertices);
+    double icpError(const Ref<const Vector2d> &r_ic, const FootStateMap &foot_states, const VertMap &foot_vertices);
+
+    bool isICPCaptured(const Ref<const Vector2d> &r_ic, const FootStateMap &foot_states, const VertMap &foot_vertices);
 
     std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop);
 
