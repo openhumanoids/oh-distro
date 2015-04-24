@@ -169,6 +169,7 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
       step.rotate(Eigen::Quaterniond(s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z));
 
       if(robotName_.compare("valkyrie")==0){
+        ROS_ERROR("LCM2ROS flipping valkyrie foot orientations");
         if (s.is_right_foot){
           Eigen::Isometry3d fix_transform;
           fix_transform.setIdentity();
@@ -186,6 +187,8 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
           fix_transform.rotate(euler_to_quat( 180*M_PI/180, 90*M_PI/180, 0 )) ;
           step = step*fix_transform;
         }
+      }else{
+        ROS_ERROR("LCM2ROS not flipping atlas foot orientations");
       }
 
       Isometry3dTime stepT = Isometry3dTime(i, step);
