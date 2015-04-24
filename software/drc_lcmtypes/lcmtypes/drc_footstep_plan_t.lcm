@@ -7,5 +7,11 @@ struct footstep_plan_t
 	int32_t num_steps;
 	footstep_t footsteps[num_steps];
 
+	int32_t num_iris_regions;
+	iris_region_t iris_regions[num_iris_regions];
+
+	// Assignment of footsteps to IRIS regions. -1 for footsteps with no region assigned
+	int32_t iris_region_assignments[num_steps];
+
 	footstep_plan_params_t params;
 }

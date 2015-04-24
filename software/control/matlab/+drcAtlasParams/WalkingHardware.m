@@ -30,13 +30,13 @@ classdef WalkingHardware < atlasParams.Base
       obj.body_motion(r.findLinkId('pelvis')).weight = 0.07;
 
       obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).enabled = true;
-      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).lb = 0.5;
+      obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).lb = 0.3;
       obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).kp = 40;
       obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).damping_ratio = 0.5;
       obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).weight = 1e-4;
       % obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).k_logistic = 10;
       obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).enabled = true;
-      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).lb = 0.5;
+      obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).lb = 0.3;
       obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).kp = 40;
       obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).damping_ratio = 0.5;
       obj.joint_soft_limits(r.findPositionIndices('l_leg_kny')).weight = 1e-4;
