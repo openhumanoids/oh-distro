@@ -1,5 +1,6 @@
 #include "drake/RigidBodyManipulator.h"
 #include "drake/Polynomial.h"
+#include "drake/PiecewisePolynomial.h"
 #include "control/ExponentialForm.hpp"
 
 #define QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT 4
@@ -100,6 +101,8 @@ class QPReactiveRecoveryPlan {
 
     static ExponentialForm icpTrajectory(double x_ic, double x_cop, double omega);
 
+    static PiecewisePolynomial swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
+
     bool isICPCaptured(Vector2d r_ic, FootStateMap foot_states, VertMap foot_vertices);
 
     std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop);
@@ -107,6 +110,7 @@ class QPReactiveRecoveryPlan {
     std::vector<InterceptPlan> getInterceptPlansForFoot(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp);
 
     std::vector<InterceptPlan> getInterceptPlans(const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp);
+
 
 };
 

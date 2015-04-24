@@ -1,6 +1,7 @@
 #include "QPReactiveRecoveryPlan.hpp"
 #include <unsupported/Eigen/Polynomials>
 #include <Eigen/StdVector>
+#include "drake/drakeGeometryUtil.h"
 extern "C" {
   #include "iris_ldp/solver.h"
 }
@@ -402,4 +403,46 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptPlans(const std::
   }
   return all_intercept_plans;
 }
+
+PiecewisePolynomial QPReactiveRecoveryPlan::swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states) {
+  throw std::runtime_error("unfinished");
+
+  const FootState state = foot_states.find(intercept_plan.swing_foot)->second;
+  const double dist_to_goal = (intercept_plan.pose_next.translation().head(2) - state.pose.translation().head(2)).norm();
+
+  // TODO: name the magic numbers here
+  const double descend_coeff = std::pow(1.0 / 0.15, 2);
+
+  if (descend_coeff * std::pow(state.pose.translation().z() - state.terrain_height, 2) >= dist_to_goal) {
+    // We're within a quadratic bowl around our target, so let's just descend straight there
+
+    std::cout << "case 1" << std::endl;
+
+    const double fraction_first = 0.7;
+
+    const double swing_height_first_in_world = state.terrain_height + (state.pose.translation().z() - state.terrain_height) * (1 - std::pow(fraction_first,2));
+
+    Matrix<double, 6, 3> xs;
+    Quaterniond quat;
+    xs.block(0, 0, 3, 1) = state.pose.translation();
+    quat = Quaterniond(state.pose.rotation());
+    xs.block(3, 0, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+
+    xs.block(0, 2, 3, 1) = intercept_plan.pose_next.translation();
+    quat = Quaterniond(intercept_plan.pose_next.rotation());
+    xs.block(3, 2, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+    // TODO: Uncomment this once unwrapExpamp exists
+    // xs.block(3, 2, 3, 1) = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1));
+
+    xs.block(0, 1, 6, 1) = (1 - fraction_first) * xs.block(0, 0, 6, 1) + fraction_first * xs.block(0, 2, 6, 1);
+    xs(2, 1) = swing_height_first_in_world;
+
+  }
+}
+
+
+
+
+
+
 
