@@ -11,6 +11,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     lcmgl = LCMGLClient('reactive_recovery')
     last_qp_input;
     last_plan;
+    arm_and_neck_inds = [];
 
     % Initializes on first getQPInput
     % (setup foot contact lock and upper body state to be
@@ -42,6 +43,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     init_time = [];
 
     lc;
+
+    foot_vertices = struct('right', [-0.05, 0.05, 0.05, -0.05; 
+                                     -0.02, -0.02, 0.02, 0.02],...
+                           'left', [-0.05, 0.05, 0.05, -0.05; 
+                                     -0.02, -0.02, 0.02, 0.02]);
+    reachable_vertices = struct('right', [-0.4, 0.4, 0.4, -0.4;
+                                   -0.2, -0.2, -0.45, -0.45],...
+                          'left', [-0.4, 0.4, 0.4, -0.4;
+                                   0.2, 0.2, 0.45, 0.45]);
 
     % nonconstant as it will be reassigned if we're in sim mode
     CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
@@ -85,6 +95,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       obj.default_qp_input = atlasControllers.QPInputConstantHeight();
       obj.default_qp_input.whole_body_data.q_des = zeros(obj.robot.getNumPositions(), 1);
       obj.default_qp_input.whole_body_data.constrained_dofs = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck');findPositionIndices(obj.robot,'back_bkz');findPositionIndices(obj.robot,'back_bky')];
+      obj.arm_and_neck_inds = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck')];
       [~, obj.V, ~, obj.LIP_height] = obj.robot.planZMPController([0;0], obj.qtraj);
       obj.g = options.g;
       obj.point_mass_biped = PointMassBiped(sqrt(options.g / obj.LIP_height));
@@ -177,9 +188,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         obj.l_foot_in_contact_lock = foot_states.left.contact;
         obj.r_foot_in_contact_lock = foot_states.right.contact;
         % Record current state of arm, neck to hold (roughly) throughout recovery
-        arm_and_neck_inds = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck')];
-        obj.qtraj(arm_and_neck_inds) = x(arm_and_neck_inds);
-        %obj.last_used_swing = '';
+        obj.qtraj(obj.arm_and_neck_inds) = x(obj.arm_and_neck_inds);
         obj.init_time = t_global;
         obj.initialized = 1;
         replan = true;
@@ -239,19 +248,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       foot_states.right.contact = obj.r_foot_in_contact_lock;
       foot_states.left.contact = obj.l_foot_in_contact_lock;
 
-
-      % warning('hard-coded for atlas foot shape');
-      foot_vertices = struct('right', [-0.05, 0.05, 0.05, -0.05; 
-                                       -0.02, -0.02, 0.02, 0.02],...
-                             'left', [-0.05, 0.05, 0.05, -0.05; 
-                                       -0.02, -0.02, 0.02, 0.02]);
-      reachable_vertices = struct('right', [-0.4, 0.4, 0.4, -0.4;
-                                     -0.2, -0.2, -0.45, -0.45],...
-                            'left', [-0.4, 0.4, 0.4, -0.4;
-                                     0.2, 0.2, 0.45, 0.45]);
-
-      is_captured = obj.isICPCaptured(r_ic, foot_states, foot_vertices);
-      if (t_global - obj.init_time >= obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION && is_captured) % && ~(~isempty(obj.last_plan) && t_global < (obj.t_start + obj.last_plan.tf)))
+      is_captured = obj.isICPCaptured(r_ic, foot_states, obj.foot_vertices);
+      if (t_global - obj.init_time >= obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION && is_captured) 
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
         if (~isempty(obj.last_plan))
           disp('captured')
@@ -262,13 +260,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         obj.t_start = [];
       else
         if ~isempty(obj.last_plan) && ~replan % if we're not replanning and have a plan
-          qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, obj.last_plan, rpc);
+          qp_input = obj.getInterceptInput(t_global, foot_states, rpc);
         else
           disp('Replanning');
           touter = tic;
           t0 = tic();
-          intercept_plans = obj.getInterceptPlansmex(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
-          % intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
+          intercept_plans = obj.getInterceptPlansmex(foot_states, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
           fprintf(1, 'mex: %fs\n', toc(t0));
 
           if isempty(intercept_plans)
@@ -316,7 +313,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             obj.publishForVisualization(t_global, com, r_ic, obj.last_ts, obj.last_coefs);
             toc(t0);
           end
-          qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, best_plan, rpc);
+          qp_input = obj.getInterceptInput(t_global, foot_states, rpc);
           toc(touter);
         end
       end
@@ -362,23 +359,21 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       obj.lcmgl.glEnd();
     end
 
-    function qp_input = getInterceptInput(obj, t_global, t_start, ts, coefs, foot_states, reachable_vertices, best_plan, rpc)
-      DEBUG = obj.DEBUG > 0;
-
-      pp = mkpp(ts, coefs, 6);
+    function qp_input = getInterceptInput(obj, t_global, foot_states, rpc)
+      pp = mkpp(obj.last_ts, obj.last_coefs, 6);
       if obj.SLOW_DRAW
-        obj.draw_plan(pp, foot_states, reachable_vertices, best_plan);
+        obj.draw_plan(pp, foot_states, obj.reachable_vertices, obj.last_plan);
       end
       
       qp_input = obj.default_qp_input;
       qp_input.whole_body_data.q_des = obj.qtraj;
       qp_input.zmp_data.x0 = [mean([foot_states.right.xyz_quat(1:2), foot_states.left.xyz_quat(1:2)], 2);
                               0; 0];
-      qp_input.zmp_data.y0 = best_plan.r_cop;
+      qp_input.zmp_data.y0 = obj.last_plan.r_cop;
       qp_input.zmp_data.S = obj.V.S;
       qp_input.zmp_data.D = -obj.LIP_height/obj.g * eye(2);
 
-      if strcmp(best_plan.swing_foot, 'right')
+      if strcmp(obj.last_plan.swing_foot, 'right')
         stance_foot = 'left';
       else
         stance_foot = 'right';
@@ -391,24 +386,24 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
                                      'contact_surfaces', 0);
 
       % Don't allow support if we are less than halfway through the plan
-      t = t_global - t_start;
-      if t <= (ts(end)/2)
+      t = t_global - obj.t_start;
+      if t <= (obj.last_ts(end)/2)
         support_for_swing = obj.support_logic_maps.prevent_support;
       else
         support_for_swing = obj.support_logic_maps.only_if_force_sensed;
       end
       
-      qp_input.support_data(end+1) = struct('body_id', obj.robot.foot_body_id.(best_plan.swing_foot),...
-                                     'contact_pts', [rpc.contact_groups{obj.robot.foot_body_id.(best_plan.swing_foot)}.toe,...
-                                                     rpc.contact_groups{obj.robot.foot_body_id.(best_plan.swing_foot)}.heel],...
+      qp_input.support_data(end+1) = struct('body_id', obj.robot.foot_body_id.(obj.last_plan.swing_foot),...
+                                     'contact_pts', [rpc.contact_groups{obj.robot.foot_body_id.(obj.last_plan.swing_foot)}.toe,...
+                                                     rpc.contact_groups{obj.robot.foot_body_id.(obj.last_plan.swing_foot)}.heel],...
                                      'support_logic_map', support_for_swing,...
                                      'mu',obj.mu,...
                                      'contact_surfaces', 0);
 
       % swing foot
-      qp_input.body_motion_data = struct('body_id', obj.robot.foot_frame_id.(best_plan.swing_foot),...
-                                         'ts', t_start+ts,...
-                                         'coefs', coefs,...
+      qp_input.body_motion_data = struct('body_id', obj.robot.foot_frame_id.(obj.last_plan.swing_foot),...
+                                         'ts', obj.t_start+obj.last_ts,...
+                                         'coefs', obj.last_coefs,...
                                          'toe_off_allowed', false,...
                                          'in_floating_base_nullspace', true,...
                                          'control_pose_when_in_contact', false,...
@@ -427,8 +422,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       pelvis_xyz_exp = [0; 0; pelvis_height; quat2expmap(rpy2quat([0;0;pelvis_yaw]))];
       coefs_pelvis = cat(3, zeros(6,1,3), pelvis_xyz_exp);
       qp_input.body_motion_data(end+1) = struct('body_id', rpc.body_ids.pelvis,...
-                                                'ts',  t_start+ts,...
-                                                'coefs', repmat(coefs_pelvis, [1, length(ts)-1, 1]),...
+                                                'ts',  obj.t_start+obj.last_ts,...
+                                                'coefs', repmat(coefs_pelvis, [1, length(obj.last_ts)-1, 1]),...
                                                 'toe_off_allowed', false,...
                                                 'in_floating_base_nullspace', false,...
                                                 'control_pose_when_in_contact', false,...

@@ -3,7 +3,7 @@
 #include "drake/drakeUtil.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-  if (nrhs != 8 || nlhs != 1) mexErrMsgTxt("usage: intercept_plans=getInterceptPlans(obj, foot_states, foot_vertices, reachable_vertices, r_ic, comd, omega, u)");
+  if (nrhs != 6 || nlhs != 1) mexErrMsgTxt("usage: intercept_plans=getInterceptPlans(obj, foot_states, r_ic, comd, omega, u)");
 
   int narg = 0;
   sizecheck(prhs[narg], 1, 1);
@@ -14,6 +14,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   plan.min_step_duration = mxGetScalar(mxGetPropertySafe(obj, "MIN_STEP_DURATION"));
   plan.foot_hull_cop_shrink_factor = mxGetScalar(mxGetPropertySafe(obj, "FOOT_HULL_COP_SHRINK_FACTOR"));
   plan.max_considerable_foot_swing = mxGetScalar(mxGetPropertySafe(obj, "MAX_CONSIDERABLE_FOOT_SWING"));
+  const mxArray *foot_vertices_obj = mxGetPropertySafe(obj, "foot_vertices");
+  const mxArray *reach_verts_obj = mxGetPropertySafe(obj, "reachable_vertices");
   ++narg;
 
   sizecheck(prhs[narg], 1, 1);
@@ -21,13 +23,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   std::map<FootID, FootState> foot_states;
   ++narg;
 
-  sizecheck(prhs[narg], 1, 1);
-  const mxArray *foot_vertices_obj = prhs[narg];
-  ++narg;
-
-  sizecheck(prhs[narg], 1, 1);
-  const mxArray *reach_verts_obj = prhs[narg];
-  ++narg;
 
   sizecheck(prhs[narg], 2, 1);
   Map<Vector2d> r_ic(mxGetPrSafe(prhs[narg]));
