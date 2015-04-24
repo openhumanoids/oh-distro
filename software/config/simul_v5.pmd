@@ -175,7 +175,7 @@ cmd "drakeAtlasSimulation Box" {
 }
 
 cmd "drakeAtlasSimulation Runningboard" {
-    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 0, -1, -1, 'runningboard');\"";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, -1, -1, 'runningboard');\"";
     host = "base";
 }
 

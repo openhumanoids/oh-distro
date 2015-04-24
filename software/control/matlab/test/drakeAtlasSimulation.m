@@ -127,7 +127,7 @@ elseif(strcmp(world_name, 'stairs'))
   r_complete = r_complete.addRobotFromURDF('stairs.urdf', [1.5 ; 0.0; 0.0] + initial_offset_xyzrpy(1:3), [0 ; 0 ; pi] + initial_offset_xyzrpy(4:6));
 elseif(strcmp(world_name, 'runningboard'))  
   r_complete = r_complete.addRobotFromURDF('springboard.urdf', [0.0 ; 0.0; 0.1] + initial_offset_xyzrpy(1:3), [0 ; 0 ; pi] + initial_offset_xyzrpy(4:6));
-  extra_height = 0.12;
+  extra_height = 0.19;
 elseif(strcmp(world_name,'box'))
   box = RigidBodyBox([1;2;box_height;] + initial_offset_xyzrpy(1:3));
   r_complete = r_complete.addCollisionGeometryToBody(1,box);
