@@ -67,7 +67,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     sizecheck(pobj, 7, 1);
     Map<XYZQuat> xyz_quat(mxGetPrSafe(pobj));
     foot_states[foot_id].pose = Isometry3d(Translation<double, 3>(xyz_quat.head(3)));
-    foot_states[foot_id].pose.rotate(Quaternion<double>(Vector4d(xyz_quat.tail(4))));
+    foot_states[foot_id].pose.rotate(Quaternion<double>(xyz_quat(3), xyz_quat(4), xyz_quat(5), xyz_quat(6)));
 
     pobj = mxGetFieldSafe(state_obj, "xyz_quatdot");
     sizecheck(pobj, 7, 1);
@@ -100,7 +100,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     biped.reachable_vertices[foot_id].row(2).setZero();
   }
 
+  // std::cout << "getting plans" << std::endl;
   std::vector<InterceptPlan> intercept_plans = plan.getInterceptPlans(foot_states, biped, icp);
+  // std::cout << "got plans" << std::endl;
 
   const size_t dims[2] = {1, intercept_plans.size()};
   const char* fields[7] = {"tf", "tswitch", "r_foot_new", "r_ic_new", "error", "swing_foot", "r_cop"};
@@ -135,6 +137,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     } else {
       mxSetField(plhs[0], i, "swing_foot", mxCreateString("left"));
     }
+
+    Matrix<double, 2, 1> r_cop;
+    r_cop = p->cop.translation().head(2);
+    mxSetField(plhs[0], i, "r_cop", eigenToMatlab(r_cop));
   }
 
 }

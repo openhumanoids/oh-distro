@@ -37,7 +37,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     pobj = mxGetFieldSafe(state_obj, "xyz_quat");
     sizecheck(pobj, 7, 1);
     Map<XYZQuat> xyz_quat(mxGetPrSafe(pobj));
-    state.pose.translate(Vector3d(xyz_quat.head(3))).rotate(Quaternion<double>(Vector4d(xyz_quat.tail(4))));
+    state.pose.translate(Vector3d(xyz_quat.head(3))).rotate(Quaternion<double>(xyz_quat(3), xyz_quat(4), xyz_quat(5), xyz_quat(6)));
 
     pobj = mxGetFieldSafe(state_obj, "xyz_quatdot");
     sizecheck(pobj, 7, 1);

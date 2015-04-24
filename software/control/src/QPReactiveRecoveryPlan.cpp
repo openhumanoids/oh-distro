@@ -264,9 +264,13 @@ Isometry3d snapToTerrain(const Isometry3d &pose, const double terrain_height, co
 std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop) {
 
   Isometry3d T_world_to_local = QPReactiveRecoveryPlan::getTWorldToLocal(icp, cop);
+  FootID stance_foot = otherFoot[swing_foot];
 
-  Matrix<double, 3, 4> reachable_vertices_in_world = foot_states.find(otherFoot.find(swing_foot)->second)->second.pose * biped.reachable_vertices.find(swing_foot)->second;
+  // std::cerr << "reach verts in stance: " << biped.reachable_vertices.find(swing_foot)->second << std::endl;
+  Matrix<double, 3, 4> reachable_vertices_in_world = foot_states.find(stance_foot)->second.pose * biped.reachable_vertices.find(swing_foot)->second;
+  // std::cerr << "stance pose: " << foot_states.find(stance_foot)->second.pose.translation() << std::endl;
   // std::cerr << "reach verts in world: " << reachable_vertices_in_world << std::endl;
+  // std::cerr << "foot name: " << footIDToName[swing_foot] << std::endl;
 
   double t_min_to_xprime = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_states.find(swing_foot)->second, biped, T_world_to_local);
   t_min_to_xprime = std::max(t_min_to_xprime, this->min_step_duration);
@@ -359,9 +363,9 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
     }
   }
 
-  FootID stance_foot = otherFoot[swing_foot];
   for (std::vector<InterceptPlan>::iterator it = intercept_plans.begin(); it != intercept_plans.end(); ++it) {
     it->pose_next = snapToTerrain(it->pose_next, foot_states.find(stance_foot)->second.terrain_height, foot_states.find(stance_foot)->second.terrain_normal);
+    it->pose_next.linear() = foot_states.find(stance_foot)->second.pose.linear();
     it->error = interceptPlanError(*it, foot_states, biped);
   }
 
@@ -393,7 +397,6 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptPlans(const std::
   for (std::vector<FootID>::iterator swing_foot = available_swing_feet.begin(); swing_foot != available_swing_feet.end(); ++swing_foot) {
     if (foot_states.find(*swing_foot)->second.velocity.head(3).squaredNorm() / biped.u_max / 2.0 < this->max_considerable_foot_swing) {
       std::vector<InterceptPlan> foot_plans = this->getInterceptPlansForFoot(*swing_foot, foot_states, biped, icp);
-      all_intercept_plans.reserve(all_intercept_plans.size() + distance(foot_plans.end(), foot_plans.begin()));
       all_intercept_plans.insert(all_intercept_plans.end(), foot_plans.begin(), foot_plans.end());
     }
   }

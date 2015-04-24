@@ -267,11 +267,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         else
           disp('Replanning');
           t0 = tic();
-          intercept_plans_mex = obj.getInterceptPlansmex(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX)
+          intercept_plans = obj.getInterceptPlansmex(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
           fprintf(1, 'mex: %fs\n', toc(t0));
-          t0 = tic();
-          intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, obj.U_MAX);
-          fprintf(1, 'matlab: %fs\n', toc(t0));
+          % t0 = tic();
+          % intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, obj.U_MAX);
+          % fprintf(1, 'matlab: %fs\n', toc(t0));
 
           if isempty(intercept_plans)
             disp('recovery is not possible');
@@ -828,7 +828,7 @@ obj.lcmgl.switchBuffers();
           [t_int, x_int] = QPReactiveRecoveryPlan.expIntercept((x_ic - x_cop), omega, x_cop + OFFSET, x0, xd0, u, 7);
           mask = false(size(t_int));
           for j = 1:numel(t_int)
-            if isreal(t_int(j)) && t_int(j) >= min_time_to_xprime_axis && t_int(j) >= abs(xd0 / u)
+            if isreal(t_int(j)) && t_int(j) >= t_min && t_int(j) >= abs(xd0 / u)
               mask(j) = true;
             end
           end
@@ -873,7 +873,7 @@ obj.lcmgl.switchBuffers();
                 warning('Unhandled bad value check')
               end
 
-              intercept.tf = max([intercept.tf, min_time_to_xprime_axis]);
+              intercept.tf = max([intercept.tf, t_min]);
               intercept_plans(end+1) = struct('tf', intercept.tf,...
                                               'tswitch', intercept.tswitch,...
                                               'r_foot_new', r_foot_reach,...
@@ -883,23 +883,6 @@ obj.lcmgl.switchBuffers();
           end
         end
       end
-
-
-      % for u = [u_max, -u_max]
-      %   tt = linspace(abs(xd0 / u), abs(xd0 / u) + 1);
-      %   plot(tt, QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, tt, u), 'g-');
-
-      % end
-
-      % plot([min_time_to_xprime_axis,...
-      %       min_time_to_xprime_axis], ...
-      %      [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, min_time_to_xprime_axis, u_max),...
-      %       QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, min_time_to_xprime_axis, -u_max)], 'r-')
-
-      % for j = 1:length(intercept_plans)
-      %   plot(intercept_plans(j).tf, intercept_plans(j).r_foot_new(1), 'ro');
-      %   plot(intercept_plans(j).tf, intercept_plans(j).r_ic_new(1), 'r*');
-      % end
 
       for j = 1:length(intercept_plans)
         intercept_plans(j).error = norm(intercept_plans(j).r_foot_new - (intercept_plans(j).r_ic_new + [OFFSET; 0]));
