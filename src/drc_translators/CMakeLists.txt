@@ -76,12 +76,12 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-#   ipab_msgs
-#   ihmc_msgs
-#)
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+   ipab_msgs
+   ihmc_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -92,12 +92,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-#catkin_package(
+catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES beginner_tutorials
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
-#)
+)
 
 ###########
 ## Build ##
@@ -107,7 +107,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -175,7 +174,6 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
 
 
 
