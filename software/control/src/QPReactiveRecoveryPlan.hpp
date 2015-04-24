@@ -79,6 +79,8 @@ class QPReactiveRecoveryPlan {
     double capture_shrink_factor = 0.8;
     double desired_icp_offset = 0.1;
     double min_step_duration = 0.4;
+    double foot_hull_cop_shrink_factor = 0.5;
+    double max_considerable_foot_swing = 0.15;
 
 		static VectorXd closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
 
@@ -101,6 +103,10 @@ class QPReactiveRecoveryPlan {
     bool isICPCaptured(Vector2d r_ic, FootStateMap foot_states, VertMap foot_vertices);
 
     std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop);
+
+    std::vector<InterceptPlan> getInterceptPlansForFoot(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp);
+
+    std::vector<InterceptPlan> getInterceptPlans(const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp);
 
 };
 

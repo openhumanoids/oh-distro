@@ -25,3 +25,7 @@ target_link_libraries(icpUpdate QPReactiveRecoveryPlan)
 add_mex(isICPCaptured isICPCaptured.cpp)
 pods_use_pkg_config_packages(isICPCaptured eigen3 drake-util)
 target_link_libraries(isICPCaptured QPReactiveRecoveryPlan)
+
+add_mex(getInterceptPlansmex getInterceptPlansmex.cpp)
+pods_use_pkg_config_packages(getInterceptPlansmex eigen3 drake-util)
+target_link_libraries(getInterceptPlansmex QPReactiveRecoveryPlan)

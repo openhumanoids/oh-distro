@@ -266,8 +266,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, obj.last_plan, rpc);
         else
           disp('Replanning');
-          U_MAX = obj.U_MAX;
-          intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, U_MAX);
+          t0 = tic();
+          intercept_plans_mex = obj.getInterceptPlansmex(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX)
+          fprintf(1, 'mex: %fs\n', toc(t0));
+          t0 = tic();
+          intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, obj.U_MAX);
+          fprintf(1, 'matlab: %fs\n', toc(t0));
 
           if isempty(intercept_plans)
             disp('recovery is not possible');

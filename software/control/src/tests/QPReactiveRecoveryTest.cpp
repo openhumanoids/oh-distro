@@ -407,8 +407,8 @@ int testGetInterceptsWithCoP() {
 
   Matrix<double, 3, 4> reachable_verts_in_world = foot_states[LEFT].pose * biped.reachable_vertices[RIGHT];
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
-    std::cout << plan->tf << std::endl;
-    std::cout << plan->pose_next.matrix() << std::endl;
+    // std::cout << plan->tf << std::endl;
+    // std::cout << plan->pose_next.matrix() << std::endl;
     if (plan->tf < planner.min_step_duration) {
       fprintf(stderr, "Min step duration violated\n");
       return 1;
@@ -426,17 +426,29 @@ int testGetInterceptsWithCoP() {
   cop = Isometry3d(Translation<double, 3>(Vector3d(-0.11, 1, 0.1)));
   icp = Isometry3d(Translation<double, 3>(Vector3d(1, 1, 0.1)));
   intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
-  if (intercept_plans.size() > 0) {
-    fprintf(stderr, "ICP is so far from CoP that there should be no intercepts computed\n");
-    return 1;
+  for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
+    // std::cout << plan->tf << std::endl;
+    // std::cout << plan->pose_next.matrix() << std::endl;
+    if (std::abs(plan->pose_next.translation().y() - 1) > 1e-2) {
+      fprintf(stderr, "intercept should be on the y=1 axis\n");
+      return 1;
+    }
+    if (std::abs(plan->pose_next.translation().x() - reachable_verts_in_world.row(0).maxCoeff()) > 1e-2) {
+      fprintf(stderr, "I expect this intercept to happen at the far right edge of the reachable set\n");
+      return 1;
+    }
   }
+  // if (intercept_plans.size() > 0) {
+  //   fprintf(stderr, "ICP is so far from CoP that there should be no intercepts computed\n");
+  //   return 1;
+  // }
 
   icp = Isometry3d(Translation<double, 3>(Vector3d(0, 1, 0.1)));
   biped.u_max = 20;
   intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
-    std::cout << plan->tf << std::endl;
-    std::cout << plan->pose_next.matrix() << std::endl;
+    // std::cout << plan->tf << std::endl;
+    // std::cout << plan->pose_next.matrix() << std::endl;
     if (std::abs(plan->pose_next.translation().y() - 1) > 1e-2) {
       fprintf(stderr, "intercept should be on the y=1 axis\n");
       return 1;
@@ -447,6 +459,17 @@ int testGetInterceptsWithCoP() {
     }
   }
 
+  cop = Isometry3d(Translation<double, 3>(Vector3d(-0.11, 1, 0.1)));
+  icp = Isometry3d(Translation<double, 3>(Vector3d(-0.11, 1, 0.1)));
+  intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+  for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
+    // std::cout << plan->tf << std::endl;
+    // std::cout << plan->pose_next.matrix() << std::endl;
+    if (std::abs(plan->pose_next.translation().y() - (foot_states[RIGHT].pose.translation().y())) > 1e-2) {
+      fprintf(stderr, "should be at the same y pose\n");
+      return 1;
+    }
+  }
 
   return 0;
   }

@@ -289,7 +289,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   Vector2d x_foot_int(x_foot_poly_plus.value(t_min_to_xprime), x_foot_poly_minus.value(t_min_to_xprime));
 
   if ((x_ic_target >= x_foot_int.minCoeff()) && (x_ic_target <= x_foot_int.maxCoeff())) {
-    std::cerr << "xprime dominates" << std::endl;
+    // std::cerr << "xprime dominates" << std::endl;
     // The time to get onto the xprime axis dominates, and we can hit the ICP (plus offset) as soon as we get to that axis
     std::vector<BangBangIntercept> intercepts = QPReactiveRecoveryPlan::bangBangIntercept(x0, xd0, x_ic_target, biped.u_max);
     if (intercepts.size() > 0) {
@@ -305,14 +305,14 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
       intercept_plan.tswitch = it_min->tswitch;
       intercept_plan.pose_next = intercept_pose_in_world;
       intercept_plan.icp_next = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(x_ic_int, 0, 0)));
-      intercept_plan.cop = T_world_to_local.inverse();
+      intercept_plan.cop = cop;
       intercept_plan.swing_foot = swing_foot;
       intercept_plan.stance_foot = otherFoot[swing_foot];
       intercept_plan.error = 0; // to be filled in later
       intercept_plans.push_back(intercept_plan);
     }
   } else {
-    std::cerr << "xprime does not dominate" << std::endl;
+    // std::cerr << "xprime does not dominate" << std::endl;
     std::vector<double> us = {biped.u_max, -biped.u_max};
     for (std::vector<double>::iterator u = us.begin(); u != us.end(); ++u) {
       std::vector<double> t_int = QPReactiveRecoveryPlan::expIntercept(icp_traj_in_local + this->desired_icp_offset, x0, xd0, *u, 7);
@@ -349,9 +349,11 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
           intercept_plan.tswitch = it_min->tswitch;
           intercept_plan.pose_next = *reachable_pose;
           intercept_plan.icp_next = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(icp_traj_in_local.value(it_min->tf), 0, 0)));
+          intercept_plan.cop = cop;
           intercept_plan.swing_foot = swing_foot;
           intercept_plan.stance_foot = otherFoot[swing_foot];
           intercept_plan.error = 0; // to be filled in later
+          intercept_plans.push_back(intercept_plan);
         }
       }
     }
@@ -366,6 +368,35 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   return intercept_plans;
 }
 
+std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptPlansForFoot(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp) {
+  FootID stance_foot = otherFoot.find(swing_foot)->second;
 
+  // Find the center of pressure, which we'll place as close as possible to the ICP
+  Isometry3d cop = QPReactiveRecoveryPlan::closestPoseInConvexHull(icp, 
+                       (foot_states.find(stance_foot)->second.pose * (this->foot_hull_cop_shrink_factor * biped.foot_vertices.find(stance_foot)->second)).topRows(2));
+  return this->getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+}
 
+std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptPlans(const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp) {
+  std::vector<InterceptPlan> all_intercept_plans;
+  std::vector<FootID> available_swing_feet;
+
+  if (foot_states.find(RIGHT)->second.contact && foot_states.find(LEFT)->second.contact) {
+    available_swing_feet.push_back(LEFT);
+    available_swing_feet.push_back(RIGHT);
+  } else if (!foot_states.find(RIGHT)->second.contact) {
+    available_swing_feet.push_back(RIGHT);
+  } else {
+    available_swing_feet.push_back(LEFT);
+  }
+
+  for (std::vector<FootID>::iterator swing_foot = available_swing_feet.begin(); swing_foot != available_swing_feet.end(); ++swing_foot) {
+    if (foot_states.find(*swing_foot)->second.velocity.head(3).squaredNorm() / biped.u_max / 2.0 < this->max_considerable_foot_swing) {
+      std::vector<InterceptPlan> foot_plans = this->getInterceptPlansForFoot(*swing_foot, foot_states, biped, icp);
+      all_intercept_plans.reserve(all_intercept_plans.size() + distance(foot_plans.end(), foot_plans.begin()));
+      all_intercept_plans.insert(all_intercept_plans.end(), foot_plans.begin(), foot_plans.end());
+    }
+  }
+  return all_intercept_plans;
+}
 
