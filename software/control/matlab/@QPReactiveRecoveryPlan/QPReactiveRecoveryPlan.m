@@ -43,6 +43,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
     lc;
 
+    % nonconstant as it will be reassigned if we're in sim mode
+    CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
   end
 
   properties (Constant)
@@ -58,10 +60,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     U_MAX = 5;
 
     MIN_STEP_DURATION = 0.4;
-    DEBUG_RIGHT_FOOT_IGNORE_DURATION = -0.3;
-
-    CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
-
+    DEBUG_RIGHT_FOOT_IGNORE_DURATION = 0.3;
   end
 
   methods
@@ -70,7 +69,11 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if nargin < 2
         options = struct();
       end
-      options = applyDefaults(options, struct('g', 9.81, 'debug', 1, 'slow_draw', 0));
+      options = applyDefaults(options, struct('g', 9.81, 'debug', 1, 'slow_draw', 0, 'sim_mode', 1));
+      if (options.sim_mode)
+        disp('Initialized in sim mode!');
+        obj.CAPTURE_MAX_FLYFOOT_HEIGHT = 0.0;
+      end
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.robot = robot;
       obj.DEBUG = options.debug;
@@ -266,12 +269,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, obj.last_plan, rpc);
         else
           disp('Replanning');
+          touter = tic;
           t0 = tic();
           intercept_plans = obj.getInterceptPlansmex(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
           fprintf(1, 'mex: %fs\n', toc(t0));
-          % t0 = tic();
-          % intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd,  obj.point_mass_biped.omega, obj.U_MAX);
-          % fprintf(1, 'matlab: %fs\n', toc(t0));
 
           if isempty(intercept_plans)
             disp('recovery is not possible');
@@ -319,6 +320,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
             toc(t0);
           end
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, best_plan, rpc);
+          toc(touter);
         end
       end
       if (obj.SLOW_DRAW)
@@ -751,7 +753,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           plot(tt, ps(1,:), tt, ps(2,:), tt, ps(3,:));
         end
       end
-obj.lcmgl.switchBuffers();
+      obj.lcmgl.switchBuffers();
       % pp = mkpp(ts, coefs, 6);
 
       % tt = linspace(0, intercept_plan.tf);
@@ -796,11 +798,12 @@ obj.lcmgl.switchBuffers();
 
       intercept_plans = struct('tf', {}, 'tswitch', {}, 'r_foot_new', {}, 'r_ic_new', {});
 
-      % t_min = min_time_to_xprime_axis;
+      t_min = max(min([xprime_axis_intercepts.tf]), obj.MIN_STEP_DURATION);
       x_ic = r_ic_prime(1);
       x_cop = r_cop_prime(1);
       % don't narrow our stance to intercept if possible 
-      x_ic_int = max(QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega) + OFFSET, x0);
+      x_predicted_ic = QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, t_min, omega);
+      x_ic_int = max(x_predicted_ic + OFFSET, x0);
 
       x_foot_int = [QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, u_max),...
                   QPReactiveRecoveryPlan.bangBangUpdate(x0, xd0, t_min, -u_max)];
@@ -821,7 +824,7 @@ obj.lcmgl.switchBuffers();
           intercept_plans(end+1) = struct('tf', t_min,...
                                           'tswitch', intercept.tswitch,...
                                           'r_foot_new', r_foot_reach,...
-                                          'r_ic_new', [x_ic_int - OFFSET; 0]);
+                                          'r_ic_new', [x_predicted_ic; 0]);
         end
       else
         for u = [u_max, -u_max]
@@ -877,7 +880,7 @@ obj.lcmgl.switchBuffers();
               intercept_plans(end+1) = struct('tf', intercept.tf,...
                                               'tswitch', intercept.tswitch,...
                                               'r_foot_new', r_foot_reach,...
-                                              'r_ic_new', [QPReactiveRecoveryPlan.icpUpdate(x_ic, x_cop, intercept.tf, omega);
+                                              'r_ic_new', [x_predicted_ic;
                                                            0]);
             end
           end

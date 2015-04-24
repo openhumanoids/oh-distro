@@ -119,8 +119,8 @@ T_wheel = [0.868966 -0.49047 -0.065855 0.371103
         0 0 0 1]
 radius = 0.17;
 
-wheel_xyz = [ 0.66215564,  0.6501538 ,  1.14539285]';
-wheel_quat = [ 0.6360798 ,  0.65685298, -0.26696468,  0.30442817]';
+wheel_xyz = [ 0.51301921,  0.57174747,  1.11740494]';
+wheel_quat =[ 0.9188762 ,  0.03220007,  0.39285272, -0.01721671]';
 wheel_xyzquat = [wheel_xyz;wheel_quat];
 
 
@@ -131,6 +131,7 @@ options.wheel_xyzquat = wheel_xyzquat;
 options.turn_radius = 0;
 q0 = xstar_complete(1:36);
 dp = drivingPlanner(r_complete,options);
+keyboard;
 
 
 data = load('data.mat');

@@ -1180,6 +1180,8 @@
     <origin rpy="0 0 0" xyz="0.0037 -0.1603 -0.0087"/>
     <!--VRC value-->
   </joint>
+  <frame link="l_foot" name="l_foot_toe" rpy="0 0 0" xyz="0.1728 0.0017 -0.07645"/>
+  <frame link="r_foot" name="r_foot_toe" rpy="0 0 0" xyz="0.1728 -0.0017 -0.07645"/>
   <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back_bkz"/>
     <actuator name="back_bkz_motor"/>
@@ -1338,4 +1340,3 @@
     </visual>
   </link>
 </robot>
-

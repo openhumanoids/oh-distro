@@ -25,6 +25,7 @@ from ddapp import doordemo
 from ddapp import drilldemo
 from ddapp import tabledemo
 from ddapp import valvedemo
+from ddapp import drivingplanner
 from ddapp import continuouswalkingdemo
 from ddapp import walkingtestdemo
 from ddapp import terraintask
@@ -403,6 +404,8 @@ if usePlanning:
                                       playPlans, showPose)
     valveTaskPanel = valvedemo.ValveTaskPanel(valveDemo)
 
+    drivingPlannerPanel = drivingplanner.DrivingPlannerPanel(robotSystem)
+
     walkingDemo = walkingtestdemo.walkingTestDemo(robotStateModel, playbackRobotModel, teleopRobotModel, footstepsDriver, manipPlanner, ikPlanner,
                     lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
                     robotStateJointController,
@@ -426,6 +429,7 @@ if usePlanning:
     taskPanels['Valve'] = valveTaskPanel.widget
     taskPanels['Drill'] = drillTaskPanel.widget
     taskPanels['Terrain'] = terrainTaskPanel.widget
+    taskPanels['Driving'] = drivingPlannerPanel.widget
     tasklaunchpanel.init(taskPanels)
 
     splinewidget.init(view, handFactory, robotStateModel)
@@ -869,3 +873,18 @@ def updateTextures():
 t = TimerCallback(targetFps=10)
 t.callback = updateTextures
 t.start()
+
+def drawCenterOfMass(model):
+    stanceFrame = footstepsDriver.getFeetMidPoint(model)
+    com = list(model.model.getCenterOfMass())
+    com[2] = stanceFrame.GetPosition()[2]
+    d = DebugData()
+    d.addSphere(com, radius=0.015)
+    obj = vis.updatePolyData(d.getPolyData(), 'COM %s' % model.getProperty('Name'), color=[1,0,0], visible=False, parent=model)
+    
+def initCenterOfMassVisulization():
+    for model in [robotStateModel, teleopRobotModel, playbackRobotModel]:
+        model.connectModelChanged(drawCenterOfMass)
+        drawCenterOfMass(model)
+
+initCenterOfMassVisulization()

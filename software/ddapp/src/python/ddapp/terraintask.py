@@ -56,6 +56,12 @@ class TerrainTask(object):
         self.robotSystem = robotSystem
 
 
+    def requestRaycastTerrain(self):
+        affs = self.robotSystem.affordanceManager.getCollisionAffordances()
+        xy = self.robotSystem.robotStateJointController.q[:2]
+        self.robotSystem.raycastDriver.requestRaycast(affs, xy-5, xy+5)
+
+
     def walkToTiltedCinderblocks(self):
         frame = om.findObjectByName('cinderblock stance frame')
         assert frame
@@ -64,7 +70,47 @@ class TerrainTask(object):
         footstepsdriverpanel.panel.onNewWalkingGoal(frameCopy)
 
 
+    def spawnGroundAffordance(self):
+
+        polyData = segmentation.getCurrentRevolutionData()
+        groundPoints, normal = segmentation.segmentGroundPoints(polyData)
+        groundOrigin = segmentation.computeCentroid(groundPoints)
+
+        stanceFrame = FootstepRequestGenerator.getRobotStanceFrame(self.robotSystem.robotStateModel)
+        #stanceFrame.PreMultiply()
+        #stanceFrame.Translate(2.0, 0.0, 0.0)
+        origin = np.array(stanceFrame.GetPosition())
+
+        origin = segmentation.projectPointToPlane(origin, groundOrigin, normal)
+
+        zaxis = normal
+        xaxis = transformUtils.getAxesFromTransform(stanceFrame)[0]
+
+        yaxis = np.cross(zaxis, xaxis)
+        yaxis /= np.linalg.norm(yaxis)
+        xaxis = np.cross(yaxis, zaxis)
+        xaxis /= np.linalg.norm(xaxis)
+
+        t = transformUtils.getTransformFromAxes(xaxis, yaxis, zaxis)
+        t.PostMultiply()
+        t.Translate(origin)
+
+
+        om.removeFromObjectModel(om.findObjectByName('ground affordance'))
+        pose = transformUtils.poseFromTransform(t)
+        desc = dict(classname='BoxAffordanceItem', Name='ground affordance', Dimensions=[10, 10, 0.01], pose=pose)
+        aff = segmentation.affordanceManager.newAffordanceFromDescription(desc)
+        aff.setProperty('Visible', False)
+        aff.setProperty('Alpha', 0.2)
+
+
+    def getPlanningStartPose(self):
+        return self.robotSystem.robotStateJointController.q.copy()
+
     def spawnTiltedCinderblocks(self):
+
+        for obj in self.findBlockObjects():
+            om.removeFromObjectModel(obj)
 
         stanceFrame = FootstepRequestGenerator.getRobotStanceFrame(self.robotSystem.robotStateModel)
         stanceFrame.PreMultiply()
@@ -93,12 +139,6 @@ class TerrainTask(object):
 
         for block in self.findBlockObjects():
             frameSync.addFrame(block.getChildFrame(), ignoreIncoming=True)
-
-        helper = FootstepRequestGenerator(self.robotSystem.footstepsDriver)
-
-        #leadingFoot = 'left'
-        #request = helper.makeFootstepRequest(startPose, stepFrames, leadingFoot)
-        #self.robotSystem.footstepsDriver.sendFootstepPlanRequest(request, waitForResponse=True)
 
     def findBlockObjects(self):
 
@@ -130,6 +170,52 @@ class TerrainTask(object):
             #print 'rpy seed:', rpySeed
 
             self.convertStepToSafeRegion(pts, rpySeed)
+
+
+    def computeManualFootsteps(self):
+
+        leadingFoot = 'right'
+
+        blockIds = [4,0,5,1,6,2,7,3]
+
+        blocks = self.findBlockObjects()
+        blocks = [blocks[i] for i in blockIds]
+
+        f = 0.04
+        w = 0.04
+
+        offsets = [
+          [0.0, w],
+          [0.0, -w],
+          [f, w],
+          [0.0, -w],
+          [-f, w],
+          [f, -w],
+          [0.0, w],
+          [0.0, -w],
+        ]
+
+        stepFrames = []
+
+        for block, offset in zip(blocks, offsets):
+            d = np.array(block.getProperty('Dimensions'))/2.0
+            t = transformUtils.copyFrame(block.getChildFrame().transform)
+            pt = offset[0], offset[1], d[2]
+            t.PreMultiply()
+            t.Translate(pt)
+            stepFrames.append(t)
+            #obj = vis.showFrame(t, '%s step frame' % block.getProperty('Name'), parent='step frames', scale=0.2)
+
+        stanceFrame = FootstepRequestGenerator.getRobotStanceFrame(self.robotSystem.robotStateModel)
+        startPose = self.getPlanningStartPose()
+
+        helper = FootstepRequestGenerator(self.robotSystem.footstepsDriver)
+        request = helper.makeFootstepRequest(startPose, stepFrames, leadingFoot)
+
+        self.robotSystem.footstepsDriver.sendFootstepPlanRequest(request, waitForResponse=True)
+
+
+
 
     def convertStepToSafeRegion(self, step, rpySeed):
         assert step.shape[0] >= 3
@@ -212,8 +298,9 @@ class TerrainTask(object):
             vis.showFrame(footOffsetFrame, 'footstep %d' % i)
             '''
 
+            blockId = len(self.findBlockObjects())
             pose = transformUtils.poseFromTransform(offsetFrame)
-            desc = dict(classname='BoxAffordanceItem', Name='block %d' % i, Dimensions=[l, w, blockHeight], pose=pose)
+            desc = dict(classname='BoxAffordanceItem', Name='block %d' % blockId, Dimensions=[l, w, blockHeight], pose=pose)
             block = self.robotSystem.affordanceManager.newAffordanceFromDescription(desc)
             blocks.append(block)
 
@@ -221,16 +308,6 @@ class TerrainTask(object):
 
 
 class TerrainImageFitter(ImageBasedAffordanceFit):
-
-    def __init__(self, drillDemo):
-        ImageBasedAffordanceFit.__init__(self, numberOfPoints=1)
-        self.drillDemo = drillDemo
-
-    def fit(self, polyData, points):
-        pass
-
-
-class StairsImageFitter(ImageBasedAffordanceFit):
 
     def __init__(self, drillDemo):
         ImageBasedAffordanceFit.__init__(self, numberOfPoints=1)
@@ -249,14 +326,21 @@ class TerrainTaskPanel(TaskUserPanel):
         self.robotSystem = robotSystem
         self.terrainTask = TerrainTask(robotSystem)
 
+        self.fitter = TerrainImageFitter(self.terrainTask)
+        self.initImageView(self.fitter.imageView)
+
         self.addDefaultProperties()
         self.addButtons()
         self.addTasks()
 
     def addButtons(self):
+        self.addManualButton('Fit ground affordance', self.terrainTask.spawnGroundAffordance)
         self.addManualButton('Spawn tilted steps', self.terrainTask.spawnTiltedCinderblocks)
+        self.addManualButton('Raycast terrain', self.terrainTask.requestRaycastTerrain)
         self.addManualButton('Walk to tilted steps', self.terrainTask.walkToTiltedCinderblocks)
         self.addManualButton('Compute safe regions', self.terrainTask.computeSafeRegions)
+        self.addManualButton('Spawn manual footsteps', self.terrainTask.computeManualFootsteps)
+
 
     def addDefaultProperties(self):
         self._syncProperties()

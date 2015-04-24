@@ -406,15 +406,16 @@ class FootstepsDriver(object):
                     obj = vis.showPolyData(vol_mesh, 'walking volume', parent=volFolder, alpha=0.5, visible=self.show_contact_slices, color=color)
                     obj.actor.SetUserTransform(footstepTransform)
 
-            trans_prev = msg.footsteps[i-2].pos.translation
-            trans_prev = [trans_prev.x, trans_prev.y, trans_prev.z]
-            yaw = np.arctan2(trans[1]-trans_prev[1], trans[0]-trans_prev[0])
-
-            # TODO: when Drake frames are supported in the C++ interface, use them
-            # to get this sole transform
-            # foot_sole_shift = np.array([0.048, 0.0, -0.0811])
-
-            T_terrain_to_world = transformUtils.frameFromPositionAndRPY([trans_prev[0], trans_prev[1], 0], [0, 0, math.degrees(yaw)])
+            sole_offset = np.mean(FootstepsDriver.getContactPts(), axis=0)
+            t_sole_prev = transformUtils.frameFromPositionMessage(msg.footsteps[i-2].pos)
+            t_sole_prev.PreMultiply()
+            t_sole_prev.Translate(sole_offset)
+            t_sole = transformUtils.copyFrame(footstepTransform)
+            t_sole.Translate(sole_offset)
+            yaw = np.arctan2(t_sole.GetPosition()[1] - t_sole_prev.GetPosition()[1],
+                             t_sole.GetPosition()[0] - t_sole_prev.GetPosition()[0])
+            T_terrain_to_world = transformUtils.frameFromPositionAndRPY([t_sole_prev.GetPosition()[0], t_sole_prev.GetPosition()[1], 0],
+                                                                        [0, 0, math.degrees(yaw)])
             path_dist = np.array(footstep.terrain_path_dist)
             height = np.array(footstep.terrain_height)
             # if np.any(height >= trans[2]):
@@ -553,11 +554,12 @@ class FootstepsDriver(object):
         self.sendUpdatePlanRequest()
 
     def sendUpdatePlanRequest(self):
-        msg = self.lastFootstepRequest
-        msg.num_existing_steps = self.lastFootstepPlan.num_steps
-        msg.existing_steps = self.lastFootstepPlan.footsteps
-        msg = self.applyParams(msg)
-        self.sendFootstepPlanRequest(msg)
+        msg = lcmdrc.footstep_check_request_t()
+        msg.initial_state = self.lastFootstepRequest.initial_state
+        msg.footstep_plan = self.lastFootstepPlan
+        msg.snap_to_terrain = True
+        msg.compute_infeasibility = False
+        self.sendFootstepPlanCheckRequest(msg)
 
     def updateRequest(self):
         if self.lastFootstepRequest is not None:
@@ -612,6 +614,22 @@ class FootstepsDriver(object):
         for r in safe_terrain_regions:
             msg.iris_regions.append(r.to_iris_region_t())
         return msg
+
+    def sendFootstepPlanCheckRequest(self, request, waitForResponse=False, waitTimeout=5000):
+        assert isinstance(request, lcmdrc.footstep_check_request_t)
+
+        requestChannel = 'FOOTSTEP_CHECK_REQUEST'
+        responseChannel = 'FOOTSTEP_PLAN_RESPONSE'
+
+        if waitForResponse:
+            if waitTimeout == 0:
+                helper = lcmUtils.MessageResponseHelper(responseChannel, lcmdrc.footstep_plan_t)
+                lcmUtils.publish(requestChannel, request)
+                return helper
+            return lcmUtils.MessageResponseHelper.publishAndWait(requestChannel, request,
+                                                                 responseChannel, lcmdrc.footstep_plan_t, waitTimeout)
+        else:
+            lcmUtils.publish(requestChannel, request)
 
     def sendFootstepPlanRequest(self, request, waitForResponse=False, waitTimeout=5000):
 
@@ -812,12 +830,27 @@ class FootstepRequestGenerator(object):
         assert leadingFoot in ('left', 'right')
         isRightFootOffset = 0 if leadingFoot == 'left' else 1
 
+        footOriginToSole = -np.mean(FootstepsDriver.getContactPts(), axis=0)
+
         stepMessages = []
         for i, stepFrame in enumerate(stepFrames):
+
+            t = transformUtils.copyFrame(stepFrame)
+            t.PreMultiply()
+            t.Translate(footOriginToSole)
+
             step = lcmdrc.footstep_t()
-            step.pos = transformUtils.positionMessageFromFrame(stepFrame)
+            step.pos = transformUtils.positionMessageFromFrame(t)
             step.is_right_foot = (i + isRightFootOffset) % 2
             step.params = self.footstepsDriver.getDefaultStepParams()
+
+            step.fixed_x = True
+            step.fixed_y = True
+            step.fixed_z = True
+            step.fixed_roll = True
+            step.fixed_pitch = True
+            step.fixed_yaw = True
+
             stepMessages.append(step)
 
         return stepMessages

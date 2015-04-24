@@ -18,6 +18,7 @@
 #define ACCEL_AXIS 1
 #define BRAKE_AXIS 2
 #define MAX_STEERING_ANGLE 5.0*M_PI_2
+#define THROTTLE_MULTIPLIER 0.5
 
 static int joystick_fd = -1;
 
@@ -90,7 +91,7 @@ void setMessageValue(js_event const & jse, const int8_t msg_type, drc::driving_c
       printf("steering: %lf\n", msg.steering_angle);
       break;
     case drc::driving_control_cmd_t::TYPE_DRIVE:
-      msg.throttle_value = -0.5*jse.value / scaleFactor + 0.5;
+      msg.throttle_value = THROTTLE_MULTIPLIER*(-0.5*jse.value / scaleFactor + 0.5);
       printf("throttle: %lf\n", msg.throttle_value);
     break;
     case drc::driving_control_cmd_t::TYPE_BRAKE:

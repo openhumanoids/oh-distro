@@ -49,6 +49,7 @@ struct TerrainMap::Helper {
   NormalMethod mNormalMethod;
   double mNormalRadius;
   std::shared_ptr<drc::BotWrapper> mBotWrapper;
+  lcm::Subscription* mPoseGroundSubscription;
 
   std::shared_ptr<maps::ViewClient> mViewClient;
   std::shared_ptr<Listener> mListener;
@@ -72,9 +73,17 @@ struct TerrainMap::Helper {
     mLatestFootPlane << 0,0,1,0;
     mViewClient.reset(new maps::ViewClient());
     mViewClient->setBotWrapper(mBotWrapper);
-    mBotWrapper->getLcm()->subscribe("POSE_GROUND", &Helper::onGround, this);
+    mPoseGroundSubscription =
+      mBotWrapper->getLcm()->subscribe("POSE_GROUND", &Helper::onGround, this);
     mListener.reset(new Listener(this));
     mViewClient->addListener(mListener.get());
+  }
+
+  ~Helper() {
+    if ((mBotWrapper != NULL) && (mBotWrapper->getLcm() != NULL) &&
+        (mPoseGroundSubscription != NULL)) {
+      mBotWrapper->getLcm()->unsubscribe(mPoseGroundSubscription);
+    }
   }
 
   // TODO: need this? could also use bot-frames from ground to local
