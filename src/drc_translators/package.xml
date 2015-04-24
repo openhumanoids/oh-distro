@@ -47,6 +47,11 @@
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
 
+  <build_depend>ipab_msgs</build_depend>
+  <run_depend>ipab_msgs</run_depend>
+  <build_depend>ihmc_msgs</build_depend>
+  <run_depend>ihmc_msgs</run_depend>
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
