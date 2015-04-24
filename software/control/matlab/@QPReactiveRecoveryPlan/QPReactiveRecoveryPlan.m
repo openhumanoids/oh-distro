@@ -261,11 +261,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         obj.last_coefs = [];
         obj.t_start = [];
       else
-        % if the last plan is about to finish, just finish it first.
-        % or if the current contact state equals the old contact state.
-        if ((~isempty(obj.last_plan) && obj.last_plan.tf > t_global && ...
-              obj.last_plan.tf - t_global < obj.PLAN_FINISH_THRESHOLD) ...
-            || (~isempty(obj.last_plan) && ~replan)) % or if we're not replanning and have a plan
+        if ~isempty(obj.last_plan) && ~replan % if we're not replanning and have a plan
           qp_input = obj.getInterceptInput(t_global, obj.t_start, obj.last_ts, obj.last_coefs, foot_states, reachable_vertices, obj.last_plan, rpc);
         else
           disp('Replanning');
