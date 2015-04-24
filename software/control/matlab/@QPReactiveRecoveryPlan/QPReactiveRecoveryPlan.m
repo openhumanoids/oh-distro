@@ -60,7 +60,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     U_MAX = 5;
 
     MIN_STEP_DURATION = 0.4;
-    DEBUG_RIGHT_FOOT_IGNORE_DURATION = 0.3;
+    DEBUG_RIGHT_FOOT_IGNORE_DURATION = -0.3;
   end
 
   methods
@@ -272,6 +272,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           touter = tic;
           t0 = tic();
           intercept_plans = obj.getInterceptPlansmex(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
+          % intercept_plans = obj.getInterceptPlans(foot_states, foot_vertices, reachable_vertices, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
           fprintf(1, 'mex: %fs\n', toc(t0));
 
           if isempty(intercept_plans)
