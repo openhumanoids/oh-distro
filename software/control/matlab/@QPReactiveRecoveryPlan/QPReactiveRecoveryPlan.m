@@ -531,10 +531,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       dist_to_goal = norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2));
       descend_coeff = (1/0.15)^2;
 
-      % TODO: why only if distance > 0.025?
-      % TODO: recomputing dist_to_goal
-      if norm(intercept_plan.r_foot_new(1:2) - foot_state.xyz_quat(1:2)) > 0.025 && ...
-        (descend_coeff*((foot_state.xyz_quat(3) - foot_state.terrain_height)^2) >= dist_to_goal)
+      if (descend_coeff*((foot_state.xyz_quat(3) - foot_state.terrain_height)^2) >= dist_to_goal)
         disp('case1');
         % descend straight there
         sizecheck(intercept_plan.r_foot_new, [7, 1]);
@@ -542,8 +539,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         % TODO: need to subtract off terrain height
         swing_height_first = foot_state.xyz_quat(3)*(1-fraction_first^2);
 
-        % TODO: wrong size ts
-        ts = [0 0 0 intercept_plan.tf];
+        ts = [0 0 intercept_plan.tf];
         xs = zeros(6,3); % only plan one middle knot point
         xs(1:3,1) = foot_state.xyz_quat(1:3);
         xs(1:3,3) = intercept_plan.r_foot_new(1:3);
