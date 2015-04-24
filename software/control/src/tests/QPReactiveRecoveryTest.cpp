@@ -166,7 +166,7 @@ int testisICPCaptured() {
   plan.capture_max_flyfoot_height = 0.025;
 
   std::map<FootID, FootState> foot_states;
-  std::map<FootID, Matrix<double, 2, 4>> foot_vertices;
+  std::map<FootID, Matrix<double, 3, 4>> foot_vertices;
   Vector2d r_ic;
   FootState rstate;
   rstate.pose.setIdentity();
@@ -174,9 +174,10 @@ int testisICPCaptured() {
   lstate.pose.setIdentity();
   bool captured;
 
-  Matrix<double, 2, 4> V;
+  Matrix<double, 3, 4> V;
   V << -.1, .1, .1, -.1,
-        -.05, -.05, .05, .05;
+        -.05, -.05, .05, .05,
+        0, 0, 0, 0;
   foot_vertices[RIGHT] = V;
   foot_vertices[LEFT] = V;
 
@@ -365,10 +366,88 @@ int testClosestPoseInConvexHull() {
     std::cout << "should be at -1, -2, 0" << std::endl;
     return 1;
   }
+
+  pose = Isometry3d(Translation<double, 3>(Vector3d(2, 4, 1)));
+  pose.rotate(AngleAxis<double>(M_PI / 2, Vector3d(0, 0, 1)));
+  pose_closest = QPReactiveRecoveryPlan::closestPoseInConvexHull(pose, verts);
+  if ((pose_closest.translation() - Vector3d(-1, -2, 1)).norm() > 1e-2) {
+    std::cerr << pose_closest.translation() << std::endl;
+    fprintf(stderr, "Wrong pose\n");
+    return 1;
+  }
+  if (!pose_closest.rotation().isApprox(pose.rotation())) {
+    std::cerr << pose_closest.rotation() << std::endl;
+    fprintf(stderr, "Rotation should be preserved\n");
+    return 1;
+  }
   return 0;
 }
 
 int testGetInterceptsWithCoP() {
+  FootID swing_foot = RIGHT;
+  std::map<FootID, FootState> foot_states;
+  BipedDescription biped = getAtlasDefaults();
+  Isometry3d icp = Isometry3d::Identity();
+  Isometry3d cop = Isometry3d::Identity();
+
+  foot_states[LEFT].pose = Isometry3d::Identity();
+  foot_states[LEFT].pose.translate(Vector3d(-0.13, 1, 0.1));
+  foot_states[LEFT].pose.rotate(AngleAxis<double>(M_PI / 2, Vector3d(0, 0, 1)));
+
+  foot_states[RIGHT].pose = Isometry3d::Identity();
+  foot_states[RIGHT].pose.translate(Vector3d(0.13, 1, 0.1));
+  foot_states[RIGHT].pose.rotate(AngleAxis<double>(M_PI / 2, Vector3d(0, 0, 1)));
+
+  cop.translate(Vector3d(-0.11, 1.05, 0.1));
+  icp.translate(Vector3d(-0.1, 1.06, 0.1));
+
+  QPReactiveRecoveryPlan planner;
+
+  std::vector<InterceptPlan> intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+
+  Matrix<double, 3, 4> reachable_verts_in_world = foot_states[LEFT].pose * biped.reachable_vertices[RIGHT];
+  for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
+    std::cout << plan->tf << std::endl;
+    std::cout << plan->pose_next.matrix() << std::endl;
+    if (plan->tf < planner.min_step_duration) {
+      fprintf(stderr, "Min step duration violated\n");
+      return 1;
+    }
+    Isometry3d closest_reachable_pose = QPReactiveRecoveryPlan::closestPoseInConvexHull(plan->pose_next, reachable_verts_in_world.topRows(2));
+    if ((closest_reachable_pose.translation().head(2) - plan->pose_next.translation().head(2)).norm() > 1e-2) {
+      std::cerr << plan->pose_next.translation() << std::endl;
+      std::cerr << reachable_verts_in_world << std::endl;
+      std::cerr << closest_reachable_pose.translation() << std::endl;
+      fprintf(stderr, "Desired step is unreachable.\n");
+      return 1;
+    }
+  }
+
+  cop = Isometry3d(Translation<double, 3>(Vector3d(-0.11, 1, 0.1)));
+  icp = Isometry3d(Translation<double, 3>(Vector3d(1, 1, 0.1)));
+  intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+  if (intercept_plans.size() > 0) {
+    fprintf(stderr, "ICP is so far from CoP that there should be no intercepts computed\n");
+    return 1;
+  }
+
+  icp = Isometry3d(Translation<double, 3>(Vector3d(0, 1, 0.1)));
+  biped.u_max = 20;
+  intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+  for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
+    std::cout << plan->tf << std::endl;
+    std::cout << plan->pose_next.matrix() << std::endl;
+    if (std::abs(plan->pose_next.translation().y() - 1) > 1e-2) {
+      fprintf(stderr, "intercept should be on the y=1 axis\n");
+      return 1;
+    }
+    if (std::abs(plan->pose_next.translation().x() - reachable_verts_in_world.row(0).maxCoeff()) > 1e-2) {
+      fprintf(stderr, "I expect this intercept to happen at the far right edge of the reachable set\n");
+      return 1;
+    }
+  }
+
+
   return 0;
   }
 

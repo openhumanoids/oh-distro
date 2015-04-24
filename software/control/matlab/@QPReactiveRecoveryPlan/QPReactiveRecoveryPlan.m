@@ -616,7 +616,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         % make it conform to terrain
         intercept_plans(j).r_foot_new(3) = foot_states.(swing_foot).terrain_height;
         normal = foot_states.(swing_foot).terrain_normal;
-        normal(3,normal(3,:) < 0) = -normal(3,normal(3,:) < 0);
+        normal(:,normal(3,:) < 0) = -normal(:,normal(3,:) < 0);
         pose_rpy = [intercept_plans(j).r_foot_new(1:3); quat2rpy(intercept_plans(j).r_foot_new(4:7))];
         pose_rpy = fitPoseToNormal(pose_rpy, normal);
         intercept_plans(j).r_foot_new = [pose_rpy(1:3); rpy2quat(pose_rpy(4:6))];

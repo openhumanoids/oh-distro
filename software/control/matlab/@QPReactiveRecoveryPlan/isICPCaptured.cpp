@@ -20,7 +20,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   sizecheck(prhs[3], 1, 1);
   const mxArray *foot_vertices_obj = prhs[3];
-  std::map<FootID, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
+  std::map<FootID, Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
 
   const mxArray *pobj;
 
@@ -57,7 +57,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     const mxArray *vert_obj = mxGetFieldSafe(foot_vertices_obj, *foot_name);
     sizecheck(vert_obj, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT);
     Map<Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> V(mxGetPrSafe(vert_obj));
-    foot_vertices[footNameToID[*foot_name]] = V;
+    foot_vertices[footNameToID[*foot_name]].topRows(2) = V;
+    foot_vertices[footNameToID[*foot_name]].row(2).setZero();
   }
 
   Matrix<double, 1, 1> is_captured;

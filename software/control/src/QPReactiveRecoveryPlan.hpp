@@ -28,13 +28,14 @@ struct FootState {
   XYZQuat velocity;
   bool contact;
   double terrain_height;
+  Vector3d terrain_normal;
 };
 
 struct InterceptPlan {
   double tf;
   double tswitch;
   Isometry3d pose_next;
-  Isometry3d icp_plus_offset_next;
+  Isometry3d icp_next;
   Isometry3d cop;
   FootID swing_foot;
   FootID stance_foot;
@@ -43,11 +44,11 @@ struct InterceptPlan {
 
 
 typedef std::map<FootID, FootState> FootStateMap;
-typedef std::map<FootID, Matrix<double, 2, 4>> VertMap;
+typedef std::map<FootID, Matrix<double, 3, 4>> VertMap;
 
 struct BipedDescription {
-  std::map<FootID, Matrix<double, 2, 4>> reachable_vertices;
-  std::map<FootID, Matrix<double, 2, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
+  std::map<FootID, Matrix<double, 3, 4>> reachable_vertices;
+  std::map<FootID, Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
   double u_max; // foot acceleration bounds used for computing ICP intercepts
   double omega; // characteristic frequency of the linear inverted pendulum system. Defined as sqrt(g / height)
 };
@@ -55,13 +56,17 @@ struct BipedDescription {
 BipedDescription getAtlasDefaults() {
   BipedDescription biped;
   biped.reachable_vertices[RIGHT] << -0.4, 0.4, 0.4, -0.4,
-                                    -0.2, -0.2, -0.45, -0.45;
+                                    -0.2, -0.2, -0.45, -0.45,
+                                    0, 0, 0, 0;
   biped.reachable_vertices[LEFT] << -0.4, 0.4, 0.4, -0.4,
-                                    0.2, 0.2, 0.45, 0.45;
+                                    0.2, 0.2, 0.45, 0.45,
+                                    0, 0, 0, 0;
   biped.foot_vertices[RIGHT] << -0.05, 0.05, 0.05, -0.05,
-                               -0.02, -0.02, 0.02, 0.02;
+                               -0.02, -0.02, 0.02, 0.02,
+                               0, 0, 0, 0;
   biped.foot_vertices[LEFT] << -0.05, 0.05, 0.05, -0.05,
-                              -0.02, -0.02, 0.02, 0.02;
+                              -0.02, -0.02, 0.02, 0.02,
+                              0, 0, 0, 0;
   biped.omega = sqrt(9.81 / 1.098);
   biped.u_max = 5;
   return biped;
@@ -77,7 +82,7 @@ class QPReactiveRecoveryPlan {
 
 		static VectorXd closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
 
-    static Isometry3d closestPoseInConvexHull(const Isometry3d &pose, const Ref<const Matrix<double, 2, Dynamic>> &V);
+    static Isometry3d closestPoseInConvexHull(const Isometry3d &pose, const Ref<const MatrixXd> &V);
 
     static std::vector<double> expIntercept(const ExponentialForm &expform, double l0, double ld0, double u, int degree);
 
@@ -95,7 +100,7 @@ class QPReactiveRecoveryPlan {
 
     bool isICPCaptured(Vector2d r_ic, FootStateMap foot_states, VertMap foot_vertices);
 
-    std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop);
+    std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const BipedDescription &biped, const Isometry3d &icp, const Isometry3d &cop);
 
 };
 
