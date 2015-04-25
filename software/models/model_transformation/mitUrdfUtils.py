@@ -51,6 +51,30 @@ def addCollisionsFromVisuals(urdf):
         visual.getparent().append(collision)
 
 
+def addVisual(link):
+    return etree.SubElement(link, 'visual')
+
+
+def addCollision(link):
+    return etree.SubElement(link, 'collision')
+
+
+def addGeometry(element):
+    return etree.SubElement(element, 'geometry')
+
+
+def addOrigin(element, xyz=[0.0, 0.0, 0.0], rpy=[0.0, 0.0, 0.0]):
+    origin = etree.SubElement(element, 'origin')
+    origin.set('xyz', '%8.5f %8.5f %8.5f' % tuple(xyz))
+    origin.set('rpy', '%8.5f %8.5f %8.5f' % tuple(rpy))
+    return origin
+
+
+def addBox(geometry, size=[1.0, 1.0, 1.0]):
+    box = etree.SubElement(geometry, 'box')
+    box.set('size', '%8.5f %8.5f %8.5f' % tuple(size))
+    return box
+
 def addFrame(urdf, frameName, linkName, xyz, rpy):
     frame = etree.SubElement(urdf.getroot(), "frame")
     frame.set("name", frameName)
@@ -210,20 +234,20 @@ def copyElementProperties(urdf, sourceElement, destinationElement, exceptionTagN
     for sourceChild in sourceChildrenToAppend:
         if sourceChild.tag not in exceptionTagNames:
             destinationElement.append(copy.deepcopy(sourceChild))
-    
+
     return urdf
 
 def invertJointAxis(urdf, jointName):
     axis = urdf.find("joint[@name='%s']/axis" % jointName)
     xyz = axis.get('xyz').split(' ')
     axis.set('xyz', ' '.join(map(lambda x : str(-float(x)), xyz)))
-    
+
     return urdf
 
 def setJointOriginRPY(urdf, jointName, rpy):
     origin = urdf.find("joint[@name='%s']/origin" % jointName)
     origin.set('rpy', ' '.join(map(lambda x : str(x), rpy)))
-    
+
     return urdf
 
 def setLinkVisualRPY(urdf, linkName, rpy):
