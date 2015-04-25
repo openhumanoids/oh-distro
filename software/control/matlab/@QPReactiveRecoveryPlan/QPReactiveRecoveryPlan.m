@@ -18,29 +18,12 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     % tracked)
     initialized = 0;
 
-    % Stateful foot contact lock
-    % Used to determine how long a foot has been continuously in
-    % contact (to the resolution of the rate at which this class
-    % is asked for a qp input)
-    % l_foot_last_noncontact = 0;
-    % r_foot_last_noncontact = 0;
-    % l_foot_last_contact = 0;
-    % r_foot_last_contact = 0;
-    l_foot_in_contact_lock = 0;
-    r_foot_in_contact_lock = 0;
-
-    % And which-foot-I'm-using-as-stance lock. Only allowed to switch this
-    % slowly to prevent bouncing
-    %last_used_swing = '';
-    %last_swing_switch = 0;
-    % debug visualization?
     DEBUG;
     SLOW_DRAW;
 
     last_ts = [];
     last_coefs = [];
     t_start = [];
-    init_time = [];
 
     lc;
 
@@ -56,24 +39,18 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     % nonconstant as it will be reassigned if we're in sim mode
     CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
 
-    capture_trigger = SchmittTrigger(0, 1, 0.01, 0.05);
-
   end
 
   properties (Constant)
     OTHER_FOOT = struct('right', 'left', 'left', 'right'); % make it easy to look up the other foot's name
     TERRAIN_CONTACT_THRESH = 0.01;
-    %SWING_SWITCH_MIN_TIME = 0.1;
-    % HYST_MIN_CONTACT_TIME = 0.005; % Foot must be solidly, continuously in contact (or out) for this long
-    % HYST_MIN_NONCONTACT_TIME = 0.2; % to be considered a support (or not a support).
-    PLAN_FINISH_THRESHOLD = 0.0; % Duration of a plan that we'll commit to completing without updating further
-    CAPTURE_SHRINK_FACTOR = 0.8; % liberal to prevent foot-roll
-    FOOT_HULL_COP_SHRINK_FACTOR = 0.5; % liberal to prevent foot-roll, should be same as the capture shrin kfactor?
+    POST_EXECUTION_DELAY = 0.1;
+    CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
+    FOOT_HULL_COP_SHRINK_FACTOR = 0.6; % liberal to prevent foot-roll, should be same as the capture shrink factor?
     MAX_CONSIDERABLE_FOOT_SWING = 0.15; % strides with extrema farther than this are ignored
-    U_MAX = 5;
+    U_MAX = 10;
 
-    MIN_STEP_DURATION = 0.4;
-    DEBUG_RIGHT_FOOT_IGNORE_DURATION = -0.3;
+    MIN_STEP_DURATION = 0.25;
   end
 
   methods
@@ -82,7 +59,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if nargin < 2
         options = struct();
       end
-      options = applyDefaults(options, struct('g', 9.81, 'debug', 1, 'slow_draw', 0, 'sim_mode', 1));
+      options = applyDefaults(options, struct('g', 9.81, 'debug', 0, 'slow_draw', 0, 'sim_mode', 1));
       if (options.sim_mode)
         disp('Initialized in sim mode!');
         obj.CAPTURE_MAX_FLYFOOT_HEIGHT = 0.0;
@@ -109,18 +86,9 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       obj.initialized = 0;
       obj.last_plan = [];
       obj.last_qp_input = [];
-      % obj.l_foot_last_noncontact = 0;
-      % obj.r_foot_last_noncontact = 0;
-      % obj.l_foot_last_contact = 0;
-      % obj.r_foot_last_contact = 0;
-      % obj.l_foot_in_contact_lock = 0;
-      % obj.r_foot_in_contact_lock = 0;
-      %obj.last_used_swing = '';
-      %obj.last_swing_switch = 0;
       obj.last_ts = [];
       obj.last_coefs = [];
       obj.t_start = [];
-      obj.init_time = [];
     end
 
     function next_plan = getSuccessor(obj, t, x)
@@ -128,7 +96,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
-      DEBUG = obj.DEBUG > 0;
 
       q = x(1:rpc.nq);
       qd = x(rpc.nq + (1:rpc.nv));
@@ -186,85 +153,21 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % Initialize if we haven't, to get foot lock into a known state
       % and capture upper body pose to hold it through the plan
       if (~obj.initialized) 
-        % Take current foot state to be truth
-        obj.l_foot_in_contact_lock = foot_states.left.contact;
-        obj.r_foot_in_contact_lock = foot_states.right.contact;
         % Record current state of arm, neck to hold (roughly) throughout recovery
         obj.qtraj(obj.arm_and_neck_inds) = x(obj.arm_and_neck_inds);
-        obj.init_time = t_global;
         obj.initialized = 1;
-        replan = true;
-      else
-        replan = false;
       end
 
-      % % force right foot not useful for first N ms for testing purposes
-      % if (t_global - obj.init_time < obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION)
-      %   foot_states.right.contact = false;
-      %   obj.r_foot_in_contact_lock = false;
-      %   replan = false;
-      %   r_ic = r_ic + [0; -0.1];
-      % end
-
-      % % Update and check against contact locks
-      % if (~foot_states.left.contact)
-      %   obj.l_foot_last_noncontact = t_global;
-      % else
-      %   obj.l_foot_last_contact = t_global;
-      % end
-      % if (~foot_states.right.contact)
-      %   obj.r_foot_last_noncontact = t_global;
-      % else
-      %   obj.r_foot_last_contact = t_global;
-      % end
-      % % State switching only when hysterisis thresholds are met
-      % % noncontact -> contact
-      % if (~obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
-      %   disp('r foot in contact');
-      %   obj.l_foot_in_contact_lock
-      %   replan = true;
-      %   obj.r_foot_in_contact_lock = true;
-      % end
-      % if (~obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_noncontact > obj.HYST_MIN_CONTACT_TIME)
-      %   disp('l foot in contact');
-      %   obj.r_foot_in_contact_lock
-      %   obj.l_foot_in_contact_lock = true;
-      %   replan = true;
-      % end
-      % % contact -> noncontact
-      % if (obj.r_foot_in_contact_lock && t_global - obj.r_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
-      %   disp('r foot leaving contact');
-      %   obj.l_foot_in_contact_lock
-      %   obj.r_foot_in_contact_lock = false;
-      %   replan = true;
-      % end
-      % if (obj.l_foot_in_contact_lock && t_global - obj.l_foot_last_contact > obj.HYST_MIN_NONCONTACT_TIME)
-      %   disp('l foot leaving contact');
-      %   obj.r_foot_in_contact_lock
-      %   obj.l_foot_in_contact_lock = false;
-      %   replan = true;
-      % end
-
-      % % commit contact from that filtering
-      % foot_states.right.contact = obj.r_foot_in_contact_lock;
-      % foot_states.left.contact = obj.l_foot_in_contact_lock;
-
-
-      % if foot_states.right.contact ~= obj.r_foot_in_contact_lock
-      %   replan = true;
-      % elseif foot_states.left.contact ~= obj.l_foot_in_contact_lock
-      %   replan = true;
-      % end
-      obj.r_foot_in_contact_lock = foot_states.right.contact;
-      obj.l_foot_in_contact_lock = foot_states.left.contact;
-
-      icp_outside_support = obj.capture_trigger.update(obj.icpError(r_ic, foot_states, obj.foot_vertices));
-      % is_captured = obj.isICPCaptured(r_ic, foot_states, obj.foot_vertices);
-      is_captured = ~icp_outside_support;
+      is_captured = obj.icpError(r_ic, foot_states, obj.foot_vertices) < 1e-2
 
       if ~isempty(obj.last_plan) && t_plan < obj.last_ts(end)
+        disp('continuing current plan')
         qp_input = obj.getInterceptInput(t_global, foot_states, rpc);
-      elseif is_captured || (~isempty(obj.last_plan) && t_plan < obj.last_ts(end) + 0.1)
+      elseif is_captured 
+        disp('captured');
+        qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
+      elseif ~isempty(obj.last_plan) && t_plan < obj.last_ts(end) + obj.POST_EXECUTION_DELAY
+        disp('in delay after plan end')
         qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
       else
         disp('replanning');
@@ -276,97 +179,22 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           obj.last_plan = obj.chooseBestIntercept(intercept_plans);
           [obj.last_ts, obj.last_coefs] = obj.swingTraj(obj.last_plan, foot_states.(obj.last_plan.swing_foot));
           obj.t_start = t_global;
-          if (obj.DEBUG > 0)
-            fprintf('starting publish for vis: ');
-            t0 = tic();
-            obj.publishForVisualization(t_global, com, r_ic, obj.last_ts, obj.last_coefs);
-            toc(t0);
-          end
           qp_input = obj.getInterceptInput(t_global, foot_states, rpc);
         end
       end
 
+      if (obj.DEBUG > 0)
+        fprintf('starting publish for vis: ');
+        t0 = tic();
+        obj.publishForVisualization(t_global, com, r_ic, obj.last_ts, obj.last_coefs);
+        toc(t0);
+      end
+
+      if obj.SLOW_DRAW
+        obj.lcmgl.switchBuffers();
+      end
+
       obj.last_qp_input = qp_input;
-
-
-
-
-
-
-
-      % % if (t_global - obj.init_time >= obj.DEBUG_RIGHT_FOOT_IGNORE_DURATION && is_captured) 
-      % if is_captured
-      %   qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
-      %   if (~isempty(obj.last_plan))
-      %     disp('captured')
-      %   end
-      %   obj.last_plan = [];
-      %   obj.last_ts = [];
-      %   obj.last_coefs = [];
-      %   obj.t_start = [];
-      % else
-      %   if ~isempty(obj.last_plan) && ~replan % if we're not replanning and have a plan
-      %     qp_input = obj.getInterceptInput(t_global, foot_states, rpc);
-      %   else
-      %     disp('Replanning');
-      %     touter = tic;
-      %     t0 = tic();
-      %     intercept_plans = obj.getInterceptPlansmex(foot_states, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
-      %     fprintf(1, 'mex: %fs\n', toc(t0));
-
-      %     if isempty(intercept_plans)
-      %       disp('recovery is not possible');
-      %       qp_input = obj.last_qp_input;
-      %       if (obj.SLOW_DRAW)
-      %         obj.lcmgl.switchBuffers();
-      %       end
-      %       return;
-      %     end
-
-      %     % Add to the errors a new term reflecting distance of 
-      %     % foot from down-projected com of robot
-      %     for j=1:numel(intercept_plans)
-      %       com_to_foot_error = norm(intercept_plans(j).r_foot_new(1:2) - com(1:2));
-      %       intercept_plans(j).error = intercept_plans(j).error + 4*com_to_foot_error;
-      %     end
-      %     % Don't switch stance feet if possible
-      %     %if t_global - obj.last_swing_switch < obj.SWING_SWITCH_MIN_TIME
-      %     %  for j=1:numel(intercept_plans)
-      %     %    if (~strcmp(intercept_plans(j).swing_foot, obj.last_used_swing))
-      %     %      intercept_plans(j).error = Inf;
-      %     %    end
-      %     %  end
-      %     %end
-
-      %     best_plan = QPReactiveRecoveryPlan.chooseBestIntercept(intercept_plans);
-
-      %     if isempty(best_plan)
-      %       best_plan = obj.last_plan;
-      %     else
-      %       obj.last_plan = best_plan;
-      %     end
-
-      %     %if ~strcmp(best_plan.swing_foot, obj.last_used_swing)
-      %     %  %fprintf('%s to %s\n', obj.last_used_swing, best_plan.swing_foot);
-      %     %  obj.last_used_swing = best_plan.swing_foot;
-      %     %  obj.last_swing_switch = t_global;
-      %     %end
-      %     [obj.last_ts, obj.last_coefs] = obj.swingTraj(best_plan, foot_states.(best_plan.swing_foot));
-      %     obj.t_start = t_global;
-      %     if (obj.DEBUG > 0)
-      %       fprintf('starting publish for vis: ');
-      %       t0 = tic();
-      %       obj.publishForVisualization(t_global, com, r_ic, obj.last_ts, obj.last_coefs);
-      %       toc(t0);
-      %     end
-      %     qp_input = obj.getInterceptInput(t_global, foot_states, rpc);
-      %     toc(touter);
-      %   end
-      % end
-      % if (obj.SLOW_DRAW)
-      %   obj.lcmgl.switchBuffers();
-      % end
-      % obj.last_qp_input = qp_input;
 
     end
 
@@ -557,7 +385,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function [ts, coefs] = swingTraj(obj, intercept_plan, foot_state)
-      DEBUG = obj.DEBUG > 1;
 
       %if norm(intercept_plan.r_foot_new(1:2) - foot_state.pose(1:2)) < 0.05
       %  disp('Asking for swing traj of very short step')
@@ -609,15 +436,15 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           xs(4:6,j) = unwrapExpmap(xs(4:6,j-1), xs(4:6,j));
         end
 
-        settings = struct('optimize_knot_times', true);
-        [coefs, ts, objval] = nWaypointCubicSplineFreeKnotTimesmex(ts(1), ts(end), xs, xd0, xdf);
+        [coefs, ts, ~] = nWaypointCubicSplineFreeKnotTimesmex(ts(1), ts(end), xs, xd0, xdf);
 
+           
+        if (obj.SLOW_DRAW)
           tt = linspace(ts(1), ts(end));
           pp = mkpp(ts, coefs, 6);
           ps = ppval(fnder(pp, 2), tt);
           fprintf('umax x:%f y: %f z:%f\n', max(ps(1, :)), max(ps(2, :)), max(ps(3, :)));
-           
-        if (1 || obj.SLOW_DRAW)
+
           obj.lcmgl.glColor3f(0.1,0.1,1.0);
           for k=1:3
             obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
@@ -650,22 +477,22 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         xs(1:2, 2) = (1-fraction_first)*xs(1:2, 1) + fraction_first*xs(1:2, 4);
         xs(1:2, 3) = (1-fraction_second)*xs(1:2, 1) + fraction_second*xs(1:2, 4);
 
-        settings = struct('optimize_knot_times', true);
-        [coefs, ts] = qpSpline(ts, xs, xd0, xdf, settings);
+        [coefs, ts, ~] = nWaypointCubicSplineFreeKnotTimesmex(ts(1), ts(end), xs, xd0, xdf);
         
-        if (1 || obj.SLOW_DRAW)
+        if (obj.SLOW_DRAW)
           obj.lcmgl.glColor3f(0.1,1.0,0.1);
           for k=1:4
             obj.lcmgl.sphere(xs(1:3, k).', 0.01, 20, 20);
           end
-        end
 
           tt = linspace(ts(1), ts(end));
           pp = mkpp(ts, coefs, 6);
           ps = ppval(fnder(pp, 2), tt);
           fprintf('umax x:%f y: %f z:%f\n', max(ps(1, :)), max(ps(2, :)), max(ps(3, :)));
+        end
 
-        if DEBUG
+
+        if obj.DEBUG
           tt = linspace(ts(1), ts(end));
           pp = mkpp(ts, coefs, 6);
           ps = ppval(pp, tt);
@@ -681,21 +508,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
           plot(tt, ps(1,:), tt, ps(2,:), tt, ps(3,:));
         end
       end
-      obj.lcmgl.switchBuffers();
       % pp = mkpp(ts, coefs, 6);
 
-      % tt = linspace(0, intercept_plan.tf);
-      % ps = ppval(pp, tt);
-      % p_knot = ppval(pp, ts);
-      % figure(4)
-      % clf
-      % hold on
-      % for j = 1:6
-      %   subplot(6, 1, j)
-      %   hold on
-      %   plot(tt, ps(j,:));
-      %   plot(ts, p_knot(j,:), 'ro');
-      % end
     end
 
     function publishForVisualization(obj, t, com, r_ic, ts, coefs)
@@ -713,7 +527,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
 
   methods(Static)
     function best_plan = chooseBestIntercept(intercept_plans)
-      [min_error, idx] = min([intercept_plans.error]);
+      [~, idx] = min([intercept_plans.error]);
       best_plan = intercept_plans(idx);
     end
   end
