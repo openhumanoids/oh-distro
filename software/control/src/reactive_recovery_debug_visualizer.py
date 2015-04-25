@@ -7,7 +7,7 @@ import sys
 import time
 from bot_lcmgl import lcmgl, GL_LINES
 import numpy as np
- 
+
 def ppval(coefs, ts, t):
   ti = np.where(ts < t)[-1]
   if (len(ti) >= 1):
@@ -33,6 +33,8 @@ def handle_debug_msg(channel, data):
 
   coefs = np.array(msg.coefs)
   ts = np.array(msg.ts)
+  if ts.shape[0] == 0:
+    return
 
   # draw spline segments
   tsdense = np.linspace(ts[0], ts[-1], 30)
