@@ -54,6 +54,10 @@ classdef HeightMapHandle < handle
             this.mMexFunc('property',this.mHandle,'publishdebug',chan);
         end
         
+        function sendRequest(this,freq)
+            this.mMexFunc('request',this.mHandle,freq);
+        end
+        
         function setUseFootPose(this,val)
             this.mMexFunc('property',this.mHandle,'usefootpose',this.logicalToString(val));
         end            
