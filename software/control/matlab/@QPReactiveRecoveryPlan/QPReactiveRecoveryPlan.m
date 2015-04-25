@@ -48,7 +48,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     CAPTURE_SHRINK_FACTOR = 0.9; % liberal to prevent foot-roll
     FOOT_HULL_COP_SHRINK_FACTOR = 0.6; % liberal to prevent foot-roll, should be same as the capture shrink factor?
     MAX_CONSIDERABLE_FOOT_SWING = 0.15; % strides with extrema farther than this are ignored
-    U_MAX = 10;
+    U_MAX = 20;
 
     MIN_STEP_DURATION = 0.25;
   end
