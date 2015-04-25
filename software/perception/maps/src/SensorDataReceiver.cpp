@@ -169,6 +169,11 @@ struct SensorDataReceiver::Helper {
       double range = iMessage->ranges[i];
       ranges[i] = range;
       if ((range < info->mRangeMin) || (range > info->mRangeMax)) continue;
+      PointType pt;
+      pt.x = cos(theta)*range;
+      pt.y = sin(theta)*range;
+      pt.z = 0;
+      cloud->points.push_back(pt);
     }
     cloud->width = cloud->points.size();
     scan->setRanges(ranges);
