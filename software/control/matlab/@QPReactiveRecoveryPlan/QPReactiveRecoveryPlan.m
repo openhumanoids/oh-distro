@@ -271,7 +271,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         intercept_plans = obj.getInterceptPlansmex(foot_states, r_ic, comd, obj.point_mass_biped.omega, obj.U_MAX);
         if isempty(intercept_plans)
           disp('recovery is not possible');
-          qp_input = obj.getCaptureInput();
+          qp_input = obj.getCaptureInput(t_global, r_ic, foot_states, rpc);
         else
           obj.last_plan = obj.chooseBestIntercept(intercept_plans);
           [obj.last_ts, obj.last_coefs] = obj.swingTraj(obj.last_plan, foot_states.(obj.last_plan.swing_foot));
