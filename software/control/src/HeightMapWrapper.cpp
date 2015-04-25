@@ -207,6 +207,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     mexUnlock();
   }
 
+  // request new map
+  else if (command == "request") {
+    if (nrhs != 3) {
+      mexErrMsgTxt("MapWrapper: need to specify frequency");
+    }
+    if (mxGetNumberOfElements(prhs[2]) != 1) {
+      mexErrMsgTxt("MapWrapper: frequency must be scalar");
+    }
+    double frequency = *mxGetPr(prhs[2]);
+    terrainMap->sendSweepRequest(Eigen::Vector3d(-2,-5,-3),
+                                 Eigen::Vector3d(5,5,0.3), 0.03, frequency);
+  }
+
   /* TODO: deprecated
   // get point cloud
   else if (command == "pointcloud") {
