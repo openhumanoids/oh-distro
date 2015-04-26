@@ -511,7 +511,8 @@
         <axis xyz="0 0 1"/>
         <parent link="NeckRotator"/>
         <child link="Head"/>
-        <limit effort="26" lower="-0.08726646255" upper="0.78539816295" velocity="5"/>
+<!--        <limit effort="26" lower="-0.08726646255" upper="0.78539816295" velocity="5"/> -->
+        <limit effort="26" lower="-0.15" upper="0.78539816295" velocity="5"/>
         <controller_gains Kd="0" Kp="20000"/>
         <dynamics damping="1.0" friction="0.0"/>
     </joint>

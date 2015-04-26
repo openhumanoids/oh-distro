@@ -62,7 +62,7 @@
           "NeckRotator",
           "UpperNeckExtensor"
           ],
-        "labels" : ["ay", "by", "cy"]
+        "labels" : ["Low", "Mid", "Up"]
       },
 
       { "name" : "Left Leg",
@@ -74,7 +74,7 @@
           "LeftAnkleExtensor",
           "LeftAnkle"
           ],
-        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
+        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
       },
 
       { "name" : "Right Leg",
@@ -86,7 +86,7 @@
           "RightAnkleExtensor",
           "RightAnkle"
           ],
-        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
+        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
       }
 
     ],
