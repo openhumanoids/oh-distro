@@ -100,7 +100,7 @@ group "5.maps" {
     }
 
     cmd "lidar-passthrough" {
-        exec = "drc-lidar-passthrough -c 0.06 -a 5";
+        exec = "bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} drc-lidar-passthrough -c 0.06'";
         host = "base";
     }
 }
