@@ -8,7 +8,7 @@ rgbd_simulation
 affordance
 maps
 # too to filter lidar self detections
-#lidar-passthrough
+lidar-passthrough
 # to check for self-collisions 
 #lidar-plancheck
 # module to apply object masks:

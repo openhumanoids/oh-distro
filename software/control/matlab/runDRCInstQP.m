@@ -26,8 +26,8 @@ atlas_options.run_in_simul_mode = run_in_simul_mode;
 atlas_options.use_new_kinsol = true;
 
 r = DRCAtlas([],atlas_options);
-r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',true)));
-r = r.removeCollisionGroupsExcept({'heel','toe'});
+r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
+r = r.removeCollisionGroupsExcept({'heel','toe','midfoot'});
 r = compile(r);
 
 control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r));

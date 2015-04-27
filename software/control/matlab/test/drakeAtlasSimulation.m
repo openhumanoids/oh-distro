@@ -89,8 +89,8 @@ options.replace_cylinders_with_capsules = false;
 r_complete = DRCAtlas([],options);
 
 % simplify collision to parts we care about
-r_pure = r_pure.removeCollisionGroupsExcept({'heel','toe'});
-r_complete = r_complete.removeCollisionGroupsExcept({'heel','toe', 'palm', 'knuckle', 'default'});
+r_pure = r_pure.removeCollisionGroupsExcept({'heel', 'toe', 'midfoot'});
+r_complete = r_complete.removeCollisionGroupsExcept({'heel', 'toe', 'midfoot', 'palm', 'knuckle', 'default'});
 r_pure = compile(r_pure);
 
 % we need to add a FT sensor frame

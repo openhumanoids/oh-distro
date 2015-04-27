@@ -10,7 +10,6 @@ qt4
 drc_viewer_utils
 gfe
 
-lidar-passthrough
 lidar-plancheck
 image-passthrough
 viewer

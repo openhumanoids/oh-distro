@@ -291,7 +291,7 @@ sendSweepRequest(const Eigen::Vector3d& iBoxMin, const Eigen::Vector3d& iBoxMax,
                  const double iResolutionMeters, const double iFrequencyHz) {
   auto spec = mHelper->getSpec(iBoxMin, iBoxMax, iResolutionMeters,
                                iFrequencyHz);
-  spec.mTimeMin = -185;
+  spec.mTimeMin = -190;
   spec.mTimeMax = 0;
   spec.mTimeMode = maps::ViewBase::TimeModeRollAngleRelative;
   mHelper->mViewClient->request(spec);
