@@ -138,6 +138,11 @@ go() {
       tempCloud->push_back(cloud->points[i]);
     }
 
+    // downsample
+    voxelGrid.setInputCloud(tempCloud);
+    voxelGrid.setLeafSize(0.1, 0.1, 0.1);
+    voxelGrid.filter(*tempCloud);
+
     // find ground plane
     pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
