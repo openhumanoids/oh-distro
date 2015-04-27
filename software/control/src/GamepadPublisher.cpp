@@ -20,7 +20,7 @@ void GamepadPublisher::publish()
 
 gamepad_cmd_t GamepadPublisher::build_message(js_event const & jse) const
 { 
-  gamepad_cmd_t gamepad_cmd;
+  static gamepad_cmd_t gamepad_cmd;
   gamepad_cmd.utime = jse.time;
 
   switch (jse.type) {
@@ -38,36 +38,38 @@ gamepad_cmd_t GamepadPublisher::build_message(js_event const & jse) const
 
 void GamepadPublisher::process_discrete_event(js_event const & jse, gamepad_cmd_t & gamepad_cmd) const
 {
+  const int8_t value = static_cast<int8_t>(jse.value);
+  
   switch (jse.number) { 
     case GAMEPAD_BUTTON_A:
-      gamepad_cmd.button_a = jse.value;
+      gamepad_cmd.button_a = value;
       break;
     case GAMEPAD_BUTTON_B:
-      gamepad_cmd.button_b = jse.value;
+      gamepad_cmd.button_b = value;
       break;
     case GAMEPAD_BUTTON_X:
-      gamepad_cmd.button_x = jse.value;
+      gamepad_cmd.button_x = value;
       break;
     case GAMEPAD_BUTTON_Y:
-      gamepad_cmd.button_y = jse.value;
+      gamepad_cmd.button_y = value;
       break;
     case GAMEPAD_BUTTON_START:
-      gamepad_cmd.button_start = jse.value;
+      gamepad_cmd.button_start = value;
       break;
     case GAMEPAD_BUTTON_BACK:
-      gamepad_cmd.button_back = jse.value;
+      gamepad_cmd.button_back = value;
       break;
     case GAMEPAD_BUTTON_LB:
-      gamepad_cmd.button_lb = jse.value;
+      gamepad_cmd.button_lb = value;
       break;
     case GAMEPAD_BUTTON_RB:
-      gamepad_cmd.button_rb = jse.value;
+      gamepad_cmd.button_rb = value;
       break;
     case GAMEPAD_BUTTON_JL:
-      gamepad_cmd.button_thumbpad_left = jse.value;
+      gamepad_cmd.button_thumbpad_left = value;
       break;
     case GAMEPAD_BUTTON_JR:
-      gamepad_cmd.button_thumbpad_right = jse.value;
+      gamepad_cmd.button_thumbpad_right = value;
       break;
     default:
       break;
@@ -78,32 +80,32 @@ void GamepadPublisher::process_discrete_event(js_event const & jse, gamepad_cmd_
 void GamepadPublisher::process_continuous_event(js_event const & jse, gamepad_cmd_t & gamepad_cmd) const
 {
   static const float scaleFactor = static_cast<float>((1<<15) - 1);
-  float scaledValue = (-0.5*jse.value / scaleFactor);
+  const float scaledValue = (-0.5*jse.value / scaleFactor);
 
   switch (jse.number) { 
     case GAMEPAD_DPAD_X:
-      gamepad_cmd.button_dpad_x = jse.value;
+      gamepad_cmd.button_dpad_x = -static_cast<int8_t>(jse.value);
       break;
     case GAMEPAD_DPAD_Y:
-      gamepad_cmd.button_dpad_y = jse.value;
+      gamepad_cmd.button_dpad_y = static_cast<int8_t>(jse.value);
       break;
     case GAMEPAD_LEFT_X:
-      gamepad_cmd.thumbpad_left_x = -scaledValue;
+      gamepad_cmd.thumbpad_left_x = -2.0f * scaledValue;
       break;
     case GAMEPAD_LEFT_Y:
-      gamepad_cmd.thumbpad_left_y = scaledValue;
+      gamepad_cmd.thumbpad_left_y = 2.0f * scaledValue;
       break;
     case GAMEPAD_RIGHT_X:
-      gamepad_cmd.thumbpad_right_x = -scaledValue;
+      gamepad_cmd.thumbpad_right_x = -2.0f * scaledValue;
       break;
     case GAMEPAD_RIGHT_Y:
-      gamepad_cmd.thumbpad_right_y = scaledValue;
+      gamepad_cmd.thumbpad_right_y = 2.0f * scaledValue;
       break;
     case GAMEPAD_TRIGGER_L:
-      gamepad_cmd.trigger_left = jse.value / 255.0f;
+      gamepad_cmd.trigger_left =  0.5f - scaledValue;
       break;
     case GAMEPAD_TRIGGER_R:
-      gamepad_cmd.trigger_right = jse.value / 255.0f;
+      gamepad_cmd.trigger_right = 0.5f - scaledValue;
       break;
     default:
       break;
