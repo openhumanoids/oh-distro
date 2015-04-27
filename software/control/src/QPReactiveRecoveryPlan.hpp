@@ -6,6 +6,11 @@
 #include "drake/lcmt_qp_controller_input.hpp"
 #include <lcm/lcm-cpp.hpp>
 
+enum SupportLogicType {
+  REQUIRE_SUPPORT, ONLY_IF_FORCE_SENSED, ONLY_IF_KINEMATIC, KINEMATIC_OR_SENSED, PREVENT_SUPPORT
+};
+
+
 #define QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT 4
 
 enum FootID {RIGHT, LEFT};
@@ -87,6 +92,7 @@ class QPReactiveRecoveryPlan {
     RigidBodyManipulator* robot;
     BipedDescription biped;
     std::map<FootID, int> foot_frame_ids;
+    std::map<FootID, int> foot_body_ids;
     VectorXd q_des;
     MatrixXd S;
 
@@ -97,8 +103,9 @@ class QPReactiveRecoveryPlan {
     std::shared_ptr<lcm::LCM> LCMHandle;
     void initLCM();
     void publishForVisualization(double t_global, const Isometry3d &icp);
-    void setupQPInputDefaults(std::shared_ptr<drake::lcmt_qp_controller_input> qp_input);
-
+    void setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache);
+    void encodeSupportData(int body_id, SupportLogicType support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data support_data);
+    void encodeBodyMotionData(int body_or_frame_id, std::vector<PiecewisePolynomial<double>> spline, drake::lcmt_body_motion_data body_motion);
 	public:
     double capture_max_flyfoot_height = 0.025;
     double capture_shrink_factor = 0.8;
@@ -107,6 +114,7 @@ class QPReactiveRecoveryPlan {
     double foot_hull_cop_shrink_factor = 0.5;
     double max_considerable_foot_swing = 0.15;
     double post_execution_delay = 0.1;
+    double mu = 0.5;
 
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot);
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot, BipedDescription biped);
