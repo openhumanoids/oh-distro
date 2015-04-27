@@ -60,6 +60,7 @@ RectangleFitter::go() {
 
   // loop over and evaluate each convex hull edge
   int n = hull.size();
+  pcl::PointCloud<pcl::PointXYZ> flatCloud;
   for (int i = 0; i < n; ++i) {
 
     // get edge endpoints
@@ -70,7 +71,6 @@ RectangleFitter::go() {
     if ((p1-p0).norm() < 1e-6) continue;
 
     // transform points to plane parallel to z=0
-    pcl::PointCloud<pcl::PointXYZ> flatCloud;
     Eigen::Isometry3f transform = Eigen::Isometry3f::Identity();
     Eigen::Matrix3f rot;
     rot.col(2) = mPlane.head<3>();
@@ -91,7 +91,7 @@ RectangleFitter::go() {
     entry.mEdgeIndex = i;
     entry.mPointMin << minPoint[0], minPoint[1], 0;
     entry.mPointMax << maxPoint[0], maxPoint[1], 0;
-    entry.mArea = (entry.mPointMax-entry.mPointMin).head<2>().norm();
+    entry.mArea = (entry.mPointMax-entry.mPointMin).head<2>().prod();
     entry.mTransform = transform;
 
     // compute score
@@ -125,10 +125,22 @@ RectangleFitter::go() {
   Eigen::Vector3f p2(center[0]+size[0]/2, center[1]+size[1]/2, 0);
   Eigen::Vector3f p3(center[0]+size[0]/2, center[1]-size[1]/2, 0);
 
+  // compute area of convex hull
+  float convexArea = 0;
+  for (int i = 0; i < (int)flatCloud.size(); ++i) {
+    Eigen::Vector2f p1, p2;
+    p1 = flatCloud.points[i].getVector3fMap().head<2>();
+    p2 = flatCloud.points[(i+1)%flatCloud.size()].getVector3fMap().head<2>();
+    convexArea += std::abs(p1[0]*p2[1] - p1[1]*p2[0]);
+  }
+  convexArea /= 2;
+
   // fill result structure
   Result result;
   result.mPlane = mPlane;
   result.mPolygon = { p0, p1, p2, p3 };
+  result.mArea = bestEntry.mArea;
+  result.mConvexArea = convexArea;
   Eigen::Isometry3f transformInv = bestEntry.mTransform.inverse();
   result.mPose = transformInv;
   result.mPose.translation() = transformInv*center;

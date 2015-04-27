@@ -265,19 +265,19 @@ p = loadpcd('/home/antone/temp/cloud.pcd')';
 %p = loadpcd('/home/antone/temp/cloud_full.pcd')';
 pts = p(:,1:3);
 figure
-plot3k(pts,'Marker',{'.',5});
+%plot3k(pts,'Marker',{'.',5});
 hold on
 
 u = unique(boxdata(:,1));
 for i = 1:numel(u)
     p = boxdata(boxdata(:,1)==u(i),2:4);
-    %myplot3(p([1:end,1],:),'r.-','linewidth',4);
+    myplot3(p([1:end,1],:),'r.-','linewidth',4);
 end
 
 u = unique(hulldata(:,1));
 for i = 1:numel(u)
     p = hulldata(hulldata(:,1)==u(i),2:4);
-    %myplot3(p([1:end,1],:),'g.-','linewidth',4);
+    myplot3(p([1:end,1],:),'g.-','linewidth',4);
 end
 
 for i = 1:numel(poses)

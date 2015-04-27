@@ -17,13 +17,14 @@ using namespace planeseg;
 BlockFitter::
 BlockFitter() {
   setSensorPose(Eigen::Vector3f(0,0,0), Eigen::Vector3f(1,0,0));
-  setBlockDimensions(Eigen::Vector3f(15+3/8.0, 15+3/8.0, 5+5/8.0)*0.0254);
+  setBlockDimensions(Eigen::Vector3f(15+3/8.0, 15+5/8.0, 5+5/8.0)*0.0254);
   setDownsampleResolution(0.01);
   setRemoveGround(true);
   setGroundBand(1e10,1e10);
   setHeightBand(0.05, 1.0);
   setMaxRange(3.0);
   setMaxAngleFromHorizontal(45);
+  setAreaThresholds(0.5, 1.5);
   setDebug(true);
 }
 
@@ -70,6 +71,12 @@ setMaxRange(const float iRange) {
 void BlockFitter::
 setMaxAngleFromHorizontal(const float iDegrees) {
   mMaxAngleFromHorizontal = iDegrees;
+}
+
+void BlockFitter::
+setAreaThresholds(const float iMin, const float iMax) {
+  mAreaThreshMin = iMin;
+  mAreaThreshMax = iMax;
 }
 
 void BlockFitter::
@@ -311,11 +318,20 @@ go() {
     ofs.close();
   }
 
-  result.mBlocks.resize(results.size());
   for (int i = 0; i < (int)results.size(); ++i) {
-    auto& block = result.mBlocks[i];
+    const auto& res = results[i];
+    float areaRatio = res.mArea/res.mConvexArea;
+    if ((areaRatio < mAreaThreshMin) || (areaRatio > mAreaThreshMax)) continue;
+
+    Block block;
     block.mSize = mBlockDimensions;
-    block.mPose = results[i].mPose;
+    block.mPose = res.mPose;
+    block.mPose(2,3) -= mBlockDimensions[2]/2;
+    block.mHull = res.mConvexHull;
+    result.mBlocks.push_back(block);
+  }
+  if (mDebug) {
+    std::cout << "Surviving blocks: " << result.mBlocks.size() << std::endl;
   }
 
   return result;

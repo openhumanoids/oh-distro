@@ -11,6 +11,8 @@ public:
     Eigen::Vector4f mPlane;
     std::vector<Eigen::Vector3f> mPolygon;
     std::vector<Eigen::Vector3f> mConvexHull;
+    float mArea;
+    float mConvexArea;
     Eigen::Isometry3f mPose;
   };
 

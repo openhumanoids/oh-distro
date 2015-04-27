@@ -10,6 +10,7 @@ public:
   struct Block {
     Eigen::Vector3f mSize;
     Eigen::Isometry3f mPose;
+    std::vector<Eigen::Vector3f> mHull;
   };
   struct Result {
     std::vector<Block> mBlocks;
@@ -27,8 +28,9 @@ public:
   void setHeightBand(const float iMinHeight, const float iMaxHeight);
   void setMaxRange(const float iRange);
   void setMaxAngleFromHorizontal(const float iDegrees);
-  void setCloud(const LabeledCloud::Ptr& iCloud);
+  void setAreaThresholds(const float iMin, const float iMax);
   void setDebug(const bool iVal);
+  void setCloud(const LabeledCloud::Ptr& iCloud);
 
   Result go();
 
@@ -44,6 +46,8 @@ protected:
   float mMaxHeightAboveGround;
   float mMaxRange;
   float mMaxAngleFromHorizontal;
+  float mAreaThreshMin;
+  float mAreaThreshMax;
   LabeledCloud::Ptr mCloud;
   bool mDebug;
 };
