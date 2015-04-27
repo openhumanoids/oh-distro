@@ -23,6 +23,7 @@ public:
   void setBlockDimensions(const Eigen::Vector3f& iDimensions);
   void setDownsampleResolution(const float iRes);
   void setRemoveGround(const bool iVal);
+  void setGroundBand(const float iMinZ, const float iMaxZ);
   void setHeightBand(const float iMinHeight, const float iMaxHeight);
   void setMaxRange(const float iRange);
   void setMaxAngleFromHorizontal(const float iDegrees);
@@ -37,6 +38,8 @@ protected:
   Eigen::Vector3f mBlockDimensions;
   float mDownsampleResolution;
   bool mRemoveGround;
+  float mMinGroundZ;
+  float mMaxGroundZ;
   float mMinHeightAboveGround;
   float mMaxHeightAboveGround;
   float mMaxRange;

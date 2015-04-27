@@ -20,6 +20,7 @@ BlockFitter() {
   setBlockDimensions(Eigen::Vector3f(15+3/8.0, 15+3/8.0, 5+5/8.0)*0.0254);
   setDownsampleResolution(0.01);
   setRemoveGround(true);
+  setGroundBand(1e10,1e10);
   setHeightBand(0.05, 1.0);
   setMaxRange(3.0);
   setMaxAngleFromHorizontal(45);
@@ -47,6 +48,13 @@ void BlockFitter::
 setRemoveGround(const bool iVal) {
   mRemoveGround = iVal;
 }
+
+void BlockFitter::
+setGroundBand(const float iMinZ, const float iMaxZ) {
+  mMinGroundZ = iMinZ;
+  mMaxGroundZ = iMaxZ;
+}
+
 
 void BlockFitter::
 setHeightBand(const float iMinHeight, const float iMaxHeight) {
@@ -112,18 +120,21 @@ go() {
     Eigen::Vector4f groundPlane;
 
     // filter points
-    std::vector<float> zVals(cloud->size());
-    for (int i = 0; i < (int)cloud->size(); ++i) zVals[i] = cloud->points[i].z;
-    std::sort(zVals.begin(), zVals.end());
-    //float minZ = zVals[(int)(zVals.size()*0.01)]; 
-    //float heightThresh = minZ + mMaxHeightAboveGround;
-    float minZ = zVals[0];
-    float heightThresh = minZ + mMaxHeightAboveGround/2;
-    std::cout << minZ << " " << zVals[0] << " " << heightThresh << std::endl;
+    float minZ = mMinGroundZ;
+    float maxZ = mMaxGroundZ;
+    if ((minZ > 1000) && (maxZ > 1000)) {
+      std::vector<float> zVals(cloud->size());
+      for (int i = 0; i < (int)cloud->size(); ++i) {
+        zVals[i] = cloud->points[i].z;
+      }
+      std::sort(zVals.begin(), zVals.end());
+      minZ = zVals[0]-0.1;
+      maxZ = minZ + 0.5;
+    }
     LabeledCloud::Ptr tempCloud(new LabeledCloud());
     for (int i = 0; i < (int)cloud->size(); ++i) {
       const Eigen::Vector3f& p = cloud->points[i].getVector3fMap();
-      if (p[2] > heightThresh) continue;
+      if ((p[2] < minZ) || (p[2] > maxZ)) continue;
       tempCloud->push_back(cloud->points[i]);
     }
 

@@ -38,7 +38,15 @@ pods_install_pkg_config_file(${LIB_NAME}
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)
 
-# create an executable, and make it public
+# standalone lcm-based block fitter
+set(APP_NAME drc-block-fitter)
+add_executable(${APP_NAME} src/block-fitter.cpp)
+target_link_libraries(${APP_NAME} boost_system)
+pods_use_pkg_config_packages(${APP_NAME} ${LIB_NAME} maps)
+pods_install_executables(${APP_NAME})
+
+
+# test program
 set(APP_NAME ${POD_NAME}-test)
 add_executable(${APP_NAME} src/${APP_NAME}.cpp)
 target_link_libraries(${APP_NAME} boost_system)
