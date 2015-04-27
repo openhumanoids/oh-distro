@@ -11,6 +11,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     lcmgl = LCMGLClient('reactive_recovery')
     last_plan;
     arm_and_neck_inds = [];
+    default_qp_input_msg;
 
     % Initializes on first getQPInput
     % (setup foot contact lock and upper body state to be
@@ -38,6 +39,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     % nonconstant as it will be reassigned if we're in sim mode
     CAPTURE_MAX_FLYFOOT_HEIGHT = 0.025;
 
+    mex_ptr;
+
   end
 
   properties (Constant)
@@ -53,7 +56,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
   end
 
   methods
-    function obj = QPReactiveRecoveryPlan(robot, options)
+    function obj = QPReactiveRecoveryPlan(robot, options, robot_property_cache)
       checkDependency('iris');
       if nargin < 2
         options = struct();
@@ -71,14 +74,16 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       % obj.LIP_height = LIP_height;
       S = load(obj.robot.fixed_point_file);
       obj.qtraj = S.xstar(1:obj.robot.getNumPositions());
-      obj.default_qp_input = atlasControllers.QPInputConstantHeight();
-      obj.default_qp_input.whole_body_data.q_des = zeros(obj.robot.getNumPositions(), 1);
-      obj.default_qp_input.whole_body_data.constrained_dofs = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck');findPositionIndices(obj.robot,'back_bkz');findPositionIndices(obj.robot,'back_bky')];
+      obj.default_qp_input_msg = atlasControllers.QPInputConstantHeight();
+      obj.default_qp_input_msg.whole_body_data.q_des = zeros(obj.robot.getNumPositions(), 1);
+      obj.default_qp_input_msg.whole_body_data.constrained_dofs = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck');findPositionIndices(obj.robot,'back_bkz');findPositionIndices(obj.robot,'back_bky')];
       obj.arm_and_neck_inds = [findPositionIndices(obj.robot,'arm');findPositionIndices(obj.robot,'neck')];
       [~, obj.V, ~, obj.LIP_height] = obj.robot.planZMPController([0;0], obj.qtraj);
       obj.g = options.g;
       obj.point_mass_biped = PointMassBiped(sqrt(options.g / obj.LIP_height));
       obj.initialized = 0;
+
+      obj.mex_ptr = constructRecoveryMexPointer(obj.robot.getMexModelPtr(), obj.V.S);
     end
 
     function obj = resetInitialization(obj)
@@ -87,6 +92,26 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       obj.last_ts = [];
       obj.last_coefs = [];
       obj.t_start = [];
+    end
+
+    function ret = duration(obj)
+      ret = inf;
+    end
+
+    function ret = start_time(obj)
+      ret = obj.start_time;
+    end
+
+    function ret = default_qp_input(obj)
+      ret = obj.default_qp_input_msg;
+    end
+
+    function ret = gain_set(obj)
+      ret = 'recovery';
+    end
+
+    function ret = isFinished(obj, t, x)
+      ret = false;
     end
 
     function next_plan = getSuccessor(obj, t, x)
@@ -234,7 +259,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
         obj.draw_plan(pp, foot_states, obj.reachable_vertices, obj.last_plan);
       end
       
-      qp_input = obj.default_qp_input;
+      qp_input = obj.default_qp_input_msg;
       qp_input.whole_body_data.q_des = obj.qtraj;
       qp_input.zmp_data.x0 = [mean([foot_states.right.xyz_quat(1:2), foot_states.left.xyz_quat(1:2)], 2);
                               0; 0];
@@ -307,7 +332,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function qp_input = getCaptureInput(obj, t_global, r_ic, foot_states, rpc)
-      qp_input = obj.default_qp_input;
+      qp_input = obj.default_qp_input_msg;
       qp_input.whole_body_data.q_des = obj.qtraj;
       qp_input.zmp_data.x0 = [mean([foot_states.right.xyz_quat(1:2), foot_states.left.xyz_quat(1:2)], 2);
                               0; 0];

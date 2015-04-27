@@ -490,48 +490,101 @@ std::vector<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double t
   return splines;
 }
 
+std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToGoalTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states) {
+  const FootState state = foot_states.at(intercept_plan.swing_foot);
+
+  std::cout << "case 1" << std::endl;
+
+  const double fraction_first = 0.7;
+
+  const double swing_height_first_in_world = state.terrain_height + (state.pose.translation().z() - state.terrain_height) * (1 - std::pow(fraction_first,2));
+
+  Matrix<double, 6, 3> xs;
+  Vector6d xd0;
+  Vector6d xdf = Vector6d::Zero();
+
+  Quaterniond quat;
+  xs.block(0, 0, 3, 1) = state.pose.translation();
+  quat = Quaterniond(state.pose.rotation());
+  auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
+  xs.block(3, 0, 3, 1) = w.value();
+  xd0.head<3>() = state.velocity.head<3>();
+  xd0.tail<3>() = w.gradient().value();
+
+  xs.block(0, 2, 3, 1) = intercept_plan.pose_next.translation();
+  quat = Quaterniond(intercept_plan.pose_next.rotation());
+  xs.block(3, 2, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+
+  auto w_unwrap = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1), 1);
+  xs.block(3, 2, 3, 1) = w_unwrap.value();
+  xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
+
+  xs.block(0, 1, 6, 1) = (1 - fraction_first) * xs.block(0, 0, 6, 1) + fraction_first * xs.block(0, 2, 6, 1);
+  xs(2, 1) = swing_height_first_in_world;
+
+  std::vector<PiecewisePolynomial<double>> spline = freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
+  return spline;
+}
+
+std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::upOverAndDownTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states) {
+  const FootState state = foot_states.at(intercept_plan.swing_foot);
+
+  std::cout << "case 2" << std::endl;
+
+  const double fraction_first = 0.15;
+  const double fraction_second = 1 - fraction_first;
+
+  double swing_height_first_in_world = state.terrain_height + this->swing_height_above_terrain;
+  double swing_height_second_in_world = state.terrain_height + this->swing_height_above_terrain;
+
+  if (state.pose.translation().z() > swing_height_first_in_world) {
+    swing_height_first_in_world = swing_height_second_in_world * (fraction_first / fraction_second) + state.pose.translation().z() * (1 - fraction_first / fraction_second);
+  }
+
+  Matrix<double, 6, 4> xs;
+  Vector6d xd0;
+  Vector6d xdf = Vector6d::Zero();
+
+  Quaterniond quat;
+  xs.block(0, 0, 3, 1) = state.pose.translation();
+  quat = Quaterniond(state.pose.rotation());
+  auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
+  xs.block(3, 0, 3, 1) = w.value();
+  xd0.head<3>() = state.velocity.head<3>();
+  xd0.tail<3>() = w.gradient().value();
+
+  xs.block(0, 3, 3, 1) = intercept_plan.pose_next.translation();
+  quat = Quaterniond(intercept_plan.pose_next.rotation());
+  xs.block(3, 3, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+
+  auto w_unwrap = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 3, 3, 1), 1);
+  xs.block(3, 3, 3, 1) = w_unwrap.value();
+  xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
+
+  xs.block(0, 1, 2, 1) = (1 - fraction_first) * xs.block(0, 0, 2, 1) + fraction_first * xs.block(0, 3, 2, 1);
+  xs(2, 1) = swing_height_first_in_world;
+  xs.block(3, 1, 3, 1) = xs.block(3, 0, 3, 1);
+
+  xs.block(0, 2, 2, 1) = (1 - fraction_second) * xs.block(0, 0, 2, 1) + fraction_second * xs.block(0, 3, 2, 1);
+  xs(2, 2) = swing_height_second_in_world;
+  xs.block(3, 2, 3, 1) = xs.block(3, 3, 3, 1);
+
+  std::vector<PiecewisePolynomial<double>> spline = freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
+  return spline;
+}
+
 std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states) {
-  throw std::runtime_error("unfinished");
-
-  const FootState state = foot_states.find(intercept_plan.swing_foot)->second;
+  const FootState state = foot_states.at(intercept_plan.swing_foot);
   const double dist_to_goal = (intercept_plan.pose_next.translation().head(2) - state.pose.translation().head(2)).norm();
-
   // TODO: name the magic numbers here
   const double descend_coeff = std::pow(1.0 / 0.15, 2);
 
   if (descend_coeff * std::pow(state.pose.translation().z() - state.terrain_height, 2) >= dist_to_goal) {
     // We're within a quadratic bowl around our target, so let's just descend straight there
-
-    std::cout << "case 1" << std::endl;
-
-    const double fraction_first = 0.7;
-
-    const double swing_height_first_in_world = state.terrain_height + (state.pose.translation().z() - state.terrain_height) * (1 - std::pow(fraction_first,2));
-
-    Matrix<double, 6, 3> xs;
-    Vector6d xd0;
-    Vector6d xdf = Vector6d::Zero();
-
-    Quaterniond quat;
-    xs.block(0, 0, 3, 1) = state.pose.translation();
-    quat = Quaterniond(state.pose.rotation());
-    auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
-    xs.block(3, 0, 3, 1) = w.value();
-    xd0.head<3>() = state.velocity.head<3>();
-    xd0.tail<3>() = w.gradient().value();
-
-    xs.block(0, 2, 3, 1) = intercept_plan.pose_next.translation();
-    quat = Quaterniond(intercept_plan.pose_next.rotation());
-    xs.block(3, 2, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
-
-    auto w_unwrap = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1), 1);
-    xs.block(3, 2, 3, 1) = w_unwrap.value();
-    xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
-
-    xs.block(0, 1, 6, 1) = (1 - fraction_first) * xs.block(0, 0, 6, 1) + fraction_first * xs.block(0, 2, 6, 1);
-    xs(2, 1) = swing_height_first_in_world;
-
-    std::vector<PiecewisePolynomial<double>> spline = freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
+    return this->straightToGoalTrajectory(intercept_plan, foot_states);
+  } else {
+    // We'll need to go up and then back down to get to the goal
+    return this->upOverAndDownTrajectory(intercept_plan, foot_states);
   }
 }
 
@@ -571,6 +624,7 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
       }
       this->foot_body_ids[RIGHT] = body_id;
     } else if (this->robot->frames[i].name.compare("l_foot_sole")) {
+      has_frame[LEFT] = true;
       this->foot_frame_ids[LEFT] = -i - 2;
       Matrix4d Tframe;
       int body_id = this->robot->parseBodyOrFrameID(this->foot_frame_ids[LEFT], &Tframe);
@@ -649,10 +703,6 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
   this->publishForVisualization(t_global, icp);
 
   this->LCMHandle->publish("QP_CONTROLLER_INPUT_DEBUG", qp_input.get());
-}
-
-void QPReactiveRecoveryPlan::setS(const MatrixXd &S) {
-  this->S = S;
 }
 
 void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache) {

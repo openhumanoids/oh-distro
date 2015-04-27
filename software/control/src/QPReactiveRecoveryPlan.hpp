@@ -89,7 +89,6 @@ class QPReactiveRecoveryPlan {
     double t_start = 0;
     bool has_plan = false;
     bool initialized = false;
-    RigidBodyManipulator* robot;
     BipedDescription biped;
     std::map<FootID, int> foot_frame_ids;
     std::map<FootID, int> foot_body_ids;
@@ -106,7 +105,11 @@ class QPReactiveRecoveryPlan {
     void setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache);
     void encodeSupportData(int body_id, SupportLogicType support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data support_data);
     void encodeBodyMotionData(int body_or_frame_id, std::vector<PiecewisePolynomial<double>> spline, drake::lcmt_body_motion_data body_motion);
+    std::vector<PiecewisePolynomial<double>> straightToGoalTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
+    std::vector<PiecewisePolynomial<double>> upOverAndDownTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states);
+
 	public:
+    RigidBodyManipulator* robot;
     double capture_max_flyfoot_height = 0.025;
     double capture_shrink_factor = 0.8;
     double desired_icp_offset = 0.1;
@@ -116,6 +119,7 @@ class QPReactiveRecoveryPlan {
     double post_execution_delay = 0.1;
     double mu = 0.5;
     double pelvis_height_above_sole = 0.84;
+    double swing_height_above_terrain = 0.03;
 
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot);
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot, BipedDescription biped);
@@ -138,7 +142,7 @@ class QPReactiveRecoveryPlan {
 
     static ExponentialForm icpTrajectory(double x_ic, double x_cop, double omega);
 
-    static std::vector<PiecewisePolynomial<double>> swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
+    std::vector<PiecewisePolynomial<double>> swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
 
     void resetInitialization();
 
@@ -156,9 +160,8 @@ class QPReactiveRecoveryPlan {
 
     Vector2d getICP();
 
-    void setS(const MatrixXd &S);
-
-
-
+    void setS(const MatrixXd &S) {
+      this->S = S;
+    }
 };
 

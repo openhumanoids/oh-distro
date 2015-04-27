@@ -33,3 +33,7 @@
 # add_mex(getInterceptPlansmex getInterceptPlansmex.cpp)
 # pods_use_pkg_config_packages(getInterceptPlansmex eigen3 drake-util)
 # target_link_libraries(getInterceptPlansmex QPReactiveRecoveryPlan)
+
+add_mex(publishQPControllerInput publishQPControllerInput.cpp)
+pods_use_pkg_config_packages(publishQPControllerInput eigen3 drake-util drake-qp-common)
+target_link_libraries(publishQPControllerInput QPReactiveRecoveryPlan)
