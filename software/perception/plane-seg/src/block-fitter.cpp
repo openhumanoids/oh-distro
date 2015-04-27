@@ -1,6 +1,7 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <sstream>
 
 #include <lcm/lcm-cpp.hpp>
 #include <ConciseArgs>
@@ -9,6 +10,7 @@
 #include <drc_utils/BotWrapper.hpp>
 
 #include <lcmtypes/drc/map_scans_t.hpp>
+#include <lcmtypes/drc/affordance_collection_t.hpp>
 
 #include <maps/ScanBundleView.hpp>
 #include <maps/LcmTranslator.hpp>
@@ -73,8 +75,53 @@ struct State {
       fitter.setCloud(cloud);
       auto result = fitter.go();
 
+      // construct json string
+      std::string json;
+      json += "{\n";
+      json += "  \"cmomand\": \"echo_response\",\n";
+      json += "  \"descriptions\": [\n";
+      std::string timeString = std::to_string(mBotWrapper->getCurrentTime());
+      for (int i = 0; i < (int)result.mBlocks.size(); ++i) {
+        const auto& block = result.mBlocks[i];
+        std::string dimensionsString, positionString, quaternionString;
+        {
+          std::ostringstream oss;
+          oss << block.mSize.transpose();
+          dimensionsString = oss.str();
+        }
+        {
+          std::ostringstream oss;
+          oss << block.mPose.translation().transpose();
+          positionString = oss.str();
+        }
+        {
+          std::ostringstream oss;
+          Eigen::Quaternionf q(block.mPose.rotation());
+          oss << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z();
+          quaternionString = oss.str();
+        }
+        std::string uuid = timeString + "_" + std::to_string(i+1);
+        
+        json += "    {\n";
+        json += "      \"classname\": \"BoxAffordanceItem\",\n";
+        json += "      \"pose\": [[" + positionString + "], [" +
+          quaternionString + "]],\n";
+        json += "      \"uuid\": \"" + uuid + "\",\n";
+        json += "      \"Dimensions\": [" + dimensionsString + "],\n";
+        json += "      \"Name\": \"box\"\n";
+        if (i == (int)result.mBlocks.size()-1) json += "    }\n";
+        else json += "    },\n";
+      }
+      json += "  ],\n";
+      json += "  \"commandId\": \"" + timeString + "\",\n";
+      json += "  \"collectionId\": \"block-fitter\"\n";
+      json += "}\n";
+
       // publish result
-      // TODO
+      drc::affordance_collection_t msg;
+      msg.utime = data.utime;
+      msg.name = json;
+      mLcmWrapper->get()->publish("AFFORDANCE_COLLECTION_COMMAND", &msg);
     }
   }
 
