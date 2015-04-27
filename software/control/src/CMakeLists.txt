@@ -6,6 +6,9 @@
 add_executable(SteeringCommandPublisher SteeringCommandPublisher.cpp)
 pods_use_pkg_config_packages(SteeringCommandPublisher lcm)
 
+add_executable(GamepadDriver GamepadPublisher.cpp Joystick.cpp GamepadDriver.cpp)
+pods_use_pkg_config_packages(GamepadDriver lcm)
+
 add_mex(RobotStateMonitor RobotStateMonitor.cpp)
 pods_use_pkg_config_packages(RobotStateMonitor eigen3 lcm)
 

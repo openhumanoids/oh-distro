@@ -1,0 +1,28 @@
+package drc;
+
+struct gamepad_cmd_t
+{
+    int64_t utime;  
+    int8_t button_x;
+    int8_t button_y;
+    int8_t button_a;
+    int8_t button_b;
+    int8_t button_start;
+    int8_t button_back;
+    int8_t button_lb;
+    int8_t button_rb;
+    int8_t button_thumbpad_left;
+    int8_t button_thumbpad_right;
+    int8_t button_dpad_x;
+    int8_t button_dpad_y;
+    
+    float thumbpad_left_x;
+    float thumbpad_left_y;
+    float thumbpad_right_x;
+    float thumbpad_right_y;
+
+    float trigger_left;
+    float trigger_right;
+	        
+    int8_t type;    
+}
