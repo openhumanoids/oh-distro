@@ -14,7 +14,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   sizecheck(prhs[3], 1, 1);
   double u = mxGetScalar(prhs[3]);
 
-  Polynomial p = QPReactiveRecoveryPlan::bangBangPolynomial(x0, xd0, u);
+  Polynomial<double> p = QPReactiveRecoveryPlan::bangBangPolynomial(x0, xd0, u);
   VectorXd xf(1);
   xf(0) = p.value(tf);
   

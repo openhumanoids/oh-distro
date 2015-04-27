@@ -67,9 +67,16 @@ int testExpTaylor() {
   double b = 0.6;
   double c = 0.7;
   ExponentialForm expform(a, b, c);
-  Polynomial p = expform.taylorExpand(d);
-  if (std::abs(p.value(0) - (a + c)) > 1e-5) {
-    std::cout << p.value(0) << std::endl;
+  Polynomial<double> p = expform.taylorExpand(d);
+  if (std::abs(expform.value(0.0) - (a + c)) > 1e-10) {
+    std::cout << "expform value does not match" << std::endl;
+    std::cout << expform.value(0.0) << std::endl;
+    std::cout << a + c << std::endl;
+    return 1;
+  }
+  if (std::abs(p.value(0.0) - (a + c)) > 1e-5) {
+    std::cout << p.value(0.0) << std::endl;
+    std::cout << a + c << std::endl;
     return 1;
   }
   if (std::abs(p.value(0.5) - expform.value(0.5)) > 1e-5) {
@@ -78,7 +85,7 @@ int testExpTaylor() {
   if (std::abs(p.value(1.5) - expform.value(1.5)) > 1e-3) {
     return 1;
   }
-  if (std::abs(p.value(5) - expform.value(5)) > 1) {
+  if (std::abs(p.value(5.0) - expform.value(5.0)) > 1) {
     return 1;
   }
   return 0;
@@ -98,11 +105,11 @@ int testExpIntercept() {
   ExponentialForm expform(a, b, c);
   std::vector<double> roots = QPReactiveRecoveryPlan::expIntercept(expform, l0, ld0, u, d);
 
-  Polynomial p_exp = expform.taylorExpand(d);
+  Polynomial<double> p_exp = expform.taylorExpand(d);
   // l0 + 1/2*ld0*t + 1/4*u*t^2 - 1/4*ld0^2/u
   VectorXd coefs_int(3);
   coefs_int << l0 - 0.25*ld0*ld0/u, 0.5*ld0, 0.25*u;
-  Polynomial p_int(coefs_int);
+  Polynomial<double> p_int(coefs_int);
   for (std::vector<double>::iterator it = roots.begin(); it != roots.end(); ++it) {
     double val_exp = p_exp.value(*it);
     double val_int = p_int.value(*it);
@@ -161,9 +168,9 @@ int testBangBangIntercept() {
 }
 
 int testisICPCaptured() {
-  QPReactiveRecoveryPlan plan;
-  plan.capture_shrink_factor = 0.8;
-  plan.capture_max_flyfoot_height = 0.025;
+  std::unique_ptr<QPReactiveRecoveryPlan> plan(new QPReactiveRecoveryPlan(NULL));
+  plan->capture_shrink_factor = 0.8;
+  plan->capture_max_flyfoot_height = 0.025;
 
   std::map<FootID, FootState> foot_states;
   std::map<FootID, Matrix<double, 3, 4>> foot_vertices;
@@ -193,14 +200,14 @@ int testisICPCaptured() {
 
   r_ic << 1.0, 2.0;
 
-  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  captured = plan->isICPCaptured(r_ic, foot_states, foot_vertices);
   if (!captured) {
     std::cout << "should be captured" << std::endl;
     return 1;
   }
 
   foot_states[LEFT].contact = false;
-  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  captured = plan->isICPCaptured(r_ic, foot_states, foot_vertices);
   if (!captured) {
     // should still be captured because lfoot is close to the terrain
     std::cout << "should be captured" << std::endl;
@@ -208,7 +215,7 @@ int testisICPCaptured() {
   }
 
   foot_states[LEFT].terrain_height = -0.1;
-  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  captured = plan->isICPCaptured(r_ic, foot_states, foot_vertices);
   if (captured) {
     // should not be captured, because terrain is too low 
     std::cout << "should not be captured" << std::endl;
@@ -217,7 +224,7 @@ int testisICPCaptured() {
 
   foot_states[LEFT].contact = true;
   r_ic << 1.0, 2.1;
-  captured = plan.isICPCaptured(r_ic, foot_states, foot_vertices);
+  captured = plan->isICPCaptured(r_ic, foot_states, foot_vertices);
   if (captured) {
     // should not be captured because r_ic is out of support
     std::cout << "should not be captured" << std::endl;
@@ -401,15 +408,15 @@ int testGetInterceptsWithCoP() {
   cop.translate(Vector3d(-0.11, 1.05, 0.1));
   icp.translate(Vector3d(-0.1, 1.06, 0.1));
 
-  QPReactiveRecoveryPlan planner;
+  std::unique_ptr<QPReactiveRecoveryPlan> planner(new QPReactiveRecoveryPlan(NULL, biped));
 
-  std::vector<InterceptPlan> intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+  std::vector<InterceptPlan> intercept_plans = planner->getInterceptsWithCoP(swing_foot, foot_states, icp, cop);
 
   Matrix<double, 3, 4> reachable_verts_in_world = foot_states[LEFT].pose * biped.reachable_vertices[RIGHT];
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
     // std::cout << plan->tf << std::endl;
     // std::cout << plan->pose_next.matrix() << std::endl;
-    if (plan->tf < planner.min_step_duration) {
+    if (plan->tf < planner->min_step_duration) {
       fprintf(stderr, "Min step duration violated\n");
       return 1;
     }
@@ -425,7 +432,7 @@ int testGetInterceptsWithCoP() {
 
   cop = Isometry3d(Translation<double, 3>(Vector3d(-0.11, 1, 0.1)));
   icp = Isometry3d(Translation<double, 3>(Vector3d(1, 1, 0.1)));
-  intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+  intercept_plans = planner->getInterceptsWithCoP(swing_foot, foot_states, icp, cop);
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
     // std::cout << plan->tf << std::endl;
     // std::cout << plan->pose_next.matrix() << std::endl;
@@ -445,7 +452,8 @@ int testGetInterceptsWithCoP() {
 
   icp = Isometry3d(Translation<double, 3>(Vector3d(0, 1, 0.1)));
   biped.u_max = 20;
-  intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+  planner.reset(new QPReactiveRecoveryPlan(NULL, biped));
+  intercept_plans = planner->getInterceptsWithCoP(swing_foot, foot_states, icp, cop);
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
     // std::cout << plan->tf << std::endl;
     // std::cout << plan->pose_next.matrix() << std::endl;
@@ -461,7 +469,7 @@ int testGetInterceptsWithCoP() {
 
   cop = Isometry3d(Translation<double, 3>(Vector3d(-0.11, 1, 0.1)));
   icp = Isometry3d(Translation<double, 3>(Vector3d(-0.11, 1, 0.1)));
-  intercept_plans = planner.getInterceptsWithCoP(swing_foot, foot_states, biped, icp, cop);
+  intercept_plans = planner->getInterceptsWithCoP(swing_foot, foot_states, icp, cop);
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
     // std::cout << plan->tf << std::endl;
     // std::cout << plan->pose_next.matrix() << std::endl;
@@ -480,77 +488,77 @@ int main() {
 
   error = testClosestPointInConvexHull1();
   if (error) {
-    std::cout << "testClosestPointInConvexHull1 failed" << std::endl;
+    std::cout << "testClosestPointInConvexHull1 FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testClosestPointInConvexHull1 passed" << std::endl;
   }
   error = testClosestPointInConvexHull2();
   if (error) {
-    std::cout << "testClosestPointInConvexHull2 failed" << std::endl;
+    std::cout << "testClosestPointInConvexHull2 FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testClosestPointInConvexHull2 passed" << std::endl;
   }
   error = testClosestPointInConvexHull3();
   if (error) {
-    std::cout << "testClosestPointInConvexHull3 failed" << std::endl;
+    std::cout << "testClosestPointInConvexHull3 FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testClosestPointInConvexHull3 passed" << std::endl;
   }
   error = testExpTaylor();
   if (error) {
-    std::cout << "testExpTaylor failed" << std::endl;
+    std::cout << "testExpTaylor FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testExpTaylor passed" << std::endl;
   }
   error = testExpIntercept();
   if (error) {
-    std::cout << "testExpIntercept failed" << std::endl;
+    std::cout << "testExpIntercept FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testExpIntercept passed" << std::endl;
   } 
   error = testBangBangIntercept();
   if (error) {
-    std::cout << "testBangBangIntercept failed" << std::endl;
+    std::cout << "testBangBangIntercept FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testBangBangIntercept passed" << std::endl;
   }
   error = testisICPCaptured();
   if (error) {
-    std::cout << "testisICPCaptured failed" << std::endl;
+    std::cout << "testisICPCaptured FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testisICPCaptured passed" << std::endl;
   }
   error = testGetTWorldToLocal();
   if (error) {
-    std::cout << "testGetTWorldToLocal failed" << std::endl;
+    std::cout << "testGetTWorldToLocal FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testGetTWorldToLocal passed" << std::endl;
   }
   error = testMinTimeToXprime();
   if (error) {
-    std::cout << "testMinTimeToXprime failed" << std::endl;
+    std::cout << "testMinTimeToXprime FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testMinTimeToXprime passed" << std::endl;
   }
   error = testClosestPoseInConvexHull();
   if (error) {
-    std::cout << "testClosestPoseInConvexHull failed" << std::endl;
+    std::cout << "testClosestPoseInConvexHull FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testClosestPoseInConvexHull passed" << std::endl;
   }
   error = testGetInterceptsWithCoP();
   if (error) {
-    std::cout << "testGetInterceptsWithCoP failed" << std::endl;
+    std::cout << "testGetInterceptsWithCoP FAILED" << std::endl;
     failed = true;
   } else {
     std::cout << "testGetInterceptsWithCoP passed" << std::endl;

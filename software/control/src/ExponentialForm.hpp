@@ -16,7 +16,7 @@ class ExponentialForm {
       m_c = c;
     }
 
-    Polynomial taylorExpand(int degree) const;
+    Polynomial<double> taylorExpand(int degree) const;
 
     ExponentialForm operator+(const double x) {
       ExponentialForm expform(this->m_a, this->m_b, this->m_c + x);

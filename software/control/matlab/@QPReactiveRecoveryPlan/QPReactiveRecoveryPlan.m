@@ -9,7 +9,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     LIP_height;
     point_mass_biped;
     lcmgl = LCMGLClient('reactive_recovery')
-    last_qp_input;
     last_plan;
     arm_and_neck_inds = [];
 
@@ -85,7 +84,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     function obj = resetInitialization(obj)
       obj.initialized = 0;
       obj.last_plan = [];
-      obj.last_qp_input = [];
       obj.last_ts = [];
       obj.last_coefs = [];
       obj.t_start = [];
@@ -193,9 +191,6 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
       if obj.SLOW_DRAW
         obj.lcmgl.switchBuffers();
       end
-
-      obj.last_qp_input = qp_input;
-
     end
 
     function draw_plan(obj, pp, foot_states, reachable_vertices, plan)
@@ -234,8 +229,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlan
     end
 
     function qp_input = getInterceptInput(obj, t_global, foot_states, rpc)
-      pp = mkpp(obj.last_ts, obj.last_coefs, 6);
       if obj.SLOW_DRAW
+        pp = mkpp(obj.last_ts, obj.last_coefs, 6);
         obj.draw_plan(pp, foot_states, obj.reachable_vertices, obj.last_plan);
       end
       

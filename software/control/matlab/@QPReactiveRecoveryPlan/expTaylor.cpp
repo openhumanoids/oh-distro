@@ -20,7 +20,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   MatrixXd all_coefs(degree+1, a.size());
 
   for (int i=0; i < a.size(); i++) {
-    Polynomial p = ExponentialForm(a(i), b(i), c(i)).taylorExpand(degree);
+    Polynomial<double> p = ExponentialForm(a(i), b(i), c(i)).taylorExpand(degree);
     VectorXd coefs = p.getCoefficients();
     all_coefs.col(i) = coefs.reverse();
   }

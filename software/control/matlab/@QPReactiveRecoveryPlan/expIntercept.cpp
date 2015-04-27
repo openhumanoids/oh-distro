@@ -35,7 +35,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if (nlhs == 2) {
     VectorXd coefs_int(3);
     coefs_int << l0 - 0.25*ld0*ld0/u, 0.5*ld0, 0.25*u;
-    Polynomial p_int(coefs_int);
+    Polynomial<double> p_int(coefs_int);
     for (int j=0; j < t_int.size(); j++) {
       x_int(j) = p_int.value(t_int(j));
     }

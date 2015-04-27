@@ -1,9 +1,10 @@
 #include "ExponentialForm.hpp"
 #include <Eigen/Dense>
+#include <iostream>
 
 using namespace Eigen;
 
-Polynomial ExponentialForm::taylorExpand(int degree) const {
+Polynomial<double> ExponentialForm::taylorExpand(int degree) const {
   VectorXd coefs = VectorXd::Zero(degree+1);
   coefs(0) = m_a + m_c;
 
@@ -13,7 +14,7 @@ Polynomial ExponentialForm::taylorExpand(int degree) const {
     coefs(d) = m_a * std::pow(m_b, d) / factorial;
   }
 
-  return Polynomial(coefs);
+  return Polynomial<double>(coefs);
 }
 
 double ExponentialForm::value(double t) const {
