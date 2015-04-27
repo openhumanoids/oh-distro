@@ -70,7 +70,7 @@ for armLinkName in armLinkNames:
     mit.copyLinkProperties(urdf, 'r_' + armLinkName, 'l_' + armLinkName)
 
 jointCopyExceptions = ['limit', 'safety_controller']
-for armJointName in ['arm_shx', 'arm_ely', 'arm_elx', 'arm_uwy', 'arm_mwx']:#, 'arm_lwy']:
+for armJointName in ['arm_shx', 'arm_ely', 'arm_elx', 'arm_uwy', 'arm_mwx']:
     mit.copyJointProperties(urdf, 'r_' + armJointName, 'l_' + armJointName, jointCopyExceptions)
 mit.copyJointProperties(urdf, 'r_arm_shz', 'l_arm_shz', jointCopyExceptions + ['origin'])
 
@@ -87,7 +87,7 @@ mit.removeAllCollisions(urdf)
 minimal_contact_urdf = copy.deepcopy(urdf)
 
 r_heel_points = ["-0.0876 0.0626 -0.07645", "-0.0876 -0.066 -0.07645"]
-r_toe_points = ["0.1728 0.0626 -0.07645","0.1728 -0.066 -0.07645"]
+r_toe_points = ["0.1728 0.0626 -0.07645", "0.1728 -0.066 -0.07645"]
 r_midfoot_points = ["0.0426 0.0626 -0.07645", "0.0426 -0.066 -0.07645"]
 
 l_heel_points = ["-0.0876 0.066 -0.07645", "-0.0876 -0.0626 -0.07645"]
@@ -103,8 +103,8 @@ mit.addContactPoint(minimal_contact_urdf, "r_foot", r_midfoot_points[1], "midfoo
 
 mit.addContactPoint(minimal_contact_urdf, "l_foot", l_heel_points[0], "heel")
 mit.addContactPoint(minimal_contact_urdf, "l_foot", l_heel_points[1], "heel")
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[0] , "toe")
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[1] , "toe")
+mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[0], "toe")
+mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[1], "toe")
 mit.addContactPoint(minimal_contact_urdf, "l_foot", l_midfoot_points[0], "midfoot")
 mit.addContactPoint(minimal_contact_urdf, "l_foot", l_midfoot_points[1], "midfoot")
 
@@ -112,20 +112,6 @@ minimal_contact_urdf.write(minimal_contact_urdf_path, pretty_print=True)
 
 # Create convex hull skeleton
 mit.addCollisionsFromVisuals(urdf)
-
-mit.addContactPoint(urdf, "r_foot", r_heel_points[0], "heel")
-mit.addContactPoint(urdf, "r_foot", r_heel_points[1], "heel")
-mit.addContactPoint(urdf, "r_foot", r_toe_points[0], "toe")
-mit.addContactPoint(urdf, "r_foot", r_toe_points[1], "toe")
-mit.addContactPoint(urdf, "r_foot", r_midfoot_points[0], "midfoot")
-mit.addContactPoint(urdf, "r_foot", r_midfoot_points[1], "midfoot")
-
-mit.addContactPoint(urdf, "l_foot", l_heel_points[0], "heel")
-mit.addContactPoint(urdf, "l_foot", l_heel_points[1], "heel")
-mit.addContactPoint(urdf, "l_foot", l_toe_points[0] , "toe")
-mit.addContactPoint(urdf, "l_foot", l_toe_points[1] , "toe")
-mit.addContactPoint(urdf, "l_foot", l_midfoot_points[0], "midfoot")
-mit.addContactPoint(urdf, "l_foot", l_midfoot_points[1], "midfoot")
 
 mit.useConvexHullMeshes(urdf)
 mit.removeCollisions(urdf, ['mtorso', 'ltorso', 'l_talus', 'r_talus'])
@@ -151,7 +137,23 @@ mit.addCollisionFilterGroup(urdf, 'l_arm',
                              'l_lfarm', 'l_hand'],
                             ['l_arm'])
 
-urdf.write(convex_hull_urdf_path, pretty_print=True)
+convex_hull_urdf = copy.deepcopy(urdf)
+
+mit.addContactPoint(convex_hull_urdf, "r_foot", r_heel_points[0], "heel")
+mit.addContactPoint(convex_hull_urdf, "r_foot", r_heel_points[1], "heel")
+mit.addContactPoint(convex_hull_urdf, "r_foot", r_toe_points[0], "toe")
+mit.addContactPoint(convex_hull_urdf, "r_foot", r_toe_points[1], "toe")
+mit.addContactPoint(convex_hull_urdf, "r_foot", r_midfoot_points[0], "midfoot")
+mit.addContactPoint(convex_hull_urdf, "r_foot", r_midfoot_points[1], "midfoot")
+
+mit.addContactPoint(convex_hull_urdf, "l_foot", l_heel_points[0], "heel")
+mit.addContactPoint(convex_hull_urdf, "l_foot", l_heel_points[1], "heel")
+mit.addContactPoint(convex_hull_urdf, "l_foot", l_toe_points[0], "toe")
+mit.addContactPoint(convex_hull_urdf, "l_foot", l_toe_points[1], "toe")
+mit.addContactPoint(convex_hull_urdf, "l_foot", l_midfoot_points[0], "midfoot")
+mit.addContactPoint(convex_hull_urdf, "l_foot", l_midfoot_points[1], "midfoot")
+
+convex_hull_urdf.write(convex_hull_urdf_path, pretty_print=True)
 
 # Add a geometry to represent the hose for lidar filtering to full collision model
 for link in urdf.xpath("//link[contains(@name,'larm')]"):
