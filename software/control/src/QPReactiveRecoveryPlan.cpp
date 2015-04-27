@@ -509,20 +509,29 @@ std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::swingTrajectory
     const double swing_height_first_in_world = state.terrain_height + (state.pose.translation().z() - state.terrain_height) * (1 - std::pow(fraction_first,2));
 
     Matrix<double, 6, 3> xs;
+    Vector6d xd0;
+    Vector6d xdf = Vector6d::Zero();
+
     Quaterniond quat;
     xs.block(0, 0, 3, 1) = state.pose.translation();
     quat = Quaterniond(state.pose.rotation());
-    xs.block(3, 0, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+    auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
+    xs.block(3, 0, 3, 1) = w.value();
+    xd0.head<3>() = state.velocity.head<3>();
+    xd0.tail<3>() = w.gradient().value();
 
     xs.block(0, 2, 3, 1) = intercept_plan.pose_next.translation();
     quat = Quaterniond(intercept_plan.pose_next.rotation());
     xs.block(3, 2, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
-    // TODO: Uncomment this once unwrapExpamp exists
-    // xs.block(3, 2, 3, 1) = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1));
+
+    auto w_unwrap = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1), 1);
+    xs.block(3, 2, 3, 1) = w_unwrap.value();
+    xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
 
     xs.block(0, 1, 6, 1) = (1 - fraction_first) * xs.block(0, 0, 6, 1) + fraction_first * xs.block(0, 2, 6, 1);
     xs(2, 1) = swing_height_first_in_world;
 
+    std::vector<PiecewisePolynomial<double>> spline = freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
   }
 }
 
@@ -711,6 +720,8 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   }
   qp_input->whole_body_data.num_constrained_dofs = qp_input->whole_body_data.constrained_dofs.size();
 
+  qp_input->param_set_name = "recovery";
+
 }
 
 
@@ -865,10 +876,9 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
   body_motion.in_floating_base_nullspace = true;
   qp_input->body_motion_data.push_back(body_motion);
 
-  double pelvis_height = foot_states.at(this->last_intercept_plan.stance_foot).terrain_height + 0.84;
+  double pelvis_height = foot_states.at(this->last_intercept_plan.stance_foot).terrain_height + this->pelvis_height_above_sole;
   Quaterniond rfoot_quat = Quaterniond(foot_states.at(RIGHT).pose.rotation());
   Quaterniond lfoot_quat = Quaterniond(foot_states.at(LEFT).pose.rotation());
-
   double pelvis_yaw = angleAverage(quat2rpy(Vector4d(rfoot_quat.w(), rfoot_quat.x(), rfoot_quat.y(), rfoot_quat.z()))(2), 
                                 quat2rpy(Vector4d(lfoot_quat.w(), lfoot_quat.x(), lfoot_quat.y(), lfoot_quat.z()))(2));
   Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
@@ -879,7 +889,6 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
   body_motion.weight_multiplier[3] = 0; // don't try to control x and y
   body_motion.weight_multiplier[4] = 0;
   qp_input->body_motion_data.push_back(body_motion);
-  qp_input->param_set_name = "recovery";
 }
 
 void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
@@ -893,9 +902,34 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
   drake::lcmt_body_motion_data body_motion;
   std::vector<FootID> foot_ids = {RIGHT, LEFT};
   for (std::vector<FootID>::iterator foot = foot_ids.begin(); foot != foot_ids.end(); ++foot) {
-    // TODO: HERE
-  }
+    if ((foot_states.at(*foot).pose.translation().z() - foot_states.at(*foot).terrain_height) < this->capture_max_flyfoot_height) {
+      this->encodeSupportData(this->foot_body_ids.at(*foot), REQUIRE_SUPPORT, robot_property_cache, support_data);
+    } else {
+      this->encodeSupportData(this->foot_body_ids.at(*foot), ONLY_IF_FORCE_SENSED, robot_property_cache, support_data);
+    }
+    qp_input->support_data.push_back(support_data);
 
+    Isometry3d pose_on_terrain = foot_states.at(*foot).pose;
+    pose_on_terrain.translation().z() = foot_states.at(*foot).terrain_height;
+    this->encodeBodyMotionData(this->foot_frame_ids.at(*foot), 
+                               constantPoseCubicSpline(foot_states.at(*foot).pose),
+                               body_motion);
+    body_motion.in_floating_base_nullspace = true;
+    qp_input->body_motion_data.push_back(body_motion);
+  }
+  double pelvis_height = 0.5 * (foot_states.at(LEFT).terrain_height + foot_states.at(RIGHT).terrain_height) + this->pelvis_height_above_sole;
+  Quaterniond rfoot_quat = Quaterniond(foot_states.at(RIGHT).pose.rotation());
+  Quaterniond lfoot_quat = Quaterniond(foot_states.at(LEFT).pose.rotation());
+  double pelvis_yaw = angleAverage(quat2rpy(Vector4d(rfoot_quat.w(), rfoot_quat.x(), rfoot_quat.y(), rfoot_quat.z()))(2), 
+                                quat2rpy(Vector4d(lfoot_quat.w(), lfoot_quat.x(), lfoot_quat.y(), lfoot_quat.z()))(2));
+  Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
+  pelvis_pose.rotate(AngleAxis<double>(pelvis_yaw, Vector3d(0, 0, 1)));
+  this->encodeBodyMotionData(robot_property_cache.body_ids.pelvis,
+                             constantPoseCubicSpline(pelvis_pose),
+                             body_motion);
+  body_motion.weight_multiplier[3] = 0; // don't try to control x and y
+  body_motion.weight_multiplier[4] = 0;
+  qp_input->body_motion_data.push_back(body_motion);
 }
 
 Vector2d QPReactiveRecoveryPlan::getICP() {

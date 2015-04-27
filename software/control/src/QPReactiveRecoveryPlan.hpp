@@ -115,6 +115,7 @@ class QPReactiveRecoveryPlan {
     double max_considerable_foot_swing = 0.15;
     double post_execution_delay = 0.1;
     double mu = 0.5;
+    double pelvis_height_above_sole = 0.84;
 
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot);
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot, BipedDescription biped);
