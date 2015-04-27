@@ -1,7 +1,6 @@
 #include "QPReactiveRecoveryPlan.hpp"
 #include <unsupported/Eigen/Polynomials>
 #include <Eigen/StdVector>
-#include "drake/drakeUtil.h"
 #include "drake/drakeGeometryUtil.h"
 #include "drake/splineGeneration.h"
 #include "lcmtypes/drc/reactive_recovery_debug_t.hpp"
@@ -771,7 +770,7 @@ void QPReactiveRecoveryPlan::encodeBodyMotionData(int body_or_frame_id, std::vec
   body_motion.body_id = body_or_frame_id + 1;
   body_motion.ts.resize(spline[0].getNumberOfSegments() + 1);
   for (int i=0; i < spline[0].getNumberOfSegments() + 1; ++i) {
-    body_motion.ts[i] = spline[0].getSegmentTimes()[i];
+    body_motion.ts[i] = spline[0].getSegmentTimes()[i] + this->t_start;
   }
   body_motion.coefs.resize(spline[0].getNumberOfSegments());
   for (int i=0; i < spline[0].getNumberOfSegments(); ++i) {
@@ -806,7 +805,39 @@ void QPReactiveRecoveryPlan::encodeBodyMotionData(int body_or_frame_id, std::vec
   body_motion.weight_multiplier[5] = 1;
 }
 
-void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
+double angleAverage(double theta1, double theta2) {
+  // (Copied from drakeUtil.cpp to avoid a lot of extra dependencies)
+  //
+  // Computes the average between two angles by averaging points on the unit
+  // circle and taking the arctan of the result.
+  //   see: http://en.wikipedia.org/wiki/Mean_of_circular_quantities
+  // theta1 is a scalar or column vector of angles (rad)
+  // theta2 is a scalar or column vector of angles (rad)
+
+  double x_mean = 0.5 * (cos(theta1) + cos(theta2));
+  double y_mean = 0.5 * (sin(theta1) + sin(theta2));
+
+  double angle_mean = atan2(y_mean, x_mean);
+
+  return angle_mean;
+}
+
+std::vector<PiecewisePolynomial<double>> constantPoseCubicSpline(const Isometry3d &pose) {
+  std::vector<PiecewisePolynomial<double>> spline;
+  std::vector<double> ts = {0, 0};
+  Matrix<double, 0, 1> xi;
+  Vector6d xyzexp;
+  xyzexp.head<3>() = pose.translation().head<3>();
+  Quaterniond quat = Quaterniond(pose.rotation());
+  xyzexp.tail<3>() = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+  for (int i=0; i < 6; ++i) {
+    PiecewisePolynomial<double> polynomials = nWaypointCubicSpline(ts, xyzexp(i), 0, xyzexp(i), 0, xi);
+    spline.push_back(polynomials);
+  }
+  return spline;
+}
+
+void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateMap &foot_states, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
 
   Vector4d x0 = Vector4d::Zero();
   x0.head<2>() = 0.5 * foot_states.at(RIGHT).pose.translation().head<2>() + 0.5 * foot_states.at(LEFT).pose.translation().head<2>();
@@ -834,12 +865,37 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
   body_motion.in_floating_base_nullspace = true;
   qp_input->body_motion_data.push_back(body_motion);
 
+  double pelvis_height = foot_states.at(this->last_intercept_plan.stance_foot).terrain_height + 0.84;
+  Quaterniond rfoot_quat = Quaterniond(foot_states.at(RIGHT).pose.rotation());
+  Quaterniond lfoot_quat = Quaterniond(foot_states.at(LEFT).pose.rotation());
 
-
-
+  double pelvis_yaw = angleAverage(quat2rpy(Vector4d(rfoot_quat.w(), rfoot_quat.x(), rfoot_quat.y(), rfoot_quat.z()))(2), 
+                                quat2rpy(Vector4d(lfoot_quat.w(), lfoot_quat.x(), lfoot_quat.y(), lfoot_quat.z()))(2));
+  Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
+  pelvis_pose.rotate(AngleAxis<double>(pelvis_yaw, Vector3d(0, 0, 1)));
+  this->encodeBodyMotionData(robot_property_cache.body_ids.pelvis,
+                             constantPoseCubicSpline(pelvis_pose),
+                             body_motion);
+  body_motion.weight_multiplier[3] = 0; // don't try to control x and y
+  body_motion.weight_multiplier[4] = 0;
+  qp_input->body_motion_data.push_back(body_motion);
+  qp_input->param_set_name = "recovery";
 }
 
-void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateMap &foot_states, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
+void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
+
+  Vector4d x0 = Vector4d::Zero();
+  x0.head<2>() = 0.5 * foot_states.at(RIGHT).pose.translation().head<2>() + 0.5 * foot_states.at(LEFT).pose.translation().head<2>();
+  eigenToCArrayOfArrays(x0, qp_input->zmp_data.x0);
+  eigenToCArrayOfArrays(icp.translation().head<2>(), qp_input->zmp_data.y0);
+
+  drake::lcmt_support_data support_data;
+  drake::lcmt_body_motion_data body_motion;
+  std::vector<FootID> foot_ids = {RIGHT, LEFT};
+  for (std::vector<FootID>::iterator foot = foot_ids.begin(); foot != foot_ids.end(); ++foot) {
+    // TODO: HERE
+  }
+
 }
 
 Vector2d QPReactiveRecoveryPlan::getICP() {
