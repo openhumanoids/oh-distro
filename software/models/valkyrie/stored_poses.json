@@ -4,11 +4,11 @@
       "allow_mirror": true, 
       "description": "arm up pregrasp", 
       "joints": {
-        "LeftElbowExtensor": -1.75, 
-        "LeftForearmSupinator": -1.5, 
-        "LeftShoulderAdductor": -1.25, 
-        "LeftShoulderExtensor": 1.75, 
-        "LeftShoulderSupinator": -1.55, 
+        "LeftElbowExtensor": -1.2, 
+        "LeftForearmSupinator": -1.35, 
+        "LeftShoulderAdductor": -1.45, 
+        "LeftShoulderExtensor": 0, 
+        "LeftShoulderSupinator": 0, 
         "LeftWrist": 0.0, 
         "LeftWristExtensor": 0.0
       }, 

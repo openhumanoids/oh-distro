@@ -1917,7 +1917,7 @@
     </visual>
   </link>
   <joint name="left_valkyrie_hand_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <origin rpy="1.57079632679 1.57079632679 0" xyz="0.08 0 0"/>
     <parent link="l_hand_force_torque"/>
     <child link="left_palm"/>
   </joint>
@@ -1971,7 +1971,7 @@
     </visual>
   </link>
   <joint name="right_valkyrie_hand_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <origin rpy="0 -1.57079632679 -1.57079632679" xyz="0.08 0 0"/>
     <parent link="r_hand_force_torque"/>
     <child link="right_palm"/>
   </joint>
