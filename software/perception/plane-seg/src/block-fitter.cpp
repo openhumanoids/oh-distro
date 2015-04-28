@@ -26,7 +26,9 @@ struct State {
   drc::BotWrapper::Ptr mBotWrapper;
   drc::LcmWrapper::Ptr mLcmWrapper;
   bool mRunContinuously;
+  bool mDoFilter;
   bool mDebug;
+  Eigen::Vector3f mBlockSize;
 
   drc::map_scans_t mData;
   int64_t mLastDataTime;
@@ -37,6 +39,13 @@ struct State {
   std::condition_variable mCondition;
   std::mutex mProcessMutex;
   std::mutex mDataMutex;
+
+  State() {
+    mRunContinuously = false;
+    mDoFilter = true;
+    mDebug = false;
+    mBlockSize << 0, 0, 0;
+  }
 
   void start() {
     mLastDataTime = 0;
@@ -66,7 +75,7 @@ struct State {
         if (mData.utime <= mLastDataTime) continue;
         data = mData;
         sensorPose = mSensorPose;
-        groundPose =mGroundPose;
+        groundPose = mGroundPose;
         mLastDataTime = mData.utime;
       }
 
@@ -90,9 +99,11 @@ struct State {
       planeseg::BlockFitter fitter;
       fitter.setSensorPose(sensorPose.translation(),
                            sensorPose.rotation().col(2));
-      fitter.setGroundBand(groundPose.translation()[2]-0.3,
+      fitter.setGroundBand(groundPose.translation()[2]-1.0,
                            groundPose.translation()[2]+0.5);
-      fitter.setAreaThresholds(0.8, 1.2);
+      if (mDoFilter) fitter.setAreaThresholds(0.8, 1.2);
+      else fitter.setAreaThresholds(0, 1000);
+      if (mBlockSize.norm() > 1e-5) fitter.setBlockDimensions(mBlockSize);
       fitter.setCloud(cloud);
       fitter.setDebug(mDebug);
       auto result = fitter.go();
@@ -186,11 +197,35 @@ struct State {
 
 int main(const int iArgc, const char** iArgv) {
 
+  std::string sizeString("");
   State state;
+
+  ConciseArgs opt(iArgc, (char**)iArgv);
+  opt.add(state.mDebug, "d", "debug", "debug flag");
+  opt.add(state.mRunContinuously, "c", "continuous", "run continuously");
+  opt.add(state.mDoFilter, "f", "filter", "filter blocks based on size");
+  opt.add(sizeString, "s", "blocksize", "prior size for blocks");
+  opt.parse();
+
+  if (sizeString.length() > 0) {
+    std::istringstream iss(sizeString);
+    float x, y, z;
+    iss >> x;
+    if (!iss.eof()) {
+      iss >> y;
+      if (!iss.eof()) {
+        iss >> z;
+        if (!iss.eof()) {
+          state.mBlockSize << x,y,z;
+          std::cout << "using block size " << state.mBlockSize.transpose() <<
+            std::endl;
+        }
+      }
+    }
+  }
+
   state.mBotWrapper.reset(new drc::BotWrapper());
   state.mLcmWrapper.reset(new drc::LcmWrapper(state.mBotWrapper->getLcm()));
-  state.mRunContinuously = false;
-  state.mDebug = false;
 
   state.start();
   state.stop();
