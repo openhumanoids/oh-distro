@@ -662,6 +662,37 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
 void QPReactiveRecoveryPlan::resetInitialization() {
   this->initialized = false;
   this->has_plan = false;
+  this->last_swing_plan.reset(NULL);
+}
+
+void verifySubtypeSizes(std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
+  // Check (and try to fix) errors in the sizes of the variable-length fields in our message
+  if (qp_input->support_data.size() != qp_input->num_support_data) {
+    std::cerr << "num support data doesn't match" << std::endl;
+    qp_input->num_support_data = qp_input->support_data.size();
+  }
+  if (qp_input->body_motion_data.size() != qp_input->num_tracked_bodies) {
+    std::cerr << "num tracked bodies doesn't match" << std::endl;
+    qp_input->num_tracked_bodies = qp_input->body_motion_data.size();
+  }
+  if (qp_input->body_wrench_data.size() != qp_input->num_external_wrenches) {
+    std::cerr << "num external wrenches doesn't match" << std::endl;
+    qp_input->num_external_wrenches = qp_input->body_wrench_data.size();
+  }
+  if (qp_input->joint_pd_override.size() != qp_input->num_joint_pd_overrides) {
+    std::cerr << "num joint pd override doesn't match" << std::endl;
+    qp_input->num_joint_pd_overrides = qp_input->joint_pd_override.size();
+  }
+  for (int i=0; i < qp_input->num_support_data; ++i) {
+    if (qp_input->support_data[i].contact_pts.size() != 3) {
+      throw std::runtime_error("contact_pts must have 3 rows");
+    }
+    for (int j=0; j < 3; ++j) {
+      if (qp_input->support_data[i].contact_pts[j].size() != qp_input->support_data[i].num_contact_pts) {
+        throw std::runtime_error("num_contact_pts must match the size of each row of contact_pts");
+      }
+    }
+  }
 }
 
 void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const RobotPropertyCache& robot_property_cache, const std::vector<bool>& contact_force_detected) {
@@ -714,6 +745,7 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
   }
 
   this->publishForVisualization(t_global, icp);
+  verifySubtypeSizes(qp_input);
 
   this->LCMHandle->publish("QP_CONTROLLER_INPUT_DEBUG", qp_input.get());
 }
@@ -721,7 +753,7 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
 void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache) {
   qp_input->be_silent = false;
   qp_input->timestamp = static_cast<int64_t> (t_global * 1e6);
-  
+
   qp_input->zmp_data.timestamp = 0;
 
   Matrix4d A = Matrix4d::Zero();
@@ -972,6 +1004,7 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
     body_motion.in_floating_base_nullspace = true;
     qp_input->body_motion_data.push_back(body_motion);
   }
+  qp_input->num_support_data = qp_input->support_data.size();
 
   drake::lcmt_body_motion_data body_motion;
   double pelvis_height = 0.5 * (foot_states.at(LEFT).terrain_height + foot_states.at(RIGHT).terrain_height) + this->pelvis_height_above_sole;
