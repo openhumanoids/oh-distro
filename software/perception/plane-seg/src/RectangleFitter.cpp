@@ -9,11 +9,17 @@ using namespace planeseg;
 RectangleFitter::
 RectangleFitter() {
   setDimensions(Eigen::Vector2f(0,0));
+  setAlgorithm(Algorithm::MinimumArea);
 }
 
 void RectangleFitter::
 setDimensions(const Eigen::Vector2f& iSize) {
   mRectangleSize = iSize;
+}
+
+void RectangleFitter::
+setAlgorithm(const Algorithm iAlgorithm) {
+  mAlgorithm = iAlgorithm;
 }
 
 void RectangleFitter::
@@ -55,9 +61,6 @@ RectangleFitter::go() {
   Entry bestEntry;
   float bestScore = 1e10;
 
-  // are we using prior dimensions?
-  bool usePriorSize = (mRectangleSize.norm() > 1e-6);
-
   // loop over and evaluate each convex hull edge
   int n = hull.size();
   pcl::PointCloud<pcl::PointXYZ> flatCloud;
@@ -98,15 +101,20 @@ RectangleFitter::go() {
     float score;
 
     // score is closest area to prior size area
-    // TODO: could score based on how much of the convex hull is near the perimeter
-    if (usePriorSize) {
+    if (mAlgorithm == Algorithm::ClosestToPriorSize) {
       Eigen::Vector2f size = (entry.mPointMax-entry.mPointMin).head<2>();
       score = (size-mRectangleSize).norm();
     }
 
     // score is simply minimum area
-    else {
+    else if (mAlgorithm == Algorithm::MinimumArea) {
       score = entry.mArea;
+    }
+
+    // score based on how much of the convex hull is near the perimeter
+    else {
+      score = 0;
+      // TODO
     }
 
     // replace best score
@@ -119,7 +127,9 @@ RectangleFitter::go() {
   // construct rectangle corners
   Eigen::Vector3f center = 0.5*(bestEntry.mPointMin + bestEntry.mPointMax);
   Eigen::Vector3f size = bestEntry.mPointMax-bestEntry.mPointMin;
-  if (usePriorSize) size.head<2>() = mRectangleSize;
+  if (mAlgorithm == Algorithm::ClosestToPriorSize) {
+    size.head<2>() = mRectangleSize;
+  }
   Eigen::Vector3f p0(center[0]-size[0]/2, center[1]-size[1]/2, 0);
   Eigen::Vector3f p1(center[0]-size[0]/2, center[1]+size[1]/2, 0);
   Eigen::Vector3f p2(center[0]+size[0]/2, center[1]+size[1]/2, 0);
@@ -139,6 +149,7 @@ RectangleFitter::go() {
   Result result;
   result.mPlane = mPlane;
   result.mPolygon = { p0, p1, p2, p3 };
+  result.mSize = size.head<2>();
   result.mArea = bestEntry.mArea;
   result.mConvexArea = convexArea;
   Eigen::Isometry3f transformInv = bestEntry.mTransform.inverse();

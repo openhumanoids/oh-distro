@@ -253,6 +253,9 @@ basedir = '/home/antone/drc/software/perception/plane-seg';
 boxdata = load([basedir,'/boxes.txt']);
 hulldata = load([basedir,'/hulls.txt']);
 pose_data = load([basedir,'/poses.txt']);
+cloud_full = loadpcd([basedir,'/cloud_full.pcd'])';
+cloud = loadpcd([basedir,'/cloud.pcd'])';
+
 poses = cell(size(pose_data,1)/4,1);
 for i = 1:size(pose_data,1)/4
     poses{i} = pose_data(i*4-3:i*4,:);
@@ -264,8 +267,9 @@ end
 p = loadpcd('/home/antone/temp/cloud.pcd')';
 %p = loadpcd('/home/antone/temp/cloud_full.pcd')';
 pts = p(:,1:3);
+pts = cloud(:,1:3);
 figure
-%plot3k(pts,'Marker',{'.',5});
+plot3k(pts(:,1:3),'Marker',{'.',5});
 hold on
 
 u = unique(boxdata(:,1));
@@ -286,7 +290,7 @@ for i = 1:numel(poses)
     y = reshape(pts(block_faces,2),size(block_faces));
     z = reshape(pts(block_faces,3),size(block_faces));
     %plot3(x(:,[1:end,1])',y(:,[1:end,1])',z(:,[1:end,1])','r:','linewidth',3);
-    plot3(x(:,[1:end,1])',y(:,[1:end,1])',z(:,[1:end,1])','r-','linewidth',4);
+    %plot3(x(:,[1:end,1])',y(:,[1:end,1])',z(:,[1:end,1])','r-','linewidth',4);
 end
 
 hold off;

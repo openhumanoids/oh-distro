@@ -42,7 +42,7 @@ pods_install_pkg_config_file(${LIB_NAME}
 set(APP_NAME drc-block-fitter)
 add_executable(${APP_NAME} src/block-fitter.cpp)
 target_link_libraries(${APP_NAME} boost_system)
-pods_use_pkg_config_packages(${APP_NAME} ${LIB_NAME} maps)
+pods_use_pkg_config_packages(${APP_NAME} ${LIB_NAME} maps bot2-lcmgl-client)
 pods_install_executables(${APP_NAME})
 
 

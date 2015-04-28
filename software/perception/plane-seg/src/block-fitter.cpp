@@ -9,6 +9,8 @@
 #include <drc_utils/LcmWrapper.hpp>
 #include <drc_utils/BotWrapper.hpp>
 
+#include <bot_lcmgl_client/lcmgl.h>
+
 #include <lcmtypes/drc/map_scans_t.hpp>
 #include <lcmtypes/drc/affordance_collection_t.hpp>
 
@@ -23,6 +25,8 @@
 struct State {
   drc::BotWrapper::Ptr mBotWrapper;
   drc::LcmWrapper::Ptr mLcmWrapper;
+  bool mRunContinuously;
+  bool mDebug;
 
   drc::map_scans_t mData;
   int64_t mLastDataTime;
@@ -36,9 +40,15 @@ struct State {
 
   void start() {
     mLastDataTime = 0;
+    mData.utime = 0;
     mLcmWrapper->get()->subscribe("MAP_SCANS", &State::onScans, this);
     mWorkerThread = std::thread(std::ref(*this));
     mLcmWrapper->startHandleThread(true);
+  }
+
+  void stop() {
+    mLcmWrapper->stopHandleThread();
+    if (mWorkerThread.joinable()) mWorkerThread.join();
   }
 
   void operator()() {
@@ -82,8 +92,9 @@ struct State {
                            sensorPose.rotation().col(2));
       fitter.setGroundBand(groundPose.translation()[2]-0.3,
                            groundPose.translation()[2]+0.5);
+      fitter.setAreaThresholds(0.8, 1.2);
       fitter.setCloud(cloud);
-      fitter.setDebug(false);
+      fitter.setDebug(mDebug);
       auto result = fitter.go();
 
       // construct json string
@@ -130,15 +141,35 @@ struct State {
       json += "  \"collectionId\": \"block-fitter\"\n";
       json += "}\n";
 
-      std::cout << json << std::endl;
-
       // publish result
       drc::affordance_collection_t msg;
       msg.utime = data.utime;
       msg.name = json;
       msg.naffs = 0;
       mLcmWrapper->get()->publish("AFFORDANCE_COLLECTION_COMMAND", &msg);
+      std::cout << "Published affordance collection" << std::endl;
+
+      // publish lcmgl
+      if (mDebug) {
+        bot_lcmgl_t* lcmgl;
+        lcmgl = bot_lcmgl_init(mLcmWrapper->get()->getUnderlyingLCM(),
+                              "block-fitter");
+        for (const auto& block : result.mBlocks) {
+          bot_lcmgl_color3f(lcmgl, 1, 0, 0);
+          bot_lcmgl_line_width(lcmgl, 4);
+          bot_lcmgl_begin(lcmgl, LCMGL_LINE_LOOP);
+          for (const auto& pt : block.mHull) {
+            bot_lcmgl_vertex3f(lcmgl, pt[0], pt[1], pt[2]);
+          }
+          bot_lcmgl_end(lcmgl);
+        }
+        bot_lcmgl_switch_buffer(lcmgl);
+        bot_lcmgl_destroy(lcmgl);
+      }
+
+      if (!mRunContinuously) break;
     }
+    mLcmWrapper->stopHandleThread();
   }
 
 
@@ -158,8 +189,11 @@ int main(const int iArgc, const char** iArgv) {
   State state;
   state.mBotWrapper.reset(new drc::BotWrapper());
   state.mLcmWrapper.reset(new drc::LcmWrapper(state.mBotWrapper->getLcm()));
-  
+  state.mRunContinuously = false;
+  state.mDebug = false;
+
   state.start();
+  state.stop();
 
   return 1;
 }

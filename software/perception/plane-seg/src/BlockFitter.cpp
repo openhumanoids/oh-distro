@@ -320,13 +320,14 @@ go() {
 
   for (int i = 0; i < (int)results.size(); ++i) {
     const auto& res = results[i];
-    float areaRatio = res.mArea/res.mConvexArea;
+    float areaRatio = mBlockDimensions.head<2>().prod()/res.mConvexArea;
     if ((areaRatio < mAreaThreshMin) || (areaRatio > mAreaThreshMax)) continue;
 
     Block block;
-    block.mSize = mBlockDimensions;
+    block.mSize << res.mSize[0], res.mSize[1], mBlockDimensions[2];
     block.mPose = res.mPose;
-    block.mPose(2,3) -= mBlockDimensions[2]/2;
+    block.mPose.translation() -=
+      block.mPose.rotation().col(2)*mBlockDimensions[2]/2;
     block.mHull = res.mConvexHull;
     result.mBlocks.push_back(block);
   }
