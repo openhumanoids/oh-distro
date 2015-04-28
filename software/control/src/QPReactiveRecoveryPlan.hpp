@@ -77,7 +77,7 @@ BipedDescription getAtlasDefaults() {
                               -0.06, -0.06, 0.06, 0.06,
                               0, 0, 0, 0;
   biped.omega = sqrt(9.81 / 1.098);
-  biped.u_max = 5;
+  biped.u_max = 20;
   return biped;
 }
   
@@ -87,7 +87,6 @@ class QPReactiveRecoveryPlan {
     std::unique_ptr<PiecewisePolynomial<double>> last_swing_plan;
     InterceptPlan last_intercept_plan;
     double t_start = 0;
-    bool has_plan = false;
     bool initialized = false;
     BipedDescription biped;
     std::map<FootID, int> foot_frame_ids;
@@ -105,15 +104,15 @@ class QPReactiveRecoveryPlan {
     void setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache);
     void encodeSupportData(int body_id, SupportLogicType support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data &support_data);
     void encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion);
-    std::unique_ptr<PiecewisePolynomial<double>> straightToGoalTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
-    std::unique_ptr<PiecewisePolynomial<double>> upOverAndDownTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states);
+    std::unique_ptr<PiecewisePolynomial<double>> straightToGoalTrajectory(double t_global, const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
+    std::unique_ptr<PiecewisePolynomial<double>> upOverAndDownTrajectory(double t_global, const InterceptPlan &intercept_plan, const FootStateMap &foot_states);
 
 	public:
     RigidBodyManipulator* robot;
     double capture_max_flyfoot_height = 0.025;
     double capture_shrink_factor = 0.8;
     double desired_icp_offset = 0.1;
-    double min_step_duration = 0.4;
+    double min_step_duration = 0.25;
     double foot_hull_cop_shrink_factor = 0.5;
     double max_considerable_foot_swing = 0.15;
     double post_execution_delay = 0.1;
@@ -144,7 +143,7 @@ class QPReactiveRecoveryPlan {
 
     static std::unique_ptr<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double tf, const Ref<const MatrixXd> &xs, const Ref<const VectorXd> xd0, const Ref<const VectorXd> xdf);
 
-    std::unique_ptr<PiecewisePolynomial<double>> swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
+    std::unique_ptr<PiecewisePolynomial<double>> swingTrajectory(double t_global, const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
 
     void resetInitialization();
 

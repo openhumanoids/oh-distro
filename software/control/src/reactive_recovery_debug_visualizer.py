@@ -34,6 +34,7 @@ def handle_debug_msg(channel, data):
   coefs = np.array(msg.coefs)
   ts = np.array(msg.ts)
   if ts.shape[0] == 0:
+    gl.switch_buffer()
     return
 
   # draw spline segments
