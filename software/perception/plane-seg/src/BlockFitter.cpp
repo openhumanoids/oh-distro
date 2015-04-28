@@ -92,6 +92,7 @@ setDebug(const bool iVal) {
 BlockFitter::Result BlockFitter::
 go() {
   Result result;
+  result.mSuccess = false;
 
   // voxelize
   LabeledCloud::Ptr cloud(new LabeledCloud());
@@ -149,6 +150,10 @@ go() {
     voxelGrid.setInputCloud(tempCloud);
     voxelGrid.setLeafSize(0.1, 0.1, 0.1);
     voxelGrid.filter(*tempCloud);
+
+    if (tempCloud->size() < 100) {
+      return result;
+    }
 
     // find ground plane
     pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
@@ -285,6 +290,7 @@ go() {
   for (auto& plane : planes) {
     RectangleFitter fitter;
     fitter.setDimensions(mBlockDimensions.head<2>());
+    fitter.setAlgorithm(RectangleFitter::Algorithm::MinimumArea);
     fitter.setData(plane.mPoints, plane.mPlane);
     auto result = fitter.go();
     results.push_back(result);
@@ -335,5 +341,6 @@ go() {
     std::cout << "Surviving blocks: " << result.mBlocks.size() << std::endl;
   }
 
+  result.mSuccess = true;
   return result;
 }

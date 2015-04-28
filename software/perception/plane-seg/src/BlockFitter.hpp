@@ -13,6 +13,7 @@ public:
     std::vector<Eigen::Vector3f> mHull;
   };
   struct Result {
+    bool mSuccess;
     std::vector<Block> mBlocks;
   };
 

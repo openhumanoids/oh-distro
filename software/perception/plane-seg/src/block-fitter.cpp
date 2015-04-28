@@ -29,6 +29,7 @@ struct State {
   bool mDoFilter;
   bool mDebug;
   Eigen::Vector3f mBlockSize;
+  int mAlgorithm;  // TODO: use algo
 
   drc::map_scans_t mData;
   int64_t mLastDataTime;
@@ -42,8 +43,9 @@ struct State {
 
   State() {
     mRunContinuously = false;
-    mDoFilter = true;
+    mDoFilter = false;
     mDebug = false;
+    mAlgorithm = 0;  // TODO
     mBlockSize << 0, 0, 0;
   }
 
@@ -80,6 +82,7 @@ struct State {
       }
 
       // convert scans to point cloud
+      // TODO: could do this scan by scan and save away high deltas
       maps::ScanBundleView view;
       maps::LcmTranslator::fromLcm(data, view);
       auto rawCloud = view.getAsPointCloud();
@@ -107,6 +110,10 @@ struct State {
       fitter.setCloud(cloud);
       fitter.setDebug(mDebug);
       auto result = fitter.go();
+      if (!result.mSuccess) {
+        std::cout << "error: could not detect blocks" << std::endl;
+        continue;
+      }
 
       // construct json string
       std::string json;
@@ -201,10 +208,12 @@ int main(const int iArgc, const char** iArgv) {
   State state;
 
   ConciseArgs opt(iArgc, (char**)iArgv);
-  opt.add(state.mDebug, "d", "debug", "debug flag");
   opt.add(state.mRunContinuously, "c", "continuous", "run continuously");
   opt.add(state.mDoFilter, "f", "filter", "filter blocks based on size");
-  opt.add(sizeString, "s", "blocksize", "prior size for blocks");
+  opt.add(sizeString, "s", "blocksize", "prior size for blocks \"x y z\"");
+  opt.add(state.mAlgorithm, "a", "algorithm",
+          "0=min_area, 1=closest_size, 2=closest_hull");
+  opt.add(state.mDebug, "d", "debug", "debug flag");
   opt.parse();
 
   if (sizeString.length() > 0) {
