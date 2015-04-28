@@ -167,5 +167,9 @@ class QPReactiveRecoveryPlan {
     }
 
     void setRobot(RigidBodyManipulator *robot);
+
+    void setQDes(const Ref<const VectorXd> &q_des) {
+      this->q_des = q_des;
+    }
 };
 

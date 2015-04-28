@@ -638,8 +638,6 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
         throw std::runtime_error("somehow I got the frame ID/index logic wrong");
       }
       this->foot_body_ids[RIGHT] = body_id;
-      std::cout << "i: " << i << std::endl;
-      std::cout << "right frame: " << Tframe << std::endl;
     } else if (this->robot->frames[i].name == "l_foot_sole") {
       has_frame[LEFT] = true;
       this->foot_frame_ids[LEFT] = -i - 2;
@@ -649,8 +647,6 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
         throw std::runtime_error("somehow I got the frame ID/index logic wrong");
       }
       this->foot_body_ids[LEFT] = body_id;
-      std::cout << "i: " << i << std::endl;
-      std::cout << "left frame: " << Tframe << std::endl;
     }
   }
 
@@ -660,7 +656,6 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
   if (!has_frame[LEFT]) {
     throw std::runtime_error("could not find l_foot_sole frame");
   }
-  exit(1);
 }
 
 
@@ -672,7 +667,6 @@ void QPReactiveRecoveryPlan::resetInitialization() {
 void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const RobotPropertyCache& robot_property_cache, const std::vector<bool>& contact_force_detected) {
 
   if (!this->initialized) {
-    std::cout << "initializing" << std::endl;
     for (int i=0; i < robot_property_cache.position_indices.at("arm").size(); ++i) {
       int j = robot_property_cache.position_indices.at("arm")(i);
       this->q_des(j) = q(j);
@@ -680,25 +674,19 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
     this->initialized = true;
     this->t_start = t_global;
   }
-  std::cout << "done initializing" << std::endl;
 
   double t_plan = t_global - this->t_start;
 
-  std::cout << "do kin" << std::endl;
   this->robot->doKinematicsNew(q, v, true, false);
 
-  std::cout << "get icp" << std::endl;
   Vector2d r_ic = this->getICP(v);
   Isometry3d icp = Isometry3d(Translation<double, 3>(Vector3d(r_ic(0), r_ic(1), 0)));
 
-  std::cout << "get foot states" << std::endl;
   FootStateMap foot_states = this->getFootStates(v, contact_force_detected);
 
-  std::cout << "icp error" << std::endl;
   bool is_captured = this->icpError(icp.translation().head<2>(), foot_states, this->biped.foot_vertices) < 1e-2;
 
   std::shared_ptr<drake::lcmt_qp_controller_input> qp_input(new struct drake::lcmt_qp_controller_input);
-  std::cout << "setup defaults" << std::endl;
   this->setupQPInputDefaults(t_global, qp_input, robot_property_cache);
 
   if (this->has_plan && t_plan < this->last_swing_plan->getEndTime()) {
@@ -725,18 +713,17 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
     }
   }
 
-  std::cout << "publish vis" << std::endl;
   this->publishForVisualization(t_global, icp);
 
-  std::cout << "publish qpinput" << std::endl;
   this->LCMHandle->publish("QP_CONTROLLER_INPUT_DEBUG", qp_input.get());
 }
 
 void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache) {
   qp_input->be_silent = false;
   qp_input->timestamp = static_cast<int64_t> (t_global * 1e6);
+  
+  qp_input->zmp_data.timestamp = 0;
 
-  std::cout << "A" << std::endl;
   Matrix4d A = Matrix4d::Zero();
   A.block(0, 2, 2, 2) = Matrix2d::Identity();
   eigenToCArrayOfArrays(A, qp_input->zmp_data.A);
@@ -752,6 +739,11 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   Matrix2d D = Matrix2d::Identity();
   D *= -(1.0 / pow(this->biped.omega, 2));
   eigenToCArrayOfArrays(D, qp_input->zmp_data.D);
+
+  // x0 and y0 will be filled in from the plan
+
+  Vector2d u0 = Vector2d::Zero();
+  eigenToCArrayOfArrays(u0, qp_input->zmp_data.u0);
 
   Matrix2d R = Matrix2d::Zero();
   eigenToCArrayOfArrays(R, qp_input->zmp_data.R);
@@ -828,6 +820,7 @@ std::map<SupportLogicType, std::vector<bool>> createSupportLogicMaps() {
 }
 
 void QPReactiveRecoveryPlan::encodeSupportData(int body_id, SupportLogicType support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data &support_data) {
+  support_data.timestamp = 0;
   support_data.body_id = body_id + 1;
   support_data.contact_pts.resize(3);
   Matrix3Xd all_contacts = heelToeContacts(body_id, robot_property_cache);
@@ -848,6 +841,7 @@ void QPReactiveRecoveryPlan::encodeSupportData(int body_id, SupportLogicType sup
 }
 
 void QPReactiveRecoveryPlan::encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion) {
+  body_motion.timestamp = 0;
   body_motion.body_id = body_or_frame_id + 1;
   encodePiecewisePolynomial(spline, body_motion.spline);
   body_motion.in_floating_base_nullspace = false;

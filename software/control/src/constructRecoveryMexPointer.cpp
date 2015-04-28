@@ -14,12 +14,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
 
-  if (nrhs != 2 || nlhs != 1) mexErrMsgTxt("usage: mex_ptr = constructMexPointer(robot_ptr, S_lyapunov)");
+  if (nrhs != 3 || nlhs != 1) mexErrMsgTxt("usage: mex_ptr = constructMexPointer(robot_ptr, qstar, S_lyapunov)");
 
   int narg = 0;
   sizecheck(prhs[narg], 1, 1);
   QPReactiveRecoveryPlan *plan;
   plan = new QPReactiveRecoveryPlan((RigidBodyManipulator*) getDrakeMexPointer(prhs[narg]));
+  ++narg;
+
+  sizecheck(prhs[narg], plan->robot->num_positions, 1);
+  Map<VectorXd> qstar(mxGetPrSafe(prhs[narg]), mxGetNumberOfElements(prhs[narg]));
+  plan->setQDes(qstar);
   ++narg;
 
   sizecheck(prhs[narg], 4, 4);

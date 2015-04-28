@@ -10,10 +10,10 @@ classdef QPReactiveRecoveryPlan < QPControllerPlanMatlabImplementation
         options = struct();
       end
       S = load(robot.fixed_point_file);
-      qtraj = S.xstar(1:robot.getNumPositions());
-      [~, V, ~, ~] = robot.planZMPController([0;0], qtraj);
+      qstar = S.xstar(1:robot.getNumPositions());
+      [~, V, ~, ~] = robot.planZMPController([0;0], qstar);
 
-      obj.mex_ptr = constructRecoveryMexPointer(robot.getMexModelPtr(), V.S); 
+      obj.mex_ptr = constructRecoveryMexPointer(robot.getMexModelPtr(), qstar, V.S); 
     end
 
 
