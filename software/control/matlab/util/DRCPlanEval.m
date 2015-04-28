@@ -34,8 +34,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
    STOP_WALKING_ASAP = 2;
 
    RECOVERY_NONE = 0;
-   RECOVERY_ASAP = 1;
-   RECOVERY_ACTIVE = 2;
+   RECOVERY_ACTIVE = 1;
  end
 
   methods
@@ -149,12 +148,17 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         disp('Entering reactive recovery mode!');
         obj.last_plan_msg_utime = msg.utime;
         obj.reactive_recovery_planner.resetInitialization();
-        obj.recovery_state = obj.RECOVERY_ASAP;
+        obj.switchToPlan(obj.reactive_recovery_planner);
+        obj.recovery_state = obj.RECOVERY_ACTIVE;
       end
     end
     function handle_recovery_trigger_off(obj, msg)
-      disp('Exiting reactive recovery mode!');
-      obj.recovery_state = obj.RECOVERY_NONE;
+      if obj.recovery_state == obj.RECOVERY_ACTIVE
+        disp('Exiting reactive recovery mode!');
+        obj.recovery_state = obj.RECOVERY_NONE;
+        new_plan = DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot);
+        obj.switchToPlan(new_plan);
+      end
     end
 
     function new_plan = smoothPlanTransition(obj, new_plan)
@@ -298,36 +302,16 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       while 1
         try
-          % t0 = tic();
           obj.LCMReceive();
-          % fprintf(1, 'recieve: %fs\n', toc(t0))
-          % t0 = tic();
-
-          % Generate a recovery plan if requested and stick it on the queue
-
-          if (obj.t > 0 && obj.recovery_state == obj.RECOVERY_ASAP)
-            fprintf('Recovery planner doing its thing!\n');
-            obj.switchToPlan(obj.reactive_recovery_planner);
-            obj.recovery_state = obj.RECOVERY_ACTIVE;
-          end
-            
-
           obj.pauseIfRequested();
-          % fprintf(1, 'pause: %fs\n', toc(t0))
           if ~isempty(obj.plan_queue)
-            % t0 = tic()
             qp_input = obj.getQPControllerInput(obj.t, obj.x, obj.contact_force_detected);
-            % fprintf(1, 'get input: %fs\n', toc(t0));
             if ~isempty(qp_input)
-              % t0 = tic();
               encodeQPInputLCMMex(qp_input);
-              % fprintf(1, 'encode: %fs\n', toc(t0));
               obj.qp_input = qp_input;
             end
           end
-          % t0 = tic();
           obj.sendStatus();
-          % fprintf(1, 'send status: %fs\n', toc(t0));
         catch e
           disp('error in planEval loop:')
           disp(e.getReport())
