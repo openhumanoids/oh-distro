@@ -3,6 +3,11 @@
 #include "drake/drakeUtil.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+  if (nrhs == 1) {
+    // zero-input argument form allows us to make sure the mex file is loaded, without actually doing anything
+    return;
+  }
+
   if (nrhs != 5 || nlhs != 0) mexErrMsgTxt("usage: publishQPControllerInput(obj, t_global, x, rpc, contact_force_detected)");
 
   int narg = 0;
