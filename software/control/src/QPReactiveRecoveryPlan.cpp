@@ -672,12 +672,12 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
 
   if (!this->initialized) {
     std::cout << "initializing" << std::endl;
-    for (int i=0; i < robot_property_cache.position_indices.arm.size(); ++i) {
-      int j = robot_property_cache.position_indices.arm(i);
+    for (int i=0; i < robot_property_cache.position_indices.at("arm").size(); ++i) {
+      int j = robot_property_cache.position_indices.at("arm")(i);
       this->q_des(j) = q(j);
     }
-    for (int i=0; i < robot_property_cache.position_indices.neck.size(); ++i) {
-      int j = robot_property_cache.position_indices.neck(i);
+    for (int i=0; i < robot_property_cache.position_indices.at("neck").size(); ++i) {
+      int j = robot_property_cache.position_indices.at("neck")(i);
       this->q_des(j) = q(j);
     }
     this->initialized = true;
@@ -782,17 +782,17 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   for (int i=0; i < this->robot->num_positions; ++i) {
     qp_input->whole_body_data.q_des[i] = this->q_des(i);
   }
-  for (int i=0; i < robot_property_cache.position_indices.arm.size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.arm[i]);
+  for (int i=0; i < robot_property_cache.position_indices.at("arm").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("arm")[i]);
   }
-  for (int i=0; i < robot_property_cache.position_indices.neck.size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.neck[i]);
+  for (int i=0; i < robot_property_cache.position_indices.at("neck").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("neck")[i]);
   }
-  for (int i=0; i < robot_property_cache.position_indices.back_bky.size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.back_bky[i]);
+  for (int i=0; i < robot_property_cache.position_indices.at("back_bky").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("back_bky")[i]);
   }
-  for (int i=0; i < robot_property_cache.position_indices.back_bkz.size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.back_bkz[i]);
+  for (int i=0; i < robot_property_cache.position_indices.at("back_bkz").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("back_bkz")[i]);
   }
   qp_input->whole_body_data.num_constrained_dofs = qp_input->whole_body_data.constrained_dofs.size();
 
@@ -817,11 +817,16 @@ void QPReactiveRecoveryPlan::publishForVisualization(double t_global, const Isom
 }
 
 Matrix3Xd heelToeContacts(int body_id, const RobotPropertyCache &robot_property_cache) {
+  std::cout << "body id: " << body_id << std::endl;
+  std::cout << "num groups: " << robot_property_cache.contact_groups.size() << std::endl;
   Matrix3Xd toe_contacts = robot_property_cache.contact_groups[body_id].at("toe");
   Matrix3Xd heel_contacts = robot_property_cache.contact_groups[body_id].at("heel");
   Matrix3Xd all_contacts(3, toe_contacts.cols() + heel_contacts.cols());
+  std::cout << "all_contacts: " << all_contacts.cols() << " " << all_contacts.rows() << std::endl;
+  std::cout << "heel_contacts: " << heel_contacts.cols() << " " << heel_contacts.rows() << std::endl;
+  std::cout << "toe_contacts: " << toe_contacts.cols() << " " << toe_contacts.rows() << std::endl;
   all_contacts.block(0, 0, 3, toe_contacts.cols()) = toe_contacts;
-  all_contacts.block(toe_contacts.cols(), 0, 3, heel_contacts.cols()) = heel_contacts;
+  all_contacts.block(0, toe_contacts.cols(), 3, heel_contacts.cols()) = heel_contacts;
   return all_contacts;
 }
 
