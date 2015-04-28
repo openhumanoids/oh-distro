@@ -210,12 +210,9 @@ int main(const int iArgc, const char** iArgv) {
   if (sizeString.length() > 0) {
     std::istringstream iss(sizeString);
     float x, y, z;
-    iss >> x;
-    if (!iss.eof()) {
-      iss >> y;
-      if (!iss.eof()) {
-        iss >> z;
-        if (!iss.eof()) {
+    if (iss >> x) {
+      if (iss >> y) {
+        if (iss >> z) {
           state.mBlockSize << x,y,z;
           std::cout << "using block size " << state.mBlockSize.transpose() <<
             std::endl;
