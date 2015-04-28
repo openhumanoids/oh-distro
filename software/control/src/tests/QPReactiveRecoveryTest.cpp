@@ -441,10 +441,6 @@ int testGetInterceptsWithCoP() {
       return 1;
     }
   }
-  // if (intercept_plans.size() > 0) {
-  //   fprintf(stderr, "ICP is so far from CoP that there should be no intercepts computed\n");
-  //   return 1;
-  // }
 
   icp = Isometry3d(Translation<double, 3>(Vector3d(0, 1, 0.1)));
   biped.u_max = 20;
