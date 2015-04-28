@@ -34,7 +34,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
    STOP_WALKING_ASAP = 2;
 
    RECOVERY_NONE = 0;
-   RECOVERY_NOW = 1;
+   RECOVERY_ASAP = 1;
+   RECOVERY_ACTIVE = 2;
  end
 
   methods
@@ -144,11 +145,11 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_recovery_trigger_on(obj, msg)
-      if obj.recovery_state ~= obj.RECOVERY_NOW
+      if obj.recovery_state == obj.RECOVERY_NONE
         disp('Entering reactive recovery mode!');
         obj.last_plan_msg_utime = msg.utime;
         obj.reactive_recovery_planner.resetInitialization();
-        obj.recovery_state = obj.RECOVERY_NOW;
+        obj.recovery_state = obj.RECOVERY_ASAP;
       end
     end
     function handle_recovery_trigger_off(obj, msg)
@@ -304,9 +305,10 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
           % Generate a recovery plan if requested and stick it on the queue
 
-          if (obj.t > 0 && obj.recovery_state == obj.RECOVERY_NOW)
+          if (obj.t > 0 && obj.recovery_state == obj.RECOVERY_ASAP)
             fprintf('Recovery planner doing its thing!\n');
             obj.switchToPlan(obj.reactive_recovery_planner);
+            obj.recovery_state = obj.RECOVERY_ACTIVE;
           end
             
 

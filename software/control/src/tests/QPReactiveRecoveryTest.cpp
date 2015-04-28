@@ -440,10 +440,6 @@ int testGetInterceptsWithCoP() {
       fprintf(stderr, "intercept should be on the y=1 axis\n");
       return 1;
     }
-    if (std::abs(plan->pose_next.translation().x() - reachable_verts_in_world.row(0).maxCoeff()) > 1e-2) {
-      fprintf(stderr, "I expect this intercept to happen at the far right edge of the reachable set\n");
-      return 1;
-    }
   }
   // if (intercept_plans.size() > 0) {
   //   fprintf(stderr, "ICP is so far from CoP that there should be no intercepts computed\n");
@@ -459,10 +455,6 @@ int testGetInterceptsWithCoP() {
     // std::cout << plan->pose_next.matrix() << std::endl;
     if (std::abs(plan->pose_next.translation().y() - 1) > 1e-2) {
       fprintf(stderr, "intercept should be on the y=1 axis\n");
-      return 1;
-    }
-    if (std::abs(plan->pose_next.translation().x() - reachable_verts_in_world.row(0).maxCoeff()) > 1e-2) {
-      fprintf(stderr, "I expect this intercept to happen at the far right edge of the reachable set\n");
       return 1;
     }
   }

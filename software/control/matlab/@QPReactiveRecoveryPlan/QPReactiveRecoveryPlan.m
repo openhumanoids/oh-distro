@@ -21,9 +21,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlanMatlabImplementation
 
 
     function qp_input = getQPControllerInput(obj, t_global, x, rpc, contact_force_detected)
-      t0 = tic();
       obj.publishQPControllerInput(t_global, x, rpc, contact_force_detected);
-      fprintf(1, 'publish recovery input: %fs\n', toc(t0));
       qp_input = [];
     end
   end
