@@ -27,6 +27,7 @@ struct State {
   drc::LcmWrapper::Ptr mLcmWrapper;
   bool mRunContinuously;
   bool mDoFilter;
+  bool mRemoveGround;
   bool mDebug;
   Eigen::Vector3f mBlockSize;
   int mAlgorithm;  // TODO: use algo
@@ -43,7 +44,8 @@ struct State {
 
   State() {
     mRunContinuously = false;
-    mDoFilter = false;
+    mDoFilter = true;
+    mRemoveGround = true;
     mDebug = false;
     mAlgorithm = 0;  // TODO
     mBlockSize << 0, 0, 0;
@@ -107,8 +109,9 @@ struct State {
       if (mDoFilter) fitter.setAreaThresholds(0.8, 1.2);
       else fitter.setAreaThresholds(0, 1000);
       if (mBlockSize.norm() > 1e-5) fitter.setBlockDimensions(mBlockSize);
-      fitter.setCloud(cloud);
+      fitter.setRemoveGround(mRemoveGround);
       fitter.setDebug(mDebug);
+      fitter.setCloud(cloud);
       auto result = fitter.go();
       if (!result.mSuccess) {
         std::cout << "error: could not detect blocks" << std::endl;
@@ -211,6 +214,8 @@ int main(const int iArgc, const char** iArgv) {
   opt.add(state.mRunContinuously, "c", "continuous", "run continuously");
   opt.add(state.mDoFilter, "f", "filter", "filter blocks based on size");
   opt.add(sizeString, "s", "blocksize", "prior size for blocks \"x y z\"");
+  opt.add(state.mRemoveGround, "g", "remove-ground",
+          "whether to remove ground before processing");
   opt.add(state.mAlgorithm, "a", "algorithm",
           "0=min_area, 1=closest_size, 2=closest_hull");
   opt.add(state.mDebug, "d", "debug", "debug flag");
