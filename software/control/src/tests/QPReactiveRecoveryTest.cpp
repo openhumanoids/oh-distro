@@ -612,6 +612,7 @@ int main() {
   if (!failed) {
     std::cout << "Reactive recovery tests passed" << std::endl;
   } else {
+    std::cout << "Reactive recovery tests FAILED" << std::endl;
     exit(1);
   }
 
