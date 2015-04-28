@@ -480,7 +480,44 @@ int testGetInterceptsWithCoP() {
   }
 
   return 0;
+}
+
+int testFreeKnotTimesSpline() {
+  double t0 = 11;
+  double tf = 15;
+  Matrix<double, 2, 4> xs;
+  xs << 0, 5, 2, 3,
+        4, -1, 6, 7;
+  Vector2d xd0;
+  xd0 << 0, 1;
+
+  Vector2d xdf = Vector2d::Zero();
+
+  std::unique_ptr<PiecewisePolynomial<double>> spline = QPReactiveRecoveryPlan::freeKnotTimesSpline(t0, tf, xs, xd0, xdf);
+  if (!spline->value(t0).isApprox(xs.col(0))) {
+    std::cout << "initial value does not match" << std::endl;
+    return 1;
   }
+  if (!spline->derivative().value(t0).isApprox(xd0)) {
+    std::cout << "initial velocity does not match" << std::endl;
+    return 1;
+  }
+  if (!spline->value(spline->getSegmentTimes()[1]).isApprox(xs.col(1))) {
+    std::cout << "second knot does not match" << std::endl;
+    return 1;
+  }
+  if (!spline->value(tf).isApprox(xs.col(3))) {
+    std::cout << "final knot does not match" << std::endl;
+    return 1;
+  }
+  if (!((spline->derivative().value(tf) - xdf).norm() < 1e-14)) {
+    std::cout << spline->derivative().value(tf) << " " << xdf << std::endl;
+    std::cout << "final velocity does not match" << std::endl;
+    return 1;
+  }
+
+  return 0;
+}
 
 int main() {
   bool failed = false;
@@ -562,6 +599,13 @@ int main() {
     failed = true;
   } else {
     std::cout << "testGetInterceptsWithCoP passed" << std::endl;
+  }
+  error = testFreeKnotTimesSpline();
+  if (error) {
+    std::cout << "testFreeKnotTimesSpline FAILED" << std::endl;
+    failed = true;
+  } else {
+    std::cout << "testFreeKnotTimesSpline passed" << std::endl;
   }
 
 

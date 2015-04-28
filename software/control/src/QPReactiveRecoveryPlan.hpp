@@ -84,7 +84,7 @@ BipedDescription getAtlasDefaults() {
 class QPReactiveRecoveryPlan {
 
   private:
-    std::vector<PiecewisePolynomial<double>> last_swing_plan;
+    std::unique_ptr<PiecewisePolynomial<double>> last_swing_plan;
     InterceptPlan last_intercept_plan;
     double t_start = 0;
     bool has_plan = false;
@@ -96,7 +96,7 @@ class QPReactiveRecoveryPlan {
     MatrixXd S;
 
     void findFootSoleFrames();
-    FootStateMap getFootStates(const std::vector<bool>& contact_force_detected);
+    FootStateMap getFootStates(const VectorXd &v, const std::vector<bool>& contact_force_detected);
     void getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input);
     void getInterceptInput(double t_global, const FootStateMap &foot_states, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input);
     std::shared_ptr<lcm::LCM> LCMHandle;
@@ -104,9 +104,9 @@ class QPReactiveRecoveryPlan {
     void publishForVisualization(double t_global, const Isometry3d &icp);
     void setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache);
     void encodeSupportData(int body_id, SupportLogicType support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data support_data);
-    void encodeBodyMotionData(int body_or_frame_id, std::vector<PiecewisePolynomial<double>> spline, drake::lcmt_body_motion_data body_motion);
-    std::vector<PiecewisePolynomial<double>> straightToGoalTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
-    std::vector<PiecewisePolynomial<double>> upOverAndDownTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states);
+    void encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data body_motion);
+    std::unique_ptr<PiecewisePolynomial<double>> straightToGoalTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
+    std::unique_ptr<PiecewisePolynomial<double>> upOverAndDownTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states);
 
 	public:
     RigidBodyManipulator* robot;
@@ -142,7 +142,9 @@ class QPReactiveRecoveryPlan {
 
     static ExponentialForm icpTrajectory(double x_ic, double x_cop, double omega);
 
-    std::vector<PiecewisePolynomial<double>> swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
+    static std::unique_ptr<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double tf, const Ref<const MatrixXd> &xs, const Ref<const VectorXd> xd0, const Ref<const VectorXd> xdf);
+
+    std::unique_ptr<PiecewisePolynomial<double>> swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
 
     void resetInitialization();
 
@@ -158,10 +160,12 @@ class QPReactiveRecoveryPlan {
 
     void publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const RobotPropertyCache& robot_property_cache, const std::vector<bool>& contact_force_detected);
 
-    Vector2d getICP();
+    Vector2d getICP(const VectorXd &v);
 
     void setS(const MatrixXd &S) {
       this->S = S;
     }
+
+    void setRobot(RigidBodyManipulator *robot);
 };
 

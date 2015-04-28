@@ -3,7 +3,7 @@
 #include "drake/drakeUtil.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-  if (nrhs != 4 || nlhs != 1) mexErrMsgTxt("usage: publishQPControllerInput(obj, t_global, x, rpc, contact_force_detected)");
+  if (nrhs != 5 || nlhs != 0) mexErrMsgTxt("usage: publishQPControllerInput(obj, t_global, x, rpc, contact_force_detected)");
 
   int narg = 0;
   sizecheck(prhs[narg], 1, 1);

@@ -3,6 +3,7 @@
 #include <Eigen/StdVector>
 #include "drake/drakeGeometryUtil.h"
 #include "drake/splineGeneration.h"
+#include "drake/lcmUtil.h"
 #include "lcmtypes/drc/reactive_recovery_debug_t.hpp"
 extern "C" {
   #include "iris_ldp/solver.h"
@@ -414,7 +415,9 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptPlans(const std::
   return all_intercept_plans;
 }
 
-std::vector<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double tf, const Ref<const MatrixXd> &xs, const Ref<const VectorXd> xd0, const Ref<const VectorXd> xdf, int grid_steps = 10) {
+std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::freeKnotTimesSpline(double t0, double tf, const Ref<const MatrixXd> &xs, const Ref<const VectorXd> xd0, const Ref<const VectorXd> xdf) {
+  const int grid_steps = 10;
+
   const size_t num_segments = xs.cols() - 1;
   const size_t ndof = xs.rows();
   const size_t num_knots = num_segments - 1;
@@ -438,7 +441,7 @@ std::vector<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double t
   if (grid_steps <= num_knots){
     // If we have have too few grid steps, then by pigeonhole it's
     // impossible to give each a unique time in our grid search.
-    throw std::runtime_error("Drake:nWaypointCubicSplineFreeKnotTimesmex.cpp:TooManyKnotsForNumGridSteps");
+    throw std::runtime_error("Drake:freeKnotTimesSpline:TooManyKnotsForNumGridSteps");
   }
   for (int i=0; i<num_knots; i++)
     t_indices[i] = i+1; // assume knot point won't be the same time as the
@@ -452,7 +455,7 @@ std::vector<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double t
     double objective_value = 0.0;
     for (int dof = 0; dof < ndof && valid_solution; dof++) {
       try {
-        PiecewisePolynomial<double> spline = nWaypointCubicSpline(segment_times, xs(dof, 0), xd0(dof), xs(dof, num_segments), xdf(dof), xi.row(dof));
+        PiecewisePolynomial<double> spline = nWaypointCubicSpline(segment_times, xs(dof, 0), xd0(dof), xs(dof, num_segments), xdf(dof), xi.row(dof).transpose());
         PiecewisePolynomial<double> acceleration_squared = spline.derivative(2);
         acceleration_squared *= acceleration_squared;
         PiecewisePolynomial<double> acceleration_squared_integral = acceleration_squared.integral();
@@ -483,14 +486,22 @@ std::vector<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double t
     }
   }
 
-  std::vector<PiecewisePolynomial<double>> splines;
-  for (int dof=0; dof < ndof; ++dof) {
-    splines.push_back(nWaypointCubicSpline(best_segment_times, xs(dof, 0), xd0(dof), xs(dof, num_segments), xdf(dof), xi.row(dof)));
+  std::vector<Matrix<Polynomial<double>, Dynamic, Dynamic>> poly_matrix;
+  poly_matrix.reserve(num_segments);
+  for (int i=0; i < num_segments; ++i) {
+    poly_matrix.push_back(Matrix<Polynomial<double>, Dynamic, Dynamic> (ndof, 1));
   }
-  return splines;
+  for (int dof=0; dof < ndof; ++dof) {
+    PiecewisePolynomial<double> one_d_spline = nWaypointCubicSpline(best_segment_times, xs(dof, 0), xd0(dof), xs(dof, num_segments), xdf(dof), xi.row(dof).transpose());
+    for (int i=0; i < num_segments; ++i) {
+      poly_matrix[i](dof) = one_d_spline.getPolynomial(i);
+    }
+  }
+  std::unique_ptr<PiecewisePolynomial<double>> spline(new PiecewisePolynomial<double>(poly_matrix, best_segment_times));
+  return spline;
 }
 
-std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToGoalTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states) {
+std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToGoalTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states) {
   const FootState state = foot_states.at(intercept_plan.swing_foot);
 
   std::cout << "case 1" << std::endl;
@@ -509,7 +520,7 @@ std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToGoalT
   auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
   xs.block(3, 0, 3, 1) = w.value();
   xd0.head<3>() = state.velocity.head<3>();
-  xd0.tail<3>() = w.gradient().value();
+  xd0.tail<3>() = w.gradient().value() * state.velocity.tail<4>();
 
   xs.block(0, 2, 3, 1) = intercept_plan.pose_next.translation();
   quat = Quaterniond(intercept_plan.pose_next.rotation());
@@ -522,11 +533,10 @@ std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToGoalT
   xs.block(0, 1, 6, 1) = (1 - fraction_first) * xs.block(0, 0, 6, 1) + fraction_first * xs.block(0, 2, 6, 1);
   xs(2, 1) = swing_height_first_in_world;
 
-  std::vector<PiecewisePolynomial<double>> spline = freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
-  return spline;
+  return QPReactiveRecoveryPlan::freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
 }
 
-std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::upOverAndDownTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states) {
+std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::upOverAndDownTrajectory(const InterceptPlan &intercept_plan, const FootStateMap &foot_states) {
   const FootState state = foot_states.at(intercept_plan.swing_foot);
 
   std::cout << "case 2" << std::endl;
@@ -545,18 +555,20 @@ std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::upOverAndDownTr
   Vector6d xd0;
   Vector6d xdf = Vector6d::Zero();
 
+  std::cout << "557" << std::endl;
   Quaterniond quat;
   xs.block(0, 0, 3, 1) = state.pose.translation();
   quat = Quaterniond(state.pose.rotation());
   auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
   xs.block(3, 0, 3, 1) = w.value();
   xd0.head<3>() = state.velocity.head<3>();
-  xd0.tail<3>() = w.gradient().value();
+  xd0.tail<3>() = w.gradient().value() * state.velocity.tail<4>();
 
   xs.block(0, 3, 3, 1) = intercept_plan.pose_next.translation();
   quat = Quaterniond(intercept_plan.pose_next.rotation());
   xs.block(3, 3, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
 
+  std::cout << "570" << std::endl;
   auto w_unwrap = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 3, 3, 1), 1);
   xs.block(3, 3, 3, 1) = w_unwrap.value();
   xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
@@ -565,15 +577,16 @@ std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::upOverAndDownTr
   xs(2, 1) = swing_height_first_in_world;
   xs.block(3, 1, 3, 1) = xs.block(3, 0, 3, 1);
 
+  std::cout << "578" << std::endl;
   xs.block(0, 2, 2, 1) = (1 - fraction_second) * xs.block(0, 0, 2, 1) + fraction_second * xs.block(0, 3, 2, 1);
   xs(2, 2) = swing_height_second_in_world;
   xs.block(3, 2, 3, 1) = xs.block(3, 3, 3, 1);
 
-  std::vector<PiecewisePolynomial<double>> spline = freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
-  return spline;
+  std::cout << "584" << std::endl;
+  return QPReactiveRecoveryPlan::freeKnotTimesSpline(0, intercept_plan.tf, xs, xd0, xdf);
 }
 
-std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states) {
+std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::swingTrajectory(const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states) {
   const FootState state = foot_states.at(intercept_plan.swing_foot);
   const double dist_to_goal = (intercept_plan.pose_next.translation().head(2) - state.pose.translation().head(2)).norm();
   // TODO: name the magic numbers here
@@ -588,11 +601,17 @@ std::vector<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::swingTrajectory
   }
 }
 
+void QPReactiveRecoveryPlan::setRobot(RigidBodyManipulator *robot) {
+  this->robot = robot;
+  this->findFootSoleFrames();
+  this->q_des.resize(robot->num_positions);
+}
+
 QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot) {
   this->robot = robot;
   this->biped = getAtlasDefaults();
   if (this->robot) {
-    this->findFootSoleFrames();
+    this->setRobot(robot);
   }
   this->initLCM();
 }
@@ -601,7 +620,7 @@ QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot, Bipe
   this->robot = robot;
   this->biped = biped;
   if (this->robot) {
-    this->findFootSoleFrames();
+    this->setRobot(robot);
   }
   this->initLCM();
 }
@@ -652,37 +671,46 @@ void QPReactiveRecoveryPlan::resetInitialization() {
 void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const RobotPropertyCache& robot_property_cache, const std::vector<bool>& contact_force_detected) {
 
   if (!this->initialized) {
+    std::cout << "initializing" << std::endl;
     for (int i=0; i < robot_property_cache.position_indices.arm.size(); ++i) {
-      this->q_des(i) = q(i);
+      int j = robot_property_cache.position_indices.arm(i);
+      this->q_des(j) = q(j);
     }
     for (int i=0; i < robot_property_cache.position_indices.neck.size(); ++i) {
-      this->q_des(i) = q(i);
+      int j = robot_property_cache.position_indices.neck(i);
+      this->q_des(j) = q(j);
     }
     this->initialized = true;
     this->t_start = t_global;
   }
+  std::cout << "done initializing" << std::endl;
 
   double t_plan = t_global - this->t_start;
 
+  std::cout << "do kin" << std::endl;
   this->robot->doKinematicsNew(q, v, true, false);
 
-  Vector2d r_ic = this->getICP();
+  std::cout << "get icp" << std::endl;
+  Vector2d r_ic = this->getICP(v);
   Isometry3d icp = Isometry3d(Translation<double, 3>(Vector3d(r_ic(0), r_ic(1), 0)));
 
-  FootStateMap foot_states = this->getFootStates(contact_force_detected);
+  std::cout << "get foot states" << std::endl;
+  FootStateMap foot_states = this->getFootStates(v, contact_force_detected);
 
+  std::cout << "icp error" << std::endl;
   bool is_captured = this->icpError(icp.translation().head<2>(), foot_states, this->biped.foot_vertices) < 1e-2;
 
-  std::shared_ptr<drake::lcmt_qp_controller_input> qp_input;
+  std::shared_ptr<drake::lcmt_qp_controller_input> qp_input(new struct drake::lcmt_qp_controller_input);
+  std::cout << "setup defaults" << std::endl;
   this->setupQPInputDefaults(t_global, qp_input, robot_property_cache);
 
-  if (this->has_plan && t_plan < this->last_swing_plan[0].getEndTime()) {
+  if (this->has_plan && t_plan < this->last_swing_plan->getEndTime()) {
     std::cout << "continuing current plan" << std::endl;
     this->getInterceptInput(t_global, foot_states, robot_property_cache, qp_input);
   } else if (is_captured) {
     std::cout << "is captured" << std::endl;
     this->getCaptureInput(t_global, foot_states, icp, robot_property_cache, qp_input);
-  } else if (this->has_plan && t_plan < this->last_swing_plan[0].getEndTime() + this->post_execution_delay) {
+  } else if (this->has_plan && t_plan < this->last_swing_plan->getEndTime() + this->post_execution_delay) {
     std::cout << "in delay after plan end" << std::endl;
     this->getCaptureInput(t_global, foot_states, icp, robot_property_cache, qp_input);
   } else {
@@ -694,14 +722,16 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
     } else {
       std::vector<InterceptPlan>::iterator best_plan = std::min_element(intercept_plans.begin(), intercept_plans.end(), errorCompare);
       this->last_intercept_plan = *best_plan;
-      this->last_swing_plan = this->swingTrajectory(this->last_intercept_plan, foot_states);
+      this->last_swing_plan.reset(this->swingTrajectory(this->last_intercept_plan, foot_states).release());
       this->t_start = t_global;
       this->getInterceptInput(t_global, foot_states, robot_property_cache, qp_input);
     }
   }
 
+  std::cout << "publish vis" << std::endl;
   this->publishForVisualization(t_global, icp);
 
+  std::cout << "publish qpinput" << std::endl;
   this->LCMHandle->publish("QP_CONTROLLER_INPUT_DEBUG", qp_input.get());
 }
 
@@ -709,6 +739,7 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   qp_input->be_silent = false;
   qp_input->timestamp = static_cast<int64_t> (t_global * 1e6);
 
+  std::cout << "A" << std::endl;
   Matrix4d A = Matrix4d::Zero();
   A.block(0, 2, 2, 2) = Matrix2d::Identity();
   eigenToCArrayOfArrays(A, qp_input->zmp_data.A);
@@ -721,15 +752,10 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   C.block(0, 0, 2, 2) = Matrix2d::Identity();
   eigenToCArrayOfArrays(C, qp_input->zmp_data.C);
 
+  std::cout << "D" << std::endl;
   Matrix2d D = Matrix2d::Identity();
   D *= (1.0 / this->biped.omega);
   eigenToCArrayOfArrays(D, qp_input->zmp_data.D);
-
-  Vector4d x0 = Vector4d::Zero();
-  eigenToCArrayOfArrays(x0, qp_input->zmp_data.x0);
-
-  Vector2d y0 = Vector2d::Zero();
-  eigenToCArrayOfArrays(y0, qp_input->zmp_data.y0);
 
   Matrix2d R = Matrix2d::Zero();
   eigenToCArrayOfArrays(R, qp_input->zmp_data.R);
@@ -738,9 +764,9 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   Qy *= 0.8;
   eigenToCArrayOfArrays(Qy, qp_input->zmp_data.Qy);
 
-  Matrix4d S = Matrix4d::Zero();
-  eigenToCArrayOfArrays(S, qp_input->zmp_data.S);
+  eigenToCArrayOfArrays(this->S, qp_input->zmp_data.S);
 
+  std::cout << "s1" << std::endl;
   Vector4d s1 = Vector4d::Zero();
   eigenToCArrayOfArrays(s1, qp_input->zmp_data.s1);
 
@@ -750,26 +776,27 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   qp_input->zmp_data.s2 = 0;
   qp_input->zmp_data.s2dot = 0;
 
+  std::cout << "q_des" << std::endl;
   qp_input->whole_body_data.num_positions = this->robot->num_positions;
   qp_input->whole_body_data.q_des.resize(this->robot->num_positions);
   for (int i=0; i < this->robot->num_positions; ++i) {
     qp_input->whole_body_data.q_des[i] = this->q_des(i);
   }
-  qp_input->whole_body_data.num_constrained_dofs = 0;
   for (int i=0; i < robot_property_cache.position_indices.arm.size(); i++) {
     qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.arm[i]);
   }
   for (int i=0; i < robot_property_cache.position_indices.neck.size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.arm[i]);
+    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.neck[i]);
   }
   for (int i=0; i < robot_property_cache.position_indices.back_bky.size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.arm[i]);
+    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.back_bky[i]);
   }
   for (int i=0; i < robot_property_cache.position_indices.back_bkz.size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.arm[i]);
+    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.back_bkz[i]);
   }
   qp_input->whole_body_data.num_constrained_dofs = qp_input->whole_body_data.constrained_dofs.size();
 
+  std::cout << "param set" << std::endl;
   qp_input->param_set_name = "recovery";
 
 }
@@ -827,20 +854,9 @@ void QPReactiveRecoveryPlan::encodeSupportData(int body_id, SupportLogicType sup
   support_data.contact_surfaces = 0;
 }
 
-void QPReactiveRecoveryPlan::encodeBodyMotionData(int body_or_frame_id, std::vector<PiecewisePolynomial<double>> spline, drake::lcmt_body_motion_data body_motion) {
+void QPReactiveRecoveryPlan::encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data body_motion) {
   body_motion.body_id = body_or_frame_id + 1;
-  body_motion.ts.resize(spline[0].getNumberOfSegments() + 1);
-  for (int i=0; i < spline[0].getNumberOfSegments() + 1; ++i) {
-    body_motion.ts[i] = spline[0].getSegmentTimes()[i] + this->t_start;
-  }
-  body_motion.coefs.resize(spline[0].getNumberOfSegments());
-  for (int i=0; i < spline[0].getNumberOfSegments(); ++i) {
-    Matrix<double, 6, 4> coefs;
-    for (int j=0; j < 6; ++j) {
-      coefs.row(j) = spline[j].getPolynomial(i).getCoefficients().reverse();
-    }
-    eigenToCArrayOfArrays(coefs, body_motion.coefs[i].coefs);
-  }
+  encodePiecewisePolynomial(spline, body_motion.spline);
   body_motion.in_floating_base_nullspace = false;
   body_motion.control_pose_when_in_contact = false;
   body_motion.quat_task_to_world[0] = 1;
@@ -883,8 +899,9 @@ double angleAverage(double theta1, double theta2) {
   return angle_mean;
 }
 
-std::vector<PiecewisePolynomial<double>> constantPoseCubicSpline(const Isometry3d &pose) {
-  std::vector<PiecewisePolynomial<double>> spline;
+PiecewisePolynomial<double> constantPoseCubicSpline(const Isometry3d &pose) {
+  std::vector<Matrix<Polynomial<double>, Dynamic, Dynamic>> poly_matrix;
+  poly_matrix.push_back(Matrix<Polynomial<double>, Dynamic, Dynamic>(6, 1));
   std::vector<double> ts = {0, 0};
   Matrix<double, 0, 1> xi;
   Vector6d xyzexp;
@@ -893,9 +910,12 @@ std::vector<PiecewisePolynomial<double>> constantPoseCubicSpline(const Isometry3
   xyzexp.tail<3>() = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
   for (int i=0; i < 6; ++i) {
     PiecewisePolynomial<double> polynomials = nWaypointCubicSpline(ts, xyzexp(i), 0, xyzexp(i), 0, xi);
-    spline.push_back(polynomials);
+    if (polynomials.getNumberOfSegments() != 1) {
+      throw std::runtime_error("I only expect to get a one-segment spline here");
+    }
+    poly_matrix[0](i) = polynomials.getPolynomial(0);
   }
-  return spline;
+  return PiecewisePolynomial<double>(poly_matrix, ts);
 }
 
 void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateMap &foot_states, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
@@ -910,7 +930,7 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
   this->encodeSupportData(stance_foot_id, REQUIRE_SUPPORT, robot_property_cache, support_data);
   qp_input->support_data.push_back(support_data);
 
-  if (t_global - this->t_start <= this->last_swing_plan[0].getEndTime() / 2) {
+  if (t_global - this->t_start <= this->last_swing_plan->getEndTime() / 2) {
     this->encodeSupportData(this->foot_body_ids.at(this->last_intercept_plan.swing_foot),
                             PREVENT_SUPPORT, robot_property_cache, support_data);
   } else {
@@ -922,7 +942,7 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
 
   drake::lcmt_body_motion_data body_motion;
   this->encodeBodyMotionData(this->foot_frame_ids.at(this->last_intercept_plan.swing_foot),
-                             this->last_swing_plan, body_motion);
+                             *this->last_swing_plan, body_motion);
   body_motion.in_floating_base_nullspace = true;
   qp_input->body_motion_data.push_back(body_motion);
 
@@ -982,15 +1002,15 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
   qp_input->body_motion_data.push_back(body_motion);
 }
 
-Vector2d QPReactiveRecoveryPlan::getICP() {
+Vector2d QPReactiveRecoveryPlan::getICP(const VectorXd &v) {
   GradientVar<double, 3, 1> com = this->robot->centerOfMass<double>(1);
   Vector3d com_position = com.value();
-  Vector3d com_velocity = com.gradient().value();
+  Vector3d com_velocity = com.gradient().value() * v;
   Vector2d icp = com_position.head(2) + com_velocity.head(2) / this->biped.omega;
   return icp;
 }
 
-FootStateMap QPReactiveRecoveryPlan::getFootStates(const std::vector<bool>& contact_force_detected) {
+FootStateMap QPReactiveRecoveryPlan::getFootStates(const VectorXd &v, const std::vector<bool>& contact_force_detected) {
   std::vector<FootID> foot_ids = {RIGHT, LEFT};
   FootStateMap foot_states;
   double min_foot_height = std::numeric_limits<double>::infinity();
@@ -1000,7 +1020,7 @@ FootStateMap QPReactiveRecoveryPlan::getFootStates(const std::vector<bool>& cont
     auto body_pose = this->robot->forwardKinNew(origin, frame_id, 0, 2, 1);
     foot_states[*id].pose = Isometry3d(Translation<double, 3>(body_pose.value().head<3>()));
     foot_states[*id].pose.rotate(Quaterniond(body_pose.value().tail<4>()));
-    foot_states[*id].velocity = body_pose.gradient().value();
+    foot_states[*id].velocity = body_pose.gradient().value() * v;
     int body_id = this->robot->parseBodyOrFrameID(this->foot_frame_ids[*id]);
     foot_states[*id].contact = contact_force_detected[body_id];
     if (foot_states[*id].pose.translation().z() < min_foot_height) {
