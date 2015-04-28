@@ -1,39 +1,7 @@
-# add_mex(closestPointInConvexHull closestPointInConvexHull.cpp)
-# pods_use_pkg_config_packages(closestPointInConvexHull eigen3 drake-util)
-# target_link_libraries(closestPointInConvexHull QPReactiveRecoveryPlan)
-
-# add_mex(expTaylor expTaylor.cpp)
-# pods_use_pkg_config_packages(expTaylor eigen3 drake-util)
-# target_link_libraries(expTaylor QPReactiveRecoveryPlan)
-
-# add_mex(expIntercept expIntercept.cpp)
-# pods_use_pkg_config_packages(expIntercept eigen3 drake-util)
-# target_link_libraries(expIntercept QPReactiveRecoveryPlan)
-
-# add_mex(bangBangIntercept bangBangIntercept.cpp)
-# pods_use_pkg_config_packages(bangBangIntercept eigen3 drake-util)
-# target_link_libraries(bangBangIntercept QPReactiveRecoveryPlan)
-
-# add_mex(bangBangUpdate bangBangUpdate.cpp)
-# pods_use_pkg_config_packages(bangBangUpdate eigen3 drake-util)
-# target_link_libraries(bangBangUpdate QPReactiveRecoveryPlan)
-
-# add_mex(icpUpdate icpUpdate.cpp)
-# pods_use_pkg_config_packages(icpUpdate eigen3 drake-util)
-# target_link_libraries(icpUpdate QPReactiveRecoveryPlan)
-
-# add_mex(isICPCaptured isICPCaptured.cpp)
-# pods_use_pkg_config_packages(isICPCaptured eigen3 drake-util)
-# target_link_libraries(isICPCaptured QPReactiveRecoveryPlan)
-
-add_mex(icpError icpError.cpp)
-pods_use_pkg_config_packages(icpError eigen3 drake-util)
-target_link_libraries(icpError QPReactiveRecoveryPlan)
-
-add_mex(getInterceptPlansmex getInterceptPlansmex.cpp)
-pods_use_pkg_config_packages(getInterceptPlansmex eigen3 drake-util)
-target_link_libraries(getInterceptPlansmex QPReactiveRecoveryPlan)
-
 add_mex(publishQPControllerInput publishQPControllerInput.cpp)
 pods_use_pkg_config_packages(publishQPControllerInput eigen3 drake-util drake-qp-common)
 target_link_libraries(publishQPControllerInput QPReactiveRecoveryPlan)
+
+add_mex(resetInitialization resetInitialization.cpp)
+pods_use_pkg_config_packages(resetInitialization eigen3 drake-util drake-qp-common)
+target_link_libraries(resetInitialization QPReactiveRecoveryPlan)
