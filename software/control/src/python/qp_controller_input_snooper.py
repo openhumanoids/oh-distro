@@ -60,16 +60,16 @@ def handle_qp_controller_input_msg(channel, data):
         gl.glVertex3f(ps[k+1,0], ps[k+1,1], ps[k+1,2]);
       gl.glEnd();
 
-      #if (t_clamped >= tsdense[0] and t_clamped <= tsdense[-1]):
-      #  # make marker indicating current tracking position
-      #  gl.glColor3f(0.9,0.2,0.9);
-      #  ctp = np.zeros((bmd.spline.polynomial_matrices[j].rows,
-      #                bmd.spline.polynomial_matrices[j].cols))
-      #  for k in range(0, bmd.spline.polynomial_matrices[j].rows):
-      #    for l in range(0, bmd.spline.polynomial_matrices[j].cols):
-      #      coefs = np.array(bmd.spline.polynomial_matrices[j].polynomials[k][l].coefficients);
-      #      ctp[k, l] = pval(coefs, t_clamped-ts[j])
-      #  gl.sphere(ctp[0], ctp[1], ctp[2], 0.005, 20, 20);
+      if (t_clamped >= tsdense[0] and t_clamped <= tsdense[-1]):
+        # make marker indicating current tracking position
+        gl.glColor3f(0.9,0.2,0.9);
+        ctp = np.zeros((bmd.spline.polynomial_matrices[j].rows,
+                      bmd.spline.polynomial_matrices[j].cols))
+        for k in range(0, bmd.spline.polynomial_matrices[j].rows):
+          for l in range(0, bmd.spline.polynomial_matrices[j].cols):
+            coefs = np.array(bmd.spline.polynomial_matrices[j].polynomials[k][l].coefficients);
+            ctp[k, l] = pval(coefs, t_clamped-ts[j])
+        gl.sphere(ctp[0], ctp[1], ctp[2], 0.005, 20, 20);
 
   gl.switch_buffer()
 
