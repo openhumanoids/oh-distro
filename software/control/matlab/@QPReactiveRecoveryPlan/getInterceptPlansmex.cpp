@@ -8,12 +8,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   int narg = 0;
   sizecheck(prhs[narg], 1, 1);
   const mxArray *obj = prhs[narg];
-  QPReactiveRecoveryPlan plan;
-  plan.capture_max_flyfoot_height = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_MAX_FLYFOOT_HEIGHT"));
-  plan.capture_shrink_factor = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_SHRINK_FACTOR"));
-  plan.min_step_duration = mxGetScalar(mxGetPropertySafe(obj, "MIN_STEP_DURATION"));
-  plan.foot_hull_cop_shrink_factor = mxGetScalar(mxGetPropertySafe(obj, "FOOT_HULL_COP_SHRINK_FACTOR"));
-  plan.max_considerable_foot_swing = mxGetScalar(mxGetPropertySafe(obj, "MAX_CONSIDERABLE_FOOT_SWING"));
   const mxArray *foot_vertices_obj = mxGetPropertySafe(obj, "foot_vertices");
   const mxArray *reach_verts_obj = mxGetPropertySafe(obj, "reachable_vertices");
   ++narg;
@@ -45,6 +39,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   BipedDescription biped;
   biped.u_max = u;
   biped.omega = omega;
+
+  QPReactiveRecoveryPlan plan(NULL, biped);
+  plan.capture_max_flyfoot_height = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_MAX_FLYFOOT_HEIGHT"));
+  plan.capture_shrink_factor = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_SHRINK_FACTOR"));
+  plan.min_step_duration = mxGetScalar(mxGetPropertySafe(obj, "MIN_STEP_DURATION"));
+  plan.foot_hull_cop_shrink_factor = mxGetScalar(mxGetPropertySafe(obj, "FOOT_HULL_COP_SHRINK_FACTOR"));
+  plan.max_considerable_foot_swing = mxGetScalar(mxGetPropertySafe(obj, "MAX_CONSIDERABLE_FOOT_SWING"));
 
   Isometry3d icp = Isometry3d(Translation<double, 3>(Vector3d(r_ic(0), r_ic(1), 0)));
 
@@ -96,7 +97,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   }
 
   // std::cout << "getting plans" << std::endl;
-  std::vector<InterceptPlan> intercept_plans = plan.getInterceptPlans(foot_states, biped, icp);
+  std::vector<InterceptPlan> intercept_plans = plan.getInterceptPlans(foot_states, icp);
   // std::cout << "got plans" << std::endl;
 
   const size_t dims[2] = {1, intercept_plans.size()};

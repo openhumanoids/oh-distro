@@ -7,7 +7,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   sizecheck(prhs[0], 1, 1);
   const mxArray *obj = prhs[0];
-  QPReactiveRecoveryPlan plan;
+  QPReactiveRecoveryPlan plan(NULL);
   plan.capture_max_flyfoot_height = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_MAX_FLYFOOT_HEIGHT"));
   plan.capture_shrink_factor = mxGetScalar(mxGetPropertySafe(obj, "CAPTURE_SHRINK_FACTOR"));
 
