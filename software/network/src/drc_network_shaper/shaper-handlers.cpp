@@ -1153,6 +1153,10 @@ void DRCShaper::load_robot_plan_custom_codecs()
     custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK"))));
     custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
     
+    const std::string& supports_plan_channel = "COMMITTED_ROBOT_PLAN_WITH_SUPPORTS";
+    custom_codecs_.insert(std::make_pair(supports_plan_channel, boost::shared_ptr<CustomChannelCodec>(new SupportsPlanCodec(supports_plan_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[supports_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[supports_plan_channel];
+    
 }
 
 void DRCShaper::load_custom_codecs()

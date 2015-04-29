@@ -1,6 +1,11 @@
 
 #include "manip-plan-codecs.h"
 #include "dccl/arithmetic/field_codec_arithmetic.h"
+#include "lzma-string.h"
+
+//
+// ManipPlanCodec
+//
 
 ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
     : CustomChannelCodec(loopback_channel),
@@ -130,6 +135,95 @@ bool ManipPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vec
     return true;
           
 }      
+
+
+//
+// SupportsPlanCodec
+//
+
+
+SupportsPlanCodec::SupportsPlanCodec(const std::string loopback_channel)
+    : CustomChannelCodec(loopback_channel),
+      dccl_(goby::acomms::DCCLCodec::get())
+{
+    using goby::glog;
+    using namespace goby::common::logger;
+
+}
+
+
+bool SupportsPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data)
+{
+    using goby::glog;
+    using namespace goby::common::logger;
+    
+    drc::robot_plan_with_supports_t lcm_object;
+    if(lcm_object.decode(&lcm_data[0], 0, lcm_data.size()) == -1)
+        return false;
+
+    drc::MinimalRobotPlan dccl_plan;
+    if(!to_minimal_robot_plan(lcm_object.plan, dccl_plan))
+        return false;    
+
+    if(!to_minimal_robot_plan_control_type_new(lcm_object.plan, dccl_plan))
+        return false;
+    
+    std::string encoded;
+    dccl_->encode(&encoded, dccl_plan);
+
+    // append LZMA compressed "support_sequence"
+    std::vector<unsigned char> support_sequence_data(lcm_object.support_sequence.getEncodedSize());
+    lcm_object.support_sequence.encode(&support_sequence_data[0], 0, support_sequence_data.size());
+    encoded += CompressWithLzma(std::string(support_sequence_data.begin(), support_sequence_data.end()), 6);
+
+    transmit_data->resize(encoded.size());
+
+    std::cout << encoded.size() << "," << std::flush;
+    
+    std::copy(encoded.begin(), encoded.end(), transmit_data->begin());
+    return true;
+}
+
+      
+bool SupportsPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data)
+{
+    using goby::glog;
+    using namespace goby::common::logger;
+
+    std::string encoded(transmit_data.begin(), transmit_data.end());
+    drc::MinimalRobotPlan dccl_plan;
+
+    dccl_->decode(encoded, &dccl_plan);
+    
+    drc::robot_plan_with_supports_t lcm_object;
+    
+    if(!from_minimal_robot_plan(lcm_object.plan, dccl_plan))
+        return false;
+
+    if(!from_minimal_robot_plan_control_type_new(lcm_object.plan, dccl_plan))
+        return false;
+
+    lcm_object.utime = lcm_object.plan.utime;
+
+
+    std::string decoded_support_sequence = DecompressWithLzma(std::string(transmit_data.begin() + dccl_->size(dccl_plan), transmit_data.end()));
+    if(lcm_object.support_sequence.decode(&decoded_support_sequence[0], 0, decoded_support_sequence.size()) == -1)
+        return false;
+
+    
+    lcm_data->resize(lcm_object.getEncodedSize());
+    lcm_object.encode(&(*lcm_data)[0], 0, lcm_data->size());
+
+    
+    return true;
+          
+}      
+
+
+//
+// ManipMapCodec
+//
+
 
 
 ManipMapCodec::ManipMapCodec(const std::string loopback_channel)
