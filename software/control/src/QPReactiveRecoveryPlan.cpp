@@ -319,9 +319,9 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
       // if there are multiple options, take the one that switches sooner
       std::vector<BangBangIntercept>::iterator it_min = std::min_element(intercepts.begin(), intercepts.end(), tswitchComp);
       Isometry3d intercept_pose_in_world = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(x_ic_target, 0, 0)));
-      // std::cerr << "intercept before reach: " << intercept_pose_in_world.translation() << std::endl;
+      std::cerr << "intercept before reach: " << intercept_pose_in_world.translation() << std::endl;
       intercept_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(intercept_pose_in_world, reachable_vertices_in_world.topRows(2));
-      // std::cerr << "intercept after reach: " << intercept_pose_in_world.translation() << std::endl;
+      std::cerr << "intercept after reach: " << intercept_pose_in_world.translation() << std::endl;
       InterceptPlan intercept_plan;
       intercept_plan.tf = t_min_to_xprime;
       intercept_plan.tswitch = it_min->tswitch;
@@ -349,12 +349,16 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
         // If there are no intercepts, get as close to our desired capture as possible within the reachable set. 
         // note: this might be off the xcop->xic line
         Isometry3d reachable_pose_in_world = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(x_ic + this->desired_icp_offset, 0, 0)));
+          std::cerr << "intercept before reach: " << reachable_pose_in_world.translation() << std::endl;
         reachable_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(reachable_pose_in_world, reachable_vertices_in_world.topRows(2));
+          std::cerr << "intercept after reach: " << reachable_pose_in_world.translation() << std::endl;
         reachable_poses.push_back(reachable_pose_in_world);
       } else {
         for (std::vector<double>::iterator t = t_int_feasible.begin(); t != t_int_feasible.end(); ++t) {
           Isometry3d reachable_pose_in_world = T_world_to_local.inverse() * Isometry3d(Translation<double, 3>(Vector3d(icp_traj_in_local.value(*t) + this->desired_icp_offset, 0, 0)));
+          std::cerr << "intercept before reach: " << reachable_pose_in_world.translation() << std::endl;
           reachable_pose_in_world = QPReactiveRecoveryPlan::closestPoseInConvexHull(reachable_pose_in_world, reachable_vertices_in_world.topRows(2));
+          std::cerr << "intercept after reach: " << reachable_pose_in_world.translation() << std::endl;
           reachable_poses.push_back(reachable_pose_in_world);
         }
       }
