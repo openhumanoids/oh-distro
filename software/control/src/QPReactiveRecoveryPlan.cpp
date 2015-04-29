@@ -303,7 +303,8 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   ExponentialForm icp_traj_in_local = QPReactiveRecoveryPlan::icpTrajectory(x_ic, x_cop, this->biped.omega);
   double x_ic_int = icp_traj_in_local.value(t_min_to_xprime) + this->desired_icp_offset;
   // Don't narrow our stance to intercept if possible
-  double x_ic_target = std::max(x_ic_int, x0);
+  // double x_ic_target = std::max(x_ic_int, x0);
+  double x_ic_target = x_ic_int;
 
   Polynomial<double> x_foot_poly_plus = QPReactiveRecoveryPlan::bangBangPolynomial(x0, xd0, this->biped.u_max);
   Polynomial<double> x_foot_poly_minus = QPReactiveRecoveryPlan::bangBangPolynomial(x0, xd0, -this->biped.u_max);
