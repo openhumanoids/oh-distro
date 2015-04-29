@@ -86,27 +86,19 @@ mit.removeAllCollisions(urdf)
 
 minimal_contact_urdf = copy.deepcopy(urdf)
 
-r_heel_points = ["-0.0876 0.0626 -0.07645", "-0.0876 -0.066 -0.07645"]
-r_toe_points = ["0.1728 0.0626 -0.07645", "0.1728 -0.066 -0.07645"]
-r_midfoot_points = ["0.0426 0.0626 -0.07645", "0.0426 -0.066 -0.07645"]
+contact_pts = {'r_foot': {'heel': ["-0.0876 0.0626 -0.07645", "-0.0876 -0.066 -0.07645"],
+                         'toe': ["0.1728 0.0626 -0.07645","0.1728 -0.066 -0.07645"],
+                         'midfoot_front': ["0.086 0.0626 -0.07645", "0.086 -0.066 -0.07645"],
+                         'midfoot_rear': ["-0.0008 0.0626 -0.07645", "-0.0008 -0.066 -0.07645"]},
+               'l_foot': {'heel': ["-0.0876 0.066 -0.07645", "-0.0876 -0.0626 -0.07645"],
+                        'toe': ["0.1728 0.066 -0.07645", "0.1728 -0.0626 -0.07645"],
+                        'midfoot_front': ["0.086 0.066 -0.07645", "0.086 -0.0626 -0.07645"],
+                        'midfoot_rear': ["-0.008 0.066 -0.07645", "-0.008 -0.0626 -0.07645"]}}
 
-l_heel_points = ["-0.0876 0.066 -0.07645", "-0.0876 -0.0626 -0.07645"]
-l_toe_points = ["0.1728 0.066 -0.07645", "0.1728 -0.0626 -0.07645"]
-l_midfoot_points = ["0.0426 0.066 -0.07645", "0.0426 -0.0626 -0.07645"]
-
-mit.addContactPoint(minimal_contact_urdf, "r_foot", r_heel_points[0], "heel")
-mit.addContactPoint(minimal_contact_urdf, "r_foot", r_heel_points[1], "heel")
-mit.addContactPoint(minimal_contact_urdf, "r_foot", r_toe_points[0], "toe")
-mit.addContactPoint(minimal_contact_urdf, "r_foot", r_toe_points[1], "toe")
-mit.addContactPoint(minimal_contact_urdf, "r_foot", r_midfoot_points[0], "midfoot")
-mit.addContactPoint(minimal_contact_urdf, "r_foot", r_midfoot_points[1], "midfoot")
-
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_heel_points[0], "heel")
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_heel_points[1], "heel")
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[0], "toe")
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_toe_points[1], "toe")
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_midfoot_points[0], "midfoot")
-mit.addContactPoint(minimal_contact_urdf, "l_foot", l_midfoot_points[1], "midfoot")
+for foot_name, groups in contact_pts.iteritems():
+    for group_name, pts in groups.iteritems():
+        for pt in pts:
+            mit.addContactPoint(minimal_contact_urdf, foot_name, pt, group_name)
 
 minimal_contact_urdf.write(minimal_contact_urdf_path, pretty_print=True)
 
@@ -139,19 +131,10 @@ mit.addCollisionFilterGroup(urdf, 'l_arm',
 
 convex_hull_urdf = copy.deepcopy(urdf)
 
-mit.addContactPoint(convex_hull_urdf, "r_foot", r_heel_points[0], "heel")
-mit.addContactPoint(convex_hull_urdf, "r_foot", r_heel_points[1], "heel")
-mit.addContactPoint(convex_hull_urdf, "r_foot", r_toe_points[0], "toe")
-mit.addContactPoint(convex_hull_urdf, "r_foot", r_toe_points[1], "toe")
-mit.addContactPoint(convex_hull_urdf, "r_foot", r_midfoot_points[0], "midfoot")
-mit.addContactPoint(convex_hull_urdf, "r_foot", r_midfoot_points[1], "midfoot")
-
-mit.addContactPoint(convex_hull_urdf, "l_foot", l_heel_points[0], "heel")
-mit.addContactPoint(convex_hull_urdf, "l_foot", l_heel_points[1], "heel")
-mit.addContactPoint(convex_hull_urdf, "l_foot", l_toe_points[0], "toe")
-mit.addContactPoint(convex_hull_urdf, "l_foot", l_toe_points[1], "toe")
-mit.addContactPoint(convex_hull_urdf, "l_foot", l_midfoot_points[0], "midfoot")
-mit.addContactPoint(convex_hull_urdf, "l_foot", l_midfoot_points[1], "midfoot")
+for foot_name, groups in contact_pts.iteritems():
+    for group_name, pts in groups.iteritems():
+        for pt in pts:
+            mit.addContactPoint(convex_hull_urdf, foot_name, pt, group_name)
 
 convex_hull_urdf.write(convex_hull_urdf_path, pretty_print=True)
 
