@@ -17,3 +17,4 @@ lidar-passthrough
 particle_filter
 pfgrasp
 jpl-tags
+plane-seg
