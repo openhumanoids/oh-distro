@@ -131,17 +131,14 @@ for i=1:length(ts)
   qd_prev = qd;
 	qdd_prev = qdd;
 
-  kinsol = doKinematics(r,q,qd,struct('compute_gradients',true));
+  kinsol = doKinematics(r,q,qd,struct('compute_JdotV',true));
   [com,J] = getCOM(r,kinsol);
-	J = J(1:2,:);
-	Jdot = forwardJacDot(r,kinsol,0);
-  Jdot = Jdot(1:2,:);
-
+  comJacDotTimesV = centerOfMassJacobianDotTimesV(r, kinsol, 1);
 	% hardcoding D for ZMP output dynamics
 	D = -1.04./9.81*eye(2);
 
-	comdd = Jdot * qd + J * qdd;
-	zmp = com(1:2) + D * comdd;
+	comdd = comJacDotTimesV + J * qdd;
+	zmp = com(1:2) + D * comdd(1:2);
 	zmpact = [zmpact [zmp;0]];
 end
 
