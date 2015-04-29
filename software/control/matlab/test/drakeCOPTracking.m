@@ -9,7 +9,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 options.floating = true;
 options.dt = 0.002;
-options.atlas_version = 4;
+options.atlas_version = 5;
 r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
@@ -17,7 +17,7 @@ r = compile(r);
 nq = getNumPositions(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v5_fp.mat'));
 xstar(1) = 0;%1*randn();
 xstar(2) = 0;%1*randn();
 xstar(6) = 0;%pi/2*randn();
