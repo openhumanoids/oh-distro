@@ -65,11 +65,13 @@ classdef DRCAtlas < Atlas
       obj.foot_force_sensors = options.foot_force_sensors;
       if (options.foot_force_sensors)
         l_foot_body = findLinkId(obj,'l_foot');
-        l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot');
+        l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot_ft');
+        obj = obj.addFrame(l_foot_frame);
         l_foot_force_sensor = ContactForceTorqueSensor(obj, l_foot_frame);
         obj = addSensor(obj, l_foot_force_sensor);
         r_foot_body = findLinkId(obj,'r_foot');
-        r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot');
+        r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot_ft');
+        obj = obj.addFrame(r_foot_frame);
         r_foot_force_sensor = ContactForceTorqueSensor(obj, r_foot_frame);
         obj = addSensor(obj, r_foot_force_sensor);
       end
