@@ -46,33 +46,39 @@ cmd "AtlasControllerNoHands" {
       host = "base";
       stop_signal = 15;
     }
-    
+
     cmd "PlanEval" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
     cmd "InstQP" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; try pelvisMotionControlmex; catch disp('derp'); end; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "InstQPBothHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "PlanEvalRightHand" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "PlanEvalBothHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
         host = "base";
+        stop_signal = 15;
     }
     cmd "InstQPRightHand" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "CombinedPlanner" {
