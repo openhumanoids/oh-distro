@@ -64,10 +64,10 @@ struct BipedDescription {
 
 BipedDescription getAtlasDefaults() {
   BipedDescription biped;
-  biped.reachable_vertices[RIGHT] << -0.4, 0.4, 0.4, -0.4,
+  biped.reachable_vertices[RIGHT] << -0.35, 0.35, 0.35, -0.35,
                                     -0.2, -0.2, -0.45, -0.45,
                                     0, 0, 0, 0;
-  biped.reachable_vertices[LEFT] << -0.4, 0.4, 0.4, -0.4,
+  biped.reachable_vertices[LEFT] << -0.35, 0.35, 0.35, -0.35,
                                     0.2, 0.2, 0.45, 0.45,
                                     0, 0, 0, 0;
   biped.foot_vertices[RIGHT] << -0.12, 0.12, 0.12, -0.12,
@@ -112,7 +112,7 @@ class QPReactiveRecoveryPlan {
     double capture_max_flyfoot_height = 0.025;
     double capture_shrink_factor = 0.8;
     double desired_icp_offset = 0.1;
-    double min_step_duration = 0.25;
+    double min_step_duration = 0.4;
     double foot_hull_cop_shrink_factor = 0.5;
     double max_considerable_foot_swing = 0.15;
     double post_execution_delay = 0.1;
