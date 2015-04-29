@@ -416,7 +416,7 @@ int testGetInterceptsWithCoP() {
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
     // std::cout << plan->tf << std::endl;
     // std::cout << plan->pose_next.matrix() << std::endl;
-    if (plan->tf < planner->min_step_duration) {
+    if (plan->tf < 0.5 * planner->min_step_duration) {
       fprintf(stderr, "Min step duration violated\n");
       return 1;
     }

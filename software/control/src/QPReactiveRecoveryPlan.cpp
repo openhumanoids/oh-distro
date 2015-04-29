@@ -282,11 +282,15 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   // std::cerr << "reach verts in stance: " << this->biped.reachable_vertices.find(swing_foot)->second << std::endl;
   Matrix<double, 3, 4> reachable_vertices_in_world = foot_states.find(stance_foot)->second.pose * this->biped.reachable_vertices.find(swing_foot)->second;
   // std::cerr << "stance pose: " << foot_states.find(stance_foot)->second.pose.translation() << std::endl;
-  // std::cerr << "reach verts in world: " << reachable_vertices_in_world << std::endl;
+  std::cerr << "reach verts in world: " << reachable_vertices_in_world << std::endl;
   // std::cerr << "foot name: " << footIDToName[swing_foot] << std::endl;
 
   double t_min_to_xprime = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_states.find(swing_foot)->second, this->biped, T_world_to_local);
-  t_min_to_xprime = std::max(t_min_to_xprime, this->min_step_duration);
+  if (foot_states.at(swing_foot).contact) {
+    t_min_to_xprime = std::max(t_min_to_xprime, this->min_step_duration);
+  } else {
+    t_min_to_xprime = std::max(t_min_to_xprime, 0.5 * this->min_step_duration);
+  }
 
   double x0 = (T_world_to_local * foot_states.find(swing_foot)->second.pose).translation().x();
   double xd0 = (T_world_to_local.linear() * foot_states.find(swing_foot)->second.velocity.head(3))(0);
