@@ -7,6 +7,8 @@
 
 #include "robot-state-analogs.pb.h"
 
+enum { JOINT_POS_PRECISION = 3 };
+
 inline void quaternion_normalize(drc::quaternion_t& q)
 {
     double length = std::sqrt(q.x*q.x+q.y*q.y+q.z*q.z+q.w*q.w);
@@ -21,7 +23,7 @@ inline void quaternion_normalize(drc::quaternion_t& q)
 class RobotStateCodec : public CustomChannelCodec
 {
   public:
-    RobotStateCodec(const std::string loopback_channel = "");
+    RobotStateCodec(const std::string loopback_channel, int frequency, bool add_joint_effort);
         
     bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
       
@@ -129,7 +131,12 @@ class RobotStateCodec : public CustomChannelCodec
     
   private:
     goby::acomms::DCCLCodec* dccl_;
-    drc::MinimalRobotState key_state_;
+    drc::MinimalRobotState tx_key_state_, rx_key_state_;
+    goby::uint64 last_key_time_;
+    int frequency_;
+    bool add_joint_effort_;
+    
+    enum { KEY_FRAME_PERIOD = 5 };
 };
 
 
