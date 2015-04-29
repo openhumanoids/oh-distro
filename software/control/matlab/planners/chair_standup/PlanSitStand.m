@@ -33,27 +33,33 @@ classdef PlanSitStand
     min_distance_constraint
     handle
     pose_data
+    rpp
   end
 
   methods
     function obj = PlanSitStand(r,plan_options)
+      if nargin < 2
+        plan_options = struct();
+      end
+      
       obj.plan_options = plan_options;
       if ~isfield(plan_options,'chair_height'), obj.plan_options.chair_height = 0.5; end
       if ~isfield(plan_options, 'use_mex'), obj.plan_options.use_mex = 1; end
       if ~isfield(plan_options,'speed'), obj.plan_options.speed = 1; end
-      if ~isfield(plan_options,'back_gaze_bound'), obj.plan_options.back_gaze_bound = 0.3; end
+      if ~isfield(plan_options,'back_gaze_bound'), obj.plan_options.back_gaze_bound = 0.4; end
       if ~isfield(plan_options,'min_distance'), obj.plan_options.min_distance = 0.1; end
       if ~isfield(plan_options,'foot_air'), obj.plan_options.foot_air = 'left'; end
       if ~isfield(plan_options,'foot_height'), obj.plan_options.foot_height = 0.2; end
       if ~isfield(plan_options,'back_bkz_weight'), obj.plan_options.back_bkz_weight = 1; end
       if ~isfield(plan_options,'pelvis_gaze_bound') obj.plan_options.pelvis_gaze_bound = 0.1; end
       if ~isfield(plan_options,'pelvis_gaze_bound') obj.plan_options.pelvis_gaze_angle = 0; end
-      if ~isfield(plan_options,'sit_back_distance') obj.plan_options.sit_back_distance = 0.15; end
+      if ~isfield(plan_options,'sit_back_distance') obj.plan_options.sit_back_distance = 0.2; end
       if ~isfield(plan_options,'bky_angle'), obj.plan_options.bky_angle = -0.2; end
-
+      if ~isfield(plan_options,'pelvis_contact_angle'), obj.plan_options.pelvis_contact_angle = 0; end
+        
       if ~isfield(plan_options,'back_gaze_tight')
         obj.plan_options.back_gaze_tight.bound = 0.02;
-        obj.plan_options.back_gaze_tight.angle = 0.1;
+        obj.plan_options.back_gaze_tight.angle = 0.2;
       end
 
       if isfield(plan_options,'pelvis_contact_angle') && obj.plan_options.pelvis_contact_angle
@@ -63,9 +69,11 @@ classdef PlanSitStand
       end
 
       obj.r = r;
+      obj.nq = r.getNumPositions();
       obj.handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
       obj.kpt = KinematicPoseTrajectory(r,{});
       obj.kpt = obj.kpt.useHandGuards();
+      obj.rpp = RobotPlanPublisher('CANDIDATE_ROBOT_PLAN_WITH_SUPPORTS',true,r.getStateFrame.coordinates(1:obj.nq));
       obj = obj.initialize();
     end
 
@@ -189,7 +197,8 @@ classdef PlanSitStand
 
       %% Load the fixed point
       %% Nominal standing pose
-      atlas_fp = load(obj.r.fixed_point_file);
+      fixed_point_file = [getenv('DRC_BASE'),'/software/control/matlab/data/atlas_v5_fp.mat'];
+      atlas_fp = load(fixed_point_file);
       obj.xstar = atlas_fp.xstar;
       obj.qstar = obj.xstar(1:obj.nq);
       obj.Q = eye(obj.nq);
@@ -203,7 +212,7 @@ classdef PlanSitStand
       obj.arm_nominal_posture_constraint = obj.arm_nominal_posture_constraint.setJointLimits(obj.arm_idx,obj.pose_data.squat(obj.arm_idx),obj.pose_data.squat(obj.arm_idx));
 
       % sitting data
-      data = load(obj.plan_options.data_file);
+      data = load([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup/chair_data_v5.mat']);
       obj.q_sol = data.q_sol;
 
       %% Max joint velocities
@@ -551,150 +560,24 @@ classdef PlanSitStand
         disp('NOT ALL CONSTRAINTS SATISFIED');
       else
         disp('all constraints satisfied');
-      end                  
+      end
+
+      % publish the plan
+      obj.publish(qtraj,supports,support_times,failed_constraint_flag)
     end
 
-    function [qtraj,supports,support_times] = planOneLeg(obj,x0,plan_type)
-      
-      q0 = x0(1:obj.nq);
-      r = obj.r;
-      kpt = obj.kpt;
-      failed_constraint_flag = 0;
-      qstar = obj.qstar;
-
-      if strcmp(obj.plan_options.foot_air,'left')
-        foot_ground = 'r_foot';
-        foot_air = 'l_foot';
-      else
-        foot_ground = 'l_foot';
-        foot_air = 'r_foot';
-      end
-
-      kinsol = r.doKinematics(q0);
-      foot_ground_pos = r.forwardKin(kinsol,r.findLinkId(foot_ground),[0;0;0]);
-      foot_air_pos = r.forwardKin(kinsol,r.findLinkId(foot_air),[0;0;0]);
-      foot_height_des = foot_ground_pos(3) + obj.plan_options.foot_height;
-
-      if any(strcmp(plan_type,{'one_leg_stand','lean'}))
-
-        % solve for pose on both feet, with com over one foot
-        clear options;
-        options = obj.plan_options;
-        options.constraints = {obj.back_gaze_constraint,obj.min_distance_constraint};
-        options.qs_contacts = {foot_ground};
-        options.no_movement.bodies = {'l_foot','r_foot'};
-        options.no_movement.q = q0;
-        [q,info,infeasible_constraint] = kpt.inverseKin(qstar,options);
-        info
-        infeasible_constraint
-        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
-        q_both_feet = q;
-
-        % solve for pose on one foot
-        clear options;
-        options = obj.plan_options;
-        tol = 0.02;
-        lb = [foot_air_pos(1) - tol;foot_air_pos(2) - tol;foot_height_des];
-        ub = [foot_air_pos(1) + tol;foot_air_pos(2) + tol;Inf];
-        foot_above_ground_constraint = WorldPositionConstraint(kpt.robot,kpt.robot.findLinkId(foot_air),[0;0;0],...
-          lb,ub);        
-        options.constraints = {obj.back_gaze_constraint,foot_above_ground_constraint,obj.min_distance_constraint};
-        options.qs_contacts = {foot_ground};
-        options.no_movement.bodies = {foot_ground};
-        options.no_movement.q = q0;
-        [q,info,infeasible_constraint] = kpt.inverseKin(qstar,options);
-        info
-        infeasible_constraint
-        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
-        q_one_foot = q;
-
-        q_vals = [q0,q_both_feet,q_one_foot];
-        [qtraj,support_times] = obj.constructAndSmoothTrajectory(q_vals);
-        tspan.(foot_ground) = [support_times(1),support_times(3)];
-        tspan.(foot_air) = [support_times(1),support_times(2)];
-        qtraj = obj.touchUpTrajectory(qtraj,tspan);
-
-        supports = struct('bodies',{},'contact_pts',{});
-        supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot')];
-        supports(1).contact_pts = {kpt.c('l_foot'),kpt.c('r_foot')};
-
-        supports(2).bodies = [r.findLinkId(foot_ground)];
-        supports(2).contact_pts = {kpt.c(foot_ground)}; 
-
-        supports(3) = supports(2);
-
-        if strcmp(plan_type,'lean')
-          q_vals = [q0,q_both_feet];
-          [qtraj,support_times] = obj.constructAndSmoothTrajectory(q_vals);
-          qtraj = obj.touchUpTrajectory(qtraj);
-          supports = struct('bodies',{},'contact_pts',{});
-          supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot')];
-          supports(1).contact_pts = {kpt.c('l_foot'),kpt.c('r_foot')};
-          supports(2) = supports(1);
-        end
-      end
-
-      if strcmp(plan_type,'stand_from_one_leg')
-        %% solve for standing pose
-        clear options;
-        options = obj.plan_options;
-        foot_on_ground_constraint = PlanSitStand.foot_on_ground_constraint(r,kpt,q0,foot_ground,foot_air);
-        options.constraints = {obj.back_gaze_constraint,foot_on_ground_constraint,obj.min_distance_constraint};
-
-        options.qs_contacts = {'l_foot','r_foot'};
-        options.no_movement.bodies = {'r_foot'};
-        options.no_movement.q = q0;
-        q_nom = qstar;
-        q_nom(1:3) = q0(1:3);
-        q_nom(6) = q0(6);
-        [q,info,infeasible_constraint] = kpt.inverseKin(q_nom,options);
-        info
-        infeasible_constraint
-        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
-        q_standing = q;
-
-        % put foot down with COM over foot_ground
-        clear options;
-        options = obj.plan_options;
-        options.constraints = {obj.back_gaze_constraint,obj.min_distance_constraint};
-        options.qs_contacts = {foot_ground};
-        options.no_movement.bodies = {'l_foot','r_foot'};
-        options.no_movement.q = q_standing;
-        q_nom = qstar;
-        q_nom(1:3) = q0(1:3);
-        q_nom(6) = q0(6);
-        [q,info,infeasible_constraint] = kpt.inverseKin(q_nom,options);
-        info
-        infeasible_constraint
-        if ~isempty(infeasible_constraint), failed_constraint_flag = 1; end
-        q_both_feet_lean = q;
-
-
-        q_vals = [q0,q_both_feet_lean,q_standing];
-        [qtraj,support_times] = obj.constructAndSmoothTrajectory(q_vals);
-        tspan.(foot_air) = [support_times(2),support_times(3)];
-        tspan.(foot_ground) = [support_times(1),support_times(3)];
-        qtraj = obj.touchUpTrajectory(qtraj,tspan);
-
-        supports = struct('bodies',{},'contact_pts',{});
-        supports(1).bodies = [r.findLinkId(foot_ground)];
-        supports(1).contact_pts = {kpt.c(foot_ground)}; 
-
-        supports(2).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot')];
-        supports(2).contact_pts = {kpt.c('l_foot'),kpt.c('r_foot')};
-
-        supports(3) = supports(2);
-      end
-
+    function publish(obj,qtraj,supports,support_times,failed_constraint_flag)
       if failed_constraint_flag
-        disp('NOT ALL CONSTRAINTS SATISFIED');
+        snopt_info = 20;
       else
-        disp('all constraints satisfied');
+        snopt_info = 1;
       end
 
+      T = qtraj.getBreaks();
+      Q = qtraj.eval(T);
+      X = [Q;0*Q]; % give it zero velocity
+      obj.rpp.publishPlanWithSupports(X,T,supports,support_times, snopt_info);
     end
-
-
 
     function [qtraj,support_times] = constructAndSmoothTrajectory(obj,q_vals)
       kpt = obj.kpt;

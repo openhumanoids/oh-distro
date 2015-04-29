@@ -117,7 +117,12 @@ classdef RobotPlanPublisher
             msg.num_bytes = 0;
         end 
 
-        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times)
+        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times,snopt_info)
+            if nargin < 6
+                snopt_info_vector = zeros(1,size(X,2));
+            else
+                snopt_info_vector = snopt_info*ones(1,size(X,2));
+            end
             t = get_timestamp_now();
             msg = drc.robot_plan_with_supports_t();
             msg.utime = t;
