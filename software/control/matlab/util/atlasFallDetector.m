@@ -65,14 +65,13 @@ while true
       msg = drc.foot_contact_estimate_t(fc);
       left_foot_in_contact = msg.left_contact > 0.5;
       right_foot_in_contact = msg.right_contact > 0.5;
-      if left_foot_in_contact && right_foot_in_contact
-        cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
-      elseif left_foot_in_contact
-        cpos = terrainContactPositions(r,kinsol,foot_indices_struct.lfoot_ind); 
-      elseif right_foot_in_contact
-        cpos = terrainContactPositions(r,kinsol,foot_indices_struct.rfoot_ind); 
-      else
-        continue
+      cpos = struct('right', terrainContactPositions(r,kinsol,foot_indices_struct.rfoot_ind),...
+                    'left', terrainContactPositions(r,kinsol,foot_indices_struct.lfoot_ind));
+      if ~left_foot_in_contact
+        cpos.left = mean(cpos.left, 2); % only count the center of the foot, not all the way out to its edges
+      end
+      if ~right_foot_in_contact
+        cpos.right = mean(cpos.right, 2); % only count the center of the foot, not all the way out to its edges
       end
     else
       cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
