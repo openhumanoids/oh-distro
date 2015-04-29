@@ -12,9 +12,12 @@ using namespace goby::common::logger;
 
 
 
-RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
+RobotStateCodec::RobotStateCodec(const std::string loopback_channel, int frequency, bool add_joint_effort)
     : CustomChannelCodec(loopback_channel),
-     dccl_(goby::acomms::DCCLCodec::get())
+      dccl_(goby::acomms::DCCLCodec::get()),
+      last_key_time_(0),
+      frequency_(frequency),
+      add_joint_effort_(add_joint_effort)
 {
     if(true)
     {
@@ -26,7 +29,7 @@ RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
         }
         dccl_->load_shared_library_codecs(dl_handle);
 
-        const int JOINT_POS_PRECISION = drc::MinimalRobotState::descriptor()->FindFieldByName("joint_position")->options().GetExtension(dccl::field).precision();
+        const int JOINT_POS_PRECISION = drc::MinimalRobotState::FullState::descriptor()->FindFieldByName("joint_position")->options().GetExtension(dccl::field).precision();
 
         const float MAX = 6.284;
         const float MIN = -MAX;    
@@ -117,11 +120,41 @@ bool RobotStateCodec::encode(const std::vector<unsigned char>& lcm_data, std::ve
 
     drc::MinimalRobotState dccl_state;
 
-    if(!to_minimal_state(lcm_object, &dccl_state, false, true))
+    if(!to_minimal_state(lcm_object, &dccl_state, false, add_joint_effort_))
         return false;
     
-    glog.is(VERBOSE) && glog << "MinimalRobotState: " << dccl_state.ShortDebugString() << std::endl;
 
+    for(int j = 0, m = dccl_state.full().joint_position_size(); j<m; ++j)
+    {
+        dccl_state.mutable_full()->set_joint_position(j, goby::util::unbiased_round(dccl_state.full().joint_position(j), JOINT_POS_PRECISION));
+    }
+
+    if(dccl_state.utime() > last_key_time_ &&
+       tx_key_state_.full().joint_position_size() == dccl_state.full().joint_position_size() &&
+       dccl_state.utime() < (last_key_time_ + KEY_FRAME_PERIOD*1.0e6))
+    {
+        // send difference instead
+        for(int j = 0, m = dccl_state.full().joint_position_size(); j<m; ++j)
+            dccl_state.mutable_diff()->add_joint_position_diff(dccl_state.full().joint_position(j)-tx_key_state_.full().joint_position(j));
+        
+        tx_key_state_ = dccl_state;
+        dccl_state.clear_full();
+    }
+    else
+    {
+        last_key_time_ = dccl_state.utime();
+        tx_key_state_ = dccl_state;
+        glog.is(VERBOSE) && glog << "Last key time: " << last_key_time_ << std::endl;
+    }
+    
+    if(glog.is(VERBOSE))
+    {
+        google::protobuf::TextFormat::Printer printer;
+        printer.SetUseShortRepeatedPrimitives(true);
+        std::string dccl_state_debug;
+        printer.PrintToString(dccl_state, &dccl_state_debug);
+        glog << "MinimalRobotState: " << dccl_state_debug << std::endl;
+    }    
 
     
     std::string encoded;
@@ -139,6 +172,32 @@ bool RobotStateCodec::decode(std::vector<unsigned char>* lcm_data, const std::ve
     drc::MinimalRobotState dccl_state;
 
     dccl_->decode(encoded, &dccl_state);
+
+    if(glog.is(VERBOSE))
+    {
+        google::protobuf::TextFormat::Printer printer;
+        printer.SetUseShortRepeatedPrimitives(true);
+        std::string dccl_state_debug;
+        printer.PrintToString(dccl_state, &dccl_state_debug);
+        glog << "MinimalRobotState: " << dccl_state_debug << std::endl;
+    } 
+    
+    if(dccl_state.has_diff()) // diff frame
+    {
+        goby::uint64 period = (1.0/frequency_)*1e6;
+        if(rx_key_state_.utime() + 1.25*period < dccl_state.utime()) // allow 20% of period for slop in sending
+        {
+            glog.is(WARN) && glog << "Missed EST_ROBOT_STATE frame...waiting for next key!" << std::endl;
+            return false;
+        }
+
+        for(int j = 0, m = rx_key_state_.full().joint_position_size(); j<m; ++j)
+        {
+            dccl_state.mutable_full()->add_joint_position(rx_key_state_.full().joint_position(j) + dccl_state.diff().joint_position_diff(j));
+        }
+        dccl_state.clear_diff();
+    }
+    rx_key_state_ = dccl_state;
     
     drc::robot_state_t lcm_object;
 
@@ -168,11 +227,13 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
 
     if(!to_minimal_joint_pos(lcm_object.joint_name,
                              lcm_object.joint_position,
-                             dccl_state->mutable_joint_position(),
-                             dccl_state->mutable_joint_id()))
+                             dccl_state->mutable_full()->mutable_joint_position(),
+                             dccl_state->mutable_full()->mutable_joint_id()))
         return false;
 
 
+
+    
     if(add_joint_effort)
     {
         for(int i = 0, n = lcm_object.joint_effort.size(); i < n; ++i)
@@ -235,13 +296,13 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     if(!from_minimal_position3d(&lcm_object->pose,dccl_state.pose(), use_rpy))
         return false;    
     
-    lcm_object->num_joints = dccl_state.joint_position_size();
+    lcm_object->num_joints = dccl_state.full().joint_position_size();
 
     
     if(!from_minimal_joint_pos(&lcm_object->joint_name,
                                &lcm_object->joint_position,
-                               dccl_state.joint_position(),
-                               dccl_state.joint_id()))
+                               dccl_state.full().joint_position(),
+                               dccl_state.full().joint_id()))
         return false;
     
     std::vector<float> joint_zeros;

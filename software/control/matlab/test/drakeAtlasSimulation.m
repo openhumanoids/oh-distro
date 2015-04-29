@@ -230,6 +230,7 @@ while(~done)
     warning(S);
   end
   try
+    options.gui_control_interface = true;
     simulate(sys,[0.0,Inf], xstar_complete, options);
   catch err
     disp('caught error in simulate(): restarting sim');
