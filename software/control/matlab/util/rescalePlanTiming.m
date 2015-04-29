@@ -15,7 +15,9 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
   scale_factor = max(abs(bsxfun(@rdivide, qd_mid, qd_max)), [], 1);
 
   if isstruct(varargin{end})
-    % options is a struct with fields, body_id, pts, theta_max
+    % options is a struct with fields, body_id, pts, max_v and max_theta
+    % max_v is the maximum cartesian velocity of the body point
+    % max_theta is the maximum degrees/second in the quaternion arc length metric
     options = varargin{end};
     num_bodies = length(options.body_id);
     body_path = zeros(3,num_bodies,length(t));
@@ -37,7 +39,7 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
     for j = 1:numel(t)-1
       for k = 1:num_bodies
         body_v_mid(k,j) = norm(body_path(:,k,j) - body_path(:,k,j+1))/(t(j+1) - t(j));
-        theta_mid(k,j) = quatRotationDistance(body_quat(:,k,j),body_quat(:,k,j+1))/(t(j+1) - t(j));
+        theta_mid(k,j) = quatArcDistance(body_quat(:,k,j),body_quat(:,k,j+1))/(t(j+1) - t(j));
       end
     end
     body_v_scale_factor = max(abs(bsxfun(@rdivide, body_v_mid, body_v_max)), [], 1); 
