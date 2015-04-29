@@ -12,11 +12,12 @@ using namespace goby::common::logger;
 
 
 
-RobotStateCodec::RobotStateCodec(const std::string loopback_channel, int frequency)
+RobotStateCodec::RobotStateCodec(const std::string loopback_channel, int frequency, bool add_joint_effort)
     : CustomChannelCodec(loopback_channel),
       dccl_(goby::acomms::DCCLCodec::get()),
       last_key_time_(0),
-      frequency_(frequency)
+      frequency_(frequency),
+      add_joint_effort_(add_joint_effort)
 {
     if(true)
     {
@@ -119,7 +120,7 @@ bool RobotStateCodec::encode(const std::vector<unsigned char>& lcm_data, std::ve
 
     drc::MinimalRobotState dccl_state;
 
-    if(!to_minimal_state(lcm_object, &dccl_state, false, true))
+    if(!to_minimal_state(lcm_object, &dccl_state, false, add_joint_effort_))
         return false;
     
 
