@@ -131,7 +131,7 @@ for i=1:length(ts)
   qd_prev = qd;
 	qdd_prev = qdd;
 
-  kinsol = doKinematics(r,q,false,true);
+  kinsol = doKinematics(r,q,qd,struct('compute_gradients',true));
   [com,J] = getCOM(r,kinsol);
 	J = J(1:2,:);
 	Jdot = forwardJacDot(r,kinsol,0);

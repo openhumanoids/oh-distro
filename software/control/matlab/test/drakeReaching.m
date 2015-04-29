@@ -120,9 +120,7 @@ for i=1:length(ts)
 end
 
 qtraj = PPTrajectory(pchip(ts,q));
-link_constraints = extractLinkTrajectories(r, qtraj, r.findLinkId('pelvis'));
-
-plan = QPLocomotionPlan.from_configuration_traj(r, qtraj.pp, link_constraints);
+plan = QPLocomotionPlan.from_quasistatic_qtraj(r, qtraj);
 plan.gain_set = 'manip_sim';
 planeval = atlasControllers.AtlasPlanEval(r, plan);
 control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r));
