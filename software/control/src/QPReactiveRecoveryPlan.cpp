@@ -264,6 +264,7 @@ double interceptPlanError(const InterceptPlan &plan, const std::map<FootID, Foot
 
 Isometry3d snapToTerrain(const Isometry3d &pose, const double terrain_height, const Ref<const Vector3d> &terrain_normal) {
   Isometry3d pose_snapped = Isometry3d(Translation<double, 3>(Vector3d(pose.translation().x(), pose.translation().y(), terrain_height)));
+  pose_snapped.linear() = pose.linear();
 
   Vector3d axis = (pose.rotation() * Vector3d(0, 0, 1)).cross(terrain_normal);
   double sin_theta = axis.norm();
@@ -376,8 +377,8 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   }
 
   for (std::vector<InterceptPlan>::iterator it = intercept_plans.begin(); it != intercept_plans.end(); ++it) {
-    it->pose_next = snapToTerrain(it->pose_next, foot_states.find(stance_foot)->second.terrain_height, foot_states.find(stance_foot)->second.terrain_normal);
     it->pose_next.linear() = foot_states.find(stance_foot)->second.pose.linear();
+    it->pose_next = snapToTerrain(it->pose_next, foot_states.find(stance_foot)->second.terrain_height, foot_states.find(stance_foot)->second.terrain_normal);
     it->error = interceptPlanError(*it, foot_states, this->biped);
   }
 
