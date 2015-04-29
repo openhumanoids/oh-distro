@@ -12,6 +12,7 @@ from ddapp import drcargs
 from ddapp import affordanceurdf
 import ddapp.applogic as app
 
+import functools
 import math
 import numpy as np
 
@@ -287,9 +288,23 @@ class EndEffectorTeleopPanel(object):
 
 
         # Remove all except the fixed base constraint if you only have an arm:
-        if (ikPlanner.fixedBaseArm==True):
+        if ikPlanner.fixedBaseArm == True:
           constraints = []
           constraints.append(ikPlanner.createLockedBasePostureConstraint(startPoseName))
+
+
+        if ikPlanner.robotNoFeet == True:
+            constraints = []  
+            constraints.append(ikPlanner.createLockedBasePostureConstraint(startPoseName))
+            if self.getBackConstraint() == 'fixed':
+                constraints.append(ikPlanner.createLockedBackPostureConstraint(startPoseName))
+                ikPlanner.setBackLocked(True)
+            elif self.getBackConstraint() == 'limited':
+                constraints.append(ikPlanner.createMovingBackLimitedPostureConstraint())
+                ikPlanner.setBackLocked(False)
+            elif self.getBackConstraint() == 'free':
+                constraints.append(ikPlanner.createMovingBackPostureConstraint())
+                ikPlanner.setBackLocked(False)
 
 
         for handModel in ikPlanner.handModels:
@@ -444,7 +459,7 @@ class EndEffectorTeleopPanel(object):
             frame.connectFrameModified(self.onGoalFrameModified)
             #addHandMesh(handModels[side], frame)
 
-        if (not ikPlanner.fixedBaseArm):
+        if not ikPlanner.fixedBaseArm and not ikPlanner.robotNoFeet:
             for linkName in ['l_foot', 'r_foot', 'pelvis']:
                 frameName = linkName + ' constraint frame'
                 om.removeFromObjectModel(om.findObjectByName(frameName))
@@ -485,6 +500,29 @@ class EndEffectorTeleopPanel(object):
         self.activate()
         return self.updateGoalFrame(self.panel.ikPlanner.getHandLink(side), frame)
 
+
+class PosturePlanShortcuts(object):
+
+    def __init__(self, jointController, ikPlanner, widget=None):
+        self.jointController = jointController
+        self.ikPlanner = ikPlanner
+
+        widget = widget or app.getMainWindow()
+        app.addShortcut(widget, 'Ctrl+Shift+S', self.planStand)
+        app.addShortcut(widget, 'Ctrl+Shift+N', self.planNominal)
+        app.addShortcut(widget, 'Ctrl+Shift+L', functools.partial(self.planPreGrasp, 'left'))
+        app.addShortcut(widget, 'Ctrl+Shift+R', functools.partial(self.planPreGrasp, 'right'))
+
+    def planStand(self):
+        self.ikPlanner.computeStandPlan(self.jointController.q)
+
+    def planNominal(self):
+        self.ikPlanner.computeNominalPlan(self.jointController.q)
+
+    def planPreGrasp(self, side):
+        startPose = self.jointController.q
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'arm up pregrasp', side=side)
+        self.ikPlanner.computePostureGoal(startPose, endPose)
 
 
 class JointLimitChecker(object):

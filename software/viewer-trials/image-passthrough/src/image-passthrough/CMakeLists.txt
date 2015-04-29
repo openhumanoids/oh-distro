@@ -49,18 +49,18 @@ pods_install_pkg_config_file(image-passthrough-app
 ###################### Applications ####################3
 add_executable(drc-image-passthrough image-passthrough-main.cpp)
 target_link_libraries(drc-image-passthrough boost_system   
-           image_io_utils camera_params
+           camera_params
            ${REQUIRED_LIBS})
 pods_use_pkg_config_packages(drc-image-passthrough  bot2-param-client
-       image-passthrough-app lcm)
+       image-passthrough-app lcm image_io_utils)
 pods_install_executables(drc-image-passthrough)
 
 
 add_executable(drc-image-passthrough-ncurses image-passthrough-ncurses.cpp)
 set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 target_link_libraries(drc-image-passthrough-ncurses boost_system   
-           image_io_utils camera_params model-client pronto_math ncurses
+           camera_params model-client pronto_math ncurses
            ${REQUIRED_LIBS})
 pods_use_pkg_config_packages(drc-image-passthrough-ncurses  bot2-param-client
-       image-passthrough-app lcm ${REQUIRED_PACKAGES} pcl_io-1.7)
+       image-passthrough-app lcm image_io_utils ${REQUIRED_PACKAGES} pcl_io-1.7)
 pods_install_executables(drc-image-passthrough-ncurses)

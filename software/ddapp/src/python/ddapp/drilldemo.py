@@ -27,6 +27,13 @@ from ddapp import segmentation
 from ddapp import planplayback
 from ddapp import affordanceupdater
 from ddapp import segmentationpanel
+from ddapp import vtkNumpy as vnp
+
+from ddapp.tasks.taskuserpanel import TaskUserPanel
+from ddapp.tasks.taskuserpanel import ImageBasedAffordanceFit
+
+import ddapp.tasks.robottasks as rt
+import ddapp.tasks.taskmanagerwidget as tmw
 
 import drc as lcmdrc
 import copy
@@ -121,7 +128,7 @@ class DrillPlannerDemo(object):
         self.setGraspingHand(defaultGraspingHand)
 
         # live operation flags
-        self.useFootstepPlanner = True
+        self.useFootstepPlanner = False
         self.visOnly = False # True for development, False for operation
         self.planFromCurrentRobotState = True # False for development, True for operation
         self.usePointerPerceptionOffset = True # True for development, False for operation
@@ -1484,3 +1491,154 @@ class DrillPlannerDemo(object):
         taskQueue.addTask(self.printAsync('done!'))
 
         return taskQueue
+
+
+
+class DrillImageFitter(ImageBasedAffordanceFit):
+
+    def __init__(self, drillDemo):
+        ImageBasedAffordanceFit.__init__(self, numberOfPoints=1)
+        self.drillDemo = drillDemo
+
+    def fit(self, polyData, points):
+        planePoints, normal = segmentation.applyLocalPlaneFit(polyData, points[0], searchRadius=0.1, searchRadiusEnd=0.2)
+        obj = vis.updatePolyData(planePoints, 'local plane fit', color=[0,1,0])
+        obj.setProperty('Point Size', 7)
+
+        viewDirection = segmentation.SegmentationContext.getGlobalInstance().getViewDirection()
+        if np.dot(normal, viewDirection) < 0:
+            normal = -normal
+
+        origin = segmentation.computeCentroid(planePoints)
+
+        zaxis = [0,0,1]
+        xaxis = normal
+        yaxis = np.cross(zaxis, xaxis)
+        yaxis /= np.linalg.norm(yaxis)
+        zaxis = np.cross(xaxis, yaxis)
+        zaxis /= np.linalg.norm(zaxis)
+
+        t = transformUtils.getTransformFromAxes(xaxis, yaxis, zaxis)
+        t.PostMultiply()
+        t.Translate(origin)
+
+        planePoints = segmentation.labelPointDistanceAlongAxis(planePoints, zaxis, origin=origin, resultArrayName='dist_along_z')
+        planePoints = segmentation.labelPointDistanceAlongAxis(planePoints, yaxis, origin=origin, resultArrayName='dist_along_y')
+        zdist = vnp.getNumpyFromVtk(planePoints, 'dist_along_z')
+        ydist = vnp.getNumpyFromVtk(planePoints, 'dist_along_y')
+        height = zdist.max() - zdist.min()
+        width = ydist.max() - ydist.min()
+
+        om.removeFromObjectModel(om.findObjectByName('drill plane'))
+        pose = transformUtils.poseFromTransform(t)
+        desc = dict(classname='BoxAffordanceItem', Name='drill plane', Dimensions=[0.01, width, height], pose=pose)
+        wall = segmentation.affordanceManager.newAffordanceFromDescription(desc)
+        wall.setProperty('Alpha', 0.2)
+
+        pickPointOnPlane = segmentation.projectPointToPlane(points[0], origin, normal)
+
+        t = transformUtils.getTransformFromAxes(xaxis, yaxis, zaxis)
+        t.PostMultiply()
+        t.Translate(pickPointOnPlane)
+        vis.updateFrame(t, 'drill wall pick point', parent=segmentation.getDebugFolder(), scale=0.2)
+
+        self.appendMessage('pick point: %r' % list(pickPointOnPlane))
+        self.appendMessage('')
+        self.appendMessage('drill wall:')
+        self.appendMessage('origin: %r' % list(pose[0]))
+        self.appendMessage('quat: %r' % list(pose[1]))
+        self.appendMessage('rpy: %r' % list(transformUtils.botpy.quat_to_roll_pitch_yaw(pose[1])))
+
+
+class DrillTaskPanel(TaskUserPanel):
+
+    def __init__(self, drillDemo):
+
+        TaskUserPanel.__init__(self, windowTitle='Drill Task')
+
+        self.drillDemo = drillDemo
+
+        self.fitter = DrillImageFitter(self.drillDemo)
+        self.fitter.appendMessage = self.appendMessage
+        self.initImageView(self.fitter.imageView)
+
+        self.addDefaultProperties()
+        self.addButtons()
+        self.addTasks()
+
+
+    def addButtons(self):
+        pass
+
+
+    def getSide(self):
+        return self.params.getPropertyEnumValue('Drill Hand').lower()
+
+    def addDefaultProperties(self):
+        self.params.addProperty('Drill Hand', 1, attributes=om.PropertyAttributes(enumNames=['Left', 'Right']))
+        self._syncProperties()
+
+    def onPropertyChanged(self, propertySet, propertyName):
+        self._syncProperties()
+
+    def _syncProperties(self):
+        pass
+
+    def addTasks(self):
+
+        # some helpers
+        self.folder = None
+        def addTask(task, parent=None):
+            parent = parent or self.folder
+            self.taskTree.onAddTask(task, copy=False, parent=parent)
+        def addFunc(func, name, parent=None):
+            addTask(rt.CallbackTask(callback=func, name=name), parent=parent)
+        def addFolder(name, parent=None):
+            self.folder = self.taskTree.addGroup(name, parent=parent)
+            return self.folder
+
+
+        d = self.drillDemo
+
+        self.taskTree.removeAllTasks()
+        side = self.getSide()
+
+        ###############
+        # add the tasks
+
+        # prep
+        folder = addFolder('Prep')
+        addTask(rt.CloseHand(name='close left hand', side='Left'))
+        addTask(rt.CloseHand(name='close right hand', side='Right'))
+        addTask(rt.SetNeckPitch(name='set neck position', angle=20))
+
+        # fit
+        addTask(rt.UserPromptTask(name='fit drill', message='Please fit and approve drill affordance.'))
+        addTask(rt.FindAffordance(name='check drill affordance', affordanceName='drill'))
+
+        # walk
+        folder = addFolder('Walk and refit')
+        addTask(rt.RequestFootstepPlan(name='plan walk to drill', stanceFrameName='drill shelf stance frame'))
+        addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
+        addTask(rt.CommitFootstepPlan(name='walk to drill', planName='drill shelf stance frame footstep plan'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
+
+        # refit
+        addTask(rt.SetNeckPitch(name='set neck position', angle=35))
+        addTask(rt.UserPromptTask(name='fit drill', message='Please fit and approve drill affordance.'))
+
+        # open hand
+        addTask(rt.OpenHand(name='open hand', side=side.capitalize()))
+
+
+        def addManipTask(name, planFunc, userPrompt=False):
+
+            folder = addFolder(name)
+            addFunc(planFunc, name='plan')
+            if not userPrompt:
+                addTask(rt.CheckPlanInfo(name='check manip plan info'))
+            else:
+                addTask(rt.UserPromptTask(name='approve manip plan', message='Please approve manipulation plan.'))
+            addFunc(d.commitManipPlan, name='execute manip plan')
+            addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'))
+

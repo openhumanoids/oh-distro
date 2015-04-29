@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot xmlns="http://drake.mit.edu"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://drake.mit.edu ../../../doc/drakeURDF.xsd" name="springboard">
+  <link name="brick">
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="2" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.4 .8 0.2" />
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.4 0.8 0.2" />
+      </geometry>
+    </collision>
+  </link>
+  
+  <link name="springboard">
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.2 0 -0.025" />
+      <mass value="1"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="2" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.2 0 -0.025" />
+      <geometry>
+        <box size="0.4 .8 0.05" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.2 0 -0.025" />
+      <geometry>
+        <box size="0.4 .8 0.05" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="springboard_hinge" type="revolute">
+    <origin rpy="0 0 0" xyz="-0.2 0 0.1"/>
+    <axis xyz="0 1 0"/>
+    <parent link="brick"/>
+    <child link="springboard"/>
+    <dynamics damping="10" friction="0"/>
+    <limit lower="-pi/2" upper="0"/>
+  </joint>
+
+  <force_element name="hinge_spring">
+   <torsional_spring stiffness="1500">
+      <joint name="springboard_hinge"/>
+    </torsional_spring>
+  </force_element>
+
+</robot>
+

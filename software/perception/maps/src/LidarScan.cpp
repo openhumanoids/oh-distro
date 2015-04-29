@@ -104,9 +104,9 @@ get(maps::PointSet& oPoints) const {
   oPoints.mTimestamp = mTimestamp;
   int n = mRanges.size();
   oPoints.mCloud.reset(new maps::PointCloud());
-  oPoints.mCloud->resize(n);
+  oPoints.mCloud->reserve(n);
   for (int i = 0; i < n; ++i) {
-    if (mRanges[i] >= 0) (*oPoints.mCloud)[i] = getPoint(i);
+    if (mRanges[i] > 0) (*oPoints.mCloud).push_back(getPoint(i));
   }
   oPoints.mCloud->sensor_origin_.head<3>() = mPoseEnd.translation();
   oPoints.mCloud->sensor_origin_[3] = 1;

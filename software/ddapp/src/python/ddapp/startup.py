@@ -25,8 +25,10 @@ from ddapp import doordemo
 from ddapp import drilldemo
 from ddapp import tabledemo
 from ddapp import valvedemo
+from ddapp import drivingplanner
 from ddapp import continuouswalkingdemo
 from ddapp import walkingtestdemo
+from ddapp import terraintask
 from ddapp import ik
 from ddapp import ikplanner
 from ddapp import objectmodel as om
@@ -134,8 +136,9 @@ useLoggingWidget = True
 useDrakeVisualizer = True
 useNavigationPanel = True
 useFootContactVis = True
+useFallDetectorVis = True
 useImageWidget = False
-useImageViewDemo = True
+useCameraFrustumVisualizer = True
 useControllerRate = True
 useForceDisplay = False
 useSkybox = False
@@ -354,6 +357,8 @@ if usePlanning:
     jointLimitChecker.setupMenuAction()
     jointLimitChecker.start()
 
+    postureShortcuts = teleoppanel.PosturePlanShortcuts(robotStateJointController, ikPlanner)
+
 
     def drillTrackerOn():
         om.findObjectByName('Multisense').model.showRevolutionCallback = fitDrillMultisense
@@ -391,12 +396,13 @@ if usePlanning:
                     lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
                     fitDrillMultisense, robotStateJointController,
                     playPlans, showPose, cameraview, segmentationpanel)
+    drillTaskPanel = drilldemo.DrillTaskPanel(drillDemo)
 
-    valveDemo = valvedemo.ValvePlannerDemo(robotStateModel, footstepsDriver, manipPlanner, ikPlanner,
-                                      lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
-                                      segmentation.segmentValveWallAuto, robotStateJointController,
-                                      playPlans, showPose)
+    valveDemo = valvedemo.ValvePlannerDemo(robotStateModel, footstepsDriver, footstepsPanel, manipPlanner, ikPlanner,
+                                      lHandDriver, rHandDriver, robotStateJointController)
     valveTaskPanel = valvedemo.ValveTaskPanel(valveDemo)
+
+    drivingPlannerPanel = drivingplanner.DrivingPlannerPanel(robotSystem)
 
     walkingDemo = walkingtestdemo.walkingTestDemo(robotStateModel, playbackRobotModel, teleopRobotModel, footstepsDriver, manipPlanner, ikPlanner,
                     lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
@@ -414,9 +420,14 @@ if usePlanning:
                                       playPlans, showPose)
     doorTaskPanel = doordemo.DoorTaskPanel(doorDemo)
 
+    terrainTaskPanel = terraintask.TerrainTaskPanel(robotSystem)
+
     taskPanels = OrderedDict()
     taskPanels['Door'] = doorTaskPanel.widget
     taskPanels['Valve'] = valveTaskPanel.widget
+    taskPanels['Drill'] = drillTaskPanel.widget
+    taskPanels['Terrain'] = terrainTaskPanel.widget
+    taskPanels['Driving'] = drivingPlannerPanel.widget
     tasklaunchpanel.init(taskPanels)
 
     splinewidget.init(view, handFactory, robotStateModel)
@@ -477,7 +488,7 @@ if useForceDisplay:
 
     class LCMForceDisplay(object):
         '''
-        Displays an feet force sensor signals in a status bar widget or label widget
+        Displays foot force sensor signals in a status bar widget or label widget
         '''
 
 
@@ -525,7 +536,7 @@ if useFootContactVis:
         leftInContact = msg.left_contact > 0.0
         rightInContact = msg.right_contact > 0.0
 
-        contactColor = QtGui.QColor(255,0,0)
+        contactColor = QtGui.QColor(0,0,255)
         noContactColor = QtGui.QColor(180, 180, 180)
 
         robotStateModel.model.setLinkColor('l_foot', contactColor if leftInContact else noContactColor)
@@ -533,6 +544,37 @@ if useFootContactVis:
 
     footContactSub = lcmUtils.addSubscriber('FOOT_CONTACT_ESTIMATE', lcmdrc.foot_contact_estimate_t, onFootContact)
     footContactSub.setSpeedLimit(60)
+
+
+if useFallDetectorVis:
+
+    class FallDetectorDisplay(object):
+
+        def __init__(self):
+
+            self.sub = lcmUtils.addSubscriber('ATLAS_FALL_STATE', lcmdrc.atlas_fall_detector_status_t, self.onFallState)
+            self.sub.setSpeedLimit(300)
+
+            self.fallDetectorTriggerTime = 0.0 
+            self.fallDetectorVisResetTime = 3.0 # seconds
+            self.color = QtGui.QColor(180, 180, 180)
+    
+        def __del__(self):
+            lcmUtils.removeSubscriber(self.sub)
+
+        def onFallState(self,msg):
+            isFalling = msg.falling
+            t = msg.utime / 10.0e6
+            if not isFalling and (t-self.fallDetectorTriggerTime > self.fallDetectorVisResetTime or t-self.fallDetectorTriggerTime<0):
+                self.color = QtGui.QColor(180, 180, 180)
+            elif isFalling:
+                self.color = QtGui.QColor(255,0,0)
+                self.fallDetectorTriggerTime = t
+
+            robotStateModel.model.setLinkColor('pelvis', self.color)
+            robotStateModel.model.setLinkColor('utorso', self.color)
+
+    fallDetectDisp = FallDetectorDisplay()
 
 
 if useDataFiles:
@@ -547,6 +589,8 @@ if useImageWidget:
     imageWidget = cameraview.ImageWidget(cameraview.imageManager, 'CAMERA_LEFT', view)
     #imageWidget = cameraview.ImageWidget(cameraview.imageManager, 'KINECT_RGB', view)
 
+if useCameraFrustumVisualizer:
+    cameraFrustumVisualizer = cameraview.CameraFrustumVisualizer(robotStateModel, cameraview.imageManager, 'CAMERA_LEFT')
 
 class ImageOverlayManager(object):
 
@@ -814,3 +858,33 @@ def sendMatlabSigint():
 
 
 #app.addToolbarMacro('Ctrl+C MATLAB', sendMatlabSigint)
+
+def updateTexture(obj):
+    cameraview.applyCameraTexture(obj, cameraview.imageManager)
+    obj._renderAllViews()
+
+def updateTextures():
+
+    affs = affordanceManager.getAffordances()
+    for aff in affs:
+        if hasattr(aff, '_applyCameraTexture'):
+            updateTexture(aff)
+
+t = TimerCallback(targetFps=10)
+t.callback = updateTextures
+t.start()
+
+def drawCenterOfMass(model):
+    stanceFrame = footstepsDriver.getFeetMidPoint(model)
+    com = list(model.model.getCenterOfMass())
+    com[2] = stanceFrame.GetPosition()[2]
+    d = DebugData()
+    d.addSphere(com, radius=0.015)
+    obj = vis.updatePolyData(d.getPolyData(), 'COM %s' % model.getProperty('Name'), color=[1,0,0], visible=False, parent=model)
+
+def initCenterOfMassVisulization():
+    for model in [robotStateModel, teleopRobotModel, playbackRobotModel]:
+        model.connectModelChanged(drawCenterOfMass)
+        drawCenterOfMass(model)
+
+initCenterOfMassVisulization()

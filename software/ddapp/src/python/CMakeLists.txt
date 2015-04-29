@@ -29,6 +29,7 @@ set(python_files
   ddapp/drcargs.py
   ddapp/drilldemo.py
   ddapp/drilltaskpanel.py
+  ddapp/drivingplanner.py
   ddapp/fieldcontainer.py
   ddapp/filterUtils.py
   ddapp/footstepsdriver.py
@@ -91,6 +92,7 @@ set(python_files
   ddapp/teleoppanel.py
   ddapp/terrain.py
   ddapp/terrainitem.py
+  ddapp/terraintask.py
   ddapp/timercallback.py
   ddapp/transformUtils.py
   ddapp/trackers.py

@@ -41,7 +41,13 @@ cmd "AtlasControllerNoHands" {
         stop_signal = 15;
     }
 
-   cmd "PlanEval" {
+    cmd "FallDetector" {
+      exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasFallDetector;\"";
+      host = "base";
+      stop_signal = 15;
+    }
+    
+    cmd "PlanEval" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
     }
@@ -94,7 +100,7 @@ group "5.maps" {
     }
 
     cmd "lidar-passthrough" {
-        exec = "drc-lidar-passthrough -c 0.06 -a 5";
+        exec = "bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} drc-lidar-passthrough -c 0.06'";
         host = "base";
     }
 }
@@ -165,6 +171,11 @@ cmd "drakeAtlasSimulation Plug Task" {
 
 cmd "drakeAtlasSimulation Box" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 0, 0, -1, -1, 'box');\"";
+    host = "base";
+}
+
+cmd "drakeAtlasSimulation Runningboard" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, -1, -1, 'runningboard');\"";
     host = "base";
 }
 
@@ -364,6 +375,21 @@ script "9.run_manip_ex" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Manip Example";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
+script "10.runningboard_test" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Runningboard";
     start cmd "PlanEvalRightHand";
     start cmd "InstQPRightHand";
     start cmd "director";

@@ -6,9 +6,9 @@ classdef DRCAtlas < Atlas
       if nargin < 2
         options = struct();
       end
-      if ~isfield(options,'atlas_version') 
-        options.atlas_version = 5; 
-      end
+      options = applyDefaults(options,...
+                              struct('atlas_version', 5,...
+                                     'use_new_kinsol', true));
 
       if ~any(options.atlas_version == [3,4,5])
         error('Atlas:badVersion','Invalid Atlas version. Valid values are 3, 4, and 5')
@@ -108,6 +108,7 @@ classdef DRCAtlas < Atlas
           obj.BDIToStateInd = 6+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
         case 5
           obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_v5_fp.mat');
+          obj.bracing_config_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_bracing_v5.mat');
           obj.stateToBDIInd = 6+[1 2 3 30 5 6 7 8 9 10 18 19 20 21 22 23 4 11 12 13 14 15 16 17 24 25 26 27 28 29]';
       end
       warning(S);
@@ -276,7 +277,7 @@ classdef DRCAtlas < Atlas
                                                % with a rotation
                                                % (due to rotation of 
                                                % frame)
-
+    bracing_config_file;
     foot_force_sensors = false;
     floating = true; % for backwards compatibility (floating is always true now)
   end

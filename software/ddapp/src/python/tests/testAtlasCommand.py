@@ -148,7 +148,7 @@ class AtlasCommandStream(object):
         self.fpsCounter = simpletimer.FPSCounter()
         self.fpsCounter.printToConsole = True
         self.timer.callback = self._tick
-        self._maxSpeed = np.deg2rad(10)
+        self._maxSpeed = np.deg2rad(10)*np.ones(len(robotstate.getDrakePoseJointNames()))
         self._initialized = False
         self.publishChannel = 'JOINT_POSITION_GOAL'
         self.lastCommandMessage = newAtlasCommandMessageAtZero()
@@ -156,12 +156,16 @@ class AtlasCommandStream(object):
     def initialize(self, currentRobotPose):
         assert not self._initialized
         self._currentCommandedPose = np.array(currentRobotPose)
+        self._previousCommandedPose = np.array(currentRobotPose)
         self._goalPose = np.array(currentRobotPose)
         self._initialized = True
+        self._previousElapsedTime = 100
+        self._controlGains = np.array([4.47,3.6]) #magic numbers from LQR double integrator solution Q = [5 0; 0 1] R = 0.25
 
     def startStreaming(self):
         assert self._initialized
-        self.timer.start()
+        if not self.timer.isActive():
+            self.timer.start()
 
     def stopStreaming(self):
         self.timer.stop()
@@ -184,28 +188,33 @@ class AtlasCommandStream(object):
 
         self.fpsCounter.tick()
 
-        elapsed = self.timer.elapsed
+        elapsed = self.timer.elapsed # time since last tick
         #nominalElapsed = (1.0 / self.timer.targetFps)
         #if elapsed > 2*nominalElapsed:
         #    elapsed = nominalElapsed
 
         # move current pose toward goal pose
-        startPose = self._currentCommandedPose.copy()
+        previousPose = self._previousCommandedPose.copy()
+        currentPose = self._currentCommandedPose.copy()
         goalPose = self._goalPose.copy()
-
-        maxDelta = self._maxSpeed * elapsed
-
-        for i in xrange(len(startPose)):
-            delta = np.clip(goalPose[i] - startPose[i], -maxDelta, maxDelta)
-            startPose[i] += delta
-            #if np.abs(delta) > 1e-6:
-            #    print robotstate.getDrakePoseJointNames()[i], '-->', np.rad2deg(startPose[i])
-
-        self._currentCommandedPose = startPose
+        nextPose = self._computeNextPose(previousPose,currentPose, goalPose, elapsed,
+            self._previousElapsedTime, self._maxSpeed)
+        self._currentCommandedPose = nextPose
 
         # publish
         self._updateAndSendCommandMessage()
 
+        # bookkeeping
+        self._previousElapsedTime = elapsed
+        self._previousCommandedPose = currentPose
+
+    def _computeNextPose(self, previousPose, currentPose, goalPose, elapsed, elapsedPrevious, maxSpeed):
+        v = 1.0/elapsedPrevious * (currentPose - previousPose)
+        u = -self._controlGains[0]*(currentPose - goalPose) - self._controlGains[1]*v # u = -K*x
+        v_next = v + elapsed*u
+        v_next = np.clip(v_next,-maxSpeed,maxSpeed) # velocity clamp
+        nextPose = currentPose + v_next*elapsed
+        return nextPose
 
 commandStream = AtlasCommandStream()
 
@@ -237,7 +246,8 @@ class CommittedRobotPlanListener(object):
 
     def onPause(self, msg):
         commandStream.stopStreaming()
-        self.animationTimer.stop()
+        if self.animationTimer:
+            self.animationTimer.stop()
 
     def onRobotPlan(self, msg):
 
@@ -677,7 +687,14 @@ class AtlasCommandPanel(object):
         self.jointTeleopPanel = JointTeleopPanel(self.robotSystem, jointGroups)
         self.jointCommandPanel = JointCommandPanel(self.robotSystem)
 
+        self.jointCommandPanel.ui.editPositionGainsButton.setEnabled(False)
+        self.jointCommandPanel.ui.speedSpinBox.setEnabled(False)
+
+        self.jointCommandPanel.ui.mirrorArmsCheck.setChecked(self.jointTeleopPanel.mirrorArms)
+        self.jointCommandPanel.ui.mirrorLegsCheck.setChecked(self.jointTeleopPanel.mirrorLegs)
         self.jointCommandPanel.ui.resetButton.connect('clicked()', self.resetJointTeleopSliders)
+        self.jointCommandPanel.ui.mirrorArmsCheck.connect('clicked()', self.mirrorJointsChanged)
+        self.jointCommandPanel.ui.mirrorLegsCheck.connect('clicked()', self.mirrorJointsChanged)
 
         self.widget = QtGui.QWidget()
 
@@ -726,11 +743,12 @@ class AtlasCommandPanel(object):
         self.animationTimer.start()
 
 
+    def mirrorJointsChanged(self):
+        self.jointTeleopPanel.mirrorLegs = self.jointCommandPanel.ui.mirrorLegsCheck.checked
+        self.jointTeleopPanel.mirrorArms = self.jointCommandPanel.ui.mirrorArmsCheck.checked
 
     def resetJointTeleopSliders(self):
         self.jointTeleopPanel.resetPoseToRobotState()
-
-
 
 def parseArgs():
 

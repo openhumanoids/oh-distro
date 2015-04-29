@@ -21,7 +21,7 @@ classdef DRCPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       r = DRCAtlas([],options);
-      r = r.removeCollisionGroupsExcept({'heel','toe'},1);
+      r = r.removeCollisionGroupsExcept({'heel','toe','midfoot'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
@@ -33,7 +33,7 @@ classdef DRCPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       options.visual = false; % loads faster
       r = Valkyrie([], options);
-      r = r.removeCollisionGroupsExcept({'heel','toe'},1);
+      r = r.removeCollisionGroupsExcept({'heel','toe','midfoot'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
@@ -150,6 +150,11 @@ classdef DRCPlanner
 %       profile viewer
     end
 
+    function plan = check_footsteps(obj, msg)
+      msg = drc.footstep_check_request_t(msg);
+      plan = obj.footstep_planner.check_footstep_plan(obj.biped, msg);
+    end
+
     function plan = plan_walking_traj(obj, msg)
       msg = drc.walking_plan_request_t(msg);
       plan = obj.walking_planner.plan_walking(obj.biped, msg, true);
@@ -184,7 +189,9 @@ classdef DRCPlanner
       nq = getNumPositions(obj.biped);
       joint_names = obj.biped.getStateFrame.coordinates(1:nq);
       [X,T,supports,support_times] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
-      qtraj = PPTrajectory(pchip(T,X));
+      nq = obj.biped.getNumPositions();
+      Q = X(1:nq,:); % extract just the q poses
+      qtraj = PPTrajectory(pchip(T,Q));
       clear options;
       options.supports = supports;
       options.support_times = support_times;
@@ -232,6 +239,11 @@ classdef DRCPlanner
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.footstep_plan_request_t, 'utime');
       obj.request_channels{end+1} = 'FOOTSTEP_PLAN_REQUEST';
       obj.handlers{end+1} = @obj.plan_footsteps;
+      obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.footstep_check_request_t, 'utime');
+      obj.request_channels{end+1} = 'FOOTSTEP_CHECK_REQUEST';
+      obj.handlers{end+1} = @obj.check_footsteps;
       obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
 
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');

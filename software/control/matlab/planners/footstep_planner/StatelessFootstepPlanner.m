@@ -35,9 +35,7 @@ classdef StatelessFootstepPlanner
             goal_pos.(f)(6) = goal_pos.(f)(6) + goal_shift * 2*pi;
           end
         end
-        q0(1:6)
-        goal_pos.center
-            
+
         if params.planning_mode == 1
           planner = @footstepPlanner.humanoids2014;
         else
@@ -48,26 +46,40 @@ classdef StatelessFootstepPlanner
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
-      plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      if request.num_iris_regions > 0 && length(plan.footsteps) > 2
+        plan = StatelessFootstepPlanner.snapToIRISRegions(biped, plan);
+      else
+        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      end
       plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan);
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
-      % for j = 1:length(plan.footsteps)
-      %   plan.footsteps(j).pos = biped.footContact2Orig(plan.footsteps(j).pos, 'center', true);
-      % end
       plan.params = request.params;
+
+      % Make sure the regions attached to the plan are exactly those which were sent in the request
+      plan.safe_regions = IRISRegion.empty();
+      for j = 1:request.num_iris_regions
+        plan.safe_regions(end+1) = IRISRegion.from_iris_region_t(request.iris_regions(j));
+      end
+
+      % Get a DRC plan with its updated LCM serialization method
+      plan = DRCFootstepPlan.from_drake_footstep_plan(plan);
     end
 
     function plan = check_footstep_plan(biped, request)
       x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:biped.getNumPositions());
-      biped = configureDRCTerrain(biped, request.params.map_mode, q0);
-      plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, biped);
+      biped = configureDRCTerrain(biped, request.footstep_plan.params.map_mode, q0);
+      plan = DRCFootstepPlan.from_footstep_plan_t(request.footstep_plan, biped);
       if request.snap_to_terrain
-        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+        if ~isempty(plan.safe_regions) && ~any(isnan(plan.region_order(3:end)))
+          plan = StatelessFootstepPlanner.snapToIRISRegions(biped, plan);
+        else
+          plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+        end
         plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan);
       end
       if request.compute_infeasibility
-        params = struct(request.footstep_params);
+        params = struct(plan.params);
         params.right_foot_lead = plan(1).is_right_foot;
         plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
       end
@@ -148,6 +160,7 @@ classdef StatelessFootstepPlanner
         end
         assert(goal_step.frame_id == plan.footsteps(end).frame_id);
         plan.footsteps(end) = goal_step;
+        plan.region_order(end) = nan;
       else
         for j = 1:request.num_goal_steps
           goal_step = Footstep.from_footstep_t(request.goal_steps(j), biped);
@@ -158,6 +171,7 @@ classdef StatelessFootstepPlanner
           end
           k = n_unmodified_steps + j;
           plan.footsteps(k) = goal_step;
+          plan.region_order(k) = nan;
         end
       end
     end
@@ -175,6 +189,32 @@ classdef StatelessFootstepPlanner
       for j = 3:nsteps
         if ~plan.footsteps(j).pos_fixed(3)
           plan.footsteps(j) = fitStepToTerrain(biped, plan.footsteps(j));
+        end
+      end
+    end
+
+    function plan = snapToIRISRegions(biped, plan)
+      for j = 1:length(plan.footsteps)
+        region = plan.safe_regions(plan.region_order(j));
+
+        if ~any(plan.footsteps(j).pos_fixed(4:5))
+          R_step = rpy2rotmat(plan.footsteps(j).pos(4:6));
+          step_normal = R_step * [0;0;1];
+
+          ax = reshape(cross(step_normal, region.normal), 3, 1);
+          if norm(ax) > 1e-3
+            theta = asin(norm(ax) / (norm(region.normal) * norm(step_normal)));
+            R_snap = axis2rotmat([ax; theta]);
+            R_step = R_snap * R_step;
+            plan.footsteps(j).pos(4:6) = rotmat2rpy(R_step);
+          end
+        end
+
+        if ~plan.footsteps(j).pos_fixed(3)
+          % n' * xyz = n' * p
+          % n' * p = n1*x + n2*y + n3*z
+          % z = (n'*p - n1*x - n2*y) / n3;
+          plan.footsteps(j).pos(3) = (region.normal' * region.point - region.normal(1:2)' * plan.footsteps(j).pos(1:2)) / region.normal(3);
         end
       end
     end

@@ -5,6 +5,7 @@ classdef drivingPlanner
     T_wheel_2_pelvis
     turn_radius
     r
+    r_original
     options
     R_hand
     hand
@@ -35,6 +36,7 @@ classdef drivingPlanner
         options = struct();
       end
       obj.r = r;
+      obj.r_original = r;
       obj.options = options;
       obj.hand = 'l_hand';
       obj.hand_pt = [0;-0.25;0];
@@ -48,32 +50,43 @@ classdef drivingPlanner
       if ~isfield(options,'wheel_radius') obj.options.wheel_radius = 0.2; end
       if ~isfield(options,'turn_radius'), obj.options.turn_radius = obj.options.wheel_radius; end
       if ~isfield(options,'reach_depth'), obj.options.reach_depth = 0; end
-      if ~isfield(options,'quat_tol'), obj.options.quat_tol = 0.02; end
+      if ~isfield(options,'quat_tol'), obj.options.quat_tol = 0.0; end
       if ~isfield(options,'tol'), obj.options.tol = 0.0; end
-      
+
       obj.nq = r.getNumPositions;
       obj.non_arm_idx = setdiff([1:obj.nq],obj.arm_idx);
-      S = load(r.fixed_point_file);
-      obj.qstar = S.xstar(1:obj.nq);
+      if isfield(options,'qstar')
+        obj.qstar = options.qstar;
+      else
+        S = load(r.fixed_point_file);
+        obj.qstar = S.xstar(1:obj.nq);
+      end
+
+      
+
       obj.data = load([getenv('DRC_BASE'),'/software/control/matlab/planners/driving_planner/data.mat']);
       
       % construct a listener for robot state
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
+
+
       obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
-      obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getManipulator.getPositionFrame.coordinates);
+      % maybe want to change this to publish plans with supports?
+      if isa(r,'Atlas')
+        obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getManipulator.getPositionFrame.coordinates);
+      else
+        obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getPositionFrame.coordinates);
+      end
+
+      %Support for running from matlab, not through director
+      if isfield(options,'wheel_xyzquat')
+        obj = obj.updateWheelTransform(options.wheel_xyzquat);
+      end
 
       % set joint velocity limits
       obj.lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
       obj = obj.setqdmax();
-      
-      %% compute wheel to pelvis transform
-      obj.T_wheel_2_world = xyz_quat_2_tform(options.wheel_xyzquat);
-      q0 = obj.getRobotState();
-      kinsol = obj.r.doKinematics(q0);
-      pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
-      T_pelvis_2_world = xyz_quat_2_tform(pelvis_xyzquat);
-      obj.T_wheel_2_pelvis = invHT(T_pelvis_2_world)*obj.T_wheel_2_world;
 
       % set the iktraj options
       iktraj_options = IKoptions(obj.r);
@@ -84,21 +97,41 @@ classdef drivingPlanner
       iktraj_options = iktraj_options.setMajorIterationsLimit(3000);
       iktraj_options = iktraj_options.setMex(true);
       iktraj_options = iktraj_options.setMajorOptimalityTolerance(1e-5);
-      obj.ik_options = iktraj_options;
+      obj.ik_options = iktraj_options;      
+    end
+
+    function obj = updateWheelTransform(obj,raw_xyzquat, q0)
       
-      
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
+
+      T_wheel_raw_2_world = jointTransform(struct('floating',2),raw_xyzquat);
+      T_wheel_2_wheel_raw = eye(4);
+      T_wheel_2_wheel_raw(1:3,1:3) = rpy2rotmat([pi/2;-pi/2;0]);
+      obj.T_wheel_2_world = T_wheel_raw_2_world * T_wheel_2_wheel_raw;
+
+      kinsol = obj.r.doKinematics(q0);
+      pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
+      T_pelvis_2_world = jointTransform(struct('floating',2),pelvis_xyzquat);
+      obj.T_wheel_2_pelvis = invHT(T_pelvis_2_world)*obj.T_wheel_2_world;
     end
 
     function [qtraj,q_safe] = planSafe(obj,options,q0)
-
+      if  nargin < 2 
+        options = struct();
+      end
       if nargin < 3
         q0 = obj.getRobotState();
+      end
+      if ~isfield(options,'speed')
+        options.speed = 1;
       end
       obj = obj.update_wheel_2_world_tform(q0);
       q_safe = obj.data.arm_safe;
       q_safe(1:6) = q0(1:6);
       q_safe(obj.non_arm_idx) = q0(obj.non_arm_idx);
-      qtraj = constructAndRescaleTrajectory([q0,q_safe],obj.qd_max);
+      qtraj = constructAndRescaleTrajectory([q0,q_safe],options.speed*obj.qd_max);
       obj.publishTraj(qtraj,1);
     end
 
@@ -111,6 +144,7 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       % need to specify reach depth and orientation
       if ~isfield(options,'depth'), options.depth = 0.1; end
@@ -146,6 +180,7 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       if ~isfield(options,'depth'), options.depth = 0; end
       if ~isfield(options,'speed'), options.speed = 1; end
@@ -169,7 +204,7 @@ classdef drivingPlanner
       infeasible_constraint;
       obj.q_touch = q_touch;
       q_vals = [q0,q_touch];
-      qtraj = constructAndRescaleTrajectory(q_vals, obj.qd_max);
+      qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
     end
 
@@ -182,9 +217,10 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       if ~isfield(options,'depth') options.depth = 0.2; end
-      if ~isfield(options, 'retract') options.speed = 1; end
+      if ~isfield(options, 'speed') options.speed = 1; end
 
       obj = obj.generateConstraints(q0,options);
       xyz_des = [0;options.depth;0];
@@ -213,6 +249,7 @@ classdef drivingPlanner
         q0 = obj.getRobotState();
       end
       obj = obj.update_wheel_2_world_tform(q0);
+      obj = obj.updateJointLimits(q0);
 
       if ~isfield(options,'turn_angle'), options.turn_angle = 0; end
       if ~isfield(options, 'angle_from_touch'), options.angle_from_touch = 0; end
@@ -221,7 +258,6 @@ classdef drivingPlanner
       if ~isfield(options,'speed') options.speed = 1; end
       if ~isfield(options,'scaling_factor'), options.acceleration_parameter = 2; end
       if ~isfield(options,'t_acc'), options.t_acc = 0.4; end
-      if ~isfield(options,'force_execute',) options.force_execute = 0; end
 
       lwy_idx = obj.r.findPositionIndices('l_arm_lwy');
       lwy_0 = q0(lwy_idx);
@@ -293,8 +329,8 @@ classdef drivingPlanner
 
     function hand_orientation_constraint = genHandQuatConstraintFromPose(obj,q0)
       kinsol = obj.r.doKinematics(q0);
-      hand_pos = obj.r.forwardKin(kinsol,obj.r.findLinkId(obj.hand),obj.hand_pt,1);
-      quat_des = rpy2quat(hand_pos(4:6));
+      hand_pos = obj.r.forwardKin(kinsol,obj.r.findLinkId(obj.hand),obj.hand_pt,2);
+      quat_des = hand_pos(4:7);
       hand_orientation_constraint = WorldQuatConstraint(obj.r,obj.r.findLinkId(obj.hand),quat_des,obj.options.quat_tol);
     end
 
@@ -334,8 +370,17 @@ classdef drivingPlanner
     function obj = update_wheel_2_world_tform(obj,q0)
       kinsol = obj.r.doKinematics(q0);
       pelvis_xyzquat = obj.r.forwardKin(kinsol,obj.r.findLinkId('pelvis'),[0;0;0],2);
-      T_pelvis_2_world = xyz_quat_2_tform(pelvis_xyzquat);
+      T_pelvis_2_world = jointTransform(struct('floating',2),pelvis_xyzquat);
       obj.T_wheel_2_world = T_pelvis_2_world * obj.T_wheel_2_pelvis;
+    end
+
+    function obj = updateJointLimits(obj,q0)
+      obj.r = obj.r_original;
+      [lb,ub] = obj.r.getJointLimits();
+      lb = min(lb,q0);
+      ub = max(ub,q0);
+      obj.r = obj.r.setJointLimits(lb,ub);
+      obj.r = compile(obj.r);
     end
 
   end

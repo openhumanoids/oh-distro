@@ -273,6 +273,7 @@ create(const maps::PointCloud::Ptr& iCloud) {
         (y < 0) || (y >= mHelper->mHeight)) continue;
     int idx = y*mHelper->mWidth + x;
     float z = proj[2];
+    if (!mHelper->mIsOrthographic && (z <= 0)) continue;
     lists[idx].push_back(z);
   }
 

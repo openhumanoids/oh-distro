@@ -51,7 +51,7 @@
     <!-- end of link list -->
     <!-- joint list -->
     <!-- WARNING: LIMITS NOT CORRECT -->
-    <joint name="${prefix}joint_1" type="fixed">
+    <joint name="${prefix}joint_1" type="revolute">
       <parent link="${prefix}link_0"/>
       <child link="${prefix}link_1"/>
       <axis xyz="0 0 1"/>
@@ -59,7 +59,7 @@
       <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
     </joint>
     <!-- WARNING: LIMITS NOT CORRECT -->
-    <joint name="${prefix}joint_2" type="fixed">
+    <joint name="${prefix}joint_2" type="revolute">
       <parent link="${prefix}link_1"/>
       <child link="${prefix}link_2"/>
       <axis xyz="0 0 1"/>
@@ -67,7 +67,7 @@
       <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
     </joint>
     <!-- WARNING: LIMITS NOT CORRECT -->
-    <joint name="${prefix}joint_3" type="fixed">
+    <joint name="${prefix}joint_3" type="revolute">
       <parent link="${prefix}link_2"/>
       <child link="${prefix}link_3"/>
       <axis xyz="0 0 1"/>
@@ -94,7 +94,7 @@
     <!-- end of link list -->
     <!-- joint list -->
     <!-- WARNING: LIMITS NOT CORRECT -->
-    <joint name="${prefix}palm_finger_1_joint" type="fixed">
+    <joint name="${prefix}palm_finger_1_joint" type="revolute">
       <parent link="${prefix}palm"/>
       <child link="${prefix}finger_1_link_0"/>
       <axis xyz="0 1 0"/>
@@ -102,7 +102,7 @@
       <limit effort="100" lower="-0.16" upper="0.25" velocity="100"/>
     </joint>
     <!-- WARNING: LIMITS NOT CORRECT -->
-    <joint name="${prefix}palm_finger_2_joint" type="fixed">
+    <joint name="${prefix}palm_finger_2_joint" type="revolute">
       <parent link="${prefix}palm"/>
       <child link="${prefix}finger_2_link_0"/>
       <axis xyz="0 1 0"/>

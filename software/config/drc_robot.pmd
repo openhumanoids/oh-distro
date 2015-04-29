@@ -42,9 +42,15 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
-    cmd "contact_monitor" {
+    cmd "ContactMonitor" {
     	exec = "drc-contact-monitor";
         host = "atlas2";
+    }
+
+    cmd "FallDetector" {
+      exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasFallDetector;\"";
+      host = "atlas2";
+      stop_signal = 15;
     }
 
     cmd "BasePlanner" {
@@ -116,7 +122,7 @@ group "5.maps" {
     }
 
     cmd "lidar-passthrough" {
-        exec = "drc-lidar-passthrough -c 0.06 -a 5";
+        exec = "bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} drc-lidar-passthrough -c 0.06'";
         host = "atlas0";
     }
 
