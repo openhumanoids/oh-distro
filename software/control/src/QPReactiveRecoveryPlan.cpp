@@ -19,12 +19,6 @@ Params params;
 Workspace work;
 Settings settings;
 
-Quaterniond quatVectorToEigen(Vector4d quat_wxyz) {
-  // The Eigen Quaterniond constructor, when used on a vector, assumes x, y, z, w ordering. We use w, x, y, z ordering. 
-  // However, when the 4-argument constructor is used, the order is w, x, y, z. Boo. 
-  return Quaterniond(quat_wxyz(0), quat_wxyz(1), quat_wxyz(2), quat_wxyz(3));
-}
-
 VectorXd QPReactiveRecoveryPlan::closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V) {
 
   int dim = x.size();
@@ -1048,7 +1042,7 @@ FootStateMap QPReactiveRecoveryPlan::getFootStates(const VectorXd &v, const std:
     Vector3d origin = Vector3d::Zero();
     auto body_pose = this->robot->forwardKinNew(origin, frame_id, 0, 2, 1);
     foot_states[*id].pose = Isometry3d(Translation<double, 3>(body_pose.value().head<3>()));
-    foot_states[*id].pose.rotate(quatVectorToEigen(body_pose.value().tail<4>()));
+    foot_states[*id].pose.rotate(quat2eigenQuaternion(body_pose.value().tail<4>()));
     foot_states[*id].velocity = body_pose.gradient().value() * v;
     int body_id = this->robot->parseBodyOrFrameID(this->foot_frame_ids[*id]);
     foot_states[*id].contact = contact_force_detected[body_id];
