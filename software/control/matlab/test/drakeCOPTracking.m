@@ -78,16 +78,16 @@ end
 lcmgl.switchBuffers();
 
 foot_support = RigidBodySupportState(r,[r.foot_body_id.right, r.foot_body_id.left]);
-link_constraints = struct('link_ndx',{}, 'pt', {}, 'coefs', {}, 'ts', {}, 'toe_off_allowed', {});
+body_motions = BodyMotionData.empty();
 for body_ind = [r.foot_body_id.right, r.foot_body_id.left, r.findLinkId('pelvis')]
-  coefs = cat(3, zeros(6, 1, 3), reshape(forwardKin(r, kinsol, body_ind, [0;0;0], 1), [6, 1, 1]));
-  link_constraints(end+1) = struct('link_ndx', body_ind, 'pt', [0;0;0], 'coefs', coefs, 'ts', [0, inf], 'toe_off_allowed', false);
+  pose = forwardKin(r, kinsol, body_ind, [0;0;0], 2);
+  body_motions(end+1) = BodyMotionData.from_body_xyzquat(body_ind, [0, inf], [pose, pose]);                                                 
 end
 
 plan = QPLocomotionPlan(r);
 plan.support_times = [0; zmptraj.tspan(end)];
 plan.supports = [foot_support, foot_support];
-plan.link_constraints = link_constraints;
+plan.body_motions = body_motions;
 plan.zmptraj = zmptraj;
 plan.zmp_final = zmptraj.eval(zmptraj.tspan(end));
 plan.LIP_height = -com(3);

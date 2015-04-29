@@ -34,7 +34,7 @@ x0 = xstar;
 q0 = x0(1:nq);
 
 % construct trajectory from current to desired bracing configuration
-d = load(fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_bracing_v4.mat'));
+d = load(fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_bracing_v5.mat'));
 tf = 0.8;
 qf = d.xstar(1:nq);
 qtraj = PPTrajectory(foh([0 tf],[q0,qf]));
