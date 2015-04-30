@@ -21,7 +21,7 @@ classdef DRCPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       r = DRCAtlas([],options);
-      r = r.removeCollisionGroupsExcept({'heel','toe','midfoot'},1);
+      r = r.removeCollisionGroupsExcept({'heel','toe','midfoot_front','midfoot_rear'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
@@ -33,7 +33,7 @@ classdef DRCPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       options.visual = false; % loads faster
       r = Valkyrie([], options);
-      r = r.removeCollisionGroupsExcept({'heel','toe','midfoot'},1);
+      r = r.removeCollisionGroupsExcept({'heel','toe','midfoot_front','midfoot_rear'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
     end
