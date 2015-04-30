@@ -24,5 +24,30 @@ struct gamepad_cmd_t
     float trigger_left;
     float trigger_right;
 	        
-    int8_t type;    
+    int8_t type;
+    int8_t button;
+    
+    //TYPES
+    const int8_t GAMEPAD_DISCRETE       = 1;
+    const int8_t GAMEPAD_CONTINUOUS     = 2;
+
+    //BUTTONS
+    const int8_t GAMEPAD_BUTTON_A       = 0;
+    const int8_t GAMEPAD_BUTTON_B       = 1;
+    const int8_t GAMEPAD_BUTTON_X       = 2;
+    const int8_t GAMEPAD_BUTTON_Y       = 3;
+    const int8_t GAMEPAD_BUTTON_START   = 7;
+    const int8_t GAMEPAD_BUTTON_BACK    = 6;
+    const int8_t GAMEPAD_BUTTON_LB      = 4;
+    const int8_t GAMEPAD_BUTTON_RB      = 5;
+    const int8_t GAMEPAD_BUTTON_JL      = 9;
+    const int8_t GAMEPAD_BUTTON_JR      = 10;
+    const int8_t GAMEPAD_RIGHT_X        = 3;
+    const int8_t GAMEPAD_RIGHT_Y        = 4;
+    const int8_t GAMEPAD_LEFT_X         = 0;
+    const int8_t GAMEPAD_LEFT_Y         = 1;
+    const int8_t GAMEPAD_DPAD_X         = 6;
+    const int8_t GAMEPAD_DPAD_Y         = 7;
+    const int8_t GAMEPAD_TRIGGER_L      = 2;
+    const int8_t GAMEPAD_TRIGGER_R      = 5;
 }

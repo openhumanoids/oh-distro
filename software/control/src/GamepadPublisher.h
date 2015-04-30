@@ -7,28 +7,6 @@
 
 #include "Joystick.h"
 
-#define GAMEPAD_DISCRETE 1
-#define GAMEPAD_CONTINUOUS 2
-
-#define GAMEPAD_BUTTON_A 0
-#define GAMEPAD_BUTTON_B 1
-#define GAMEPAD_BUTTON_X 2
-#define GAMEPAD_BUTTON_Y 3
-#define GAMEPAD_BUTTON_START 7
-#define GAMEPAD_BUTTON_BACK 6
-#define GAMEPAD_BUTTON_LB 4
-#define GAMEPAD_BUTTON_RB 5
-#define GAMEPAD_BUTTON_JL 9
-#define GAMEPAD_BUTTON_JR 10
-#define GAMEPAD_RIGHT_X 3
-#define GAMEPAD_RIGHT_Y 4
-#define GAMEPAD_LEFT_X 0
-#define GAMEPAD_LEFT_Y 1
-#define GAMEPAD_DPAD_X 6
-#define GAMEPAD_DPAD_Y 7
-#define GAMEPAD_TRIGGER_L 2
-#define GAMEPAD_TRIGGER_R 5
-
 class GamepadPublisher
 {
 public:

@@ -1,2 +1,0 @@
-v = FootstepViewer();
-v.run();
