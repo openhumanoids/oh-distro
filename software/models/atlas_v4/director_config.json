@@ -52,7 +52,39 @@
           "r_arm_mwx"
           ],
         "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx"]
+      },
+
+      { "name" : "Neck",
+        "joints" : [
+          "neck_ay"
+          ],
+        "labels" : ["ay"]
+      },
+
+      { "name" : "Left Leg",
+        "joints" : [
+          "l_leg_hpz",
+          "l_leg_hpx",
+          "l_leg_hpy",
+          "l_leg_kny",
+          "l_leg_aky",
+          "l_leg_akx"
+          ],
+        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
+      },
+
+      { "name" : "Right Leg",
+        "joints" : [
+          "r_leg_hpz",
+          "r_leg_hpx",
+          "r_leg_hpy",
+          "r_leg_kny",
+          "r_leg_aky",
+          "r_leg_akx"
+          ],
+        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
       }
+
     ],
 
   "drakeJointNames": [
@@ -136,6 +168,10 @@
     "r_arm_mwx",
     "back_bkz"
   ],
+
+  "pelvisLink" : "pelvis",
+  "kneeJoints" : ["l_leg_kny", "r_leg_kny"],
+  "kneeJointLimits" : [0.6,2.5],
 
   "handCombinations": [
       { "side" : "left",
