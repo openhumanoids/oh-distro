@@ -22,7 +22,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.002;
-r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = DRCAtlas([],options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 v = r.constructVisualizer;
@@ -34,10 +34,10 @@ options.inertia_error = 0.05; % standard deviation for inertia noise (percentage
 options.damping_error = 0.05; % standard deviation for damping noise (percentage of true joint damping)
 % ******************* END ADJUSTABLE **************************************
 
-rctrl = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+rctrl = DRCAtlas([],options);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(rctrl.fixed_point_file);
 r = r.setInitialState(xstar);
 rctrl = rctrl.setInitialState(xstar);
 
@@ -80,52 +80,32 @@ request = drc.walking_plan_request_t();
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
-walking_ctrl_data = walking_planner.plan_walking(r, request, false);
+walking_ctrl_msg = walking_planner.plan_walking(r, request, false);
+walking_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(walking_ctrl_msg, r);
 
 ts = walking_plan.ts;
 T = ts(end);
 
-ctrl_data = QPControllerData(true,struct(...
-  'acceleration_input_frame',atlasFrames.AtlasCoordinates(r),...
-  'D',-getAtlasNominalCOMHeight()/9.81*eye(2),... % assumed COM height
-  'Qy',eye(2),...
-  'S',walking_ctrl_data.S,... % always a constant
-  's1',walking_ctrl_data.s1,...
-  's2',walking_ctrl_data.s2,...
-  's1dot',walking_ctrl_data.s1dot,...
-  's2dot',walking_ctrl_data.s2dot,...
-  'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
-  'u0',zeros(2,1),...
-	'qtraj',x0(1:nq),...
-	'comtraj',walking_ctrl_data.comtraj,...
-  'link_constraints',walking_ctrl_data.link_constraints, ...
-  'support_times',walking_ctrl_data.support_times,...
-  'supports',walking_ctrl_data.supports,...
-  'mu',walking_ctrl_data.mu,...
-  'ignore_terrain',walking_ctrl_data.ignore_terrain,...
-  'y0',walking_ctrl_data.zmptraj,...
-  'plan_shift',zeros(3,1),...
-  'constrained_dofs',[findPositionIndices(r,'arm');findPositionIndices(r,'neck')]));
+walking_ctrl_data.comtraj = ExpPlusPPTrajectory(walking_ctrl_data.comtraj.breaks,...
+                                                walking_ctrl_data.comtraj.K,...
+                                                walking_ctrl_data.comtraj.A,...
+                                                walking_ctrl_data.comtraj.alpha,...
+                                                walking_ctrl_data.comtraj.gamma);
+% plot walking traj in drake viewer
+lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+ts = walking_plan.ts;
+for i=1:length(ts)
+  lcmgl.glColor3f(0, 0, 1);
+  lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.glColor3f(0, 1, 0);
+  lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+end
+lcmgl.switchBuffers();
 
-
-% ******************* BEGIN ADJUSTABLE ************************************
-% *************************************************************************
-options.dt = 0.003;
-options.slack_limit = 30.0;
-options.w_qdd = 0.001*ones(nq,1);
-options.w_grf = 0;
-options.w_slack = 0.001;
-options.W_kdot = 0*eye(3);
-options.contact_threshold = 0.005;
-options.debug = false;
-options.use_mex = true;
-options.solver = 0;
-options.use_bullet = use_bullet;
-
-% ******************* END ADJUSTABLE **************************************
-
-% instantiate QP controller
-qp = QPController(rctrl,{},ctrl_data,options);
+planeval = atlasControllers.AtlasPlanEval(r, walking_ctrl_data);
+param_sets = atlasParams.getDefaults(r);
+control = atlasControllers.InstantaneousQPController(r, []);
+qp = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
@@ -154,36 +134,7 @@ options.noise_model(2).params = struct('std',0.0025);
 noiseblk = StateCorruptionBlock(r,options);
 rnoisy = cascade(r,noiseblk);
 
-% cascade footstep plan shift block
-fs = FootstepPlanShiftBlock(rctrl,ctrl_data,options);
-rnoisy = cascade(rnoisy,fs);
-
-% feedback QP controller with atlas
-ins(1).system = 1;
-ins(1).input = 2;
-ins(2).system = 1;
-ins(2).input = 3;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
-clear ins;
-
-% feedback foot contact detector with QP/atlas
-options.use_lcm=false;
-fc = FootContactBlock(r,ctrl_data,options);
-ins(1).system = 2;
-ins(1).input = 1;
-sys = mimoFeedback(fc,sys,[],[],ins,outs);
-clear ins;  
-
-pd = IKPDBlock(r,ctrl_data,options);
-ins(1).system = 1;
-ins(1).input = 1;
-sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins;
-
-qt = QTrajEvalBlock(rctrl,ctrl_data,options);
-sys = mimoFeedback(qt,sys,[],[],[],outs);
+sys = feedback(rnoisy, sys);
 
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
 output_select(1).system=1;
@@ -198,8 +149,8 @@ foot_err = 0;
 pelvis_sway = 0;
 rfoot_idx = findLinkId(r,'r_foot');
 lfoot_idx = findLinkId(r,'l_foot');
-rfoottraj = walking_ctrl_data.link_constraints(1).traj;
-lfoottraj = walking_ctrl_data.link_constraints(2).traj;
+rfoottraj = PPTrajectory(mkpp(walking_ctrl_data.link_constraints(1).ts, walking_ctrl_data.link_constraints(1).coefs, 6));
+lfoottraj = PPTrajectory(mkpp(walking_ctrl_data.link_constraints(2).ts, walking_ctrl_data.link_constraints(2).coefs, 6));
 for i=1:length(ts)
   x=traj.eval(ts(i));
   q=x(1:getNumPositions(r));

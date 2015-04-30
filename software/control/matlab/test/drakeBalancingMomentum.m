@@ -1,6 +1,4 @@
-function drakeBalancingMomentum(use_mex)
+function drakeBalancingMomentum()
 
-if nargin<1; use_mex = 1; end;
-
-drakeBalancing(use_mex,1);
+drakeBalancing(1);
 

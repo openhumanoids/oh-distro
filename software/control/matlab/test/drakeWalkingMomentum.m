@@ -1,5 +1,3 @@
-function drakeWalkingMomentum(use_mex)
+function drakeWalkingMomentum()
 
-if nargin<1; use_mex = 1; end
-
-drakeWalking(use_mex,0,0,1,0);
+drakeWalking(struct('use_angular_momentum', true));
