@@ -227,18 +227,18 @@
       "nominal_handedness": "left"
     },
     {
-      "allow_mirror": true, 
-      "description": "safe arm pose to enter car", 
+      "allow_mirror": true,
+      "description": "safe arm pose to enter car",
       "joints": {
-        "l_arm_elx": 1.8495821952819824, 
-        "l_arm_ely": 3.073181629180908, 
-        "l_arm_lwy": 0.06462918221950531, 
-        "l_arm_mwx": 1.0717439651489258, 
-        "l_arm_shx": 1.2634254693984985, 
-        "l_arm_shz": 0.43667125701904297, 
+        "l_arm_elx": 1.8495821952819824,
+        "l_arm_ely": 3.073181629180908,
+        "l_arm_lwy": 0.06462918221950531,
+        "l_arm_mwx": 1.0717439651489258,
+        "l_arm_shx": 1.2634254693984985,
+        "l_arm_shz": 0.43667125701904297,
         "l_arm_uwy": 0.03604685515165329
-      }, 
-      "name": "car entry arm", 
+      },
+      "name": "car entry arm",
       "nominal_handedness": "left"
     }
   ],
@@ -437,6 +437,105 @@
       },
       "name": "drill cut nominal",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "drill tuck for walk",
+      "joints": {
+        "r_arm_elx": -2.06873482,
+        "r_arm_ely": 2.13313961,
+        "r_arm_lwy": -0.18396020000000002,
+        "r_arm_mwx": -0.8990279999999999,
+        "r_arm_shx": 1.3383216000000002,
+        "r_arm_shz": -0.26232204400000003,
+        "r_arm_uwy": 1.3549499999999997
+      },
+      "name": "drill tuck for walk",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "drill wall prep",
+      "joints": {
+        "r_arm_elx": -2.047516107559204,
+        "r_arm_ely": 2.146918296813965,
+        "r_arm_lwy": -0.7550668716430664,
+        "r_arm_mwx": -0.38795939087867737,
+        "r_arm_shx": 0.4074179232120514,
+        "r_arm_shz": 0.5899945497512817,
+        "r_arm_uwy": -0.10947520285844803
+      },
+      "name": "drill wall prep",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "drill wall lower 1",
+      "joints": {
+        "back_bkx": 0.0,
+        "back_bky": 0.0,
+        "back_bkz": 0.0,
+        "r_arm_elx": -1.51738636,
+        "r_arm_ely": 2.5761038,
+        "r_arm_lwy": 1.0918928000000006,
+        "r_arm_mwx": -0.38795939087867737,
+        "r_arm_shx": 0.6408864000000001,
+        "r_arm_shz": 0.5899945497512817,
+        "r_arm_uwy": 0.0
+      },
+      "name": "drill wall lower 1",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "drill wall lower 2",
+      "joints": {
+        "back_bkx": 0.0,
+        "back_bky": 0.0,
+        "back_bkz": 0.0,
+        "r_arm_elx": -0.8647217299999999,
+        "r_arm_ely": 2.9530945999999996,
+        "r_arm_lwy": 0.0,
+        "r_arm_mwx": -0.15865200000000002,
+        "r_arm_shx": 0.5183640000000003,
+        "r_arm_shz": -0.622820338,
+        "r_arm_uwy": 0.0
+      },
+      "name": "drill wall lower 2",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "drill wall lower 3",
+      "joints": {
+        "back_bkx": 0.0,
+        "back_bky": 0.0,
+        "back_bkz": 0.0,
+        "r_arm_elx": -0.04947999000000003,
+        "r_arm_ely": 3.02535117,
+        "r_arm_lwy": -1.5666288,
+        "r_arm_mwx": 0.21506160000000007,
+        "r_arm_shx": 0.5183640122413635,
+        "r_arm_shz": -0.08325099600000008,
+        "r_arm_uwy": 0.0
+      },
+      "name": "drill wall lower 3",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "drill raise inspect",
+      "joints": {
+        "r_arm_elx": -2.23131193,
+        "r_arm_ely": 1.24092805,
+        "r_arm_lwy": -0.17209180000000002,
+        "r_arm_mwx": 0.11634480000000003,
+        "r_arm_shx": 0.06911520000000015,
+        "r_arm_shz": 0.715500126,
+        "r_arm_uwy": -0.4516499999999999
+      },
+      "name": "drill raise inspect",
+      "nominal_handedness": "right"
     }
   ],
   "table clearing": [
