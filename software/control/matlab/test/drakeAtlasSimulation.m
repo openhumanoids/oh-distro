@@ -83,8 +83,8 @@ options.replace_cylinders_with_capsules = false;
 r_complete = DRCAtlas([],options);
 
 % simplify collision to parts we care about
-r_pure = r_pure.removeCollisionGroupsExcept({'heel', 'toe', 'midfoot'});
-r_complete = r_complete.removeCollisionGroupsExcept({'heel', 'toe', 'midfoot', 'palm', 'knuckle', 'default'});
+r_pure = r_pure.removeCollisionGroupsExcept({'heel', 'toe', 'midfoot_front', 'midfoot_rear'});
+r_complete = r_complete.removeCollisionGroupsExcept({'heel', 'toe', 'midfoot_front', 'midfoot_rear', 'palm', 'knuckle', 'default'});
 r_pure = compile(r_pure);
 
 % we need to add a FT sensor frame
@@ -218,6 +218,7 @@ while(~done)
     warning(S);
   end
   try
+    options.gui_control_interface = true;
     simulate(sys,[0.0,Inf], xstar_complete, options);
   catch err
     disp('caught error in simulate(): restarting sim');

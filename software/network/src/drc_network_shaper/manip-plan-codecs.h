@@ -4,13 +4,13 @@
 #include "custom-codecs.h"
 
 #include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/robot_plan_with_supports_t.hpp"
 #include "lcmtypes/drc/aff_indexed_robot_plan_t.hpp"
 
 #include "robot-plan-analogs.pb.h"
 
 #include "robot-state-codecs.h"
 
-enum { JOINT_POS_PRECISION = 3 };
 
 class ManipPlanCodec : public CustomChannelCodec
 {
@@ -40,6 +40,21 @@ class ManipMapCodec : public CustomChannelCodec
         
 };
 
+class SupportsPlanCodec : public CustomChannelCodec
+{
+  public:
+    SupportsPlanCodec(const std::string loopback_channel = "");
+        
+    bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
+      
+    bool decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data);
+    
+  private:
+    goby::acomms::DCCLCodec* dccl_;
+        
+        
+};
+
 
 template<class LCMRobotPlan>
 bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan& dccl_plan)
@@ -53,9 +68,9 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
 
     drc::MinimalRobotState previous_goal = dccl_plan.goal();
 
-    for(int i = 0, n = previous_goal.joint_position_size(); i < n; ++i)
+    for(int i = 0, n = previous_goal.full().joint_position_size(); i < n; ++i)
     {
-        previous_goal.set_joint_position(i, goby::util::unbiased_round(previous_goal.joint_position(i), JOINT_POS_PRECISION));
+        previous_goal.mutable_full()->set_joint_position(i, goby::util::unbiased_round(previous_goal.full().joint_position(i), JOINT_POS_PRECISION));
     }
 
     for(int i = 1, n = lcm_object.plan.size(); i < n; ++i)
@@ -75,12 +90,12 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
 
 
         // pre-round everything
-        for(int j = 0, m = present_goal.joint_position_size(); j < m; ++j)
+        for(int j = 0, m = present_goal.full().joint_position_size(); j < m; ++j)
         {
-            present_goal.set_joint_position(j, goby::util::unbiased_round(present_goal.joint_position(j), JOINT_POS_PRECISION));
+            present_goal.mutable_full()->set_joint_position(j, goby::util::unbiased_round(present_goal.full().joint_position(j), JOINT_POS_PRECISION));
         }
         
-        for(int j = 0, m = present_goal.joint_position_size(); j < m; ++j)
+        for(int j = 0, m = present_goal.full().joint_position_size(); j < m; ++j)
         {
             const google::protobuf::Reflection* present_goal_diff_refl = present_goal_diff->GetReflection();
             const google::protobuf::Descriptor* present_goal_diff_desc = present_goal_diff->GetDescriptor();
@@ -92,7 +107,7 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
                 glog.is(DIE) && glog << "No hardcoded joint called " << joint_name << " present in MinimalRobotStateDiff DCCL message!" << std::endl;
             }
             
-            float jp_diff = present_goal.joint_position(RobotStateCodec::joint_names_to_order_[joint_name]) - previous_goal.joint_position(RobotStateCodec::joint_names_to_order_[joint_name]);
+            float jp_diff = present_goal.full().joint_position(RobotStateCodec::joint_names_to_order_[joint_name]) - previous_goal.full().joint_position(RobotStateCodec::joint_names_to_order_[joint_name]);
             present_goal_diff_refl->AddFloat(present_goal_diff, present_goal_diff_field_desc, jp_diff);
 
             /* if(i)  */
@@ -232,9 +247,9 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
              {
                  glog.is(DIE) && glog << "No hardcoded joint called " << joint_name << " present in MinimalRobotStateDiff DCCL message!" << std::endl;
              }
-             present_goal.set_joint_position(RobotStateCodec::joint_names_to_order_[joint_name],
+             present_goal.mutable_full()->set_joint_position(RobotStateCodec::joint_names_to_order_[joint_name],
                                              present_goal_diff_refl->GetRepeatedFloat(dccl_plan.goal_diff(), present_goal_diff_field_desc, i) +
-                                             present_goal.joint_position(RobotStateCodec::joint_names_to_order_[joint_name]));
+                                             present_goal.full().joint_position(RobotStateCodec::joint_names_to_order_[joint_name]));
          }
 
          

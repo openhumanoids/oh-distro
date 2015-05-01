@@ -29,19 +29,6 @@ group "1.state_mit" {
 
 group "2.plan_and_control" {
 
-
-    cmd "AtlasControllerNoHands" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1, 3); \"";
-        host = "base";
-        stop_signal = 15;
-    }
-    cmd "AtlasControllerPlusHandWeight" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 2, 3); \"";
-        host = "base";
-        stop_signal = 15;
-    }
-
-
     cmd "PlanEval" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 3, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
@@ -162,21 +149,6 @@ cmd "systemwide-tests-valve" {
 cmd "systemwide-tests-walking" {
     exec = "drc-systemwide-tests walking";
     host = "localhost";
-}
-
-script "-1.run_monolithic_controller_simul" {
-    start cmd "base_deputy";
-    wait ms 1000;
-    start group "0.params_and_model_pub";
-    wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
-    start cmd "CombinedPlanner";
-    start group "5.maps";
-
-    start cmd "drakeAtlasSimulation Walking Flat (Vis)";
-    start cmd "AtlasControllerNoHands";
-    start cmd "director";
 }
 
 script "0.run_all_but_simul_and_controller" {

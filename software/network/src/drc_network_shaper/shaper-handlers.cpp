@@ -177,8 +177,12 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
 
     
     bool disable_ers_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, std::string(config_prefix + "disable_ers_custom_codecs").c_str());
+
     if (!disable_ers_custom_codecs){    
-        load_ers_custom_codecs();
+        int add_joint_efforts = false;
+        bot_param_get_boolean(app.bot_param, std::string(config_prefix + "add_ers_joint_efforts").c_str(), &add_joint_efforts);
+
+        load_ers_custom_codecs(add_joint_efforts);
     }
 
     
@@ -1030,11 +1034,22 @@ void DRCShaper::load_pmd_custom_codecs()
 
 }
 
-void DRCShaper::load_ers_custom_codecs()
+void DRCShaper::load_ers_custom_codecs(bool add_joint_efforts)
 {
+    int ers_freq = 0;
+    for(int i = 0, n = app_.resendlist().size(); i < n; ++i)
+    {
+        if(app_.resendlist()[i].channel == "EST_ROBOT_STATE")
+        {
+            ers_freq = app_.resendlist()[i].max_freq;
+            break;
+        }
+    }
+    
+    glog.is(VERBOSE) && glog << "EST_ROBOT_STATE frequency is: " << ers_freq << std::endl;
     
     const std::string& ers_channel = "EST_ROBOT_STATE";
-    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
+    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK", ers_freq, add_joint_efforts)))); // 118
     custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
 
     {
@@ -1137,6 +1152,10 @@ void DRCShaper::load_robot_plan_custom_codecs()
     std::string footstep_plan_channel = "WALKING_CONTROLLER_PLAN_REQUEST";
     custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK"))));
     custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];
+    
+    const std::string& supports_plan_channel = "COMMITTED_ROBOT_PLAN_WITH_SUPPORTS";
+    custom_codecs_.insert(std::make_pair(supports_plan_channel, boost::shared_ptr<CustomChannelCodec>(new SupportsPlanCodec(supports_plan_channel + "_COMPRESSED_LOOPBACK")))); 
+    custom_codecs_[supports_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[supports_plan_channel];
     
 }
 

@@ -229,9 +229,11 @@ class FootstepsDriver(object):
             self.params.setProperty(k, v)
 
     def _setupSubscriptions(self):
-        lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootstepPlan,
-                               lcmUtils.HistoricalLCMLoader("drc", "software/drc_lcmtypes/lcmtypes",
-                                                            os.getenv("DRC_BASE")))
+
+        useHistoricalLoader = False
+        historicalLoader = lcmUtils.HistoricalLCMLoader('drc', 'software/drc_lcmtypes/lcmtypes', os.getenv('DRC_BASE')) if useHistoricalLoader else None
+
+        lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootstepPlan, historicalLoader)
         lcmUtils.addSubscriber('WALKING_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
         lcmUtils.addSubscriber('WALKING_SIMULATION_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
 
@@ -467,10 +469,10 @@ class FootstepsDriver(object):
         hard coded Location of the Drake contact points relative to foot frame. this should be read from URDF
         '''
         contact_pts = np.zeros((4,3))
-        contact_pts[0,:] = [-0.082,  0.0624435, -0.081119]
-        contact_pts[1,:] = [-0.082, -0.0624435, -0.081119]
-        contact_pts[2,:] = [0.178,   0.0624435, -0.081119]
-        contact_pts[3,:] = [0.178,  -0.0624435, -0.081119]
+        contact_pts[0,:] = [-0.0876,  0.0626, -0.07645]
+        contact_pts[1,:] = [-0.0876, -0.0626, -0.07645]
+        contact_pts[2,:] = [0.1728,   0.0626, -0.07645]
+        contact_pts[3,:] = [0.1728,  -0.0626, -0.07645]
         return contact_pts
 
     @staticmethod

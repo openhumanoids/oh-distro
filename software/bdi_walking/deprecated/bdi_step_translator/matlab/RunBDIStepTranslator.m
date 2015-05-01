@@ -1,2 +1,0 @@
-t = BDIStepTranslator();
-t.run();

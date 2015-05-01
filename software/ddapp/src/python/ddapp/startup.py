@@ -83,6 +83,8 @@ from ddapp.shallowCopy import shallowCopy
 from ddapp import segmentationroutines
 from ddapp import trackers
 
+from ddapp import gamepad
+
 from ddapp.tasks import robottasks as rt
 from ddapp.tasks import taskmanagerwidget
 from ddapp.tasks.descriptions import loadTaskDescriptions
@@ -144,13 +146,10 @@ useForceDisplay = False
 useSkybox = False
 useDataFiles = True
 usePFGrasp = False
-
+useGamepad = True
 
 poseCollection = PythonQt.dd.ddSignalMap()
 costCollection = PythonQt.dd.ddSignalMap()
-
-
-
 
 if useSpreadsheet:
     spreadsheet.init(poseCollection, costCollection)
@@ -382,6 +381,8 @@ if usePlanning:
     teleopPanel = teleoppanel.init(robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController,
                      ikPlanner, manipPlanner, affordanceManager, playbackPanel.setPlan, playbackPanel.hidePlan)
 
+    if useGamepad:
+        gamePad = gamepad.Gamepad(teleopPanel, teleopJointController, ikPlanner, view)
 
 
     debrisDemo = debrisdemo.DebrisPlannerDemo(robotStateModel, robotStateJointController, playbackRobotModel,
@@ -395,7 +396,7 @@ if usePlanning:
     drillDemo = drilldemo.DrillPlannerDemo(robotStateModel, playbackRobotModel, teleopRobotModel, footstepsDriver, manipPlanner, ikPlanner,
                     lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
                     fitDrillMultisense, robotStateJointController,
-                    playPlans, showPose, cameraview, segmentationpanel)
+                    playPlans, teleopPanel.showPose, cameraview, segmentationpanel)
     drillTaskPanel = drilldemo.DrillTaskPanel(drillDemo)
 
     valveDemo = valvedemo.ValvePlannerDemo(robotStateModel, footstepsDriver, footstepsPanel, manipPlanner, ikPlanner,
@@ -529,6 +530,37 @@ if useSkybox:
     #view.camera().SetViewAngle(60)
 
 
+class RobotLinkHighligher(object):
+
+    def __init__(self, robotModel):
+        self.robotModel = robotModel
+        self.previousColors = {}
+
+    def highlightLink(self, linkName, color):
+
+        currentColor = self.robotModel.model.getLinkColor(linkName)
+        if not currentColor.isValid():
+            return
+
+        if linkName not in self.previousColors:
+            self.previousColors[linkName] = currentColor
+
+        alpha = self.robotModel.getProperty('Alpha')
+        newColor = QtGui.QColor(color[0]*255, color[1]*255, color[2]*255, alpha*255)
+
+        self.robotModel.model.setLinkColor(linkName, newColor)
+
+    def dehighlightLink(self, linkName):
+
+        color = self.previousColors.pop(linkName, None)
+        if color is None:
+            return
+
+        color.setAlpha(self.robotModel.getProperty('Alpha')*255)
+        self.robotModel.model.setLinkColor(linkName, color)
+
+robotHighlighter = RobotLinkHighligher(robotStateModel)
+
 if useFootContactVis:
 
     def onFootContact(msg):
@@ -536,11 +568,12 @@ if useFootContactVis:
         leftInContact = msg.left_contact > 0.0
         rightInContact = msg.right_contact > 0.0
 
-        contactColor = QtGui.QColor(0,0,255)
-        noContactColor = QtGui.QColor(180, 180, 180)
+        for linkName, inContact in [['l_foot', msg.left_contact > 0.0], ['r_foot', msg.right_contact > 0.0]]:
+            if inContact:
+                robotHighlighter.highlightLink(linkName, [0, 0, 1])
+            else:
+                robotHighlighter.dehighlightLink(linkName)
 
-        robotStateModel.model.setLinkColor('l_foot', contactColor if leftInContact else noContactColor)
-        robotStateModel.model.setLinkColor('r_foot', contactColor if rightInContact else noContactColor)
 
     footContactSub = lcmUtils.addSubscriber('FOOT_CONTACT_ESTIMATE', lcmdrc.foot_contact_estimate_t, onFootContact)
     footContactSub.setSpeedLimit(60)
@@ -558,21 +591,25 @@ if useFallDetectorVis:
             self.fallDetectorTriggerTime = 0.0 
             self.fallDetectorVisResetTime = 3.0 # seconds
             self.color = QtGui.QColor(180, 180, 180)
-    
+
         def __del__(self):
             lcmUtils.removeSubscriber(self.sub)
 
         def onFallState(self,msg):
+            links = ['pelvis', 'utorso']
+
             isFalling = msg.falling
             t = msg.utime / 10.0e6
             if not isFalling and (t-self.fallDetectorTriggerTime > self.fallDetectorVisResetTime or t-self.fallDetectorTriggerTime<0):
-                self.color = QtGui.QColor(180, 180, 180)
+                for link in links:
+                    robotHighlighter.dehighlightLink(link)
+
             elif isFalling:
-                self.color = QtGui.QColor(255,0,0)
+                for link in links:
+                    robotHighlighter.highlightLink(link, [1,0,0])
+
                 self.fallDetectorTriggerTime = t
 
-            robotStateModel.model.setLinkColor('pelvis', self.color)
-            robotStateModel.model.setLinkColor('utorso', self.color)
 
     fallDetectDisp = FallDetectorDisplay()
 
@@ -621,8 +658,6 @@ class ImageOverlayManager(object):
 
         if self.usePicker:
             self.imagePicker = ImagePointPicker(imageView)
-            #self.imagePicker.doubleClickCallback = drillDemo.onImageViewDoubleClick
-            #imageView.rayCallback = segmentation.extractPointsAlongClickRay
             self.imagePicker.start()
 
     def hide(self):
