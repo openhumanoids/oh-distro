@@ -142,7 +142,7 @@ group "6.hands_robotiq" {
 
 }
 
-group "7.other_drivers" {
+group "7.SA_cameras" {
 
     cmd "sa-left" {
         exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_LEFT -s 12491351 -r 270 --equalize 400";
@@ -196,6 +196,7 @@ script "0.prep" {
     start group "4.perception_drivers";
     start group "6.hands_robotiq";
     start group "5.maps";
+    start group "7.SA_cameras";
 
     start cmd "atlas-off";
 }
