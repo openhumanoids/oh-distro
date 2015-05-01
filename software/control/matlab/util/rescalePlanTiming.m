@@ -1,9 +1,10 @@
 function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
-  % @param acceleration_param - Scalar parameter greater than or equal to 2 that
-  %                             adjusts the acceleration profile. Higher values
-  %                             yield more gradual accelerations. @defualt 3
-
-  % check to see whether options were passed in as part of varagin
+  % qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, <warpTime args>, [options])
+  % See warpTime for a description of <warpTime args>.
+  %
+  % options is a struct with fields, body_id, pts, max_v and max_theta
+  %   * max_v is the maximum cartesian velocity of the body point
+  %   * max_theta is the maximum degrees/second in the quaternion arc length metric
   
   % Scale timing to obey joint velocity limits
   % Create initial spline
@@ -14,10 +15,8 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
   qd_mid = qtraj.fnder().eval(t_mid);
   scale_factor = max(abs(bsxfun(@rdivide, qd_mid, qd_max)), [], 1);
 
+  % check to see whether options were passed in as part of varagin
   if isstruct(varargin{end})
-    % options is a struct with fields, body_id, pts, max_v and max_theta
-    % max_v is the maximum cartesian velocity of the body point
-    % max_theta is the maximum degrees/second in the quaternion arc length metric
     options = varargin{end};
     num_bodies = length(options.body_id);
     body_path = zeros(3,num_bodies,length(t));
