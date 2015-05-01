@@ -240,6 +240,21 @@
       },
       "name": "car entry arm",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "arm up pregrasp waypoint",
+      "joints": {
+        "r_arm_elx": -1.5503730199999999,
+        "r_arm_ely": 2.70490899,
+        "r_arm_lwy": 0.0,
+        "r_arm_mwx": 0.0,
+        "r_arm_shx": 0.0,
+        "r_arm_shz": -0.51443523,
+        "r_arm_uwy": 0.0
+      },
+      "name": "arm up pregrasp waypoint",
+      "nominal_handedness": "right"
     }
   ],
   "door": [
@@ -536,6 +551,96 @@
       },
       "name": "drill raise inspect",
       "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "new: drill raise for press",
+      "joints": {
+        "l_arm_elx": 2.1950902938842773,
+        "l_arm_ely": 1.0697721242904663,
+        "l_arm_lwy": -0.3630537688732147,
+        "l_arm_mwx": -0.29536378383636475,
+        "l_arm_shx": 0.49463510513305664,
+        "l_arm_shz": -0.18175899982452393,
+        "l_arm_uwy": -0.5969356298446655
+      },
+      "name": "new: drill raise for press",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "new: thumb raise for press",
+      "joints": {
+        "r_arm_elx": -1.8811005353927612,
+        "r_arm_ely": 1.162081241607666,
+        "r_arm_lwy": -0.0879969447851181,
+        "r_arm_mwx": -0.3726710081100464,
+        "r_arm_shx": 1.1815698146820068,
+        "r_arm_shz": 1.250345230102539,
+        "r_arm_uwy": -0.18455038964748383
+      },
+      "name": "new: thumb raise for press",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "new: hand raise for grasp",
+      "joints": {
+        "r_arm_elx": -1.3007776737213135,
+        "r_arm_ely": 1.3734009265899658,
+        "r_arm_lwy": 0.30113035440444946,
+        "r_arm_mwx": -1.2949539422988892,
+        "r_arm_shx": 0.7351045608520508,
+        "r_arm_shz": 1.5707999467849731,
+        "r_arm_uwy": -0.7961083650588989
+      },
+      "name": "new: hand raise for grasp",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "new: hand raise for pregrasp",
+      "joints": {
+        "r_arm_elx": -1.0935081243515015,
+        "r_arm_ely": 1.4518219232559204,
+        "r_arm_lwy": 0.21014884114265442,
+        "r_arm_mwx": -1.5443907976150513,
+        "r_arm_shx": 0.8644720315933228,
+        "r_arm_shz": 1.5453208684921265,
+        "r_arm_uwy": -0.6870912909507751
+      },
+      "name": "new: hand raise for pregrasp",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "new: drill raise for press 2",
+      "joints": {
+        "l_arm_elx": 1.9153196811676025,
+        "l_arm_ely": 1.1967946290969849,
+        "l_arm_lwy": -0.5094176530838013,
+        "l_arm_mwx": 0.0009385342127643526,
+        "l_arm_shx": 0.49090638756752014,
+        "l_arm_shz": -0.3633900582790375,
+        "l_arm_uwy": -0.4467889368534088
+      },
+      "name": "new: drill raise for press 2",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "new: walk with drill",
+      "joints": {
+        "l_arm_elx": 2.0946528911590576,
+        "l_arm_ely": 2.670351505279541,
+        "l_arm_lwy": -0.5245199799537659,
+        "l_arm_mwx": 0.0,
+        "l_arm_shx": -1.093276858329773,
+        "l_arm_shz": 0.2623220384120941,
+        "l_arm_uwy": 1.354949951171875
+      },
+      "name": "new: walk with drill",
+      "nominal_handedness": "left"
     }
   ],
   "table clearing": [
