@@ -312,6 +312,93 @@
       },
       "name": "hand up tuck",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "hand up tuck both",
+      "joints": {
+        "l_arm_elx": 2.2760796546936035,
+        "l_arm_ely": 0.3644244372844696,
+        "l_arm_lwy": 1.734723475976807e-18,
+        "l_arm_mwx": 0.784614622592926,
+        "l_arm_shx": -1.3069056272506714,
+        "l_arm_shz": -1.4836206436157227,
+        "l_arm_uwy": 0.08796451985836029,
+        "r_arm_elx": -2.2760796546936035,
+        "r_arm_ely": 0.3644244372844696,
+        "r_arm_lwy": 0.0,
+        "r_arm_mwx": -0.784614622592926,
+        "r_arm_shx": 1.3069056272506714,
+        "r_arm_shz": 1.4836206436157227,
+        "r_arm_uwy": 0.08796451985836029
+      },
+      "name": "hand up tuck both",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "door-touch nom",
+      "joints": {
+        "l_arm_elx": 1.712615966796875,
+        "l_arm_ely": 1.5258442163467407,
+        "l_arm_lwy": -1.5227203369140625,
+        "l_arm_mwx": -0.9824485182762146,
+        "l_arm_shx": -1.255802035331726,
+        "l_arm_shz": 0.19136977195739746,
+        "l_arm_uwy": -1.7891645431518555
+      },
+      "name": "door-touch nom",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre-reach both",
+      "joints": {
+        "back_bkx": 0.0,
+        "back_bky": 0.0,
+        "back_bkz": 0.0,
+        "l_arm_elx": 2.0209803581237793,
+        "l_arm_ely": 3.0596115589141846,
+        "l_arm_lwy": -2.3796141147613525,
+        "l_arm_mwx": 1.0576800107955933,
+        "l_arm_shx": -0.459369033575058,
+        "l_arm_shz": 0.6029572486877441,
+        "l_arm_uwy": -1.156224012374878,
+        "r_arm_elx": -2.0209803581237793,
+        "r_arm_ely": 3.0596115589141846,
+        "r_arm_lwy": 0.7819115519523621,
+        "r_arm_mwx": 1.038118600845337,
+        "r_arm_shx": 0.459369033575058,
+        "r_arm_shz": -0.6029572486877441,
+        "r_arm_uwy": 1.949746012687683
+      },
+      "name": "pre-reach both",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "post-push",
+      "joints": {
+        "back_bkx": 0.0,
+        "back_bky": 0.0,
+        "back_bkz": -8.470329472543003e-22,
+        "l_arm_elx": 0.9613706469535828,
+        "l_arm_ely": 0.7742084860801697,
+        "l_arm_lwy": -1.3942848443984985,
+        "l_arm_mwx": 1.2658132314682007,
+        "l_arm_shx": -0.8563313484191895,
+        "l_arm_shz": -1.4041873216629028,
+        "l_arm_uwy": -2.0321204662323,
+        "r_arm_elx": -1.6610057353973389,
+        "r_arm_ely": 2.516777515411377,
+        "r_arm_lwy": 1.8273311853408813,
+        "r_arm_mwx": 0.762302815914154,
+        "r_arm_shx": 0.811505138874054,
+        "r_arm_shz": -0.24651595950126648,
+        "r_arm_uwy": 1.7213726043701172
+      },
+      "name": "post-push",
+      "nominal_handedness": "none"
     }
   ],
   "drill": [
