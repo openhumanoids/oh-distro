@@ -20,8 +20,8 @@ group "1.state_mit" {
         exec = "drc-state-sync -b -a 4";
         host = "base";
     }
-    cmd "fusion" {
-        exec = "se-fusion";
+    cmd "contact-passthrough" {
+        exect = "drc-controller-contact-passthrough";
         host = "base";
     }
 
@@ -219,8 +219,6 @@ script "0.run_all_but_simul_and_controller" {
     start group "5.maps";
     start cmd "director";
 }
-
-
 
 script "1.run_walking_flat" {
     start cmd "base_deputy";

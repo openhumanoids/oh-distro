@@ -20,8 +20,8 @@ group "1.state_mit" {
         exec = "drc-state-sync -b -a 5";
         host = "base";
     }
-    cmd "fusion" {
-        exec = "se-fusion";
+    cmd "contact-passthrough" {
+        exect = "drc-controller-contact-passthrough";
         host = "base";
     }
 
