@@ -281,9 +281,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
             qp_input = obj.getQPControllerInput(obj.t, obj.x, obj.contact_force_detected);
             % fprintf(1, 'get input: %fs\n', toc(t0));
             if ~isempty(qp_input)
-              if length(qp_input.param_set_name) <= length(obj.mode) + 1 || ~strcmp(qp_input.param_set_name(end-length(obj.mode):end), ['_', obj.mode])
-                qp_input.param_set_name = [qp_input.param_set_name, '_', obj.mode]; % send _sim or _hardware param variant
-              end
               % t0 = tic();
               encodeQPInputLCMMex(qp_input);
               % fprintf(1, 'encode: %fs\n', toc(t0));
