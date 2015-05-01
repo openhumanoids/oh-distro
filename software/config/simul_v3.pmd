@@ -151,13 +151,26 @@ cmd "systemwide-tests-walking" {
     host = "localhost";
 }
 
+script "-2.run_box" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start group "1.state_mit";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Box";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
+    start cmd "director";
+}
+
 script "0.run_all_but_simul_and_controller" {
     start cmd "base_deputy";
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "director";
@@ -168,8 +181,7 @@ script "1.run_walking_flat" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Walking Flat";
@@ -190,8 +202,7 @@ script "2.run_walking_steps" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Walking Two Steps";
@@ -205,8 +216,7 @@ script "3.run_valve" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Valve Task";
@@ -227,8 +237,7 @@ script "4.run_door" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Door Task";
@@ -242,8 +251,7 @@ script "5.run_drill" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Drill Task";
@@ -257,8 +265,7 @@ script "6.run_terrain" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Terrain Task";
@@ -272,8 +279,7 @@ script "7.run_plug" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Plug Task";
@@ -287,8 +293,7 @@ script "8.run_stairs" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Stairs Task";
@@ -302,8 +307,7 @@ script "9.run_manip_ex" {
     wait ms 1000;
     start group "0.params_and_model_pub";
     wait ms 1000;
-    start cmd "state-sync";
-    start cmd "joints2frames";
+    start group "1.state_mit";
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Manip Example";
@@ -311,3 +315,18 @@ script "9.run_manip_ex" {
     start cmd "InstQPRightHand";
     start cmd "director";
 }
+
+script "10.runningboard_test" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start group "1.state_mit";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Runningboard";
+    start cmd "PlanEvalRightHand";
+    start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
