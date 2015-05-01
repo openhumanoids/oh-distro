@@ -31,7 +31,10 @@ classdef BracingPlan < QPControllerPlan
       obj.qp_input.param_set_name = 'bracing';
     end
 
-    function qp_input = getQPControllerInput(obj, varargin)
+    function qp_input = getQPControllerInput(obj, t, varargin)
+      if isempty(obj.start_time)
+        obj.start_time = t;
+      end
       qp_input = obj.qp_input;
     end
   end
