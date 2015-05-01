@@ -153,7 +153,7 @@ struct State {
           quaternionString + "]],\n";
         json += "      \"uuid\": \"" + uuid + "\",\n";
         json += "      \"Dimensions\": [" + dimensionsString + "],\n";
-        json += "      \"Name\": \"box" + std::to_string(i+1) + "\"\n";
+        json += "      \"Name\": \"cinderblock " + std::to_string(i) + "\"\n";
         if (i == (int)result.mBlocks.size()-1) json += "    }\n";
         else json += "    },\n";
       }
