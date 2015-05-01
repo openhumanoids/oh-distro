@@ -31,9 +31,9 @@ else:
   print 'No mode specified - sending null config'
   msg.data_type =  1 # ee pos=0 | joint angles =1
   msg.to_home_position = False
-  msg.n_angles = 6;
+  msg.n_angles = 7;
   # left arm set point:
-  msg.joint_angles = [0.2705597,-1.33021509, 2.099817,  0.50086, 0.02374, 0.00058]
+  msg.joint_angles = [0.2705597,-1.33021509, 2.099817,  0.50086, 0.02374, 0.00058, 1]
   #right arm set point:
   # msg.joint_angles = [0.2705597, 1.33021509, 2.099817, -0.50086, 0.02374, 0.00058]
 
