@@ -8,7 +8,7 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
   % Scale timing to obey joint velocity limits
   % Create initial spline
   n_breaks = numel(qtraj.getBreaks());
-  t = linspace(qtraj.tspan(1), qtraj.tspan(2),max(n_breaks, 40));
+  t = linspace(qtraj.tspan(1), qtraj.tspan(2),max(n_breaks, 20));
   q_path = eval(qtraj, t); %#ok
   t_mid = mean([t(2:end); t(1:end-1)],1);
   qd_mid = qtraj.fnder().eval(t_mid);
