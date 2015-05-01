@@ -121,9 +121,9 @@ end
 
 qtraj = PPTrajectory(pchip(ts,q));
 plan = QPLocomotionPlan.from_quasistatic_qtraj(r, qtraj);
-plan.gain_set = 'manip_sim';
+plan.gain_set = 'manip';
 planeval = atlasControllers.AtlasPlanEval(r, plan);
-control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r));
+control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r, true));
 plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
 
 if noisy

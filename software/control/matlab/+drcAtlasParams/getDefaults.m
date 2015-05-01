@@ -1,16 +1,25 @@
-function param_sets = getDefaults(r)
+function param_sets = getDefaults(r, use_sim_params)
+% Returns a struct which maps param set names like 'walking', 'standing', etc.
+% to param set objects, which inherit from atlasParams.Base()
 typecheck(r, 'DRCAtlas');
-param_sets = struct('standing_hardware', drcAtlasParams.StandingHardware(r),...
-                    'standing_sim', drcAtlasParams.StandingSim(r),...
-                    'walking_hardware', drcAtlasParams.WalkingHardware(r),...
-                    'walking_sim', drcAtlasParams.WalkingSim(r),...
-                    'manip_hardware', drcAtlasParams.ManipHardware(r),...
-                    'manip_sim', drcAtlasParams.ManipSim(r));
 
-if r.atlas_version == 5
-  param_sets.bracing_sim = drcAtlasParams.BracingSim(r);
-  param_sets.bracing_hardware = drcAtlasParams.BracingHardware(r);
+if use_sim_params
+  param_sets = struct('standing', drcAtlasParams.StandingSim(r),...
+                      'walking', drcAtlasParams.WalkingSim(r),...
+                      'manip', drcAtlasParams.ManipSim(r));
+  if r.atlas_version == 5
+    param_sets.bracing = drcAtlasParams.BracingSim(r);
+  else
+    warning('Drake:BracingNotAvailable', 'Bracing params only defined for Atlas v5. Bracing behavior will not work with this robot.');
+  end
 else
-  warning('Drake:BracingNotAvailable', 'Bracing params only defined for Atlas v5. Bracing behavior will not work with this robot.');
+  param_sets = struct('standing', drcAtlasParams.StandingHardware(r),...
+                      'walking', drcAtlasParams.WalkingHardware(r),...
+                      'manip', drcAtlasParams.ManipHardware(r));
+  if r.atlas_version == 5
+    param_sets.bracing = drcAtlasParams.BracingHardware(r);
+  else
+    warning('Drake:BracingNotAvailable', 'Bracing params only defined for Atlas v5. Bracing behavior will not work with this robot.');
+  end
 end
   
