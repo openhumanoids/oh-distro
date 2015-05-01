@@ -3,6 +3,7 @@
 #include <string>
 
 #define JOYSTICK_SUCCESS 1
+#define JS_EVENT_AXIS 2
 
 struct js_event {
 	unsigned int time;    /* event timestamp in milliseconds */

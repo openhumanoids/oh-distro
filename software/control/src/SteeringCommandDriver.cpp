@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 
   SteeringCommandPublisher steering_publisher(argv[1], argv[2]);
 
-  while (true) {
+  while (steering_publisher.good()) {
     steering_publisher.publish();
   }
 

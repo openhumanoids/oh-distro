@@ -1,7 +1,6 @@
 #include "SteeringCommandPublisher.h"
 #include <math.h>
 
-#define JS_EVENT_AXIS         2
 #define UNSUPPORTED_MSG_TYPE -1
 #define STEERING_AXIS 0
 #define ACCEL_AXIS 1
@@ -12,7 +11,7 @@
 using namespace std;
 using namespace drc;
 
-int8_t SteeringCommandPublisher::getMessageType(js_event const & jse) const
+int8_t SteeringCommandPublisher::get_message_type(js_event const & jse) const
 {
   int8_t msg_type = UNSUPPORTED_MSG_TYPE;
   
@@ -34,7 +33,7 @@ int8_t SteeringCommandPublisher::getMessageType(js_event const & jse) const
   return msg_type;
 }
 
-void SteeringCommandPublisher::setMessageValue(js_event const & jse, const int8_t msg_type, driving_control_cmd_t & msg) const
+void SteeringCommandPublisher::set_message_value(js_event const & jse, const int8_t msg_type, driving_control_cmd_t & msg) const
 {
   static const double scaleFactor = static_cast<double>((1<<15) - 1);
   switch (msg_type) {
@@ -60,11 +59,11 @@ SteeringCommandPublisher::SteeringCommandPublisher(string const & device_name, s
 driving_control_cmd_t SteeringCommandPublisher::build_message(js_event const & jse) const
 {
   driving_control_cmd_t driving_control_cmd;
-  int8_t msg_type = getMessageType(jse);
+  int8_t msg_type = get_message_type(jse);
   if (msg_type != UNSUPPORTED_MSG_TYPE) {
     driving_control_cmd.utime = jse.time;
     driving_control_cmd.type = msg_type;
-    setMessageValue(jse, msg_type, driving_control_cmd);
+    set_message_value(jse, msg_type, driving_control_cmd);
   } else {
     printf("Unpublished Event: time %8u, value %8hd, type: %3u, axis/button: %u\n", jse.time, jse.value, jse.type, jse.number);
   }
@@ -82,4 +81,7 @@ void SteeringCommandPublisher::publish()
   }
 }
 
-
+bool SteeringCommandPublisher::good() const
+{
+  return m_lcm.good() && m_joystick.is_open();
+}
