@@ -10,6 +10,7 @@ class ControllerContactPassthrough(object):
         self.output_channel = output_channel
         self.body_ids = body_ids
         self.lc = lcm.LCM()
+        self._setupSubscritions()
 
     def _setupSubscritions(self):
         self.lc.subscribe(self.qp_input_channel, self.handle_qp_input)
