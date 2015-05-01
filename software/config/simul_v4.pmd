@@ -15,16 +15,10 @@ group "1.state_mit" {
         exec = "drc-joints2frames";
         host = "base";
     }
-
     cmd "state-sync" {
         exec = "drc-state-sync -b -a 4";
         host = "base";
     }
-    cmd "contact-passthrough" {
-        exect = "drc-controller-contact-passthrough";
-        host = "base";
-    }
-
 }
 
 group "2.plan_and_control" {

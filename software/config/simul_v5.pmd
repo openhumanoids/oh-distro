@@ -21,7 +21,7 @@ group "1.state_mit" {
         host = "base";
     }
     cmd "contact-passthrough" {
-        exect = "drc-controller-contact-passthrough";
+        exec = "drc-controller-contact-passthrough";
         host = "base";
     }
 
