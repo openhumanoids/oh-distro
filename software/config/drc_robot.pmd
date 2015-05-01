@@ -155,6 +155,13 @@ group "7.SA_cameras" {
     }
 }
 
+group "8.logging" {
+    cmd "atlas logger" {
+        exec = "lcm-logger  --rotate=30 --split-mb=1000 -s /home/user/logs/rolling/log_split";
+        host = "atlas2";
+    }
+}
+
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
     host = "atlas2";
@@ -197,6 +204,7 @@ script "0.prep" {
     start group "6.hands_robotiq";
     start group "5.maps";
     start group "7.SA_cameras";
+    start group "8.logging";
 
     start cmd "atlas-off";
 }
