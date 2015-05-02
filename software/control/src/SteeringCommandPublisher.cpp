@@ -77,7 +77,9 @@ void SteeringCommandPublisher::publish()
   int rc = m_joystick.read_joystick_event(jse);
   if (rc == JOYSTICK_SUCCESS) {
     driving_control_cmd_t driving_control_cmd = build_message(jse);
-    m_lcm.publish("STEERING_COMMAND", &driving_control_cmd);
+    if (driving_control_cmd.type != UNSUPPORTED_MSG_TYPE) {
+      m_lcm.publish(m_channel_name, &driving_control_cmd);
+    }
   }
 }
 
