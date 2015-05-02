@@ -4,7 +4,6 @@
 #include <string>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/gamepad_cmd_t.hpp"
-
 #include "Joystick.h"
 
 class GamepadPublisher

@@ -3,8 +3,8 @@
 # matlab has it's own boost libraries.  DO NOT let any mex file depend
 # on the system boost (directly nor indirectly), or you're asking for trouble.
 
-add_executable(SteeringCommandPublisher SteeringCommandPublisher.cpp)
-pods_use_pkg_config_packages(SteeringCommandPublisher lcm)
+add_executable(SteeringCommandDriver Joystick.cpp SteeringCommandDriver.cpp SteeringCommandPublisher.cpp)
+pods_use_pkg_config_packages(SteeringCommandDriver lcm)
 
 add_executable(GamepadDriver GamepadPublisher.cpp Joystick.cpp GamepadDriver.cpp)
 pods_use_pkg_config_packages(GamepadDriver lcm)

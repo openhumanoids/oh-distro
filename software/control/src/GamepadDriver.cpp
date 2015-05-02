@@ -13,5 +13,5 @@ int main(int argc, char *argv[])
     gamepad_publisher.publish();
   }
 
-	return 0;
+  return 0;
 }
