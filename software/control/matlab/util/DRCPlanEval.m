@@ -163,7 +163,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function new_plan = smoothPlanTransition(obj, new_plan)
       % Make the transition to the new plan as smooth as possible
-      new_plan.start_time = [];
+      new_plan.setStartTime([]);
 
       % Use the previously commanded state to override the first (or only) knot point in the new trajectory. This is necessary to prevent the robot from suddenly drooping or jerking at the start of a plan, since the initial state of the plan may not match the robot's current desired state. 
       if ~isempty(obj.qp_input)
@@ -237,7 +237,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         else
           obj.plan_queue(1) = [];
         end
-        obj.plan_queue{1}.start_time = t;
+        obj.plan_queue{1}.setStartTime(t);
         obj.sendStatus();
       end
     end

@@ -61,7 +61,7 @@ classdef StatelessWalkingPlanner
       lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 
       zmptraj = walking_plan_data.getZMPTrajectory();
-      comtraj = getCenterOfMassTrajectory();
+      comtraj = walking_plan_data.getCenterOfMassTrajectory();
       for i=1:length(ts)
         lcmgl.glColor3f(0, 0, 1);
         lcmgl.sphere([comtraj.eval(ts(i));0], 0.01, 20, 20);
