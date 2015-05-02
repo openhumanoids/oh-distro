@@ -41,7 +41,7 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
     cmd "InstQP" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; try pelvisMotionControlmex; catch disp('derp'); end; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
         stop_signal = 15;
     }
@@ -70,7 +70,7 @@ group "2.plan_and_control" {
     }
 
     cmd "CombinedPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; try pelvisMotionControlmex; catch disp('derp'); end; p = CombinedPlanner([],5); p.run();\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],5); p.run();\"";
        host = "base";
        stop_signal = 15;
     }

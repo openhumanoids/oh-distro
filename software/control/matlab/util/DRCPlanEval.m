@@ -23,7 +23,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     contact_force_detected;
     last_status_msg_time;
 
-    reactive_recovery_planner_warmstarted = 0;
     last_plan_msg_utime = 0;
   end
 
@@ -47,8 +46,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
-      recovery_options = struct('sim_mode', strcmp(obj.mode, 'sim'));
-      obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r, recovery_options);
+      obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -152,6 +150,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         obj.recovery_state = obj.RECOVERY_ACTIVE;
       end
     end
+
     function handle_recovery_trigger_off(obj, msg)
       if obj.recovery_state == obj.RECOVERY_ACTIVE
         disp('Exiting reactive recovery mode!');
