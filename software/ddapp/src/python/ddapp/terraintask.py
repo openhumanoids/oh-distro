@@ -7,6 +7,7 @@ import time
 import types
 import functools
 import numpy as np
+from collections import defaultdict
 
 from ddapp import transformUtils
 from ddapp import lcmUtils
@@ -49,6 +50,7 @@ blockWidth = (15 + 3/8.0) * 0.0254
 blockLength = (15 + 5/8.0) * 0.0254
 blockHeight = (5 + 5/8.0) * 0.0254
 
+blockSafetyMargin = [0.03, 0.05]
 
 class TerrainTask(object):
 
@@ -144,7 +146,7 @@ class TerrainTask(object):
 
         blocks = []
         for obj in om.getObjects():
-            if obj.getProperty('Name').startswith('block ') and obj.getChildFrame():
+            if obj.getProperty('Name').startswith('cinderblock ') and obj.getChildFrame():
                 blocks.append(obj)
 
         return sorted(blocks, key=lambda x: x.getProperty('Name'))
@@ -177,6 +179,35 @@ class TerrainTask(object):
             t = transformUtils.getTransformFromAxesAndOrigin(axes[0], axes[1], axes[2], origin)
             block.getChildFrame().copyFrame(t)
             block.setProperty('Dimensions', dims)
+        self.renameAndReorderBlocks(stanceFrame)
+
+    def renameAndReorderBlocks(self, stanceFrame):
+        """
+        Sort the blocks into row and column bins using the robot's stance frame, and rename the accordingly
+        """
+        blocks = self.findBlockObjects()
+        blockDescriptions = [block.getDescription() for block in blocks]
+
+        blockRows = defaultdict(lambda: [])
+
+        T = stanceFrame.GetLinearInverse()
+        blockXYZInStance = np.vstack((T.TransformPoint(block.getChildFrame().transform.GetPosition()) for block in blocks))
+        minBlockX = blockXYZInStance[:,0].min()
+
+        # Bin by x (in stance frame)
+        for i, block in enumerate(blocks):
+            om.removeFromObjectModel(block)
+            blockRows[int(round((blockXYZInStance[i,0] - minBlockX) / blockLength))].append(i)
+        # Then sort by y (in stance frame)
+        for row_id, row in blockRows.iteritems():
+            yInLocal = [blockXYZInStance[i, 1] for i in row]
+            blockRows[row_id] = [blockDescriptions[row[i]] for i in np.argsort(yInLocal)]
+
+        for row_id in sorted(blockRows.keys()):
+            for col_id, block in enumerate(blockRows[row_id]):
+                block['Name'] = 'cinderblock ({:d},{:d})'.format(row_id, col_id)
+                self.robotSystem.affordanceManager.newAffordanceFromDescription(block)
+
 
     def computeSafeRegions(self):
 
@@ -185,6 +216,9 @@ class TerrainTask(object):
         for block in blocks:
 
             d = np.array(block.getProperty('Dimensions'))/2.0
+            d[0] -= blockSafetyMargin[0]
+            d[1] -= blockSafetyMargin[1]
+
             t = block.getChildFrame().transform
 
             pts = [
@@ -283,7 +317,7 @@ class TerrainTask(object):
 
             blockId = len(self.findBlockObjects())
             pose = transformUtils.poseFromTransform(blockFrame)
-            desc = dict(classname='BoxAffordanceItem', Name='block %d' % blockId, Dimensions=[blockLength, blockWidth, blockHeight], pose=pose)
+            desc = dict(classname='BoxAffordanceItem', Name='cinderblock %d' % blockId, Dimensions=[blockLength, blockWidth, blockHeight], pose=pose)
             block = self.robotSystem.affordanceManager.newAffordanceFromDescription(desc)
 
 
@@ -333,7 +367,7 @@ class TerrainTask(object):
             offsetFrame.PostMultiply()
             offsetFrame.Concatenate(relativeFrame)
 
-            #vis.showFrame(offsetFrame, 'block %d' % i)
+            #vis.showFrame(offsetFrame, 'cinderblock %d' % i)
 
             '''
             footOffsetFrame = transformUtils.frameFromPositionAndRPY([0.0, 0.0, blockHeight/2.0 + 0.07], [0.0, 0.0, 0.0])
@@ -345,7 +379,7 @@ class TerrainTask(object):
 
             blockId = len(self.findBlockObjects())
             pose = transformUtils.poseFromTransform(offsetFrame)
-            desc = dict(classname='BoxAffordanceItem', Name='block %d' % blockId, Dimensions=[l, w, blockHeight], pose=pose)
+            desc = dict(classname='BoxAffordanceItem', Name='cinderblock %d' % blockId, Dimensions=[l, w, blockHeight], pose=pose)
             block = self.robotSystem.affordanceManager.newAffordanceFromDescription(desc)
             blocks.append(block)
 

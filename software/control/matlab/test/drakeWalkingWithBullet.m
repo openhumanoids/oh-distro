@@ -1,3 +1,3 @@
 function drakeWalkingWithBullet
 
-drakeWalking(1,0,1);
+drakeWalking(struct('use_bullet', true));

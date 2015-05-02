@@ -1,13 +1,14 @@
-function drakeWalking(use_mex,use_ik,use_bullet,use_angular_momentum,random_navgoal)
+function drakeWalking(options)
+if nargin < 1
+  options = struct();
+end
+options = applyDefaults(options, struct('use_bullet', false,...
+                                        'use_angular_momentum', false,...
+                                        'random_navgoal', false,...
+                                        'hokuyo', false));
 
-if (nargin<1); use_mex = true; end
-if (nargin<2); use_ik = false; end
-if (nargin<3); use_bullet = false; end
-if (nargin<4); use_angular_momentum = false; end
-if (nargin<5); random_navgoal = false; end
-
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v4_fp.mat'));
-if random_navgoal
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_v5_fp.mat'));
+if options.random_navgoal
   xstar(1) = randn();
   xstar(2) = randn();
   xstar(6) = pi*randn();
@@ -22,11 +23,14 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 % construct robot model
-options.floating = true;
-options.ignore_friction = true;
-options.dt = 0.001;
-options.atlas_version = 4;
-r = DRCAtlas([],options);
+atlas_options = struct('floating', true,...
+                       'ignore_friction', true,...
+                       'dt', 0.001,...
+                       'atlas_version', 5,...
+                       'use_bullet', options.use_bullet,...
+                       'hokuyo', options.hokuyo,...
+                       'visualize', false);
+r = DRCAtlas([],atlas_options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
@@ -85,6 +89,11 @@ tic;
 walking_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(DRCQPLocomotionPlan.toLCM(walking_ctrl_data), r);
 fprintf(1, 'control data lcm code/decode time: %f\n', toc);
 
+walking_ctrl_data.comtraj = ExpPlusPPTrajectory(walking_ctrl_data.comtraj.breaks,...
+                                                walking_ctrl_data.comtraj.K,...
+                                                walking_ctrl_data.comtraj.A,...
+                                                walking_ctrl_data.comtraj.alpha,...
+                                                walking_ctrl_data.comtraj.gamma);
 % plot walking traj in drake viewer
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 ts = walking_plan.ts;
@@ -96,14 +105,20 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-% Hack because the old controller expects s2 as an input, but doesn't use it
-walking_ctrl_data.V.s2 = PPTrajectory(foh([-inf, inf], [0, 0]));
+planeval = atlasControllers.AtlasPlanEval(r, walking_ctrl_data);
+param_sets = atlasParams.getDefaults(r);
+if options.use_angular_momentum
+  param_sets.standing = StandingAngularMomentum(r);
+  param_sets.walking = WalkingAngularMomentum(r);
+end
+control = atlasControllers.InstantaneousQPController(r, []);
+plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
+sys = feedback(r, plancontroller);
+output_select(1).system=1;
+output_select(1).output=1;
+sys = mimoCascade(sys,v,[],[],output_select);
 
-traj = atlasUtil.simulateWalking(r, walking_ctrl_data, struct('use_mex', logical(use_mex),...
-                                                              'use_ik', logical(use_ik),...
-                                                              'use_bullet', logical(use_bullet),...
-                                                              'use_angular_momentum', logical(use_angular_momentum),...
-                                                              'draw_button', true));
+traj = simulate(sys, [0, walking_ctrl_data.duration], walking_ctrl_data.x0, struct('gui_control_interface', true));
 
 playback(v,traj,struct('slider',true));
 

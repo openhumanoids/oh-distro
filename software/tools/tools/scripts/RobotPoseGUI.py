@@ -179,7 +179,7 @@ def saveConfig(config, filename):
     config argument, a dict. 
     '''
     with open(filename, 'w') as outfile:
-        json.dump(config, outfile, indent=2, sort_keys=True)
+        json.dump(config, outfile, indent=2, separators=(',', ': '), sort_keys=True)
 
 
 def storePose(poseType, captureMethod, group, name, description, outFile):
@@ -576,7 +576,7 @@ class CapturePanel(object):
         existingPostures = self.ui.getPosturesInGroup(group)
         for posture in existingPostures:
             if posture['name'] == name:
-                reply = QtGui.QMessageBox.question(self.ui, 'Overwrite posture?', 'Posture with name "%s" already exists.\nDo you want to overwrite?' % name,
+                reply = self.ui.showQuestion('Overwrite posture?', 'Posture with name "%s" already exists.\nDo you want to overwrite?' % name,
                                                   QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
 
                 if reply == QtGui.QMessageBox.No:
@@ -604,6 +604,7 @@ class MainWindow(QtGui.QWidget):
         self.setup()
         self.restoreSettings()
         self.messageBoxWarning = functools.partial(QtGui.QMessageBox.warning, self)
+        self.messageBoxQuestion = functools.partial(QtGui.QMessageBox.question, self)
 
     def setup(self):
         self.connect(QtGui.QShortcut(QtGui.QKeySequence('Ctrl+W'), self), QtCore.SIGNAL('activated()'), self.close)
@@ -614,6 +615,9 @@ class MainWindow(QtGui.QWidget):
 
     def showWarning(self, title, message):
         self.messageBoxWarning(title, message)
+
+    def showQuestion(self, title, message, buttons, defaultButton):
+        return self.messageBoxQuestion(title, message, buttons, defaultButton)
 
     def getSettings(self):
         return QtCore.QSettings('mitdrc', 'RobotPoseGUI')

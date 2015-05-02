@@ -41,29 +41,49 @@ with open(drcargs.args().directorConfigFile) as directorConfigFile:
                 _footMeshFiles[j][i] = os.path.join(directorConfigDirectory, _footMeshFiles[j][i])
 
 
-DEFAULT_PARAM_SET = 'drake'
-DEFAULT_STEP_PARAMS = {'BDI': {'Max Num Steps': 12,
+DEFAULT_PARAM_SET = 'Drake Nominal'
+DEFAULT_STEP_PARAMS = {'BDI': {'Min Num Steps': 0,
+                               'Max Num Steps': 12,
+                               'Min Step Width': 0.20,
                                'Nominal Step Width': 0.26,
                                'Nominal Forward Step': 0.15,
                                'Max Forward Step': 0.40,
                                'Max Step Width': 0.4,
+                               'Max Upward Step': 0.18,
+                               'Max Downward Step': 0.18,
                                'Behavior': 0,
                                'Leading Foot': 0,
+                               'Swing Height': 0.05,
                                'Drake Swing Speed': 0.2,
                                'Drake Instep Shift': 0.0275,
                                'Drake Min Hold Time': 2.0,
-                               'Support Contact Groups': 0},
-                       'drake': {'Max Num Steps': 12,
+                               'Support Contact Groups': 0,
+                               'Map Mode': 3},
+                       'Drake Nominal': {'Min Num Steps': 0,
+                                 'Max Num Steps': 12,
+                                 'Min Step Width': 0.20,
                                  'Nominal Step Width': 0.26,
                                  'Nominal Forward Step': 0.26,
                                  'Max Forward Step': 0.30,
                                  'Max Step Width': 0.32,
+                                 'Max Upward Step': 0.18,
+                                 'Max Downward Step': 0.18,
                                  'Behavior': 2,
                                  'Leading Foot': 0,
+                                 'Swing Height': 0.05,
                                  'Drake Swing Speed': 0.4,
                                  'Drake Instep Shift': 0.005,
                                  'Drake Min Hold Time': 0.75,
-                                 'Support Contact Groups': 0}}
+                                 'Support Contact Groups': 0,
+                                 'Map Mode': 3}}
+DEFAULT_STEP_PARAMS['Terrain'] = DEFAULT_STEP_PARAMS['Drake Nominal'].copy()
+DEFAULT_STEP_PARAMS['Terrain'].update({'Drake Min Hold Time': 2.0,
+                                       'Max Forward Step': 0.36,
+                                       'Nominal Step Width': 0.22,
+                                       'Map Mode': 1})
+DEFAULT_STEP_PARAMS['Stairs'] = DEFAULT_STEP_PARAMS['Drake Nominal'].copy()
+DEFAULT_STEP_PARAMS['Stairs'].update({'Drake Min Hold Time': 2.0,
+                                      'Map Mode': 2})
 
 DEFAULT_CONTACT_SLICES = {(0.05, 0.3): np.array([[-0.13, -0.13, 0.13, 0.13],
                                           [0.0562, -0.0562, 0.0562, -0.0562]]),
@@ -191,6 +211,8 @@ class FootstepsDriver(object):
 
     def _setupProperties(self):
         self.params = om.ObjectModelItem('Footstep Params')
+        self.defaults_map = ['Drake Nominal', 'Terrain', 'Stairs']
+        self.params.addProperty('Defaults', 0, attributes=om.PropertyAttributes(enumNames=self.defaults_map))
         self.params.addProperty('Behavior', 0, attributes=om.PropertyAttributes(enumNames=['BDI Stepping', 'BDI Walking', 'Drake Walking']))
         self.params.addProperty('Leading Foot', 1, attributes=om.PropertyAttributes(enumNames=['Auto', 'Left', 'Right']))
         self.leading_foot_map = [lcmdrc.footstep_plan_params_t.LEAD_AUTO,
@@ -206,11 +228,16 @@ class FootstepsDriver(object):
                              ]
         # self.params.addProperty('Heights Source', attributes=om.PropertyAttributes(enumNames=['Map Data', 'Foot Plane']))
         # self.params.addProperty('Normals Source', attributes=om.PropertyAttributes(enumNames=['Map Data', 'Foot Plane']))
+        self.params.addProperty('Min Num Steps', None, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
         self.params.addProperty('Max Num Steps', None, attributes=om.PropertyAttributes(decimals=0, minimum=1, maximum=30, singleStep=1))
+        self.params.addProperty('Min Step Width', None, attributes=om.PropertyAttributes(decimals=2, minimum=0.1, maximum=0.35, singleStep=0.01))
         self.params.addProperty('Nominal Step Width', None, attributes=om.PropertyAttributes(decimals=2, minimum=0.21, maximum=0.4, singleStep=0.01))
-        self.params.addProperty('Nominal Forward Step', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.01))
         self.params.addProperty('Max Step Width', None, attributes=om.PropertyAttributes(decimals=2, minimum=0.22, maximum=0.5, singleStep=0.01))
+        self.params.addProperty('Nominal Forward Step', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.01))
         self.params.addProperty('Max Forward Step', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.01))
+        self.params.addProperty('Swing Height', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.005))
+        self.params.addProperty('Max Upward Step', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.01))
+        self.params.addProperty('Max Downward Step', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.01))
         self.params.addProperty('Drake Swing Speed', None, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=5.0, singleStep=0.05))
         self.params.addProperty('Drake Min Hold Time', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=5.0, singleStep=0.05))
         self.params.addProperty('Drake Instep Shift', None, attributes=om.PropertyAttributes(decimals=4, minimum=-0.3, maximum=0.3, singleStep=0.0005))
@@ -229,9 +256,11 @@ class FootstepsDriver(object):
             self.params.setProperty(k, v)
 
     def _setupSubscriptions(self):
-        lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootstepPlan,
-                               lcmUtils.HistoricalLCMLoader("drc", "software/drc_lcmtypes/lcmtypes",
-                                                            os.getenv("DRC_BASE")))
+
+        useHistoricalLoader = False
+        historicalLoader = lcmUtils.HistoricalLCMLoader('drc', 'software/drc_lcmtypes/lcmtypes', os.getenv('DRC_BASE')) if useHistoricalLoader else None
+
+        lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootstepPlan, historicalLoader)
         lcmUtils.addSubscriber('WALKING_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
         lcmUtils.addSubscriber('WALKING_SIMULATION_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
 
@@ -257,7 +286,7 @@ class FootstepsDriver(object):
         default_step_params.step_speed = self.params.properties.drake_swing_speed
         default_step_params.drake_min_hold_time = self.params.properties.drake_min_hold_time
         default_step_params.drake_instep_shift = self.params.properties.drake_instep_shift
-        default_step_params.step_height = 0.05
+        default_step_params.step_height = self.params.properties.swing_height
         default_step_params.constrain_full_foot_pose = True
         default_step_params.bdi_step_duration = 2.0
         default_step_params.bdi_sway_duration = 0.0
@@ -590,14 +619,14 @@ class FootstepsDriver(object):
     def applyParams(self, msg):
         msg.params = lcmdrc.footstep_plan_params_t()
         msg.params.max_num_steps = self.params.properties.max_num_steps
-        msg.params.min_num_steps = 0
-        msg.params.min_step_width = 0.20
+        msg.params.min_num_steps = self.params.properties.min_num_steps
+        msg.params.min_step_width = self.params.properties.min_step_width
         msg.params.nom_step_width = self.params.properties.nominal_step_width
         msg.params.max_step_width = self.params.properties.max_step_width
         msg.params.nom_forward_step = self.params.properties.nominal_forward_step
         msg.params.max_forward_step = self.params.properties.max_forward_step
-        msg.params.nom_upward_step = 0.25;
-        msg.params.nom_downward_step = 0.15;
+        msg.params.nom_upward_step = self.params.properties.max_upward_step
+        msg.params.nom_downward_step = self.params.properties.max_downward_step
         msg.params.planning_mode = self.params.properties.planner_mode
         msg.params.behavior = self.behavior_lcm_map[self.params.properties.behavior]
         # msg.params.use_map_heights = self.params.properties.heights_source == 0
