@@ -102,7 +102,7 @@ class QPReactiveRecoveryPlan {
     void initLCM();
     void publishForVisualization(double t_global, const Isometry3d &icp);
     void setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache);
-    void encodeSupportData(int body_id, SupportLogicType support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data &support_data);
+    void encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data &support_data);
     void encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion);
     std::unique_ptr<PiecewisePolynomial<double>> straightToGoalTrajectory(double t_global, const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
     std::unique_ptr<PiecewisePolynomial<double>> upOverAndDownTrajectory(double t_global, const InterceptPlan &intercept_plan, const FootStateMap &foot_states);

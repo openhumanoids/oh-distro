@@ -832,7 +832,7 @@ std::map<SupportLogicType, std::vector<bool>> createSupportLogicMaps() {
   return ret;
 }
 
-void QPReactiveRecoveryPlan::encodeSupportData(int body_id, SupportLogicType support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data &support_data) {
+void QPReactiveRecoveryPlan::encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data &support_data) {
   support_data.timestamp = 0;
   support_data.body_id = body_id + 1;
   support_data.contact_pts.resize(3);
@@ -850,7 +850,15 @@ void QPReactiveRecoveryPlan::encodeSupportData(int body_id, SupportLogicType sup
     support_data.support_logic_map[i] = logic[i];
   }
   support_data.mu = this->mu;
-  support_data.contact_surfaces = 0;
+  support_data.use_support_surface = true;
+  for (int i=0; i < 3; ++i) {
+    // 4-vector describing a support surface: [v; b] such that v' * [x;y;z] + b == 0
+    // we have normal n and height h at x0,y0
+    // n' * [x0;y0;h] + b == 0
+    // b = -n' * [x0;y0;h]
+    support_data.support_surface[i] = static_cast<float>(foot_state.terrain_normal(i));
+  }
+  support_data.support_surface[3] = static_cast<float> (-1 * foot_state.terrain_normal.transpose() * Vector3d(foot_state.pose.translation().x(), foot_state.pose.translation().y(), foot_state.terrain_height));
 }
 
 void QPReactiveRecoveryPlan::encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion) {
@@ -923,15 +931,18 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
 
   drake::lcmt_support_data support_data_stance;
   int stance_foot_id = this->foot_body_ids.at(this->last_intercept_plan.stance_foot);
-  this->encodeSupportData(stance_foot_id, REQUIRE_SUPPORT, robot_property_cache, support_data_stance);
+  this->encodeSupportData(stance_foot_id, foot_states.at(this->last_intercept_plan.stance_foot), 
+                          REQUIRE_SUPPORT, robot_property_cache, support_data_stance);
   qp_input->support_data.push_back(support_data_stance);
 
   drake::lcmt_support_data support_data_swing;
   if (t_global - this->t_start <= (this->last_swing_plan->getEndTime() - this->last_swing_plan->getStartTime()) / 2) {
     this->encodeSupportData(this->foot_body_ids.at(this->last_intercept_plan.swing_foot),
+                            foot_states.at(this->last_intercept_plan.swing_foot),
                             PREVENT_SUPPORT, robot_property_cache, support_data_swing);
   } else {
     this->encodeSupportData(this->foot_body_ids.at(this->last_intercept_plan.swing_foot),
+                            foot_states.at(this->last_intercept_plan.swing_foot),
                             ONLY_IF_FORCE_SENSED, robot_property_cache, support_data_swing);
   }
   qp_input->support_data.push_back(support_data_swing);
@@ -971,9 +982,11 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
     drake::lcmt_support_data support_data;
     drake::lcmt_body_motion_data body_motion;
     if ((foot_states.at(*foot).pose.translation().z() - foot_states.at(*foot).terrain_height) < this->capture_max_flyfoot_height) {
-      this->encodeSupportData(this->foot_body_ids.at(*foot), REQUIRE_SUPPORT, robot_property_cache, support_data);
+      this->encodeSupportData(this->foot_body_ids.at(*foot), foot_states.at(*foot),
+                              REQUIRE_SUPPORT, robot_property_cache, support_data);
     } else {
-      this->encodeSupportData(this->foot_body_ids.at(*foot), ONLY_IF_FORCE_SENSED, robot_property_cache, support_data);
+      this->encodeSupportData(this->foot_body_ids.at(*foot), foot_states.at(*foot),
+                              ONLY_IF_FORCE_SENSED, robot_property_cache, support_data);
     }
     qp_input->support_data.push_back(support_data);
 
