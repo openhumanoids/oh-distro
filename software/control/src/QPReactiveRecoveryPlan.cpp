@@ -692,7 +692,6 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
   FootStateMap foot_states = this->getFootStates(v, contact_force_detected);
 
   bool is_captured = this->icpError(icp.translation().head<2>(), foot_states, this->biped.foot_vertices) < 1e-2;
-  is_captured = false;
 
   std::shared_ptr<drake::lcmt_qp_controller_input> qp_input(new struct drake::lcmt_qp_controller_input);
   this->setupQPInputDefaults(t_global, qp_input, robot_property_cache);
