@@ -59,8 +59,8 @@ group "2.plan_and_control" {
     }
 
     cmd "RemotePlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = RemotePlanner(); p.run();\"";
-       host = "atlas2";
+       exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} matlab -nosplash -nodesktop -r \"addpath_control; p = RemotePlanner(); p.run();\"'";
+       host = "atlas1";
        stop_signal = 15;
     }
 
@@ -77,8 +77,8 @@ group "2.plan_and_control" {
     }
 
     cmd "PressureControl" {
-        exec = "drc-atlas-pressure-monitor";
-        host = "atlas2";
+        exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} drc-atlas-pressure-monitor'";
+        host = "atlas1";
     }
 
 }
