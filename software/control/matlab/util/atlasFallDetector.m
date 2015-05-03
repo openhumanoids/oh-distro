@@ -73,6 +73,7 @@ while true
       if ~right_foot_in_contact
         cpos.right = mean(cpos.right, 2); % only count the center of the foot, not all the way out to its edges
       end
+      cpos = [cpos.right, cpos.left];
     else
       cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
     end    
