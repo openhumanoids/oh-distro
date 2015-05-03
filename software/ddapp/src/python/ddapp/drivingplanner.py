@@ -20,6 +20,10 @@ class DrivingPlanner(object):
         self.ikServer = ikServer
         self.robotSystem = robotSystem
         self.ikServer.connectStartupCompleted(self.initialize)
+        self.steeringAngleDegrees = 0.0;
+        self.maxTurningRadius = 10.0
+        self.trajSegments = 50
+        self.wheelDistance = 1.0
 
     def getInitCommands(self):
 
@@ -113,33 +117,45 @@ class DrivingPlanner(object):
     def getPlanningStartPose(self):
         return self.robotSystem.robotStateJointController.q
 
-    def computeDrivingTrajectory(self, steering_angle_degrees, numTrajPoints = 50):
-        angle = steering_angle_degrees
+    def computeDrivingTrajectory(self, steeringAngleDegrees, maxTurningRadius = 10, numTrajPoints = 50):
         
-        if abs(angle) < 1:
-            angle = 0.1
+        angle = steeringAngleDegrees
+        
+        if abs(angle) < 0.1:
+            angle = 1e-8
 
-        turningRadius = 1.0 / (angle * (1/1700.0)) #rough guess of 10 meters per 170 degrees        
+        turningRadius = 1.0 / (angle * (1 / (maxTurningRadius * 170.0)))
         turningCenter = [0, turningRadius, 0]
         trajPoints = list()
 
         for i in range(0, numTrajPoints):
-            theta = math.radians((10/turningRadius)*i - 90)
+            theta = math.radians((10 / turningRadius) * i - 90)
             trajPoint = np.asarray(turningCenter)+turningRadius*np.asarray([math.cos(theta), math.sin(theta), 0])
             trajPoints.append(trajPoint)
 
         return trajPoints
+
+    def updateAndDrawTrajectory(self):
+        trajPoints = self.computeDrivingTrajectory(self.steeringAngleDegrees, self.maxTurningRadius, self.trajSegments + 1)
+        self.drawDrivingTrajectory(trajPoints)            
 
     def drawDrivingTrajectory(self, drivingTraj):
         d = DebugData()
 
         numTrajPoints = len(drivingTraj)
 
-        #draw trajectory
-        for i in range(0, numTrajPoints - 1):
-            rgb = [(numTrajPoints-i)/float(numTrajPoints),1-(numTrajPoints-i)/float(numTrajPoints),1]            
-            d.addArrow(drivingTraj[i], drivingTraj[i+1], 0.02, 0.01, rgb)
-        
+        if numTrajPoints > 1:
+            for i in range(0, numTrajPoints - 1):
+                rgb = [(numTrajPoints - i) / float(numTrajPoints), 1 - (numTrajPoints - i) / float(numTrajPoints), 1]            
+                v1 = drivingTraj[i + 1] - drivingTraj[i]
+                v2 = np.cross(v1, [0, 0, 1])
+                v2 /= np.linalg.norm(v2)
+                d.addLine(drivingTraj[i] + 0.5 * self.wheelDistance * v2, drivingTraj[i + 1] + 0.5 * self.wheelDistance * v2,  0.01, rgb)
+                d.addLine(drivingTraj[i] - 0.5 * self.wheelDistance * v2, drivingTraj[i + 1] - 0.5 * self.wheelDistance * v2,  0.01, rgb)
+                if i == numTrajPoints - 2:
+                    d.addArrow(drivingTraj[i] + 0.5 * self.wheelDistance * v2, drivingTraj[i+1] + 0.5 * self.wheelDistance * v2, 0.02, 0.01, rgb)
+                    d.addArrow(drivingTraj[i] - 0.5 * self.wheelDistance * v2, drivingTraj[i+1] - 0.5 * self.wheelDistance * v2, 0.02, 0.01, rgb)
+
         vis.updatePolyData(d.getPolyData(), 'DrivingTrajectory')
         om.findObjectByName('DrivingTrajectory').setProperty('Color By', 1)
 
@@ -172,6 +188,9 @@ class DrivingPlannerPanel(TaskUserPanel):
         self.params.addProperty('PreGrasp Angle', 0, attributes=om.PropertyAttributes(singleStep=10))
         self.params.addProperty('Turn Angle', 0, attributes=om.PropertyAttributes(singleStep=10))
         self.params.addProperty('Speed', 1.0, attributes=om.PropertyAttributes(singleStep=0.1, decimals=2))
+        self.params.addProperty('Turning Radius', 10.0, attributes=om.PropertyAttributes(singleStep=0.01, decimals=2))
+        self.params.addProperty('Wheel Separation', 1.0, attributes=om.PropertyAttributes(singleStep=0.01, decimals=2))
+        self.params.addProperty('Trajectory Segments', 50, attributes=om.PropertyAttributes(singleStep=1, decimals=0))
         self.params.addProperty('Show Trajectory', True)
         self._syncProperties()
 
@@ -181,15 +200,20 @@ class DrivingPlannerPanel(TaskUserPanel):
         self.preGraspAngle = self.params.getProperty('PreGrasp Angle')
         self.turnAngle = self.params.getProperty('Turn Angle')
         self.speed = self.params.getProperty('Speed')
+        self.drivingPlanner.maxTurningRadius = self.params.getProperty('Turning Radius')
+        self.drivingPlanner.trajSegments = self.params.getProperty('Trajectory Segments')
+        self.drivingPlanner.wheelDistance = self.params.getProperty('Wheel Separation')
         self.showTrajectory = self.params.getProperty('Show Trajectory')
+        self.drivingPlanner.updateAndDrawTrajectory()
         traj = om.findObjectByName('DrivingTrajectory')
         if traj is not None:
             traj.setProperty('Visible', self.showTrajectory)
+        
 
     def onSteeringCommand(self, msg):
         if msg.type == msg.TYPE_DRIVE_DELTA_STEERING:
-            trajPoints = self.drivingPlanner.computeDrivingTrajectory(math.degrees(msg.steering_angle))
-            self.drivingPlanner.drawDrivingTrajectory(trajPoints)            
+            self.drivingPlanner.steeringAngleDegrees = math.degrees(msg.steering_angle)
+            self.drivingPlanner.updateAndDrawTrajectory()
 
     def onStart(self):
         self.onUpdateWheelLocation()
