@@ -598,6 +598,7 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::swingTrajec
   // TODO: name the magic numbers here
   const double descend_coeff = std::pow(1.0 / 0.15, 2);
 
+  std::cout << "planning swing with tf = " << intercept_plan.tf << std::endl;
   if (descend_coeff * std::pow(state.pose.translation().z() - state.terrain_height, 2) >= dist_to_goal) {
     // We're within a quadratic bowl around our target, so let's just descend straight there
     return this->straightToGoalTrajectory(t_global, intercept_plan, foot_states);
