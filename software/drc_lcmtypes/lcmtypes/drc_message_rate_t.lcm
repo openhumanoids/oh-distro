@@ -1,0 +1,14 @@
+package drc;
+
+// this is meant to be a very small message
+struct message_rate_t
+{
+  // which channel (from enum)
+  int8_t channel;
+
+  // rate in 0.1 Hz units
+  int16_t rate_deci_hz;
+
+  // enum for channels (add more as needed)
+  const int8_t ATLAS_COMMAND = 1;
+}
