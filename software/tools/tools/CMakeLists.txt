@@ -11,6 +11,7 @@ lcmtypes_build()
 add_subdirectory(src/frequency)
 add_subdirectory(src/printf-cache)
 add_subdirectory(src/systemwide-tests)
+add_subdirectory(src/contact-passthrough)
 
 # require python
 find_package(PythonInterp REQUIRED)
@@ -47,5 +48,5 @@ pods_install_python_script(drc-measure-orientation-drift scripts/measure_orienta
 pods_install_python_script(drc-systemwide-tests python/system_test.py)
 
 pods_install_python_script(drc-atlas-pressure-monitor python/atlas_pressure_monitor.py)
-pods_install_python_script(drc-controller-contact-passthrough python/controller_contact_passthrough.py)
+pods_install_python_script(drc-controller-contact-passthrough-python python/controller_contact_passthrough.py)
 
