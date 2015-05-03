@@ -84,21 +84,8 @@ Isometry3d QPReactiveRecoveryPlan::closestPoseInConvexHull(const Isometry3d &pos
     exit(1);
   }
   const int dim = V.rows();
-  VectorXd closest_point = QPReactiveRecoveryPlan::closestPointInConvexHull(pose.translation().head(dim), V);
-  Vector3d new_translation;
-  for (int i=0; i < 3; i++) {
-    if (i < dim) {
-      new_translation(i) = closest_point(i);
-    } else {
-      new_translation(i) = pose.translation()(i);
-    }
-  }
-  Isometry3d new_pose = Isometry3d(Translation<double, 3>(new_translation));
-  new_pose.rotate(pose.rotation());
-
-  // Vector2d xy = QPReactiveRecoveryPlan::closestPointInConvexHull(pose.translation().head(2), V);
-  // Isometry3d new_pose = Isometry3d(Translation<double, 3>(Vector3d(xy(0), xy(1), pose.translation().z())));
-  // new_pose.rotate(pose.rotation());
+  Isometry3d new_pose = pose;
+  new_pose.translation().head(dim) = QPReactiveRecoveryPlan::closestPointInConvexHull(pose.translation().head(dim), V);
   return new_pose;
 }
 
