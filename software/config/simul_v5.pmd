@@ -68,11 +68,6 @@ group "2.plan_and_control" {
        host = "base";
        stop_signal = 15;
     }
-
-    cmd "BaseBDIStepTranslator" {
-        exec = "drc-bdi-step-translator";
-        host = "base";
-    }
 }
 
 group "5.maps" {

@@ -35,7 +35,6 @@ group "1.state_mit" {
 
 group "2.plan_and_control" {
 
-
     cmd "EncoderCalibration" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders(true);\"";
         host = "atlas2";
@@ -59,21 +58,10 @@ group "2.plan_and_control" {
        stop_signal = 15;
     }
 
-
     cmd "RemotePlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = RemotePlanner(); p.run();\"";
        host = "atlas2";
        stop_signal = 15;
-    }
-
-    cmd "RobotBDIStepTranslator" {
-        exec = "drc-bdi-step-translator";
-        host = "atlas2";
-    }
-
-    cmd "BDIStepPlotter" {
-        exec = "drc-bdi-step-translator -b";
-        host = "base";
     }
 
     cmd "PlanEval" {
