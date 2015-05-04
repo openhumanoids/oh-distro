@@ -8,7 +8,7 @@ home_dir =os.getenv("HOME")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
-from valkyrie.pause_command_message_t import pause_command_message_t
+from ipab.pause_command_message_t import pause_command_message_t
 
 def timestamp_now (): return int (time.time () * 1000000)
 

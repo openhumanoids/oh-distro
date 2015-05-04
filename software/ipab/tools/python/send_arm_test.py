@@ -8,7 +8,7 @@ home_dir =os.getenv("HOME")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
-from valkyrie.hand_pose_packet_message_t import hand_pose_packet_message_t
+from ipab.hand_pose_packet_message_t import hand_pose_packet_message_t
 
 def timestamp_now (): return int (time.time () * 1000000)
 
