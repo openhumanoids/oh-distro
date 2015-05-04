@@ -126,11 +126,8 @@ std::vector<double> QPReactiveRecoveryPlan::expIntercept(const ExponentialForm &
   // using a taylor expansion up to power [degree]
 
   Polynomial<double> p_taylor = expform.taylorExpand(degree);
-  VectorXd coefs = -QPReactiveRecoveryPlan::bangBangPolynomial(l0, ld0, u).getCoefficients();
-  coefs.conservativeResize(6);
-  coefs.tail(3).setZero();
-  Polynomial<double> p_bang(coefs);
-  Polynomial<double> p_int = p_taylor + p_bang;
+  Polynomial<double> p_bang = QPReactiveRecoveryPlan::bangBangPolynomial(l0, ld0, u);
+  Polynomial<double> p_int = p_taylor - p_bang;
 
   std::vector<double> roots = realRoots(p_int);
   std::vector<double> nonneg_roots;
