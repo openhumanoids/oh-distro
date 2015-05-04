@@ -48,9 +48,8 @@ group "2.plan_and_control" {
     }
 
     cmd "FallDetector" {
-      exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasFallDetector;\"";
+      exec = "drc-atlas-fall-detector";
       host = "atlas2";
-      stop_signal = 15;
     }
 
     cmd "BasePlanner" {

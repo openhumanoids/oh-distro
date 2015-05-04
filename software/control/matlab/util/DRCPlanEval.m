@@ -262,6 +262,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
               plan_type = drc.plan_status_t.UNKNOWN;
             end
+          elseif isa(current_plan, 'QPReactiveRecoveryPlan')
+            execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+            plan_type = drc.plan_status_t.RECOVERING;
           elseif isa(current_plan, 'FrozenPlan')
             execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
             plan_type = drc.plan_status_t.STANDING;

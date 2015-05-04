@@ -16,7 +16,7 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
   scale_factor = max(abs(bsxfun(@rdivide, qd_mid, qd_max)), [], 1);
 
   % check to see whether options were passed in as part of varagin
-  if isstruct(varargin{end})
+  if ~isempty(varargin) && isstruct(varargin{end})
     options = varargin{end};
     num_bodies = length(options.body_id);
     body_path = zeros(3,num_bodies,length(t));

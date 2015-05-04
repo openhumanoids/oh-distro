@@ -24,4 +24,5 @@ struct plan_status_t {
   const int8_t CRAWLING     = 6;
   const int8_t DUMMY        = 7;
   const int8_t MANIPULATING = 8;
+  const int8_t RECOVERING   = 9;
 }

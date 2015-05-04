@@ -30,9 +30,8 @@ group "1.state_mit" {
 group "2.plan_and_control" {
 
     cmd "FallDetector" {
-      exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasFallDetector;\"";
+      exec = "drc-atlas-fall-detector";
       host = "base";
-      stop_signal = 15;
     }
 
     cmd "PlanEval" {
