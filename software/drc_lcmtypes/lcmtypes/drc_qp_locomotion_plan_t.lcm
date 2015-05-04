@@ -41,5 +41,13 @@ struct qp_locomotion_plan_t
 
   int16_t num_constrained_dofs;
   int16_t constrained_dofs[num_constrained_dofs];
+
+  int16_t num_untracked_joints;
+  int32_t untracked_joint_ind[num_untracked_joints];
+
+  int32_t n_default_qp_input_bytes;
+  byte default_qp_input[n_default_qp_input_bytes];
+
+  boolean is_quasistatic;
 }
 
