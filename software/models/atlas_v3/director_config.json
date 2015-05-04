@@ -53,30 +53,6 @@
           ],
         "labels" : ["usy", "shx", "ely", "elx", "uwy", "mwx"]
       }
-
-      { "name" : "Right Leg",
-        "joints" : [
-          "r_leg_hpz",
-          "r_leg_hpx",
-          "r_leg_hpy",
-          "r_leg_kny",
-          "r_leg_aky",
-          "r_leg_akx"
-          ],
-        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
-      },
-
-      { "name" : "Left Leg",
-        "joints" : [
-          "l_leg_hpz",
-          "l_leg_hpx",
-          "l_leg_hpy",
-          "l_leg_kny",
-          "l_leg_aky",
-          "l_leg_akx"
-          ],
-        "labels" : ["hpz", "hpx", "hpy", "kny", "aky", "akx"]
-      }
     ],
 
   "drakeJointNames": [
