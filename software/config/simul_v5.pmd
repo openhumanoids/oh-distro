@@ -222,6 +222,7 @@ script "1.run_walking_flat" {
     start cmd "drakeAtlasSimulation Walking Flat";
     start cmd "PlanEval";
     start cmd "InstQP";
+    start cmd "FallDetector";
     start cmd "director";
 }
 
