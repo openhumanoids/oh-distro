@@ -178,8 +178,7 @@ classdef DRCPlanner
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
 
       qtraj = PPTrajectory(qtraj_pp);
-      plan = QPLocomotionPlan.from_quasistatic_qtraj(obj.biped, qtraj);
-
+      plan = QPLocomotionPlanSettings.fromQuasistaticQTraj(obj.biped, qtraj);
       
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end
@@ -195,7 +194,7 @@ classdef DRCPlanner
       clear options;
       options.supports = supports;
       options.support_times = support_times;
-      plan = QPLocomotionPlan.from_quasistatic_qtraj(obj.biped, qtraj,options);
+      plan = QPLocomotionPlanSettings.fromQuasistaticQTraj(obj.biped, qtraj,options);
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end
 

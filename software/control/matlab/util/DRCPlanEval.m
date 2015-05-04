@@ -40,7 +40,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     function obj = DRCPlanEval(r, mode, varargin)
       typecheck(r,'DRCAtlas');
       obj = obj@atlasControllers.AtlasPlanEval(r, varargin{:});
-      obj.contact_force_detected = zeros(obj.robot_property_cache.num_bodies, 1);
+      obj.contact_force_detected = zeros(obj.robot.getNumBodies(), 1);
       assert(strcmp(obj.mode, 'sim') || strcmp(obj.mode, 'hardware'), 'bad mode: %s', mode);
       obj.mode = mode;
 
@@ -162,10 +162,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function new_plan = smoothPlanTransition(obj, new_plan)
       % Make the transition to the new plan as smooth as possible
-      new_plan.setStartTime([]);
-
-      warning('Plan smoothing not re-implemented yet!');
-      return;
 
       % Use the previously commanded state to override the first (or only) knot point in the new trajectory. This is necessary to prevent the robot from suddenly drooping or jerking at the start of a plan, since the initial state of the plan may not match the robot's current desired state. 
       if ~isempty(obj.qp_input)
@@ -223,6 +219,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function obj = switchToPlan(obj, new_plan)
+      new_plan = QPLocomotionPlanCPPWrapper(new_plan);
       obj = switchToPlan@atlasControllers.AtlasPlanEval(obj, new_plan);
       obj.sendStatus();
     end
@@ -239,7 +236,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         else
           obj.plan_queue(1) = [];
         end
-        obj.plan_queue{1}.setStartTime(t);
         obj.sendStatus();
       end
     end
@@ -311,8 +307,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           obj.pauseIfRequested();
           if ~isempty(obj.plan_queue)
             qp_input = obj.getQPControllerInput(obj.t, obj.x, obj.contact_force_detected);
+
             if ~isempty(qp_input)
-              encodeQPInputLCMMex(qp_input);
+              if isnumeric(qp_input)
+                qp_input = drake.lcmt_qp_controller_input(qp_input);
+              end
+              obj.lc.publish('QP_CONTROLLER_INPUT', qp_input);
               obj.qp_input = qp_input;
             end
           end
