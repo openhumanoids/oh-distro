@@ -33,8 +33,12 @@ xstar(6) = pi*randn();
 r = r.setInitialState(xstar);
 
 x0 = xstar;
-standing_plan = QPLocomotionPlan.from_standing_state(x0, r);
-standing_plan.planned_support_command = QPControllerPlan.support_logic_maps.kinematic_or_sensed;
+% Construct plan
+settings = QPLocomotionPlanSettings.fromStandingState(x0, r);
+
+% Only use supports when in contact
+settings.planned_support_command = QPControllerPlan.support_logic_maps.kinematic_or_sensed;
+standing_plan = QPLocomotionPlanCPPWrapper(settings);
 
 param_sets = atlasParams.getDefaults(r);
 if use_angular_momentum

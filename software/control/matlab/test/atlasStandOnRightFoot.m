@@ -58,10 +58,10 @@ zmp_knots = struct('t', num2cell(foot_ts([1,2,3])),...
                    'zmp', {com0(1:2), rfoot_pose(1:2), rfoot_pose(1:2)},...
                    'supp', {double_support, r.right_full_support, r.right_full_support});
 
-plan = QPLocomotionPlan.from_biped_foot_and_zmp_knots([rfoot_motion, lfoot_motion], zmp_knots, r, x0);
-plan.gain_set = 'walking';
+plan_settings = QPLocomotionPlanSettings.fromBipedFootAndZMPKnots([rfoot_motion, lfoot_motion], zmp_knots, r, x0);
+plan_settings.gain_set = 'walking';
 
-lc.publish('CONFIGURATION_TRAJ', DRCQPLocomotionPlan.toLCM(plan.settings));
+lc.publish('CONFIGURATION_TRAJ', DRCQPLocomotionPlan.toLCM(plan_settings);
 
 end
 

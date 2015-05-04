@@ -84,17 +84,18 @@ for body_ind = [r.foot_body_id.right, r.foot_body_id.left, r.findLinkId('pelvis'
   body_motions(end+1) = BodyMotionData.from_body_xyzquat(body_ind, [0, inf], [pose, pose]);                                                 
 end
 
-plan = QPLocomotionPlan(r);
-plan.support_times = [0; zmptraj.tspan(end)];
-plan.supports = [foot_support, foot_support];
-plan.body_motions = body_motions;
-plan.zmptraj = zmptraj;
-plan.zmp_final = zmptraj.eval(zmptraj.tspan(end));
-plan.LIP_height = -com(3);
-plan.V = V;
-plan.comtraj = comtraj;
-plan.duration = zmptraj.tspan(end) - 0.001;
-plan.gain_set = 'walking';
+plan_settings = QPLocomotionPlanSettings(r);
+plan_settings.support_times = [0; zmptraj.tspan(end)];
+plan_settings.supports = [foot_support, foot_support];
+plan_settings.body_motions = body_motions;
+plan_settings.zmptraj = zmptraj;
+plan_settings.zmp_final = zmptraj.eval(zmptraj.tspan(end));
+plan_settings.LIP_height = -com(3);
+plan_settings.V = V;
+plan_settings.comtraj = comtraj;
+plan_settings.duration = zmptraj.tspan(end) - 0.001;
+plan_settings.gain_set = 'walking';
+plan = QPLocomotionPlanCPPWrapper(plan_settings);
 
 planeval = atlasControllers.AtlasPlanEval(r, plan);
 control = atlasControllers.InstantaneousQPController(r, []);
