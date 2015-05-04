@@ -1,0 +1,3 @@
+add_executable(testAtlasFallDetector atlasFallDetectorTest.cpp)
+target_link_libraries(testAtlasFallDetector AtlasFallDetector)
+pods_install_executables(testAtlasFallDetector)
