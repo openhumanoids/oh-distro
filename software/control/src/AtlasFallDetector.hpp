@@ -35,9 +35,11 @@ private:
   DrakeRobotState robot_state;
   bool controller_is_active;
   double g = 9.81;
+  double icp_exit_time = NAN;
+  double icp_debounce_threshold = 0.01;
 
   Vector2d getICP();
   double getSupportFootHeight();
-  Matrix3Xd getSupportPolygon ();
+  Matrix3Xd getVirtualSupportPolygon ();
   bool isICPCaptured();
 };

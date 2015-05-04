@@ -46,6 +46,11 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const drc::robot_state_t* msg) {
   this->state_driver->decode(msg, &(this->robot_state));
   this->model->doKinematics(robot_state.q);
+
+  drc::atlas_fall_detector_status_t msg;
+  if (this->isICPCaptured()) {
+  }
+
 }
 
 void AtlasFallDetector::handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
@@ -80,7 +85,7 @@ double AtlasFallDetector::getSupportFootHeight() {
   }
 }
 
-Matrix3Xd AtlasFallDetector::getSupportPolygon () {
+Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon () {
   Matrix3Xd all_contact_pts(3, 0);
 
   for (std::map<FootID, int>::iterator foot = this->foot_body_ids.begin(); foot != foot_body_ids.end(); ++foot) {
@@ -102,7 +107,7 @@ Matrix3Xd AtlasFallDetector::getSupportPolygon () {
 
 bool AtlasFallDetector::isICPCaptured() {
   Vector2d icp = this->getICP();
-  Matrix3Xd support_pts = this->getSupportPolygon();
+  Matrix3Xd support_pts = this->getVirtualSupportPolygon();
   return in_convex_hull(support_pts.topRows(2), icp);
 }
 
