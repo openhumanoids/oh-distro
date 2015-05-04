@@ -9,9 +9,9 @@
 #include "lcmtypes/drc/footstep_plan_t.hpp"
 #include "lcmtypes/drc/plan_control_t.hpp"
 
-#include "lcmtypes/valkyrie/com_height_packet_message_t.hpp"
-#include "lcmtypes/valkyrie/pause_command_message_t.hpp"
-#include "lcmtypes/valkyrie/hand_pose_packet_message_t.hpp"
+#include "lcmtypes/ipab/com_height_packet_message_t.hpp"
+#include "lcmtypes/ipab/pause_command_message_t.hpp"
+#include "lcmtypes/ipab/hand_pose_packet_message_t.hpp"
 
 #include <ihmc_msgs/FootstepDataListMessage.h>
 #include <ihmc_msgs/ComHeightPacketMessage.h>
@@ -51,14 +51,14 @@ class LCM2ROS{
     ihmc_msgs::FootstepDataMessage createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos, double orient_w, double orient_x, double orient_y, double orient_z);
     void sendBasicSteps();
 
-    void comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::com_height_packet_message_t* msg);
+    void comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::com_height_packet_message_t* msg);
     ros::Publisher com_height_pub_;
 
-    void pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::pause_command_message_t* msg);
+    void pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::pause_command_message_t* msg);
     void stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
     ros::Publisher pause_pub_;
 
-    void handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::hand_pose_packet_message_t* msg);
+    void handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::hand_pose_packet_message_t* msg);
     ros::Publisher hand_pose_pub_;
 
     pronto_vis* pc_vis_;
@@ -231,14 +231,14 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
 }
 
 
-void LCM2ROS::comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::com_height_packet_message_t* msg) {
+void LCM2ROS::comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::com_height_packet_message_t* msg) {
   ROS_ERROR("LCM2ROS got com height");
   ihmc_msgs::ComHeightPacketMessage mout;
   mout.height_offset = msg->height_offset;
   com_height_pub_.publish(mout);
 }
 
-void LCM2ROS::pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::pause_command_message_t* msg) {
+void LCM2ROS::pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::pause_command_message_t* msg) {
   ROS_ERROR("LCM2ROS got pause %d", (int) msg->pause);
   ihmc_msgs::PauseCommandMessage mout;
   mout.pause = msg->pause;
@@ -252,7 +252,7 @@ void LCM2ROS::stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &cha
   pause_pub_.publish(mout);
 }
 
-void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const valkyrie::hand_pose_packet_message_t* msg) {
+void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::hand_pose_packet_message_t* msg) {
   ROS_ERROR("LCM2ROS got handPose packet");
   ihmc_msgs::HandPosePacketMessage mout;
   mout.robot_side = msg->robot_side;
