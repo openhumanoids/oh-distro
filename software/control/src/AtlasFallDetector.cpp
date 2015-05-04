@@ -1,6 +1,8 @@
 #include "AtlasFallDetector.hpp"
 #include "convexHull.hpp"
 
+
+
 AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model) {
   this->model = model;
   std::vector<std::string> state_coordinate_names;
@@ -15,6 +17,9 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->state_driver.reset(new RobotStateDriver(state_coordinate_names));
 
   this->findFootIDS();
+
+  this->debounce.reset(new Debounce());
+  this->debounce->t_low_to_high = 0.0;
 }
 
 void AtlasFallDetector::findFootIDS() {
@@ -46,17 +51,23 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const drc::robot_state_t* msg) {
   this->state_driver->decode(msg, &(this->robot_state));
   this->model->doKinematics(robot_state.q);
+  bool icp_is_ok = this->debounce->update(this->robot_state.t, this->isICPCaptured());
 
-  drc::atlas_fall_detector_status_t msg;
-  if (this->isICPCaptured()) {
-  }
-
+  drc::atlas_fall_detector_status_t fall_msg;
+  fall_msg.utime = static_cast<int64_t> (robot_state.t * 1e6);
+  fall_msg.falling = ~icp_is_ok;
+  Vector2d icp = this->getICP();
+  fall_msg.icp[0] = icp(0);
+  fall_msg.icp[1] = icp(1);
+  fall_msg.icp[2] = this->getSupportFootHeight();
 }
 
 void AtlasFallDetector::handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
                        const drc::controller_status_t* msg) {
-  this->controller_is_active = (msg->state != msg->DUMMY);
+  this->controller_is_active = (msg->state == msg->STANDING ||
+                                msg->state == msg->WALKING || 
+                                msg->state == msg->MANIPULATING);
 }
 
 Vector2d AtlasFallDetector::getICP() {
