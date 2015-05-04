@@ -76,16 +76,9 @@ public:
   ~AtlasFallDetector() {}
 
   AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model);
-  void findFootIDS();
-  void handleFootContact(const lcm::ReceiveBuffer* rbuf,
-                         const std::string& chan,
-                         const drc::foot_contact_estimate_t* msg);
-  void handleRobotState(const lcm::ReceiveBuffer* rbuf,
-                         const std::string& chan,
-                         const drc::robot_state_t* msg);
-  void handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
-                         const std::string& chan,
-                         const drc::controller_status_t* msg);
+  void run() {
+    while(0 == this->lcm.handle());
+  }
 
 private:
   std::shared_ptr<RigidBodyManipulator> model;
@@ -98,9 +91,21 @@ private:
   double g = 9.81;
   double icp_exit_time = NAN;
   double icp_debounce_threshold = 0.01;
+  lcm::LCM lcm;
 
   Vector2d getICP();
   double getSupportFootHeight();
   Matrix3Xd getVirtualSupportPolygon ();
   bool isICPCaptured();
+
+  void findFootIDS();
+  void handleFootContact(const lcm::ReceiveBuffer* rbuf,
+                         const std::string& chan,
+                         const drc::foot_contact_estimate_t* msg);
+  void handleRobotState(const lcm::ReceiveBuffer* rbuf,
+                         const std::string& chan,
+                         const drc::robot_state_t* msg);
+  void handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
+                         const std::string& chan,
+                         const drc::controller_status_t* msg);
 };

@@ -20,6 +20,14 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
 
   this->debounce.reset(new Debounce());
   this->debounce->t_low_to_high = 0.0;
+
+  if (!this->lcm.good()) {
+    throw std::runtime_error("LCM is not good");
+  }
+  this->lcm.subscribe("FOOT_CONTACT_ESTIMATE", &AtlasFallDetector::handleFootContact, this);
+  this->lcm.subscribe("EST_ROBOT_STATE", &AtlasFallDetector::handleRobotState, this);
+  this->lcm.subscribe("CONTROLLER_STATUS", &AtlasFallDetector::handleControllerStatus, this);
+
 }
 
 void AtlasFallDetector::findFootIDS() {
@@ -123,11 +131,6 @@ bool AtlasFallDetector::isICPCaptured() {
 }
 
 int main(int argc, char** argv) {
-  lcm::LCM lcm;
-  if (!lcm.good()) {
-    throw std::runtime_error("LCM is not good");
-  }
-
   const char* drc_path = std::getenv("DRC_BASE");
   std::cout << "drc path: " << std::endl;
   if (!drc_path) {
@@ -138,10 +141,7 @@ int main(int argc, char** argv) {
   model->compile();
 
   std::unique_ptr<AtlasFallDetector> fall_detector(new AtlasFallDetector(model));
-  lcm.subscribe("FOOT_CONTACT_ESTIMATE", &AtlasFallDetector::handleFootContact, fall_detector.get());
-  lcm.subscribe("EST_ROBOT_STATE", &AtlasFallDetector::handleRobotState, fall_detector.get());
-  lcm.subscribe("CONTROLLER_STATUS", &AtlasFallDetector::handleControllerStatus, fall_detector.get());
-
   std::cout << "Atlas fall detector running" << std::endl;
-  std::cout << "finished" << std::endl;
+  fall_detector->run();
+  return 0;
 }
