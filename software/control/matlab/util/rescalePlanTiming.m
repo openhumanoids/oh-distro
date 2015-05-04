@@ -19,32 +19,34 @@ function qtraj_rescaled = rescalePlanTiming(qtraj, qd_max, varargin)
   if ~isempty(varargin) && isstruct(varargin{end})
     options = varargin{end};
     num_bodies = length(options.body_id);
-    body_path = zeros(3,num_bodies,length(t));
-    body_v_max = options.max_v;
-    body_v_max = body_v_max(:);
-    body_quat = zeros(4,num_bodies,length(t));
-    robot = options.robot;
-    for j = 1:length(t)
-      kinsol = robot.doKinematics(q_path(:,j));
-      for k = 1:num_bodies
-        body_pos = robot.forwardKin(kinsol,options.body_id(k),options.pts(:,k),2);
-        body_path(:,k,j) = body_pos(1:3);
-        body_quat(:,k,j) = body_pos(4:7);
+    if num_bodies > 0
+      body_path = zeros(3,num_bodies,length(t));
+      body_v_max = options.max_v;
+      body_v_max = body_v_max(:);
+      body_quat = zeros(4,num_bodies,length(t));
+      robot = options.robot;
+      for j = 1:length(t)
+        kinsol = robot.doKinematics(q_path(:,j));
+        for k = 1:num_bodies
+          body_pos = robot.forwardKin(kinsol,options.body_id(k),options.pts(:,k),2);
+          body_path(:,k,j) = body_pos(1:3);
+          body_quat(:,k,j) = body_pos(4:7);
+        end
       end
-    end
-    body_v_mid = zeros(num_bodies,length(t_mid));
-    theta_mid = zeros(num_bodies,length(t_mid));
-    theta_max = options.max_theta(:);
-    for j = 1:numel(t)-1
-      for k = 1:num_bodies
-        body_v_mid(k,j) = norm(body_path(:,k,j) - body_path(:,k,j+1))/(t(j+1) - t(j));
-        theta_mid(k,j) = quatArcDistance(body_quat(:,k,j),body_quat(:,k,j+1))/(t(j+1) - t(j));
+      body_v_mid = zeros(num_bodies,length(t_mid));
+      theta_mid = zeros(num_bodies,length(t_mid));
+      theta_max = options.max_theta(:);
+      for j = 1:numel(t)-1
+        for k = 1:num_bodies
+          body_v_mid(k,j) = norm(body_path(:,k,j) - body_path(:,k,j+1))/(t(j+1) - t(j));
+          theta_mid(k,j) = quatArcDistance(body_quat(:,k,j),body_quat(:,k,j+1))/(t(j+1) - t(j));
+        end
       end
+      body_v_scale_factor = max(abs(bsxfun(@rdivide, body_v_mid, body_v_max)), [], 1); 
+      theta_scale_factor = max(abs(bsxfun(@rdivide, theta_mid, theta_max)), [], 1);
+      body_scale_factor = max(body_v_scale_factor,theta_scale_factor);
+      scale_factor = max(body_scale_factor,scale_factor);
     end
-    body_v_scale_factor = max(abs(bsxfun(@rdivide, body_v_mid, body_v_max)), [], 1); 
-    theta_scale_factor = max(abs(bsxfun(@rdivide, theta_mid, theta_max)), [], 1);
-    body_scale_factor = max(body_v_scale_factor,theta_scale_factor);
-    scale_factor = max(body_scale_factor,scale_factor);
     varargin = varargin(1:end-1);
   end
 
