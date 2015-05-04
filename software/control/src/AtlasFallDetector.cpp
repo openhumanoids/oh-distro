@@ -91,7 +91,8 @@ void AtlasFallDetector::handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
                        const drc::controller_status_t* msg) {
   this->controller_is_active = (msg->state == msg->STANDING ||
                                 msg->state == msg->WALKING || 
-                                msg->state == msg->MANIPULATING);
+                                msg->state == msg->MANIPULATING || 
+                                msg->state == msg->RECOVERING);
 }
 
 Vector2d AtlasFallDetector::getICP() {
