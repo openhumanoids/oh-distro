@@ -25,6 +25,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
   channels << "ATLAS_COMMAND" << "ATLAS_FOOT_POS_EST"
            << "ATLAS_IMU_PACKET" << "ATLAS_IMU_PACKET_FILTERED"
            << "ATLAS_STATE" << "ATLAS_STATE_FILTERED" << "ATLAS_STATE_FILTERED_ALT"    
+           << "ATLAS_STATE_AS_LOGGED"
            << "ATLAS_STATE_EXTRA"
            << "ATLAS_STATUS" << "EST_ROBOT_STATE" 
            << "EST_ROBOT_STATE_KF" << "EST_ROBOT_STATE_LP" << "EST_ROBOT_STATE_ECHO" 
