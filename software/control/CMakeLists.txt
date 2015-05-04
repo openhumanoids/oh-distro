@@ -78,6 +78,11 @@ file(WRITE ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m
 enable_testing()
 include(CTest)
 
+add_test(NAME testQPReactiveRecovery
+         COMMAND testQPReactiveRecovery)
+add_test(NAME testAtlasFallDetector
+         COMMAND testAtlasFallDetector)
+
 #find_program(matlab matlab)
 #if (NOT matlab-NOTFOUND)
 #   add_test(NAME MATLAB_Unit_Tests
