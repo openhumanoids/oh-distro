@@ -64,7 +64,7 @@ group "3.plan_and_control" {
     }
 
     cmd "plan-passthrough" {
-       exec = "val-plan-passthrough";
+       exec = "ipab-plan-passthrough";
        host = "localhost";
     }
 }

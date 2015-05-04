@@ -18,5 +18,4 @@ ddapp
 
 #viewer-trials
 
-#valkyrie
 ipab
