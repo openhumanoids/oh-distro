@@ -15,19 +15,28 @@ using namespace Eigen;
 // negative for clockwise turn, and zero if the points are collinear.
 coord2_t cross(const Point &O, const Point &A, const Point &B)
 {
-  return (long)(A.x - O.x) * (B.y - O.y) - (long)(A.y - O.y) * (B.x - O.x);
+  return (A.x - O.x) * (B.y - O.y) - (A.y - O.y) * (B.x - O.x);
 }
  
 // Returns a list of points on the convex hull in counter-clockwise order.
 // Note: the last point in the returned list is the same as the first one.
 vector<Point> convex_hull(vector<Point> P)
 {
+
   int n = P.size(), k = 0;
   vector<Point> H(2*n);
+
+  if (n == 2) {
+    H.reserve(3);
+    H.push_back(P[0]); 
+    H.push_back(P[1]); 
+    H.push_back(P[0]); 
+    return H;
+  }
  
   // Sort points lexicographically
   sort(P.begin(), P.end());
- 
+
   // Build lower hull
   for (int i = 0; i < n; ++i) {
     while (k >= 2 && cross(H[k-2], H[k-1], P[i]) <= 0) k--;
