@@ -291,7 +291,7 @@ classdef drivingPlanner
       q_turn = q0;
       q_turn(lwy_idx) = lwy_des;
       varargin = {options.acceleration_parameter,options.t_acc};
-      qtraj = constructAndRescaleTrajectory([q0,q_turn],options.speed*obj.qd_max,0,varargin);
+      qtraj = constructAndRescaleTrajectory([q0,q_turn],options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
     end
 
