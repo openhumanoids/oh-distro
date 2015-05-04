@@ -95,9 +95,9 @@ lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 ts = walking_plan.ts;
 for i=1:length(ts)
   lcmgl.glColor3f(0, 0, 1);
-  lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.sphere([walking_ctrl_data.settings.comtraj.eval(ts(i));0], 0.01, 20, 20);
   lcmgl.glColor3f(0, 1, 0);
-  lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.sphere([walking_ctrl_data.settings.zmptraj.eval(ts(i));0], 0.01, 20, 20);
 end
 lcmgl.switchBuffers();
 
@@ -114,7 +114,7 @@ output_select(1).system=1;
 output_select(1).output=1;
 sys = mimoCascade(sys,v,[],[],output_select);
 
-traj = simulate(sys, [0, walking_ctrl_data.duration], walking_ctrl_data.x0, struct('gui_control_interface', true));
+traj = simulate(sys, [0, walking_ctrl_data.settings.duration], walking_ctrl_data.settings.x0, struct('gui_control_interface', true));
 
 playback(v,traj,struct('slider',true));
 
