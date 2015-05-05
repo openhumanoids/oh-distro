@@ -90,6 +90,7 @@ When creating branches, create it relative to ipab/master:
     git fetch ipab
     git checkout ipab/master
     git pull ipab master
+    git checkout ipab/master
     git checkout -b your-branch-name
 
 When pushing, push to ipab on github:
