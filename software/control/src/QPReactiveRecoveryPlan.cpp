@@ -311,6 +311,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
       intercept_plan.swing_foot = swing_foot;
       intercept_plan.stance_foot = otherFoot[swing_foot];
       intercept_plan.error = 0; // to be filled in later
+      intercept_plan.stance_pose = foot_states.at(stance_foot).pose;
       intercept_plans.push_back(intercept_plan);
     }
   } else {
@@ -360,6 +361,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
           intercept_plan.swing_foot = swing_foot;
           intercept_plan.stance_foot = otherFoot[swing_foot];
           intercept_plan.error = 0; // to be filled in later
+          intercept_plan.stance_pose = foot_states.at(stance_foot).pose;
           intercept_plans.push_back(intercept_plan);
         }
       }
@@ -907,10 +909,16 @@ PiecewisePolynomial<double> constantPoseCubicSpline(const Isometry3d &pose) {
 
 void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateMap &foot_states, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
 
+  PiecewisePolynomial<double>::CoefficientMatrix plan_shift(6, 1);
+  plan_shift.topRows<3>() = this->last_intercept_plan.stance_pose.translation() - foot_states.at(this->last_intercept_plan.stance_foot).pose.translation();
+  plan_shift.bottomRows<3>().setZero();
+  // plan_shift = desired - measured;
+  // measured = desired - plan_shift
+
   Vector4d x0 = Vector4d::Zero();
-  x0.head<2>() = 0.5 * foot_states.at(RIGHT).pose.translation().head<2>() + 0.5 * foot_states.at(LEFT).pose.translation().head<2>();
+  x0.head<2>() = 0.5 * this->last_intercept_plan.stance_pose.translation().head<2>() + 0.5 * this->last_intercept_plan.pose_next.translation().head<2>() - plan_shift.topRows<2>();
   eigenToCArrayOfArrays(x0, qp_input->zmp_data.x0);
-  eigenToCArrayOfArrays(this->last_intercept_plan.cop.translation().head<2>(), qp_input->zmp_data.y0);
+  eigenToCArrayOfArrays(this->last_intercept_plan.cop.translation().head<2>() - plan_shift.topRows<2>(), qp_input->zmp_data.y0);
 
   drake::lcmt_support_data support_data_stance;
   int stance_foot_id = this->foot_body_ids.at(this->last_intercept_plan.stance_foot);
@@ -933,11 +941,12 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
 
   drake::lcmt_body_motion_data body_motion;
   this->encodeBodyMotionData(this->foot_frame_ids.at(this->last_intercept_plan.swing_foot),
-                             *this->last_swing_plan, body_motion);
+                             *this->last_swing_plan - plan_shift, body_motion);
   body_motion.in_floating_base_nullspace = true;
   qp_input->body_motion_data.push_back(body_motion);
 
-  double pelvis_height = foot_states.at(this->last_intercept_plan.stance_foot).terrain_height + this->pelvis_height_above_sole;
+  double pelvis_height = this->last_intercept_plan.stance_pose.translation().z() + this->pelvis_height_above_sole;
+  // double pelvis_height = foot_states.at(this->last_intercept_plan.stance_foot).terrain_height + this->pelvis_height_above_sole;
   Quaterniond rfoot_quat = Quaterniond(foot_states.at(RIGHT).pose.rotation());
   Quaterniond lfoot_quat = Quaterniond(foot_states.at(LEFT).pose.rotation());
   double pelvis_yaw = angleAverage(quat2rpy(Vector4d(rfoot_quat.w(), rfoot_quat.x(), rfoot_quat.y(), rfoot_quat.z()))(2), 
@@ -945,7 +954,7 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
   Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
   pelvis_pose.rotate(AngleAxis<double>(pelvis_yaw, Vector3d(0, 0, 1)));
   this->encodeBodyMotionData(this->robot_property_cache.body_ids.pelvis,
-                             constantPoseCubicSpline(pelvis_pose),
+                             constantPoseCubicSpline(pelvis_pose) - plan_shift,
                              body_motion);
   body_motion.weight_multiplier[3] = 0; // don't try to control x and y
   body_motion.weight_multiplier[4] = 0;

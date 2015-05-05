@@ -48,6 +48,7 @@ struct InterceptPlan {
   Isometry3d cop;
   FootID swing_foot;
   FootID stance_foot;
+  Isometry3d stance_pose;
   double error;
 };
 
