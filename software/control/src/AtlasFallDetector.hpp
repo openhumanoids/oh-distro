@@ -7,6 +7,7 @@
 #include "lcmtypes/drc/utime_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/controller_status_t.hpp"
+#include "lcmtypes/drc/atlas_behavior_command_t.hpp"
 #include "RobotStateDriver.hpp"
 
 enum FootID {RIGHT, LEFT};
@@ -108,4 +109,7 @@ private:
   void handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::controller_status_t* msg);
+  void handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
+                         const std::string& chan,
+                         const drc::atlas_behavior_command_t* msg);
 };

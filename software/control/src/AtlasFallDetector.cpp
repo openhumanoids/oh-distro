@@ -31,6 +31,7 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->lcm.subscribe("FOOT_CONTACT_ESTIMATE", &AtlasFallDetector::handleFootContact, this);
   this->lcm.subscribe("EST_ROBOT_STATE", &AtlasFallDetector::handleRobotState, this);
   this->lcm.subscribe("CONTROLLER_STATUS", &AtlasFallDetector::handleControllerStatus, this);
+  this->lcm.subscribe("ATLAS_BEHAVIOR_COMMAND", &AtlasFallDetector::handleAtlasBehavior, this);
 
 }
 
@@ -48,6 +49,14 @@ void AtlasFallDetector::findFootIDS() {
   }
   if (this->foot_body_ids.find(LEFT) == this->foot_body_ids.end()) {
     throw std::runtime_error("could not find l_foot body");
+  }
+}
+
+void AtlasFallDetector::handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
+                       const std::string& chan,
+                       const drc::atlas_behavior_command_t* msg) {
+  if (msg->command != "user" || msg->command != "USER") {
+    this->controller_is_active = false;
   }
 }
 
