@@ -43,12 +43,12 @@ classdef RobotPlanPublisher
             end
         end
 
-        function publishPlanWithSupports(obj,X,T,supports,support_times,channel)
+        function publishPlanWithSupports(obj,X,T,supports,support_times,snopt_info)
             if nargin < 6
-                channel = obj.channel;
+                snopt_info = 0;
             end
-            msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times);
-            obj.lc.publish(channel,msg);
+            msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times,snopt_info);
+            obj.lc.publish(obj.channel,msg);
         end
 
 
@@ -117,11 +117,16 @@ classdef RobotPlanPublisher
             msg.num_bytes = 0;
         end 
 
-        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times)
+        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times,snopt_info)
+            if nargin < 6
+                snopt_info_vector = zeros(1,size(X,2));
+            else
+                snopt_info_vector = snopt_info*ones(1,size(X,2));
+            end
             t = get_timestamp_now();
             msg = drc.robot_plan_with_supports_t();
             msg.utime = t;
-            msg.plan = obj.encodeRobotPlan(X,T);
+            msg.plan = obj.encodeRobotPlan(X,T,t,snopt_info_vector);
             support_sequence = drc.support_sequence_t();
             support_sequence.num_ts = length(support_times);
             support_sequence.ts = support_times;
