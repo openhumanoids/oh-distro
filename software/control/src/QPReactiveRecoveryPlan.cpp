@@ -195,9 +195,34 @@ double QPReactiveRecoveryPlan::icpError(const Ref<const Vector2d> &r_ic, const F
 
 
 bool QPReactiveRecoveryPlan::isICPCaptured(const Ref<const Vector2d> &r_ic, const FootStateMap &foot_states, const VertMap &foot_vertices) {
+  if (foot_states.size() != 2) {
+    throw std::runtime_error("isICPCaptured only supports 2 feet");
+  }
+  Matrix<double, 3, 8> all_vertices_in_world;
 
-  double icp_error = this->icpError(r_ic, foot_states, foot_vertices);
-  return icp_error < 1e-2; // determined by the accuracy of our CVXGEN QP solver. 
+  int foot_count = 0;
+  for (std::map<FootID, FootState>::const_iterator state = foot_states.begin(); state != foot_states.end(); ++state) {
+    if (state->second.contact || 
+        (state->second.pose.translation()(2) - state->second.terrain_height < this->capture_max_flyfoot_height)) {
+      auto vert_it = foot_vertices.find(state->first);
+      if (vert_it == foot_vertices.end()) {
+        std::cout << footIDToName[state->first] << std::endl;
+        throw std::runtime_error("Cannot find foot name in foot_vertices");
+      }
+
+      Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT> foot_vertices_in_world = state->second.pose * (this->capture_shrink_factor * vert_it->second);
+      all_vertices_in_world.block(0, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT*foot_count, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT) = foot_vertices_in_world.block(0,0,3,QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT);
+      ++foot_count;
+    } else {
+      return false;
+    }
+  }
+
+  Matrix<double, 2, Dynamic> active_vertices_in_world = all_vertices_in_world.block(0, 0, 2, foot_count * QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT);
+
+  VectorXd r_ic_near = QPReactiveRecoveryPlan::closestPointInConvexHull(r_ic, active_vertices_in_world);
+  return (r_ic - r_ic_near).norm() < 1e-2; // threshold set by the accuracy of the cvxgen qp solver
+
 }
 
 ExponentialForm QPReactiveRecoveryPlan::icpTrajectory(double x_ic, double x_cop, double omega) {
@@ -677,19 +702,19 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
 
   FootStateMap foot_states = this->getFootStates(v, contact_force_detected);
 
-  bool is_captured = this->icpError(icp.translation().head<2>(), foot_states, this->biped.foot_vertices) < 1e-2;
+  bool is_captured = this->isICPCaptured(icp.translation().head<2>(), foot_states, this->biped.foot_vertices);
 
   std::shared_ptr<drake::lcmt_qp_controller_input> qp_input(new struct drake::lcmt_qp_controller_input);
   this->setupQPInputDefaults(t_global, qp_input);
 
   if (this->last_swing_plan && t_global < this->last_swing_plan->getEndTime()) {
-    // std::cout << "continuing current plan" << std::endl;
+    std::cout << "continuing current plan" << std::endl;
     this->getInterceptInput(t_global, foot_states, qp_input);
   } else if (is_captured) {
-    // std::cout << "is captured" << std::endl;
+    std::cout << "is captured" << std::endl;
     this->getCaptureInput(t_global, foot_states, icp, qp_input);
   } else if (this->last_swing_plan && t_global < this->last_swing_plan->getEndTime() + this->post_execution_delay) {
-    // std::cout << "in delay after plan end" << std::endl;
+    std::cout << "in delay after plan end" << std::endl;
     this->getCaptureInput(t_global, foot_states, icp, qp_input);
   } else {
     std::cout << "replanning" << std::endl;
