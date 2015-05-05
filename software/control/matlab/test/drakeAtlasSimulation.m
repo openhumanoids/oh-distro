@@ -30,7 +30,7 @@ options.hokuyo = false;
 options.foot_force_sensors = false;
 options.obstacles = false; % Replaced by step terrain, though the option still works...
 
-options.enable_fastqp = false;
+options.enable_fastqp = true;
 if (right_hand)
   options.hand_right = 'robotiq_weight_only';
 end
