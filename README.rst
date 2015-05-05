@@ -76,12 +76,26 @@ Add the *sandbox* remote. The *sandbox* is the location where branches can be sh
     git remote add sandbox git@github.com:drcbot/drc.git
     git fetch sandbox
 
-**Update for Edinburgh only (May 2015)**
+**Instruction for Edinburgh (May 2015)**
+
+**NB: this need to be checked**
+
+::
+
+    git clone git@github.com:mitdrc/drc.git
+    git remote add sandbox git@github.com:drcbot/drc.git
+    git fetch sandbox
+    git submodule update --init --recursive
 
 ::
 
     git remote add ipab git@github.com:ipab-slmc/drc.git
     git fetch ipab
+    cd software/drake
+    git remote add ipab git@github.com:ipab-slmc/drake.git
+    git fetch ipab
+    cd ~/drc
+    git submodule update --init --recursive
 
 When creating branches, create it relative to ipab/master:
 
@@ -92,6 +106,8 @@ When creating branches, create it relative to ipab/master:
     git pull ipab master
     git checkout ipab/master
     git checkout -b your-branch-name
+
+
 
 When pushing, push to ipab on github:
 
