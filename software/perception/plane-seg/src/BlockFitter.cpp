@@ -94,6 +94,8 @@ go() {
   Result result;
   result.mSuccess = false;
 
+  if (mCloud->size() < 100) return result;
+
   // voxelize
   LabeledCloud::Ptr cloud(new LabeledCloud());
   pcl::VoxelGrid<pcl::PointXYZL> voxelGrid;
@@ -108,6 +110,8 @@ go() {
     std::cout << "Voxelized cloud size " << cloud->size() << std::endl;
     pcl::io::savePCDFileBinary("cloud_full.pcd", *cloud);
   }
+
+  if (cloud->size() < 100) return result;
 
   // pose
   cloud->sensor_origin_.head<3>() = mOrigin;
@@ -151,9 +155,7 @@ go() {
     voxelGrid.setLeafSize(0.1, 0.1, 0.1);
     voxelGrid.filter(*tempCloud);
 
-    if (tempCloud->size() < 100) {
-      return result;
-    }
+    if (cloud->size() < 100) return result;
 
     // find ground plane
     pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
