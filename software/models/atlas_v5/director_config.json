@@ -184,6 +184,7 @@
   "pelvisLink" : "pelvis",
   "kneeJoints" : ["l_leg_kny", "r_leg_kny"],
   "kneeJointLimits" : [0.6,2.5],
+  "baseZJointLimits" : [0.61, 0.92],
 
   "handCombinations": [
       { "side" : "left",
