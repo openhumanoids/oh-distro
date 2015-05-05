@@ -240,21 +240,6 @@
       },
       "name": "car entry arm",
       "nominal_handedness": "left"
-    },
-    {
-      "allow_mirror": true,
-      "description": "polaris",
-      "joints": {
-        "l_arm_elx": 2.0451743602752686,
-        "l_arm_ely": 0.056549202650785446,
-        "l_arm_lwy": -9.566205108058057e-07,
-        "l_arm_mwx": -1.6570308208465576,
-        "l_arm_shx": 0.09738905727863312,
-        "l_arm_shz": -1.5285158157348633,
-        "l_arm_uwy": 0.0879632905125618
-      },
-      "name": "polaris_step_arm_safe",
-      "nominal_handedness": "left"
     }
   ],
   "door": [
