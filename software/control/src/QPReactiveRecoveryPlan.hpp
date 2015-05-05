@@ -112,7 +112,7 @@ class QPReactiveRecoveryPlan {
 
 	public:
     RigidBodyManipulator* robot;
-    double capture_max_flyfoot_height = 0.025;
+    double capture_max_flyfoot_height = 0.05;
     double capture_shrink_factor = 0.8;
     double desired_icp_offset = 0.1;
     double min_step_duration = 0.4;
