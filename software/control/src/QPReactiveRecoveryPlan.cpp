@@ -958,7 +958,7 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
   Vector4d x0 = Vector4d::Zero();
   x0.head<2>() = 0.5 * foot_states.at(RIGHT).pose.translation().head<2>() + 0.5 * foot_states.at(LEFT).pose.translation().head<2>();
   eigenToCArrayOfArrays(x0, qp_input->zmp_data.x0);
-  eigenToCArrayOfArrays(icp.translation().head<2>(), qp_input->zmp_data.y0);
+  eigenToCArrayOfArrays(x0.head<2>(), qp_input->zmp_data.y0);
 
   std::vector<FootID> foot_ids = {RIGHT, LEFT};
   for (std::vector<FootID>::iterator foot = foot_ids.begin(); foot != foot_ids.end(); ++foot) {
