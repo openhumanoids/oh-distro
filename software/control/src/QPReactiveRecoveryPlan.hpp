@@ -98,12 +98,12 @@ class QPReactiveRecoveryPlan {
 
     void findFootSoleFrames();
     FootStateMap getFootStates(const VectorXd &v, const std::vector<bool>& contact_force_detected);
-    void getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input);
-    void getInterceptInput(double t_global, const FootStateMap &foot_states, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input);
+    void getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, drake::lcmt_qp_controller_input &qp_input);
+    void getInterceptInput(double t_global, const FootStateMap &foot_states, drake::lcmt_qp_controller_input &qp_input);
     std::shared_ptr<lcm::LCM> LCMHandle;
     void initLCM();
     void publishForVisualization(double t_global, const Isometry3d &icp);
-    void setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input);
+    void setupQPInputDefaults(double t_global, drake::lcmt_qp_controller_input &qp_input);
     void encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, drake::lcmt_support_data &support_data);
     void encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion);
     std::unique_ptr<PiecewisePolynomial<double>> straightToGoalTrajectory(double t_global, const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
@@ -160,6 +160,7 @@ class QPReactiveRecoveryPlan {
 
     std::vector<InterceptPlan> getInterceptPlans(const std::map<FootID, FootState> &foot_states, const Isometry3d &icp);
 
+    drake::lcmt_qp_controller_input getQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const std::vector<bool>& contact_force_detected);
     void publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const std::vector<bool>& contact_force_detected);
 
     Vector2d getICP(const VectorXd &v);
