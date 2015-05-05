@@ -741,7 +741,7 @@
     <parent link="l_ufarm"/>
     <child link="l_lfarm"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="25" lower="-1.7628" upper="1.7628" velocity="10"/>
+    <limit effort="25" lower="-1.76" upper="1.76" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7628" soft_upper_limit="11.7628"/>
   </joint>
   <joint name="l_arm_uwy" type="revolute">
@@ -750,7 +750,7 @@
     <parent link="l_larm"/>
     <child link="l_ufarm"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="25" lower="-3.011" upper="3.011" velocity="10"/>
+    <limit effort="25" lower="-2.98" upper="2.98" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-13.011" soft_upper_limit="13.011"/>
   </joint>
   <joint name="l_arm_lwy" type="revolute">
@@ -759,7 +759,7 @@
     <parent link="l_lfarm"/>
     <child link="l_hand"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="25" lower="-2.9671" upper="2.9671" velocity="10"/>
+    <limit effort="25" lower="-2.82" upper="2.82" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-12.9671" soft_upper_limit="12.9671"/>
   </joint>
   <joint name="l_leg_akx" type="revolute">
@@ -768,7 +768,7 @@
     <parent link="l_talus"/>
     <child link="l_foot"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="360" lower="-0.8" upper="0.8" velocity="12"/>
+    <limit effort="360" lower="-0.7" upper="0.7" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
   </joint>
   <joint name="l_leg_aky" type="revolute">
@@ -777,7 +777,7 @@
     <parent link="l_lleg"/>
     <child link="l_talus"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="740" lower="-1" upper="0.7" velocity="12"/>
+    <limit effort="740" lower="-1.06" upper="0.72" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7"/>
   </joint>
   <joint name="l_leg_hpx" type="revolute">
@@ -786,7 +786,7 @@
     <parent link="l_uglut"/>
     <child link="l_lglut"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="530" lower="-0.523599" upper="0.523599" velocity="12"/>
+    <limit effort="530" lower="-0.23" upper="0.52" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
   </joint>
   <joint name="l_leg_hpy" type="revolute">
@@ -804,7 +804,7 @@
     <parent link="pelvis"/>
     <child link="l_uglut"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="275" lower="-0.174358" upper="0.786794" velocity="12"/>
+    <limit effort="275" lower="-0.2" upper="0.82" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.1744" soft_upper_limit="10.7868"/>
   </joint>
   <joint name="l_leg_kny" type="revolute">
@@ -822,7 +822,7 @@
     <parent link="utorso"/>
     <child link="head"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="25" lower="-0.602139" upper="1.14319" velocity="6.28"/>
+    <limit effort="25" lower="-0.605" upper="1.16" velocity="6.28"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6021" soft_upper_limit="11.1432"/>
   </joint>
   <joint name="r_arm_elx" type="revolute">
@@ -867,7 +867,7 @@
     <parent link="r_ufarm"/>
     <child link="r_lfarm"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="25" lower="-1.7628" upper="1.7628" velocity="10"/>
+    <limit effort="25" lower="-1.76" upper="1.76" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7628" soft_upper_limit="11.7628"/>
   </joint>
   <joint name="r_arm_uwy" type="revolute">
@@ -876,7 +876,7 @@
     <parent link="r_larm"/>
     <child link="r_ufarm"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="25" lower="-3.011" upper="3.011" velocity="10"/>
+    <limit effort="25" lower="-2.98" upper="2.98" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-13.011" soft_upper_limit="13.011"/>
   </joint>
   <joint name="r_arm_lwy" type="revolute">
@@ -885,7 +885,7 @@
     <parent link="r_lfarm"/>
     <child link="r_hand"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="25" lower="-2.9671" upper="2.9671" velocity="10"/>
+    <limit effort="25" lower="-2.82" upper="2.82" velocity="10"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-12.9671" soft_upper_limit="12.9671"/>
   </joint>
   <joint name="r_leg_akx" type="revolute">
@@ -894,7 +894,7 @@
     <parent link="r_talus"/>
     <child link="r_foot"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="360" lower="-0.8" upper="0.8" velocity="12"/>
+    <limit effort="360" lower="-0.7" upper="0.7" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
   </joint>
   <joint name="r_leg_aky" type="revolute">
@@ -903,7 +903,7 @@
     <parent link="r_lleg"/>
     <child link="r_talus"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="740" lower="-1" upper="0.7" velocity="12"/>
+    <limit effort="740" lower="-1.06" upper="0.72" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7"/>
   </joint>
   <joint name="r_leg_hpx" type="revolute">
@@ -912,7 +912,7 @@
     <parent link="r_uglut"/>
     <child link="r_lglut"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="530" lower="-0.523599" upper="0.523599" velocity="12"/>
+    <limit effort="530" lower="-0.52" upper="0.23" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
   </joint>
   <joint name="r_leg_hpy" type="revolute">
@@ -930,7 +930,7 @@
     <parent link="pelvis"/>
     <child link="r_uglut"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="275" lower="-0.786794" upper="0.174358" velocity="12"/>
+    <limit effort="275" lower="-0.82" upper="0.2" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.7868" soft_upper_limit="10.1744"/>
   </joint>
   <joint name="r_leg_kny" type="revolute">
