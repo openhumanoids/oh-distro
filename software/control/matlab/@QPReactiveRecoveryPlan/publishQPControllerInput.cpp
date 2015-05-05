@@ -8,7 +8,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     return;
   }
 
-  if (nrhs != 5 || nlhs != 0) mexErrMsgTxt("usage: publishQPControllerInput(obj, t_global, x, rpc, contact_force_detected)");
+  if (nrhs != 4 || nlhs != 0) mexErrMsgTxt("usage: publishQPControllerInput(obj, t_global, x, contact_force_detected)");
 
   int narg = 0;
   sizecheck(prhs[narg], 1, 1);
@@ -26,11 +26,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   ++narg;
 
   
-  sizecheck(prhs[narg], 1, 1);
-  std::shared_ptr<RobotPropertyCache> rpc(new struct RobotPropertyCache);
-  parseRobotPropertyCache(prhs[narg], rpc.get());
-  ++narg;
-
   sizecheck(prhs[narg], plan->robot->num_bodies, 1);
   Map<VectorXd> contact_force_detected_double(mxGetPrSafe(prhs[narg]), mxGetNumberOfElements(prhs[narg]));
   std::vector<bool> contact_force_detected;
@@ -40,5 +35,5 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   }
   ++narg;
 
-  plan->publishQPControllerInput(t_global, q, v, *rpc, contact_force_detected);
+  plan->publishQPControllerInput(t_global, q, v, contact_force_detected);
 }

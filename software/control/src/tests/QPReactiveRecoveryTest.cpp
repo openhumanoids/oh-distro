@@ -168,7 +168,8 @@ int testBangBangIntercept() {
 }
 
 int testisICPCaptured() {
-  std::unique_ptr<QPReactiveRecoveryPlan> plan(new QPReactiveRecoveryPlan(NULL));
+  RobotPropertyCache rpc;
+  std::unique_ptr<QPReactiveRecoveryPlan> plan(new QPReactiveRecoveryPlan(NULL, rpc));
   plan->capture_shrink_factor = 0.8;
   plan->capture_max_flyfoot_height = 0.025;
 
@@ -408,7 +409,8 @@ int testGetInterceptsWithCoP() {
   cop.translate(Vector3d(-0.11, 1.05, 0.1));
   icp.translate(Vector3d(-0.1, 1.06, 0.1));
 
-  std::unique_ptr<QPReactiveRecoveryPlan> planner(new QPReactiveRecoveryPlan(NULL, biped));
+  RobotPropertyCache rpc;
+  std::unique_ptr<QPReactiveRecoveryPlan> planner(new QPReactiveRecoveryPlan(NULL, rpc, biped));
 
   std::vector<InterceptPlan> intercept_plans = planner->getInterceptsWithCoP(swing_foot, foot_states, icp, cop);
 
@@ -444,7 +446,7 @@ int testGetInterceptsWithCoP() {
 
   icp = Isometry3d(Translation<double, 3>(Vector3d(0, 1, 0.1)));
   biped.u_max = 20;
-  planner.reset(new QPReactiveRecoveryPlan(NULL, biped));
+  planner.reset(new QPReactiveRecoveryPlan(NULL, rpc, biped));
   intercept_plans = planner->getInterceptsWithCoP(swing_foot, foot_states, icp, cop);
   for (std::vector<InterceptPlan>::iterator plan = intercept_plans.begin(); plan != intercept_plans.end(); ++plan) {
     // std::cout << plan->tf << std::endl;

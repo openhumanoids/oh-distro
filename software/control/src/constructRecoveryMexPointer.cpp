@@ -14,23 +14,30 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
 
-  if (nrhs != 3 || nlhs != 1) mexErrMsgTxt("usage: mex_ptr = constructMexPointer(robot_ptr, qstar, S_lyapunov)");
+  if (nrhs != 4 || nlhs != 1) mexErrMsgTxt("usage: mex_ptr = constructMexPointer(robot_ptr, qstar, S_lyapunov, rpc)");
 
   int narg = 0;
   sizecheck(prhs[narg], 1, 1);
-  QPReactiveRecoveryPlan *plan;
-  plan = new QPReactiveRecoveryPlan((RigidBodyManipulator*) getDrakeMexPointer(prhs[narg]));
+  RigidBodyManipulator* model = (RigidBodyManipulator*) getDrakeMexPointer(prhs[narg]);
   ++narg;
 
-  sizecheck(prhs[narg], plan->robot->num_positions, 1);
+  sizecheck(prhs[narg], model->num_positions, 1);
   Map<VectorXd> qstar(mxGetPrSafe(prhs[narg]), mxGetNumberOfElements(prhs[narg]));
-  plan->setQDes(qstar);
   ++narg;
 
   sizecheck(prhs[narg], 4, 4);
   Map<Matrix4d>S(mxGetPrSafe(prhs[narg]));
-  plan->setS(S);
   ++narg;
+
+  sizecheck(prhs[narg], 1, 1);
+  RobotPropertyCache rpc;
+  parseRobotPropertyCache(prhs[narg], &rpc);
+  ++narg;
+
+  QPReactiveRecoveryPlan *plan;
+  plan = new QPReactiveRecoveryPlan(model, rpc);
+  plan->setQDes(qstar);
+  plan->setS(S);
 
   plhs[0] = createDrakeMexPointer((void*) plan, "QPReactiveRecoveryPlan");
 }

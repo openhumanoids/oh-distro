@@ -599,18 +599,20 @@ void QPReactiveRecoveryPlan::setRobot(RigidBodyManipulator *robot) {
   this->q_des.resize(robot->num_positions);
 }
 
-QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot) {
+QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc) {
   this->robot = robot;
   this->biped = getAtlasDefaults();
+  this->robot_property_cache = rpc;
   if (this->robot) {
     this->setRobot(robot);
   }
   this->initLCM();
 }
 
-QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot, BipedDescription biped) {
+QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc, BipedDescription biped) {
   this->robot = robot;
   this->biped = biped;
+  this->robot_property_cache = rpc;
   if (this->robot) {
     this->setRobot(robot);
   }
@@ -659,11 +661,11 @@ void QPReactiveRecoveryPlan::resetInitialization() {
   this->last_swing_plan.reset(NULL);
 }
 
-void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const RobotPropertyCache& robot_property_cache, const std::vector<bool>& contact_force_detected) {
+void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const std::vector<bool>& contact_force_detected) {
 
   if (!this->initialized) {
-    for (int i=0; i < robot_property_cache.position_indices.at("arm").size(); ++i) {
-      int j = robot_property_cache.position_indices.at("arm")(i);
+    for (int i=0; i < this->robot_property_cache.position_indices.at("arm").size(); ++i) {
+      int j = this->robot_property_cache.position_indices.at("arm")(i);
       this->q_des(j) = q(j);
     }
     this->initialized = true;
@@ -680,29 +682,29 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
   bool is_captured = this->icpError(icp.translation().head<2>(), foot_states, this->biped.foot_vertices) < 1e-2;
 
   std::shared_ptr<drake::lcmt_qp_controller_input> qp_input(new struct drake::lcmt_qp_controller_input);
-  this->setupQPInputDefaults(t_global, qp_input, robot_property_cache);
+  this->setupQPInputDefaults(t_global, qp_input);
 
   if (this->last_swing_plan && t_global < this->last_swing_plan->getEndTime()) {
     // std::cout << "continuing current plan" << std::endl;
-    this->getInterceptInput(t_global, foot_states, robot_property_cache, qp_input);
+    this->getInterceptInput(t_global, foot_states, qp_input);
   } else if (is_captured) {
     // std::cout << "is captured" << std::endl;
-    this->getCaptureInput(t_global, foot_states, icp, robot_property_cache, qp_input);
+    this->getCaptureInput(t_global, foot_states, icp, qp_input);
   } else if (this->last_swing_plan && t_global < this->last_swing_plan->getEndTime() + this->post_execution_delay) {
     // std::cout << "in delay after plan end" << std::endl;
-    this->getCaptureInput(t_global, foot_states, icp, robot_property_cache, qp_input);
+    this->getCaptureInput(t_global, foot_states, icp, qp_input);
   } else {
     std::cout << "replanning" << std::endl;
     std::vector<InterceptPlan> intercept_plans = this->getInterceptPlans(foot_states, icp);
     if (intercept_plans.size() == 0) {
       std::cout << "recovery is not possible" << std::endl;
-      this->getCaptureInput(t_global, foot_states, icp, robot_property_cache, qp_input);
+      this->getCaptureInput(t_global, foot_states, icp, qp_input);
     } else {
       std::vector<InterceptPlan>::iterator best_plan = std::min_element(intercept_plans.begin(), intercept_plans.end(), errorCompare);
       this->last_intercept_plan = *best_plan;
       this->last_swing_plan.reset(this->swingTrajectory(t_global, this->last_intercept_plan, foot_states).release());
       this->t_start = t_global;
-      this->getInterceptInput(t_global, foot_states, robot_property_cache, qp_input);
+      this->getInterceptInput(t_global, foot_states, qp_input);
     }
   }
 
@@ -712,7 +714,7 @@ void QPReactiveRecoveryPlan::publishQPControllerInput(double t_global, const Vec
   this->LCMHandle->publish("QP_CONTROLLER_INPUT", qp_input.get());
 }
 
-void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input, const RobotPropertyCache &robot_property_cache) {
+void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
   qp_input->be_silent = false;
   qp_input->timestamp = static_cast<int64_t> (t_global * 1e6);
   qp_input->num_support_data = 0;
@@ -766,17 +768,17 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, std::shared_p
   for (int i=0; i < this->robot->num_positions; ++i) {
     qp_input->whole_body_data.q_des[i] = this->q_des(i);
   }
-  for (int i=0; i < robot_property_cache.position_indices.at("arm").size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("arm")[i]);
+  for (int i=0; i < this->robot_property_cache.position_indices.at("arm").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("arm")[i]);
   }
-  for (int i=0; i < robot_property_cache.position_indices.at("neck").size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("neck")[i]);
+  for (int i=0; i < this->robot_property_cache.position_indices.at("neck").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("neck")[i]);
   }
-  for (int i=0; i < robot_property_cache.position_indices.at("back_bky").size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("back_bky")[i]);
+  for (int i=0; i < this->robot_property_cache.position_indices.at("back_bky").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bky")[i]);
   }
-  for (int i=0; i < robot_property_cache.position_indices.at("back_bkz").size(); i++) {
-    qp_input->whole_body_data.constrained_dofs.push_back(robot_property_cache.position_indices.at("back_bkz")[i]);
+  for (int i=0; i < this->robot_property_cache.position_indices.at("back_bkz").size(); i++) {
+    qp_input->whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bkz")[i]);
   }
   qp_input->whole_body_data.num_constrained_dofs = qp_input->whole_body_data.constrained_dofs.size();
 
@@ -799,9 +801,9 @@ void QPReactiveRecoveryPlan::publishForVisualization(double t_global, const Isom
   this->LCMHandle->publish("REACTIVE_RECOVERY_DEBUG", msg.get());
 }
 
-Matrix3Xd heelToeContacts(int body_id, const RobotPropertyCache &robot_property_cache) {
-  Matrix3Xd toe_contacts = robot_property_cache.contact_groups[body_id].at("toe");
-  Matrix3Xd heel_contacts = robot_property_cache.contact_groups[body_id].at("heel");
+Matrix3Xd QPReactiveRecoveryPlan::heelToeContacts(int body_id) {
+  Matrix3Xd toe_contacts = this->robot_property_cache.contact_groups[body_id].at("toe");
+  Matrix3Xd heel_contacts = this->robot_property_cache.contact_groups[body_id].at("heel");
   Matrix3Xd all_contacts(3, toe_contacts.cols() + heel_contacts.cols());
   all_contacts.block(0, 0, 3, toe_contacts.cols()) = toe_contacts;
   all_contacts.block(0, toe_contacts.cols(), 3, heel_contacts.cols()) = heel_contacts;
@@ -817,11 +819,11 @@ std::map<SupportLogicType, std::vector<bool>> createSupportLogicMaps() {
   return ret;
 }
 
-void QPReactiveRecoveryPlan::encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, const RobotPropertyCache &robot_property_cache, drake::lcmt_support_data &support_data) {
+void QPReactiveRecoveryPlan::encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, drake::lcmt_support_data &support_data) {
   support_data.timestamp = 0;
   support_data.body_id = body_id + 1;
   support_data.contact_pts.resize(3);
-  Matrix3Xd all_contacts = heelToeContacts(body_id, robot_property_cache);
+  Matrix3Xd all_contacts = this->heelToeContacts(body_id);
   support_data.num_contact_pts = all_contacts.cols();
   for (int i=0; i < 3; i++) {
     support_data.contact_pts[i].resize(all_contacts.cols());
@@ -907,7 +909,7 @@ PiecewisePolynomial<double> constantPoseCubicSpline(const Isometry3d &pose) {
   return PiecewisePolynomial<double>(poly_matrix, ts);
 }
 
-void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateMap &foot_states, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
+void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateMap &foot_states, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
 
   Vector4d x0 = Vector4d::Zero();
   x0.head<2>() = 0.5 * foot_states.at(RIGHT).pose.translation().head<2>() + 0.5 * foot_states.at(LEFT).pose.translation().head<2>();
@@ -917,18 +919,18 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
   drake::lcmt_support_data support_data_stance;
   int stance_foot_id = this->foot_body_ids.at(this->last_intercept_plan.stance_foot);
   this->encodeSupportData(stance_foot_id, foot_states.at(this->last_intercept_plan.stance_foot), 
-                          REQUIRE_SUPPORT, robot_property_cache, support_data_stance);
+                          REQUIRE_SUPPORT, support_data_stance);
   qp_input->support_data.push_back(support_data_stance);
 
   drake::lcmt_support_data support_data_swing;
   if (t_global - this->t_start <= (this->last_swing_plan->getEndTime() - this->last_swing_plan->getStartTime()) / 2) {
     this->encodeSupportData(this->foot_body_ids.at(this->last_intercept_plan.swing_foot),
                             foot_states.at(this->last_intercept_plan.swing_foot),
-                            PREVENT_SUPPORT, robot_property_cache, support_data_swing);
+                            PREVENT_SUPPORT, support_data_swing);
   } else {
     this->encodeSupportData(this->foot_body_ids.at(this->last_intercept_plan.swing_foot),
                             foot_states.at(this->last_intercept_plan.swing_foot),
-                            ONLY_IF_FORCE_SENSED, robot_property_cache, support_data_swing);
+                            ONLY_IF_FORCE_SENSED, support_data_swing);
   }
   qp_input->support_data.push_back(support_data_swing);
   qp_input->num_support_data = qp_input->support_data.size();
@@ -946,7 +948,7 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
                                 quat2rpy(Vector4d(lfoot_quat.w(), lfoot_quat.x(), lfoot_quat.y(), lfoot_quat.z()))(2));
   Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
   pelvis_pose.rotate(AngleAxis<double>(pelvis_yaw, Vector3d(0, 0, 1)));
-  this->encodeBodyMotionData(robot_property_cache.body_ids.pelvis,
+  this->encodeBodyMotionData(this->robot_property_cache.body_ids.pelvis,
                              constantPoseCubicSpline(pelvis_pose),
                              body_motion);
   body_motion.weight_multiplier[3] = 0; // don't try to control x and y
@@ -955,7 +957,7 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
   qp_input->num_tracked_bodies = qp_input->body_motion_data.size();
 }
 
-void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, const RobotPropertyCache &robot_property_cache, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
+void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, std::shared_ptr<drake::lcmt_qp_controller_input> qp_input) {
 
   Vector4d x0 = Vector4d::Zero();
   x0.head<2>() = 0.5 * foot_states.at(RIGHT).pose.translation().head<2>() + 0.5 * foot_states.at(LEFT).pose.translation().head<2>();
@@ -968,10 +970,10 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
     drake::lcmt_body_motion_data body_motion;
     if ((foot_states.at(*foot).pose.translation().z() - foot_states.at(*foot).terrain_height) < this->capture_max_flyfoot_height) {
       this->encodeSupportData(this->foot_body_ids.at(*foot), foot_states.at(*foot),
-                              REQUIRE_SUPPORT, robot_property_cache, support_data);
+                              REQUIRE_SUPPORT, support_data);
     } else {
       this->encodeSupportData(this->foot_body_ids.at(*foot), foot_states.at(*foot),
-                              ONLY_IF_FORCE_SENSED, robot_property_cache, support_data);
+                              ONLY_IF_FORCE_SENSED, support_data);
     }
     qp_input->support_data.push_back(support_data);
 
@@ -993,7 +995,7 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
                                 quat2rpy(Vector4d(lfoot_quat.w(), lfoot_quat.x(), lfoot_quat.y(), lfoot_quat.z()))(2));
   Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
   pelvis_pose.rotate(AngleAxis<double>(pelvis_yaw, Vector3d(0, 0, 1)));
-  this->encodeBodyMotionData(robot_property_cache.body_ids.pelvis,
+  this->encodeBodyMotionData(this->robot_property_cache.body_ids.pelvis,
                              constantPoseCubicSpline(pelvis_pose),
                              body_motion);
   body_motion.weight_multiplier[3] = 0; // don't try to control x and y
