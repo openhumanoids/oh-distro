@@ -92,7 +92,15 @@ When creating branches, create it relative to ipab/master:
     git pull ipab master
     git checkout -b your-branch-name
 
-When creating a pull request also, make sure that it is relative to ipab/master
+When pushing, push to ipab on github:
+
+::
+
+    git push ipab HEAD
+
+When creating a pull request make sure that it is relative to ipab/drc/master and not
+mitdrc/drc/master
+ 
 
 Dependencies
 ============
