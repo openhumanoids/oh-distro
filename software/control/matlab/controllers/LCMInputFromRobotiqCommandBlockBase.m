@@ -23,8 +23,8 @@ classdef LCMInputFromRobotiqCommandBlockBase < MIMODrakeSystem
       end
 
 
-      output_frame = r.getInputFrame().getFrameByName([handedness, '_atlasFrames.HandInput']);
-      input_frame = r.getOutputFrame().getFrameByName([handedness, '_atlasFrames.HandState']);
+      output_frame = r.getInputFrame().getFrameByNameRecursive([handedness, '_atlasFrames.HandInput']);
+      input_frame = r.getOutputFrame().getFrameByNameRecursive([handedness, '_atlasFrames.HandState']);
 
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
