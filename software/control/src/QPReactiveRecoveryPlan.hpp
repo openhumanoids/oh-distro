@@ -117,7 +117,7 @@ class QPReactiveRecoveryPlan {
     double min_step_duration = 0.4;
     double foot_hull_cop_shrink_factor = 0.5;
     double max_considerable_foot_swing = 0.15;
-    double post_execution_delay = 0.1;
+    double post_execution_delay = 0.4;
     double mu = 0.5;
     double pelvis_height_above_sole = 0.84;
     double swing_height_above_terrain = 0.03;

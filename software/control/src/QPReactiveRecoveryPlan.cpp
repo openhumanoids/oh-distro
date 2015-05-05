@@ -270,11 +270,7 @@ std::vector<InterceptPlan> QPReactiveRecoveryPlan::getInterceptsWithCoP(const Fo
   // std::cerr << "foot name: " << footIDToName[swing_foot] << std::endl;
 
   double t_min_to_xprime = QPReactiveRecoveryPlan::getMinTimeToXprimeAxis(foot_states.find(swing_foot)->second, this->biped, T_world_to_local);
-  if (foot_states.at(swing_foot).contact) {
-    t_min_to_xprime = std::max(t_min_to_xprime, this->min_step_duration);
-  } else {
-    t_min_to_xprime = std::max(t_min_to_xprime, 0.5 * this->min_step_duration);
-  }
+  t_min_to_xprime = std::max(t_min_to_xprime, this->min_step_duration);
 
   double x0 = (T_world_to_local * foot_states.find(swing_foot)->second.pose).translation().x();
   double xd0 = (T_world_to_local.linear() * foot_states.find(swing_foot)->second.velocity.head(3))(0);
