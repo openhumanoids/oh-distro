@@ -101,7 +101,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     function handle_stand_default(obj, msg)
       disp('Got a default stand plan')
       obj.last_plan_msg_utime = msg.utime;
-      new_plan = DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot);
+      new_plan = QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot));
       obj.switchToPlan(new_plan);
     end
 
@@ -110,7 +110,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.recovery_state = obj.RECOVERY_NONE;
       obj.last_plan_msg_utime = msg.utime;
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
-      obj.switchToPlan(obj.smoothPlanTransition(new_plan));
+      obj.switchToPlan(QPLocomotionPlanCPPWrapper(obj.smoothPlanTransition(new_plan)));
     end
 
     function handle_bracing_plan(obj, msg)
@@ -155,7 +155,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       if obj.recovery_state == obj.RECOVERY_ACTIVE
         disp('Exiting reactive recovery mode!');
         obj.recovery_state = obj.RECOVERY_NONE;
-        new_plan = DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot);
+        new_plan = QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot));
         obj.switchToPlan(new_plan);
       end
     end
@@ -209,7 +209,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         if have_right_foot && have_left_foot
           disp('Got double support, pausing now.')
           obj.pause_state = obj.PAUSE_NONE;
-          obj.switchToPlan(DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot));
+          obj.switchToPlan(QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot)));
         end
       elseif obj.pause_state == obj.PAUSE_NOW
         disp('freezing now')
@@ -219,7 +219,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function obj = switchToPlan(obj, new_plan)
-      new_plan = QPLocomotionPlanCPPWrapper(new_plan);
       obj = switchToPlan@atlasControllers.AtlasPlanEval(obj, new_plan);
       obj.sendStatus();
     end
@@ -244,14 +243,14 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2
         if ~isempty(obj.plan_queue)
           current_plan = obj.plan_queue{1};
-          if isa(current_plan, 'QPLocomotionPlan')
-            if strcmp(current_plan.gain_set, 'standing')
+          if isa(current_plan, 'QPLocomotionPlanCPPWrapper')
+            if strcmp(current_plan.settings.gain_set, 'standing')
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
               plan_type = drc.plan_status_t.STANDING;
-            elseif strcmp(current_plan.gain_set, 'walking')
+            elseif strcmp(current_plan.settings.gain_set, 'walking')
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
               plan_type = drc.plan_status_t.WALKING;
-            elseif strcmp(current_plan.gain_set, 'manip')
+            elseif strcmp(current_plan.settings.gain_set, 'manip')
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
               plan_type = drc.plan_status_t.MANIPULATING;
             else
