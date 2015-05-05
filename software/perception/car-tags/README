@@ -1,0 +1,8 @@
+This pod contains the code for detecting AprilTags via
+monocular or stereo cameras, as well as a wrapper driver for running the
+detector within the drc system.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
