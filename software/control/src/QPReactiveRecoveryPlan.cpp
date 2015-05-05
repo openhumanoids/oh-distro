@@ -1005,8 +1005,7 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
     }
     qp_input->support_data.push_back(support_data);
 
-    Isometry3d pose_on_terrain = foot_states.at(*foot).pose;
-    pose_on_terrain.translation().z() = foot_states.at(*foot).terrain_height;
+    Isometry3d pose_on_terrain = snapToTerrain(foot_states.at(*foot).pose, foot_states.at(*foot).terrain_height, foot_states.at(*foot).terrain_normal);
     this->encodeBodyMotionData(this->foot_frame_ids.at(*foot), 
                                constantPoseCubicSpline(pose_on_terrain),
                                body_motion);
