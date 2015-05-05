@@ -529,7 +529,7 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToG
   const double swing_height_first_in_world = state.terrain_height + (state.pose.translation().z() - state.terrain_height) * (1 - std::pow(fraction_first,2));
 
   Matrix<double, 6, 3> xs;
-  Vector6d xd0;
+  Vector6d xd0 = Vector6d::Zero(); // don't try to continue current velocity (it just leads to unpredictable and weird splines)
   Vector6d xdf = Vector6d::Zero();
 
   Quaterniond quat;
@@ -537,8 +537,6 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToG
   quat = Quaterniond(state.pose.rotation());
   auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
   xs.block(3, 0, 3, 1) = w.value();
-  xd0.head<3>() = state.velocity.head<3>();
-  xd0.tail<3>() = w.gradient().value() * state.velocity.tail<4>();
 
   xs.block(0, 2, 3, 1) = intercept_plan.pose_next.translation();
   quat = Quaterniond(intercept_plan.pose_next.rotation());
