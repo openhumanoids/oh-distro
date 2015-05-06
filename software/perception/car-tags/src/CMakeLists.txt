@@ -8,6 +8,7 @@ add_executable(${APP_NAME} car-tags-driver.cpp)
 pods_use_pkg_config_packages(${APP_NAME}
   apriltags
   drc-utils
+  opencv
 )
 
 pods_install_executables(${APP_NAME})

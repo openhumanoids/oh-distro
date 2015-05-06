@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include <unistd.h>
 
+#include <opencv2/opencv.hpp>
+
 #include <AprilTags/apriltag.h>
 #include <AprilTags/common/image_u8.h>
 
@@ -24,8 +26,57 @@
 #include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 
+
+class CameraListener {
+    public:
+    void setup() {
+        mBotWrapper.reset(new drc::BotWrapper());
+        mLcmWrapper.reset(new drc::LcmWrapper(mBotWrapper->getLcm()));
+        mLcmWrapper->get()->subscribe("CAMERA", &CameraListener::onCamera, this);
+    }  
+    
+    void start() {
+        mLcmWrapper->startHandleThread(true);
+    }
+
+    void onCamera(const lcm::ReceiveBuffer* buffer, const std::string& channel,
+                const bot_core::images_t* msg) {
+
+        printf("got %d images\n", msg->n_images);
+        cv::Mat image;
+        decodeImage(msg, image);
+
+    }
+
+    void decodeImage(const bot_core::images_t* msg, cv::Mat & decoded_image) {
+        bot_core::image_t* leftImage = NULL;
+        for (int i = 0; i < msg->n_images; ++i) {
+          if (msg->image_types[i] == bot_core::images_t::LEFT) {
+            leftImage = (bot_core::image_t*)(&msg->images[i]);
+            decoded_image = leftImage->pixelformat == leftImage->PIXEL_FORMAT_MJPEG ?
+                cv::imdecode(cv::Mat(leftImage->data), -1) :
+                cv::Mat(leftImage->height, leftImage->width, CV_8UC1, leftImage->data.data());
+                if (decoded_image.channels() > 1) {
+                    cv::cvtColor(decoded_image, decoded_image, CV_RGB2GRAY);
+                }
+                break;
+          }
+        }
+    }
+    
+    private:
+    drc::LcmWrapper::Ptr mLcmWrapper;
+    drc::BotWrapper::Ptr mBotWrapper;
+};
+
+
+
 int main(int argc, char *argv[])
 {
+    CameraListener camera_listener;
+    camera_listener.setup();
+    camera_listener.start();
+
     getopt_t *getopt = getopt_create();
 
     getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
