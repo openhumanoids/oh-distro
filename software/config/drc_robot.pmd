@@ -150,6 +150,19 @@ group "8.logging" {
     }
 }
 
+group "9.BDI_walking" {
+    cmd "RobotBDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "atlas2";
+    }
+
+    cmd "BDIStepPlotter" {
+        exec = "drc-bdi-step-translator -b";
+        host = "base";
+    }
+}
+
+
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
     host = "atlas2";
