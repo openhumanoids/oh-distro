@@ -145,29 +145,35 @@ classdef PlanSitStand
       obj.shoulder_in_constraints = obj.shoulder_in_constraints.setJointLimits(joint_ind,joint_min,joint_max);
 
 
-      joint_angles_r = [-2.306710720062256;
-         0.14479857683181763;
-         0.16161412000656128;
-         0.767612934112548; 
-         1.5669173002243042; 
-         3];
-       
-      names_r = {'r_arm_elx','r_arm_ely','r_arm_mwx','r_arm_shx','r_arm_shz',...
-        'r_arm_uwy'};
+      % joint_angles_r = [-2.306710720062256;
+      %    0.14479857683181763;
+      %    0.16161412000656128;
+      %    0.767612934112548; 
+      %    1.5669173002243042; 
+      %    3];
 
-      joint_ind_r =zeros(6,1);
-      joint_ind_l = zeros(6,1);
-      joint_angles_l = joint_angles_r;
-      for j = 1:numel(names_r)
-        name_r = names_r{j};
-        joint_ind_r(j) = r.findPositionIndices(name_r);
-        name_l = name_r;
-        name_l(1) = 'l';
+      joint_angles_l = [2.2760796546936035, 0.3644244372844696,0.0,0.784614622592926,...
+      -1.3069056272506714,-1.4836206436157227,0.08796451985836029]';
+       
+      % names_r = {'r_arm_elx','r_arm_ely','r_arm_mwx','r_arm_shx','r_arm_shz',...
+      %   'r_arm_uwy'};
+
+      names_l = {'l_arm_elx','l_arm_ely','l_arm_lwy','l_arm_mwx','l_arm_shx','l_arm_shz',...
+        'l_arm_uwy'};
+
+      joint_ind_r =zeros(length(names_l),1);
+      joint_ind_l = zeros(length(names_l),1);
+      joint_angles_r = joint_angles_l;
+      for j = 1:numel(names_l)
+        name_l = names_l{j};
         joint_ind_l(j) = r.findPositionIndices(name_l);
+        name_r = name_l;
+        name_r(1) = 'r';
+        joint_ind_r(j) = r.findPositionIndices(name_r);
 
         % if joint is not named y then we need to flip the joint angle
-        if ~strcmp(name_l(end),'y')
-          joint_angles_l(j) = -joint_angles_l(j);
+        if ~strcmp(name_r(end),'y')
+          joint_angles_r(j) = -joint_angles_r(j);
         end
       end
 
@@ -507,8 +513,8 @@ classdef PlanSitStand
       end
 
       if strcmp(plan_type,'hold_with_pelvis_contact')
-        qtraj = ConstantTrajectory(q0);
         support_times = [0,10];
+        qtraj = PPTrajectory(foh(support_times,[q0,q0]));
         supports = struct('bodies',{},'contact_pts',{});
         supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot'),obj.pelvis_bodies];
         supports(1).contact_pts = [{kpt.c('l_foot'),kpt.c('r_foot')},obj.pelvis_contact_pts];
@@ -516,8 +522,8 @@ classdef PlanSitStand
       end
 
       if strcmp(plan_type,'hold_without_pelvis_contact')
-        qtraj = ConstantTrajectory(q0);
         support_times = [0,10];
+        qtraj = PPTrajectory(foh(support_times,[q0,q0]));
         supports = struct('bodies',{},'contact_pts',{});
         supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot')];
         supports(1).contact_pts = {kpt.c('l_foot'),kpt.c('r_foot')};

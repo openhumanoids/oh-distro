@@ -51,7 +51,7 @@ def main():
   if len(sys.argv) > 3:
     debounce_time = float(sys.argv[3])
   else:
-    debounce_time  = float(0.01) # seconds
+    debounce_time  = float(0.05) # seconds
 
   c = ContactMonitor(thresold,channel, debounce_time)
   lc.subscribe("EST_ROBOT_STATE", c.state_handle)
