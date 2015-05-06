@@ -93,7 +93,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
       trigger_msg.activate = true;
       trigger_msg.override = false;
       trigger_msg.utime = static_cast<int64_t> (robot_state.t * 1e6);
-      this->lcm.publish("AUTO_STEP_RECOVERY", &trigger_msg);
+      this->lcm.publish("RECOVERY_TRIGGER", &trigger_msg);
     }
   }
 }
