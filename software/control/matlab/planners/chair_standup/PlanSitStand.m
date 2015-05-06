@@ -513,8 +513,8 @@ classdef PlanSitStand
       end
 
       if strcmp(plan_type,'hold_with_pelvis_contact')
-        qtraj = ConstantTrajectory(q0);
         support_times = [0,10];
+        qtraj = PPTrajectory(foh(support_times,[q0,q0]));
         supports = struct('bodies',{},'contact_pts',{});
         supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot'),obj.pelvis_bodies];
         supports(1).contact_pts = [{kpt.c('l_foot'),kpt.c('r_foot')},obj.pelvis_contact_pts];
@@ -522,8 +522,8 @@ classdef PlanSitStand
       end
 
       if strcmp(plan_type,'hold_without_pelvis_contact')
-        qtraj = ConstantTrajectory(q0);
         support_times = [0,10];
+        qtraj = PPTrajectory(foh(support_times,[q0,q0]));
         supports = struct('bodies',{},'contact_pts',{});
         supports(1).bodies = [r.findLinkId('l_foot'),r.findLinkId('r_foot')];
         supports(1).contact_pts = {kpt.c('l_foot'),kpt.c('r_foot')};
