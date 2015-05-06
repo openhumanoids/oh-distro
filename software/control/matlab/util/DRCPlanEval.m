@@ -126,7 +126,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         disp('Got an atlas behavior command...going into silent mode');
         obj.recovery_state = obj.RECOVERY_NONE;
         obj.last_plan_msg_utime = msg.utime;
-        obj.switchToPlan(SilentPlan());
+        obj.switchToPlan(SilentPlan(obj.robot));
       end
     end
 

@@ -1,8 +1,9 @@
 classdef SilentPlan < QPControllerPlanMatlabImplementation
   methods
-    function obj = SilentPlan()
+    function obj = SilentPlan(robot)
       obj.default_qp_input_ = atlasControllers.QPInputConstantHeight();
       obj.default_qp_input_.be_silent = true;
+      obj.default_qp_input_.whole_body_data.q_des = zeros(robot.getNumPositions(), 1);
       obj.default_qp_input_ = obj.default_qp_input_.to_lcm();
     end
 
