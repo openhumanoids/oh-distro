@@ -65,11 +65,13 @@ classdef DRCAtlas < Atlas
       obj.foot_force_sensors = options.foot_force_sensors;
       if (options.foot_force_sensors)
         l_foot_body = findLinkId(obj,'l_foot');
-        l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot');
+        l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot_ft');
+        obj = obj.addFrame(l_foot_frame);
         l_foot_force_sensor = ContactForceTorqueSensor(obj, l_foot_frame);
         obj = addSensor(obj, l_foot_force_sensor);
         r_foot_body = findLinkId(obj,'r_foot');
-        r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot');
+        r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot_ft');
+        obj = obj.addFrame(r_foot_frame);
         r_foot_force_sensor = ContactForceTorqueSensor(obj, r_foot_frame);
         obj = addSensor(obj, r_foot_force_sensor);
       end
@@ -92,7 +94,7 @@ classdef DRCAtlas < Atlas
 
       obj.control_rate = options.control_rate;
       if (isa(obj.getStateFrame(), 'MultiCoordinateFrame'))
-        obj.getStateFrame().getFrameByName('drcFrames.AtlasState').setMaxRate(obj.control_rate);
+        obj.getStateFrame().getFrameByNameRecursive('drcFrames.AtlasState').setMaxRate(obj.control_rate);
       else
         obj.getStateFrame().setMaxRate(obj.control_rate);
       end
@@ -121,12 +123,14 @@ classdef DRCAtlas < Atlas
       end
 
       % Sanity check if we don't have hands.
-      if (~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
+      if (strcmp(obj.manip.getStateFrame().getFrameByNum(1).name, 'atlasPosition'))
         obj.hand_right = 0;
         obj.hand_left = 0;
       end
-      % Construct state vector itself
-      if (obj.hand_right == 0 && obj.hand_left == 0 && ~isa(obj.manip.getStateFrame().getFrameByNum(1), 'MultiCoordinateFrame'))
+      % Construct state vector itself -- start by replacing the
+      % atlasPosition and atlasVelocity frames with a single
+      % larger state frame
+      if (obj.hand_right == 0 && obj.hand_left == 0 && strcmp(obj.manip.getStateFrame().getFrameByNum(1).name, 'atlasPosition'))
         atlas_state_frame = drcFrames.AtlasState(obj);
       else
         atlas_state_frame = obj.manip.getStateFrame();
@@ -149,21 +153,10 @@ classdef DRCAtlas < Atlas
         end
         atlas_state_frame = replaceFrameNum(atlas_state_frame,id,atlasFrames.HandState(obj,id,'left_atlasFrames.HandState'));
       end
-%       if (obj.foot_force_sensors)
-%         lind = obj.getStateFrame.getFrameNumByName('l_footForceTorque_state');
-%         rind = obj.getStateFrame.getFrameNumByName('r_footForceTorque_state');
-%         atlas_state_frame = replaceFrameNum(atlas_state_frame, lind, drcFrames.ForceTorque());
-%         atlas_state_frame = replaceFrameNum(atlas_state_frame, rind, drcFrames.ForceTorque());
-%       end
+      
       tsmanip_state_frame = obj.getStateFrame();
-      if (~isa(tsmanip_state_frame.getFrameByNum(1), 'MultiCoordinateFrame'))
-        tsmanip_state_frame = drcFrames.AtlasState(obj);
-      else
-        tsmanip_state_frame = replaceFrameNum(tsmanip_state_frame,1,drcFrames.AtlasState(obj));
-      end
       if tsmanip_state_frame.dim>atlas_state_frame.dim
-        id = findSubFrameEquivalentModuloTransforms(tsmanip_state_frame,atlas_state_frame);
-        tsmanip_state_frame.frame{id} = atlas_state_frame;
+        tsmanip_state_frame.frame{1} = atlas_state_frame;
         state_frame = tsmanip_state_frame;
       else
         state_frame = atlas_state_frame;
@@ -211,8 +204,9 @@ classdef DRCAtlas < Atlas
           end
         end
       end
+      % The output function of a TSRBM appends the TS sensors to the
+      % output of the RBM. So get ready for that:
       output_frame = atlas_output_frame;
-      % Continuing frame from above...
       if (~isempty(obj.sensor))
         for i=1:length(obj.sensor)
           if (~isa(obj.sensor{i}, 'FullStateFeedbackSensor'))
@@ -224,21 +218,6 @@ classdef DRCAtlas < Atlas
           end
         end
       end
-%       atlas_output_frame = cell(0);
-%       if (~isempty(obj.manip.sensor))
-%         for i=1:length(obj.manip.sensor)
-%           atlas_output_frame{i} = obj.manip.sensor{i}.constructFrame(obj.manip);
-%         end
-%       end
-%       output_frame = atlas_output_frame;
-%       % Continuing frame from above...
-%       if (~isempty(obj.sensor))
-%         for i=1:length(obj.sensor)
-%           output_frame{length(atlas_output_frame)+i} = obj.sensor{i}.constructFrame(obj);
-%         end
-%       end
-%       atlas_output_frame = MultiCoordinateFrame.constructFrame(atlas_output_frame);
-%       output_frame = MultiCoordinateFrame.constructFrame(output_frame);
       
       if ~isequal_modulo_transforms(atlas_output_frame,getOutputFrame(obj.manip))
         obj.manip = obj.manip.setNumOutputs(atlas_output_frame.dim);

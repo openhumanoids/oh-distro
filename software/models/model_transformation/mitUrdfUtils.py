@@ -250,6 +250,13 @@ def setJointOriginRPY(urdf, jointName, rpy):
 
     return urdf
 
+def setJointLimits(urdf, jointName, lower, upper):
+    origin = urdf.find("joint[@name='%s']/limit" % jointName)
+    origin.set('lower', str(lower))
+    origin.set('upper', str(upper))
+
+    return urdf
+
 def setLinkVisualRPY(urdf, linkName, rpy):
     visual = urdf.find("link[@name='%s']/visual" % linkName)
     origin = visual.get('origin')

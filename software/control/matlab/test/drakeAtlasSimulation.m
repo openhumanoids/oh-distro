@@ -8,10 +8,11 @@ if nargin < 5, left_hand = 0; end
 if nargin < 6, world_name = ''; end
 if nargin < 7, box_height = 1.10; end
 
-% IF YOU WANT MASS EST LOOK HERE
+% IF YOU WANT MASS EST OR ACCURATE FOOT F/T LOOK HERE
 % (when this is more fleshed out this will become
 % an argument)
 use_mass_est = false;
+foot_force_sensors = false;
 
 % And if you want external wrench input on pelvis
 use_external_force = 'mtorso';
@@ -28,10 +29,8 @@ options.atlas_version = atlas_version;
 options.floating = true;
 options.dt = 0.00333;
 options.hokuyo = false;
-options.foot_force_sensors = false; % This works (you'll have to change
 options.use_new_kinsol = true;
-% LCMBroadcastBlock to broadcast them)
-% but is slow right now.
+options.foot_force_sensors = false;
 options.obstacles = false; % Replaced by step terrain, though the option still works...
 if (right_hand)
   options.hand_right = 'robotiq_weight_only';
@@ -48,15 +47,13 @@ else
 end
 r_pure = DRCAtlas([],options);
 % And construct a complete one
+options.foot_force_sensors = foot_force_sensors; % warning: slow
 if (add_hokuyo)
     
     
   options.hokuyo = true;
   options.hokuyo_spin_rate = 4;
 end
-options.foot_force_sensors = false; % This works (you'll have to change
-% LCMBroadcastBlock to broadcast them)
-% but is slow right now.
 sdfDir = fullfile(getDrakePath, 'examples', 'Atlas', 'sdf');
 terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 
@@ -202,7 +199,7 @@ while(~done)
   end
   if (left_hand > 0)
     %lcmRobotiqInputBlock = LCMInputFromRobotiqCommandBlockTendons(r_complete, options);
-    lcmRobotiqInputBlock_left = getHandDriver(right_hand, r_complete, 'left', options);
+    lcmRobotiqInputBlock_left = getHandDriver(left_hand, r_complete, 'left', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_left, sys, [], [], [], outs);
   end
 
@@ -217,7 +214,11 @@ while(~done)
   broadcast_opts.publish_truth = 0;
   broadcast_opts.publish_imu = 1;
   lcmBroadcastBlock = LCMBroadcastBlock(r_complete,r_pure, broadcast_opts);
-  sys = mimoCascade(sys, lcmBroadcastBlock);
+  for i=1:r_complete.getOutputFrame.getNumFrames
+     connection(i).from_output = i;
+     connection(i).to_input = i;
+  end
+  sys = mimoCascade(sys, lcmBroadcastBlock, connection);
   
   % Visualize if desired
   if visualize
@@ -226,7 +227,20 @@ while(~done)
     S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
     output_select(1).system=1;
     output_select(1).output=1;
-    sys = mimoCascade(sys,v,[],[],output_select);
+    
+    % Foot force/torque state is confusing the piping, so specify manually
+    if (foot_force_sensors)
+      clear connection;
+      connection(1).from_output = 1;
+      connection(1).to_input = 1;
+      connection(2).from_output = 2;
+      connection(2).to_input = 2;
+      connection(3).from_output = 3;
+      connection(3).to_input = 3;
+      sys = mimoCascade(sys,v,connection,[],output_select);
+    else
+      sys = mimoCascade(sys,v,[],[],output_select);
+    end
     warning(S);
   end
   try
@@ -239,30 +253,30 @@ end
 end
 
 function handString = getHandString(hand_id)
-switch hand_id
-  case 1
-    handString = 'robotiq';
-  case 2
-    handString = 'robotiq_tendons';
-  case 3
-    handString = 'robotiq_simple';
-  case -1
-    handString = 'robotiq_weight_only';
-  otherwise
-    handString = 'none';
-end
+  switch hand_id
+    case 1
+      handString = 'robotiq';
+    case 2
+      handString = 'robotiq_tendons';
+    case 3
+      handString = 'robotiq_simple';
+    case -1
+      handString = 'robotiq_weight_only';
+    otherwise
+      handString = 'none';
+  end
 end
 
 function handDriver = getHandDriver(hand_id, r_complete, handedness, options)
-switch hand_id
-  case 1
-    handDriver = LCMInputFromRobotiqCommandBlock(r_complete, handedness, options);
-  case 2
-    handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, handedness, options);
-  case 3
-    handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, handedness, options);
-  otherwise
-    handDriver = [];
-    disp('unexpected hand type, should be {1, 2, 3}')
-end
+  switch hand_id
+    case 1
+      handDriver = LCMInputFromRobotiqCommandBlock(r_complete, handedness, options);
+    case 2
+      handDriver = LCMInputFromRobotiqCommandBlockTendons(r_complete, handedness, options);
+    case 3
+      handDriver = LCMInputFromRobotiqCommandBlockSimplePD(r_complete, handedness, options);
+    otherwise
+      handDriver = [];
+      disp('unexpected hand type, should be {1, 2, 3}')
+  end
 end
