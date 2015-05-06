@@ -27,9 +27,13 @@
 #include <lcmtypes/bot_core/image_t.hpp>
 
 #include <vector>
+#include <iostream>
 
-struct ImageQuad { 
+#include <Eigen/Dense>
+
+struct TagMatch { 
     cv::Point2d p0, p1, p2, p3;
+    Eigen::Matrix3d H;
 };
 
 class AprilTagDetector {
@@ -57,7 +61,7 @@ class AprilTagDetector {
         tag36h11_destroy(tf);
     }
 
-    std::vector<ImageQuad> detectTags(image_u8_t *im) {
+    std::vector<TagMatch> detectTags(image_u8_t *im) {
 
         const int hamm_hist_max = 10;
 
@@ -68,7 +72,7 @@ class AprilTagDetector {
 
         zarray_t *detections = apriltag_detector_detect(td, im);
         printf("Detections: %d\n", zarray_size(detections));
-        std::vector<ImageQuad> quads;
+        std::vector<TagMatch> tag_matches;
 
         for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
@@ -81,12 +85,14 @@ class AprilTagDetector {
             for (int x = 0; x < 3 ; x++) {
                 image_u8_draw_line(im, det->p[x][0], det->p[x][1], det->p[x+1][0], det->p[x+1][1], 255, 10);
             }
-            ImageQuad quad;
-            quad.p0 = cv::Point2d(det->p[0][0], det->p[0][1]);
-            quad.p1 = cv::Point2d(det->p[1][0], det->p[1][1]);
-            quad.p2 = cv::Point2d(det->p[2][0], det->p[2][1]);
-            quad.p3 = cv::Point2d(det->p[3][0], det->p[3][1]);
-            quads.push_back(quad);
+            TagMatch tag_match;
+            tag_match.p0 = cv::Point2d(det->p[0][0], det->p[0][1]);
+            tag_match.p1 = cv::Point2d(det->p[1][0], det->p[1][1]);
+            tag_match.p2 = cv::Point2d(det->p[2][0], det->p[2][1]);
+            tag_match.p3 = cv::Point2d(det->p[3][0], det->p[3][1]);
+            Eigen::Map<Eigen::Matrix3d> H_map(det->H->data);
+            tag_match.H = H_map.transpose();
+            tag_matches.push_back(tag_match);
 
             //image_u8_draw_line(im, det->p[3][0], det->p[3][1], det->p[0][0], det->p[0][1], 255, 10);
             //image_u8_write_pnm(im, "test.pnm");
@@ -111,7 +117,7 @@ class AprilTagDetector {
         }
 
         printf("\n");
-        return quads;
+        return tag_matches;
     }
     private:
     int quiet;
@@ -145,17 +151,35 @@ class CameraListener {
         decodeImage(msg, image);
         image_u8_t *image_u8 = fromCvMat(image);
         
-        std::vector<ImageQuad> quads = mDetector->detectTags(image_u8);
+        std::vector<TagMatch> tags = mDetector->detectTags(image_u8);
         cv::cvtColor(image, image, CV_GRAY2RGB);
-        for (int i = 0; i < quads.size(); i++) { 
+        for (int i = 0; i < tags.size(); i++) { 
 
-            cv::line(image, quads[i].p0, quads[i].p1, cv::Scalar(255,0,0), 10, CV_AA);
-            cv::line(image, quads[i].p1, quads[i].p2, cv::Scalar(0,255,0), 10, CV_AA);
-            cv::line(image, quads[i].p2, quads[i].p3, cv::Scalar(0,0,255), 10, CV_AA);
-            cv::line(image, quads[i].p3, quads[i].p0, cv::Scalar(0,0,255), 10, CV_AA);
+            cv::line(image, tags[i].p0, tags[i].p1, cv::Scalar(255,0,0), 2, CV_AA);
+            cv::line(image, tags[i].p1, tags[i].p2, cv::Scalar(0,255,0), 2, CV_AA);
+            cv::line(image, tags[i].p2, tags[i].p3, cv::Scalar(0,0,255), 2, CV_AA);
+            cv::line(image, tags[i].p3, tags[i].p0, cv::Scalar(0,0,255), 2, CV_AA);
+            
+
+            Eigen::Vector3d x_axis(2,0,1);
+            Eigen::Vector3d y_axis(0,2,1);
+            Eigen::Vector3d origin(0,0,1);
+
+            Eigen::Vector3d px = tags[i].H * x_axis;
+            Eigen::Vector3d py = tags[i].H * y_axis;
+            Eigen::Vector3d o  = tags[i].H * origin;
+
+            px/= px[2];
+            py/= py[2];
+            o/= o[2];
+
+            cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(px[0], px[1]), cv::Scalar(255,0,255), 1, CV_AA);
+            cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(py[0], py[1]), cv::Scalar(255,255,0), 1, CV_AA);
+
+            std::cout << tags[i].H << std::endl;
         }
         cv::imshow("detections", image);
-        cv::waitKey();
+        cv::waitKey(1);
         image_u8_destroy(image_u8);
     }
 
