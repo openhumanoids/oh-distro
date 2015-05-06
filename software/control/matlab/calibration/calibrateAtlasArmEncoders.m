@@ -242,6 +242,8 @@ end
   end
 
 
+  exit;
+
 end
 
 function send_controller_state(lc, state_name)
