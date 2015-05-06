@@ -35,6 +35,7 @@ def handle_qp_controller_input_msg(channel, data):
   msg = lcmt_qp_controller_input.decode(data)
   #print("received")
   # draw spline segment for each tracked body
+  min_body_z = np.inf
   for i in range(0, msg.num_tracked_bodies):
     bmd = msg.body_motion_data[i]
     ts = bmd.spline.breaks;
@@ -70,6 +71,10 @@ def handle_qp_controller_input_msg(channel, data):
             coefs = np.array(bmd.spline.polynomial_matrices[j].polynomials[k][l].coefficients);
             ctp[k, l] = pval(coefs, t_clamped-ts[j])
         gl.sphere(ctp[0], ctp[1], ctp[2], 0.005, 20, 20);
+        min_body_z = min(min_body_z, ctp[2])
+
+  gl.glColor3f(0, 1, 0)
+  gl.sphere(msg.zmp_data.y0[0][0], msg.zmp_data.y0[1][0], min_body_z - 0.1, 0.01, 20, 20)
 
   gl.switch_buffer()
 
