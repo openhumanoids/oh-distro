@@ -64,10 +64,27 @@ bool configure(const std::string& iConfigFile, const std::string& iName,
     spec.mOutputCommunity = bindingStrings[i+1];
     spec.mInputChannel    = bindingStrings[i+2];
     spec.mOutputChannel   = bindingStrings[i+3];
-    spec.mOutputFrequency = stoi(bindingStrings[i+4]);
+    spec.mOutputFrequency = std::stof(bindingStrings[i+4]);
     oBridge.addBinding(spec);
     ++numBindings;
   }
+
+  // rate stats (optional)
+  std::string rateKey = keyBase + ".rate_info." + iName;
+  std::vector<std::string> rateStrings;
+  if (botWrapper.get(rateKey, rateStrings) && (rateStrings.size() > 0)) {
+    for (int i = 0; i < (int)rateStrings.size(); i+=6) {
+      Bridge::RateInfoSpec spec;
+      spec.mInputCommunity  = rateStrings[i+0];
+      spec.mInputChannel    = rateStrings[i+1];
+      spec.mEnumValue       = std::stoi(rateStrings[i+2]);
+      spec.mOutputCommunity = rateStrings[i+3];
+      spec.mOutputChannel   = rateStrings[i+4];
+      spec.mOutputFrequency = std::stof(rateStrings[i+5]);
+      oBridge.addRateInfo(spec);
+    }
+  }
+
   std::cout << "added " << numBindings << " channel bindings" << std::endl;
 
   return true;
