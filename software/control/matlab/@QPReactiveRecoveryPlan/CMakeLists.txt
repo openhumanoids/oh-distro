@@ -1,11 +1,11 @@
 add_mex(publishQPControllerInput publishQPControllerInput.cpp)
-pods_use_pkg_config_packages(publishQPControllerInput eigen3 drake-util drake-qp-common)
+pods_use_pkg_config_packages(publishQPControllerInput eigen3 drake-mex-util drake-qp-common)
 target_link_libraries(publishQPControllerInput QPReactiveRecoveryPlan)
 
 add_mex(getQPControllerInput getQPControllerInput.cpp)
-pods_use_pkg_config_packages(getQPControllerInput eigen3 drake-util drake-qp-common)
+pods_use_pkg_config_packages(getQPControllerInput eigen3 drake-mex-util drake-qp-common)
 target_link_libraries(getQPControllerInput QPReactiveRecoveryPlan)
 
 add_mex(resetInitialization resetInitialization.cpp)
-pods_use_pkg_config_packages(resetInitialization eigen3 drake-util drake-qp-common)
+pods_use_pkg_config_packages(resetInitialization eigen3 drake-mex-util drake-qp-common)
 target_link_libraries(resetInitialization QPReactiveRecoveryPlan)
