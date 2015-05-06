@@ -23,7 +23,7 @@ end
 
 motion_direction = 1; % default move in positive direction
 qdes = zeros(nq,1);
-if strcmp(joint_name,'l_arm_usy')
+if strcmp(joint_name,'l_arm_shz')
   qdes(joint_index_map.r_arm_shx) = 1.45;
   switch config_id
     case 1
@@ -84,7 +84,7 @@ elseif any(strcmp(joint_name,{'l_arm_elx','l_arm_uwy','l_arm_mwx'}))
       error('unknown config_id');
   end
   
-elseif strcmp(joint_name,'r_arm_usy')
+elseif strcmp(joint_name,'r_arm_shz')
   qdes(joint_index_map.l_arm_shx) = -1.45;
   switch config_id
     case 1

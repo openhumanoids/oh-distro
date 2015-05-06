@@ -162,6 +162,11 @@ cmd "drakeAtlasSimulation Box" {
     host = "base";
 }
 
+cmd "drakeAtlasSimulation Polaris Step" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, -1, -1, 'polaris_step');\"";
+    host = "base";
+}
+
 cmd "drakeAtlasSimulation Runningboard" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, -1, -1, 'runningboard');\"";
     host = "base";
@@ -366,5 +371,20 @@ script "10.runningboard_test" {
     start cmd "drakeAtlasSimulation Runningboard";
     start cmd "PlanEvalRightHand";
     start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
+script "11.run_polaris_step" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Polaris Step";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }

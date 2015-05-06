@@ -90,7 +90,7 @@ NonlinearProgram
         obj.robot = obj.robot.addToIgnoredListOfCollisionFilterGroup('ignores_ground','ground');
         obj.robot = obj.robot.addToIgnoredListOfCollisionFilterGroup('ground','ignores_ground');
         if isempty(robot.terrain)
-          warning('NO TERRAIN: your robot does not have a terrain, consider adding a RigidBodyFlatTerrain');
+          warning('KinematicPoseTrajectory:Terrain','NO TERRAIN: your robot does not have a terrain, consider adding a RigidBodyFlatTerrain');
         end
       end
       obj.robot = compile(obj.robot);

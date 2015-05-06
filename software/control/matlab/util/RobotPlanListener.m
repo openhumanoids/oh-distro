@@ -107,17 +107,21 @@ classdef RobotPlanListener
             support_sequence = msg.support_sequence;
             support_times = support_sequence.ts;
 
-            supports = struct('bodies',{},'contact_pts',{});
+            supports = struct('bodies',{},'contact_pts',{},'use_support_surface',{},'support_surface',{});
 
             for j = 1:length(support_sequence.supports)
                 support_element = support_sequence.supports(j);
+
                 supports(j).bodies = zeros(support_element.num_bodies,1);
                 supports(j).contact_pts = cell(support_element.num_bodies,1);
+                supports(j).use_support_surface = false(support_element.num_bodies, 1);
+                supports(j).support_surface = cell(support_element.num_bodies,1);
 
                 for k = 1:support_element.num_bodies
                     support_body = support_element.support_bodies(k);
                     supports(j).bodies(k) = support_body.body_id;
                     supports(j).contact_pts{k} = support_body.contact_pts;
+                    supports(j).support_surface{k} = [0;0;1;0];
                 end
             end
         end

@@ -24,13 +24,13 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'back_bkx';% <---- joint name 
-input_mode = 'position';% <---- force, position
-control_mode = 'force+velocity';% <---- force, force+velocity, position
-signal = 'chirp';% <----  zoh, foh, chirp
+joint = 'r_arm_elx';% <---- joint name 
+input_mode = 'force';% <---- force, position
+control_mode = 'force';% <---- force, force+velocity, position
+signal = 'foh';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 25;% <--- signal duration (sec)
+T = 30;% <--- signal duration (sec)
 
 % chirp specific
 amp = 0.15;% <----  Nm or radians
@@ -39,7 +39,7 @@ chirp_fT = 0.5;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
-vals = -[0 10 0.5];% <----  Nm or radians
+vals = 3*[0 -1 1 0];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 110;
@@ -58,11 +58,11 @@ end
 % load robot model
 options.floating = true;
 options.ignore_friction = true;
-r = DRCAtlas(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'),options);
+r = DRCAtlas([],options);
 
 % load fixed-base model
 options.floating = false;
-r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/atlas_v4/model_minimal_contact.urdf'));
+r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/atlas_v5/model_minimal_contact.urdf'));
 
 % setup frames
 state_frame = getStateFrame(r);
@@ -105,7 +105,7 @@ if ~isfield(joint_index_map,joint)
   error ('unknown joint name');
 end
 
-gains = getAtlasGains();
+gains = getAtlasGains(5);
 
 % zero out force gains to start --- move to nominal joint position
 gains.k_f_p = zeros(nu,1);
@@ -120,7 +120,7 @@ ref_frame.updateGains(gains);
 % move to desired pos
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,5);
 
-gains2 = getAtlasGains();
+gains2 = getAtlasGains(5);
 if any(strcmp(control_mode,{'force','force+velocity'}))
   % set joint position gains to 0
   gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;

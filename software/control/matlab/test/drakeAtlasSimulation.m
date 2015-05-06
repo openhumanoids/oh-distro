@@ -32,6 +32,8 @@ options.hokuyo = false;
 options.use_new_kinsol = true;
 options.foot_force_sensors = false;
 options.obstacles = false; % Replaced by step terrain, though the option still works...
+
+options.enable_fastqp = true;
 if (right_hand)
   options.hand_right = 'robotiq_weight_only';
 end
@@ -132,6 +134,12 @@ elseif(strcmp(world_name,'box'))
   handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
   kpt = KinematicPoseTrajectory(r_complete,{});
   r_complete = kpt.addSpecifiedCollisionGeometryToRobot({'l_fpelvis','r_fpelvis'},r_complete);  
+elseif(strcmp(world_name,'polaris_step'))
+  step_height = 0.15;
+  extra_height = step_height;
+  box = RigidBodyBox([0.5;1;2*step_height]);
+  r_complete = r_complete.addCollisionGeometryToBody(1,box);
+  r_complete = r_complete.addVisualGeometryToBody(1,box);
 end
 r_complete = compile(r_complete);
 
