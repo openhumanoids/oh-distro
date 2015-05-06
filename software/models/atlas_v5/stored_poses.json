@@ -352,31 +352,6 @@
     },
     {
       "allow_mirror": true,
-      "description": "pre-reach both",
-      "joints": {
-        "back_bkx": 0.0,
-        "back_bky": 0.0,
-        "back_bkz": 0.0,
-        "l_arm_elx": 2.0209803581237793,
-        "l_arm_ely": 3.0596115589141846,
-        "l_arm_lwy": -2.3796141147613525,
-        "l_arm_mwx": 1.0576800107955933,
-        "l_arm_shx": -0.459369033575058,
-        "l_arm_shz": 0.6029572486877441,
-        "l_arm_uwy": -1.156224012374878,
-        "r_arm_elx": -2.0209803581237793,
-        "r_arm_ely": 3.0596115589141846,
-        "r_arm_lwy": 0.7819115519523621,
-        "r_arm_mwx": 1.038118600845337,
-        "r_arm_shx": 0.459369033575058,
-        "r_arm_shz": -0.6029572486877441,
-        "r_arm_uwy": 1.949746012687683
-      },
-      "name": "pre-reach both",
-      "nominal_handedness": "none"
-    },
-    {
-      "allow_mirror": true,
       "description": "post-push",
       "joints": {
         "back_bkx": 0.0,
@@ -399,6 +374,76 @@
       },
       "name": "post-push",
       "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "high touch",
+      "joints": {
+        "l_arm_elx": 2.2759687900543213,
+        "l_arm_ely": 1.5707963705062866,
+        "l_arm_lwy": 0.0,
+        "l_arm_mwx": -0.39923325181007385,
+        "l_arm_shx": 0.0,
+        "l_arm_shz": -0.31166988611221313,
+        "l_arm_uwy": 0.0
+      },
+      "name": "high touch",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre-reach both",
+      "joints": {
+        "back_bkx": 0.0,
+        "back_bky": 0.0,
+        "back_bkz": 0.0,
+        "l_arm_elx": 2.0209803581237793,
+        "l_arm_ely": 3.0596115589141846,
+        "l_arm_lwy": 8.326672684688674e-17,
+        "l_arm_mwx": 1.0576800107955933,
+        "l_arm_shx": -0.459369033575058,
+        "l_arm_shz": 0.6029572486877441,
+        "l_arm_uwy": -1.156224012374878,
+        "r_arm_elx": -2.0209803581237793,
+        "r_arm_ely": 3.0596115589141846,
+        "r_arm_lwy": 0.7819115519523621,
+        "r_arm_mwx": 1.038118600845337,
+        "r_arm_shx": 0.459369033575058,
+        "r_arm_shz": -0.6029572486877441,
+        "r_arm_uwy": 1.949746012687683
+      },
+      "name": "pre-reach both",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre-smash",
+      "joints": {
+        "l_arm_elx": 2.1818318367004395,
+        "l_arm_ely": 0.17592903971672058,
+        "l_arm_lwy": 0.0,
+        "l_arm_mwx": 0.3842903971672058,
+        "l_arm_shx": -0.9707543849945068,
+        "l_arm_shz": -1.3964413404464722,
+        "l_arm_uwy": 1.3010426069826053e-18
+      },
+      "name": "pre-smash",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "smash",
+      "joints": {
+        "l_arm_elx": 0.501868486404419,
+        "l_arm_ely": 0.17592903971672058,
+        "l_arm_lwy": 0.0,
+        "l_arm_mwx": 9.62964972193618e-35,
+        "l_arm_shx": -0.496372789144516,
+        "l_arm_shz": -1.3964413404464722,
+        "l_arm_uwy": 2.7755575615628914e-17
+      },
+      "name": "smash",
+      "nominal_handedness": "left"
     }
   ],
   "drill": [
