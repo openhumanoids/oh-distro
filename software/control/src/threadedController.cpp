@@ -4,7 +4,6 @@
 #include <atomic>
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
-#include "drc/controller_status_t.hpp"
 #include "drc/robot_state_t.hpp"
 #include "drc/atlas_behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>

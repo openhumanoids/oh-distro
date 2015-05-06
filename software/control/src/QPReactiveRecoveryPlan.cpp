@@ -703,13 +703,13 @@ drake::lcmt_qp_controller_input QPReactiveRecoveryPlan::getQPControllerInput(dou
   this->setupQPInputDefaults(t_global, qp_input);
 
   if (this->last_swing_plan && t_global < this->last_swing_plan->getEndTime()) {
-    std::cout << "continuing current plan" << std::endl;
+    // std::cout << "continuing current plan" << std::endl;
     this->getInterceptInput(t_global, foot_states, qp_input);
   } else if (is_captured) {
-    std::cout << "is captured" << std::endl;
+    // std::cout << "is captured" << std::endl;
     this->getCaptureInput(t_global, foot_states, icp, qp_input);
   } else if (this->last_swing_plan && t_global < this->last_swing_plan->getEndTime() + this->post_execution_delay) {
-    std::cout << "in delay after plan end" << std::endl;
+    // std::cout << "in delay after plan end" << std::endl;
     this->getCaptureInput(t_global, foot_states, icp, qp_input);
   } else {
     std::cout << "replanning" << std::endl;

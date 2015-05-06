@@ -19,6 +19,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     pause_state = 0;
     recovery_state = 0;
+    recovery_enabled = 0;
     reactive_recovery_planner;
     contact_force_detected;
     last_status_msg_time;
@@ -57,8 +58,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
-      obj = obj.addLCMInterface('enter_recovery', 'RECOVERY_TRIGGER_ON', @drc.utime_t, 0, @obj.handle_recovery_trigger_on);
-      obj = obj.addLCMInterface('exit_recovery', 'RECOVERY_TRIGGER_OFF', @drc.utime_t, 0, @obj.handle_recovery_trigger_off);
+      obj = obj.addLCMInterface('recovery_trigger', 'RECOVERY_TRIGGER', @drc.boolean_t, 0, @obj.handle_recovery_trigger);
+      obj = obj.addLCMInterface('recovery_enable', 'RECOVERY_ENABLE', @drc.boolean_t, 0, @obj.handle_recovery_enable);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
@@ -141,23 +142,28 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       end
     end
 
-    function handle_recovery_trigger_on(obj, msg)
-      if obj.recovery_state == obj.RECOVERY_NONE && ~isempty(obj.x)
-        disp('Entering reactive recovery mode!');
-        obj.last_plan_msg_utime = msg.utime;
-        obj.reactive_recovery_planner.resetInitialization();
-        obj.switchToPlan(obj.reactive_recovery_planner);
-        obj.recovery_state = obj.RECOVERY_ACTIVE;
+    function handle_recovery_trigger(obj, msg)
+      if msg.data
+        if obj.recovery_enabled && obj.recovery_state == obj.RECOVERY_NONE && ~isempty(obj.x)
+          disp('Entering reactive recovery mode!');
+          obj.last_plan_msg_utime = msg.utime;
+          obj.reactive_recovery_planner.resetInitialization();
+          obj.switchToPlan(obj.reactive_recovery_planner);
+          obj.recovery_state = obj.RECOVERY_ACTIVE;
+        end
+      else
+        if obj.recovery_state == obj.RECOVERY_ACTIVE
+          disp('Exiting reactive recovery mode!');
+          obj.recovery_state = obj.RECOVERY_NONE;
+          new_plan = QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot));
+          obj.switchToPlan(new_plan);
+        end
       end
     end
 
-    function handle_recovery_trigger_off(obj, msg)
-      if obj.recovery_state == obj.RECOVERY_ACTIVE
-        disp('Exiting reactive recovery mode!');
-        obj.recovery_state = obj.RECOVERY_NONE;
-        new_plan = QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot));
-        obj.switchToPlan(new_plan);
-      end
+    function handle_recovery_enable(obj, msg)
+      obj.recovery_enabled = msg.data;
+      obj.sendStatus()
     end
 
     function new_plan = smoothPlanTransition(obj, new_plan)
@@ -288,6 +294,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         else
           plan_status_msg.last_plan_start_utime = current_plan.start_time * 1e6;
         end
+        plan_status_msg.recovery_enabled = obj.recovery_enabled;
         obj.lc.publish('PLAN_EXECUTION_STATUS', plan_status_msg);
 
       end
