@@ -21,6 +21,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     recovery_state = 0;
     recovery_enabled = 0;
     reactive_recovery_planner;
+    bracing_plan;
     contact_force_detected;
     last_status_msg_time;
 
@@ -48,6 +49,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
       obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
+      obj.bracing_plan = BracingPlan(obj.robot);
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -58,7 +60,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
-      obj = obj.addLCMInterface('recovery_trigger', 'RECOVERY_TRIGGER', @drc.boolean_t, 0, @obj.handle_recovery_trigger);
+      obj = obj.addLCMInterface('recovery_trigger', 'RECOVERY_TRIGGER', @drc.recovery_trigger_t, 0, @obj.handle_recovery_trigger);
       obj = obj.addLCMInterface('recovery_enable', 'RECOVERY_ENABLE', @drc.boolean_t, 0, @obj.handle_recovery_enable);
     end
 
@@ -115,9 +117,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_bracing_plan(obj, msg)
-      % disp('Got a bracing plan')
-      new_plan = BracingPlan(obj.robot);
-      obj.switchToPlan(obj.smoothPlanTransition(new_plan));
+      disp('Got a bracing plan')
+      obj.switchToPlan(obj.smoothPlanTransition(obj.bracing_plan));
     end
     
     function handle_atlas_behavior_command(obj, msg)
@@ -143,13 +144,15 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_recovery_trigger(obj, msg)
-      if msg.data
-        if obj.recovery_enabled && obj.recovery_state == obj.RECOVERY_NONE && ~isempty(obj.x)
-          disp('Entering reactive recovery mode!');
-          obj.last_plan_msg_utime = msg.utime;
-          obj.reactive_recovery_planner.resetInitialization();
-          obj.switchToPlan(obj.reactive_recovery_planner);
-          obj.recovery_state = obj.RECOVERY_ACTIVE;
+      if msg.activate
+        if obj.recovery_enabled || msg.override
+          if obj.recovery_state == obj.RECOVERY_NONE && ~isempty(obj.x)
+            disp('Entering reactive recovery mode!');
+            obj.last_plan_msg_utime = msg.utime;
+            obj.reactive_recovery_planner.resetInitialization();
+            obj.switchToPlan(obj.reactive_recovery_planner);
+            obj.recovery_state = obj.RECOVERY_ACTIVE;
+          end
         end
       else
         if obj.recovery_state == obj.RECOVERY_ACTIVE

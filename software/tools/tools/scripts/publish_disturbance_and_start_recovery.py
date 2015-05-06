@@ -44,8 +44,9 @@ msg.fy = 0;
 msg.fz = 0;
 lc.publish("SIM_WRENCH_INPUT", msg.encode())
 
-msg = boolean_t()
+msg = recovery_trigger_t()
+msg.activate = True
+msg.override = True
 msg.utime = 0
-msg.data = True
 lc = lcm.LCM()
 lc.publish("RECOVERY_TRIGGER", msg.encode())

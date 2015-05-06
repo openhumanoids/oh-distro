@@ -4,8 +4,9 @@ import lcm
 import drc
 from drc.utime_t import utime_t
 
-msg = boolean_t()
-msg.utime = 0;
-msg.data = False
+msg = recovery_trigger_t()
+msg.activate = False
+msg.override = True
+msg.utime = 0
 lc = lcm.LCM()
 lc.publish("RECOVERY_TRIGGER", msg.encode())

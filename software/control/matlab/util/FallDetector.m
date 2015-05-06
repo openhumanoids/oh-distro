@@ -92,8 +92,9 @@ classdef FallDetector
               msg.falling=falling_debounced;
               obj.lc.publish('ATLAS_FALL_STATE',msg);
               if msg.falling
-                recovery_msg = drc.boolean_t();
-                recovery_msg.data = true;
+                recovery_msg = drc.recovery_trigger_t();
+                recovery_msg.activate = true;
+                recovery_msg.override = false;
                 obj.lc.publish('RECOVERY_TRIGGER', recovery_msg);
               end
               if obj.publish_lcmgl

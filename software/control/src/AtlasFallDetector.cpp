@@ -1,6 +1,6 @@
 #include "AtlasFallDetector.hpp"
 #include "convexHull.hpp"
-#include "lcmtypes/drc/boolean_t.hpp"
+#include "lcmtypes/drc/recovery_trigger_t.hpp"
 
 
 
@@ -89,10 +89,11 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     this->lcm.publish("ATLAS_FALL_STATE", &fall_msg);
 
     if (!icp_is_ok) {
-      drc::boolean_t trigger_msg;
-      trigger_msg.data = true;
+      drc::recovery_trigger_t trigger_msg;
+      trigger_msg.activate = true;
+      trigger_msg.override = false;
       trigger_msg.utime = static_cast<int64_t> (robot_state.t * 1e6);
-      this->lcm.publish("RECOVERY_TRIGGER", &trigger_msg);
+      this->lcm.publish("AUTO_STEP_RECOVERY", &trigger_msg);
     }
   }
 }
