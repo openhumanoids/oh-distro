@@ -26,6 +26,11 @@
 #include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 
+#include <vector>
+
+struct ImageQuad { 
+    cv::Point2d p0, p1, p2, p3;
+};
 
 class AprilTagDetector {
     public:
@@ -52,7 +57,7 @@ class AprilTagDetector {
         tag36h11_destroy(tf);
     }
 
-    void detectTags(image_u8_t *im) {
+    std::vector<ImageQuad> detectTags(image_u8_t *im) {
 
         const int hamm_hist_max = 10;
 
@@ -62,6 +67,8 @@ class AprilTagDetector {
         //image_u8_t *im = image_u8_create_from_pnm(path);
 
         zarray_t *detections = apriltag_detector_detect(td, im);
+        printf("Detections: %d\n", zarray_size(detections));
+        std::vector<ImageQuad> quads;
 
         for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
@@ -71,6 +78,18 @@ class AprilTagDetector {
                 printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, goodness %8.3f, margin %8.3f\n",
                        i, det->family->d*det->family->d, det->family->h, det->id, det->hamming, det->goodness, det->decision_margin);
 
+            for (int x = 0; x < 3 ; x++) {
+                image_u8_draw_line(im, det->p[x][0], det->p[x][1], det->p[x+1][0], det->p[x+1][1], 255, 10);
+            }
+            ImageQuad quad;
+            quad.p0 = cv::Point2d(det->p[0][0], det->p[0][1]);
+            quad.p1 = cv::Point2d(det->p[1][0], det->p[1][1]);
+            quad.p2 = cv::Point2d(det->p[2][0], det->p[2][1]);
+            quad.p3 = cv::Point2d(det->p[3][0], det->p[3][1]);
+            quads.push_back(quad);
+
+            //image_u8_draw_line(im, det->p[3][0], det->p[3][1], det->p[0][0], det->p[0][1], 255, 10);
+            //image_u8_write_pnm(im, "test.pnm");
             hamm_hist[det->hamming]++;
         }
 
@@ -92,6 +111,7 @@ class AprilTagDetector {
         }
 
         printf("\n");
+        return quads;
     }
     private:
     int quiet;
@@ -124,7 +144,18 @@ class CameraListener {
         cv::Mat image;
         decodeImage(msg, image);
         image_u8_t *image_u8 = fromCvMat(image);
-        mDetector->detectTags(image_u8);
+        
+        std::vector<ImageQuad> quads = mDetector->detectTags(image_u8);
+        cv::cvtColor(image, image, CV_GRAY2RGB);
+        for (int i = 0; i < quads.size(); i++) { 
+
+            cv::line(image, quads[i].p0, quads[i].p1, cv::Scalar(255,0,0), 10, CV_AA);
+            cv::line(image, quads[i].p1, quads[i].p2, cv::Scalar(0,255,0), 10, CV_AA);
+            cv::line(image, quads[i].p2, quads[i].p3, cv::Scalar(0,0,255), 10, CV_AA);
+            cv::line(image, quads[i].p3, quads[i].p0, cv::Scalar(0,0,255), 10, CV_AA);
+        }
+        cv::imshow("detections", image);
+        cv::waitKey();
         image_u8_destroy(image_u8);
     }
 
@@ -145,8 +176,9 @@ class CameraListener {
     }
     
     image_u8_t *fromCvMat(const cv::Mat & img) { 
-        image_u8_t *image_u8 = image_u8_create(img.cols, img.rows);
-        memcpy(image_u8->buf, img.data, sizeof(uint8_t) * img.cols * img.rows);
+        image_u8_t *image_u8 = image_u8_create_alignment(img.cols, img.rows, img.step);
+        int size = img.total() * img.elemSize();
+        memcpy(image_u8->buf, img.data, size * sizeof(uint8_t));
         return image_u8;
     }
 
