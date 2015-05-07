@@ -8,13 +8,7 @@
 
 #include <AprilTags/apriltag.h>
 #include <AprilTags/common/image_u8.h>
-
 #include <AprilTags/tag36h11.h>
-#include <AprilTags/tag36h10.h>
-#include <AprilTags/tag36artoolkit.h>
-#include <AprilTags/tag25h9.h>
-#include <AprilTags/tag25h7.h>
-
 #include <AprilTags/common/zarray.h>
 #include <AprilTags/common/getopt.h>
 
@@ -25,6 +19,9 @@
 #include <lcmtypes/drc/robot_state_t.hpp>
 #include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
+
+#include <bot_core/camtrans.h>
+#include <bot_param/param_util.h>
 
 #include <vector>
 #include <iostream>
@@ -71,9 +68,8 @@ class AprilTagDetector {
         //image_u8_t *im = image_u8_create_from_pnm(path);
 
         zarray_t *detections = apriltag_detector_detect(td, im);
-        printf("Detections: %d\n", zarray_size(detections));
-        std::vector<TagMatch> tag_matches;
 
+        std::vector<TagMatch> tag_matches;
         for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
             zarray_get(detections, i, &det);
@@ -93,9 +89,6 @@ class AprilTagDetector {
             Eigen::Map<Eigen::Matrix3d> H_map(det->H->data);
             tag_match.H = H_map.transpose();
             tag_matches.push_back(tag_match);
-
-            //image_u8_draw_line(im, det->p[3][0], det->p[3][1], det->p[0][0], det->p[0][1], 255, 10);
-            //image_u8_write_pnm(im, "test.pnm");
             hamm_hist[det->hamming]++;
         }
 
@@ -104,19 +97,13 @@ class AprilTagDetector {
         if (!quiet) {
             timeprofile_display(td->tp);
             printf("nedges: %d, nsegments: %d, nquads: %d\n", td->nedges, td->nsegments, td->nquads);
-        }
-
-        if (!quiet)
             printf("Hamming histogram: ");
-
-        for (int i = 0; i < hamm_hist_max; i++)
-            printf("%5d", hamm_hist[i]);
-
-        if (quiet) {
+            for (int i = 0; i < hamm_hist_max; i++)
+                printf("%5d", hamm_hist[i]);
             printf("%12.3f", timeprofile_total_utime(td->tp) / 1.0E3);
+            printf("\n");
         }
-
-        printf("\n");
+        
         return tag_matches;
     }
     private:
@@ -134,10 +121,25 @@ class CameraListener {
         mDetector = detector;
     }
 
-    void setup() {
+    bool setup() {
         mBotWrapper.reset(new drc::BotWrapper());
         mLcmWrapper.reset(new drc::LcmWrapper(mBotWrapper->getLcm()));
         mLcmWrapper->get()->subscribe("CAMERA", &CameraListener::onCamera, this);
+
+        if (mBotWrapper->getBotParam() == nullptr) {
+            printf("Couldn't get bot params\n");
+            return false;
+        }
+
+        mCamTransLeft = bot_param_get_new_camtrans(mBotWrapper->getBotParam(),"CAMERA_LEFT");
+        std::cout << bot_camtrans_get_width(mCamTransLeft) << std::endl;
+        std::cout << bot_camtrans_get_height(mCamTransLeft) << std::endl;
+        std::cout << bot_camtrans_get_focal_length_x(mCamTransLeft) << std::endl;
+        std::cout << bot_camtrans_get_focal_length_y(mCamTransLeft) << std::endl;
+        std::cout << bot_camtrans_get_principal_x(mCamTransLeft) << std::endl;
+        std::cout << bot_camtrans_get_principal_y(mCamTransLeft) << std::endl;
+
+        return true;
     }  
     
     void start() {
@@ -146,7 +148,6 @@ class CameraListener {
 
     void onCamera(const lcm::ReceiveBuffer* buffer, const std::string& channel,
                 const bot_core::images_t* msg) {
-        printf("got %d images\n", msg->n_images);
         cv::Mat image;
         decodeImage(msg, image);
         image_u8_t *image_u8 = fromCvMat(image);
@@ -175,8 +176,6 @@ class CameraListener {
 
             cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(px[0], px[1]), cv::Scalar(255,0,255), 1, CV_AA);
             cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(py[0], py[1]), cv::Scalar(255,255,0), 1, CV_AA);
-
-            std::cout << tags[i].H << std::endl;
         }
         cv::imshow("detections", image);
         cv::waitKey(1);
@@ -210,6 +209,7 @@ class CameraListener {
     AprilTagDetector *mDetector;
     drc::LcmWrapper::Ptr mLcmWrapper;
     drc::BotWrapper::Ptr mBotWrapper;
+    BotCamTrans* mCamTransLeft;
 };
 
 
@@ -237,9 +237,11 @@ int main(int argc, char *argv[])
 
     AprilTagDetector tag_detector(getopt);
     CameraListener camera_listener;
-    camera_listener.setup();
-    camera_listener.setDetector(&tag_detector);
-    camera_listener.start();
+    
+    if (camera_listener.setup()) {
+        camera_listener.setDetector(&tag_detector);
+        camera_listener.start();
+    }
 
     return 0;
 }
