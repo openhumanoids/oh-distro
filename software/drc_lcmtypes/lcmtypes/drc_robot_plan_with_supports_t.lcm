@@ -7,4 +7,6 @@ struct robot_plan_with_supports_t
 	robot_plan_t plan;
 
 	support_sequence_t support_sequence;
+
+  boolean is_quasistatic;
 }

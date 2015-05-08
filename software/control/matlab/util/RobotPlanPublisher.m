@@ -43,11 +43,14 @@ classdef RobotPlanPublisher
             end
         end
 
-        function publishPlanWithSupports(obj,X,T,supports,support_times,snopt_info)
+        function publishPlanWithSupports(obj,X,T,supports,support_times,snopt_info,is_quasistatic)
             if nargin < 6
                 snopt_info = 0;
             end
-            msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times,snopt_info);
+            if nargin < 7
+              is_quasistatic = false;
+            end
+            msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times,snopt_info,is_quasistatic);
             obj.lc.publish(obj.channel,msg);
         end
 
@@ -117,11 +120,14 @@ classdef RobotPlanPublisher
             msg.num_bytes = 0;
         end 
 
-        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times,snopt_info)
+        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times,snopt_info,is_quasistatic)
             if nargin < 6
                 snopt_info_vector = zeros(1,size(X,2));
             else
                 snopt_info_vector = snopt_info*ones(1,size(X,2));
+            end
+            if nargin < 7
+              is_quasistatic = false;
             end
             %t = get_timestamp_now();
             t = now()*24*60*60;
@@ -152,6 +158,7 @@ classdef RobotPlanPublisher
             end
             support_sequence.supports = support_element_array;
             msg.support_sequence = support_sequence;
+            msg.is_quasistatic = is_quasistatic;
         end
 
     end % end methods

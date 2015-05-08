@@ -102,7 +102,7 @@ classdef RobotPlanListener
             
         end	% end function
 
-        function [X,T,supports,support_times] = decodeRobotPlanWithSupports(msg,floating,joint_names)
+        function [X,T,options] = decodeRobotPlanWithSupports(msg,floating,joint_names)
             [X,T,G,CT] = RobotPlanListener.decodeRobotPlan(msg.plan,floating,joint_names);
             support_sequence = msg.support_sequence;
             support_times = support_sequence.ts;
@@ -125,6 +125,9 @@ classdef RobotPlanListener
                     supports(j).use_support_surface(k) = support_body.use_support_surface;
                 end
             end
+            options.supports = supports;
+            options.support_times = support_times;
+            options.is_quasistatic = msg.is_quasistatic;
         end
         
     end % end methods(static)
