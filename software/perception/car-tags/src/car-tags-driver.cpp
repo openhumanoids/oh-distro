@@ -34,7 +34,8 @@ struct TagMatch {
     Eigen::Matrix3d H;
 };
 
-Eigen::Isometry3d getRelativeTransform(TagMatch const& match, Eigen::Matrix3d const & K, double tag_size) {
+Eigen::Isometry3d getRelativeTransform(TagMatch const& match, Eigen::Matrix3d const & K, double tag_size) 
+{
   std::vector<cv::Point3f> objPts;
   std::vector<cv::Point2f> imgPts;
   double s = tag_size/2.;
@@ -117,11 +118,8 @@ class AprilTagDetector {
 
         const int hamm_hist_max = 10;
 
-        
         int hamm_hist[hamm_hist_max];
         memset(hamm_hist, 0, sizeof(hamm_hist));
-        //image_u8_t *im = image_u8_create_from_pnm(path);
-
         zarray_t *detections = apriltag_detector_detect(td, im);
 
         std::vector<TagMatch> tag_matches;
@@ -194,11 +192,6 @@ class CameraListener {
         K(1,1) = bot_camtrans_get_focal_length_y(mCamTransLeft);
         K(0,2) = bot_camtrans_get_principal_x(mCamTransLeft);
         K(1,2) = bot_camtrans_get_principal_y(mCamTransLeft);
-
-        std::cout << K << std::endl;
-        Kinv = K.inverse();
-        std::cout << Kinv << std::endl;
-
         return true;
     }  
     
@@ -220,7 +213,6 @@ class CameraListener {
             cv::line(image, tags[i].p1, tags[i].p2, cv::Scalar(0,255,0), 2, CV_AA);
             cv::line(image, tags[i].p2, tags[i].p3, cv::Scalar(0,0,255), 2, CV_AA);
             cv::line(image, tags[i].p3, tags[i].p0, cv::Scalar(0,0,255), 2, CV_AA);
-            
 
             Eigen::Vector3d x_axis(2,0,1);
             Eigen::Vector3d y_axis(0,2,1);
@@ -281,8 +273,6 @@ class CameraListener {
     drc::BotWrapper::Ptr mBotWrapper;
     BotCamTrans* mCamTransLeft;
     Eigen::Matrix3d K;
-    Eigen::Matrix3d Kinv;
-
 };
 
 
