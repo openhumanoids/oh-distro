@@ -48,5 +48,6 @@ struct qp_locomotion_plan_t
   byte default_qp_input[n_default_qp_input_bytes];
 
   boolean is_quasistatic;
+
 }
 

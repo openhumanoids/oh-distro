@@ -59,14 +59,15 @@ classdef DRCQPLocomotionPlan
       
       msg.num_constrained_dofs = length(obj.constrained_dofs);
       msg.constrained_dofs = obj.constrained_dofs;
-      
+
       msg.num_untracked_joints = length(obj.untracked_joint_inds);
       msg.untracked_joint_inds = obj.untracked_joint_inds;
-      
+
       msg.default_qp_input = mxSerialize(obj.default_qp_input);
       msg.n_default_qp_input_bytes = length(msg.default_qp_input);
-      
+
       msg.is_quasistatic = logical(obj.is_quasistatic);
+
     end
   end
 end
