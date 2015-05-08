@@ -29,6 +29,9 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
       obj.mu = double(msg.mu);
       obj.gain_set = char(msg.gain_set);
       obj.constrained_dofs = double(msg.constrained_dofs);
+      obj.untracked_joint_inds = msg.untracked_joint_inds;
+      obj.default_qp_input = mxDeserialize(msg.default_qp_input);
+      obj.is_quasistatic = logical(msg.is_quasistatic);
     end
 
     function msg = toLCM(obj)
@@ -68,6 +71,15 @@ classdef DRCQPLocomotionPlan < QPLocomotionPlan
       
       msg.num_constrained_dofs = length(obj.constrained_dofs);
       msg.constrained_dofs = obj.constrained_dofs;
+
+      msg.num_untracked_joints = length(obj.untracked_joint_inds);
+      msg.untracked_joint_inds = obj.untracked_joint_inds;
+
+      msg.default_qp_input = mxSerialize(obj.default_qp_input);
+      msg.n_default_qp_input_bytes = length(msg.default_qp_input);
+
+      msg.is_quasistatic = logical(obj.is_quasistatic);
+
     end
   end
 end
