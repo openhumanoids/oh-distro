@@ -123,7 +123,8 @@ classdef RobotPlanPublisher
             else
                 snopt_info_vector = snopt_info*ones(1,size(X,2));
             end
-            t = get_timestamp_now();
+            %t = get_timestamp_now();
+            t = now()*24*60*60;
             msg = drc.robot_plan_with_supports_t();
             msg.utime = t;
             msg.plan = obj.encodeRobotPlan(X,T,t,snopt_info_vector);
@@ -142,6 +143,8 @@ classdef RobotPlanPublisher
                     support_bodies(k).num_contact_pts = size(supports(j).contact_pts{k},2);
                     support_bodies(k).contact_pts = supports(j).contact_pts{k};
                     support_bodies(k).body_id = supports(j).bodies(k);
+                    support_bodies(k).support_surface = supports(j).support_surface{k};
+                    support_bodies(k).use_support_surface = supports(j).use_support_surface(k);
                 end
                support_element_array(j).utime = t;
                support_element_array(j).num_bodies = numel(supports(j).contact_pts);

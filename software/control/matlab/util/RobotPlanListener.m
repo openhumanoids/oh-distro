@@ -121,7 +121,8 @@ classdef RobotPlanListener
                     support_body = support_element.support_bodies(k);
                     supports(j).bodies(k) = support_body.body_id;
                     supports(j).contact_pts{k} = support_body.contact_pts;
-                    supports(j).support_surface{k} = [0;0;1;0];
+                    supports(j).support_surface{k} = support_body.support_surface;
+                    supports(j).use_support_surface(k) = support_body.use_support_surface;
                 end
             end
         end
