@@ -132,12 +132,17 @@ class CameraListener {
         }
 
         mCamTransLeft = bot_param_get_new_camtrans(mBotWrapper->getBotParam(),"CAMERA_LEFT");
-        std::cout << bot_camtrans_get_width(mCamTransLeft) << std::endl;
-        std::cout << bot_camtrans_get_height(mCamTransLeft) << std::endl;
-        std::cout << bot_camtrans_get_focal_length_x(mCamTransLeft) << std::endl;
-        std::cout << bot_camtrans_get_focal_length_y(mCamTransLeft) << std::endl;
-        std::cout << bot_camtrans_get_principal_x(mCamTransLeft) << std::endl;
-        std::cout << bot_camtrans_get_principal_y(mCamTransLeft) << std::endl;
+        
+        K = Eigen::Matrix3d::Identity();
+
+        K(0,0) = bot_camtrans_get_focal_length_x(mCamTransLeft);
+        K(1,1) = bot_camtrans_get_focal_length_y(mCamTransLeft);
+        K(0,2) = bot_camtrans_get_principal_x(mCamTransLeft);
+        K(1,2) = bot_camtrans_get_principal_y(mCamTransLeft);
+
+        std::cout << K << std::endl;
+        Kinv = K.inverse();
+        std::cout << Kinv << std::endl;
 
         return true;
     }  
@@ -210,6 +215,9 @@ class CameraListener {
     drc::LcmWrapper::Ptr mLcmWrapper;
     drc::BotWrapper::Ptr mBotWrapper;
     BotCamTrans* mCamTransLeft;
+    Eigen::Matrix3d K;
+    Eigen::Matrix3d Kinv;
+
 };
 
 
