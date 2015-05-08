@@ -16,7 +16,7 @@
 #include <drc_utils/BotWrapper.hpp>
 #include <lcm/lcm-cpp.hpp>
 
-#include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 
@@ -68,6 +68,24 @@ Eigen::Isometry3d getRelativeTransform(TagMatch const& match, Eigen::Matrix3d co
   return T;
 }
 
+
+bot_core::rigid_transform_t encodeLCMFrame(Eigen::Isometry3d const & frame) 
+{
+    Eigen::Vector3d t(frame.translation());
+    Eigen::Quaterniond r(frame.rotation());
+
+    bot_core::rigid_transform_t msg;
+    msg.quat[0] = r.w();
+    msg.quat[1] = r.x();
+    msg.quat[2] = r.y();
+    msg.quat[3] = r.z();
+
+    msg.trans[0] = t[0];
+    msg.trans[1] = t[1];
+    msg.trans[2] = t[2];
+
+    return msg;
+}
 
 
 class AprilTagDetector {
@@ -225,13 +243,9 @@ class CameraListener {
             auto local_to_camera = camera_to_local.inverse();
             auto tag_to_local = camera_to_local*tag_to_camera;
 
-            //std::cout << "time: " << msg->utime << std::endl;
-            //std::cout << "local_to_camera: " << local_to_camera.translation() << std::endl;
-            //std::cout << "tag_to_camera: " << tag_to_camera.translation() << std::endl;
-            //std::cout << "tag_to_local:" << tag_to_local.translation() << std::endl;
-            //std::cout << "camera_to_local:" << camera_to_local.translation() << std::endl;
-            
-            //TODO: publish this transform on bot-frames
+            bot_core::rigid_transform_t tag_to_local_msg = encodeLCMFrame(tag_to_local);
+            tag_to_local_msg.utime = msg->utime;
+            mLcmWrapper->get()->publish("APRIL_TAG", &tag_to_local_msg);
         }
         cv::imshow("detections", image);
         cv::waitKey(1);
