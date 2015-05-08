@@ -33,6 +33,45 @@ struct TagMatch {
     Eigen::Matrix3d H;
 };
 
+
+Eigen::Matrix4d getRelativeTransform(TagMatch const& match, Eigen::Matrix3d const & K, double tag_size) {
+  std::vector<cv::Point3f> objPts;
+  std::vector<cv::Point2f> imgPts;
+  double s = tag_size/2.;
+  objPts.push_back(cv::Point3f(-s,-s, 0));
+  objPts.push_back(cv::Point3f( s,-s, 0));
+  objPts.push_back(cv::Point3f( s, s, 0));
+  objPts.push_back(cv::Point3f(-s, s, 0));
+
+
+  imgPts.push_back(match.p0);
+  imgPts.push_back(match.p1);
+  imgPts.push_back(match.p2);
+  imgPts.push_back(match.p3);
+
+  cv::Mat rvec, tvec;
+  cv::Matx33f cameraMatrix(
+                           K(0,0), 0, K(0,2),
+                           0, K(1,1), K(1,2),
+                           0,  0,  1);
+
+  cv::Vec4f distParam(0,0,0,0); 
+  cv::solvePnP(objPts, imgPts, cameraMatrix, distParam, rvec, tvec);
+  cv::Matx33d r;
+  cv::Rodrigues(rvec, r);
+  Eigen::Matrix3d wRo;
+  wRo << r(0,0), r(0,1), r(0,2), r(1,0), r(1,1), r(1,2), r(2,0), r(2,1), r(2,2);
+
+  Eigen::Matrix4d T; 
+  T.topLeftCorner(3,3) = wRo;
+  T.col(3).head(3) << tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
+  T.row(3) << 0,0,0,1;
+
+  return T;
+}
+
+
+
 class AprilTagDetector {
     public:
     AprilTagDetector(getopt_t *options) : getopt(options) {
@@ -181,6 +220,10 @@ class CameraListener {
 
             cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(px[0], px[1]), cv::Scalar(255,0,255), 1, CV_AA);
             cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(py[0], py[1]), cv::Scalar(255,255,0), 1, CV_AA);
+
+            auto T = getRelativeTransform(tags[i], K, 0.165);
+
+            //TODO: publish this transform on bot-frames
         }
         cv::imshow("detections", image);
         cv::waitKey(1);
