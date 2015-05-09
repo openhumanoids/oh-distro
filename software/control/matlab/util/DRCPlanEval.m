@@ -272,6 +272,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           elseif isa(current_plan, 'FrozenPlan')
             execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
             plan_type = drc.plan_status_t.STANDING;
+          elseif isa(current_plan, 'BracingPlan')
+            execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+            plan_type = drc.plan_status_t.BRACING;
           else
             execution_flag = drc.plan_status_t.EXECUTION_STATUS_NO_PLAN;
             plan_type = drc.plan_status_t.DUMMY;

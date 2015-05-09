@@ -93,10 +93,17 @@ private:
   double icp_debounce_threshold = 0.01;
   lcm::LCM lcm;
 
+  double icp_far_away_time = NAN;
+  double icp_capturable_radius = 0.3;
+  double bracing_min_trigger_time = 0.2;
+
+  Vector2d icp_cache;
+  bool icp_cached = false;
   Vector2d getICP();
   double getSupportFootHeight();
   Matrix3Xd getVirtualSupportPolygon ();
   bool isICPCaptured();
+  bool isICPCapturable();
 
   void findFootIDS();
   void handleFootContact(const lcm::ReceiveBuffer* rbuf,
