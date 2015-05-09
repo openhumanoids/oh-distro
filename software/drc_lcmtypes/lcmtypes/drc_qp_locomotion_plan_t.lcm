@@ -49,6 +49,7 @@ struct qp_locomotion_plan_t
 
   boolean is_quasistatic;
   boolean use_plan_shift;
+  double D_control[2][2];
 
 }
 

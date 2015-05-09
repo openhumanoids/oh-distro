@@ -20,6 +20,7 @@ classdef DRCQPLocomotionPlan
       obj.default_qp_input = mxDeserialize(msg.default_qp_input);
       obj.is_quasistatic = logical(msg.is_quasistatic);
       obj.use_plan_shift = logical(msg.use_plan_shift);
+      obj.D_control = double(msg.D_control);
     end
 
     function msg = toLCM(obj)
@@ -64,6 +65,7 @@ classdef DRCQPLocomotionPlan
 
       msg.is_quasistatic = logical(obj.is_quasistatic);
       msg.use_plan_shift = logical(obj.use_plan_shift);
+      msg.D_control = obj.D_control;
     end
   end
 end
