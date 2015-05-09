@@ -9,8 +9,25 @@
   },
 
   "teleopJointGroups" : [
+      { "name" : "Base",
+        "joints" : [
+          "base_x",
+          "base_y",
+          "base_z",
+          "base_roll",
+          "base_pitch",
+          "base_yaw"
+          ],
+        "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
+      },
 
-      { "name" : "Arm",
+      { "name" : "Back",
+        "joints" : [
+          ],
+        "labels" : []
+      },
+
+      { "name" : "Left Arm",
         "joints" : [
           "lwr_arm_0_joint",
           "lwr_arm_1_joint",
@@ -21,6 +38,52 @@
           "lwr_arm_6_joint"
           ],
         "labels" : ["0","1", "2", "3", "4", "5", "6"]
+      },
+
+      { "name" : "Right Arm",
+        "joints" : [
+          "lwr_arm_0_joint",
+          "lwr_arm_1_joint",
+          "lwr_arm_2_joint",
+          "lwr_arm_3_joint",
+          "lwr_arm_4_joint",
+          "lwr_arm_5_joint",
+          "lwr_arm_6_joint"
+          ],
+        "labels" : ["0","1", "2", "3", "4", "5", "6"]
+      },
+
+      { "name" : "Neck",
+        "joints" : [
+          "LowerNeckExtensor",
+          "NeckRotator",
+          "UpperNeckExtensor"
+          ],
+        "labels" : ["Low", "Mid", "Up"]
+      },
+
+      { "name" : "Left Leg",
+        "joints" : [
+          "LeftHipRotator",
+          "LeftHipAdductor",
+          "LeftHipExtensor",
+          "LeftKneeExtensor",
+          "LeftAnkleExtensor",
+          "LeftAnkle"
+          ],
+        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
+      },
+
+      { "name" : "Right Leg",
+        "joints" : [
+          "RightHipRotator",
+          "RightHipAdductor",
+          "RightHipExtensor",
+          "RightKneeExtensor",
+          "RightAnkleExtensor",
+          "RightAnkle"
+          ],
+        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
       }
 
     ],
@@ -50,6 +113,11 @@
     "lwr_arm_6_joint"
   ],
   "fixedPointFile" : "../../control/matlab/data/kuka_lwr_fp.mat",
+
+  "pelvisLink" : "Pelvis",
+  "kneeJoints" : ["LeftKneeExtensor", "RightKneeExtensor"],
+  "kneeJointLimits" : [-1.9,-0.6],
+  "baseZJointLimits" : [0.955, 1.14],
 
   "handCombinations": [
       { "side" : "left",
