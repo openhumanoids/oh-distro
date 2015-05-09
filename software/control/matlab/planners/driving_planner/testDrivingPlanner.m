@@ -123,12 +123,13 @@ wheel_xyz = [ 0.51301921,  0.57174747,  1.11740494]';
 wheel_quat =[ 0.9188762 ,  0.03220007,  0.39285272, -0.01721671]';
 wheel_xyzquat = [wheel_xyz;wheel_quat];
 
+wheel_xyzquat_accel_test_log = [ 0.2986127 ,  0.77869179,  1.11781477, 0.89567653, -0.0191484 ,  0.4441922 ,  0.00949625]';
+
 
 
 clear options;
 options.wheel_radius = radius;
-options.wheel_xyzquat = wheel_xyzquat;
-options.turn_radius = 0;
+options.wheel_xyzquat = wheel_xyzquat_accel_test_log;
 q0 = xstar_complete(1:36);
 dp = drivingPlanner(r_complete,options);
 keyboard;
