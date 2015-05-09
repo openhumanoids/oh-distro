@@ -355,6 +355,7 @@ getHeightAndNormal(const T iX, const T iY,
   if (usePlaneForNormal) {
     oNormal << plane[0],plane[1],plane[2];
   }
+  if (oNormal[2] < 0) oNormal = -oNormal;
   return true;
 }
 
