@@ -191,9 +191,6 @@ classdef DRCPlanner
       nq = obj.biped.getNumPositions();
       Q = X(1:nq,:); % extract just the q poses
       qtraj = PPTrajectory(pchip(T,Q));
-      clear options;
-      options.supports = supports;
-      options.support_times = support_times;
       plan = QPLocomotionPlanSettings.fromQuasistaticQTraj(obj.biped, qtraj,options);
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end
