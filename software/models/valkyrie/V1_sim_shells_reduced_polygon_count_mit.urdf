@@ -3743,4 +3743,74 @@
     <joint name="RightHipRotator"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
+  <collision_filter_group name="feet">
+    <member link="l_foot"/>
+    <member link="r_foot"/>
+    <ignored_collision_filter_group collision_filter_group="feet"/>
+  </collision_filter_group>
+  <collision_filter_group name="core">
+    <member link="Trunk"/>
+    <member link="Pelvis"/>
+    <!-- Neck and Head required here for collision planning -->
+    <member link="LowerNeckExtensor"/>
+    <member link="Head"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+  </collision_filter_group>
+  <collision_filter_group name="ignore_core">
+    <member link="RightShoulderAdductor"/>
+    <member link="LeftShoulderAdductor"/>
+    <member link="RightShoulderExtensor"/>
+    <member link="LeftShoulderExtensor"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+  </collision_filter_group>
+  <collision_filter_group name="r_uleg">
+    <member link="RightHipRotator"/>
+    <member link="RightHipAdductor"/>
+    <member link="RightLeg"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+    <ignored_collision_filter_group collision_filter_group="r_uleg"/>
+    <ignored_collision_filter_group collision_filter_group="l_uleg"/>
+  </collision_filter_group>
+  <collision_filter_group name="l_uleg">
+    <member link="LeftHipRotator"/>
+    <member link="LeftHipAdductor"/>
+    <member link="LeftLeg"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+    <ignored_collision_filter_group collision_filter_group="r_uleg"/>
+    <ignored_collision_filter_group collision_filter_group="l_uleg"/>
+  </collision_filter_group>
+  <collision_filter_group name="r_leg">
+    <member link="RightShankStructure"/>
+    <member link="RightAnkleYoke"/>
+    <member link="r_foot"/>
+    <ignored_collision_filter_group collision_filter_group="r_leg"/>
+    <ignored_collision_filter_group collision_filter_group="r_uleg"/>
+  </collision_filter_group>
+  <collision_filter_group name="l_leg">
+    <member link="LeftShankStructure"/>
+    <member link="LeftAnkleYoke"/>
+    <member link="l_foot"/>
+    <ignored_collision_filter_group collision_filter_group="l_leg"/>
+    <ignored_collision_filter_group collision_filter_group="l_uleg"/>
+  </collision_filter_group>
+  <collision_filter_group name="r_arm">
+    <member link="RightShoulderExtensor"/>
+    <member link="RightShoulderAdductor"/>
+    <member link="RightShoulderRotator"/>
+    <member link="RightElbowExtensor"/>
+    <member link="RightForearm"/>
+    <member link="RightWristYoke"/>
+    <member link="RightPalm"/>
+    <ignored_collision_filter_group collision_filter_group="r_arm"/>
+  </collision_filter_group>
+  <collision_filter_group name="l_arm">
+    <member link="LeftShoulderExtensor"/>
+    <member link="LeftShoulderAdductor"/>
+    <member link="LeftShoulderRotator"/>
+    <member link="LeftElbowExtensor"/>
+    <member link="LeftForearm"/>
+    <member link="LeftWristYoke"/>
+    <member link="LeftPalm"/>
+    <ignored_collision_filter_group collision_filter_group="l_arm"/>
+  </collision_filter_group>
 </robot>
