@@ -6,7 +6,7 @@ classdef BracingPlan < QPControllerPlanMatlabImplementation
       qp_input = atlasControllers.QPInputConstantHeight();
       qp_input.whole_body_data.q_des = qstar;
       qp_input.param_set_name = 'bracing';
-      obj.default_qp_input_ = qp_input;
+      obj.default_qp_input_ = qp_input.to_lcm();
 
       obj.duration_ = inf;
 
