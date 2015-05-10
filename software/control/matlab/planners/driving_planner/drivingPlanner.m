@@ -18,6 +18,7 @@ classdef drivingPlanner
     final_posture_constraint
     posture_constraint
     steering_position_constraint
+    steering_gaze_constraint
     hand_orientation_constraint
     N
     qd_max
@@ -48,10 +49,11 @@ classdef drivingPlanner
       end
 
       if ~isfield(options,'wheel_radius') obj.options.wheel_radius = 0.2; end
-      if ~isfield(options,'turn_radius'), obj.options.turn_radius = obj.options.wheel_radius; end
+      if ~isfield(options,'turn_radius'), obj.options.turn_radius = 0.1875; end
       if ~isfield(options,'reach_depth'), obj.options.reach_depth = 0; end
       if ~isfield(options,'quat_tol'), obj.options.quat_tol = 0.0; end
       if ~isfield(options,'tol'), obj.options.tol = 0.0; end
+      if ~isfield(options,'steering_gaze_tol'), obj.options.steering_gaze_tol = 0.01; end
 
       obj.nq = r.getNumPositions;
       obj.non_arm_idx = setdiff([1:obj.nq],obj.arm_idx);
@@ -150,9 +152,16 @@ classdef drivingPlanner
       if ~isfield(options,'depth'), options.depth = 0.1; end
       if ~isfield(options,'angle') options.angle = 0; end
       if ~isfield(options,'speed') options.speed = 1; end
-      obj.q0 = q0;
+      if ~isfield(options,'graspLocation') options.graspLocation = 'center'; end
+      if ~isfield(options, 'turn_radius'), options.turn_radius = obj.options.turn_radius; end
 
-      xyz_des = [0;options.depth;0];
+      obj.q0 = q0;
+      if strcmp(options.graspLocation,'center')
+        xyz_des = [0;options.depth;0];
+      else
+        xyz_des = obj.xyzFromAngle(options.angle, options.depth, options.turn_radius);
+      end
+
       if isfield(options,'xyz_des')
         xyz_des = options.xyz_des;
       end
@@ -185,7 +194,8 @@ classdef drivingPlanner
       if ~isfield(options,'depth'), options.depth = 0; end
       if ~isfield(options,'speed'), options.speed = 1; end
 
-      xyz_des = [0;options.depth;0];
+      xyz_des = obj.getHandPositionInWheelFrame(q0);
+      xyz_des(2) = options.depth;
       if isfield(options,'xyz_des')
         xyz_des = options.xyz_des;
       end
@@ -223,7 +233,8 @@ classdef drivingPlanner
       if ~isfield(options, 'speed') options.speed = 1; end
 
       obj = obj.generateConstraints(q0,options);
-      xyz_des = [0;options.depth;0];
+      xyz_des = obj.getHandPositionInWheelFrame(q0);
+      xyz_des(2) = options.depth;
       lb = xyz_des - obj.options.tol*ones(3,1);
       ub = xyz_des + obj.options.tol*ones(3,1); 
       position_constraint = WorldPositionInFrameConstraint(obj.r,obj.r.findLinkId(obj.hand),obj.hand_pt,obj.T_wheel_2_world,lb,ub);
@@ -238,6 +249,47 @@ classdef drivingPlanner
       q_vals = [q0,q_retract];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
+    end
+
+    function [qtraj] = planSteeringWheelTurn(obj,options,q0)
+      if nargin < 2
+        options = struct();
+      end
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
+      if ~isfield(options,'speed'), options.speed = 1; end
+      if ~isfield(options,'turn_radius'), options.turn_radius = obj.options.turn_radius; end
+      if ~isfield(options,'N'), options.N = 20; end
+      if ~isfield(options,'steering_gaze_tol'), options.steering_gaze_tol = 0.3; end
+      N = options.N;
+      obj = obj.updateJointLimits(q0);
+      obj.update_wheel_2_world_tform(q0);
+      obj = obj.generateConstraints(q0,options);
+      final_posture_constraint = PostureConstraint(obj.r,[N,N+1/2]);
+      final_posture_constraint = final_posture_constraint.setJointLimits([1:obj.nq]',q0,q0);
+      constraints = [{final_posture_constraint, obj.steering_gaze_constraint, obj.posture_constraint}, obj.steering_position_constraint];
+
+      t = [1:N];
+%       q_nom = obj.data.pre_grasp_2;
+      q_nom = q0;
+      q_nom(1:6) = q0(1:6);
+      q_nom_traj = ConstantTrajectory(q_nom);
+      q_seed_traj = q_nom_traj;
+
+      [xtraj, info, infeasible_constraint] = obj.r.inverseKinTraj(t,q_seed_traj,q_nom_traj,constraints{:}, obj.ik_options);
+      ts = xtraj.getBreaks();
+      q_vals = xtraj.eval(ts);
+      q_vals = q_vals(1:obj.nq,:);
+      qtraj = PPTrajectory(pchip(ts,q_vals));
+      rescale_options.robot = obj.r;
+      rescale_options.body_id = obj.r.findLinkId(obj.hand);
+      rescale_options.pts = obj.hand_pt;
+      rescale_options.max_v = options.speed*0.2;
+      rescale_options.max_theta = 100;
+      qtraj = rescalePlanTiming(qtraj,4*options.speed*obj.qd_max,rescale_options);
+      obj.publishTraj(qtraj,info);
+      % need to rescale the trajectory here, use the new stuff fro
     end
 
     % just use lwy to do the turn
@@ -301,24 +353,45 @@ classdef drivingPlanner
         plan_options = struct();
       end
       if ~isfield(options,'angle') options.angle = 0; end
-
+      if ~isfield(options,'N'), options.N = 10; end
+      if ~isfield(options,'turn_radius'), options.turn_radius = obj.options.turn_radius; end
+      if ~isfield(options,'steering_gaze_tol'), options.steering_gaze_tol = 0.3; end
+      turn_radius = options.turn_radius;
+      N = options.N;
 
       % need options for orientation, reach height etc. 
       R = rpy2rotmat([0;-options.angle;0]);
       quat_des = rotmat2quat(obj.T_wheel_2_world(1:3,1:3)*R);
       obj.hand_orientation_constraint = WorldQuatConstraint(obj.r,obj.r.findLinkId(obj.hand),quat_des,obj.options.quat_tol);
-      obj.steering_position_constraint = cell(obj.N,1);
+      
+      
+      % construct the steering gaze constraint
+      steering_gaze_dir_in_wheel_frame = [0;-1;0];
+      steering_gaze_dir_in_world_frame = obj.T_wheel_2_world*[steering_gaze_dir_in_wheel_frame;1];
+      steering_gaze_dir_in_world_frame = steering_gaze_dir_in_world_frame(1:3) - obj.T_wheel_2_world(1:3,4);
+      dir_in_hand_frame = [0;-1;0];
+      % don't want to enforce this constraint at the beginning or end due to planning from a fixed initial state
+      tspan = [2,N-1/2];
+      obj.steering_gaze_constraint = WorldGazeDirConstraint(obj.r,obj.r.findLinkId('l_hand'),dir_in_hand_frame,...
+        steering_gaze_dir_in_world_frame,options.steering_gaze_tol,tspan);
+      obj.steering_position_constraint = {};
+      xyz_current = obj.getHandPositionInWheelFrame(q0);
+      depth_current = xyz_current(2);
+      % need a gaze constraint and a position constraint for each position around, except the first and the last
+      for j = 2:N-1
+        theta = options.angle + (j-1)/(N-1)*2*pi;
+        x = turn_radius*cos(theta);
+        z = turn_radius*sin(theta);
+        y = depth_current;
+        lb = [x;y;z] - obj.options.tol*ones(3,1);
+        ub = [x;y;z] + obj.options.tol*ones(3,1);
+        obj.steering_position_constraint{end+1} = WorldPositionInFrameConstraint(obj.r,obj.r.findLinkId(obj.hand),obj.hand_pt,obj.T_wheel_2_world,lb,ub,[j,j+1/2]);
 
-      % for j = 1:obj.N-1
-      %   theta = options.angle + j/obj.N*2*pi;
-      %   z = obj.options.turn_radius*cos(theta);
-      %   x = obj.options.turn_radius*sin(theta);
-      %   y = obj.options.reach_depth;
-      %   lb = [x;y;z] - obj.options.tol*ones(3,1);
-      %   ub = [x;y;z] + obj.options.tol*ones(3,1);
-      %   obj.steering_position_constraint{j} = WorldPositionInFrameConstraint(obj.r,obj.r.findLinkId(obj.hand),obj.hand_pt,obj.T_wheel_2_world,lb,ub,[j,j+1/2]);
-      % end
-
+        % % constraint that ensures that we start where we end
+        % if j == 1
+        %   obj.steering_position_constraint{N} = WorldPositionInFrameConstraint(obj.r,obj.r.findLinkId(obj.hand),obj.hand_pt,obj.T_wheel_2_world,lb,ub,[N,N+1/2]);
+        % end
+      end
       joint_ind = setdiff([1:obj.nq]',obj.arm_idx);
       obj.posture_constraint = PostureConstraint(obj.r);
       obj.posture_constraint = obj.posture_constraint.setJointLimits(joint_ind,q0(joint_ind),q0(joint_ind));
@@ -332,6 +405,32 @@ classdef drivingPlanner
       hand_pos = obj.r.forwardKin(kinsol,obj.r.findLinkId(obj.hand),obj.hand_pt,2);
       quat_des = hand_pos(4:7);
       hand_orientation_constraint = WorldQuatConstraint(obj.r,obj.r.findLinkId(obj.hand),quat_des,obj.options.quat_tol);
+    end
+
+    function hand_pos_in_wheel_frame = getHandPositionInWheelFrame(obj,q0)
+      if nargin < 2
+        q0 = obj.getRobotState();
+      end
+      
+      T_world_2_wheel = invHT(obj.T_wheel_2_world);
+      kinsol = obj.r.doKinematics(q0);
+      hand_pos = obj.r.forwardKin(kinsol,obj.r.findLinkId('l_hand'),obj.hand_pt);
+      hand_pos_in_wheel_frame = T_world_2_wheel*[hand_pos;1];
+      hand_pos_in_wheel_frame  = hand_pos_in_wheel_frame(1:3);
+    end
+
+    function xyz = xyzFromAngle(obj, theta, depth, turn_radius)
+      if nargin < 3
+        depth = 0;
+      end
+
+      if nargin < 4
+        turn_radius = obj.options.turn_radius;
+      end
+
+      x = turn_radius*cos(theta);
+      z = turn_radius*sin(theta);
+      xyz = [x;depth;z];
     end
 
     function obj = setqdmax(obj,speed)
