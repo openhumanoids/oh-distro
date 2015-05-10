@@ -1,6 +1,6 @@
-function atlasKneeSingularityTest()
+function atlasStandOnRightFoot()
 % NOTEST
-% Make sure we can approach and leave the knee singularity gracefully by commanding a set of poses which are unreachable for the leg. 
+
 
 checkDependency('iris');
 checkDependency('lcmgl');
