@@ -791,16 +791,16 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, drake::lcmt_q
     qp_input.whole_body_data.q_des[i] = this->q_des(i);
   }
   for (int i=0; i < this->robot_property_cache.position_indices.at("arm").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("arm")[i]);
+    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("arm")[i] + 1);
   }
   for (int i=0; i < this->robot_property_cache.position_indices.at("neck").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("neck")[i]);
+    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("neck")[i] + 1);
   }
   for (int i=0; i < this->robot_property_cache.position_indices.at("back_bky").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bky")[i]);
+    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bky")[i] + 1);
   }
   for (int i=0; i < this->robot_property_cache.position_indices.at("back_bkz").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bkz")[i]);
+    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bkz")[i] + 1);
   }
   qp_input.whole_body_data.num_constrained_dofs = qp_input.whole_body_data.constrained_dofs.size();
 
