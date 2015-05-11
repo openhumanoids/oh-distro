@@ -156,7 +156,7 @@ go() {
     voxelGrid.setLeafSize(0.1, 0.1, 0.1);
     voxelGrid.filter(*tempCloud);
 
-    if (cloud->size() < 100) return result;
+    if (tempCloud->size() < 100) return result;
 
     // find ground plane
     const float kGroundPlaneDistanceThresh = 0.01; // TODO: param
