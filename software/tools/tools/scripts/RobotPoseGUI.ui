@@ -287,6 +287,16 @@
          </item>
          <item>
           <property name="text">
+           <string>left arm, right arm, back, left leg, right leg</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>left arm, right arm, back, left leg, right leg, base</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>back</string>
           </property>
          </item>
