@@ -98,6 +98,7 @@ private:
   double icp_capturable_radius = 0.25;
   double bracing_min_trigger_time = 0.4;
   Vector2d last_cop;
+  bool bracing_spamlatch = false;
 
   Vector2d icp_cache;
   bool icp_cached = false;

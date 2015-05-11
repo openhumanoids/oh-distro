@@ -89,7 +89,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
   bool icp_is_capturable = this->isICPCapturable();
   // must remain not capturable for sufficient time to trigger bracing; if
   // we got to capturable reset timer
-  if (icp_is_capturable) this->icp_far_away_time = NAN;
+  if (icp_is_capturable) {this->icp_far_away_time = NAN; this->bracing_spamlatch = false;}
   else if (!icp_is_capturable && isnan(this->icp_far_away_time)){
     this->icp_far_away_time = robot_state.t;
     icp_is_capturable = true;
@@ -99,8 +99,10 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     icp_is_capturable = true;
     std::cout << "counting to bracing!" << this->icp_far_away_time << "vs " << robot_state.t << std::endl;
   } 
-  if (!icp_is_capturable)
+  if (!icp_is_capturable && !this->bracing_spamlatch){
     std::cout << "bracing!" << std::endl;
+    this->bracing_spamlatch = true;
+  }
 
   if (this->controller_is_active) {
     drc::atlas_fall_detector_status_t fall_msg;

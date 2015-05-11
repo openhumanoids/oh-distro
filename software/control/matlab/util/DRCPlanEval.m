@@ -36,6 +36,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
    RECOVERY_NONE = 0;
    RECOVERY_ACTIVE = 1;
+   RECOVERY_BRACING = 2;
  end
 
   methods
@@ -49,7 +50,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
       obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
-      obj.bracing_plan = BracingPlan(obj.robot);
+      %obj.bracing_plan = BracingPlan(obj.robot);
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -118,7 +119,10 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function handle_bracing_plan(obj, msg)
       disp('Got a bracing plan')
-      obj.recovery_state = obj.RECOVERY_NONE;
+      if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
+        obj.bracing_plan = BracingPlan(obj.robot, obj.x(1:obj.robot.getNumPositions));
+      end
+      obj.recovery_state = obj.RECOVERY_BRACING;
       obj.switchToPlan(obj.bracing_plan);
     end
     
