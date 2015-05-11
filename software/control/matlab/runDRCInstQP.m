@@ -14,8 +14,7 @@ atlas_options = applyDefaults(atlas_options, struct('atlas_version', 5, ...
                                                     'hand_left', 'robotiq_weight_only'));
 ctrl_options = applyDefaults(ctrl_options, struct('atlas_command_channel', 'ATLAS_COMMAND',...
                                                   'atlas_behavior_channel', 'ATLAS_BEHAVIOR_COMMAND',...
-                                                  'max_infocount', 10));
-
+                                                  'max_infocount', 20));
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
@@ -24,6 +23,7 @@ atlas_options.visual = false; % loads faster
 atlas_options.floating = true;
 atlas_options.ignore_friction = true;
 atlas_options.run_in_simul_mode = run_in_simul_mode;
+atlas_options.use_new_kinsol = true;
 
 r = DRCAtlas([],atlas_options);
 r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));

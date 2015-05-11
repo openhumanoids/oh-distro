@@ -14,6 +14,8 @@ if nargin < 7, box_height = 1.10; end
 use_mass_est = false;
 foot_force_sensors = false;
 
+% And if you want external wrench input on pelvis
+use_external_force = 'mtorso';
 initial_offset_xyzrpy = [0;0;0;0;0;0];
 
 % silence some warnings
@@ -27,6 +29,7 @@ options.atlas_version = atlas_version;
 options.floating = true;
 options.dt = 0.00333;
 options.hokuyo = false;
+options.use_new_kinsol = true;
 options.foot_force_sensors = false;
 options.obstacles = false; % Replaced by step terrain, though the option still works...
 
@@ -48,6 +51,8 @@ r_pure = DRCAtlas([],options);
 % And construct a complete one
 options.foot_force_sensors = foot_force_sensors; % warning: slow
 if (add_hokuyo)
+    
+    
   options.hokuyo = true;
   options.hokuyo_spin_rate = 4;
 end
@@ -56,6 +61,7 @@ terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 
 options.hand_right = getHandString(right_hand);
 options.hand_left = getHandString(left_hand);
+options.external_force = use_external_force;
 
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
@@ -204,7 +210,13 @@ while(~done)
     lcmRobotiqInputBlock_left = getHandDriver(left_hand, r_complete, 'left', options);
     sys = mimoFeedback(lcmRobotiqInputBlock_left, sys, [], [], [], outs);
   end
-  
+
+  % LCM interpret in for the force/torque type
+  if (use_external_force)
+    lcmFTBlock = LCMInputFromForceTorqueBlock(r_complete, r_pure, use_external_force);
+    sys = mimoFeedback(lcmFTBlock, sys, [], [], [], outs);
+  end
+
   % LCM broadcast out
   broadcast_opts = options;
   broadcast_opts.publish_truth = 0;

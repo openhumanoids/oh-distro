@@ -27,6 +27,7 @@ atlas_options = struct('floating', true,...
                        'ignore_friction', true,...
                        'dt', 0.001,...
                        'atlas_version', 5,...
+                       'enable_fastqp', false,...
                        'use_bullet', options.use_bullet,...
                        'hokuyo', options.hokuyo,...
                        'visualize', false);
@@ -88,20 +89,16 @@ walking_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(walking_ctrl_m
 tic;
 walking_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(DRCQPLocomotionPlan.toLCM(walking_ctrl_data), r);
 fprintf(1, 'control data lcm code/decode time: %f\n', toc);
+walking_ctrl_data = QPLocomotionPlanCPPWrapper(walking_ctrl_data);
 
-walking_ctrl_data.comtraj = ExpPlusPPTrajectory(walking_ctrl_data.comtraj.breaks,...
-                                                walking_ctrl_data.comtraj.K,...
-                                                walking_ctrl_data.comtraj.A,...
-                                                walking_ctrl_data.comtraj.alpha,...
-                                                walking_ctrl_data.comtraj.gamma);
 % plot walking traj in drake viewer
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 ts = walking_plan.ts;
 for i=1:length(ts)
   lcmgl.glColor3f(0, 0, 1);
-  lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.sphere([walking_ctrl_data.settings.comtraj.eval(ts(i));0], 0.01, 20, 20);
   lcmgl.glColor3f(0, 1, 0);
-  lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.sphere([walking_ctrl_data.settings.zmptraj.eval(ts(i));0], 0.01, 20, 20);
 end
 lcmgl.switchBuffers();
 
@@ -118,7 +115,7 @@ output_select(1).system=1;
 output_select(1).output=1;
 sys = mimoCascade(sys,v,[],[],output_select);
 
-traj = simulate(sys, [0, walking_ctrl_data.duration], walking_ctrl_data.x0, struct('gui_control_interface', true));
+traj = simulate(sys, [0, walking_ctrl_data.settings.duration], walking_ctrl_data.settings.x0, struct('gui_control_interface', true));
 
 playback(v,traj,struct('slider',true));
 

@@ -82,15 +82,11 @@ request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_msg = walking_planner.plan_walking(r, request, false);
 walking_ctrl_data = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(walking_ctrl_msg, r);
+walking_ctrl_data = QPLocomotionPlanCPPWrapper(walking_ctrl_data);
 
 ts = walking_plan.ts;
 T = ts(end);
 
-walking_ctrl_data.comtraj = ExpPlusPPTrajectory(walking_ctrl_data.comtraj.breaks,...
-                                                walking_ctrl_data.comtraj.K,...
-                                                walking_ctrl_data.comtraj.A,...
-                                                walking_ctrl_data.comtraj.alpha,...
-                                                walking_ctrl_data.comtraj.gamma);
 % plot walking traj in drake viewer
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 ts = walking_plan.ts;

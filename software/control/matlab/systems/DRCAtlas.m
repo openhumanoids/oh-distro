@@ -98,7 +98,7 @@ classdef DRCAtlas < Atlas
       else
         obj.getStateFrame().setMaxRate(obj.control_rate);
       end
-      
+
   	  switch obj.atlas_version
         case 3
           obj.fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_v3_fp.mat');
@@ -165,7 +165,7 @@ classdef DRCAtlas < Atlas
       obj = obj.setStateFrame(state_frame);
       
       % Same bit of complexity for input frame to get hand inputs
-      if (obj.hand_right > 0 || obj.hand_left > 0)
+      if (obj.hand_right > 0 || obj.hand_left > 0 || obj.external_force > 0)
         input_frame = getInputFrame(obj);
         input_frame  = replaceFrameNum(input_frame,1,drcFrames.AtlasInput(obj));
       else

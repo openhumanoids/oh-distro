@@ -102,7 +102,7 @@ end
 
   function moveAndWriteCalibration
 
-    send_controller_state(lc, 'MANIPULATING');
+    send_controller_state(lc, 'DUMMY');
     switch_back_to_freeze = false;
     % get current atlas behavior
     pause(0.25);

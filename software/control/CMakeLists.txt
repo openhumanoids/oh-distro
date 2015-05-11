@@ -49,6 +49,7 @@ add_subdirectory(src)
 add_subdirectory(contact_monitor)
 add_subdirectory(fall_detector)
 add_subdirectory(joint_monitor)
+add_subdirectory(matlab/@QPReactiveRecoveryPlan)
 
 message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab")
 
@@ -76,6 +77,11 @@ file(WRITE ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m
 
 enable_testing()
 include(CTest)
+
+add_test(NAME testQPReactiveRecovery
+         COMMAND testQPReactiveRecovery)
+add_test(NAME testAtlasFallDetector
+         COMMAND testAtlasFallDetector)
 
 #find_program(matlab matlab)
 #if (NOT matlab-NOTFOUND)

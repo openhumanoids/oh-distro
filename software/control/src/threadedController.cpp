@@ -1,10 +1,9 @@
 #include <mutex>
 #include <thread>
-#include <chrono>
+// #include <chrono>
 #include <atomic>
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
-#include "drc/controller_status_t.hpp"
 #include "drc/robot_state_t.hpp"
 #include "drc/atlas_behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
@@ -300,7 +299,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       std::this_thread::yield();
     }
 
-    auto begin = std::chrono::high_resolution_clock::now();
+    // auto begin = std::chrono::high_resolution_clock::now();
 
 
     // copy pointers
@@ -365,9 +364,9 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg);
     }
 
-    typedef std::chrono::duration<float> float_seconds;
-    auto end = std::chrono::high_resolution_clock::now();
-    auto elapsed = std::chrono::duration_cast<float_seconds>(end - begin);
+    // typedef std::chrono::duration<float> float_seconds;
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto elapsed = std::chrono::duration_cast<float_seconds>(end - begin);
     //std::cout << "solve speed: " << elapsed.count() << " ms.  " << 1.0 /elapsed.count() << " hz." << std::endl;
 
   }

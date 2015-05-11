@@ -1,0 +1,9 @@
+package drc;
+
+struct recovery_trigger_t
+{
+	int64_t utime;
+
+	boolean activate; // whether to activate reactive recovery mode
+	boolean override; // whether to ignore the recovery_enabled property
+}

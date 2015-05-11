@@ -45,19 +45,52 @@ pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 add_mex(AtlasCommandDriver SHARED AtlasCommandDriver.cpp)
 pods_use_pkg_config_packages(AtlasCommandDriver drake-qp-common)
 
-add_mex(RobotStateDriver SHARED RobotStateDriver.cpp)
-pods_use_pkg_config_packages(RobotStateDriver drake-control-util)
+# NOTE: add_library can NOT be replaced by add_mex here, because executables link against it.
+# RobotStateDriver currently does need to include controlUtil.h from drake however, for a typedef.
+# It may NOT link against drakeControlUtil however, since that is a mex library, so calling a function defined in that header will result in a linker error
+add_library(RobotStateDriver SHARED RobotStateDriver.cpp)
 target_link_libraries(RobotStateDriver drakeGeometryUtil)
+pods_install_headers(RobotStateDriver.hpp DESTINATION control)
 
 add_mex(FootContactDriver SHARED FootContactDriver.cpp)
 
-# add_mex(threadedController SHARED threadedController.cpp)
-# pods_use_pkg_config_packages(threadedController drake-qp-common)
-# target_link_libraries(threadedController RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
+add_library(ExponentialForm SHARED ExponentialForm.cpp)
+target_link_libraries(ExponentialForm drakePolynomial)
+pods_install_libraries(ExponentialForm)
+pods_install_headers(ExponentialForm.hpp DESTINATION control)
+
+add_library(QPReactiveRecoveryPlan SHARED QPReactiveRecoveryPlan.cpp)
+target_link_libraries(QPReactiveRecoveryPlan iris_ldp drakePolynomial ExponentialForm drakeGeometryUtil drakeTrajectories drakeSplineGeneration drakeRBM drakeGradientUtil lcm drakeLCMUtil)
+pods_install_libraries(QPReactiveRecoveryPlan)
+pods_install_headers(QPReactiveRecoveryPlan.hpp DESTINATION control)
+pods_install_pkg_config_file(drc-qp-reactive-recovery
+  LIBS -ldrcReactiveRecovery
+  CFLAGS -I\${prefix}/include/lcmtypes
+  REQUIRES
+  VERSION 0.0.1)
+
+add_mex(constructRecoveryMexPointer constructRecoveryMexPointer.cpp)
+pods_use_pkg_config_packages(constructRecoveryMexPointer drake-qp-common drake-util)
+target_link_libraries(constructRecoveryMexPointer QPReactiveRecoveryPlan)
+install(TARGETS constructRecoveryMexPointer DESTINATION matlab)
 
 add_mex(threadedControllermex threadedControllermex.cpp)
 pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-util)
 target_link_libraries(threadedControllermex RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
+
+add_library(convexHull SHARED convexHull.cpp)
+pods_install_libraries(convexHull)
+pods_install_headers(convexHull.hpp DESTINATION control)
+
+add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
+pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm)
+target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver convexHull)
+pods_install_libraries(AtlasFallDetector)
+pods_install_headers(AtlasFallDetector.hpp DESTINATION control)
+
+add_executable(drc-atlas-fall-detector runAtlasFallDetector.cpp)
+target_link_libraries(drc-atlas-fall-detector AtlasFallDetector)
+pods_install_executables(drc-atlas-fall-detector )
 
 
 install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize threadedControllermex BotParamClient DESTINATION matlab)
@@ -126,4 +159,5 @@ add_jar(drc_control ${java_src_files})
 
 install_jar(drc_control share/java)
 
+add_subdirectory(tests)
 pods_install_python_script(drc-qp-input-snooper python/qp_controller_input_snooper.py)
