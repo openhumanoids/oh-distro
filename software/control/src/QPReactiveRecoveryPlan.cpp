@@ -908,8 +908,8 @@ double angleAverage(double theta1, double theta2) {
   // theta1 is a scalar or column vector of angles (rad)
   // theta2 is a scalar or column vector of angles (rad)
 
-  double x_mean = 0.5 * (cos(theta1) + cos(theta2));
-  double y_mean = 0.5 * (sin(theta1) + sin(theta2));
+  double x_mean = 0.5 * (std::cos(theta1) + std::cos(theta2));
+  double y_mean = 0.5 * (std::sin(theta1) + std::sin(theta2));
 
   double angle_mean = atan2(y_mean, x_mean);
 
