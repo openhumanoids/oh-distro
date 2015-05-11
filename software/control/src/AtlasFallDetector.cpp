@@ -111,7 +111,7 @@ Vector2d AtlasFallDetector::getICP() {
   auto com = this->model->centerOfMass<double>(1);
   Vector3d com_pos = com.value();
   Vector3d com_vel = com.gradient().value() * this->robot_state.qd;
-  Vector2d icp = com_pos.head<2>() + std::sqrt((com_pos(2) - this->getSupportFootHeight()) / this->model->a_grav(2)) * com_vel.head<2>();
+  Vector2d icp = com_pos.head<2>() + std::sqrt((com_pos(2) - this->getSupportFootHeight()) / (-this->model->a_grav(5))) * com_vel.head<2>();
   return icp;
 }
 
