@@ -221,19 +221,31 @@ def extractLargestCluster(polyData, minClusterSize=100):
     return thresholdPoints(polyData, 'cluster_labels', [1, 1])
 
 
+def segmentGround(polyData, groundThickness=0.02, sceneHeightFromGround=0.05):
+    ''' A More complex ground removal algorithm. Works when plane isn't
+    preceisely flat. First clusters on z to find approx ground height, then fits a plane there
+    '''
 
-
-
-def segmentGroundPoints(polyData):
+    searchRegionThickness = 0.5
 
     zvalues = vtkNumpy.getNumpyFromVtk(polyData, 'Points')[:,2]
     groundHeight = np.percentile(zvalues, 5)
-    polyData = thresholdPoints(polyData, 'z', [groundHeight - 0.3, groundHeight + 0.3])
 
-    polyData, normal = applyPlaneFit(polyData, distanceThreshold=0.005, expectedNormal=[0,0,1])
-    groundPoints = thresholdPoints(polyData, 'dist_to_plane', [-0.01, 0.01])
+    vtkNumpy.addNumpyToVtk(polyData, zvalues.copy(), 'z')
+    searchRegion = thresholdPoints(polyData, 'z', [groundHeight - searchRegionThickness/2.0, groundHeight + searchRegionThickness/2.0])
 
-    return groundPoints, normal
+    updatePolyData(searchRegion, 'ground search region', parent=getDebugFolder(), colorByName='z', visible=False)
+
+    _, origin, normal = applyPlaneFit(searchRegion, distanceThreshold=0.02, expectedNormal=[0,0,1], perpendicularAxis=[0,0,1], returnOrigin=True)
+
+    points = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
+    dist = np.dot(points - origin, normal)
+    vtkNumpy.addNumpyToVtk(polyData, dist, 'dist_to_plane')
+
+    groundPoints = thresholdPoints(polyData, 'dist_to_plane', [-groundThickness/2.0, groundThickness/2.0])
+    scenePoints = thresholdPoints(polyData, 'dist_to_plane', [sceneHeightFromGround, 100])
+
+    return origin, normal, groundPoints, scenePoints
 
 
 def segmentGroundPlane():
@@ -408,33 +420,21 @@ def showMajorPlanes(polyData=None):
         obj.setProperty('Point Size', 3)
 
 
-def cropToBox(polyData, params, expansionDistance=0.1):
+def cropToBox(polyData, transform, dimensions):
 
+    origin = np.array(transform.GetPosition())
+    axes = transformUtils.getAxesFromTransform(transform)
 
-    origin = params['origin']
-
-    xwidth = params['xwidth']
-    ywidth = params['ywidth']
-    zwidth = params['zwidth']
-
-    xaxis = params['xaxis']
-    yaxis = params['yaxis']
-    zaxis = params['zaxis']
-
-
-    for axis, width in ((xaxis, xwidth), (yaxis, ywidth), (zaxis, zwidth)):
-        cropAxis = axis*(width/2.0 + expansionDistance)
+    for axis, length in zip(axes, dimensions):
+        cropAxis = np.array(axis)*(length/2.0)
         polyData = cropToLineSegment(polyData, origin - cropAxis, origin + cropAxis)
 
-    updatePolyData(polyData, 'cropped')
+    return polyData
 
 
 def cropToSphere(polyData, origin, radius):
     polyData = labelDistanceToPoint(polyData, origin)
     return thresholdPoints(polyData, 'distance_to_point', [0, radius])
-
-
-
 
 
 def applyPlaneFit(polyData, distanceThreshold=0.02, expectedNormal=None, perpendicularAxis=None, angleEpsilon=0.2, returnOrigin=False, searchOrigin=None, searchRadius=None):
@@ -606,7 +606,7 @@ def segmentGroundPlanes():
         name = obj.getProperty('Name')
         print '----- %s---------' % name
         print  'head axis:', obj.headAxis
-        groundPoints, normal = segmentGroundPoints(obj.polyData)
+        origin, normal, groundPoints, _ = segmentGround(obj.polyData)
         print 'ground normal:', normal
         showPolyData(groundPoints, name + ' ground points', visible=False)
         a = np.array([0,0,1])
@@ -679,29 +679,7 @@ def removeGroundSimple(polyData, groundThickness=0.02, sceneHeightFromGround=0.0
 
 
 def removeGround(polyData, groundThickness=0.02, sceneHeightFromGround=0.05):
-    ''' A More complex ground removal algorithm. Works when plane isn't
-    preceisely flat. First clusters on z to find approx ground height, then fits a plane there
-    '''
-
-    searchRegionThickness = 0.5
-
-    zvalues = vtkNumpy.getNumpyFromVtk(polyData, 'Points')[:,2]
-    groundHeight = np.percentile(zvalues, 5)
-
-    vtkNumpy.addNumpyToVtk(polyData, zvalues.copy(), 'z')
-    searchRegion = thresholdPoints(polyData, 'z', [groundHeight - searchRegionThickness/2.0, groundHeight + searchRegionThickness/2.0])
-
-    updatePolyData(searchRegion, 'ground search region', parent=getDebugFolder(), colorByName='z', visible=False)
-
-    _, origin, normal = applyPlaneFit(searchRegion, distanceThreshold=0.02, expectedNormal=[0,0,1], perpendicularAxis=[0,0,1], returnOrigin=True)
-
-    points = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
-    dist = np.dot(points - origin, normal)
-    vtkNumpy.addNumpyToVtk(polyData, dist, 'dist_to_plane')
-
-    groundPoints = thresholdPoints(polyData, 'dist_to_plane', [-groundThickness/2.0, groundThickness/2.0])
-    scenePoints = thresholdPoints(polyData, 'dist_to_plane', [sceneHeightFromGround, 100])
-
+    origin, normal, groundPoints, scenePoints = segmentGround(polyData, groundThickness, sceneHeightFromGround)
     return groundPoints, scenePoints
 
 
