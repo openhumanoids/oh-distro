@@ -110,7 +110,7 @@ class QPReactiveRecoveryPlan {
     std::unique_ptr<PiecewisePolynomial<double>> upOverAndDownTrajectory(double t_global, const InterceptPlan &intercept_plan, const FootStateMap &foot_states);
     Matrix3Xd heelToeContacts(int body_id);
 
-	public:
+  public:
     RigidBodyManipulator* robot;
     double capture_max_flyfoot_height = 0.05;
     double capture_shrink_factor = 0.8;
@@ -126,7 +126,7 @@ class QPReactiveRecoveryPlan {
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc);
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc, BipedDescription biped);
 
-		static VectorXd closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
+    static VectorXd closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
 
     static Isometry3d closestPoseInConvexHull(const Isometry3d &pose, const Ref<const MatrixXd> &V);
 
