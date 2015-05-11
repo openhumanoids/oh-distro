@@ -257,6 +257,10 @@
       "nominal_handedness": "right"
     }
   ],
+
+  "driving": [
+
+  ],
   "door": [
     {
       "allow_mirror": true,

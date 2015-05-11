@@ -137,6 +137,19 @@ classdef drivingPlanner
       obj.publishTraj(qtraj,1);
     end
 
+    function [qtraj, q_seed] = planSeed(obj, q0)
+      if nargin < 3
+        q0 = obj.getRobotState();
+      end
+      q_seed = obj.data.pre_grasp_2;
+      q_seed(obj.non_arm_idx) = q0;
+      q_vals = [q0,q_pre_grasp];
+      qtraj = constructAndRescaleTrajectory(q_vals, obj.qd_max);
+      info = 1;
+      obj.publishTraj(qtraj,info);
+
+    end
+
     function [qtraj,q_pre_grasp] = planPreGrasp(obj,options,q0)
       if nargin < 2
         options = struct();
@@ -175,7 +188,10 @@ classdef drivingPlanner
       constraints = {obj.posture_constraint,obj.hand_orientation_constraint, position_constraint};
       [q_pre_grasp,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint;
+      if ~isempty(infeasible_constraint)
+        disp('infeasible constraints are')
+        infeasible_constraint
+      end
       q_vals = [q0,q_pre_grasp];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
@@ -211,7 +227,10 @@ classdef drivingPlanner
       q_nom = q0;
       [q_touch,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint;
+      if ~isempty(infeasible_constraint)
+        disp('infeasible constraints are')
+        infeasible_constraint
+      end
       obj.q_touch = q_touch;
       q_vals = [q0,q_touch];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
@@ -245,7 +264,10 @@ classdef drivingPlanner
       q_nom(1:6) = q0(1:6);
       [q_retract,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint;
+      if ~isempty(infeasible_constraint)
+        disp('infeasible constraints are')
+        infeasible_constraint
+      end
       q_vals = [q0,q_retract];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
