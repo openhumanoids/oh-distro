@@ -193,6 +193,7 @@ struct State {
         for (const auto& pt : result.mGroundPolygon) {
           bot_lcmgl_vertex3f(lcmgl, pt[0], pt[1], pt[2]);
         }
+        bot_lcmgl_end(lcmgl);
 
         bot_lcmgl_switch_buffer(lcmgl);
         bot_lcmgl_destroy(lcmgl);
