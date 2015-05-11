@@ -13,7 +13,8 @@
 #include "RobotStateDriver.hpp"
 #include "AtlasCommandDriver.hpp"
 #include "FootContactDriver.hpp"
-
+#include "drake/ForceTorqueMeasurement.h"
+#include "drake/Side.h"
 
 namespace {
 
@@ -45,6 +46,7 @@ public:
   std::shared_ptr<QPControllerOutput> qp_output;
 
   Matrix<bool, Dynamic, 1> b_contact_force;
+  std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurements;
   std::shared_ptr<QPControllerDebugData> debug;
 
   int info;
@@ -224,6 +226,15 @@ public:
 
     pointerMutex.lock();
     solveArgs.robot_state = state;
+
+    const drc::force_torque_t& force_torque = msg->force_torque;
+
+    solveArgs.foot_force_torque_measurements[Side::LEFT].frame_idx = solveArgs.pdata->rpc.body_ids.l_foot; // TODO: make sure that this is right
+    solveArgs.foot_force_torque_measurements[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
+
+    solveArgs.foot_force_torque_measurements[Side::RIGHT].frame_idx = solveArgs.pdata->rpc.body_ids.r_foot; // TODO: make sure that this is right
+    solveArgs.foot_force_torque_measurements[Side::RIGHT].wrench << force_torque.r_foot_torque_x, force_torque.r_foot_torque_y, 0.0, 0.0, 0.0, force_torque.r_foot_force_z;
+
     pointerMutex.unlock();
     newStateAvailable = true;
   }
@@ -309,6 +320,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
     std::shared_ptr<DrakeRobotState> robot_state = solveArgs.robot_state;
     std::shared_ptr<drake::lcmt_qp_controller_input> qp_input = solveArgs.qp_input;
     b_contact_force = solveArgs.b_contact_force;
+    std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurements = solveArgs.foot_force_torque_measurements;
     pointerMutex.unlock();
 
     // newInputAvailable = false;
@@ -323,7 +335,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       solveArgs.pdata->state.q_integrator_state = VectorXd::Zero(solveArgs.pdata->state.q_integrator_state.size());
       infocount = 0;
     } else {
-      int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, b_contact_force, &qp_output, solveArgs.debug);
+      int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, b_contact_force, foot_force_torque_measurements, &qp_output, solveArgs.debug);
 
       if (!isOutputSafe(qp_output)) {
         // First priority is to halt unsafe behavior
