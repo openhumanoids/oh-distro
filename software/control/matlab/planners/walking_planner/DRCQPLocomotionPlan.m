@@ -9,12 +9,7 @@ classdef DRCQPLocomotionPlan
       obj.supports = mxDeserialize(msg.supports);
       obj.body_motions = mxDeserialize(msg.link_constraints);
       obj.zmptraj = mxDeserialize(msg.zmptraj);
-      if isnumeric(obj.zmptraj)
-        obj.zmp_final = obj.zmptraj;
-      else
-        obj.zmp_final = fasteval(obj.zmptraj, obj.zmptraj.tspan(end));
-      end
-      obj.LIP_height = msg.LIP_height;
+      obj.zmp_data.D = -msg.LIP_height / obj.g * eye(2);
       obj.V = struct('S', double(msg.S), 's1', mxDeserialize(msg.s1));
       obj.qtraj = mxDeserialize(msg.qtraj);
       obj.comtraj = mxDeserialize(msg.comtraj);
@@ -24,6 +19,8 @@ classdef DRCQPLocomotionPlan
       obj.untracked_joint_inds = msg.untracked_joint_inds;
       obj.default_qp_input = mxDeserialize(msg.default_qp_input);
       obj.is_quasistatic = logical(msg.is_quasistatic);
+      obj.use_plan_shift = logical(msg.use_plan_shift);
+      obj.D_control = double(msg.D_control);
     end
 
     function msg = toLCM(obj)
@@ -42,7 +39,7 @@ classdef DRCQPLocomotionPlan
       msg.zmptraj = mxSerialize(obj.zmptraj);
       msg.n_zmptraj_bytes = length(msg.zmptraj);
 
-      msg.LIP_height = obj.LIP_height;
+      msg.LIP_height = obj.g * -1 * obj.zmp_data.D(1,1);
 
       msg.S = obj.V.S;
       msg.s1 = mxSerialize(obj.V.s1);
@@ -67,7 +64,8 @@ classdef DRCQPLocomotionPlan
       msg.n_default_qp_input_bytes = length(msg.default_qp_input);
 
       msg.is_quasistatic = logical(obj.is_quasistatic);
-
+      msg.use_plan_shift = logical(obj.use_plan_shift);
+      msg.D_control = obj.D_control;
     end
   end
 end
