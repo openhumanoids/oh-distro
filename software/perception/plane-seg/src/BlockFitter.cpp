@@ -6,6 +6,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/common/common.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/surface/convex_hull.h>
 #include <pcl/io/pcd_io.h>
 
 #include "RobustNormalEstimator.hpp"
@@ -134,7 +135,7 @@ go() {
     // filter points
     float minZ = mMinGroundZ;
     float maxZ = mMaxGroundZ;
-    if ((minZ > 1000) && (maxZ > 1000)) {
+    if ((minZ > 10000) && (maxZ > 10000)) {
       std::vector<float> zVals(cloud->size());
       for (int i = 0; i < (int)cloud->size(); ++i) {
         zVals[i] = cloud->points[i].z;
@@ -158,13 +159,14 @@ go() {
     if (cloud->size() < 100) return result;
 
     // find ground plane
+    const float kGroundPlaneDistanceThresh = 0.01; // TODO: param
     pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     pcl::SACSegmentation<pcl::PointXYZL> seg;
     seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(0.01);
+    seg.setDistanceThreshold(kGroundPlaneDistanceThresh);
     seg.setInputCloud(tempCloud);
     seg.segment(*inliers, *coeffs);
     groundPlane << coeffs->values[0], coeffs->values[1],
@@ -180,6 +182,30 @@ go() {
         std::endl;
     }
     else {
+      // compute convex hull
+      result.mGroundPlane = groundPlane;
+      {
+        tempCloud.reset(new LabeledCloud());
+        for (int i = 0; i < (int)cloud->size(); ++i) {
+          Eigen::Vector3f p = cloud->points[i].getVector3fMap();
+          float dist = groundPlane.head<3>().dot(p) + groundPlane[3];
+          if (std::abs(dist) > kGroundPlaneDistanceThresh) continue;
+          p -= (groundPlane.head<3>()*dist);
+          pcl::PointXYZL cloudPt;
+          cloudPt.getVector3fMap() = p;
+          tempCloud->push_back(cloudPt);
+        }
+        pcl::ConvexHull<pcl::PointXYZL> chull;
+        pcl::PointCloud<pcl::PointXYZL> hull;
+        chull.setInputCloud(tempCloud);
+        chull.reconstruct(hull);
+        result.mGroundPolygon.resize(hull.size());
+        for (int i = 0; i < (int)hull.size(); ++i) {
+          result.mGroundPolygon[i] = hull[i].getVector3fMap();
+        }
+      }
+
+      // remove points below or near ground
       tempCloud.reset(new LabeledCloud());
       for (int i = 0; i < (int)cloud->size(); ++i) {
         Eigen::Vector3f p = cloud->points[i].getVector3fMap();

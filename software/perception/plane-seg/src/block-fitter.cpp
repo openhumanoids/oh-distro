@@ -187,6 +187,13 @@ struct State {
           }
           bot_lcmgl_end(lcmgl);
         }
+
+        bot_lcmgl_color3f(lcmgl, 0, 1, 0);
+        bot_lcmgl_begin(lcmgl, LCMGL_LINE_LOOP);
+        for (const auto& pt : result.mGroundPolygon) {
+          bot_lcmgl_vertex3f(lcmgl, pt[0], pt[1], pt[2]);
+        }
+
         bot_lcmgl_switch_buffer(lcmgl);
         bot_lcmgl_destroy(lcmgl);
       }

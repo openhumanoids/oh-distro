@@ -15,6 +15,8 @@ public:
   struct Result {
     bool mSuccess;
     std::vector<Block> mBlocks;
+    Eigen::Vector4f mGroundPlane;
+    std::vector<Eigen::Vector3f> mGroundPolygon;
   };
 
 public:
