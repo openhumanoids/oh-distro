@@ -91,13 +91,16 @@ struct State {
       planeseg::LabeledCloud::Ptr cloud(new planeseg::LabeledCloud());
       pcl::copyPointCloud(*rawCloud, *cloud);
 
-      // remove points outside bbox
+      // remove points outside max radius
+      const float kValidRadius = 5;  // meters; TODO: could make this a param
+      const float kValidRadius2 = kValidRadius*kValidRadius;
       planeseg::LabeledCloud::Ptr tempCloud(new planeseg::LabeledCloud());
-      pcl::PassThrough<pcl::PointXYZL> pass;
-      pass.setInputCloud(cloud);
-      pass.setFilterFieldName("y");
-      pass.setFilterLimits (-3.0, 3.0);
-      pass.filter(*tempCloud);
+      for (int i = 0; i < (int)cloud->size(); ++i) {
+        Eigen::Vector3f p = cloud->points[i].getVector3fMap();
+        float dist2 = (p-sensorPose.translation()).squaredNorm();
+        if (dist2 > kValidRadius2) continue;
+        tempCloud->push_back(cloud->points[i]);
+      }
       std::swap(cloud, tempCloud);
 
       // process
@@ -199,6 +202,14 @@ struct State {
                const drc::map_scans_t* iMessage) {
     std::unique_lock<std::mutex> lock(mDataMutex);
     mData = *iMessage;
+    int64_t scanTime = iMessage->utime;
+    int64_t headPoseTime = mBotWrapper->getLatestTime("head", "local");
+    int64_t groundPoseTime = mBotWrapper->getLatestTime("ground", "local");
+    if ((std::abs(headPoseTime-scanTime) > 1e6) ||
+        (std::abs(groundPoseTime-scanTime) > 1e6)) {
+      std::cout << "warning: got scans but no valid pose found" << std::endl;
+      return;
+    }
     mBotWrapper->getTransform("head", "local", mSensorPose, iMessage->utime);
     mBotWrapper->getTransform("ground", "local", mGroundPose, iMessage->utime);
     mCondition.notify_one();
