@@ -20,6 +20,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     pause_state = 0;
     recovery_state = 0;
     recovery_enabled = 1;
+    bracing_enabled = 1;
     reactive_recovery_planner;
     bracing_plan;
     contact_force_detected;
@@ -119,11 +120,15 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function handle_bracing_plan(obj, msg)
       disp('Got a bracing plan')
-      if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
-        obj.bracing_plan = BracingPlan(obj.robot, obj.x(1:obj.robot.getNumPositions));
+      if (obj.bracing_enabled)
+        if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
+          obj.bracing_plan = BracingPlan(obj.robot, obj.x(1:obj.robot.getNumPositions));
+        end
+        obj.recovery_state = obj.RECOVERY_BRACING;
+        obj.switchToPlan(obj.bracing_plan);
+      else
+        disp('    ... but ignoring because bracing is disabled in DRCPlanEval.m');
       end
-      obj.recovery_state = obj.RECOVERY_BRACING;
-      obj.switchToPlan(obj.bracing_plan);
     end
     
     function handle_atlas_behavior_command(obj, msg)
