@@ -32,7 +32,7 @@ group "1.state_mit" {
     }
     cmd "contact-passthrough" {
         exec = "drc-controller-contact-passthrough";
-        host = "base";
+        host = "atlas2";
     }
 }
 
