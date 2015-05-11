@@ -94,8 +94,8 @@ private:
   lcm::LCM lcm;
 
   double icp_far_away_time = NAN;
-  double icp_capturable_radius = 0.3;
-  double bracing_min_trigger_time = 0.2;
+  double icp_capturable_radius = 0.2;
+  double bracing_min_trigger_time = 0.15;
 
   Vector2d icp_cache;
   bool icp_cached = false;

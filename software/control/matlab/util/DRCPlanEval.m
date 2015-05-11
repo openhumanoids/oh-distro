@@ -19,7 +19,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     pause_state = 0;
     recovery_state = 0;
-    recovery_enabled = 0;
+    recovery_enabled = 1;
     reactive_recovery_planner;
     bracing_plan;
     contact_force_detected;
@@ -118,7 +118,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     function handle_bracing_plan(obj, msg)
       disp('Got a bracing plan')
-      obj.switchToPlan(obj.smoothPlanTransition(obj.bracing_plan));
+      obj.recovery_state = obj.RECOVERY_NONE;
+      obj.switchToPlan(obj.bracing_plan);
     end
     
     function handle_atlas_behavior_command(obj, msg)
@@ -249,7 +250,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function sendStatus(obj)
-      if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2
+      if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2 || obj.last_status_msg_time > obj.t
         if ~isempty(obj.plan_queue)
           current_plan = obj.plan_queue{1};
           if isa(current_plan, 'QPLocomotionPlanCPPWrapper')

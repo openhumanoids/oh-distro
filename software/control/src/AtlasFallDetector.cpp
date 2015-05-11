@@ -60,6 +60,7 @@ void AtlasFallDetector::handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
   if (msg->command != "user" || msg->command != "USER") {
     this->controller_is_active = false;
   }
+  std::cout << msg->command << std::endl;
 }
 
 void AtlasFallDetector::handleFootContact(const lcm::ReceiveBuffer* rbuf,
@@ -77,13 +78,17 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
   this->model->doKinematicsNew(robot_state.q, robot_state.qd);
   bool icp_is_ok = this->debounce->update(this->robot_state.t, this->isICPCaptured());
   bool icp_is_capturable = this->isICPCapturable();
-  if (icp_is_capturable) icp_far_away_time = NAN;
-  else if (!icp_is_capturable && isnan(icp_far_away_time)){
-    icp_far_away_time = robot_state.t;
-  } else {
-    if (robot_state.t - icp_far_away_time < bracing_min_trigger_time)
-      icp_is_capturable = true;
+  if (icp_is_capturable) this->icp_far_away_time = NAN;
+  else if (!icp_is_capturable && isnan(this->icp_far_away_time)){
+    this->icp_far_away_time = robot_state.t;
+    icp_is_capturable = true;
   }
+  if (!isnan(this->icp_far_away_time) && (robot_state.t - this->icp_far_away_time < bracing_min_trigger_time)){
+    icp_is_capturable = true;
+    std::cout << "counting to bracing!" << this->icp_far_away_time << "vs " << robot_state.t << std::endl;
+  } 
+  if (!icp_is_capturable)
+    std::cout << "bracing!" << std::endl;
 
   if (this->controller_is_active) {
     drc::atlas_fall_detector_status_t fall_msg;
@@ -98,7 +103,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     fall_msg.measured_cop[2] = NAN;
     this->lcm.publish("ATLAS_FALL_STATE", &fall_msg);
 
-    if (~icp_is_capturable){
+    if (!icp_is_capturable){
       // goto bracing
       drc::utime_t trigger_msg;
       trigger_msg.utime = static_cast<int64_t> (robot_state.t * 1e6);
