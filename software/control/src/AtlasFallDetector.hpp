@@ -8,6 +8,7 @@
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/controller_status_t.hpp"
 #include "lcmtypes/drc/atlas_behavior_command_t.hpp"
+#include "drake/lcmt_qp_controller_input.hpp"
 #include "RobotStateDriver.hpp"
 
 enum FootID {RIGHT, LEFT};
@@ -94,8 +95,9 @@ private:
   lcm::LCM lcm;
 
   double icp_far_away_time = NAN;
-  double icp_capturable_radius = 0.2;
-  double bracing_min_trigger_time = 0.15;
+  double icp_capturable_radius = 0.25;
+  double bracing_min_trigger_time = 0.4;
+  Vector2d last_cop;
 
   Vector2d icp_cache;
   bool icp_cached = false;
@@ -115,6 +117,9 @@ private:
   void handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::controller_status_t* msg);
+  void handleControllerInput(const lcm::ReceiveBuffer* rbuf,
+                         const std::string& chan,
+                         const drake::lcmt_qp_controller_input* msg); 
   void handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::atlas_behavior_command_t* msg);

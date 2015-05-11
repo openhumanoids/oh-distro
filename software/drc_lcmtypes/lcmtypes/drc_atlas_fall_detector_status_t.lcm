@@ -5,6 +5,7 @@ struct atlas_fall_detector_status_t
   int64_t utime;
   
   boolean falling;
+  boolean bracing;
 
   // interesting quantities
   double icp[3];
