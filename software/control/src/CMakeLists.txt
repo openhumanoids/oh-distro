@@ -16,7 +16,7 @@ add_mex(AtlasCommandPublisher AtlasCommandPublisher.cpp)
 pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 add_mex(footstepPlanShiftmex footstepPlanShiftmex.cpp)
-pods_use_pkg_config_packages(footstepPlanShiftmex eigen3 drake-control-util drake-rbm drake-util)
+pods_use_pkg_config_packages(footstepPlanShiftmex eigen3 drake-control-util drake-rbm drake-mex-util)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher footstepPlanShiftmex DESTINATION matlab)
 
@@ -70,12 +70,12 @@ pods_install_pkg_config_file(drc-qp-reactive-recovery
   VERSION 0.0.1)
 
 add_mex(constructRecoveryMexPointer constructRecoveryMexPointer.cpp)
-pods_use_pkg_config_packages(constructRecoveryMexPointer drake-qp-common drake-util)
+pods_use_pkg_config_packages(constructRecoveryMexPointer drake-qp-common drake-mex-util drake-control-mex-util)
 target_link_libraries(constructRecoveryMexPointer QPReactiveRecoveryPlan)
 install(TARGETS constructRecoveryMexPointer DESTINATION matlab)
 
 add_mex(threadedControllermex threadedControllermex.cpp)
-pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-util)
+pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-mex-util drake-control-mex-util)
 target_link_libraries(threadedControllermex RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 
 add_library(convexHull SHARED convexHull.cpp)

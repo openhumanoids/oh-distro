@@ -1,6 +1,6 @@
 #include "mex.h"
 #include "control/QPReactiveRecoveryPlan.hpp"
-#include "drake/drakeUtil.h"
+#include "drake/drakeMexUtil.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if (nrhs == 1) {

@@ -60,21 +60,21 @@ AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names, vector<str
 void AtlasCommandDriver::updateGains(AtlasHardwareGains *gains) {
 
   if (gains->k_q_p.size() != m_num_joints)
-    mexErrMsgTxt("Length of k_q_p must be equal to m_num_joints");
+    throw std::runtime_error("Length of k_q_p must be equal to m_num_joints");
   if (gains->k_q_i.size() != m_num_joints)
-    mexErrMsgTxt("Length of k_q_i must be equal to m_num_joints");
+    throw std::runtime_error("Length of k_q_i must be equal to m_num_joints");
   if (gains->k_qd_p.size() != m_num_joints)
-    mexErrMsgTxt("Length of k_qd_p must be equal to m_num_joints");
+    throw std::runtime_error("Length of k_qd_p must be equal to m_num_joints");
   if (gains->k_f_p.size() != m_num_joints)
-    mexErrMsgTxt("Length of k_f_p must be equal to m_num_joints");
+    throw std::runtime_error("Length of k_f_p must be equal to m_num_joints");
   if (gains->ff_qd.size() != m_num_joints)
-    mexErrMsgTxt("Length of ff_qd must be equal to m_num_joints");
+    throw std::runtime_error("Length of ff_qd must be equal to m_num_joints");
   if (gains->ff_qd_d.size() != m_num_joints)
-    mexErrMsgTxt("Length of ff_qd_d must be equal to m_num_joints");
+    throw std::runtime_error("Length of ff_qd_d must be equal to m_num_joints");
   if (gains->ff_f_d.size() != m_num_joints)
-    mexErrMsgTxt("Length of ff_f_d must be equal to m_num_joints");
+    throw std::runtime_error("Length of ff_f_d must be equal to m_num_joints");
   if (gains->ff_const.size() != m_num_joints)
-    mexErrMsgTxt("Length of ff_const must be equal to m_num_joints");
+    throw std::runtime_error("Length of ff_const must be equal to m_num_joints");
   
   for (int i=0; i<m_num_joints; i++) {
     msg.k_q_p[input_index_map.drake_to_robot[i]] = gains->k_q_p[i];

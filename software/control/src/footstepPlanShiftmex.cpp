@@ -1,4 +1,4 @@
-#include "drake/drakeUtil.h"
+#include "drake/drakeMexUtil.h"
 #include "drake/controlUtil.h"
 
 struct FootstepShiftData {
