@@ -8,6 +8,7 @@
 #include "lcmtypes/drc/utime_t.hpp"
 #include "drc/robot_state_t.hpp"
 #include "drc/atlas_behavior_command_t.hpp"
+#include "drc/zmp_com_observer_state_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include "drake/QPCommon.h"
 #include "RobotStateDriver.hpp"
