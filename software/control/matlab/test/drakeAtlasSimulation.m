@@ -12,7 +12,7 @@ if nargin < 7, box_height = 1.10; end
 % (when this is more fleshed out this will become
 % an argument)
 use_mass_est = false;
-foot_force_sensors = false;
+foot_force_sensors = true;
 
 % And if you want external wrench input on pelvis
 use_external_force = 'mtorso';
