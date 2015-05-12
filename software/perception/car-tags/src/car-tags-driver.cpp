@@ -29,7 +29,8 @@
 
 #include <Eigen/Dense>
 
-struct TagMatch { 
+struct TagMatch {
+    int id; 
     cv::Point2d p0, p1, p2, p3;
     Eigen::Matrix3d H;
 };
@@ -135,10 +136,12 @@ class AprilTagDetector {
                 image_u8_draw_line(im, det->p[x][0], det->p[x][1], det->p[x+1][0], det->p[x+1][1], 255, 10);
             }
             TagMatch tag_match;
+            tag_match.id = det->family->d*det->family->d;
             tag_match.p0 = cv::Point2d(det->p[0][0], det->p[0][1]);
             tag_match.p1 = cv::Point2d(det->p[1][0], det->p[1][1]);
             tag_match.p2 = cv::Point2d(det->p[2][0], det->p[2][1]);
             tag_match.p3 = cv::Point2d(det->p[3][0], det->p[3][1]);
+
             Eigen::Map<Eigen::Matrix3d> H_map(det->H->data);
             tag_match.H = H_map.transpose();
             tag_matches.push_back(tag_match);
@@ -230,14 +233,11 @@ class CameraListener {
             cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(py[0], py[1]), cv::Scalar(255,255,0), 1, CV_AA);
 
             Eigen::Isometry3d tag_to_camera = getRelativeTransform(tags[i], K, 0.165);
-            Eigen::Isometry3d camera_to_local;
-            mBotWrapper->getTransform("CAMERA_LEFT" , "local", camera_to_local);
-            auto local_to_camera = camera_to_local.inverse();
-            auto tag_to_local = camera_to_local*tag_to_camera;
-
-            bot_core::rigid_transform_t tag_to_local_msg = encodeLCMFrame(tag_to_local);
-            tag_to_local_msg.utime = msg->utime;
-            mLcmWrapper->get()->publish("APRIL_TAG", &tag_to_local_msg);
+            bot_core::rigid_transform_t tag_to_camera_msg = encodeLCMFrame(tag_to_camera);
+            tag_to_camera_msg.utime = msg->utime;
+            mLcmWrapper->get()->publish("APRIL_TAG_TO_CAMERA_LEFT", &tag_to_camera_msg);
+            break;
+            
         }
         cv::imshow("detections", image);
         cv::waitKey(1);
