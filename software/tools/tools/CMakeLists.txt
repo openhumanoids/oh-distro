@@ -48,3 +48,8 @@ pods_install_python_script(drc-systemwide-tests python/system_test.py)
 
 pods_install_python_script(drc-atlas-pressure-monitor python/atlas_pressure_monitor.py)
 
+pods_install_python_script(sim-publish-disturbance-and-start-recovery scripts/publish_disturbance_and_start_recovery.py)
+pods_install_python_script(sim-publish-recovery-trigger-off scripts/publish_recovery_trigger_off.py)
+pods_install_python_script(sim-publish-recovery-trigger-on scripts/publish_recovery_trigger_on.py)
+pods_install_python_script(sim-publish-threedof-force scripts/publish_threedof_force.py)
+

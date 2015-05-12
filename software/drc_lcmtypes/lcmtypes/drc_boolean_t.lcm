@@ -1,0 +1,8 @@
+package drc;
+
+struct boolean_t
+{
+	int64_t utime;
+
+	boolean data;
+}

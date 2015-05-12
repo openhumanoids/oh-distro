@@ -60,16 +60,18 @@ classdef StatelessWalkingPlanner
 
       lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 
+      zmptraj = walking_plan_data.settings.zmptraj;
+      comtraj = walking_plan_data.settings.comtraj;
       for i=1:length(ts)
-%         lcmgl.glColor3f(0, 0, 1);
-%         lcmgl.sphere([walking_plan.comtraj.eval(ts(i));0], 0.01, 20, 20);
+        lcmgl.glColor3f(0, 0, 1);
+        lcmgl.sphere([comtraj.eval(ts(i));0], 0.01, 20, 20);
         lcmgl.glColor3f(0, 1, 0);
-        lcmgl.sphere([walking_plan_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+        lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);
       end
       lcmgl.switchBuffers();
 
       if compute_xtraj
-        [xtraj, ~, ts] = planWalkingStateTraj(r, walking_plan_data, xstar);
+        [xtraj, ~, ts] = planWalkingStateTraj(r, walking_plan_data.settings, xstar);
         joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
         walking_plan = WalkingPlan(ts, xtraj, joint_names);
@@ -87,7 +89,7 @@ classdef StatelessWalkingPlanner
           walking_plan = WalkingPlan(ts, xs, joint_names);
         end
       else
-        walking_plan = DRCQPLocomotionPlan.toLCM(walking_plan_data);
+        walking_plan = DRCQPLocomotionPlan.toLCM(walking_plan_data.settings);
       end
       disp('done')
     end

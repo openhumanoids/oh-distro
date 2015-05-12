@@ -7,6 +7,8 @@
 #include <drc_utils/LcmWrapper.hpp>
 #include <drc_utils/Clock.hpp>
 
+#include <lcmtypes/drc/message_rate_t.hpp>
+
 struct Bridge::Imp {
   struct Binding {
     drc::LcmWrapper::Ptr mDestLcmWrapper;
@@ -15,18 +17,28 @@ struct Bridge::Imp {
     int64_t mLastPublishTime;
   };
 
+  struct RateInfo {
+    drc::LcmWrapper::Ptr mDestLcmWrapper;
+    RateInfoSpec mSpec;
+    int64_t mOutputPeriod = 0;
+    int64_t mLastPublishTime = 0;
+    int32_t mMessagesReceived = 0;
+    bool mActive = false;
+  };
+
   struct BindingList {
     typedef std::shared_ptr<BindingList> Ptr;
 
     lcm::Subscription* mSubscription;
     std::vector<Binding> mBindings;
+    RateInfo mRateInfo;
     Imp* mImp;
 
     void handler(const lcm::ReceiveBuffer* iBuffer,
                  const std::string& iChannel) {
+      int64_t currentTime = drc::Clock::instance()->getCurrentTime();
       for (auto& binding : mBindings) {
         auto& spec = binding.mSpec;
-        int64_t currentTime = drc::Clock::instance()->getCurrentTime();
         if ((binding.mOutputPeriod > 0) &&
             ((currentTime-binding.mLastPublishTime) < binding.mOutputPeriod)) {
           continue;
@@ -38,6 +50,19 @@ struct Bridge::Imp {
           std::cout << "transferred (" << spec.mInputCommunity << "," <<
             spec.mInputChannel << ") to (" << spec.mOutputCommunity << "," <<
             spec.mOutputChannel << ")" << std::endl;
+        }
+      }
+      if (mRateInfo.mActive) {
+        ++mRateInfo.mMessagesReceived;
+        int64_t dt = currentTime - mRateInfo.mLastPublishTime;
+        if (dt >= mRateInfo.mOutputPeriod) {
+          drc::message_rate_t msg;
+          msg.channel = mRateInfo.mSpec.mEnumValue;
+          msg.rate_deci_hz = 10.0*mRateInfo.mMessagesReceived/dt*1e6;
+          mRateInfo.mDestLcmWrapper->get()->
+            publish(mRateInfo.mSpec.mOutputChannel, &msg);
+          mRateInfo.mLastPublishTime = currentTime;
+          mRateInfo.mMessagesReceived = 0;
         }
       }
     }
@@ -149,6 +174,35 @@ addBinding(const BindingSpec& iSpec) {
   inputCommunity->mBindingLists[iSpec.mInputChannel]->mImp = mImp.get();
 
   inputCommunity->mIsSource = true;
+  
+  return true;
+}
+
+bool Bridge::
+addRateInfo(const RateInfoSpec& iSpec) {
+  auto inputIter = mImp->mCommunities.find(iSpec.mInputCommunity);
+  if (inputIter == mImp->mCommunities.end()) {
+    std::cout << "error: community " << iSpec.mInputCommunity <<
+      " does not exist." << std::endl;
+    return false;
+  }
+
+  auto outputIter = mImp->mCommunities.find(iSpec.mOutputCommunity);
+  if (outputIter == mImp->mCommunities.end()) {
+    std::cout << "error: community " << iSpec.mOutputCommunity <<
+      " does not exist." << std::endl;
+    return false;
+  }
+
+  auto inputCommunity = inputIter->second;
+  auto outputCommunity = outputIter->second;
+
+  auto& rateInfo =
+    inputCommunity->mBindingLists[iSpec.mInputChannel]->mRateInfo;
+  rateInfo.mSpec = iSpec;
+  rateInfo.mDestLcmWrapper = outputCommunity->mLcmWrapper;
+  rateInfo.mOutputPeriod = 1.0/iSpec.mOutputFrequency*1e6;
+  rateInfo.mActive = true;
   
   return true;
 }

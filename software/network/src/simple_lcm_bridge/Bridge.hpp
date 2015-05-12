@@ -14,6 +14,15 @@ public:
     float mOutputFrequency;
   };
 
+  struct RateInfoSpec {
+    std::string mInputCommunity;
+    std::string mInputChannel;
+    std::string mOutputCommunity;
+    std::string mOutputChannel;
+    float mOutputFrequency;
+    int mEnumValue;  // from drc_message_rate_t enum
+  };
+
 public:
   Bridge();
   ~Bridge();
@@ -21,6 +30,7 @@ public:
   void setVerbose(const bool iVal);
   bool addCommunity(const std::string& iName, const std::string& iUrl);
   bool addBinding(const BindingSpec& iSpec);
+  bool addRateInfo(const RateInfoSpec& iSpec);
 
   bool start();
   bool stop();

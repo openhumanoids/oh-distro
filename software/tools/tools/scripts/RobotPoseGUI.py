@@ -105,7 +105,7 @@ def getJointSets():
     jointGroups = config['teleopJointGroups']
 
     jointSets = {}
-    groups = ['left arm', 'right arm', 'back']
+    groups = ['left arm', 'right arm', 'back', 'left leg', 'right leg', 'base']
     for group in jointGroups:
         groupName = group['name'].lower()
         if groupName in groups:

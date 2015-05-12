@@ -45,6 +45,7 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     pub_frequency_["BODY_TO_RHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "r_hand_force_torque" ) );
     pub_frequency_["BODY_TO_LHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "l_hand_force_torque" ) );
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
+    pub_frequency_["BODY_TO_UTORSO"] = FrequencyLimit(0, 1E6/getMaxFrequency( "utorso") );
   #endif
 
   send_ground_height_ = true;
@@ -210,6 +211,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
     }else if(  (*ii).first.compare( "l_hand_force_torque" ) == 0 ){ // ft sensor
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND_FORCE_TORQUE" );
+    }else if(  (*ii).first.compare( "utorso" ) == 0 ){ // torso
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_UTORSO" );
     }
   }
 

@@ -18,8 +18,14 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     atlas_state_coder;
 
     pause_state = 0;
+    recovery_state = 0;
+    recovery_enabled = 1;
+    bracing_enabled = 0;
+    reactive_recovery_planner;
+    bracing_plan;
     contact_force_detected;
     last_status_msg_time;
+
     last_plan_msg_utime = 0;
   end
 
@@ -28,18 +34,25 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
    PAUSE_NONE = 0;
    PAUSE_NOW = 1;
    STOP_WALKING_ASAP = 2;
+
+   RECOVERY_NONE = 0;
+   RECOVERY_ACTIVE = 1;
+   RECOVERY_BRACING = 2;
  end
 
   methods
     function obj = DRCPlanEval(r, mode, varargin)
       typecheck(r,'DRCAtlas');
       obj = obj@atlasControllers.AtlasPlanEval(r, varargin{:});
-      obj.contact_force_detected = zeros(obj.robot_property_cache.num_bodies, 1);
+      obj.contact_force_detected = zeros(obj.robot.getNumBodies(), 1);
       assert(strcmp(obj.mode, 'sim') || strcmp(obj.mode, 'hardware'), 'bad mode: %s', mode);
       obj.mode = mode;
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
+      obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
+      %obj.bracing_plan = BracingPlan(obj.robot);
+
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -49,6 +62,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
+      obj = obj.addLCMInterface('recovery_trigger', 'RECOVERY_TRIGGER', @drc.recovery_trigger_t, 0, @obj.handle_recovery_trigger);
+      obj = obj.addLCMInterface('recovery_enable', 'RECOVERY_ENABLE', @drc.boolean_t, 0, @obj.handle_recovery_enable);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
@@ -91,26 +106,35 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     function handle_stand_default(obj, msg)
       disp('Got a default stand plan')
       obj.last_plan_msg_utime = msg.utime;
-      new_plan = DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot);
+      new_plan = QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot));
       obj.switchToPlan(new_plan);
     end
 
     function handle_locomotion_plan(obj, msg)
       disp('Got a locomotion plan')
+      obj.recovery_state = obj.RECOVERY_NONE;
       obj.last_plan_msg_utime = msg.utime;
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
-      obj.switchToPlan(obj.smoothPlanTransition(new_plan));
+      obj.switchToPlan(QPLocomotionPlanCPPWrapper(obj.smoothPlanTransition(new_plan)));
     end
 
     function handle_bracing_plan(obj, msg)
-      % disp('Got a bracing plan')
-      new_plan = BracingPlan(obj.robot);
-      obj.switchToPlan(obj.smoothPlanTransition(new_plan));
+      if (obj.bracing_enabled)
+        if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
+          disp('Acting on a bracing plan')
+          obj.bracing_plan = BracingPlan(obj.robot, obj.x(1:obj.robot.getNumPositions));
+        end
+        obj.recovery_state = obj.RECOVERY_BRACING;
+        obj.switchToPlan(obj.bracing_plan);
+      %else
+      %  disp('    ... but ignoring because bracing is disabled in DRCPlanEval.m');
+      end
     end
     
     function handle_atlas_behavior_command(obj, msg)
       if strcmp(char(msg.command), 'stop') || strcmp(char(msg.command), 'freeze')
         disp('Got an atlas behavior command...going into silent mode');
+        obj.recovery_state = obj.RECOVERY_NONE;
         obj.last_plan_msg_utime = msg.utime;
         obj.switchToPlan(SilentPlan(obj.robot));
       end
@@ -129,9 +153,34 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       end
     end
 
+    function handle_recovery_trigger(obj, msg)
+      if msg.activate
+        if obj.recovery_enabled || msg.override
+          if obj.recovery_state == obj.RECOVERY_NONE && ~isempty(obj.x)
+            disp('Entering reactive recovery mode!');
+            obj.last_plan_msg_utime = msg.utime;
+            obj.reactive_recovery_planner.resetInitialization();
+            obj.switchToPlan(obj.reactive_recovery_planner);
+            obj.recovery_state = obj.RECOVERY_ACTIVE;
+          end
+        end
+      else
+        if obj.recovery_state == obj.RECOVERY_ACTIVE
+          disp('Exiting reactive recovery mode!');
+          obj.recovery_state = obj.RECOVERY_NONE;
+          new_plan = QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot));
+          obj.switchToPlan(new_plan);
+        end
+      end
+    end
+
+    function handle_recovery_enable(obj, msg)
+      obj.recovery_enabled = msg.data;
+      obj.sendStatus()
+    end
+
     function new_plan = smoothPlanTransition(obj, new_plan)
       % Make the transition to the new plan as smooth as possible
-      new_plan.start_time = [];
 
       % Use the previously commanded state to override the first (or only) knot point in the new trajectory. This is necessary to prevent the robot from suddenly drooping or jerking at the start of a plan, since the initial state of the plan may not match the robot's current desired state. 
       if ~isempty(obj.qp_input)
@@ -179,7 +228,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         if have_right_foot && have_left_foot
           disp('Got double support, pausing now.')
           obj.pause_state = obj.PAUSE_NONE;
-          obj.switchToPlan(DRCQPLocomotionPlan.from_standing_state(obj.x, obj.robot));
+          obj.switchToPlan(QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(obj.x, obj.robot)));
         end
       elseif obj.pause_state == obj.PAUSE_NOW
         disp('freezing now')
@@ -205,32 +254,37 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         else
           obj.plan_queue(1) = [];
         end
-        obj.plan_queue{1}.start_time = t;
         obj.sendStatus();
       end
     end
 
     function sendStatus(obj)
-      if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2
+      if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2 || obj.last_status_msg_time > obj.t
         if ~isempty(obj.plan_queue)
           current_plan = obj.plan_queue{1};
-          if isa(current_plan, 'QPLocomotionPlan')
-            if strcmp(current_plan.gain_set, 'standing')
+          if isa(current_plan, 'QPLocomotionPlanCPPWrapper')
+            if strcmp(current_plan.settings.gain_set, 'standing')
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
               plan_type = drc.plan_status_t.STANDING;
-            elseif strcmp(current_plan.gain_set, 'walking')
+            elseif strcmp(current_plan.settings.gain_set, 'walking')
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
               plan_type = drc.plan_status_t.WALKING;
-            elseif strcmp(current_plan.gain_set, 'manip')
+            elseif strcmp(current_plan.settings.gain_set, 'manip')
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
               plan_type = drc.plan_status_t.MANIPULATING;
             else
               execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
               plan_type = drc.plan_status_t.UNKNOWN;
             end
+          elseif isa(current_plan, 'QPReactiveRecoveryPlan')
+            execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+            plan_type = drc.plan_status_t.RECOVERING;
           elseif isa(current_plan, 'FrozenPlan')
             execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
             plan_type = drc.plan_status_t.STANDING;
+          elseif isa(current_plan, 'BracingPlan')
+            execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+            plan_type = drc.plan_status_t.BRACING;
           else
             execution_flag = drc.plan_status_t.EXECUTION_STATUS_NO_PLAN;
             plan_type = drc.plan_status_t.DUMMY;
@@ -256,6 +310,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         else
           plan_status_msg.last_plan_start_utime = current_plan.start_time * 1e6;
         end
+        plan_status_msg.recovery_enabled = obj.recovery_enabled;
         obj.lc.publish('PLAN_EXECUTION_STATUS', plan_status_msg);
 
       end
@@ -270,26 +325,20 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
       while 1
         try
-          % t0 = tic();
           obj.LCMReceive();
-          % fprintf(1, 'recieve: %fs\n', toc(t0))
-          % t0 = tic();
           obj.pauseIfRequested();
-          % fprintf(1, 'pause: %fs\n', toc(t0))
           if ~isempty(obj.plan_queue)
-            % t0 = tic()
             qp_input = obj.getQPControllerInput(obj.t, obj.x, obj.contact_force_detected);
-            % fprintf(1, 'get input: %fs\n', toc(t0));
+
             if ~isempty(qp_input)
-              % t0 = tic();
-              encodeQPInputLCMMex(qp_input);
-              % fprintf(1, 'encode: %fs\n', toc(t0));
+              if isnumeric(qp_input)
+                qp_input = drake.lcmt_qp_controller_input(qp_input);
+              end
+              obj.lc.publish('QP_CONTROLLER_INPUT', qp_input);
               obj.qp_input = qp_input;
             end
           end
-          % t0 = tic();
           obj.sendStatus();
-          % fprintf(1, 'send status: %fs\n', toc(t0));
         catch e
           disp('error in planEval loop:')
           disp(e.getReport())

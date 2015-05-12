@@ -375,7 +375,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % See if we just passed our publish-timestep for 
       % the foot contact state message, publish if so (and if
       % we're publishing ground truth anyway)
-      if (obj.publish_truth && mod(t, obj.fc_publish_period)  < obj.r.timestep)
+      if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
         foot_contact_est = drc.foot_contact_estimate_t();
         foot_contact_est.utime = t*1000*1000;
         foot_contact_est.left_contact = left_ankle_ft_state(3) > 500;

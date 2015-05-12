@@ -30,48 +30,48 @@ group "1.state_mit" {
 group "2.plan_and_control" {
 
     cmd "FallDetector" {
-      exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasFallDetector;\"";
+      exec = "drc-atlas-fall-detector";
       host = "base";
-      stop_signal = 15;
     }
 
     cmd "PlanEval" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
     cmd "InstQP" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "InstQPBothHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "PlanEvalRightHand" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "PlanEvalBothHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
         host = "base";
+        stop_signal = 15;
     }
     cmd "InstQPRightHand" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
         host = "base";
+        stop_signal = 15;
     }
 
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],5); p.run();\"";
        host = "base";
        stop_signal = 15;
-    }
-
-    cmd "BaseBDIStepTranslator" {
-        exec = "drc-bdi-step-translator";
-        host = "base";
     }
 }
 
@@ -162,6 +162,11 @@ cmd "drakeAtlasSimulation Box" {
     host = "base";
 }
 
+cmd "drakeAtlasSimulation Polaris Step" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, -1, -1, 'polaris_step');\"";
+    host = "base";
+}
+
 cmd "drakeAtlasSimulation Runningboard" {
     exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation(5, 1, 1, -1, -1, 'runningboard');\"";
     host = "base";
@@ -216,6 +221,7 @@ script "1.run_walking_flat" {
     start cmd "drakeAtlasSimulation Walking Flat";
     start cmd "PlanEval";
     start cmd "InstQP";
+    start cmd "FallDetector";
     start cmd "director";
 }
 
@@ -365,5 +371,20 @@ script "10.runningboard_test" {
     start cmd "drakeAtlasSimulation Runningboard";
     start cmd "PlanEvalRightHand";
     start cmd "InstQPRightHand";
+    start cmd "director";
+}
+
+script "11.run_polaris_step" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "state-sync";
+    start cmd "joints2frames";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation Polaris Step";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }

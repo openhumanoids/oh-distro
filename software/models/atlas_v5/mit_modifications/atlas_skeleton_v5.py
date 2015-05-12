@@ -81,6 +81,26 @@ mit.setJointOriginRPY(urdf, 'l_arm_shz', [0, 0, math.pi])
 mit.setJointOriginRPY(urdf, 'l_arm_uwy', [0, math.pi, 0])
 mit.setJointOriginRPY(urdf, 'l_arm_lwy', [0, math.pi, 0])
 
+# update joint limits
+# legs
+mit.setJointLimits(urdf, 'l_leg_aky', -1.06, 0.72)
+mit.setJointLimits(urdf, 'r_leg_aky', -1.06, 0.72)
+mit.setJointLimits(urdf, 'l_leg_akx', -0.7, 0.7)
+mit.setJointLimits(urdf, 'r_leg_akx', -0.7, 0.7)
+mit.setJointLimits(urdf, 'l_leg_hpx', -0.23, 0.52)
+mit.setJointLimits(urdf, 'r_leg_hpx', -0.52, 0.23)
+mit.setJointLimits(urdf, 'l_leg_hpz', -0.2, 0.82)
+mit.setJointLimits(urdf, 'r_leg_hpz', -0.82, 0.2)
+# arms
+mit.setJointLimits(urdf, 'l_arm_uwy',-2.98, 2.98)
+mit.setJointLimits(urdf, 'r_arm_uwy',-2.98, 2.98)
+mit.setJointLimits(urdf, 'l_arm_mwx',-1.76, 1.76)
+mit.setJointLimits(urdf, 'r_arm_mwx',-1.76, 1.76)
+mit.setJointLimits(urdf, 'l_arm_lwy',-2.82, 2.82)
+mit.setJointLimits(urdf, 'r_arm_lwy',-2.82, 2.82)
+# neck
+mit.setJointLimits(urdf, 'neck_ay', -0.605, 1.16)
+
 # Create minimal contact skeleton
 mit.removeAllCollisions(urdf)
 

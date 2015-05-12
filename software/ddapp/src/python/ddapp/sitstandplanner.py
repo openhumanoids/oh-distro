@@ -16,18 +16,22 @@ class SitStandPlanner(object):
         self.ikServer = ikServer
         self.robotSystem = robotSystem
         self.ikServer.connectStartupCompleted(self.initialize)
+        self.initializedFlag = False
         self.planOptions = dict()
 
-    def initialize(self,ikServer, success):
+    def initialize(self, ikServer, success):
+        if ikServer.restarted:
+            return
         commands = self.getInitCommands()
         self.ikServer.taskQueue.addTask(functools.partial(self.ikServer.comm.sendCommandsAsync, commands))
         self.ikServer.taskQueue.start()
+        self.initializedFlag = True
 
     def getInitCommands(self):
-
         commands = ['''
         addpath([getenv('DRC_BASE'), '/software/control/matlab/planners/chair_standup']);
         pssRobot = s.robot;
+        warning('Off','KinematicPoseTrajectory:Terrain');
         pss = PlanSitStand(pssRobot);
       ''']
         return commands

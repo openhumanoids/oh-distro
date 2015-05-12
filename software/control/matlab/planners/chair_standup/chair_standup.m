@@ -205,6 +205,7 @@ end
 r_pure = DRCAtlas([],options);
 
 %%
+error('this code calls from_standup_traj, which no longer exists. It should be fixed or deprecated.');
 standup_plan = QPLocomotionPlan.from_standup_traj(r_pure,qtraj,supports,support_times);
 
 %% Save chair standup data

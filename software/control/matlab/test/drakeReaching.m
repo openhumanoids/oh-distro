@@ -120,8 +120,9 @@ for i=1:length(ts)
 end
 
 qtraj = PPTrajectory(pchip(ts,q));
-plan = QPLocomotionPlan.from_quasistatic_qtraj(r, qtraj);
-plan.gain_set = 'manip';
+plan_settings = QPLocomotionPlanSettings.fromQuasistaticQTraj(r, qtraj);
+plan_settings.gain_set = 'manip';
+plan = QPLocomotionPlanCPPWrapper(plan_settings);
 planeval = atlasControllers.AtlasPlanEval(r, plan);
 control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r, true));
 plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);

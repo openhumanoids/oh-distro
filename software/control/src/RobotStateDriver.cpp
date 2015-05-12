@@ -1,4 +1,4 @@
-#include <mex.h>
+#include <stdexcept>
 #include "RobotStateDriver.hpp"
 #include "drake/drakeGeometryUtil.h"
 
@@ -23,7 +23,7 @@ RobotStateDriver::RobotStateDriver(vector<string> state_coordinate_names) {
   // this class is assuming an RPY floating base, not quaternion, so let's verify that's what we've got
   map<string,int>::iterator it = m_floating_joint_map.find("base_roll");
   if (it == m_floating_joint_map.end()) {
-    mexErrMsgTxt("This method has not yet been updated to support quaternion floating base. It's assuming roll, pitch, yaw for floating base pose, but I couldn't find a 'base_roll' coordinate. \n");
+    throw std::runtime_error("This method has not yet been updated to support quaternion floating base. It's assuming roll, pitch, yaw for floating base pose, but I couldn't find a 'base_roll' coordinate. \n");
   }
 }
 
