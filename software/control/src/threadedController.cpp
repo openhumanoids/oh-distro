@@ -386,6 +386,15 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
         }
       }
       params = &(it->second);
+
+      // publish zmp/com observer state
+      if (params->use_center_of_mass_observer) {
+        drc::zmp_com_observer_state_t zmp_com_observer_state_msg;
+        eigenVectorToCArray(solveArgs.pdata->state.center_of_mass_observer_state.head<2>(), zmp_com_observer_state_msg.com);
+        eigenVectorToCArray(solveArgs.pdata->state.center_of_mass_observer_state.tail<2>(), zmp_com_observer_state_msg.comd);
+        lcmHandler.LCMHandle->publish("ZMP_COM_OBSERVER_STATE", &zmp_com_observer_state_msg);
+      }
+
       // publish ATLAS_COMMAND
       drc::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
       lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg);
