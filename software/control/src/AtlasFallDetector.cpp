@@ -1,6 +1,7 @@
 #include "AtlasFallDetector.hpp"
 #include "convexHull.hpp"
 #include "lcmtypes/drc/recovery_trigger_t.hpp"
+#include "drake/drakeFloatingPointUtil.h"
 
 /* Monitors foot contacts and robot state, and applies heuristics to trigger the 
    recovery planner, and the bracing planner. */
@@ -82,22 +83,21 @@ void AtlasFallDetector::handleControllerInput(const lcm::ReceiveBuffer* rbuf,
 void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
                        const drc::robot_state_t* msg) {
-  icp_cached = false;
   this->state_driver->decode(msg, &(this->robot_state));
   this->model->doKinematicsNew(robot_state.q, robot_state.qd);
-  bool icp_is_ok = this->debounce->update(this->robot_state.t, this->isICPCaptured());
-  bool icp_is_capturable = this->isICPCapturable();
+  Vector2d icp = this->getICP();
+  bool icp_is_ok = this->debounce->update(this->robot_state.t, this->isICPCaptured(icp));
+  bool icp_is_capturable = this->isICPCapturable(icp);
   // must remain not capturable for sufficient time to trigger bracing; if
   // we got to capturable reset timer
   if (icp_is_capturable) {this->icp_far_away_time = NAN; this->bracing_spamlatch = false;}
-  else if (!icp_is_capturable && isnan(this->icp_far_away_time)){
+  else if (!icp_is_capturable && isNaN(this->icp_far_away_time)){
     this->icp_far_away_time = robot_state.t;
     icp_is_capturable = true;
   }
   // actual did-we-count-enough logic:
-  if (!isnan(this->icp_far_away_time) && (robot_state.t - this->icp_far_away_time < bracing_min_trigger_time)){
+  if (!isNaN(this->icp_far_away_time) && (robot_state.t - this->icp_far_away_time < bracing_min_trigger_time)){
     icp_is_capturable = true;
-    std::cout << "counting to bracing!" << this->icp_far_away_time << "vs " << robot_state.t << std::endl;
   } 
   if (!icp_is_capturable && !this->bracing_spamlatch){
     std::cout << "bracing!" << std::endl;
@@ -109,7 +109,6 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     fall_msg.utime = static_cast<int64_t> (robot_state.t * 1e6);
     fall_msg.falling = !icp_is_ok;
     fall_msg.bracing = !icp_is_capturable;
-    Vector2d icp = this->getICP();
     fall_msg.icp[0] = icp(0);
     fall_msg.icp[1] = icp(1);
     fall_msg.icp[2] = this->getSupportFootHeight();
@@ -143,17 +142,11 @@ void AtlasFallDetector::handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
 }
 
 Vector2d AtlasFallDetector::getICP() {
-  if (icp_cached)
-    return icp_cache;
-  else {
-    auto com = this->model->centerOfMass<double>(1);
-    Vector3d com_pos = com.value();
-    Vector3d com_vel = com.gradient().value() * this->robot_state.qd;
-    Vector2d icp = com_pos.head<2>() + std::sqrt((com_pos(2) - this->getSupportFootHeight()) / (-this->model->a_grav(5))) * com_vel.head<2>();
-    icp_cached = true;
-    icp_cache = icp;
-    return icp;
-  }
+  auto com = this->model->centerOfMass<double>(1);
+  Vector3d com_pos = com.value();
+  Vector3d com_vel = com.gradient().value() * this->robot_state.qd;
+  Vector2d icp = com_pos.head<2>() + std::sqrt((com_pos(2) - this->getSupportFootHeight()) / (-this->model->a_grav(5))) * com_vel.head<2>();
+  return icp;
 }
 
 double AtlasFallDetector::getSupportFootHeight() {
@@ -202,14 +195,12 @@ Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon () {
   return all_contact_pts;
 }
 
-bool AtlasFallDetector::isICPCaptured() {
-  Vector2d icp = this->getICP();
+bool AtlasFallDetector::isICPCaptured(Vector2d icp) {
   Matrix3Xd support_pts = this->getVirtualSupportPolygon();
   return in_convex_hull(support_pts.topRows(2), icp);
 }
 
-bool AtlasFallDetector::isICPCapturable() {
-  Vector2d icp = this->getICP();
+bool AtlasFallDetector::isICPCapturable(Vector2d icp) {
   double dist_from_cop = (icp - this->last_cop).norm();
   return dist_from_cop < icp_capturable_radius;
 }

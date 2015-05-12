@@ -100,13 +100,11 @@ private:
   Vector2d last_cop;
   bool bracing_spamlatch = false;
 
-  Vector2d icp_cache;
-  bool icp_cached = false;
   Vector2d getICP();
   double getSupportFootHeight();
   Matrix3Xd getVirtualSupportPolygon ();
-  bool isICPCaptured();
-  bool isICPCapturable();
+  bool isICPCaptured(Vector2d icp);
+  bool isICPCapturable(Vector2d icp);
 
   void findFootIDS();
   void handleFootContact(const lcm::ReceiveBuffer* rbuf,
