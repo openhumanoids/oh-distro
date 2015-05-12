@@ -4,6 +4,8 @@
 #include <atomic>
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
+#include "drc/controller_status_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 #include "drc/robot_state_t.hpp"
 #include "drc/atlas_behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
@@ -324,20 +326,33 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, b_contact_force, &qp_output, solveArgs.debug);
 
       if (!isOutputSafe(qp_output)) {
+        // First priority is to halt unsafe behavior
         atlas_behavior_msg.utime = 0;
         atlas_behavior_msg.command = "freeze";
         lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
+        /*
+        drc::utime_t trigger_msg;
+        trigger_msg.utime = static_cast<int64_t> (robot_state->t * 1e6);
+        lcmHandler.LCMHandle->publish("BRACE_FOR_FALL", &trigger_msg);
+        */
       }
 
       if (info < 0 && ctrl_opts->max_infocount > 0) {
         infocount++;
+        std::cout << "Infocount incremented " << infocount << std::endl;
         if (infocount >= ctrl_opts->max_infocount) {
           if (infocount == ctrl_opts->max_infocount) {
             std::cout << "Infocount exceeded. Freezing Atlas!" << std::endl;
           }
+          /*
           atlas_behavior_msg.utime = 0;
           atlas_behavior_msg.command = "freeze";
           lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
+          */
+          // we've lost control and are probably falling. cross fingers...
+          drc::utime_t trigger_msg;
+          trigger_msg.utime = static_cast<int64_t> (robot_state->t * 1e6);
+          lcmHandler.LCMHandle->publish("BRACE_FOR_FALL", &trigger_msg);
         }
       } else {
         infocount = 0;

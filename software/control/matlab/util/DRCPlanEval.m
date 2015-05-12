@@ -19,7 +19,8 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     pause_state = 0;
     recovery_state = 0;
-    recovery_enabled = 0;
+    recovery_enabled = 1;
+    bracing_enabled = 0;
     reactive_recovery_planner;
     bracing_plan;
     contact_force_detected;
@@ -36,6 +37,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
    RECOVERY_NONE = 0;
    RECOVERY_ACTIVE = 1;
+   RECOVERY_BRACING = 2;
  end
 
   methods
@@ -49,7 +51,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
       obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
-      obj.bracing_plan = BracingPlan(obj.robot);
+      %obj.bracing_plan = BracingPlan(obj.robot);
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
@@ -117,8 +119,16 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_bracing_plan(obj, msg)
-      disp('Got a bracing plan')
-      obj.switchToPlan(obj.smoothPlanTransition(obj.bracing_plan));
+      if (obj.bracing_enabled)
+        if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
+          disp('Acting on a bracing plan')
+          obj.bracing_plan = BracingPlan(obj.robot, obj.x(1:obj.robot.getNumPositions));
+        end
+        obj.recovery_state = obj.RECOVERY_BRACING;
+        obj.switchToPlan(obj.bracing_plan);
+      %else
+      %  disp('    ... but ignoring because bracing is disabled in DRCPlanEval.m');
+      end
     end
     
     function handle_atlas_behavior_command(obj, msg)
@@ -249,7 +259,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function sendStatus(obj)
-      if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2
+      if isempty(obj.last_status_msg_time) || (obj.t - obj.last_status_msg_time) > 0.2 || obj.last_status_msg_time > obj.t
         if ~isempty(obj.plan_queue)
           current_plan = obj.plan_queue{1};
           if isa(current_plan, 'QPLocomotionPlanCPPWrapper')
@@ -272,6 +282,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           elseif isa(current_plan, 'FrozenPlan')
             execution_flag = drc.plan_status_t.EXECUTION_STATUS_FINISHED;
             plan_type = drc.plan_status_t.STANDING;
+          elseif isa(current_plan, 'BracingPlan')
+            execution_flag = drc.plan_status_t.EXECUTION_STATUS_EXECUTING;
+            plan_type = drc.plan_status_t.BRACING;
           else
             execution_flag = drc.plan_status_t.EXECUTION_STATUS_NO_PLAN;
             plan_type = drc.plan_status_t.DUMMY;

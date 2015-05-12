@@ -54,6 +54,7 @@ classdef drivingPlanner
       if ~isfield(options,'quat_tol'), obj.options.quat_tol = 0.0; end
       if ~isfield(options,'tol'), obj.options.tol = 0.0; end
       if ~isfield(options,'steering_gaze_tol'), obj.options.steering_gaze_tol = 0.01; end
+      if ~isfield(options,'seed_with_current'), obj.options.seed_with_current = 0; end
 
       obj.nq = r.getNumPositions;
       obj.non_arm_idx = setdiff([1:obj.nq],obj.arm_idx);
@@ -137,6 +138,7 @@ classdef drivingPlanner
       obj.publishTraj(qtraj,1);
     end
 
+
     function [qtraj,q_pre_grasp] = planPreGrasp(obj,options,q0)
       if nargin < 2
         options = struct();
@@ -169,13 +171,22 @@ classdef drivingPlanner
       ub = xyz_des + obj.options.tol*ones(3,1);
 
       obj = obj.generateConstraints(q0, options);
-      q_nom = obj.data.pre_grasp_2;
+
+      if obj.options.seed_with_current
+        q_nom = q0;
+      else
+        q_nom = obj.data.pre_grasp_2;
+      end
+      
       q_nom(1:6) = q0(1:6);
       position_constraint = WorldPositionInFrameConstraint(obj.r,obj.r.findLinkId(obj.hand),obj.hand_pt,obj.T_wheel_2_world,lb,ub);
       constraints = {obj.posture_constraint,obj.hand_orientation_constraint, position_constraint};
       [q_pre_grasp,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint;
+      if ~isempty(infeasible_constraint)
+        disp('infeasible constraints are')
+        infeasible_constraint
+      end
       q_vals = [q0,q_pre_grasp];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);
@@ -211,7 +222,10 @@ classdef drivingPlanner
       q_nom = q0;
       [q_touch,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint;
+      if ~isempty(infeasible_constraint)
+        disp('infeasible constraints are')
+        infeasible_constraint
+      end
       obj.q_touch = q_touch;
       q_vals = [q0,q_touch];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
@@ -245,7 +259,10 @@ classdef drivingPlanner
       q_nom(1:6) = q0(1:6);
       [q_retract,info,infeasible_constraint] = obj.r.inverseKin(q_nom,q_nom,constraints{:},obj.ik_options);
       info
-      infeasible_constraint;
+      if ~isempty(infeasible_constraint)
+        disp('infeasible constraints are')
+        infeasible_constraint
+      end
       q_vals = [q0,q_retract];
       qtraj = constructAndRescaleTrajectory(q_vals, options.speed*obj.qd_max);
       obj.publishTraj(qtraj,info);

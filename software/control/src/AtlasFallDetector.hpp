@@ -8,6 +8,7 @@
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/controller_status_t.hpp"
 #include "lcmtypes/drc/atlas_behavior_command_t.hpp"
+#include "drake/lcmt_qp_controller_input.hpp"
 #include "RobotStateDriver.hpp"
 
 enum FootID {RIGHT, LEFT};
@@ -93,10 +94,17 @@ private:
   double icp_debounce_threshold = 0.01;
   lcm::LCM lcm;
 
+  double icp_far_away_time = NAN;
+  double icp_capturable_radius = 0.25;
+  double bracing_min_trigger_time = 0.4;
+  Vector2d last_cop;
+  bool bracing_spamlatch = false;
+
   Vector2d getICP();
   double getSupportFootHeight();
   Matrix3Xd getVirtualSupportPolygon ();
-  bool isICPCaptured();
+  bool isICPCaptured(Vector2d icp);
+  bool isICPCapturable(Vector2d icp);
 
   void findFootIDS();
   void handleFootContact(const lcm::ReceiveBuffer* rbuf,
@@ -108,6 +116,9 @@ private:
   void handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::controller_status_t* msg);
+  void handleControllerInput(const lcm::ReceiveBuffer* rbuf,
+                         const std::string& chan,
+                         const drake::lcmt_qp_controller_input* msg); 
   void handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::atlas_behavior_command_t* msg);
