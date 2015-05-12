@@ -94,6 +94,16 @@ group "4.perception_drivers" {
         host = "atlas0";
     }
 
+    cmd "video encode" {
+        exec = "drc-video-encode -k 60 -c CAMERA -o CAMERA_LEFT_STREAM";
+        host = "atlas0";
+    }
+
+    cmd "video decode" {
+        exec = "drc-video-decode -c CAMERA_LEFT -i CAMERA_LEFT_STREAM -o CAMERA_LEFT_DECODED";
+        host = "base";
+    }
+
 }
 
 group "5.maps" {
