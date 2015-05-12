@@ -1,5 +1,7 @@
 #include <mex.h>
 #include "threadedController.cpp"
+#include "drake/drakeMexUtil.h"
+#include "drake/controlMexUtil.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
