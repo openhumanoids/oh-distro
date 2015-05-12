@@ -100,9 +100,9 @@ set(camunits-extra-wrapper_url https://svn.csail.mit.edu/rrg_pods/camunits-pods/
 set(camunits-extra-wrapper_revision 887)
 set(camunits-extra-wrapper_depends camunits-wrapper)
 
-set(apriltags_url https://svn.csail.mit.edu/apriltags)
-set(apriltags_revision 24)
-set(apriltags_depends opencv-drc)
+set(apriltags_url https://github.com/psiorx/apriltags-pod.git)
+set(apriltags_revision ed2972f01e00d9b5a4afa2612b018374d889641f)
+set(apriltags_depends)
 
 set(spotless_url ssh://git@github.com/RobotLocomotion/spotless-pod.git)
 set(spotless_revision 464be854a1296d4726cb37d86f24d39742293ab6)
