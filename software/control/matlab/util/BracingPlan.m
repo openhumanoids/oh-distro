@@ -1,10 +1,12 @@
 classdef BracingPlan < QPControllerPlanMatlabImplementation
   methods
-    function obj = BracingPlan(r)
-      d = load(r.bracing_config_file);
-      qstar = d.xstar(1:r.getNumPositions());
+    function obj = BracingPlan(r, q_des)
+      if (nargin < 2)
+        d = load(r.bracing_config_file);
+        q_des = d.xstar(1:r.getNumPositions());
+      end
       qp_input = atlasControllers.QPInputConstantHeight();
-      qp_input.whole_body_data.q_des = qstar;
+      qp_input.whole_body_data.q_des = q_des;
       qp_input.param_set_name = 'bracing';
       obj.default_qp_input_ = qp_input.to_lcm();
 
