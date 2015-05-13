@@ -18,7 +18,7 @@
 #include <maps/LcmTranslator.hpp>
 
 #include <pcl/common/io.h>
-#include <pcl/filters/passthrough.h>
+#include <pcl/common/transforms.h>
 
 #include "BlockFitter.hpp"
 
@@ -90,12 +90,44 @@ struct State {
       }
 
       // convert scans to point cloud
-      // TODO: could do this scan by scan and save away high deltas
       maps::ScanBundleView view;
       maps::LcmTranslator::fromLcm(data, view);
-      auto rawCloud = view.getAsPointCloud();
+      maps::PointCloud rawCloud, curCloud;
+      std::vector<float> allDeltas;
+      for (const auto& scan : view.getScans()) {
+
+        // compute range deltas
+        int numRanges = scan->getNumRanges();
+        std::vector<float> deltas;
+        const auto& ranges = scan->getRanges();
+        float prevRange = -1;
+        int curIndex = 0;
+        for (int i = 0; i < numRanges; ++i, ++curIndex) {
+          if (ranges[i] <= 0) continue;
+          prevRange = ranges[i];
+          deltas.push_back(0);
+          break;
+        }
+        for (int i = curIndex+1; i < numRanges; ++i) {
+          float range = ranges[i];
+          if (range <= 0) continue;
+          deltas.push_back(range-prevRange);
+          prevRange = range;
+        }
+
+        // add this scan to cloud
+        scan->get(curCloud, true);
+        rawCloud += curCloud;
+        allDeltas.insert(allDeltas.end(), deltas.begin(), deltas.end());
+      }
+      pcl::transformPointCloud
+        (rawCloud, rawCloud,
+         Eigen::Affine3f(view.getTransform().matrix()).inverse());
       planeseg::LabeledCloud::Ptr cloud(new planeseg::LabeledCloud());
-      pcl::copyPointCloud(*rawCloud, *cloud);
+      pcl::copyPointCloud(rawCloud, *cloud);
+      for (int i = 0; i < (int)cloud->size(); ++i) {
+        cloud->points[i].label = 1000*allDeltas[i];
+      }
 
       // remove points outside max radius
       const float kValidRadius = 5;  // meters; TODO: could make this a param

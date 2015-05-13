@@ -42,8 +42,8 @@ go() {
   const int n = mCloud->size();
 
   // create kdtree and get nearest neighbors list
-  pcl::search::KdTree<pcl::PointXYZL>::Ptr tree
-    (new pcl::search::KdTree<pcl::PointXYZL>());
+  pcl::search::KdTree<Point>::Ptr tree
+    (new pcl::search::KdTree<Point>());
   tree->setInputCloud(mCloud);
   std::vector<std::vector<int>> neighbors(n);
   std::vector<float> distances;
