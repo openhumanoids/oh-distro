@@ -18,7 +18,7 @@
 #include <maps/LcmTranslator.hpp>
 
 #include <pcl/common/io.h>
-#include <pcl/filters/passthrough.h>
+#include <pcl/common/transforms.h>
 
 #include "BlockFitter.hpp"
 
@@ -90,12 +90,46 @@ struct State {
       }
 
       // convert scans to point cloud
-      // TODO: could do this scan by scan and save away high deltas
       maps::ScanBundleView view;
       maps::LcmTranslator::fromLcm(data, view);
-      auto rawCloud = view.getAsPointCloud();
+      maps::PointCloud rawCloud, curCloud;
+      std::vector<float> allDeltas;
+      for (const auto& scan : view.getScans()) {
+
+        // compute range deltas
+        int numRanges = scan->getNumRanges();
+        std::vector<float> deltas;
+        const auto& ranges = scan->getRanges();
+        float prevRange = -1;
+        int curIndex = 0;
+        for (int i = 0; i < numRanges; ++i, ++curIndex) {
+          if (ranges[i] <= 0) continue;
+          prevRange = ranges[i];
+          deltas.push_back(0);
+          break;
+        }
+        for (int i = curIndex+1; i < numRanges; ++i) {
+          float range = ranges[i];
+          if (range <= 0) continue;
+          deltas.push_back(range-prevRange);
+          prevRange = range;
+        }
+
+        // add this scan to cloud
+        scan->get(curCloud, true);
+        rawCloud += curCloud;
+        allDeltas.insert(allDeltas.end(), deltas.begin(), deltas.end());
+      }
+      pcl::transformPointCloud
+        (rawCloud, rawCloud,
+         Eigen::Affine3f(view.getTransform().matrix()).inverse());
       planeseg::LabeledCloud::Ptr cloud(new planeseg::LabeledCloud());
-      pcl::copyPointCloud(*rawCloud, *cloud);
+      pcl::copyPointCloud(rawCloud, *cloud);
+      /* TODO: change point type
+      for (int i = 0; i < (int)cloud->size(); ++i) {
+        cloud->points[i].label = 1000*allDeltas[i];
+      }
+      */
 
       // remove points outside max radius
       const float kValidRadius = 5;  // meters; TODO: could make this a param
@@ -127,12 +161,18 @@ struct State {
         continue;
       }
 
+      //
       // construct json string
+      //
+
+      // header
       std::string json;
       json += "{\n";
       json += "  \"command\": \"echo_response\",\n";
       json += "  \"descriptions\": {\n";
       std::string timeString = std::to_string(mBotWrapper->getCurrentTime());
+
+      // blocks
       for (int i = 0; i < (int)result.mBlocks.size(); ++i) {
         const auto& block = result.mBlocks[i];
         std::string dimensionsString, positionString, quaternionString;
@@ -163,9 +203,42 @@ struct State {
         json += "      \"uuid\": \"" + uuid + "\",\n";
         json += "      \"Dimensions\": [" + dimensionsString + "],\n";
         json += "      \"Name\": \"cinderblock " + std::to_string(i) + "\"\n";
-        if (i == (int)result.mBlocks.size()-1) json += "    }\n";
-        else json += "    },\n";
+        json += "    },\n";
       }
+
+      // ground
+      {
+        std::string positionString, quaternionString;
+        Eigen::Vector3f groundNormal = result.mGroundPlane.head<3>();
+        {
+          std::ostringstream oss;
+          Eigen::Vector3f p = groundPose.translation();
+          p -= (groundNormal.dot(p)+result.mGroundPlane[3])*groundNormal;
+          oss << p[0] << ", " << p[1] << ", " << p[2];
+          positionString = oss.str();
+        }
+        {
+          std::ostringstream oss;
+          Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
+          rot.col(2) = groundNormal.normalized();
+          rot.col(1) = rot.col(2).cross(Eigen::Vector3f::UnitX()).normalized();
+          rot.col(0) = rot.col(1).cross(rot.col(2)).normalized();
+          Eigen::Quaternionf q(rot);
+          oss << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z();
+          quaternionString = oss.str();
+        }
+        
+        json += "    \"ground affordance\": {\n";
+        json += "      \"classname\": \"BoxAffordanceItem\",\n";
+        json += "      \"pose\": [[" + positionString + "], [" +
+          quaternionString + "]],\n";
+        json += "      \"uuid\": \"ground affordance\",\n";
+        json += "      \"Dimensions\": [10, 10, 0.01],\n";
+        json += "      \"Name\": \"ground affordance\"\n";
+        json += "    }\n";
+      }
+
+      // footer
       json += "  },\n";
       json += "  \"commandId\": \"" + timeString + "\",\n";
       json += "  \"collectionId\": \"block-fitter\"\n";

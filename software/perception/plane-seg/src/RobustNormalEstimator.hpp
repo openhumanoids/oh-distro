@@ -13,17 +13,16 @@ public:
   void setMaxEstimationError(const float iDist);
   void setMaxCenterError(const float iDist);
   void setMaxIterations(const int iIters);
+  void computeCurvature(const bool iVal);
 
   bool go(const LabeledCloud::Ptr& iCloud, NormalCloud& oNormals);
-
-protected:
-  struct SimpleProblem;
 
 protected:
   float mRadius;
   float mMaxEstimationError;
   float mMaxCenterError;
   int mMaxIterations;
+  bool mComputeCurvature;
 };
 
 }

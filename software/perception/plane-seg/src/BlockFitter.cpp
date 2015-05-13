@@ -5,10 +5,10 @@
 
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/common/common.h>
-#include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/io/pcd_io.h>
 
+#include "PlaneFitter.hpp"
 #include "RobustNormalEstimator.hpp"
 #include "PlaneSegmenter.hpp"
 #include "RectangleFitter.hpp"
@@ -159,28 +159,28 @@ go() {
     if (tempCloud->size() < 100) return result;
 
     // find ground plane
+    std::vector<Eigen::Vector3f> pts(tempCloud->size());
+    for (int i = 0; i < (int)tempCloud->size(); ++i) {
+      pts[i] = tempCloud->points[i].getVector3fMap();
+    }
     const float kGroundPlaneDistanceThresh = 0.01; // TODO: param
-    pcl::ModelCoefficients::Ptr coeffs(new pcl::ModelCoefficients);
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-    pcl::SACSegmentation<pcl::PointXYZL> seg;
-    seg.setOptimizeCoefficients(true);
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(kGroundPlaneDistanceThresh);
-    seg.setInputCloud(tempCloud);
-    seg.segment(*inliers, *coeffs);
-    groundPlane << coeffs->values[0], coeffs->values[1],
-      coeffs->values[2], coeffs->values[3];
+    PlaneFitter planeFitter;
+    planeFitter.setMaxDistance(kGroundPlaneDistanceThresh);
+    planeFitter.setRefineUsingInliers(true);
+    auto res = planeFitter.go(pts);
+    groundPlane = res.mPlane;
     if (groundPlane[2] < 0) groundPlane = -groundPlane;
     if (mDebug) {
       std::cout << "dominant plane: " << groundPlane.transpose() << std::endl;
-      std::cout << "  inliers: " << inliers->indices.size() << std::endl;
+      std::cout << "  inliers: " << res.mInliers.size() << std::endl;
     }
+
     if (std::acos(groundPlane[2]) > 30*M_PI/180) {
       std::cout << "error: ground plane not found!" << std::endl;
       std::cout << "proceeding with full segmentation (may take a while)..." <<
         std::endl;
     }
+
     else {
       // compute convex hull
       result.mGroundPlane = groundPlane;
