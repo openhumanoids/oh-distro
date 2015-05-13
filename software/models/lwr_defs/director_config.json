@@ -21,12 +21,6 @@
         "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
       },
 
-      { "name" : "Back",
-        "joints" : [
-          ],
-        "labels" : []
-      },
-
       { "name" : "Left Arm",
         "joints" : [
           "lwr_arm_0_joint",
@@ -71,7 +65,7 @@
   "pelvisLink" : "Pelvis",
   "kneeJoints" : ["LeftKneeExtensor", "RightKneeExtensor"],
   "kneeJointLimits" : [-1.9,-0.6],
-  "baseZJointLimits" : [0.955, 1.14],
+  "baseZJointLimits" : [-0.1, 0.1],
 
   "handCombinations": [
       { "side" : "left",
