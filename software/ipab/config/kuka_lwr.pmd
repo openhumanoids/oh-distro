@@ -11,6 +11,13 @@ group "0.params_and_model_pub" {
     }
 }
 
+group "1.state" {
+    cmd "joints2frames" {
+        exec = "drc-joints2frames-kuka";
+        host = "localhost";
+    }
+}
+
 group "2.sensors" {
 
     cmd "kinect" {
@@ -44,6 +51,7 @@ cmd "kintinuous" {
 script "start" {
     start group "0.params_and_model_pub";
     wait ms 1000;
+    start group "1.state";
     start group "2.sensors";
     start cmd "drake-designer";
 }
