@@ -171,7 +171,7 @@ struct State {
 
 int main(const int iArgc, const char** iArgv) {
 
-  int scaleFactor = 16;
+  int scaleFactor = 8;
   std::string inputChannel = "CAMERA_STREAM";
   std::string outputChannel = "DECODED_IMAGE";
   std::string cameraChannel = "CAMERA_LEFT";

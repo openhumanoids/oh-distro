@@ -37,7 +37,7 @@ struct State {
   x264_picture_t mPictureIn;
   x264_picture_t mPictureOut;
   struct SwsContext* mConverterContext;
-  int64_t mLastPublishTime;
+  int mCurrentFrameNum;
 
   std::deque<int> mPublishBytes;
   std::deque<int64_t> mPublishTimes;
@@ -106,6 +106,7 @@ struct State {
     }
 
     mTimeWindowSize = 5.0/mPublishPeriod;
+    mCurrentFrameNum = 0;
 
     return true;
   }
@@ -146,6 +147,8 @@ struct State {
     int stride = w*3;
     sws_scale(mConverterContext, &cvImg.data, &stride, 0, h,
               mPictureIn.img.plane, mPictureIn.img.i_stride);
+    mPictureIn.i_pts = mCurrentFrameNum;
+    ++mCurrentFrameNum;
 
     // encode
     x264_nal_t* nals;
@@ -202,7 +205,7 @@ struct State {
 
 int main(const int iArgc, const char** iArgv) {
 
-  int scaleFactor = 16;
+  int scaleFactor = 8;
   int bitRate = 4;
   double publishFrequency = 2;
   double keyframeInterval = 5;
