@@ -188,6 +188,7 @@ classdef DRCPlanner
       nq = getNumPositions(obj.biped);
       joint_names = obj.biped.getStateFrame.coordinates(1:nq);
       [X,T,options] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
+      options.bodies_to_control_when_in_contact = [obj.biped.findLinkId('pelvis'), obj.biped.foot_body_id.right, obj.biped.foot_body_id.left];
       nq = obj.biped.getNumPositions();
       Q = X(1:nq,:); % extract just the q poses
       qtraj = PPTrajectory(pchip(T,Q));

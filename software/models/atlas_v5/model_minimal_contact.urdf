@@ -289,6 +289,30 @@
         <mesh filename="package://atlas_v5/meshes/pelvis.obj"/>
       </geometry>
     </visual>
+    <collision group="butt">
+      <origin rpy="0 0 0" xyz="-0.0927 -0.0616 -0.144"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="butt">
+      <origin rpy="0 0 0" xyz="-0.0927 -0.0616 -0.144"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="butt">
+      <origin rpy="0 0 0" xyz="-0.0927 0.0623 -0.144"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="butt">
+      <origin rpy="0 0 0" xyz="-0.0927 0.0623 -0.144"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
   </link>
   <link name="r_clav">
     <inertial>
