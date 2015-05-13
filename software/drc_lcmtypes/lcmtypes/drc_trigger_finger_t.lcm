@@ -1,0 +1,19 @@
+package drc;
+
+struct trigger_finger_t
+{
+    int64_t utime;  
+    float slider1;
+    float slider2;
+    float slider3;
+    float slider4;
+
+    float knob1;
+    float knob2;
+    float knob3;
+    float knob4;
+    float knob5;
+    float knob6;
+    float knob7;
+    float knob8;
+}
