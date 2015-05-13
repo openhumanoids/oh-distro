@@ -1,0 +1,7 @@
+package drc;
+
+struct throttle_control_cmd_t
+{
+  int64_t utime;
+  double ankle_position;           
+}
