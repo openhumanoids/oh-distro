@@ -125,9 +125,11 @@ struct State {
          Eigen::Affine3f(view.getTransform().matrix()).inverse());
       planeseg::LabeledCloud::Ptr cloud(new planeseg::LabeledCloud());
       pcl::copyPointCloud(rawCloud, *cloud);
+      /* TODO: change point type
       for (int i = 0; i < (int)cloud->size(); ++i) {
         cloud->points[i].label = 1000*allDeltas[i];
       }
+      */
 
       // remove points outside max radius
       const float kValidRadius = 5;  // meters; TODO: could make this a param
