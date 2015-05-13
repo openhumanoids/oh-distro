@@ -1,9 +1,0 @@
-package drc;
-
-struct zmp_com_observer_state_t
-{
-  int64_t utime;
-
-  double com[2];
-  double comd[2];
-}
