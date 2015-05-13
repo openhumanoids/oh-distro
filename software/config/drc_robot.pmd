@@ -127,6 +127,10 @@ group "5.maps" {
         host = "atlas0";
     }
 
+    cmd "block fitter" {
+        exec = "drc-block-fitter -c -t BLOCK_FIT_TRIGGER";
+        host = "base";
+    }
 }
 
 group "6.hands_robotiq" {
