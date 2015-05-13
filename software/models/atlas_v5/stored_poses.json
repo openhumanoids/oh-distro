@@ -464,13 +464,13 @@
       "allow_mirror": true,
       "description": "pre-reach grasping",
       "joints": {
-        "r_arm_elx": -2.0209803581237793,
-        "r_arm_ely": 3.0596115589141846,
-        "r_arm_lwy": 0.7819115519523621,
-        "r_arm_mwx": 1.038118600845337,
-        "r_arm_shx": 0.459369033575058,
-        "r_arm_shz": -0.6029572486877441,
-        "r_arm_uwy": 1.949746012687683
+        "r_arm_elx": -2.3266680240631104,
+        "r_arm_ely": 2.7806777954101562,
+        "r_arm_lwy": 2.248668909072876,
+        "r_arm_mwx": 0.6631243228912354,
+        "r_arm_shx": 0.867233395576477,
+        "r_arm_shz": -0.7219979763031006,
+        "r_arm_uwy": 0.5879825353622437
       },
       "name": "pre-reach grasping",
       "nominal_handedness": "right"
