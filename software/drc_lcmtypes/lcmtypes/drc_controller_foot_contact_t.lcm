@@ -1,0 +1,13 @@
+package drc;
+
+struct controller_foot_contact_t
+{
+	int64_t utime;
+
+	int32_t num_right_foot_contacts;
+	double right_foot_contacts[3][num_right_foot_contacts];
+
+	int32_t num_left_foot_contacts;
+	double left_foot_contacts[3][num_left_foot_contacts];
+
+}

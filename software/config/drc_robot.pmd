@@ -30,6 +30,10 @@ group "1.state_mit" {
         exec = "se-yaw-lock -yd";
         host = "atlas2";
     }
+    cmd "contact-passthrough" {
+        exec = "drc-controller-contact-passthrough";
+        host = "atlas2";
+    }
 }
 
 
