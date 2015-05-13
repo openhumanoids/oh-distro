@@ -149,7 +149,7 @@ solve(const std::vector<Eigen::Vector3f>& iPoints) const {
   ransac.setRefineUsingInliers(mRefineUsingInliers);
   ransac.setMaximumIterations(mMaxIterations);
 
-  SimpleProblem problem(iPoints);
+  T problem(iPoints);
   problem.setCenterPoint(mCenterPoint);
 
   auto res = ransac.solve(problem);
