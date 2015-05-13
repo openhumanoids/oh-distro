@@ -161,12 +161,18 @@ struct State {
         continue;
       }
 
+      //
       // construct json string
+      //
+
+      // header
       std::string json;
       json += "{\n";
       json += "  \"command\": \"echo_response\",\n";
       json += "  \"descriptions\": {\n";
       std::string timeString = std::to_string(mBotWrapper->getCurrentTime());
+
+      // blocks
       for (int i = 0; i < (int)result.mBlocks.size(); ++i) {
         const auto& block = result.mBlocks[i];
         std::string dimensionsString, positionString, quaternionString;
@@ -197,9 +203,42 @@ struct State {
         json += "      \"uuid\": \"" + uuid + "\",\n";
         json += "      \"Dimensions\": [" + dimensionsString + "],\n";
         json += "      \"Name\": \"cinderblock " + std::to_string(i) + "\"\n";
-        if (i == (int)result.mBlocks.size()-1) json += "    }\n";
-        else json += "    },\n";
+        json += "    },\n";
       }
+
+      // ground
+      {
+        std::string positionString, quaternionString;
+        Eigen::Vector3f groundNormal = result.mGroundPlane.head<3>();
+        {
+          std::ostringstream oss;
+          Eigen::Vector3f p = groundPose.translation();
+          p -= (groundNormal.dot(p)+result.mGroundPlane[3])*groundNormal;
+          oss << p[0] << ", " << p[1] << ", " << p[2];
+          positionString = oss.str();
+        }
+        {
+          std::ostringstream oss;
+          Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
+          rot.col(2) = groundNormal.normalized();
+          rot.col(1) = rot.col(2).cross(Eigen::Vector3f::UnitX()).normalized();
+          rot.col(0) = rot.col(1).cross(rot.col(2)).normalized();
+          Eigen::Quaternionf q(rot);
+          oss << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z();
+          quaternionString = oss.str();
+        }
+        
+        json += "    \"ground affordance\": {\n";
+        json += "      \"classname\": \"BoxAffordanceItem\",\n";
+        json += "      \"pose\": [[" + positionString + "], [" +
+          quaternionString + "]],\n";
+        json += "      \"uuid\": \"ground affordance\",\n";
+        json += "      \"Dimensions\": [10, 10, 0.01],\n";
+        json += "      \"Name\": \"ground affordance\"\n";
+        json += "    }\n";
+      }
+
+      // footer
       json += "  },\n";
       json += "  \"commandId\": \"" + timeString + "\",\n";
       json += "  \"collectionId\": \"block-fitter\"\n";
