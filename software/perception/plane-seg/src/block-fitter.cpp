@@ -28,6 +28,7 @@ struct State {
   bool mRunContinuously;
   bool mDoFilter;
   bool mRemoveGround;
+  bool mGrabExactPoses;
   bool mDebug;
   Eigen::Vector3f mBlockSize;
   int mAlgorithm;  // TODO: use algo
@@ -46,6 +47,7 @@ struct State {
     mRunContinuously = false;
     mDoFilter = true;
     mRemoveGround = true;
+    mGrabExactPoses = false;
     mDebug = false;
     mAlgorithm = 0;  // TODO
     mBlockSize << 0, 0, 0;
@@ -213,8 +215,9 @@ struct State {
     int64_t scanTime = iMessage->utime;
     int64_t headPoseTime = mBotWrapper->getLatestTime("head", "local");
     int64_t groundPoseTime = mBotWrapper->getLatestTime("ground", "local");
-    if ((std::abs(headPoseTime-scanTime) > 1e6) ||
-        (std::abs(groundPoseTime-scanTime) > 1e6)) {
+    if ((groundPoseTime == 0) || (headPoseTime == 0) ||
+        (mGrabExactPoses && ((std::abs(headPoseTime-scanTime) > 1e6) ||
+                             (std::abs(groundPoseTime-scanTime) > 1e6)))) {
       std::cout << "warning: got scans but no valid pose found" << std::endl;
       return;
     }
@@ -237,6 +240,8 @@ int main(const int iArgc, const char** iArgv) {
           "whether to remove ground before processing");
   opt.add(state.mAlgorithm, "a", "algorithm",
           "0=min_area, 1=closest_size, 2=closest_hull");
+  opt.add(state.mGrabExactPoses, "p", "exact-poses",
+          "wait for synchronized poses");
   opt.add(state.mDebug, "d", "debug", "debug flag");
   opt.parse();
 
