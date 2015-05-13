@@ -28,9 +28,12 @@ struct State {
   bool mRunContinuously;
   bool mDoFilter;
   bool mRemoveGround;
+  bool mGrabExactPoses;
   bool mDebug;
   Eigen::Vector3f mBlockSize;
   int mAlgorithm;  // TODO: use algo
+  bool mDoTrigger;
+  bool mTriggered;
 
   drc::map_scans_t mData;
   int64_t mLastDataTime;
@@ -46,9 +49,12 @@ struct State {
     mRunContinuously = false;
     mDoFilter = true;
     mRemoveGround = true;
+    mGrabExactPoses = false;
     mDebug = false;
     mAlgorithm = 0;  // TODO
     mBlockSize << 0, 0, 0;
+    mDoTrigger = false;
+    mTriggered = true;
   }
 
   void start() {
@@ -209,24 +215,32 @@ struct State {
                const std::string& iChannel,
                const drc::map_scans_t* iMessage) {
     std::unique_lock<std::mutex> lock(mDataMutex);
+    if (!mTriggered) return;
     mData = *iMessage;
     int64_t scanTime = iMessage->utime;
     int64_t headPoseTime = mBotWrapper->getLatestTime("head", "local");
     int64_t groundPoseTime = mBotWrapper->getLatestTime("ground", "local");
-    if ((std::abs(headPoseTime-scanTime) > 1e6) ||
-        (std::abs(groundPoseTime-scanTime) > 1e6)) {
+    if ((groundPoseTime == 0) || (headPoseTime == 0) ||
+        (mGrabExactPoses && ((std::abs(headPoseTime-scanTime) > 1e6) ||
+                             (std::abs(groundPoseTime-scanTime) > 1e6)))) {
       std::cout << "warning: got scans but no valid pose found" << std::endl;
       return;
     }
     mBotWrapper->getTransform("head", "local", mSensorPose, iMessage->utime);
     mBotWrapper->getTransform("ground", "local", mGroundPose, iMessage->utime);
     mCondition.notify_one();
+    if (mDoTrigger) mTriggered = false;
+  }
+
+  void onTrigger(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel) {
+    mTriggered = true;
   }
 };
 
 int main(const int iArgc, const char** iArgv) {
 
   std::string sizeString("");
+  std::string triggerChannel;
   State state;
 
   ConciseArgs opt(iArgc, (char**)iArgv);
@@ -237,6 +251,10 @@ int main(const int iArgc, const char** iArgv) {
           "whether to remove ground before processing");
   opt.add(state.mAlgorithm, "a", "algorithm",
           "0=min_area, 1=closest_size, 2=closest_hull");
+  opt.add(state.mGrabExactPoses, "p", "exact-poses",
+          "wait for synchronized poses");
+  opt.add(triggerChannel, "t", "trigger-channel",
+          "perform block fit only when trigger is received");
   opt.add(state.mDebug, "d", "debug", "debug flag");
   opt.parse();
 
@@ -256,6 +274,13 @@ int main(const int iArgc, const char** iArgv) {
 
   state.mBotWrapper.reset(new drc::BotWrapper());
   state.mLcmWrapper.reset(new drc::LcmWrapper(state.mBotWrapper->getLcm()));
+
+  if (triggerChannel.length() > 0) {
+    state.mDoTrigger = true;
+    state.mTriggered = false;
+    state.mLcmWrapper->get()->subscribe(triggerChannel,
+                                        &State::onTrigger, &state);
+  }
 
   state.start();
   state.stop();
