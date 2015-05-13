@@ -1,7 +1,8 @@
 package drc;
 
-struct throttle_control_cmd_t
+struct joint_position_goal_t
 {
   int64_t utime;
-  double ankle_position;           
+  double joint_position;
+  string joint_name           
 }
