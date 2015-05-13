@@ -62,6 +62,8 @@ void AtlasFallDetector::handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
                        const drc::atlas_behavior_command_t* msg) {
   if (msg->command != "user" || msg->command != "USER") {
     this->controller_is_active = false;
+  } else {
+    this->bracing_latch = false;
   }
   std::cout << msg->command << std::endl;
 }
@@ -88,9 +90,11 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
   Vector2d icp = this->getICP();
   bool icp_is_ok = this->debounce->update(this->robot_state.t, this->isICPCaptured(icp));
   bool icp_is_capturable = this->isICPCapturable(icp);
+  if (this->bracing_latch) icp_is_capturable = false;
+
   // must remain not capturable for sufficient time to trigger bracing; if
   // we got to capturable reset timer
-  if (icp_is_capturable) {this->icp_far_away_time = NAN; this->bracing_spamlatch = false;}
+  if (icp_is_capturable) this->icp_far_away_time = NAN;
   else if (!icp_is_capturable && isNaN(this->icp_far_away_time)){
     this->icp_far_away_time = robot_state.t;
     icp_is_capturable = true;
@@ -99,9 +103,9 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
   if (!isNaN(this->icp_far_away_time) && (robot_state.t - this->icp_far_away_time < bracing_min_trigger_time)){
     icp_is_capturable = true;
   } 
-  if (!icp_is_capturable && !this->bracing_spamlatch){
+  if (!icp_is_capturable && !this->bracing_latch){
     std::cout << "bracing!" << std::endl;
-    this->bracing_spamlatch = true;
+    this->bracing_latch = true;
   }
 
   if (this->controller_is_active) {
@@ -138,7 +142,8 @@ void AtlasFallDetector::handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
   this->controller_is_active = (msg->state == msg->STANDING ||
                                 msg->state == msg->WALKING || 
                                 msg->state == msg->MANIPULATING || 
-                                msg->state == msg->RECOVERING);
+                                msg->state == msg->RECOVERING || 
+                                msg->state == msg->BRACING);
 }
 
 Vector2d AtlasFallDetector::getICP() {
