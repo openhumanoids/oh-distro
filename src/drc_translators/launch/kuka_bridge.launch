@@ -1,4 +1,7 @@
 <launch>
   <node name="lcm2ros_kuka" pkg="drc_translators" type="lcm2ros_kuka" /> 
   <node name="ros2lcm_kuka" pkg="drc_translators" type="ros2lcm_kuka" /> 
+
+  <node name="ros2lcm_sdh" pkg="drc_translators" type="ros2lcm_sdh" />
+  <node name="lcm2lcm_kuka" pkg="drc_translators" type="lcm2lcm_kuka" /> 
 </launch>
