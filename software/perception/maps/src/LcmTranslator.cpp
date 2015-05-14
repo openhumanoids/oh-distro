@@ -499,7 +499,8 @@ fromLcm(const drc::map_image_t& iMessage, DepthImageView& oView) {
 
 bool LcmTranslator::
 toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
-      const float iQuantMax, const bool iCompress) {
+      const float iQuantMax, const bool iCompress,
+      const bool iIncludeIntensities) {
   auto& msg = oMessage;
 
   // basic info
@@ -565,7 +566,28 @@ toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
   else if (bits <= 16) dataType = DataBlob::DataTypeUint16;
   else dataType = DataBlob::DataTypeFloat32;
   blob.convertTo(compressionType, dataType);
-  return toLcm(blob, oMessage.range_blob);
+  if (!toLcm(blob, oMessage.range_blob)) return false;
+
+  // store intensities to blob
+  if (iIncludeIntensities &&
+      (iScan.getNumIntensities()==iScan.getNumRanges())) {
+    const float intensityScale = 4000/255;   // TODO: hardcoded for now
+    msg.intensity_scale = intensityScale;
+    std::vector<float> intensities = iScan.getIntensities();
+    for (size_t i = 0; i < ranges.size(); ++i) {
+      if (ranges[i] <= 0) intensities[i] = 0;
+      intensities[i] = intensities[i]/intensityScale + 0.5f;
+      if (intensities[i] > 255) intensities[i] = 255;
+    }
+    bytes = std::vector<uint8_t>
+      ((uint8_t*)intensities.data(),
+       (uint8_t*)(intensities.data() + intensities.size()));
+    blob.setData(bytes, spec);
+    blob.convertTo(compressionType, DataBlob::DataTypeUint8);
+    if (!toLcm(blob, oMessage.intensity_blob)) return false;
+  }
+
+  return true;
 }
 
 bool LcmTranslator::
@@ -598,12 +620,25 @@ fromLcm(const drc::map_scan_t& iMessage, LidarScan& oScan) {
   for (auto& r : ranges) r *= msg.range_scale;
   oScan.setRanges(ranges);
 
+  // intensities
+  if (fromLcm(msg.intensity_blob, blob)) {
+    blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32);
+    raw = (float*)blob.getBytes().data();
+    std::vector<float> intensities
+      (raw, raw+blob.getBytes().size()/sizeof(float));
+    if (intensities.size() == ranges.size()) {
+      for (auto& val : intensities) val *= msg.intensity_scale;
+      oScan.setIntensities(intensities);
+    }
+  }
+
   return true;
 }
 
 bool LcmTranslator::
 toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
-      const float iQuantMax, const bool iCompress) {
+      const float iQuantMax, const bool iCompress,
+      const bool iIncludeIntensities) {
 
   const auto& scans = iView.getScans();
   const int numScans = scans.size();
@@ -622,8 +657,9 @@ toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
   for (int i = 0; i < numScans; ++i) {
     drc::map_scan_t& msg = oMessage.scans[i];
     LidarScan::Ptr scan = scans[i];
-    toLcm(*scan, msg, iQuantMax, iCompress);
+    toLcm(*scan, msg, iQuantMax, iCompress, iIncludeIntensities);
     oMessage.data_bytes += msg.range_blob.num_bytes;
+    oMessage.data_bytes += msg.intensity_blob.num_bytes;
   }
 
   return true;

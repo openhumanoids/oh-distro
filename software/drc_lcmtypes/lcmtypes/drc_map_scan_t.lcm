@@ -19,4 +19,8 @@ struct map_scan_t
   // scan data blob
   float range_scale;
   map_blob_t range_blob;
+
+  // intensity blob
+  float intensity_scale;
+  map_blob_t intensity_blob;
 }
