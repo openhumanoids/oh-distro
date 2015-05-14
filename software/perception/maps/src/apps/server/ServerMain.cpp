@@ -385,11 +385,13 @@ struct ViewWorker {
           int totalBytes = 0;
           const int kNumScanChunks = 1;  // TODO PARAM
           for (int i = 0; i < kNumScanChunks; ++i) {
-            int totalNumScans = bundle->getNumScans();
+            int totalNumScans = allScans.size();
             int chunkSize = totalNumScans/kNumScanChunks;
             int minIndex = i*chunkSize;
             int maxIndex = std::min((i+1)*chunkSize, totalNumScans);
             std::vector<LidarScan::Ptr> curScans(maxIndex-minIndex);
+            if (curScans.size() == 0) continue;
+
             for (size_t k = 0; k < curScans.size(); ++k) {
               curScans[k] = allScans[k+minIndex];
             }
