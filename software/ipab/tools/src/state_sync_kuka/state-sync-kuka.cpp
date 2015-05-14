@@ -1,9 +1,8 @@
 // Selective lcm2lcm combiner for Edinburgh Kuka Arm including SDH hand
 // mfallon
-#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <ros/console.h>
 #include <cstdlib>
 #include <sys/time.h>
 #include <time.h>
@@ -37,12 +36,14 @@ private:
   void broadcastRobotState();
 
   // Store most recent states of both the hand and the arm, and combine once a new one arrives for each
+  boost::mutex mtx_;
+
   drc::joint_state_t kukaState_;
   drc::joint_state_t sdhState_;
 };
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_) : lcm_(lcm_) {
-  ROS_INFO("Initializing LCM2LCM Robot State Publisher");
+
   
   lcm_->subscribe("SCHUNK_STATE", &App::sdhStateHandler, this);
   lcm_->subscribe("KUKA_STATE", &App::kukaStateHandler, this);
@@ -63,14 +64,18 @@ App::~App()  {
 }
 
 void App::kukaStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::joint_state_t* msg) {
+  mtx_.lock();
   kukaState_ = *msg;
+  mtx_.unlock();
 
   // Broadcast new message
   this->broadcastRobotState();
 }
 
 void App::sdhStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::joint_state_t* msg) {
+  mtx_.lock();
   sdhState_ = *msg;
+  mtx_.unlock();
 
   // Broadcast new message
   this->broadcastRobotState();
@@ -94,6 +99,7 @@ void App::broadcastRobotState() {
   int kuka_joints = 7; //kukaState_->joint_position.size();
   int sdh_joints = 7; //sdhState_->joint_position.size();
 
+  mtx_.lock();
   for (int i = 0; i < kukaState_.joint_position.size(); i++)  {
     msg_out.joint_position[ i ] = kukaState_.joint_position[ i ];
     msg_out.joint_velocity[ i ] = kukaState_.joint_velocity[ i ];
@@ -105,6 +111,8 @@ void App::broadcastRobotState() {
     msg_out.joint_velocity[ j+7 ] = sdhState_.joint_velocity[ j ];
     msg_out.joint_effort[ j+7 ] = sdhState_.joint_effort[ j ];
   }
+  std::cout << msg_out.joint_position[0] << msg_out.joint_name[0] << "\n";
+  mtx_.unlock();
 
   lcm_->publish("EST_ROBOT_STATE", &msg_out);
 }
@@ -117,7 +125,6 @@ int main(int argc, char **argv){
   App handlerObject(lcm);
 
   std::cout << "lcm2lcm translator ready\n";
-  ROS_ERROR("LCM2LCM Robot State Publisher Ready");
   
   while(0 == lcm->handle());
   return 0;

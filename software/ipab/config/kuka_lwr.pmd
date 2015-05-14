@@ -16,12 +16,17 @@ group "1.state" {
         exec = "drc-joints2frames-kuka";
         host = "localhost";
     }
+
+    cmd "kuka_robot_state_publisher" {
+	exec = "ipab-state-sync-kuka";
+	host = "localhost";
+    }
 }
 
 group "2.sensors" {
 
     cmd "kinect" {
-        exec = "kinect-openni-lcm";
+        exec = "kinect-openni-lcm -j -z";
         host = "localhost";
     }
 
@@ -36,6 +41,17 @@ group "2.sensors" {
     }
 }
 
+group "3.actuators" {
+    cmd "arm_schunk_sdh" {
+        exec = "roslaunch schunk_sdh schunk_sdh.launch";
+        host = "localhost";
+    }
+
+    cmd "activate_sdh_hand" {
+        exec = "rosservice call /gripper/sdh_controller/init";
+        host = "localhost";
+    }
+}
 
 cmd "drake-designer" {
     exec = "drake-designer -lwr -c $DRC_BASE/software/config/kuka_lwr.cfg";
@@ -56,3 +72,6 @@ script "start" {
     start cmd "drake-designer";
 }
 
+script "arm_sdh" {
+    start group "3.actuators";
+}
