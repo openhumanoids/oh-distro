@@ -13,6 +13,7 @@
 
 #include <lcmtypes/drc/map_scans_t.hpp>
 #include <lcmtypes/drc/affordance_collection_t.hpp>
+#include <lcmtypes/drc/block_fit_request_t.hpp>
 
 #include <maps/ScanBundleView.hpp>
 #include <maps/LcmTranslator.hpp>
@@ -33,6 +34,7 @@ struct State {
   Eigen::Vector3f mBlockSize;
   int mAlgorithm;  // TODO: use algo
   bool mDoTrigger;
+  std::string mNamePrefix;
   bool mTriggered;
 
   drc::map_scans_t mData;
@@ -52,8 +54,10 @@ struct State {
     mGrabExactPoses = false;
     mDebug = false;
     mAlgorithm = 0;  // TODO
-    mBlockSize << 0, 0, 0;
+    mBlockSize << 15+3/8.0, 15+5/8.0, 5+5/8.0;
+    mBlockSize *=0.0254;
     mDoTrigger = false;
+    mNamePrefix = "cinderblock";
     mTriggered = true;
   }
 
@@ -82,7 +86,7 @@ struct State {
       Eigen::Isometry3f groundPose;
       {
         std::unique_lock<std::mutex> dataLock(mDataMutex);
-        if (mData.utime <= mLastDataTime) continue;
+        if (mData.utime == mLastDataTime) continue;
         data = mData;
         sensorPose = mSensorPose;
         groundPose = mGroundPose;
@@ -151,7 +155,7 @@ struct State {
                            groundPose.translation()[2]+0.5);
       if (mDoFilter) fitter.setAreaThresholds(0.8, 1.2);
       else fitter.setAreaThresholds(0, 1000);
-      if (mBlockSize.norm() > 1e-5) fitter.setBlockDimensions(mBlockSize);
+      fitter.setBlockDimensions(mBlockSize);
       fitter.setRemoveGround(mRemoveGround);
       fitter.setDebug(mDebug);
       fitter.setCloud(cloud);
@@ -202,7 +206,8 @@ struct State {
           quaternionString + "]],\n";
         json += "      \"uuid\": \"" + uuid + "\",\n";
         json += "      \"Dimensions\": [" + dimensionsString + "],\n";
-        json += "      \"Name\": \"cinderblock " + std::to_string(i) + "\"\n";
+        json += "      \"Name\": \"" + mNamePrefix + " " +
+          std::to_string(i) + "\"\n";
         json += "    },\n";
       }
 
@@ -234,7 +239,8 @@ struct State {
           quaternionString + "]],\n";
         json += "      \"uuid\": \"ground affordance\",\n";
         json += "      \"Dimensions\": [10, 10, 0.01],\n";
-        json += "      \"Name\": \"ground affordance\"\n";
+        json += "      \"Name\": \"ground affordance\",\n";
+        json += "      \"Visible\": 0\n";
         json += "    }\n";
       }
 
@@ -305,8 +311,13 @@ struct State {
     if (mDoTrigger) mTriggered = false;
   }
 
-  void onTrigger(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel) {
+  void onTrigger(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
+                 const drc::block_fit_request_t* iMessage) {
+    mNamePrefix = iMessage->name_prefix;
+    mBlockSize << iMessage->dimensions[0], iMessage->dimensions[1],
+      iMessage->dimensions[2];
     mTriggered = true;
+    std::cout << "received trigger" << std::endl;
   }
 };
 

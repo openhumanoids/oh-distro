@@ -354,8 +354,11 @@ go() {
 
   for (int i = 0; i < (int)results.size(); ++i) {
     const auto& res = results[i];
-    float areaRatio = mBlockDimensions.head<2>().prod()/res.mConvexArea;
-    if ((areaRatio < mAreaThreshMin) || (areaRatio > mAreaThreshMax)) continue;
+    if (mBlockDimensions.head<2>().norm() > 1e-5) {
+      float areaRatio = mBlockDimensions.head<2>().prod()/res.mConvexArea;
+      if ((areaRatio < mAreaThreshMin) ||
+          (areaRatio > mAreaThreshMax)) continue;
+    }
 
     Block block;
     block.mSize << res.mSize[0], res.mSize[1], mBlockDimensions[2];

@@ -1,0 +1,13 @@
+package drc;
+
+struct block_fit_request_t
+{
+  // request timestamp
+  int64_t utime;
+
+  // prior dimensions (set to all zeros to return all blocks)
+  float dimensions[3];
+
+  // affordance prefix
+  string name_prefix;
+}
