@@ -56,7 +56,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
-      obj = obj.addLCMInterface('bracing_plan', 'BRACE_FOR_FALL', @drc.utime_t, 0, @obj.handle_bracing_plan);
       obj = obj.addLCMInterface('start_stand', 'START_MIT_STAND', @drc.utime_t, 0, @obj.handle_stand_default);
       obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @drc.atlas_behavior_command_t, 0, @obj.handle_atlas_behavior_command);
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
@@ -65,6 +64,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('recovery_trigger', 'RECOVERY_TRIGGER', @drc.recovery_trigger_t, 0, @obj.handle_recovery_trigger);
       obj = obj.addLCMInterface('recovery_enable', 'RECOVERY_ENABLE', @drc.boolean_t, 0, @obj.handle_recovery_enable);
       obj = obj.addLCMInterface('bracing_enable', 'BRACING_ENABLE', @drc.boolean_t, 0, @obj.handle_bracing_enable);
+      obj = obj.addLCMInterface('bracing_plan', 'BRACE_FOR_FALL', @drc.recovery_trigger_t, 0, @obj.handle_bracing_plan);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
@@ -120,15 +120,17 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_bracing_plan(obj, msg)
-      if (obj.bracing_enabled)
-        if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
-          disp('Acting on a bracing plan')
-          obj.bracing_plan = BracingPlan(obj.robot, obj.x(1:obj.robot.getNumPositions));
+      if (msg.activate)
+        if (obj.bracing_enabled || msg.override)
+          if ~isempty(obj.x)
+            if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
+              disp('Acting on a bracing plan')
+              obj.bracing_plan = BracingPlan(obj.robot, obj.x(1:obj.robot.getNumPositions));
+            end
+            obj.recovery_state = obj.RECOVERY_BRACING;
+            obj.switchToPlan(obj.bracing_plan);
+          end
         end
-        obj.recovery_state = obj.RECOVERY_BRACING;
-        obj.switchToPlan(obj.bracing_plan);
-      %else
-      %  disp('    ... but ignoring because bracing is disabled in DRCPlanEval.m');
       end
     end
     

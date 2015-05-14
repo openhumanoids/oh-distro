@@ -6,6 +6,7 @@
 #include "drake/lcmt_qp_controller_input.hpp"
 #include "drc/controller_status_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
+#include "lcmtypes/drc/recovery_trigger_t.hpp"
 #include "drc/robot_state_t.hpp"
 #include "drc/atlas_behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
@@ -327,6 +328,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 
       if (!isOutputSafe(qp_output)) {
         // First priority is to halt unsafe behavior
+        /*
         atlas_behavior_msg.utime = 0;
         atlas_behavior_msg.command = "freeze";
         lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
@@ -350,8 +352,10 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
           lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
           */
           // we've lost control and are probably falling. cross fingers...
-          drc::utime_t trigger_msg;
+          drc::recovery_trigger_t trigger_msg;
           trigger_msg.utime = static_cast<int64_t> (robot_state->t * 1e6);
+          trigger_msg.activate = true;
+          trigger_msg.override = true;
           lcmHandler.LCMHandle->publish("BRACE_FOR_FALL", &trigger_msg);
         }
       } else {
