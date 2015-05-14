@@ -222,6 +222,7 @@ script "0.prep" {
     start group "5.maps";
     start group "7.SA_cameras";
     start group "8.logging";
+    start cmd "atlas control panel";
 
     start cmd "atlas-off";
 }
