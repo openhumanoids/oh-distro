@@ -57,18 +57,22 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   drc::joint_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   
-  msg_out.joint_position.assign(n_joints , 0  );
-  msg_out.joint_velocity.assign(n_joints , 0  );
-  msg_out.joint_effort.assign(n_joints , 0  );
-  msg_out.num_joints = n_joints;
+  msg_out.joint_position.assign(n_joints + 1, 0  );
+  msg_out.joint_velocity.assign(n_joints + 1, 0  );
+  msg_out.joint_effort.assign(n_joints + 1, 0  );
+  msg_out.num_joints = n_joints + 1;
 
-  msg_out.joint_name = msg->name;
+  msg_out.joint_name = {"sdh_knuckle_joint", "sdh_thumb_2_joint", "sdh_thumb_3_joint", "sdh_finger_12_joint", "sdh_finger_13_joint", "sdh_finger_22_joint", "sdh_finger_23_joint", "sdh_finger_21_joint"};
   for (int i = 0; i < n_joints; i++)  {
     msg_out.joint_name[ i ] = msg->name[ i ];
     msg_out.joint_position[ i ] = msg->position[ i ];
     msg_out.joint_velocity[ i ] = msg->velocity[ i ];
     msg_out.joint_effort[ i ] = msg->effort[i];
   }
+  msg_out.joint_name[ n_joints ] = "sdh_finger_21_joint";
+  msg_out.joint_position[ n_joints ] = msg->position[0];
+  msg_out.joint_velocity[ n_joints ] = msg->velocity[0];
+  msg_out.joint_effort[ n_joints ] = msg->effort[0];
 
   lcm_publish_.publish("SCHUNK_STATE", &msg_out);
 }
@@ -79,7 +83,7 @@ int main(int argc, char **argv){
   ros::NodeHandle nh;
   new App(nh);
   std::cout << "ros2lcm_sdh translator ready\n";
-  ROS_ERROR("ROS2LCM Translator Ready");
+  ROS_ERROR("ROS2LCM Schunk SDH Joint State Translator Ready");
   ros::spin();
   return 0;
 }
