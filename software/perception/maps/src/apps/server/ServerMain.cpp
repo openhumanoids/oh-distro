@@ -383,7 +383,7 @@ struct ViewWorker {
           std::string chan =
             mRequest.channel.size()>0 ? mRequest.channel : "MAP_SCANS";
           int totalBytes = 0;
-          const int kNumScanChunks = 1;  // TODO PARAM
+          const int kNumScanChunks = 10;  // TODO PARAM
           for (int i = 0; i < kNumScanChunks; ++i) {
             int totalNumScans = bundle->getNumScans();
             int chunkSize = totalNumScans/kNumScanChunks;
@@ -400,9 +400,11 @@ struct ViewWorker {
             LcmTranslator::toLcm(curBundle, msgScans,
                                  mRequest.quantization_max, true, true);
             msgScans.utime = drc::Clock::instance()->getCurrentTime();
-            if (msgScans.num_scans > 0) {
-              msgScans.utime = msgScans.scans.back().utime;
+            if (allScans.size() > 0) {
+              msgScans.utime = allScans.back()->getTimestamp();
             }
+            msgScans.chunk_id = i;
+            msgScans.num_chunks = kNumScanChunks;
             msgScans.map_id = localMap->getId();
             totalBytes += msgScans.data_bytes;
             lcm->publish(chan, &msgScans);

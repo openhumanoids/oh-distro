@@ -651,6 +651,8 @@ toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) oMessage.transform[i][j] = xform(i,j);
   }
+  oMessage.chunk_id = 0;
+  oMessage.num_chunks = 1;
 
   // set scan data
   oMessage.data_bytes = 0;
