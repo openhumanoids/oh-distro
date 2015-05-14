@@ -4,12 +4,10 @@ image_io_utils
 # sudeep:
 opencv-utils
 # library to create depth masks:
-rgbd_simulation 
+rgbd_simulation
 affordance
 maps
-# too to filter lidar self detections
-lidar-passthrough
-# to check for self-collisions 
+# to check for self-collisions
 #lidar-plancheck
 # module to apply object masks:
 #image-passthrough
