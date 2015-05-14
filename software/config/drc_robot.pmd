@@ -219,7 +219,6 @@ script "0.prep" {
     start group "1.state_mit";
     start group "2.plan_and_control";
     start group "4.perception_drivers";
-    start group "6.hands_robotiq";
     start group "5.maps";
     start group "7.SA_cameras";
     start group "8.logging";
@@ -231,6 +230,7 @@ script "1.power_on" {
     stop cmd "atlas-off";
     wait ms 2000;
     start cmd "atlas-high";
+    start group "6.hands_robotiq";
 }
 
 script "2.stop_clean" {
