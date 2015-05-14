@@ -1,0 +1,8 @@
+package drc;
+
+struct joint_position_goal_t
+{
+  int64_t utime;
+  double joint_position;
+  string joint_name;
+}
