@@ -13,6 +13,7 @@ public:
 
   void setTimestamp(const int64_t iTimestamp);
   void setRanges(const std::vector<float>& iRanges);
+  void setIntensities(const std::vector<float>& iIntensities);
   void setAngles(const float iThetaMin, const float iThetaStep);
   void setPose(const Eigen::Isometry3f& iPose);
   void setPoses(const Eigen::Isometry3f& iStartPose,
@@ -20,7 +21,9 @@ public:
 
   int64_t getTimestamp() const;
   int getNumRanges() const;
+  int getNumIntensities() const;
   const std::vector<float>& getRanges() const;
+  const std::vector<float>& getIntensities() const;
   float range(const int iIndex) const { return mRanges[iIndex]; }
   float& range(const int iIndex) { return mRanges[iIndex]; }
   float getThetaMin() const;
@@ -38,6 +41,7 @@ public:
 protected:
   int64_t mTimestamp;
   std::vector<float> mRanges;
+  std::vector<float> mIntensities;
   float mThetaMin;
   float mThetaStep;
   Eigen::Isometry3f mPoseStart;

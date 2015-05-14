@@ -15,6 +15,7 @@ public:
 
   void set(const std::vector<maps::LidarScan::Ptr>& iScans);
   std::vector<maps::LidarScan::Ptr> getScans() const;
+  int getNumScans() const;
 
   const Type getType() const;
   ViewBase::Ptr clone() const;

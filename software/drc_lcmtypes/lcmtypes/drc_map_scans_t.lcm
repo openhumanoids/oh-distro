@@ -22,4 +22,8 @@ struct map_scans_t
 
   // scan data
   map_scan_t scans[num_scans];
+
+  // sequence info
+  int32_t chunk_id;
+  int32_t num_chunks;
 }

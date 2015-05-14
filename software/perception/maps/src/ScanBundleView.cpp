@@ -22,6 +22,11 @@ getScans() const {
   return mScans;
 }
 
+int ScanBundleView::
+getNumScans() const {
+  return mScans.size();
+}
+
 const ViewBase::Type ScanBundleView::
 getType() const {
   return TypeScanBundle;

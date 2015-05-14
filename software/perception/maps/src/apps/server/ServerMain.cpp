@@ -379,19 +379,41 @@ struct ViewWorker {
         else if (mRequest.type == drc::map_request_t::SCAN_BUNDLE) {
           auto bundle = localMap->getAsScanBundle(bounds);
           bundle->setId(mRequest.view_id);
-          drc::map_scans_t msgScans;
-          LcmTranslator::toLcm(*bundle, msgScans, mRequest.quantization_max);
-          msgScans.utime = drc::Clock::instance()->getCurrentTime();
-          if (msgScans.num_scans > 0) {
-            msgScans.utime = msgScans.scans.back().utime;
-          }
-          msgScans.map_id = localMap->getId();
+          const auto& allScans = bundle->getScans();
           std::string chan =
             mRequest.channel.size()>0 ? mRequest.channel : "MAP_SCANS";
-          lcm->publish(chan, &msgScans);
-          std::cout << "Sent scan bundle on " << chan << " at " <<
-            msgScans.data_bytes << " bytes (view " << bundle->getId() <<
-            ")" << std::endl;
+          int totalBytes = 0;
+          const int kNumScanChunks = 1;  // TODO PARAM
+          for (int i = 0; i < kNumScanChunks; ++i) {
+            int totalNumScans = allScans.size();
+            int chunkSize = totalNumScans/kNumScanChunks;
+            int minIndex = i*chunkSize;
+            int maxIndex = std::min((i+1)*chunkSize, totalNumScans);
+            std::vector<LidarScan::Ptr> curScans(maxIndex-minIndex);
+            if (curScans.size() == 0) continue;
+
+            for (size_t k = 0; k < curScans.size(); ++k) {
+              curScans[k] = allScans[k+minIndex];
+            }
+            ScanBundleView curBundle;
+            curBundle.setId(bundle->getId());
+            curBundle.set(curScans);
+            drc::map_scans_t msgScans;
+            LcmTranslator::toLcm(curBundle, msgScans,
+                                 mRequest.quantization_max, true, true);
+            msgScans.utime = drc::Clock::instance()->getCurrentTime();
+            if (allScans.size() > 0) {
+              msgScans.utime = allScans.back()->getTimestamp();
+            }
+            msgScans.chunk_id = i;
+            msgScans.num_chunks = kNumScanChunks;
+            msgScans.map_id = localMap->getId();
+            totalBytes += msgScans.data_bytes;
+            lcm->publish(chan, &msgScans);
+          }
+          std::cout << "Sent " << kNumScanChunks << " scan bundle(s) on " <<
+            chan << " at " << totalBytes << " bytes (view " <<
+            bundle->getId() << ")" << std::endl;
         }
       }
 
