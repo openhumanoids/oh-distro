@@ -64,6 +64,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
       obj = obj.addLCMInterface('recovery_trigger', 'RECOVERY_TRIGGER', @drc.recovery_trigger_t, 0, @obj.handle_recovery_trigger);
       obj = obj.addLCMInterface('recovery_enable', 'RECOVERY_ENABLE', @drc.boolean_t, 0, @obj.handle_recovery_enable);
+      obj = obj.addLCMInterface('bracing_enable', 'BRACING_ENABLE', @drc.boolean_t, 0, @obj.handle_bracing_enable);
     end
 
     function obj = addLCMInterface(obj, name, channel, msg_constructor, timeout, handler)
@@ -172,6 +173,11 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           obj.switchToPlan(new_plan);
         end
       end
+    end
+
+    function handle_bracing_enable(obj, msg)
+      obj.bracing_enabled = msg.data;
+      obj.sendStatus()
     end
 
     function handle_recovery_enable(obj, msg)
@@ -311,6 +317,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
           plan_status_msg.last_plan_start_utime = current_plan.start_time * 1e6;
         end
         plan_status_msg.recovery_enabled = obj.recovery_enabled;
+        plan_status_msg.bracing_enabled = obj.bracing_enabled;
         obj.lc.publish('PLAN_EXECUTION_STATUS', plan_status_msg);
 
       end

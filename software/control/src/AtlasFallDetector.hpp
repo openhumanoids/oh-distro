@@ -98,7 +98,7 @@ private:
   double icp_capturable_radius = 0.25;
   double bracing_min_trigger_time = 0.4;
   Vector2d last_cop;
-  bool bracing_spamlatch = false;
+  bool bracing_latch = false;
 
   Vector2d getICP();
   double getSupportFootHeight();
