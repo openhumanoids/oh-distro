@@ -5,7 +5,6 @@
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
 #include "drc/controller_status_t.hpp"
-#include "lcmtypes/drc/utime_t.hpp"
 #include "lcmtypes/drc/recovery_trigger_t.hpp"
 #include "drc/robot_state_t.hpp"
 #include "drc/atlas_behavior_command_t.hpp"
@@ -331,11 +330,6 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
         atlas_behavior_msg.utime = 0;
         atlas_behavior_msg.command = "freeze";
         lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
-        /*
-        drc::utime_t trigger_msg;
-        trigger_msg.utime = static_cast<int64_t> (robot_state->t * 1e6);
-        lcmHandler.LCMHandle->publish("BRACE_FOR_FALL", &trigger_msg);
-        */
       }
 
       if (info < 0 && ctrl_opts->max_infocount > 0) {
