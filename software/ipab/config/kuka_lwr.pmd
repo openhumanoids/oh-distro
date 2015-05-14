@@ -71,7 +71,3 @@ script "start" {
     start group "2.sensors";
     start cmd "drake-designer";
 }
-
-script "arm_sdh" {
-    start group "3.actuators";
-}
