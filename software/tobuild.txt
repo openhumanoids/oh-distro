@@ -6,8 +6,9 @@ drc_lcmtypes
 latency
 drivers
 utils
-drake
 perception
+drake
+lidar-passthrough
 motion_estimate
 network
 tools
