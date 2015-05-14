@@ -575,8 +575,8 @@ toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
     msg.intensity_scale = intensityScale;
     std::vector<float> intensities = iScan.getIntensities();
     for (size_t i = 0; i < ranges.size(); ++i) {
-      if (ranges[i] <= 0) intensities[i] = 0;
       intensities[i] = intensities[i]/intensityScale + 0.5f;
+      if (ranges[i] <= 0) intensities[i] = 0;
       if (intensities[i] > 255) intensities[i] = 255;
     }
     bytes = std::vector<uint8_t>
