@@ -328,7 +328,6 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 
       if (!isOutputSafe(qp_output)) {
         // First priority is to halt unsafe behavior
-        /*
         atlas_behavior_msg.utime = 0;
         atlas_behavior_msg.command = "freeze";
         lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
