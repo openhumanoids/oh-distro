@@ -20,7 +20,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     pause_state = 0;
     recovery_state = 0;
     recovery_enabled = 1;
-    bracing_enabled = 0;
+    bracing_enabled = 1;
     reactive_recovery_planner;
     bracing_plan;
     contact_force_detected;
