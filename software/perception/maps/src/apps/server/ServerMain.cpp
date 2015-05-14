@@ -383,7 +383,7 @@ struct ViewWorker {
           std::string chan =
             mRequest.channel.size()>0 ? mRequest.channel : "MAP_SCANS";
           int totalBytes = 0;
-          const int kNumScanChunks = 10;  // TODO PARAM
+          const int kNumScanChunks = 1;  // TODO PARAM
           for (int i = 0; i < kNumScanChunks; ++i) {
             int totalNumScans = bundle->getNumScans();
             int chunkSize = totalNumScans/kNumScanChunks;
