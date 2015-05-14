@@ -111,7 +111,6 @@ void App::broadcastRobotState() {
     msg_out.joint_velocity[ j+7 ] = sdhState_.joint_velocity[ j ];
     msg_out.joint_effort[ j+7 ] = sdhState_.joint_effort[ j ];
   }
-  std::cout << msg_out.joint_position[0] << msg_out.joint_name[0] << "\n";
   mtx_.unlock();
 
   lcm_->publish("EST_ROBOT_STATE", &msg_out);
