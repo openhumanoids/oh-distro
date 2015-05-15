@@ -30,6 +30,10 @@ group "1.state_mit" {
         exec = "se-yaw-lock -yd";
         host = "atlas2";
     }
+    cmd "contact-passthrough" {
+        exec = "drc-controller-contact-passthrough";
+        host = "atlas2";
+    }
 }
 
 
@@ -94,6 +98,16 @@ group "4.perception_drivers" {
         host = "atlas0";
     }
 
+    cmd "video encode" {
+        exec = "drc-video-encode -k 60 -c CAMERA -o CAMERA_LEFT_STREAM";
+        host = "atlas0";
+    }
+
+    cmd "video decode" {
+        exec = "drc-video-decode -c CAMERA_LEFT -i CAMERA_LEFT_STREAM -o CAMERA_LEFT_DECODED";
+        host = "base";
+    }
+
 }
 
 group "5.maps" {
@@ -113,6 +127,10 @@ group "5.maps" {
         host = "atlas0";
     }
 
+    cmd "block fitter" {
+        exec = "drc-block-fitter -c -t BLOCK_FIT_TRIGGER";
+        host = "base";
+    }
 }
 
 group "6.hands_robotiq" {
@@ -201,10 +219,10 @@ script "0.prep" {
     start group "1.state_mit";
     start group "2.plan_and_control";
     start group "4.perception_drivers";
-    start group "6.hands_robotiq";
     start group "5.maps";
     start group "7.SA_cameras";
     start group "8.logging";
+    start cmd "atlas control panel";
 
     start cmd "atlas-off";
 }
@@ -213,6 +231,7 @@ script "1.power_on" {
     stop cmd "atlas-off";
     wait ms 2000;
     start cmd "atlas-high";
+    start group "6.hands_robotiq";
 }
 
 script "2.stop_clean" {

@@ -15,6 +15,7 @@ set(REQUIRED_PACKAGES
   pcl_segmentation-1.7
 )
 add_library(${LIB_NAME} SHARED
+  src/PlaneFitter.cpp
   src/RobustNormalEstimator.cpp
   src/IncrementalPlaneEstimator.cpp
   src/PlaneSegmenter.cpp
@@ -23,6 +24,7 @@ add_library(${LIB_NAME} SHARED
 )
 pods_install_headers(
   src/Types.hpp
+  src/PlaneFitter.hpp
   src/RobustNormalEstimator.hpp
   src/IncrementalPlaneEstimator.hpp
   src/PlaneSegmenter.hpp
@@ -48,6 +50,14 @@ pods_install_executables(${APP_NAME})
 
 # test program
 set(APP_NAME ${POD_NAME}-test)
+add_executable(${APP_NAME} src/${APP_NAME}.cpp)
+target_link_libraries(${APP_NAME} boost_system)
+pods_use_pkg_config_packages(${APP_NAME} ${LIB_NAME})
+pods_install_executables(${APP_NAME})
+
+
+# fit single block
+set(APP_NAME ${POD_NAME}-test2)
 add_executable(${APP_NAME} src/${APP_NAME}.cpp)
 target_link_libraries(${APP_NAME} boost_system)
 pods_use_pkg_config_packages(${APP_NAME} ${LIB_NAME})

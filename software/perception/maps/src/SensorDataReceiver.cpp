@@ -177,6 +177,7 @@ struct SensorDataReceiver::Helper {
     }
     cloud->width = cloud->points.size();
     scan->setRanges(ranges);
+    scan->setIntensities(iMessage->intensities);
 
     SensorData data;
     data.mPointSet.reset(new PointSet());

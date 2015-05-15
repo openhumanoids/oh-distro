@@ -39,6 +39,9 @@ def getRobotGrayColor():
 def getRobotOrangeColor():
     return QtGui.QColor(255, 190, 0)
 
+def getRobotBlueColor():
+    return QtGui.QColor(170, 255, 255)
+
 
 class RobotModelItem(om.ObjectModelItem):
 
@@ -526,3 +529,7 @@ def setRobotiqJointsToPinchClosedHand(robotModel):
 def setRobotiqJoints(robotModel, side, fingers=[0.0, 0.0, 0.0], palm=[0.0, 0.0, 0.0]):
     robotModel.model.setJointPositions(np.tile(fingers, 3), ['%s_finger_%s_joint_%d' % (side, n, i+1) for n in ['1', '2', 'middle'] for i in range(3)])
     robotModel.model.setJointPositions(palm, ['%s_palm_finger_%s_joint' % (side, n) for n in ['1', '2', 'middle']])
+
+def getRobotiqJoints():
+    return ['%s_finger_%s_joint_%d' % (side, n, i+1) for n in ['1', '2', 'middle'] for i in range(3) for side in ['left', 'right']] + \
+        ['%s_palm_finger_%s_joint' % (side, n) for n in ['1', '2', 'middle'] for side in ['left', 'right']]

@@ -64,6 +64,7 @@ from ddapp import sensordatarequestpanel
 from ddapp import tasklaunchpanel
 from ddapp import pfgrasp
 from ddapp import pfgrasppanel
+from ddapp.jointpropagator import JointPropagator
 
 from ddapp import robotplanlistener
 from ddapp import handdriver
@@ -269,7 +270,6 @@ if useDrakeVisualizer:
 
 if usePlanning:
 
-
     def showPose(pose):
         playbackRobotModel.setProperty('Visible', True)
         playbackJointController.setPose('show_pose', pose)
@@ -348,6 +348,16 @@ if usePlanning:
 
     def sendFusedHeightRequest(repeatTime=0.0):
         sendDataRequest(lcmdrc.data_request_t.FUSED_HEIGHT, repeatTime)
+
+
+    teleopJointPropagator = JointPropagator(robotStateModel, teleopRobotModel, roboturdf.getRobotiqJoints() + ['neck_ay'])
+    playbackJointPropagator = JointPropagator(robotStateModel, playbackRobotModel, roboturdf.getRobotiqJoints())
+    def doPropagation(model=None):
+        if teleopRobotModel.getProperty('Visible'):
+            teleopJointPropagator.doPropagation()
+        if playbackRobotModel.getProperty('Visible'):
+            playbackJointPropagator.doPropagation()
+    robotStateModel.connectModelChanged(doPropagation)
 
     #app.addToolbarMacro('scene height', sendSceneHeightRequest)
     #app.addToolbarMacro('scene depth', sendSceneDepthRequest)
@@ -429,14 +439,14 @@ if usePlanning:
     egressPanel = egressplanner.EgressPanel(robotSystem)
 
     taskPanels = OrderedDict()
-    
+
     taskPanels['Driving'] = drivingPlannerPanel.widget
     taskPanels['Egress'] = egressPanel.widget
     taskPanels['Door'] = doorTaskPanel.widget
     taskPanels['Valve'] = valveTaskPanel.widget
     taskPanels['Drill'] = drillTaskPanel.widget
     taskPanels['Terrain'] = terrainTaskPanel.widget
-    
+
     tasklaunchpanel.init(taskPanels)
 
     splinewidget.init(view, handFactory, robotStateModel)
@@ -469,14 +479,13 @@ if useLoggingWidget:
 
 if useControllerRate:
 
-    class LCMMessageRateDisplay(object):
+    class ControllerRateLabel(object):
         '''
-        Displays an LCM message frequency in a status bar widget or label widget
+        Displays a controller frequency in the status bar
         '''
 
-        def __init__(self, channel, messageTemplate, statusBar=None):
-
-            self.sub = lcmUtils.addSubscriber(channel)
+        def __init__(self, atlasDriver, statusBar):
+            self.atlasDriver = atlasDriver
             self.label = QtGui.QLabel('')
             statusBar.addPermanentWidget(self.label)
 
@@ -484,13 +493,12 @@ if useControllerRate:
             self.timer.callback = self.showRate
             self.timer.start()
 
-        def __del__(self):
-            lcmUtils.removeSubscriber(self.sub)
-
         def showRate(self):
-            self.label.text = 'Controller rate: %.2f hz' % self.sub.getMessageRate()
+            rate = self.atlasDriver.getControllerRate()
+            rate = 'unknown' if rate is None else '%d hz' % rate
+            self.label.text = 'Controller rate: %s' % rate
 
-    rateComputer = LCMMessageRateDisplay('ATLAS_COMMAND', 'Controller rate: %.2 hz', app.getMainWindow().statusBar())
+    controllerRateLabel = ControllerRateLabel(atlasDriver, app.getMainWindow().statusBar())
 
 
 if useForceDisplay:
@@ -588,44 +596,20 @@ if useFootContactVis:
 
 
 if useFallDetectorVis:
+    def onPlanStatus(msg):
+        links = ['pelvis', 'utorso']
+        if msg.plan_type == lcmdrc.plan_status_t.RECOVERING:
+            for link in links:
+                robotHighlighter.highlightLink(link, [1,0.4,0.0])
+        elif msg.plan_type == lcmdrc.plan_status_t.BRACING:
+            for link in links:
+                robotHighlighter.highlightLink(link, [1, 0, 0])
+        else:
+            for link in links:
+                robotHighlighter.dehighlightLink(link)
 
-    class FallDetectorDisplay(object):
-
-        def __init__(self):
-
-            self.sub = lcmUtils.addSubscriber('ATLAS_FALL_STATE', lcmdrc.atlas_fall_detector_status_t, self.onFallState)
-            self.sub.setSpeedLimit(300)
-
-            self.fallDetectorTriggerTime = 0.0 
-            self.fallDetectorVisResetTime = 3.0 # seconds
-            self.color = QtGui.QColor(180, 180, 180)
-
-        def __del__(self):
-            lcmUtils.removeSubscriber(self.sub)
-
-        def onFallState(self,msg):
-            links = ['pelvis', 'utorso']
-
-            isFalling = msg.falling
-            isBracing = msg.bracing
-            t = msg.utime / 10.0e6
-            if not isFalling and not isBracing and (t-self.fallDetectorTriggerTime > self.fallDetectorVisResetTime or t-self.fallDetectorTriggerTime<0):
-                for link in links:
-                    robotHighlighter.dehighlightLink(link)
-
-            elif isBracing:
-                for link in links:
-                    robotHighlighter.highlightLink(link, [1, 0, 0])
-                self.fallDetectorTriggerTime = t
-
-            elif isFalling:
-                for link in links:
-                    robotHighlighter.highlightLink(link, [1,0.4,0.0])
-                self.fallDetectorTriggerTime = t
-
-
-    fallDetectDisp = FallDetectorDisplay()
-
+    fallDetectorSub = lcmUtils.addSubscriber("PLAN_EXECUTION_STATUS", lcmdrc.plan_status_t, onPlanStatus)
+    fallDetectorSub.setSpeedLimit(10)
 
 if useDataFiles:
 

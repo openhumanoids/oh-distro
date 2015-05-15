@@ -71,6 +71,12 @@ class TerrainTask(object):
         frameCopy = transformUtils.copyFrame(frame.transform)
         footstepsdriverpanel.panel.onNewWalkingGoal(frameCopy)
 
+    def requestBlockFit(self):
+        msg = lcmdrc.block_fit_request_t()
+        msg.utime = getUtime()
+        msg.dimensions = [blockWidth, blockLength, blockHeight]
+        msg.name_prefix = 'cinderblock'
+        lcmUtils.publish('BLOCK_FIT_TRIGGER', msg)
 
     def spawnGroundAffordance(self):
 
@@ -426,6 +432,7 @@ class TerrainTaskPanel(TaskUserPanel):
         self.addManualButton('Walk to tilted steps', self.terrainTask.walkToTiltedCinderblocks)
         self.addManualButton('Spawn manual footsteps', self.terrainTask.computeManualFootsteps)
         self.addManualSpacer()
+        self.addManualButton('Fit Blocks', self.terrainTask.requestBlockFit)
         self.addManualButton('Fit ground affordance', self.terrainTask.spawnGroundAffordance)
         self.addManualButton('Raycast terrain', self.terrainTask.requestRaycastTerrain)
         self.addManualSpacer()

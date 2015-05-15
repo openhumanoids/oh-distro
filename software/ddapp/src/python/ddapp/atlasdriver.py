@@ -42,6 +42,7 @@ class AtlasDriver(object):
         self.lastControllerStatusMessage = None
         self.lastAtlasBatteryDataMessage = None
         self.lastAtlasElectricArmStatusMessage = None
+        self.lastControllerRateMessage = None
         self._setupSubscriptions()
         self.timer = SimpleTimer()
 
@@ -54,6 +55,7 @@ class AtlasDriver(object):
         lcmUtils.addSubscriber('PLAN_EXECUTION_STATUS', lcmdrc.plan_status_t, self.onControllerStatus)
         lcmUtils.addSubscriber('ATLAS_BATTERY_DATA', lcmdrc.atlas_battery_data_t, self.onAtlasBatteryData)
         lcmUtils.addSubscriber('ATLAS_ELECTRIC_ARM_STATUS', lcmdrc.atlas_electric_arm_status_t, self.onAtlasElectricArmStatus)
+        lcmUtils.addSubscriber('CONTROLLER_RATE', lcmdrc.message_rate_t, self.onControllerRate)
         sub = lcmUtils.addSubscriber('ATLAS_STATUS', lcmdrc.atlas_status_t, self.onAtlasStatus)
         sub.setSpeedLimit(60)
 
@@ -62,6 +64,9 @@ class AtlasDriver(object):
 
     def onControllerStatus(self, message):
         self.lastControllerStatusMessage = message
+
+    def onControllerRate(self, message):
+        self.lastControllerRateMessage = message
 
     def onAtlasBatteryData(self, message):
         self.lastAtlasBatteryDataMessage = message
@@ -125,6 +130,14 @@ class AtlasDriver(object):
         assert behaviorId in behaviors
         return behaviors[behaviorId]
 
+    def getControllerRate(self):
+        '''
+        Returns the current controller rate hz or None if no controller rate
+        message has been received.
+        '''
+        if self.lastControllerRateMessage:
+            return self.lastControllerRateMessage.rate_deci_hz / 10.0
+
     def getControllerStatus(self):
         '''
         Returns the current controller status as a string.  The possible string
@@ -148,6 +161,14 @@ class AtlasDriver(object):
         else:
             return "disabled"
 
+    def getBracingEnabledStatus(self):
+        if not self.lastControllerStatusMessage:
+            return None
+        if self.lastControllerStatusMessage.bracing_enabled:
+            return "enabled"
+        else:
+            return "disabled"
+
     def getElectricArmEnabledStatus(self, i):
         assert 0 <= i <= 5
         if self.lastAtlasElectricArmStatusMessage:
@@ -165,6 +186,14 @@ class AtlasDriver(object):
         if self.lastAtlasElectricArmStatusMessage:
             return self.lastAtlasElectricArmStatusMessage.drive_current[i]
         return 0.0
+
+    def getBatteryChargeRemaining(self):
+        '''
+        Returns the current controller rate hz or 0 is no controller rate
+        message has been received.
+        '''
+        if self.lastAtlasBatteryDataMessage:
+            return self.lastAtlasBatteryDataMessage.remaining_charge_percentage
 
     def getCurrentInletPressure(self):
         if self.lastAtlasStatusMessage:
@@ -224,6 +253,16 @@ class AtlasDriver(object):
         msg = lcmdrc.boolean_t()
         msg.data = True
         lcmUtils.publish('RECOVERY_ENABLE', msg)
+
+    def sendBracingEnable(self):
+        msg = lcmdrc.boolean_t()
+        msg.data = True
+        lcmUtils.publish('BRACING_ENABLE', msg)
+
+    def sendBracingDisable(self):
+        msg = lcmdrc.boolean_t()
+        msg.data = False
+        lcmUtils.publish('BRACING_ENABLE', msg)
 
     def sendRecoveryDisable(self):
         msg = lcmdrc.boolean_t()

@@ -27,4 +27,5 @@ struct plan_status_t {
   const int8_t RECOVERING   = 9;
 
   boolean recovery_enabled;
+  boolean bracing_enabled;
 }

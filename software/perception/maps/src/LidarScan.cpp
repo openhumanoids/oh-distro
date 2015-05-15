@@ -22,6 +22,11 @@ setRanges(const std::vector<float>& iRanges) {
 }
 
 void LidarScan::
+setIntensities(const std::vector<float>& iIntensities) {
+  mIntensities = iIntensities;
+}
+
+void LidarScan::
 setAngles(const float iThetaMin, const float iThetaStep) {
   mThetaMin = iThetaMin;
   mThetaStep = iThetaStep;
@@ -49,9 +54,19 @@ getNumRanges() const {
   return mRanges.size();
 }
 
+int LidarScan::
+getNumIntensities() const {
+  return mIntensities.size();
+}
+
 const std::vector<float>& LidarScan::
 getRanges() const {
   return mRanges;
+}
+
+const std::vector<float>& LidarScan::
+getIntensities() const {
+  return mIntensities;
 }
 
 float LidarScan::

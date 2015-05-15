@@ -56,12 +56,14 @@ public:
 
   // for scan
   static bool toLcm(const LidarScan& iScan, drc::map_scan_t& oMessage,
-                    const float iQuantMax=-1, const bool iCompress=true);
+                    const float iQuantMax=-1, const bool iCompress=true,
+                    const bool iIncludeIntensities=false);
   static bool fromLcm(const drc::map_scan_t& iMessage, LidarScan& oScan);
 
   // for scan bundle
   static bool toLcm(const ScanBundleView& iView, drc::map_scans_t& oMessage,
-                    const float iQuantMax=-1, const bool iCompress=true);
+                    const float iQuantMax=-1, const bool iCompress=true,
+                    const bool iIncludeIntensities=false);
   static bool fromLcm(const drc::map_scans_t& iMessage, ScanBundleView& oView);
 };
 
