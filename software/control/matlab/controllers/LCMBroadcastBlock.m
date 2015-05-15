@@ -270,8 +270,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.frame_nums.right_hand_state = input_frame.getFrameNumByNameRecursive('right_atlasFrames.HandState');
         obj.frame_nums.left_hand_state = input_frame.getFrameNumByNameRecursive('left_atlasFrames.HandState');
         obj.frame_nums.hokuyo_state = input_frame.getFrameNumByNameRecursive('hokuyo');
-        obj.frame_nums.left_foot_ft_state = input_frame.getFrameNumByNameRecursive('l_footForceTorque');
-        obj.frame_nums.right_foot_ft_state = input_frame.getFrameNumByNameRecursive('r_footForceTorque');
+        obj.frame_nums.left_foot_ft_state = input_frame.getFrameNumByNameRecursive('l_foot_ftForceTorque');
+        obj.frame_nums.right_foot_ft_state = input_frame.getFrameNumByNameRecursive('r_foot_ftForceTorque');
       else
         obj.frame_nums.atlas_state = 1;
         obj.frame_nums.right_hand_state = '';
@@ -460,7 +460,13 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 
       % pack in any foot contact info that we have
       state_msg.force_torque.l_foot_force_z = left_ankle_ft_state(3);
+      state_msg.force_torque.l_foot_torque_x = left_ankle_ft_state(4);
+      state_msg.force_torque.l_foot_torque_y = left_ankle_ft_state(5);
+      
       state_msg.force_torque.r_foot_force_z = right_ankle_ft_state(3);
+      state_msg.force_torque.r_foot_torque_x = right_ankle_ft_state(4);
+      state_msg.force_torque.r_foot_torque_y = right_ankle_ft_state(5);
+
       
       if (~obj.publish_truth)
         obj.lc.publish('ATLAS_STATE', state_msg);
