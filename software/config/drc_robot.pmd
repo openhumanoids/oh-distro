@@ -181,17 +181,17 @@ group "9.BDI_walking" {
 
 group "10.Driving" {
     cmd "Streaming Robot Side" {
-        exec = "DISPLAY=:0 $DRC_BASE/software/ddapp/src/python/test/testAtlasCommand.py --robot";
+        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robot";
         host = "atlas2";
     }
 
-    cmd "Streaming Robot Side w/Driving Gains" {
-        exec = "DISPLAY=:0 $DRC_BASE/software/ddapp/src/python/test/testAtlasCommand.py --robotDrivingGains";
+    cmd "Streaming Robot Side with Driving Gains" {
+        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robotDrivingGains";
         host = "atlas2";
     }
 
     cmd "Streaming Base Side" {
-        exec = "$DRC_BASE/software/ddapp/src/python/test/testAtlasCommand.py --base";
+        exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --base";
         host = "base";
     }
 
@@ -201,7 +201,7 @@ group "10.Driving" {
     }
 
     cmd "Steering Driver" {
-        exec = "$DRC_BASE/software/control/src/SteeringCommandDriver /dev/input/js0 STEERING_COMMAND\n") ";
+        exec = "$DRC_BASE/software/control/pod-build/bin/SteeringCommandDriver /dev/input/js0 STEERING_COMMAND";
         host = "base";
     }
 
