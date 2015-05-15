@@ -144,7 +144,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
         obj.last_plan_msg_utime = msg.utime;
         obj.switchToPlan(SilentPlan(obj.robot));
       else
-        disp('Got an atlas behavior mode that wasn\'t stop or freeze.');
+        disp('Got an atlas behavior mode that was not stop or freeze.');
         obj.frozen_state = 0;
       end
     end
