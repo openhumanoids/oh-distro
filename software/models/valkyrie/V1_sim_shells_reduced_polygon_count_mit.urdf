@@ -2690,7 +2690,7 @@
             <origin rpy="0 0 0" xyz="0.0057963439 0.0020433211 9.0424431e-05"/>
         </collision>
     </link>
-    <link name="r_foot">
+    <link name="RightUpperFoot">
         <inertial>
             <mass value="1.888"/>
             <origin rpy="0 0.13 0" xyz="0.048263578 -3.1591183e-05 0.077849126"/>
@@ -2762,11 +2762,11 @@
     </visual>
 
     </link>
-  <frame name="r_foot_sole" xyz="0.0925 0 0.07125" rpy="0 -1.4408 0" link="r_foot"/>
-    <gazebo reference="r_foot">
+  <frame name="r_foot_sole" xyz="0.0925 0 0.07125" rpy="0 -1.4408 0" link="RightUpperFoot"/>
+    <gazebo reference="RightUpperFoot">
         <material>Gazebo/White</material>
     </gazebo>
-    <gazebo reference="r_foot">
+    <gazebo reference="RightUpperFoot">
         <kp>100000.0</kp>
         <kd>1000.0</kd>
         <mu1>1.5</mu1>
@@ -2839,7 +2839,7 @@
         <origin rpy="1.57079632679 0 -0.13" xyz="0.0127 0 0"/>
         <axis xyz="0 0 1"/>
         <parent link="RightAnkleYoke"/>
-        <child link="r_foot"/>
+        <child link="RightUpperFoot"/>
         <limit effort="205" lower="-0.3490658502" upper="0.3490658502" velocity="11"/>
         <controller_gains Kd="400" Kp="15000"/>
         <dynamics damping="0.3" />
@@ -3034,7 +3034,7 @@
     <joint name="RightCOP_Offset" type="fixed">
         <origin rpy="0.0 -1.57079632679 0" xyz="0.0845 0 0"/>
         <axis xyz="0 0 1"/>
-        <parent link="r_foot"/>
+        <parent link="RightUpperFoot"/>
         <child link="RightCOP_Frame"/>
     </joint>
     <link name="RightLeg6Axis_Frame">
@@ -3048,7 +3048,7 @@
     <joint name="RightLeg6Axis_Offset" type="fixed">
         <origin rpy="0 0  0" xyz="0.058547 0 0.0215"/>
         <axis xyz="0 0 1"/>
-        <parent link="r_foot"/>
+        <parent link="RightUpperFoot"/>
         <child link="RightLeg6Axis_Frame"/>
     </joint>
     <link name="RightLegHermes_Frame">
@@ -3062,7 +3062,7 @@
     <joint name="RightLegHermes_Offset" type="fixed">
         <origin rpy="0.0 -1.57079632679 0" xyz="0.0845 0 0"/>
         <axis xyz="0 0 1"/>
-        <parent link="r_foot"/>
+        <parent link="RightUpperFoot"/>
         <child link="RightLegHermes_Frame"/>
     </joint>
     <link name="RightMPU6000_Frame">
@@ -3076,7 +3076,7 @@
     <joint name="RightMPU6000_Offset" type="fixed">
         <origin rpy="0 1.44079632679 3.14159265358" xyz="0.0471 0.00722 0.0843"/>
         <axis xyz="0 0 1"/>
-        <parent link="r_foot"/>
+        <parent link="RightUpperFoot"/>
         <child link="RightMPU6000_Frame"/>
     </joint>
     <copSensor frame="RightValkyrieCOP_Frame" name="RightValkyrieCOP" nodePath="/right_leg/cop" type="ValkyrieCOPSensor"/>
@@ -3201,7 +3201,7 @@
             <origin rpy="0 0 0" xyz="0.0057963439 0.0020433211 9.0424431e-05"/>
         </collision>
     </link>
-    <link name="l_foot">
+    <link name="LeftUpperFoot">
         <inertial>
             <mass value="1.888"/>
             <origin rpy="0 -0.13 0" xyz="0.048263578 -3.1591183e-05 -0.077849126"/>
@@ -3273,12 +3273,11 @@
     </visual>
 
     </link>
-  <frame name="l_foot_sole" xyz="0.0925 0 -0.07125" rpy="3.1416 1.4408 0" link="l_foot"/>
-<!--  <frame name="l_foot_sole" xyz="0.082 0 -0.14" rpy="3.1416 1.5708 0" link="l_foot"/> -->
-    <gazebo reference="l_foot">
+  <frame name="l_foot_sole" xyz="0.0925 0 -0.07125" rpy="3.1416 1.4408 0" link="LeftUpperFoot"/>
+    <gazebo reference="LeftUpperFoot">
         <material>Gazebo/White</material>
     </gazebo>
-    <gazebo reference="l_foot">
+    <gazebo reference="LeftUpperFoot">
         <kp>100000.0</kp>
         <kd>1000.0</kd>
         <mu1>1.5</mu1>
@@ -3351,7 +3350,7 @@
         <origin rpy="-1.57079632679 0 -0.13" xyz="0.0127 0 0"/>
         <axis xyz="0 0 1"/>
         <parent link="LeftAnkleYoke"/>
-        <child link="l_foot"/>
+        <child link="LeftUpperFoot"/>
         <limit effort="205" lower="-0.3490658502" upper="0.3490658502" velocity="11"/>
         <controller_gains Kd="400" Kp="15000"/>
         <dynamics damping="0.3" />
@@ -3546,7 +3545,7 @@
     <joint name="LeftCOP_Offset" type="fixed">
         <origin rpy="3.14159265358 1.57079632679 0" xyz="0.0845 0 0"/>
         <axis xyz="0 0 1"/>
-        <parent link="l_foot"/>
+        <parent link="LeftUpperFoot"/>
         <child link="LeftCOP_Frame"/>
     </joint>
     <link name="LeftLeg6Axis_Frame">
@@ -3560,7 +3559,7 @@
     <joint name="LeftLeg6Axis_Offset" type="fixed">
         <origin rpy="0 0 0" xyz="0.058547 0 -0.0215"/>
         <axis xyz="0 0 1"/>
-        <parent link="l_foot"/>
+        <parent link="LeftUpperFoot"/>
         <child link="LeftLeg6Axis_Frame"/>
     </joint>
     <link name="LeftLegHermes_Frame">
@@ -3574,7 +3573,7 @@
     <joint name="LeftLegHermes_Offset" type="fixed">
         <origin rpy="3.14159265358 1.57079632679 0" xyz="0.0845 0 0"/>
         <axis xyz="0 0 1"/>
-        <parent link="l_foot"/>
+        <parent link="LeftUpperFoot"/>
         <child link="LeftLegHermes_Frame"/>
     </joint>
     <link name="LeftMPU6000_Frame">
@@ -3588,7 +3587,7 @@
     <joint name="LeftMPU6000_Offset" type="fixed">
         <origin rpy="0 -1.70079632679 0.0" xyz="0.0471 -0.00722 -0.0843"/>
         <axis xyz="0 0 1"/>
-        <parent link="l_foot"/>
+        <parent link="LeftUpperFoot"/>
         <child link="LeftMPU6000_Frame"/>
     </joint>
     <copSensor frame="LeftValkyrieCOP_Frame" name="LeftValkyrieCOP" nodePath="/left_leg/cop" type="ValkyrieCOPSensor"/>
@@ -3744,8 +3743,8 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
   <collision_filter_group name="feet">
-    <member link="l_foot"/>
-    <member link="r_foot"/>
+    <member link="LeftUpperFoot"/>
+    <member link="RightUpperFoot"/>
     <ignored_collision_filter_group collision_filter_group="feet"/>
   </collision_filter_group>
   <collision_filter_group name="core">
@@ -3782,14 +3781,14 @@
   <collision_filter_group name="r_leg">
     <member link="RightShankStructure"/>
     <member link="RightAnkleYoke"/>
-    <member link="r_foot"/>
+    <member link="RightUpperFoot"/>
     <ignored_collision_filter_group collision_filter_group="r_leg"/>
     <ignored_collision_filter_group collision_filter_group="r_uleg"/>
   </collision_filter_group>
   <collision_filter_group name="l_leg">
     <member link="LeftShankStructure"/>
     <member link="LeftAnkleYoke"/>
-    <member link="l_foot"/>
+    <member link="LeftUpperFoot"/>
     <ignored_collision_filter_group collision_filter_group="l_leg"/>
     <ignored_collision_filter_group collision_filter_group="l_uleg"/>
   </collision_filter_group>
