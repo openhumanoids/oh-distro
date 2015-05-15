@@ -23,6 +23,15 @@ public:
   double t_low_to_high = 0.01;
   double t_high_to_low = 0.01;
 
+  void reset(bool state) {
+    if (state) {
+      this->state = HIGH;
+    } else {
+      this->state = LOW;
+    }
+  }
+
+
   bool update(double t, bool input) {
     if (input) {
       switch (this->state) {
@@ -85,16 +94,14 @@ public:
 private:
   std::shared_ptr<RigidBodyManipulator> model;
   std::shared_ptr<RobotStateDriver> state_driver;
-  std::unique_ptr<Debounce> debounce;
+  std::unique_ptr<Debounce> icp_is_ok_debounce;
+  std::unique_ptr<Debounce> icp_is_capturable_debounce;
   std::map<FootID, bool> foot_contact;
   std::map<FootID, int> foot_body_ids;
   DrakeRobotState robot_state;
   bool controller_is_active;
-  double icp_exit_time = NAN;
-  double icp_debounce_threshold = 0.01;
   lcm::LCM lcm;
 
-  double icp_far_away_time = NAN;
   double icp_capturable_radius = 0.25;
   double bracing_min_trigger_time = 0.4;
   Vector2d last_cop;

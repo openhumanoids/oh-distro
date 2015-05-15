@@ -17,7 +17,6 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
 
     atlas_state_coder;
 
-    frozen_state = 0;
     pause_state = 0;
     recovery_state = 0;
     recovery_enabled = 1;
@@ -122,7 +121,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_bracing_plan(obj, msg)
-      if (msg.activate && ~obj.frozen_state)
+      if (msg.activate)
         if (obj.bracing_enabled || msg.override)
           if ~isempty(obj.x)
             if (obj.recovery_state ~= obj.RECOVERY_BRACING || isempty(obj.bracing_plan))
@@ -140,12 +139,10 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       if strcmp(char(msg.command), 'stop') || strcmp(char(msg.command), 'freeze')
         disp('Got an atlas behavior command...going into silent mode');
         obj.recovery_state = obj.RECOVERY_NONE;
-        obj.frozen_state = 1;
         obj.last_plan_msg_utime = msg.utime;
         obj.switchToPlan(SilentPlan(obj.robot));
       else
         disp('Got an atlas behavior mode that was not stop or freeze.');
-        obj.frozen_state = 0;
       end
     end
 
@@ -163,7 +160,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function handle_recovery_trigger(obj, msg)
-      if msg.activate && ~obj.frozen_state
+      if msg.activate
         if obj.recovery_enabled || msg.override
           if obj.recovery_state == obj.RECOVERY_NONE && ~isempty(obj.x)
             disp('Entering reactive recovery mode!');
