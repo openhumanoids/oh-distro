@@ -17,6 +17,9 @@ struct SimpleProblemBase {
 
   MatrixX3f mPoints;
   Eigen::Vector3f mCenterPoint;
+  bool mCheckNormal = false;
+  Eigen::Vector3f mNormalPrior = Eigen::Vector3f(0,0,0);
+  float mMaxAngleDeviation = 0;
 
   SimpleProblemBase(const std::vector<Eigen::Vector3f>& iPoints) {
     mPoints.resize(iPoints.size(),3);
@@ -24,7 +27,6 @@ struct SimpleProblemBase {
       mPoints.row(i) = iPoints[i];
     }
   }
-  void setCenterPoint(const Eigen::Vector3f& iPoint) { mCenterPoint = iPoint; }
   int getSampleSize() const { return 3; }
   int getNumDataPoints() const { return mPoints.rows(); }
 
@@ -64,7 +66,14 @@ struct SimpleProblemBase {
   
   std::vector<double> computeSquaredErrors(const Solution& iSolution) const {
     const auto& plane = iSolution.mPlane;
-    Eigen::VectorXf errors = (mPoints*plane.head<3>()).array() + plane[3];
+    Eigen::Vector3f normal = plane.head<3>();
+    if (mCheckNormal) {
+      float dot = std::abs(normal.dot(mNormalPrior));
+      if (dot < std::cos(mMaxAngleDeviation)) {
+        return std::vector<double>();
+      }
+    }
+    Eigen::VectorXf errors = (mPoints*normal).array() + plane[3];
     std::vector<double> errors2(errors.size());
     for (int i = 0; i < (int)errors2.size(); ++i) {
       errors2[i] = errors[i]*errors[i];
@@ -108,6 +117,7 @@ PlaneFitter() {
   setRefineUsingInliers(true);
   float badValue = std::numeric_limits<float>::infinity();
   setCenterPoint(Eigen::Vector3f(badValue, badValue, badValue));
+  setNormalPrior(Eigen::Vector3f(0,0,0), 2*M_PI);
 }
 
 PlaneFitter::
@@ -134,6 +144,15 @@ setRefineUsingInliers(const bool iVal) {
   mRefineUsingInliers = iVal;
 }
 
+void PlaneFitter::
+setNormalPrior(const Eigen::Vector3f& iNormal,
+               const float iMaxAngleDeviation) {
+  mNormalPrior = iNormal;
+  if (mNormalPrior.norm() > 1e-5) mNormalPrior.normalize();
+  mMaxAngleDeviation = iMaxAngleDeviation;
+  mCheckNormal = (iNormal.norm() > 1e-5) && (iMaxAngleDeviation < M_PI);
+}
+
 PlaneFitter::Result PlaneFitter::
 go(const std::vector<Eigen::Vector3f>& iPoints) const {
   if (std::isinf(mCenterPoint[0])) return solve<SimpleProblemBase>(iPoints);
@@ -150,7 +169,10 @@ solve(const std::vector<Eigen::Vector3f>& iPoints) const {
   ransac.setMaximumIterations(mMaxIterations);
 
   T problem(iPoints);
-  problem.setCenterPoint(mCenterPoint);
+  problem.mCenterPoint = mCenterPoint;
+  problem.mCheckNormal = mCheckNormal;
+  problem.mNormalPrior = mNormalPrior;
+  problem.mMaxAngleDeviation = mMaxAngleDeviation;
 
   auto res = ransac.solve(problem);
   result.mSuccess = res.mSuccess;
