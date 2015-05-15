@@ -76,5 +76,8 @@
         "robotMountLink" : "sdh_hand_force_torque",
         "palmLink" : "sdh_hand_face"
       }
-  ]
+  ],
+
+  "userConfig" : ["useKuka"]
+
 }

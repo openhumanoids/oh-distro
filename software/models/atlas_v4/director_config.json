@@ -193,5 +193,8 @@
         "robotMountLink" : "r_hand_force_torque",
         "palmLink" : "r_hand_face"
       }
-  ]
+  ],
+
+  "userConfig" : []
+
 }
