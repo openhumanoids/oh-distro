@@ -32,7 +32,7 @@ struct State {
   bool mGrabExactPoses;
   bool mDebug;
   Eigen::Vector3f mBlockSize;
-  int mAlgorithm;  // TODO: use algo
+  int mAlgorithm;
   bool mDoTrigger;
   std::string mNamePrefix;
   bool mTriggered;
@@ -53,7 +53,7 @@ struct State {
     mRemoveGround = true;
     mGrabExactPoses = false;
     mDebug = false;
-    mAlgorithm = 0;  // TODO
+    mAlgorithm = planeseg::BlockFitter::RectangleFitAlgorithm::MinimumArea;
     mBlockSize << 15+3/8.0, 15+5/8.0, 5+5/8.0;
     mBlockSize *=0.0254;
     mDoTrigger = false;
@@ -157,6 +157,8 @@ struct State {
       else fitter.setAreaThresholds(0, 1000);
       fitter.setBlockDimensions(mBlockSize);
       fitter.setRemoveGround(mRemoveGround);
+      fitter.setRectangleFitAlgorithm
+        ((planeseg::BlockFitter::RectangleFitAlgorithm)mAlgorithm);
       fitter.setDebug(mDebug);
       fitter.setCloud(cloud);
       auto result = fitter.go();
