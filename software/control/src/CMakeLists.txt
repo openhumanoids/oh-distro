@@ -76,7 +76,7 @@ target_link_libraries(constructRecoveryMexPointer QPReactiveRecoveryPlan)
 install(TARGETS constructRecoveryMexPointer DESTINATION matlab)
 
 add_mex(threadedControllermex threadedControllermex.cpp)
-pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-mex-util drake-control-mex-util)
+pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-mex-util drake-control-mex-util drake-side)
 target_link_libraries(threadedControllermex RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
