@@ -80,14 +80,14 @@ pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-mex-uti
 target_link_libraries(threadedControllermex RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
-pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm)
-target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver convexHull)
+pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm drake-convex-hull)
+target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver)
 pods_install_libraries(AtlasFallDetector)
 pods_install_headers(AtlasFallDetector.hpp DESTINATION control)
 
 add_executable(drc-atlas-fall-detector runAtlasFallDetector.cpp)
 target_link_libraries(drc-atlas-fall-detector AtlasFallDetector)
-pods_use_pkg_config_packages(drc-atlas-fall-detector drake-convex-hull)
+pods_use_pkg_config_packages(drc-atlas-fall-detector)
 pods_install_executables(drc-atlas-fall-detector )
 
 install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize threadedControllermex BotParamClient DESTINATION matlab)
