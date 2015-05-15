@@ -90,8 +90,6 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     this->state_driver->decode(msg, &(this->robot_state));
     this->model->doKinematicsNew(robot_state.q, robot_state.qd);
     Vector2d icp = this->getICP();
-    std::cout << "ipc: " << icp.transpose() << std::endl;
-    std::cout << "icp captured: " << this->isICPCaptured(icp) << std::endl;
     bool icp_is_ok = this->icp_is_ok_debounce->update(this->robot_state.t, this->isICPCaptured(icp));
     bool icp_is_capturable = this->icp_is_capturable_debounce->update(this->robot_state.t, this->isICPCapturable(icp));
     if (!icp_is_capturable && !this->bracing_latch){
