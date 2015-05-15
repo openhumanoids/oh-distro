@@ -8,6 +8,7 @@
 #include "lcmtypes/drc/walking_plan_request_t.hpp"
 #include "lcmtypes/drc/footstep_plan_t.hpp"
 #include "lcmtypes/drc/plan_control_t.hpp"
+#include "lcmtypes/drc/robot_plan_t.hpp"
 
 #include "lcmtypes/ipab/com_height_packet_message_t.hpp"
 #include "lcmtypes/ipab/pause_command_message_t.hpp"
@@ -23,6 +24,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float64.h>
+#include <trajectory_msgs/JointTrajectory.h>
 #include <map>
 
 #include <Eigen/Core>
@@ -61,6 +63,9 @@ class LCM2ROS{
     void handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::hand_pose_packet_message_t* msg);
     ros::Publisher hand_pose_pub_;
 
+    void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
+    ros::Publisher robot_plan_pub_;
+
     pronto_vis* pc_vis_;
 };
 
@@ -79,8 +84,13 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
   lcm_->subscribe("STOP_WALKING",&LCM2ROS::stopHandler, this); // from drake-designer
   pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/" + robotName_ + "/control/pause_footstep_exec",10);
 
-  lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
-  hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
+  // robot plan messages now used, untested
+  lcm_->subscribe("COMMITTED_ROBOT_PLAN",&LCM2ROS::robotPlanHandler, this);
+  robot_plan_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory2",10);
+  // depreciated:
+  //lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
+  //hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
+
 
   node_ = new ros::NodeHandle();
 
@@ -260,6 +270,28 @@ void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string 
   mout.trajectory_time = msg->trajectory_time;
   mout.joint_angles = msg->joint_angles;
   hand_pose_pub_.publish(mout);
+}
+
+void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg) {
+  ROS_ERROR("LCM2ROS got robot plan");
+
+  trajectory_msgs::JointTrajectory m;
+  m.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+  m.joint_names = msg->plan[0].joint_name;
+
+  for (int i=0; i < msg->num_states; i++){
+    drc::robot_state_t state = msg->plan[i];
+    trajectory_msgs::JointTrajectoryPoint point;
+
+    point.positions =     std::vector<double>(state.joint_position.begin(), state.joint_position.end());
+    point.velocities = std::vector<double>(state.joint_velocity.begin(), state.joint_velocity.end());
+    point.accelerations.assign ( state.joint_position.size()   ,0.0); // not provided, send zeros
+    point.effort = std::vector<double>(state.joint_effort.begin(), state.joint_effort.end());;
+    point.time_from_start = ros::Duration().fromSec(state.utime*1E-6);
+    m.points.push_back(point);
+  }
+
+  robot_plan_pub_.publish(m);
 }
 
 int main(int argc,char** argv) {
