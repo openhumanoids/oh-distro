@@ -278,10 +278,17 @@ script "2.stop_clean" {
 }
 
 
-script "3.Driving" {
-    stop group "2.plan_and_control"
-    start cmd "Streaming Robot Side"
-    start cmd "Streaming Base Side"
-    start cmd "Throttle Driver"
-    start cmd "Steering Driver"
+script "3.Start Streaming" {
+    stop group "2.plan_and_control";
+    start cmd "Streaming Robot Side";
+    start cmd "Streaming Base Side";
+    start cmd "Throttle Driver";
+    start cmd "Steering Driver";
+}
+
+script "4.Stop Streaming" {
+    stop group "10.Driving";
+    stop group "1.state_mit";
+    start group "1.state_mit";
+    start group "2.plan_and_control";
 }
