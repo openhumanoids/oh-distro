@@ -179,6 +179,34 @@ group "9.BDI_walking" {
     }
 }
 
+group "10.Driving" {
+    cmd "Streaming Robot Side" {
+        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robot";
+        host = "atlas2";
+    }
+
+    cmd "Streaming Robot Side with Driving Gains" {
+        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robotDrivingGains";
+        host = "atlas2";
+    }
+
+    cmd "Streaming Base Side" {
+        exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --base";
+        host = "base";
+    }
+
+    cmd "Throttle Driver" {
+        exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/ddapp/triggerfinger.py THROTTLE_COMMAND ";
+        host = "base";
+    }
+
+    cmd "Steering Driver" {
+        exec = "$DRC_BASE/software/control/pod-build/bin/SteeringCommandDriver /dev/input/js0 STEERING_COMMAND";
+        host = "base";
+    }
+
+
+}
 
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
@@ -247,4 +275,20 @@ script "2.stop_clean" {
     start cmd "fusion";
     start cmd "PlanEval";
     start cmd "InstQP";
+}
+
+
+script "3.Start Streaming" {
+    stop group "2.plan_and_control";
+    start cmd "Streaming Robot Side";
+    start cmd "Streaming Base Side";
+    start cmd "Throttle Driver";
+    start cmd "Steering Driver";
+}
+
+script "4.Stop Streaming" {
+    stop group "10.Driving";
+    stop group "1.state_mit";
+    start group "1.state_mit";
+    start group "2.plan_and_control";
 }

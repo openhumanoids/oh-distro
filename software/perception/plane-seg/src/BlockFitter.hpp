@@ -7,6 +7,12 @@ namespace planeseg {
 
 class BlockFitter {
 public:
+  enum RectangleFitAlgorithm {
+    MinimumArea,
+    ClosestToPriorSize,
+    MaximumHullPointOverlap
+  };
+
   struct Block {
     Eigen::Vector3f mSize;
     Eigen::Isometry3f mPose;
@@ -32,6 +38,7 @@ public:
   void setMaxRange(const float iRange);
   void setMaxAngleFromHorizontal(const float iDegrees);
   void setAreaThresholds(const float iMin, const float iMax);
+  void setRectangleFitAlgorithm(const RectangleFitAlgorithm iAlgo);
   void setDebug(const bool iVal);
   void setCloud(const LabeledCloud::Ptr& iCloud);
 
@@ -51,6 +58,7 @@ protected:
   float mMaxAngleFromHorizontal;
   float mAreaThreshMin;
   float mAreaThreshMax;
+  RectangleFitAlgorithm mRectangleFitAlgorithm;
   LabeledCloud::Ptr mCloud;
   bool mDebug;
 };
