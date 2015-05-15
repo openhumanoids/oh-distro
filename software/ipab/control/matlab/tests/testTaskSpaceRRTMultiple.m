@@ -48,6 +48,8 @@ elseif (which_robot == 5)
 elseif (which_robot == 6)
   urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
   S = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp.mat']);
+  options.l_foot_link_name = 'LeftUpperFoot';
+  options.r_foot_link_name = 'RightUpperFoot';
   options.l_hand_link_name = 'LeftPalm';
   options.r_hand_link_name = 'RightPalm';  
 end

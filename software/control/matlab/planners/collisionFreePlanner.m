@@ -53,6 +53,12 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   if ~isfield(options,'end_effector_pt') || isempty(options.end_effector_pt)
     options.end_effector_pt = [0; 0; 0]; 
   end
+  if ~isfield(options,'left_foot_link') || isempty(options.left_foot_link)
+    options.left_foot_link = 'l_foot';
+  end
+  if ~isfield(options,'right_foot_link') || isempty(options.right_foot_link)
+    options.right_foot_link = 'r_foot';
+  end
   if ~isfield(options,'goal_bias'),options.goal_bias = 0.1; end;
   if ~isfield(options,'n_smoothing_passes'),options.n_smoothing_passes = 5; end;
   if ~isfield(options,'smoothing_type'),options.smoothing_type = 'end_effector'; end;
@@ -132,7 +138,7 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   end
   nq = r.getNumPositions();
 
-  active_collision_options.body_idx = setdiff(1:r.getNumBodies(),[r.findLinkId('l_foot'), r.findLinkId('r_foot')]);
+  active_collision_options.body_idx = setdiff(1:r.getNumBodies(),[r.findLinkId( options.left_foot_link ), r.findLinkId( options.right_foot_link )]);
   switch options.planning_mode
     case {'rrt_connect', 'rrt'}
       % Create task-space planning tree
