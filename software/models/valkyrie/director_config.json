@@ -172,6 +172,8 @@
   "mirrorJointSignFlips" : ["WaistRotator"],
 
   "pelvisLink" : "Pelvis",
+  "leftFootLink" : "LeftUpperFoot",
+  "rightFootLink" : "RightUpperFoot",
   "kneeJoints" : ["LeftKneeExtensor", "RightKneeExtensor"],
   "kneeJointLimits" : [-1.9,-0.6],
   "baseZJointLimits" : [0.955, 1.14],
