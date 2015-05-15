@@ -87,7 +87,6 @@ pods_install_headers(AtlasFallDetector.hpp DESTINATION control)
 
 add_executable(drc-atlas-fall-detector runAtlasFallDetector.cpp)
 target_link_libraries(drc-atlas-fall-detector AtlasFallDetector)
-pods_use_pkg_config_packages(drc-atlas-fall-detector)
 pods_install_executables(drc-atlas-fall-detector )
 
 install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize threadedControllermex BotParamClient DESTINATION matlab)
