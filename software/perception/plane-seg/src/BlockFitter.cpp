@@ -26,6 +26,7 @@ BlockFitter() {
   setMaxRange(3.0);
   setMaxAngleFromHorizontal(45);
   setAreaThresholds(0.5, 1.5);
+  setRectangleFitAlgorithm(RectangleFitAlgorithm::MinimumArea);
   setDebug(true);
 }
 
@@ -78,6 +79,11 @@ void BlockFitter::
 setAreaThresholds(const float iMin, const float iMax) {
   mAreaThreshMin = iMin;
   mAreaThreshMax = iMax;
+}
+
+void BlockFitter::
+setRectangleFitAlgorithm(const RectangleFitAlgorithm iAlgo) {
+  mRectangleFitAlgorithm = iAlgo;
 }
 
 void BlockFitter::
@@ -318,7 +324,7 @@ go() {
   for (auto& plane : planes) {
     RectangleFitter fitter;
     fitter.setDimensions(mBlockDimensions.head<2>());
-    fitter.setAlgorithm(RectangleFitter::Algorithm::MinimumArea);
+    fitter.setAlgorithm((RectangleFitter::Algorithm)mRectangleFitAlgorithm);
     fitter.setData(plane.mPoints, plane.mPlane);
     auto result = fitter.go();
     results.push_back(result);
