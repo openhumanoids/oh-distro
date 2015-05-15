@@ -22,6 +22,8 @@ public:
   void setCenterPoint(const Eigen::Vector3f& iPoint);
   void setMaxIterations(const int iIterations);
   void setRefineUsingInliers(const bool iVal);
+  void setNormalPrior(const Eigen::Vector3f& iNormal,
+                      const float iMaxAngleDeviation);
 
   Result go(const std::vector<Eigen::Vector3f>& iPoints) const;
 
@@ -34,6 +36,10 @@ protected:
   float mMaxDistance;
   int mMaxIterations;
   bool mRefineUsingInliers;
+
+  Eigen::Vector3f mNormalPrior;
+  float mMaxAngleDeviation;
+  bool mCheckNormal;
 };
 
 }
