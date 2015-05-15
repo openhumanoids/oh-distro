@@ -56,6 +56,7 @@ public:
     // start number of iterations as infinite, then reduce as we go
     double numIterationsNeeded = 1e10;
     int iterationCount = 0;
+    int skippedSampleCount = 0;
 
     // for random sample index generation
     std::vector<int> allIndices(n);
@@ -79,6 +80,16 @@ public:
 
       // compute errors over all data points
       std::vector<double> errors2 = iProblem.computeSquaredErrors(solution);
+
+      // check whether this is a valid sample
+      // TODO: this should be done via a method in Problem class, but would
+      // require changing all existing usages to include that method
+      if (errors2.size() == 0) {
+        ++skippedSampleCount;
+        if (skippedSampleCount >= mMaximumIterations) break;
+        continue;
+      }
+      skippedSampleCount = 0;
 
       // compute error threshold to be applied to each term
       double thresh = mMaximumError;
