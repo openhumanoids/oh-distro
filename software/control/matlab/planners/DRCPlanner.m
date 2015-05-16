@@ -187,13 +187,11 @@ classdef DRCPlanner
       msg = drc.robot_plan_with_supports_t(msg);
       nq = getNumPositions(obj.biped);
       joint_names = obj.biped.getStateFrame.coordinates(1:nq);
-      [X,T,supports,support_times] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
+      [X,T,options] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
+      options.bodies_to_control_when_in_contact = [obj.biped.findLinkId('pelvis'), obj.biped.foot_body_id.right, obj.biped.foot_body_id.left];
       nq = obj.biped.getNumPositions();
       Q = X(1:nq,:); % extract just the q poses
       qtraj = PPTrajectory(pchip(T,Q));
-      clear options;
-      options.supports = supports;
-      options.support_times = support_times;
       plan = QPLocomotionPlanSettings.fromQuasistaticQTraj(obj.biped, qtraj,options);
       plan = DRCQPLocomotionPlan.toLCM(plan);
     end

@@ -24,13 +24,21 @@ class ManipulationPlanDriver(object):
     PLAN_RECEIVED = 'PLAN_RECEIVED'
     PLAN_COMMITTED = 'PLAN_COMMITTED'
 
-    def __init__(self):
+    def __init__(self, ikPlanner):
         lcmUtils.addSubscriber('CANDIDATE_MANIP_PLAN', lcmdrc.robot_plan_w_keyframes_t, self.onManipPlan)
         lcmUtils.addSubscriber('CANDIDATE_ROBOT_PLAN_WITH_SUPPORTS',lcmdrc.robot_plan_with_supports_t, self.onManipPlan)
         self.lastManipPlan = None
         self.committedPlans = []
         self.callbacks = callbacks.CallbackRegistry([self.PLAN_RECEIVED,
                                                      self.PLAN_COMMITTED])
+        self.ikPlanner = ikPlanner
+        self.publishPlansWithSupports = False
+        self.plansWithSupportsAreQuasistatic = True
+        self.leftFootSupportEnabled  = True
+        self.rightFootSupportEnabled = True
+        self.leftHandSupportEnabled  = False
+        self.rightHandSupportEnabled = False
+        self.pelvisSupportEnabled  = False
 
     def onManipPlan(self, msg):
         self.lastManipPlan = msg
@@ -55,6 +63,83 @@ class ManipulationPlanDriver(object):
 
         return msg
 
+    def convertPlanToPlanWithSupports(self, planMsg, supports, ts, isQuasistatic):
+        assert(len(supports) == len(ts))
+        msg = lcmdrc.robot_plan_with_supports_t()
+        msg.utime = planMsg.utime
+        msg.plan = planMsg
+        msg.support_sequence.utime = planMsg.utime
+        msg.support_sequence.num_ts = len(ts)
+        msg.support_sequence.ts = ts
+        msg.support_sequence.supports = supports
+        msg.is_quasistatic = isQuasistatic
+
+        return msg
+
+
+    def getSupports(self):
+        if self.publishPlansWithSupports:
+            supportElement = lcmdrc.support_element_t()
+            supportElement.utime = getUtime()
+            numBodies = 0
+            supportBodies = []
+            if self.pelvisSupportEnabled:
+                numBodies += 1
+                supportBodies.append(self.getPelvisSupportBodyMsg())
+            if self.leftFootSupportEnabled:
+                numBodies += 1
+                supportBodies.append(self.getFootSupportBodyMsg('left'))
+            if self.rightFootSupportEnabled:
+                numBodies += 1
+                supportBodies.append(self.getFootSupportBodyMsg('right'))
+            if self.leftHandSupportEnabled:
+                #numBodies += 2
+                numBodies += 1
+                supportBodies.append(self.getHandSupportBodyMsg('left', [0, 0, 1, 0]))
+                #supportBodies.append(self.getHandSupportBodyMsg('left', [0, 0, -1, 0]))
+            if self.rightHandSupportEnabled:
+                #numBodies += 2
+                numBodies += 1
+                supportBodies.append(self.getHandSupportBodyMsg('right', [0, 0, 1, 0]))
+                #supportBodies.append(self.getHandSupportBodyMsg('right', [0, 0, -1, 0]))
+            supportElement.num_bodies = numBodies
+            supportElement.support_bodies = supportBodies
+            return [supportElement]
+
+    def getPelvisSupportBodyMsg(self):
+        linkname = 'pelvis'
+        supportBody = lcmdrc.support_body_t()
+        supportBody.utime = getUtime()
+        supportBody.body_id = int(self.ikPlanner.ikServer.comm.getFloatArray('links.%s' % linkname)[0])
+        supportBody.contact_pts = np.array(self.ikPlanner.ikServer.comm.getFloatArray('pelvis_pts(:)')).reshape((3,-1), order='F')
+        supportBody.num_contact_pts = len(supportBody.contact_pts[0])
+        supportBody.use_support_surface = False
+        supportBody.override_contact_pts = True
+        return supportBody
+
+    def getFootSupportBodyMsg(self, side):
+        linkname = 'l_foot' if side == 'left' else 'r_foot'
+        supportBody = lcmdrc.support_body_t()
+        supportBody.utime = getUtime()
+        supportBody.body_id = int(self.ikPlanner.ikServer.comm.getFloatArray('links.%s' % linkname)[0])
+        supportBody.contact_pts = np.array(self.ikPlanner.ikServer.comm.getFloatArray('%s_pts(:)' % linkname)).reshape((3,-1), order='F')
+        supportBody.num_contact_pts = len(supportBody.contact_pts[0])
+        supportBody.use_support_surface = False
+        supportBody.override_contact_pts = True
+        return supportBody
+
+    def getHandSupportBodyMsg(self, side, support_surface):
+        linkname = 'l_hand' if side == 'left' else 'r_hand'
+        supportBody = lcmdrc.support_body_t()
+        supportBody.utime = getUtime()
+        supportBody.body_id = int(self.ikPlanner.ikServer.comm.getFloatArray('links.%s' % linkname)[0])
+        supportBody.contact_pts = self.ikPlanner.getPalmPoint(side=side).reshape(3,1)
+        supportBody.num_contact_pts = 1
+        supportBody.use_support_surface = True
+        supportBody.override_contact_pts = True
+        supportBody.support_surface = support_surface
+        return supportBody
+
     def commitManipPlan(self, manipPlan):
 
         if manipPlan in self.committedPlans:
@@ -63,6 +148,10 @@ class ManipulationPlanDriver(object):
 
         if isinstance(manipPlan, lcmdrc.robot_plan_w_keyframes_t):
             manipPlan = self.convertKeyframePlan(manipPlan)
+            supports = self.getSupports()
+            if supports is not None:
+                manipPlan = self.convertPlanToPlanWithSupports(manipPlan, supports, [0.0],
+                                                               self.plansWithSupportsAreQuasistatic)
         manipPlan.utime = getUtime()
 
         channelMap = {lcmdrc.robot_plan_with_supports_t:'COMMITTED_ROBOT_PLAN_WITH_SUPPORTS'}

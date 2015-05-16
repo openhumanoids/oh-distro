@@ -198,6 +198,12 @@ class IKPlanner(object):
         self.fixedBaseArm = False
         self.robotNoFeet = False
 
+        self.leftFootSupportEnabled  = True
+        self.rightFootSupportEnabled = True
+        self.leftHandSupportEnabled  = False
+        self.rightHandSupportEnabled = False
+        self.pelvisSupportEnabled  = False
+
         om.addToObjectModel(IkOptionsItem(ikServer, self), parentObj=om.getOrCreateContainer('planning'))
 
 
@@ -250,13 +256,20 @@ class IKPlanner(object):
 
 
     def createQuasiStaticConstraint(self):
-        return ik.QuasiStaticConstraint()
+        return ik.QuasiStaticConstraint(leftFootEnabled=self.leftFootSupportEnabled,
+                                        rightFootEnabled=self.rightFootSupportEnabled,
+                                        pelvisEnabled=self.pelvisSupportEnabled)
 
 
     def createFixedFootConstraints(self, startPose, **kwargs):
 
         constraints = []
-        for linkName in ['l_foot', 'r_foot']:
+        linknames = []
+        if self.leftFootSupportEnabled:
+            linknames.append('l_foot')
+        if self.rightFootSupportEnabled:
+            linknames.append('r_foot')
+        for linkName in linknames:
             p = self.createFixedLinkConstraints(startPose, linkName, **kwargs)
 
             constraints.append(p)
@@ -1185,7 +1198,6 @@ class IKPlanner(object):
         constraintSet = ConstraintSet(self, constraints, 'posture_goal_end', startPoseName)
         endPose, info = constraintSet.runIk()
         return constraintSet.runIkTraj()
-
 
     def getManipPlanListener(self):
         responseChannel = 'CANDIDATE_MANIP_PLAN'
