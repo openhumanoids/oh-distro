@@ -35,6 +35,10 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->icp_is_capturable_debounce.reset(new Debounce());
   this->icp_is_capturable_debounce->t_low_to_high = 0.0;
   this->icp_is_capturable_debounce->t_high_to_low = this->bracing_min_trigger_time;
+  this->no_foot_contact_debounce.reset(new Debounce());
+  this->no_foot_contact_debounce->t_low_to_high = 5.0;
+  this->no_foot_contact_debounce->t_high_to_low = 0.01;
+  this->no_foot_contact_debounce->reset(true);
 
   if (!this->lcm.good()) {
     throw std::runtime_error("LCM is not good");
@@ -86,6 +90,10 @@ void AtlasFallDetector::handleControllerInput(const lcm::ReceiveBuffer* rbuf,
 void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
                        const drc::robot_state_t* msg) {
+  bool no_foot_contact = this->no_foot_contact_debounce->update(this->robot_state.t, !(this->foot_contact.at(RIGHT) || this->foot_contact.at(LEFT)));
+  if (no_foot_contact) {
+    this->controller_is_active = false;
+  }
   if (this->controller_is_active && this->atlas_is_in_user) {
     this->state_driver->decode(msg, &(this->robot_state));
     this->model->doKinematicsNew(robot_state.q, robot_state.qd);
