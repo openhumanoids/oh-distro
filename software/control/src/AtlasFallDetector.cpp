@@ -84,16 +84,16 @@ void AtlasFallDetector::handleFootContact(const lcm::ReceiveBuffer* rbuf,
 void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
                        const drc::robot_state_t* msg) {
-  std::cout << "right: " << this->foot_contact.at(RIGHT) << " left: " << this->foot_contact.at(LEFT);
+  // std::cout << "right: " << this->foot_contact.at(RIGHT) << " left: " << this->foot_contact.at(LEFT);
 
-  std::cout << " active: " << controller_is_active << " user: " << atlas_is_in_user << " contact valid: " << foot_contact_valid;
+  // std::cout << " active: " << controller_is_active << " user: " << atlas_is_in_user << " contact valid: " << foot_contact_valid;
   if (this->controller_is_active && this->atlas_is_in_user && this->foot_contact_valid) {
     this->state_driver->decode(msg, &(this->robot_state));
     this->model->doKinematicsNew(robot_state.q, robot_state.qd);
     Vector2d icp = this->getICP();
     bool icp_is_ok = this->icp_is_ok_debounce->update(this->robot_state.t, this->isICPCaptured(icp));
     bool icp_is_capturable = this->icp_is_capturable_debounce->update(this->robot_state.t, this->isICPCapturable(icp));
-    std::cout << " icp ok: " << icp_is_ok << " icp capturable: " << icp_is_capturable << std::endl;
+    // std::cout << " icp ok: " << icp_is_ok << " icp capturable: " << icp_is_capturable << std::endl;
     if (!icp_is_capturable && !this->bracing_latch){
       std::cout << "bracing!" << std::endl;
       this->bracing_latch = true;
@@ -127,7 +127,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     }
   } else {
     this->resetState();
-    std::cout << std::endl;
+    // std::cout << std::endl;
   }
 
 }
