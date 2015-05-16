@@ -17,8 +17,6 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->robot_state.q.resize(num_states);
   this->robot_state.qd.resize(num_states);
 
-  last_cop[0] = 0.0; last_cop[1] = 0.0;
-
   for (int i=0; i < num_states; ++i) {
     state_coordinate_names.push_back(model->getStateName(i));
   }
@@ -26,9 +24,6 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->state_driver.reset(new RobotStateDriver(state_coordinate_names));
 
   this->findFootIDS();
-
-  this->foot_contact[RIGHT] = false;
-  this->foot_contact[LEFT] = false;
 
   this->icp_is_ok_debounce.reset(new Debounce());
   this->icp_is_ok_debounce->t_low_to_high = 0.0;
@@ -38,7 +33,8 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->no_foot_contact_debounce.reset(new Debounce());
   this->no_foot_contact_debounce->t_low_to_high = 5.0;
   this->no_foot_contact_debounce->t_high_to_low = 0.01;
-  this->no_foot_contact_debounce->reset(true);
+
+  this->resetState();
 
   if (!this->lcm.good()) {
     throw std::runtime_error("LCM is not good");
@@ -47,7 +43,15 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->lcm.subscribe("EST_ROBOT_STATE", &AtlasFallDetector::handleRobotState, this);
   this->lcm.subscribe("CONTROLLER_STATUS", &AtlasFallDetector::handleControllerStatus, this);
   this->lcm.subscribe("ATLAS_STATUS", &AtlasFallDetector::handleAtlasStatus, this);
-  this->lcm.subscribe("QP_CONTROLLER_INPUT", &AtlasFallDetector::handleControllerInput, this);  
+}
+
+void AtlasFallDetector::resetState() {
+  this->foot_contact[RIGHT] = false;
+  this->foot_contact[LEFT] = false;
+  this->foot_contact_valid = false;
+  this->icp_is_ok_debounce->reset(true);
+  this->icp_is_capturable_debounce->reset(true);
+  this->no_foot_contact_debounce->reset(true);
 }
 
 void AtlasFallDetector::findFootIDS() {
@@ -78,23 +82,18 @@ void AtlasFallDetector::handleFootContact(const lcm::ReceiveBuffer* rbuf,
                        const drc::foot_contact_estimate_t* msg) {
   this->foot_contact[RIGHT] = msg->right_contact > 0.5;
   this->foot_contact[LEFT] = msg->left_contact > 0.5;
-}
-
-void AtlasFallDetector::handleControllerInput(const lcm::ReceiveBuffer* rbuf,
-                       const std::string& chan,
-                       const drake::lcmt_qp_controller_input* msg) {
-  this->last_cop[0] = msg->zmp_data.y0[0][0];
-  this->last_cop[1] = msg->zmp_data.y0[1][0];
-}
+  this->foot_contact_valid = true
+;}
 
 void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
                        const drc::robot_state_t* msg) {
-  bool no_foot_contact = this->no_foot_contact_debounce->update(this->robot_state.t, !(this->foot_contact.at(RIGHT) || this->foot_contact.at(LEFT)));
+  bool no_feet_are_in_contact = this->no_foot_contact_debounce->update(this->robot_state.t, !(this->foot_contact.at(RIGHT) || this->foot_contact.at(LEFT)));
   if (no_foot_contact) {
-    this->controller_is_active = false;
+    this->resetState();
+    return;
   }
-  if (this->controller_is_active && this->atlas_is_in_user) {
+  if (this->controller_is_active && this->atlas_is_in_user && this->foot_contact_valid) {
     this->state_driver->decode(msg, &(this->robot_state));
     this->model->doKinematicsNew(robot_state.q, robot_state.qd);
     Vector2d icp = this->getICP();
@@ -132,9 +131,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
       this->lcm.publish("RECOVERY_TRIGGER", &trigger_msg);
     }
   } else {
-    this->bracing_latch = false;
-    this->icp_is_ok_debounce->reset(true);
-    this->icp_is_capturable_debounce->reset(true);
+    this->resetState();
   }
 
 }
@@ -178,23 +175,21 @@ double AtlasFallDetector::getSupportFootHeight() {
   }
 }
 
-Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon () {
+Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon (bool shrink_noncontact_foot) {
   Matrix3Xd all_contact_pts(3, 0);
 
   for (std::map<FootID, int>::iterator foot = this->foot_body_ids.begin(); foot != foot_body_ids.end(); ++foot) {
-    // std::set<int> body_ids = {foot->second};
-    // Matrix3Xd contact_pts_in_world(3, this->model->bodies[foot->second]->contact_pts.cols());
-    // this->model->getContactPositions(contact_pts_in_world, body_ids);
-
     Matrix3Xd contact_pts;
     this->model->getTerrainContactPoints(*this->model->bodies[foot->second], contact_pts);
     Matrix3Xd contact_pts_in_world = this->model->forwardKinNew(contact_pts, foot->second, 0, 0, 0).value();
-    if (!this->foot_contact.at(foot->first)) {
-      // If foot is out of contact, only use its center to define the support polygon
-      for (int i=0; i < 3; ++i) {
-        contact_pts_in_world(i, 0) = contact_pts_in_world.row(i).mean();
+    if (shrink_noncontact_foot) {
+      if (!this->foot_contact.at(foot->first)) {
+        // If foot is out of contact, only use its center to define the support polygon
+        for (int i=0; i < 3; ++i) {
+          contact_pts_in_world(i, 0) = contact_pts_in_world.row(i).mean();
+        }
+        contact_pts_in_world.conservativeResize(3, 1);
       }
-      contact_pts_in_world.conservativeResize(3, 1);
     }
     all_contact_pts.conservativeResize(3, all_contact_pts.cols() + contact_pts_in_world.cols());
     all_contact_pts.block(0, all_contact_pts.cols() - contact_pts_in_world.cols(), 3, contact_pts_in_world.cols()) = contact_pts_in_world;
@@ -208,6 +203,5 @@ bool AtlasFallDetector::isICPCaptured(Vector2d icp) {
 }
 
 bool AtlasFallDetector::isICPCapturable(Vector2d icp) {
-  double dist_from_cop = (icp - this->last_cop).norm();
-  return dist_from_cop < icp_capturable_radius;
+  return signedDistanceInsideConvexHull(this->getVirtualSupportPolygon(false), icp) < icp_capturable_radius;
 }
