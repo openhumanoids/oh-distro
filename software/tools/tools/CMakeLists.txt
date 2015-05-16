@@ -54,4 +54,4 @@ pods_install_python_script(sim-publish-disturbance-and-start-recovery scripts/pu
 pods_install_python_script(sim-publish-recovery-trigger-off scripts/publish_recovery_trigger_off.py)
 pods_install_python_script(sim-publish-recovery-trigger-on scripts/publish_recovery_trigger_on.py)
 pods_install_python_script(sim-publish-threedof-force scripts/publish_threedof_force.py)
-
+pods_install_python_script(drc-rolling-log-splicer python/rolling_logs.py)
