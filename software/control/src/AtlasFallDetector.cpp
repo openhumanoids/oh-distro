@@ -89,7 +89,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
                        const drc::robot_state_t* msg) {
   bool no_feet_are_in_contact = this->no_foot_contact_debounce->update(this->robot_state.t, !(this->foot_contact.at(RIGHT) || this->foot_contact.at(LEFT)));
-  if (no_foot_contact) {
+  if (no_feet_are_in_contact) {
     this->resetState();
     return;
   }
@@ -111,8 +111,8 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     fall_msg.icp[0] = icp(0);
     fall_msg.icp[1] = icp(1);
     fall_msg.icp[2] = this->getSupportFootHeight();
-    fall_msg.measured_cop[0] = this->last_cop[0];
-    fall_msg.measured_cop[1] = this->last_cop[1];
+    fall_msg.measured_cop[0] = NAN;
+    fall_msg.measured_cop[1] = NAN;
     fall_msg.measured_cop[2] = NAN;
     this->lcm.publish("ATLAS_FALL_STATE", &fall_msg);
 
