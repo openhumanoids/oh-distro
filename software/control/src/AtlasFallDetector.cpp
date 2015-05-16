@@ -1,5 +1,5 @@
 #include "AtlasFallDetector.hpp"
-#include "convexHull.hpp"
+#include "drake/convexHull.h"
 #include "lcmtypes/drc/recovery_trigger_t.hpp"
 #include "drake/drakeFloatingPointUtil.h"
 
@@ -196,7 +196,7 @@ Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon () {
 
 bool AtlasFallDetector::isICPCaptured(Vector2d icp) {
   Matrix3Xd support_pts = this->getVirtualSupportPolygon();
-  return in_convex_hull(support_pts.topRows<2>(), icp);
+  return inConvexHull(support_pts.topRows<2>(), icp);
 }
 
 bool AtlasFallDetector::isICPCapturable(Vector2d icp) {

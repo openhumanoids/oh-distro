@@ -61,6 +61,7 @@ pods_install_headers(ExponentialForm.hpp DESTINATION control)
 
 add_library(QPReactiveRecoveryPlan SHARED QPReactiveRecoveryPlan.cpp)
 target_link_libraries(QPReactiveRecoveryPlan iris_ldp drakePolynomial ExponentialForm drakeGeometryUtil drakeTrajectories drakeSplineGeneration drakeRBM drakeGradientUtil lcm drakeLCMUtil)
+pods_use_pkg_config_packages(QPReactiveRecoveryPlan drake-convex-hull)
 pods_install_libraries(QPReactiveRecoveryPlan)
 pods_install_headers(QPReactiveRecoveryPlan.hpp DESTINATION control)
 pods_install_pkg_config_file(drc-qp-reactive-recovery
@@ -78,20 +79,15 @@ add_mex(threadedControllermex threadedControllermex.cpp)
 pods_use_pkg_config_packages(threadedControllermex drake-qp-common drake-mex-util drake-control-mex-util drake-side)
 target_link_libraries(threadedControllermex RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 
-add_library(convexHull SHARED convexHull.cpp)
-pods_install_libraries(convexHull)
-pods_install_headers(convexHull.hpp DESTINATION control)
-
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
-pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm)
-target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver convexHull)
+pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm drake-convex-hull)
+target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver)
 pods_install_libraries(AtlasFallDetector)
 pods_install_headers(AtlasFallDetector.hpp DESTINATION control)
 
 add_executable(drc-atlas-fall-detector runAtlasFallDetector.cpp)
 target_link_libraries(drc-atlas-fall-detector AtlasFallDetector)
 pods_install_executables(drc-atlas-fall-detector )
-
 
 install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize threadedControllermex BotParamClient DESTINATION matlab)
 install(TARGETS RobotStateDriver AtlasCommandDriver FootContactDriver DESTINATION lib)
