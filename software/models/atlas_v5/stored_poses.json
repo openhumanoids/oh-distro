@@ -1659,6 +1659,51 @@
       },
       "name": "egress18",
       "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "bar_pre_grasp",
+      "joints": {
+        "r_arm_elx": -1.4394243955612183,
+        "r_arm_ely": 2.2699360847473145,
+        "r_arm_lwy": 0.4721096456050873,
+        "r_arm_mwx": -0.8623077869415283,
+        "r_arm_shx": -1.1221998929977417,
+        "r_arm_shz": 0.4449957609176636,
+        "r_arm_uwy": 0.12864278256893158
+      },
+      "name": "bar_pre_grasp",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "wheel_safe_2",
+      "joints": {
+        "l_arm_elx": 1.1545331478118896,
+        "l_arm_ely": 2.610661268234253,
+        "l_arm_lwy": 0.03753460943698883,
+        "l_arm_mwx": 0.9970396161079407,
+        "l_arm_shx": 1.2730393409729004,
+        "l_arm_shz": 0.6864376664161682,
+        "l_arm_uwy": 0.03159046918153763
+      },
+      "name": "wheel_safe_2",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "wheel_safe_1",
+      "joints": {
+        "l_arm_elx": 2.120427131652832,
+        "l_arm_ely": 3.0755536556243896,
+        "l_arm_lwy": 0.03753460943698883,
+        "l_arm_mwx": 0.9970396161079407,
+        "l_arm_shx": 1.2736623287200928,
+        "l_arm_shz": 0.7641922235488892,
+        "l_arm_uwy": 0.03159046918153763
+      },
+      "name": "wheel_safe_1",
+      "nominal_handedness": "left"
     }
   ],
   "table clearing": [
