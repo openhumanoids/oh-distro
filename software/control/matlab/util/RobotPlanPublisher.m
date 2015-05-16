@@ -43,11 +43,14 @@ classdef RobotPlanPublisher
             end
         end
 
-        function publishPlanWithSupports(obj,X,T,supports,support_times,snopt_info)
+        function publishPlanWithSupports(obj,X,T,supports,support_times,snopt_info,is_quasistatic)
             if nargin < 6
                 snopt_info = 0;
             end
-            msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times,snopt_info);
+            if nargin < 7
+              is_quasistatic = false;
+            end
+            msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times,snopt_info,is_quasistatic);
             obj.lc.publish(obj.channel,msg);
         end
 
@@ -117,13 +120,17 @@ classdef RobotPlanPublisher
             msg.num_bytes = 0;
         end 
 
-        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times,snopt_info)
+        function msg = encodeRobotPlanWithSupports(obj,X,T,supports,support_times,snopt_info,is_quasistatic)
             if nargin < 6
                 snopt_info_vector = zeros(1,size(X,2));
             else
                 snopt_info_vector = snopt_info*ones(1,size(X,2));
             end
-            t = get_timestamp_now();
+            if nargin < 7
+              is_quasistatic = false;
+            end
+            %t = get_timestamp_now();
+            t = now()*24*60*60;
             msg = drc.robot_plan_with_supports_t();
             msg.utime = t;
             msg.plan = obj.encodeRobotPlan(X,T,t,snopt_info_vector);
@@ -142,6 +149,8 @@ classdef RobotPlanPublisher
                     support_bodies(k).num_contact_pts = size(supports(j).contact_pts{k},2);
                     support_bodies(k).contact_pts = supports(j).contact_pts{k};
                     support_bodies(k).body_id = supports(j).bodies(k);
+                    support_bodies(k).support_surface = supports(j).support_surface{k};
+                    support_bodies(k).use_support_surface = supports(j).use_support_surface(k);
                 end
                support_element_array(j).utime = t;
                support_element_array(j).num_bodies = numel(supports(j).contact_pts);
@@ -149,6 +158,7 @@ classdef RobotPlanPublisher
             end
             support_sequence.supports = support_element_array;
             msg.support_sequence = support_sequence;
+            msg.is_quasistatic = is_quasistatic;
         end
 
     end % end methods

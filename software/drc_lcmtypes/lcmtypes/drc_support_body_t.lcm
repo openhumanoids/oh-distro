@@ -6,8 +6,10 @@ struct support_body_t
 
 	int32_t body_id;
 
+	boolean use_support_surface;
 	boolean override_contact_pts;
 	int32_t num_contact_pts;
 
 	double contact_pts[3][num_contact_pts];
+  double support_surface[4];
 }
