@@ -196,7 +196,7 @@ Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon () {
 
 bool AtlasFallDetector::isICPCaptured(Vector2d icp) {
   Matrix3Xd support_pts = this->getVirtualSupportPolygon();
-  return inConvexHull(support_pts.topRows(2), icp);
+  return inConvexHull(support_pts.topRows<2>(), icp);
 }
 
 bool AtlasFallDetector::isICPCapturable(Vector2d icp) {
