@@ -33,7 +33,7 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->icp_is_capturable_debounce->t_low_to_high = 0.0;
   this->icp_is_capturable_debounce->t_high_to_low = this->bracing_min_trigger_time;
   this->no_foot_contact_debounce.reset(new Debounce());
-  this->no_foot_contact_debounce->t_low_to_high = 1.0;
+  this->no_foot_contact_debounce->t_low_to_high = 5.0;
   this->no_foot_contact_debounce->t_high_to_low = 0.01;
   this->no_foot_contact_debounce->reset(true);
 
