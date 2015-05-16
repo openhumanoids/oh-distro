@@ -96,7 +96,6 @@ private:
   std::shared_ptr<RobotStateDriver> state_driver;
   std::unique_ptr<Debounce> icp_is_ok_debounce;
   std::unique_ptr<Debounce> icp_is_capturable_debounce;
-  std::unique_ptr<Debounce> no_foot_contact_debounce;
   std::map<FootID, int> foot_body_ids;
 
   bool foot_contact_valid = false;
