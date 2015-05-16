@@ -14,12 +14,15 @@ classdef PositionControlSim < atlasParams.Base
       arm_ind = findPositionIndices(r,'arm');
       back_ind = findPositionIndices(r,'back');
       leg_ind = findPositionIndices(r,'leg');
+      electric_ind = [findPositionIndices(r,'uwy'); findPositionIndices(r,'mwx'); findPositionIndices(r,'lwy')];
       integral_gains(arm_ind) = 1.75; % TODO: generalize this
+      integral_gains(electric_ind) = 0;
       integral_gains(back_ind) = 0.3;
       integral_gains(leg_ind) = 0.3;
 
-      integral_clamps(arm_ind) = 0.1;
-      integral_clamps(back_ind) = 0.1;
+      integral_clamps(arm_ind) = 0.2;
+      integral_clamps(electric_ind) = 0;
+      integral_clamps(back_ind) = 0.2;
       integral_clamps(leg_ind) = 0.1;
 
       integral_eta = 0;
