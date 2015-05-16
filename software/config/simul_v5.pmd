@@ -30,7 +30,7 @@ group "1.state_mit" {
 group "2.plan_and_control" {
 
     cmd "FallDetector" {
-      exec = "drc-atlas-fall-detector";
+      exec = "drc-atlas-fall-detector 1";
       host = "base";
     }
 

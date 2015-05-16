@@ -6,7 +6,10 @@
 /* Monitors foot contacts and robot state, and applies heuristics to trigger the 
    recovery planner, and the bracing planner. */
 
-AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model) {
+AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model, bool sim_override) {
+  // in sim atlas_status is never published, so make sure the fall detector can still function
+  this->atlas_is_in_user = sim_override;
+
   this->model = model;
   std::vector<std::string> state_coordinate_names;
   int num_states = model->num_positions + model->num_velocities;
@@ -39,7 +42,7 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model
   this->lcm.subscribe("FOOT_CONTACT_ESTIMATE", &AtlasFallDetector::handleFootContact, this);
   this->lcm.subscribe("EST_ROBOT_STATE", &AtlasFallDetector::handleRobotState, this);
   this->lcm.subscribe("CONTROLLER_STATUS", &AtlasFallDetector::handleControllerStatus, this);
-  this->lcm.subscribe("ATLAS_BEHAVIOR_COMMAND", &AtlasFallDetector::handleAtlasBehavior, this);
+  this->lcm.subscribe("ATLAS_STATUS", &AtlasFallDetector::handleAtlasStatus, this);
   this->lcm.subscribe("QP_CONTROLLER_INPUT", &AtlasFallDetector::handleControllerInput, this);  
 }
 
@@ -60,13 +63,10 @@ void AtlasFallDetector::findFootIDS() {
   }
 }
 
-void AtlasFallDetector::handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
+void AtlasFallDetector::handleAtlasStatus(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
-                       const drc::atlas_behavior_command_t* msg) {
-  if (msg->command != "user" || msg->command != "USER") {
-    this->controller_is_active = false;
-  }
-  std::cout << msg->command << std::endl;
+                       const drc::atlas_status_t* msg) {
+  this->atlas_is_in_user = msg->behavior == msg->BEHAVIOR_USER;
 }
 
 void AtlasFallDetector::handleFootContact(const lcm::ReceiveBuffer* rbuf,
@@ -86,7 +86,7 @@ void AtlasFallDetector::handleControllerInput(const lcm::ReceiveBuffer* rbuf,
 void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
                        const drc::robot_state_t* msg) {
-  if (this->controller_is_active) {
+  if (this->controller_is_active && this->atlas_is_in_user) {
     this->state_driver->decode(msg, &(this->robot_state));
     this->model->doKinematicsNew(robot_state.q, robot_state.qd);
     Vector2d icp = this->getICP();
