@@ -376,7 +376,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       it = solveArgs.pdata->param_sets.find(qp_input->param_set_name);
       if (it == solveArgs.pdata->param_sets.end()) {
         mexWarnMsgTxt("Got a param set I don't recognize! Using standing params instead");
-        it = solveArgs.pdata->param_sets.find("standing_hardware");
+        it = solveArgs.pdata->param_sets.find("standing");
         if (it == solveArgs.pdata->param_sets.end()) {
           params = nullptr;
           mexErrMsgTxt("Could not fall back to standing parameters either. I have to give up here.");
