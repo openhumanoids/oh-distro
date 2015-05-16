@@ -36,7 +36,7 @@ class RollingLogDatabase(object):
         self.folder = folder
 
     def _loadLogs(self):
-        return [LCMLog(os.path.join(self.folder, p)) for p in os.listdir(self.folder)]
+        return [LCMLog(os.path.join(self.folder, p)) for p in os.listdir(self.folder) if p.startswith("log_split")]
 
     def getLogsInRange(self, start, stop=None):
         if stop is None:
@@ -48,7 +48,6 @@ class RollingLogDatabase(object):
             raise NoLogsAvailableError("No logs available to splice")
         if outfile is None:
             outfile = tempfile.mkstemp(suffix=".lcm")[1]
-        print ["bot-lcm-logsplice"] + [log.path for log in logs] + [outfile]
         subprocess.check_call(["bot-lcm-logsplice"] + [log.path for log in logs] + [outfile])
         return outfile
 
@@ -59,15 +58,12 @@ def main():
     parser.add_argument("--minutes", "-M", metavar="M", type=float, nargs=1, default=[0])
     parser.add_argument("--hours", "-H", metavar="H", type=float, nargs=1, default=[0])
     args = parser.parse_args()
-    print args.seconds
     db = RollingLogDatabase(os.path.abspath(os.curdir))
     start = dt.datetime.now() - dt.timedelta(seconds=args.seconds[0],
                                                               minutes=args.minutes[0],
                                                               hours=args.hours[0])
     stop = dt.datetime.now()
     logs = db.getLogsInRange(start=start, stop=stop)
-    print "got {:d} logs: ".format(len(logs))
-    print logs
     print db.spliceLogs(logs, outfile="lcmlog_from_{:s}_to_{:s}".format(start.isoformat(), stop.isoformat()))
 
 if __name__ == '__main__':
