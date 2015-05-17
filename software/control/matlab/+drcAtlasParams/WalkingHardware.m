@@ -16,7 +16,7 @@ classdef WalkingHardware < atlasParams.Base
       if (r.getNumVelocities() ~= r.getNumPositions())
         error('this code calls findPositionIndices, which is no longer equivalent to findVelocityIndices');
       end
-      obj.whole_body.w_qdd(r.findPositionIndices('back_bkx')) = 0.001;
+      obj.whole_body.w_qdd(r.findPositionIndices('back_bkx')) = 0.0005;
       obj.whole_body.w_qdd(r.findPositionIndices('leg')) = 1e-6;
 
       obj.body_motion(r.foot_body_id.right).Kp = 48*ones(6,1);
@@ -27,7 +27,7 @@ classdef WalkingHardware < atlasParams.Base
       obj.body_motion(r.foot_body_id.left).weight = 0.01;
       obj.body_motion(r.findLinkId('pelvis')).Kp = [0; 0; 20; 20; 20; 20];
       obj.body_motion(r.findLinkId('pelvis')).damping_ratio = 0.6;
-      obj.body_motion(r.findLinkId('pelvis')).weight = 0.045;
+      obj.body_motion(r.findLinkId('pelvis')).weight = 0.03;
 
       obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).enabled = true;
       obj.joint_soft_limits(r.findPositionIndices('r_leg_kny')).lb = 0.3;
