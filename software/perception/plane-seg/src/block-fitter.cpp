@@ -319,6 +319,7 @@ struct State {
     mBlockSize << iMessage->dimensions[0], iMessage->dimensions[1],
       iMessage->dimensions[2];
     mAlgorithm = iMessage->algorithm;
+    mLastDataTime = 0;  // force processing of new data
     mTriggered = true;
     std::cout << "received trigger" << std::endl;
   }
