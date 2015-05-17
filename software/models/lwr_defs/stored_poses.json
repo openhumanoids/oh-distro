@@ -1,0 +1,19 @@
+{
+  "General": [
+    {
+      "allow_mirror": true, 
+      "description": "arm up pregrasp", 
+      "joints": {
+        "lwr_arm_0_joint": 0, 
+        "lwr_arm_1_joint": 0.78539, 
+        "lwr_arm_2_joint": 0, 
+        "lwr_arm_3_joint": 1.5707, 
+        "lwr_arm_4_joint": 0, 
+        "lwr_arm_5_joint": -0.78539, 
+        "lwr_arm_6_joint": 0
+      }, 
+      "name": "nominal", 
+      "nominal_handedness": "left"
+    }
+  ]
+}
