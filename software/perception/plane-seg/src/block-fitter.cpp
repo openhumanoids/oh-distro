@@ -318,6 +318,7 @@ struct State {
     mNamePrefix = iMessage->name_prefix;
     mBlockSize << iMessage->dimensions[0], iMessage->dimensions[1],
       iMessage->dimensions[2];
+    mAlgorithm = iMessage->algorithm;
     mTriggered = true;
     std::cout << "received trigger" << std::endl;
   }
