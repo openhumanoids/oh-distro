@@ -48,7 +48,11 @@ class RollingLogDatabase(object):
             raise NoLogsAvailableError("No logs available to splice")
         if outfile is None:
             outfile = tempfile.mkstemp(suffix=".lcm")[1]
-        subprocess.check_call(["bot-lcm-logsplice"] + [log.path for log in logs] + [outfile])
+        if len(logs) == 1:
+            cmd = "cp"
+        else:
+            cmd = "bot-lcm-logsplice"
+        subprocess.check_call([cmd] + [log.path for log in logs] + [outfile])
         return outfile
 
 
