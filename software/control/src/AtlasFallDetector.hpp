@@ -7,7 +7,7 @@
 #include "lcmtypes/drc/utime_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/controller_status_t.hpp"
-#include "lcmtypes/drc/atlas_behavior_command_t.hpp"
+#include "lcmtypes/drc/atlas_status_t.hpp"
 #include "drake/lcmt_qp_controller_input.hpp"
 #include "RobotStateDriver.hpp"
 
@@ -86,7 +86,7 @@ class AtlasFallDetector {
 public:
   ~AtlasFallDetector() {}
 
-  AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model);
+  AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model, bool sim_override = false);
   void run() {
     while(0 == this->lcm.handle());
   }
@@ -96,24 +96,33 @@ private:
   std::shared_ptr<RobotStateDriver> state_driver;
   std::unique_ptr<Debounce> icp_is_ok_debounce;
   std::unique_ptr<Debounce> icp_is_capturable_debounce;
-  std::map<FootID, bool> foot_contact;
   std::map<FootID, int> foot_body_ids;
+
+  bool foot_contact_valid = false;
+  std::map<FootID, bool> foot_contact;
   DrakeRobotState robot_state;
-  bool controller_is_active;
+
+  // Double lock to keep the fall detector from running unless
+  // it is true that:
+  //  -- the controller is in a controlled state (recovery, manip, walking, etc)
+  //  -- the robot is in user
+  bool controller_is_active = false;
+  bool atlas_is_in_user = false;
+
   lcm::LCM lcm;
 
   double icp_capturable_radius = 0.25;
   double bracing_min_trigger_time = 0.4;
-  Vector2d last_cop;
   bool bracing_latch = false;
 
   Vector2d getICP();
   double getSupportFootHeight();
-  Matrix3Xd getVirtualSupportPolygon ();
+  Matrix3Xd getVirtualSupportPolygon (bool shrink_noncontact_foot=true);
   bool isICPCaptured(Vector2d icp);
   bool isICPCapturable(Vector2d icp);
 
   void findFootIDS();
+  void resetState();
   void handleFootContact(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::foot_contact_estimate_t* msg);
@@ -123,10 +132,7 @@ private:
   void handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::controller_status_t* msg);
-  void handleControllerInput(const lcm::ReceiveBuffer* rbuf,
+  void handleAtlasStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
-                         const drake::lcmt_qp_controller_input* msg); 
-  void handleAtlasBehavior(const lcm::ReceiveBuffer* rbuf,
-                         const std::string& chan,
-                         const drc::atlas_behavior_command_t* msg);
+                         const drc::atlas_status_t* msg);
 };
