@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   trajectory_msgs
   image_transport
+  std_srvs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -208,6 +209,10 @@ pods_use_pkg_config_packages(ros2lcm_kuka lcm lcmtypes_pronto-lcmtypes bot2-core
 add_executable(ros2lcm_sdh src/ros2lcm_sdh.cpp)
 target_link_libraries(ros2lcm_sdh ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(ros2lcm_sdh lcm lcmtypes_pronto-lcmtypes bot2-core eigen3)
+
+add_executable(lcm2ros_sdh src/lcm2ros_sdh.cpp)
+target_link_libraries(lcm2ros_sdh ${catkin_LIBRARIES})
+pods_use_pkg_config_packages(lcm2ros_sdh lcm lcmtypes_pronto-lcmtypes bot2-core std_srvs)
 
 add_executable(ros2lcm_kinect src/ros2lcm_kinect.cpp)
 target_link_libraries(ros2lcm_kinect ${catkin_LIBRARIES})
