@@ -14,6 +14,7 @@
 #include <Eigen/Dense>
 
 #include <sensor_msgs/JointState.h>
+#include <trajectory_msgs/JointTrajectory.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/joint_state_t.hpp"
