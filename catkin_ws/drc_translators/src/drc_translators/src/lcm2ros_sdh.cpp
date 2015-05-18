@@ -12,6 +12,7 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 #include "lcmtypes/robotiqhand/command_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
+#include <ipab_msgs/RobotiqCommand.h>
 #include <std_srvs/Empty.h> // TODO: replace with Trigger once it's available
 
 using namespace std;
@@ -44,8 +45,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const robotiqhand::command_t* msg) {
   ROS_ERROR("LCM2ROS_SDH got hand command");
 
-  // Check whether hand is active
-  //ROS_ERROR("Hand active: %i", msg->activate);
   // TODO: implement engaging on receiving this flag as true and have an auto-timeout to disengage
 
   // Check whether to perform an emergency release
@@ -58,17 +57,32 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
     }
     return;
   }
-  
 
+  ipab_msgs::RobotiqCommand m;
+  m.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+  
+  m.activate = (bool) msg->activate;
+  m.emergency_release = (bool) msg->emergency_release;
+  m.do_move = (bool) msg->do_move;
+
+  m.mode = msg->mode;
+  m.position = msg->position;
+  m.force = msg->force;
+  m.velocity = msg->velocity;
+
+  m.ifc = (bool) msg->ifc;
+  m.positionA = msg->positionA;
+  m.positionB = msg->positionB;
+  m.positionC = msg->positionC;
+
+  m.isc = (bool) msg->isc;
+  m.positionS = msg->positionS;
+
+  hand_command_pub_.publish(m);
 
   // Check whether command is a movement
   if (msg->do_move == 1) {
     ROS_ERROR("Do move hand: %i", msg->do_move);
-
-    // Range for all of these is 0-255
-    int position = msg->position;
-    int force = msg->force;
-    int velocity = msg->velocity;
 
     // Command position, force, and velocity (TODO: only position implemented right now)
     // TODO
@@ -99,24 +113,6 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   } else {
     ROS_WARN("Setting modes not supported - only basic mode supported!");
   }
-
-  /*trajectory_msgs::JointTrajectory m;
-  m.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-  m.joint_names = msg->plan[0].joint_name;
-
-  for (int i=0; i < msg->num_states; i++){
-    drc::robot_state_t state = msg->plan[i];
-    trajectory_msgs::JointTrajectoryPoint point;
-
-    point.positions =     std::vector<double>(state.joint_position.begin(), state.joint_position.end());
-    point.velocities = std::vector<double>(state.joint_velocity.begin(), state.joint_velocity.end());
-    point.accelerations.assign ( state.joint_position.size()   ,0.0); // not provided, send zeros
-    point.effort = std::vector<double>(state.joint_effort.begin(), state.joint_effort.end());;
-    point.time_from_start = ros::Duration().fromSec(state.utime*1E-6);
-    m.points.push_back(point);
-  }
-
-  robot_plan_pub_.publish(m);*/
 }
 
 int main(int argc,char** argv) {
