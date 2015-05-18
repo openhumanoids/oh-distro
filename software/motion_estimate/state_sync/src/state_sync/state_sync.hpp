@@ -128,6 +128,7 @@ class state_sync{
     
     // Alpha Filters:
     EstimateTools::AlphaFilter* rotation_rate_alpha_filter_;
+    EstimateTools::AlphaFilter* neck_alpha_filter_;
     
     // Torque Adjustment:
     EstimateTools::TorqueAdjustment* torque_adjustment_;
