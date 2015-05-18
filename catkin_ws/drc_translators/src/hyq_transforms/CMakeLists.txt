@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 set(ROS_BUILD_TYPE Release)
 
-catkin_package()
+catkin_package(CATKIN_DEPENDS roscpp tf tf_conversions roscpp actionlib std_msgs actionlib_msgs)
 
 include_directories(${catkin_INCLUDE_DIRS})
 

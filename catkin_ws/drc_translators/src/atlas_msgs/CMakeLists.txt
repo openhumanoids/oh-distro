@@ -44,8 +44,5 @@ WalkDemoResult.msg
 ## Generate added messages and services with any dependencies listed here
 generate_messages(  DEPENDENCIES  std_msgs geometry_msgs actionlib_msgs)
 
-catkin_package(  CATKIN_DEPENDS message_runtime )
+catkin_package(  CATKIN_DEPENDS message_runtime std_msgs geometry_msgs actionlib_msgs )
 
-include_directories(${catkin_INCLUDE_DIRS})
-
-include_directories(include ${catkin_INCLUDE_DIRS})
