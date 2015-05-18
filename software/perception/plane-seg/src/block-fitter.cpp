@@ -221,6 +221,7 @@ struct State {
           std::ostringstream oss;
           Eigen::Vector3f p = groundPose.translation();
           p -= (groundNormal.dot(p)+result.mGroundPlane[3])*groundNormal;
+          p -= 0.005*groundNormal;  // account for thickness of slab
           oss << p[0] << ", " << p[1] << ", " << p[2];
           positionString = oss.str();
         }
