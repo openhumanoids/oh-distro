@@ -240,7 +240,7 @@ struct State {
         json += "      \"pose\": [[" + positionString + "], [" +
           quaternionString + "]],\n";
         json += "      \"uuid\": \"ground affordance\",\n";
-        json += "      \"Dimensions\": [15, 15, 0.01],\n";
+        json += "      \"Dimensions\": [100, 100, 0.01],\n";
         json += "      \"Name\": \"ground affordance\",\n";
         json += "      \"Visible\": 0\n";
         json += "    }\n";
