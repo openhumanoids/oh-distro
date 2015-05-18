@@ -108,6 +108,9 @@ gains.k_qd_p(r_arm_uwy) = gains.k_qd_p(r_arm_shz);
 gains.k_qd_p(r_arm_mwx) = gains.k_qd_p(r_arm_shz); 
 gains.k_qd_p(r_arm_lwy) = gains.k_qd_p(r_arm_shz); 
 
+gains.k_q_p = 0.5*gains.k_q_p;
+gains.k_qd_p = 0.5*gains.k_qd_p;
+
 joint_is_force_controlled = zeros(r.getNumInputs(), 1);
 joint_is_position_controlled = zeros(r.getNumInputs(), 1);
 joint_is_force_controlled(force_controlled_joints) = 1;
