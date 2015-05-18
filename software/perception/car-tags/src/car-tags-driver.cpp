@@ -179,13 +179,15 @@ class CameraListener {
 
     bool setup() {
         mBotWrapper.reset(new drc::BotWrapper());
+
+        while (!mBotWrapper->getBotParam()) {
+            std::cout << "Re-trying ... " << std::endl;
+            mBotWrapper->setDefaults();
+        }
+        
+
         mLcmWrapper.reset(new drc::LcmWrapper(mBotWrapper->getLcm()));
         mLcmWrapper->get()->subscribe("CAMERA", &CameraListener::onCamera, this);
-
-        if (mBotWrapper->getBotParam() == nullptr) {
-            printf("Couldn't get bot params\n");
-            return false;
-        }
 
         mCamTransLeft = bot_param_get_new_camtrans(mBotWrapper->getBotParam(),"CAMERA_LEFT");
         

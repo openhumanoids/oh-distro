@@ -204,8 +204,11 @@ group "10.Driving" {
         exec = "$DRC_BASE/software/control/pod-build/bin/SteeringCommandDriver /dev/input/js0 STEERING_COMMAND";
         host = "base";
     }
-
-
+    
+    cmd "April Tags" {
+        exec = "drc-car-tags -t 12";
+	host = "atlas1";
+    }
 }
 
 cmd "atlas-off" {
