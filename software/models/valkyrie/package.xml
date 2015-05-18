@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>V1</name>
+  <version>0.0.0</version>
+  <description>Valkyrie meshes</description>
+
+  <maintainer email="v.ivan@ed.ac.uk">Vladimir Ivan</maintainer>
+
+  <license>TODO</license>
+
+
+  <!--   <test_depend>gtest</test_depend> -->
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
+
