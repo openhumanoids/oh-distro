@@ -108,8 +108,6 @@ class AprilTagDetector {
 
         quiet = getopt_get_bool(getopt, "quiet");
         tag_size = getopt_get_double(getopt, "size");
-        std::cout << "window2: " << getopt_get_bool(getopt, "window") << std::endl;
-
     }
 
     ~AprilTagDetector() {
@@ -187,7 +185,6 @@ class CameraListener {
     }
 
     bool setup(bool show_window) {
-        std::cout << "show window: " << show_window << std::endl;
         mBotWrapper.reset(new drc::BotWrapper());
 
         while (!mBotWrapper->getBotParam()) {
@@ -323,7 +320,7 @@ int main(int argc, char *argv[])
 
     AprilTagDetector tag_detector(getopt);
     CameraListener camera_listener;
-    
+
     if (camera_listener.setup(getopt_get_bool(getopt, "window"))) {
         camera_listener.setDetector(&tag_detector);
         camera_listener.start();
