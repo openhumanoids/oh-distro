@@ -233,7 +233,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   }
   
   /// 6. neck joint filtering
-  double neck_alpha = 0.8;
+  double neck_alpha = 0.97;
   neck_alpha_filter_ = new EstimateTools::AlphaFilter (neck_alpha);
   
   utime_prev_ = 0;
@@ -422,7 +422,7 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
   Eigen::VectorXd neck_state = Eigen::VectorXd::Zero(2);
   neck_state(0) = joint_position[Atlas::JOINT_NECK_AY];
   neck_state(1) = joint_velocity[Atlas::JOINT_NECK_AY];
-  Eigen::VectorXd filtered_neck_state;
+  Eigen::VectorXd filtered_neck_state = Eigen::VectorXd::Zero(2);
   
   neck_alpha_filter_->processSample(neck_state, filtered_neck_state);
 
