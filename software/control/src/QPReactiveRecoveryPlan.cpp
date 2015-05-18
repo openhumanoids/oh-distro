@@ -542,7 +542,7 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToG
   quat = Quaterniond(intercept_plan.pose_next.rotation());
   xs.block(3, 2, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
 
-  auto w_unwrap = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1), 1);
+  auto w_unwrap = closestExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1), 1);
   xs.block(3, 2, 3, 1) = w_unwrap.value();
   xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
 
@@ -581,7 +581,7 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::upOverAndDo
   quat = Quaterniond(intercept_plan.pose_next.rotation());
   xs.block(3, 3, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
 
-  auto w_unwrap = unwrapExpmap(xs.block(3, 0, 3, 1), xs.block(3, 3, 3, 1), 1);
+  auto w_unwrap = closestExpmap(xs.block(3, 0, 3, 1), xs.block(3, 3, 3, 1), 1);
   xs.block(3, 3, 3, 1) = w_unwrap.value();
   xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
 
