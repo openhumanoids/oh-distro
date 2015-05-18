@@ -12,8 +12,7 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 #include "lcmtypes/robotiqhand/command_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
-#include <cob_srvs/Trigger.h> // TODO: replace with std_srvs/Trigger once it's been officially released
-#include <std_srvs/Empty.h>
+#include <std_srvs/Empty.h> // TODO: replace with Trigger once it's available
 
 using namespace std;
 
@@ -50,8 +49,7 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   // TODO: implement engaging on receiving this flag as true and have an auto-timeout to disengage
 
   // Check whether to perform an emergency release
-  if (true || msg->emergency_release == 1) {    
-    //cob_srvs::Trigger er_trigger;
+  if (msg->emergency_release == 1) {    
     std_srvs::Empty er_trigger; // TODO: temporary until std_srvs::Trigger is available
     if (rosserviceclient_Emergency_Release_.call(er_trigger)) {
       ROS_ERROR("Emergency release activated");
