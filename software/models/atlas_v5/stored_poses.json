@@ -780,7 +780,7 @@
       "joints": {
         "l_arm_elx": 1.9153196811676025,
         "l_arm_ely": 1.1967946290969849,
-        "l_arm_lwy": -0.5094176530838013,
+        "l_arm_lwy": -0.17453292519943295,
         "l_arm_mwx": 0.0009385342127643526,
         "l_arm_shx": 0.49090638756752014,
         "l_arm_shz": -0.3633900582790375,
@@ -802,6 +802,21 @@
         "l_arm_uwy": 1.354949951171875
       },
       "name": "new: walk with drill",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "thumb raise for press 2",
+      "joints": {
+        "l_arm_elx": 1.964935064315796,
+        "l_arm_ely": 1.3764699697494507,
+        "l_arm_lwy": -0.5914456844329834,
+        "l_arm_mwx": 0.32018545269966125,
+        "l_arm_shx": -1.1554428339004517,
+        "l_arm_shz": -0.8584969639778137,
+        "l_arm_uwy": 0.17140406370162964
+      },
+      "name": "thumb raise for press 2",
       "nominal_handedness": "left"
     }
   ],
