@@ -215,13 +215,14 @@ struct State {
 
       // ground
       {
-        std::string positionString, quaternionString;
+        std::string positionString, quaternionString, dimensionsString;
         Eigen::Vector3f groundNormal = result.mGroundPlane.head<3>();
+        Eigen::Vector3f groundSize(100,100,0.01);
         {
           std::ostringstream oss;
           Eigen::Vector3f p = groundPose.translation();
           p -= (groundNormal.dot(p)+result.mGroundPlane[3])*groundNormal;
-          p -= 0.005*groundNormal;  // account for thickness of slab
+          p -= (groundSize[2]/2)*groundNormal;
           oss << p[0] << ", " << p[1] << ", " << p[2];
           positionString = oss.str();
         }
@@ -235,13 +236,19 @@ struct State {
           oss << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z();
           quaternionString = oss.str();
         }
+        {
+          std::ostringstream oss;
+          Eigen::Vector3f size = groundSize;
+          oss << size[0] << ", " << size[1] << ", " << size[2];
+          dimensionsString = oss.str();
+        }
         
         json += "    \"ground affordance\": {\n";
         json += "      \"classname\": \"BoxAffordanceItem\",\n";
         json += "      \"pose\": [[" + positionString + "], [" +
           quaternionString + "]],\n";
         json += "      \"uuid\": \"ground affordance\",\n";
-        json += "      \"Dimensions\": [100, 100, 0.01],\n";
+        json += "      \"Dimensions\": [" + dimensionsString+ "],\n";
         json += "      \"Name\": \"ground affordance\",\n";
         json += "      \"Visible\": 0\n";
         json += "    }\n";
