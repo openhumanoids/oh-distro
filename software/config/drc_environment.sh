@@ -95,6 +95,10 @@ setup_robot_computers()
   then
       export LCM_DEFAULT_URL=${LCM_URL_DRC_BASE}
   fi
+  if [ "paladin-24" = $(hostname) ]
+  then
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_WINGMAN}
+  fi
 
 
 
@@ -113,7 +117,8 @@ setup_robot_computers()
 setup_network_sim()
 {
     export LCM_URL_DRC_ROBOT="udpm://239.255.76.68:7668?ttl=0"
-    export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=0"
+    export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=1"
+    export LCM_URL_DRC_WINGMAN="udpm://239.255.76.67:7667?ttl=0"
 }
 
 setup_lcm_communities()
