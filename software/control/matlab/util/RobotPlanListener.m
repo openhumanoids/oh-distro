@@ -109,6 +109,7 @@ classdef RobotPlanListener
 
             supports = struct('bodies',{},'contact_pts',{},'use_support_surface',{},'support_surface',{});
 
+            bodies_to_control_when_in_contact = [];
             for j = 1:length(support_sequence.supports)
                 support_element = support_sequence.supports(j);
 
@@ -119,12 +120,14 @@ classdef RobotPlanListener
 
                 for k = 1:support_element.num_bodies
                     support_body = support_element.support_bodies(k);
+                    bodies_to_control_when_in_contact(end+1) = support_body.body_id
                     supports(j).bodies(k) = support_body.body_id;
                     supports(j).contact_pts{k} = support_body.contact_pts;
                     supports(j).support_surface{k} = support_body.support_surface;
                     supports(j).use_support_surface(k) = support_body.use_support_surface;
                 end
             end
+            options.bodies_to_control_when_in_contact = unique(bodies_to_control_when_in_contact);
             options.supports = supports;
             options.support_times = support_times;
             options.is_quasistatic = msg.is_quasistatic;
