@@ -1,4 +1,5 @@
 <launch>
   <node name="ros2lcm_sdh" pkg="drc_translators" type="ros2lcm_sdh" /> 
+  <node name="lcm2ros_sdh" pkg="drc_translators" type="lcm2ros_sdh" />
   <!-- launch hand before - include here TODO -->
 </launch>
