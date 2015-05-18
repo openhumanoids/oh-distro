@@ -1704,6 +1704,58 @@
       },
       "name": "wheel_safe_1",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "egress-left-arm",
+      "joints": {
+        "l_arm_elx": 1.3880977630615234,
+        "l_arm_ely": 3.0732100009918213,
+        "l_arm_lwy": 0.06428340077400208,
+        "l_arm_mwx": -1.6546380519866943,
+        "l_arm_shx": 1.263519525527954,
+        "l_arm_shz": -1.434218406677246,
+        "l_arm_uwy": 0.03600066155195236
+      },
+      "name": "egress-left-arm",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "egress-right-arm",
+      "joints": {
+        "r_arm_elx": -1.6188147068023682,
+        "r_arm_ely": 2.564171552658081,
+        "r_arm_lwy": 0.9999157190322876,
+        "r_arm_mwx": -0.8601318597793579,
+        "r_arm_shx": -0.7958008050918579,
+        "r_arm_shz": 0.7728909850120544,
+        "r_arm_uwy": 0.726915180683136
+      },
+      "name": "egress-right-arm",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "egress-arms",
+      "joints": {
+        "l_arm_elx": 1.3880977630615234,
+        "l_arm_ely": 3.0732100009918213,
+        "l_arm_lwy": 0.06428340077400208,
+        "l_arm_mwx": -1.6546380519866943,
+        "l_arm_shx": 1.263519525527954,
+        "l_arm_shz": -1.434218406677246,
+        "l_arm_uwy": 0.03600066155195236,
+        "r_arm_elx": -1.6188147068023682,
+        "r_arm_ely": 2.564171552658081,
+        "r_arm_lwy": 0.9999157190322876,
+        "r_arm_mwx": -0.8601318597793579,
+        "r_arm_shx": -0.7958008050918579,
+        "r_arm_shz": 0.7728909850120544,
+        "r_arm_uwy": 0.726915180683136
+      },
+      "name": "egress-arms",
+      "nominal_handedness": "none"
     }
   ],
   "table clearing": [
