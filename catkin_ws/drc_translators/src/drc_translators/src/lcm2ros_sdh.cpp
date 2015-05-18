@@ -35,7 +35,7 @@ class LCM2ROS{
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
   lcm_->subscribe("ROBOTIQ_LEFT_COMMAND",&LCM2ROS::handCommandHandler, this);
-  hand_command_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/sdh/command",10);
+  hand_command_pub_ = nh_.advertise<ipab_msgs::RobotiqCommand>("/gripper/ddapp_command",10);
 
   rosserviceclient_Emergency_Release_ = nh_.serviceClient<std_srvs::Empty>("/gripper/sdh_controller/emergency_stop"); // TODO: change to trigger
 
@@ -80,39 +80,36 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
 
   hand_command_pub_.publish(m);
 
-  // Check whether command is a movement
-  if (msg->do_move == 1) {
-    ROS_ERROR("Do move hand: %i", msg->do_move);
-
+  // TODO: Implement direct call of driver services
+  /*if (msg->do_move == 1) {
     // Command position, force, and velocity (TODO: only position implemented right now)
-    // TODO
 
     // TODO: implement different modes
-    /*switch(msg->mode) {
+    switch(msg->mode) {
       // -1 - ignore (use previous mode)
       //  0 - basic (normal)
       //  1 - pinch
       //  2 - wide
       //  3 - scissor
-    }*/
+    }
 
     // TODO: individual finger control and individual scissor control not yet implemented
-    /*// Individual finger control
+    // Individual finger control
     // 1 - active
     // 0 - inactive
-    int8_t ifc;
-    int16_t positionA;
-    int16_t positionB;
-    int16_t positionC;
+    // int8_t ifc;
+    // int16_t positionA;
+    // int16_t positionB;
+    // int16_t positionC;
 
     // Indiviual scissor control
     // 1 - active
     // 0 - inactive
-    int8_t isc;
-    int16_t positionS;*/
+    // int8_t isc;
+    // int16_t positionS;
   } else {
     ROS_WARN("Setting modes not supported - only basic mode supported!");
-  }
+  }*/
 }
 
 int main(int argc,char** argv) {
