@@ -36,4 +36,7 @@ struct footstep_params_t
     const int8_t SUPPORT_GROUPS_HEEL_TOE = 0;
     const int8_t SUPPORT_GROUPS_MIDFOOT_TOE = 1;
     const int8_t SUPPORT_GROUPS_HEEL_MIDFOOT = 2;
+
+    boolean prevent_swing_undershoot;
+    boolean prevent_swing_overshoot;
 }
