@@ -10,7 +10,13 @@ find_package(catkin REQUIRED COMPONENTS  roscpp
 
 
 ## Generate messages in the 'msg' folder
-add_message_files(   FILES   PlannerRequest.msg)
+add_message_files(   FILES   PlannerRequest.msg RobotiqCommand.msg)
+
+## Generate service types
+#add_service_files(
+#  FILES
+#  RobotiqCommand.srv
+#)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(  DEPENDENCIES  std_msgs )
