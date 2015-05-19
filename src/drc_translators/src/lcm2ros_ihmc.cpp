@@ -65,6 +65,7 @@ class LCM2ROS{
 
     void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
     ros::Publisher robot_plan_pub_;
+    void sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm, std::vector<string> input_joint_names);
 
     pronto_vis* pc_vis_;
 };
@@ -87,6 +88,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
   // robot plan messages now used, untested
   lcm_->subscribe("COMMITTED_ROBOT_PLAN",&LCM2ROS::robotPlanHandler, this);
   robot_plan_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory2",10);
+
   // depreciated:
   //lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
   //hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
@@ -272,26 +274,122 @@ void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string 
   hand_pose_pub_.publish(mout);
 }
 
-void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg) {
-  ROS_ERROR("LCM2ROS got robot plan");
 
+void filterJointNamesToIHMC(std::vector<std::string> &joint_name  ){
+  // Rename these joints to expected values:
+
+  int n_joints = joint_name.size();
+  for (int i = 0; i < n_joints; i++)  {
+    // ihmc v3 to mit v3:
+    //if (joint_name[i] == "l_arm_shz"){
+    //  joint_name[i] = "l_arm_usy";
+    //}
+    //if (joint_name[i] == "r_arm_shz"){
+    //  joint_name[i] = "r_arm_usy";
+    //}
+
+    if (joint_name[i] == "l_arm_uwy"){
+      joint_name[i] = "l_arm_wry";
+    }
+    if (joint_name[i] == "l_arm_mwx"){
+      joint_name[i] = "l_arm_wrx";
+    }
+    if (joint_name[i] == "l_arm_mwx"){
+      joint_name[i] = "l_arm_wrx";
+    }
+    if (joint_name[i] == "r_arm_uwy"){
+      joint_name[i] = "r_arm_wry";
+    }
+    if (joint_name[i] == "r_arm_mwx"){
+      joint_name[i] = "r_arm_wrx";
+    }
+
+    // ihmc v5 to mit v5:
+    if (joint_name[i] == "l_arm_lwy"){
+      joint_name[i] = "l_arm_wry2";
+    }
+    if (joint_name[i] == "r_arm_lwy"){
+      joint_name[i] = "r_arm_wry2";
+    }
+
+    if (joint_name[i] == "neck_ay"){
+      joint_name[i] = "neck_ry";
+    }
+    if (joint_name[i] == "hokuyo_joint"){
+      //double output = remainderf( joint_position[i] , M_PI);
+      //std::cout << (joint_position[i]) << " "  << output << "\n";
+      //joint_position[i] = output;
+      //joint_name[i] = "hokuyo_link";
+    }
+  }
+}
+
+
+void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm, std::vector<string> input_joint_names){
+
+  // Find the indices of the arm joints which we want to extract
+  std::vector<int> arm_indices;// = {3,10,11,12,13,14,15};
+  for (size_t i =0; i < output_joint_names_arm.size(); i++){
+    std:string name = output_joint_names_arm[i];
+    vector<string>::iterator it;
+    it = find (input_joint_names.begin(), input_joint_names.end(), name );
+    int index = std::distance( input_joint_names.begin(), it );
+    if ( index < input_joint_names.size() ){
+      std::cout << name << " found in input_joint_names at " << index << '\n';
+      arm_indices.push_back(index);
+    }else{
+      ROS_ERROR("%s not found in input_joint_names, not sending plan", name.c_str());
+      std::cout << name << " not found in input_joint_names, not sending plan\n";
+      return;
+    }
+  }
+
+  // Fish out the arm indices:
   trajectory_msgs::JointTrajectory m;
   m.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-  m.joint_names = msg->plan[0].joint_name;
-
-  for (int i=0; i < msg->num_states; i++){
+  m.joint_names = output_joint_names_arm;
+  for (int i=1; i < msg->num_states; i++){ // NB: skipping the first sample as it has time = 0
     drc::robot_state_t state = msg->plan[i];
     trajectory_msgs::JointTrajectoryPoint point;
 
-    point.positions =     std::vector<double>(state.joint_position.begin(), state.joint_position.end());
-    point.velocities = std::vector<double>(state.joint_velocity.begin(), state.joint_velocity.end());
-    point.accelerations.assign ( state.joint_position.size()   ,0.0); // not provided, send zeros
-    point.effort = std::vector<double>(state.joint_effort.begin(), state.joint_effort.end());;
-    point.time_from_start = ros::Duration().fromSec(state.utime*1E-6);
+    for (int j=0; j <arm_indices.size() ; j++){
+      point.positions.push_back( state.joint_position[ arm_indices[j] ] );
+      point.velocities.push_back( state.joint_velocity[ arm_indices[j] ] );
+      point.accelerations.push_back( 0  );
+      point.effort.push_back( state.joint_effort[ arm_indices[j] ] );
+      point.time_from_start = ros::Duration().fromSec(state.utime*1E-6);
+    }
     m.points.push_back(point);
   }
 
   robot_plan_pub_.publish(m);
+}
+
+
+void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg) {
+  ROS_ERROR("LCM2ROS got robot plan");
+
+  std::vector<string> l_arm_strings;
+  std::vector<string> r_arm_strings;
+  std::vector<string> input_joint_names = msg->plan[0].joint_name;
+
+  if(robotName_.compare("atlas")==0){
+    // Remove MIT/IPAB joint names and use IHMC joint names:
+    filterJointNamesToIHMC(input_joint_names);
+    l_arm_strings = {"l_arm_shz","l_arm_shx","l_arm_ely","l_arm_elx","l_arm_wry","l_arm_wrx","l_arm_wry2"};
+    r_arm_strings = {"r_arm_shz","r_arm_shx","r_arm_ely","r_arm_elx","r_arm_wry","r_arm_wrx","r_arm_wry2"};
+  }else if (robotName_.compare("valkyrie")==0){
+    l_arm_strings = {"LeftShoulderExtensor","LeftShoulderAdductor","LeftShoulderSupinator","LeftElbowExtensor","LeftForearmSupinator","LeftWristExtensor","LeftWrist"};
+    r_arm_strings = {"RightShoulderExtensor","RightShoulderAdductor","RightShoulderSupinator","RightElbowExtensor","RightForearmSupinator","RightWristExtensor","RightWrist"};
+  }
+
+
+  sendSingleArmPlan(msg, l_arm_strings, input_joint_names);
+  ROS_ERROR("LCM2ROS sent left arm, sleeping for 1 second");
+  sleep(1);
+  ROS_ERROR("LCM2ROS sent right arm");
+  sendSingleArmPlan(msg, r_arm_strings, input_joint_names);
+
 }
 
 int main(int argc,char** argv) {
