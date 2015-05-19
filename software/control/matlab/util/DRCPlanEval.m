@@ -136,13 +136,12 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
     
     function handle_atlas_behavior_command(obj, msg)
-      if strcmp(char(msg.command), 'stop') || strcmp(char(msg.command), 'freeze')
+      cmd = char(msg.command);
+      if ~(strcmp(cmd, 'user') || strcmp(cmd, 'USER'))
         disp('Got an atlas behavior command...going into silent mode');
         obj.recovery_state = obj.RECOVERY_NONE;
         obj.last_plan_msg_utime = msg.utime;
         obj.switchToPlan(SilentPlan(obj.robot));
-      else
-        disp('Got an atlas behavior mode that was not stop or freeze.');
       end
     end
 
