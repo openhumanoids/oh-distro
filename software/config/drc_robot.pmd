@@ -98,17 +98,8 @@ group "4.perception_drivers" {
         host = "atlas0";
     }
 
-    cmd "video encode" {
-        exec = "drc-video-encode -k 60 -c CAMERA -o CAMERA_LEFT_STREAM";
-        host = "atlas0";
-    }
-
-    cmd "video decode" {
-        exec = "drc-video-decode -c CAMERA_LEFT -i CAMERA_LEFT_STREAM -o CAMERA_LEFT_DECODED";
-        host = "base";
-    }
-
 }
+
 
 group "5.maps" {
 
@@ -208,6 +199,18 @@ group "10.Driving" {
     cmd "April Tags" {
         exec = "drc-car-tags --threads=12  --window=true";
 	host = "base";
+    }
+}
+
+group "11.Video" {
+    cmd "video encode" {
+        exec = "drc-video-encode -k 60 -c CAMERA -o CAMERA_LEFT_STREAM";
+        host = "atlas0";
+    }
+
+    cmd "video decode" {
+        exec = "drc-video-decode -c CAMERA_LEFT -i CAMERA_LEFT_STREAM -o CAMERA_LEFT_DECODED";
+        host = "base";
     }
 }
 
