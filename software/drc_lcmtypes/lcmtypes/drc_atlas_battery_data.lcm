@@ -35,4 +35,17 @@ struct atlas_battery_data_t
   // increments with the number of charge-discharge cycles that the battery
   // has experienced.
   int32_t cycle_count;
+  
+  
+  //  A physical (real) battery may be in storage mode (asleep). 
+  //  The in_storage_mode value is 1 for a battery in storage mode, and 0 otherwise.
+  //  A battery in storage mode will not deliver power.  The battery emulator 
+  //  will return 0 always. Boston Dynamics will be responsible for taking
+  //  batteries out of storage mode
+  int32_t in_storage_mode;
+
+  // For a physical (real) battery this value returns the highest cell temperature
+  // in the battery. A value of 60 C or greater will cause the battery to shut down.
+  // The battery emulator will return 0 always.
+  float temperature;
 }
