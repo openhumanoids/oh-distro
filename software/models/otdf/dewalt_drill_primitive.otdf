@@ -1,0 +1,129 @@
+<?xml version="1.0" ?><object name="dewalt_drill" xmlns:mat="http://www.mit.edu" xmlns:trans="http://www.mit.edu" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
+
+    <!-- World frame origin of the object -->
+    <param default_value="0.5" inc="0.001" max="100" min="-100" name="x"/>
+    <param default_value="0.0" inc="0.001" max="100" min="-100" name="y"/>
+    <param default_value="0.5" inc="0.001" max="100" min="-100" name="z"/>
+    <!--Roll,Pitch,Yaw are about Body Frame-->
+    <param default_value="0.0" inc="0.001" max="5" min="-5" name="roll"/>
+    <param default_value="0.0" inc="0.001" max="5" min="-5" name="pitch"/>
+    <param default_value="0.0" inc="0.001" max="5" min="-5" name="yaw"/>
+
+
+    <param default_value="0.012" inc="0.001" max="2.0" min="-2.0" name="battery1_x"/>
+    <param default_value="0.0142" inc="0.001" max="2.0" min="-2.0" name="battery1_z"/>
+    <param default_value="0.1174" inc="0.001" max="2.0" min="-2.0" name="battery1_length"/>
+    <param default_value="0.0762" inc="0.001" max="2.0" min="-2.0" name="battery1_width"/>
+    <param default_value="0.0285" inc="0.001" max="2.0" min="-2.0" name="battery1_height"/>
+
+    <param default_value="-0.005" inc="0.001" max="2.0" min="-2.0" name="battery2_x"/>
+    <param default_value="0.0382" inc="0.001" max="2.0" min="-2.0" name="battery2_z"/>
+    <param default_value="0.0864" inc="0.001" max="2.0" min="-2.0" name="battery2_length"/>
+    <param default_value="0.0572" inc="0.001" max="2.0" min="-2.0" name="battery2_width"/>
+    <param default_value="0.0225" inc="0.001" max="2.0" min="-2.0" name="battery2_height"/>
+
+    <param default_value="0.023" inc="0.001" max="2.0" min="-2.0" name="button1_x"/>
+    <param default_value="0.057" inc="0.001" max="2.0" min="-2.0" name="button1_z"/>
+    <param default_value="0.03" inc="0.001" max="2.0" min="-2.0" name="button1_length"/>
+    <param default_value="0.0562" inc="0.001" max="2.0" min="-2.0" name="button1_width"/>
+    <param default_value="0.0225" inc="0.001" max="2.0" min="-2.0" name="button1_height"/>
+
+    <param default_value="0.027" inc="0.001" max="2.0" min="-2.0" name="button2_x"/>
+    <param default_value="-0.032" inc="0.001" max="2.0" min="-2.0" name="button2_y"/>
+    <param default_value="0.05" inc="0.001" max="2.0" min="-2.0" name="button2_z"/>
+    <param default_value="0.01" inc="0.001" max="2.0" min="-2.0" name="button2_length"/>
+    <param default_value="0.005" inc="0.001" max="2.0" min="-2.0" name="button2_width"/>
+    <param default_value="0.01" inc="0.001" max="2.0" min="-2.0" name="button2_height"/>
+
+    <param default_value="0.1968" inc="0.001" max="2.0" min="-2.0" name="ridge_z"/>
+    <param default_value="0.01" inc="0.001" max="2.0" min="-2.0" name="ridge_length"/>
+    <param default_value="0.0365" inc="0.001" max="2.0" min="-2.0" name="ridge_radius"/>
+
+    <param default_value="0.1" inc="0.001" max="2.0" min="-2.0" name="handle_z"/>
+    <param default_value="0.2" inc="0.001" max="2.0" min="-2.0" name="handle_length"/>
+    <param default_value="0.0287" inc="0.001" max="2.0" min="-2.0" name="handle_radius"/>
+
+    <param default_value="0.235" inc="0.001" max="2.0" min="-2.0" name="guard_z"/>
+    <param default_value="0.067" inc="0.001" max="2.0" min="-2.0" name="guard_length"/>
+    <param default_value="0.022" inc="0.001" max="2.0" min="-2.0" name="guard_radius"/>
+
+    <param default_value="0.277" inc="0.001" max="2.0" min="-2.0" name="bit_z"/>
+    <param default_value="0.02" inc="0.001" max="2.0" min="-2.0" name="bit_length"/>
+    <param default_value="0.001" inc="0.001" max="2.0" min="-2.0" name="bit_radius"/>
+
+    <param default_value="0.005" inc="0.001" max="2.0" min="-2.0" name="button_radius"/>
+    <param default_value="0.014" inc="0.001" max="2.0" min="-2.0" name="button_x"/>
+    <param default_value="-0.024" inc="0.001" max="2.0" min="-2.0" name="button_y"/>
+    <param default_value="0.07" inc="0.001" max="2.0" min="-2.0" name="button_z"/>
+
+    <link name="drill_body">
+
+      <visual name="battery1">
+        <origin rpy="0 0 0" xyz="${battery1_x} 0.0 ${battery1_z}"/>
+         <geometry>
+           <box size="${battery1_length} ${battery1_width} ${battery1_height}"/>
+         </geometry>
+      </visual>
+<!--
+      <visual name="battery2">
+        <origin rpy="0 0 0" xyz="${battery2_x} 0.0 ${battery2_z}"/>
+         <geometry>
+           <box size="${battery2_length} ${battery2_width} ${battery2_height}"/>
+         </geometry>
+      </visual>
+
+      <visual name="button1">
+        <origin rpy="0 0 0" xyz="${button1_x} 0.0 ${button1_z}"/>
+         <geometry>
+           <box size="${button1_length} ${button1_width} ${button1_height}"/>
+         </geometry>
+      </visual>
+
+      <visual name="button2">
+        <origin rpy="0 0 0" xyz="${button2_x} ${button2_y} ${button2_z}"/>
+         <geometry>
+           <box size="${button2_length} ${button2_width} ${button2_height}"/>
+         </geometry>
+      </visual>
+-->
+
+
+      <visual name="button">
+        <origin rpy="0 0 0" xyz="${button_x} ${button_y} ${button_z}"/>
+         <geometry>
+           <sphere radius="${button_radius}"/>
+         </geometry>
+      </visual>
+
+     <visual name="ridge">
+       <origin rpy="0 0 0" xyz="0.0 0.0 ${ridge_z}"/>
+       <geometry>
+         <cylinder length="${ridge_length}" radius="${ridge_radius}"/>
+       </geometry>
+     </visual>
+
+     <visual name="handle">
+       <origin rpy="0 0 0" xyz="0.0 0.0 ${handle_z}"/>
+       <geometry>
+         <cylinder length="${handle_length}" radius="${handle_radius}"/>
+       </geometry>
+     </visual>
+
+     <visual name="guard">
+       <origin rpy="0 0 0" xyz="0.0 0.0 ${guard_z}"/>
+       <geometry>
+         <cylinder length="${guard_length}" radius="${guard_radius}"/>
+       </geometry>
+     </visual>
+
+     <visual name="bit">
+       <origin rpy="0 0 0" xyz="0.0 0.0 ${bit_z}"/>
+       <geometry>
+         <cylinder length="${bit_length}" radius="${bit_radius}"/>
+       </geometry>
+     </visual>
+
+   </link>
+
+  </object>
