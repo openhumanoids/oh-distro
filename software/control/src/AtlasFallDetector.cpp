@@ -46,6 +46,7 @@ void AtlasFallDetector::resetState() {
   this->foot_contact[RIGHT] = false;
   this->foot_contact[LEFT] = false;
   this->foot_contact_valid = false;
+  this->bracing_latch = false;
   this->icp_is_ok_debounce->reset(true);
   this->icp_is_capturable_debounce->reset(true);
 }
