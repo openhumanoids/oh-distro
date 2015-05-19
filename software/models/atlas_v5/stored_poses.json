@@ -1841,46 +1841,6 @@
     },
     {
       "allow_mirror": true,
-      "description": "bar_grab",
-      "joints": {
-        "r_arm_elx": -0.953641951084137,
-        "r_arm_ely": 2.411365270614624,
-        "r_arm_lwy": -0.7450018525123596,
-        "r_arm_mwx": -0.23783113062381744,
-        "r_arm_shx": -0.09554995596408844,
-        "r_arm_shz": 1.3830804824829102,
-        "r_arm_uwy": 1.3588124513626099
-      },
-      "name": "bar_grab",
-      "nominal_handedness": "right"
-    },
-    {
-      "allow_mirror": true,
-      "description": "driving_back_forwards",
-      "joints": {
-        "back_bkx": -0.14753428101539612,
-        "back_bky": 0.2112531214952469,
-        "back_bkz": 0.6565927267074585,
-        "l_arm_elx": 0.6759105324745178,
-        "l_arm_ely": 2.7783963680267334,
-        "l_arm_lwy": 0.09436947107315063,
-        "l_arm_mwx": 1.6983503103256226,
-        "l_arm_shx": 0.7456309199333191,
-        "l_arm_shz": 0.6029119491577148,
-        "l_arm_uwy": -0.4668582081794739,
-        "r_arm_elx": -1.8288438320159912,
-        "r_arm_ely": 1.6825687885284424,
-        "r_arm_lwy": -0.9590877890586853,
-        "r_arm_mwx": -0.3014787435531616,
-        "r_arm_shx": -0.9861153364181519,
-        "r_arm_shz": 0.43809300661087036,
-        "r_arm_uwy": 1.3893464803695679
-      },
-      "name": "driving_back_forwards",
-      "nominal_handedness": "none"
-    },
-    {
-      "allow_mirror": true,
       "description": "bar_pre_grab",
       "joints": {
         "r_arm_elx": -1.7643336057662964,
