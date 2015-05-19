@@ -255,6 +255,21 @@
       },
       "name": "arm up pregrasp waypoint",
       "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "bar_pre_grab",
+      "joints": {
+        "r_arm_elx": -1.7643336057662964,
+        "r_arm_ely": 2.6073708534240723,
+        "r_arm_lwy": 0.25155019760131836,
+        "r_arm_mwx": 0.7917401790618896,
+        "r_arm_shx": -0.2954992949962616,
+        "r_arm_shz": 1.0234864950180054,
+        "r_arm_uwy": 0.4773232042789459
+      },
+      "name": "bar_pre_grab",
+      "nominal_handedness": "right"
     }
   ],
   "door": [
@@ -1770,6 +1785,150 @@
         "r_arm_uwy": 0.726915180683136
       },
       "name": "egress-arms",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "car_entry_left_arm",
+      "joints": {
+        "l_arm_elx": 0.4940149188041687,
+        "l_arm_ely": 2.6329214572906494,
+        "l_arm_lwy": -0.06632130593061447,
+        "l_arm_mwx": 1.7599999904632568,
+        "l_arm_shx": 0.8085815906524658,
+        "l_arm_shz": 0.6763771772384644,
+        "l_arm_uwy": -0.07953717559576035
+      },
+      "name": "car_entry_left_arm",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "driving",
+      "joints": {
+        "back_bkx": -0.1469222456216812,
+        "back_bky": -0.11764799803495407,
+        "back_bkz": 0.6483407616615295,
+        "l_arm_elx": 1.2820680141448975,
+        "l_arm_ely": 2.9075398445129395,
+        "l_arm_lwy": -0.03830164298415184,
+        "l_arm_mwx": 0.9173204898834229,
+        "l_arm_shx": 0.809750497341156,
+        "l_arm_shz": 0.27981188893318176,
+        "l_arm_uwy": -0.2729048728942871,
+        "l_leg_akx": -0.06326865404844284,
+        "l_leg_aky": -0.9294699430465698,
+        "l_leg_hpx": 0.019240915775299072,
+        "l_leg_hpy": -1.2941806316375732,
+        "l_leg_hpz": 0.7882317304611206,
+        "l_leg_kny": 1.6098170280456543,
+        "r_arm_elx": -0.8789556622505188,
+        "r_arm_ely": 2.3328135013580322,
+        "r_arm_lwy": -0.5969976782798767,
+        "r_arm_mwx": -0.3487091362476349,
+        "r_arm_shx": -0.057751405984163284,
+        "r_arm_shz": 1.398444414138794,
+        "r_arm_uwy": 1.2565925121307373,
+        "r_leg_akx": 0.046245187520980835,
+        "r_leg_aky": 0.14804281294345856,
+        "r_leg_hpx": 0.003832506714388728,
+        "r_leg_hpy": -0.8909308314323425,
+        "r_leg_hpz": -0.6574512720108032,
+        "r_leg_kny": 0.7647472023963928
+      },
+      "name": "driving",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "bar_grab",
+      "joints": {
+        "r_arm_elx": -0.953641951084137,
+        "r_arm_ely": 2.411365270614624,
+        "r_arm_lwy": -0.7450018525123596,
+        "r_arm_mwx": -0.23783113062381744,
+        "r_arm_shx": -0.09554995596408844,
+        "r_arm_shz": 1.3830804824829102,
+        "r_arm_uwy": 1.3588124513626099
+      },
+      "name": "bar_grab",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "driving_back_forwards",
+      "joints": {
+        "back_bkx": -0.14753428101539612,
+        "back_bky": 0.2112531214952469,
+        "back_bkz": 0.6565927267074585,
+        "l_arm_elx": 0.6759105324745178,
+        "l_arm_ely": 2.7783963680267334,
+        "l_arm_lwy": 0.09436947107315063,
+        "l_arm_mwx": 1.6983503103256226,
+        "l_arm_shx": 0.7456309199333191,
+        "l_arm_shz": 0.6029119491577148,
+        "l_arm_uwy": -0.4668582081794739,
+        "r_arm_elx": -1.8288438320159912,
+        "r_arm_ely": 1.6825687885284424,
+        "r_arm_lwy": -0.9590877890586853,
+        "r_arm_mwx": -0.3014787435531616,
+        "r_arm_shx": -0.9861153364181519,
+        "r_arm_shz": 0.43809300661087036,
+        "r_arm_uwy": 1.3893464803695679
+      },
+      "name": "driving_back_forwards",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "bar_pre_grab",
+      "joints": {
+        "r_arm_elx": -1.7643336057662964,
+        "r_arm_ely": 2.6073708534240723,
+        "r_arm_lwy": 0.25155019760131836,
+        "r_arm_mwx": 0.7917401790618896,
+        "r_arm_shx": -0.2954992949962616,
+        "r_arm_shz": 1.0234864950180054,
+        "r_arm_uwy": 0.4773232042789459
+      },
+      "name": "bar_pre_grab",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "car_entry_new",
+      "joints": {
+        "back_bkx": -0.14753428101539612,
+        "back_bky": -0.11925547569990158,
+        "back_bkz": 0.6565927267074585,
+        "l_arm_elx": 0.5924957394599915,
+        "l_arm_ely": 2.529503345489502,
+        "l_arm_lwy": -0.14048147201538086,
+        "l_arm_mwx": 1.7599999904632568,
+        "l_arm_shx": 1.0078437328338623,
+        "l_arm_shz": 0.6016284823417664,
+        "l_arm_uwy": -0.07543905079364777,
+        "l_leg_akx": -0.1768098920583725,
+        "l_leg_aky": -0.5192006230354309,
+        "l_leg_hpx": 0.11790065467357635,
+        "l_leg_hpy": -1.0002373456954956,
+        "l_leg_hpz": -0.07946836948394775,
+        "l_leg_kny": 1.4453893899917603,
+        "r_arm_elx": -2.223902463912964,
+        "r_arm_ely": 2.5840394496917725,
+        "r_arm_lwy": 0.3533085286617279,
+        "r_arm_mwx": 0.9900488257408142,
+        "r_arm_shx": -0.4669501781463623,
+        "r_arm_shz": 0.8146702647209167,
+        "r_arm_uwy": 0.5010660886764526,
+        "r_leg_akx": 0.03398497402667999,
+        "r_leg_aky": 0.16362643241882324,
+        "r_leg_hpx": 0.016527440398931503,
+        "r_leg_hpy": -0.8884566426277161,
+        "r_leg_hpz": -0.6766411662101746,
+        "r_leg_kny": 0.7456771731376648
+      },
+      "name": "car_entry_new",
       "nominal_handedness": "none"
     }
   ],
