@@ -255,58 +255,6 @@
       },
       "name": "arm up pregrasp waypoint",
       "nominal_handedness": "right"
-    },
-    {
-      "allow_mirror": true,
-      "description": "bar_pre_grab",
-      "joints": {
-        "r_arm_elx": -1.7643336057662964,
-        "r_arm_ely": 2.6073708534240723,
-        "r_arm_lwy": 0.25155019760131836,
-        "r_arm_mwx": 0.7917401790618896,
-        "r_arm_shx": -0.2954992949962616,
-        "r_arm_shz": 1.0234864950180054,
-        "r_arm_uwy": 0.4773232042789459
-      },
-      "name": "bar_pre_grab",
-      "nominal_handedness": "right"
-    },
-    {
-      "allow_mirror": true,
-      "description": "car_entry_new",
-      "joints": {
-        "back_bkx": -0.14753428101539612,
-        "back_bky": -0.11925547569990158,
-        "back_bkz": 0.6565927267074585,
-        "l_arm_elx": 0.5924957394599915,
-        "l_arm_ely": 2.529503345489502,
-        "l_arm_lwy": -0.14048147201538086,
-        "l_arm_mwx": 1.7599999904632568,
-        "l_arm_shx": 1.0078437328338623,
-        "l_arm_shz": 0.6016284823417664,
-        "l_arm_uwy": -0.07543905079364777,
-        "l_leg_akx": -0.20554740726947784,
-        "l_leg_aky": -0.3976866602897644,
-        "l_leg_hpx": 0.14736366271972656,
-        "l_leg_hpy": -1.1156507730484009,
-        "l_leg_hpz": -0.08437202870845795,
-        "l_leg_kny": 1.473657250404358,
-        "r_arm_elx": -2.223902463912964,
-        "r_arm_ely": 2.5840394496917725,
-        "r_arm_lwy": 0.3533085286617279,
-        "r_arm_mwx": 0.9900488257408142,
-        "r_arm_shx": -0.4669501781463623,
-        "r_arm_shz": 0.8146702647209167,
-        "r_arm_uwy": 0.5010660886764526,
-        "r_leg_akx": 0.0347151942551136,
-        "r_leg_aky": 0.16160354018211365,
-        "r_leg_hpx": 0.015874862670898438,
-        "r_leg_hpy": -0.8889411687850952,
-        "r_leg_hpz": -0.6752510070800781,
-        "r_leg_kny": 0.7468665242195129
-      },
-      "name": "car_entry_new",
-      "nominal_handedness": "none"
     }
   ],
   "door": [
