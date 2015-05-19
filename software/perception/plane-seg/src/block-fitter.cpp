@@ -171,6 +171,19 @@ struct State {
       // construct json string
       //
 
+      // convenience methods
+      auto vecToStr = [](const Eigen::Vector3f& iVec) {
+        std::ostringstream oss;
+        oss << iVec[0] << ", " << iVec[1] << ", " << iVec[2];
+        return oss.str();
+      };
+      auto rotToStr = [](const Eigen::Matrix3f& iRot) {
+        std::ostringstream oss;
+        Eigen::Quaternionf q(iRot);
+        oss << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z();
+        return oss.str();
+      };
+
       // header
       std::string json;
       json += "{\n";
@@ -181,25 +194,12 @@ struct State {
       // blocks
       for (int i = 0; i < (int)result.mBlocks.size(); ++i) {
         const auto& block = result.mBlocks[i];
-        std::string dimensionsString, positionString, quaternionString;
-        {
-          std::ostringstream oss;
-          Eigen::Vector3f size = block.mSize;
-          oss << size[0] << ", " << size[1] << ", " << size[2];
-          dimensionsString = oss.str();
-        }
-        {
-          std::ostringstream oss;
-          Eigen::Vector3f p = block.mPose.translation();
-          oss << p[0] << ", " << p[1] << ", " << p[2];
-          positionString = oss.str();
-        }
-        {
-          std::ostringstream oss;
-          Eigen::Quaternionf q(block.mPose.rotation());
-          oss << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z();
-          quaternionString = oss.str();
-        }
+        std::string dimensionString = vecToStr(block.mSize);
+        std::string positionString = vecToStr(block.mPose.translation());
+        std::string quaternionString = rotToStr(block.mPose.rotation());
+        Eigen::Vector3f color(0.5, 0.4, 0.5);
+        std::string colorString = vecToStr(color);
+        float alpha = 1.0;
         std::string uuid = timeString + "_" + std::to_string(i+1);
         
         json += "    \"" + uuid + "\": {\n";
@@ -207,7 +207,9 @@ struct State {
         json += "      \"pose\": [[" + positionString + "], [" +
           quaternionString + "]],\n";
         json += "      \"uuid\": \"" + uuid + "\",\n";
-        json += "      \"Dimensions\": [" + dimensionsString + "],\n";
+        json += "      \"Dimensions\": [" + dimensionString + "],\n";
+        json += "      \"Color\": [" + colorString + "],\n";
+        json += "      \"Alpha\": " + std::to_string(alpha) + ",\n";
         json += "      \"Name\": \"" + mNamePrefix + " " +
           std::to_string(i) + "\"\n";
         json += "    },\n";
@@ -215,15 +217,14 @@ struct State {
 
       // ground
       {
-        std::string positionString, quaternionString;
+        std::string positionString, quaternionString, dimensionString;
         Eigen::Vector3f groundNormal = result.mGroundPlane.head<3>();
+        Eigen::Vector3f groundSize(100,100,0.01);
         {
-          std::ostringstream oss;
           Eigen::Vector3f p = groundPose.translation();
           p -= (groundNormal.dot(p)+result.mGroundPlane[3])*groundNormal;
-          p -= 0.005*groundNormal;  // account for thickness of slab
-          oss << p[0] << ", " << p[1] << ", " << p[2];
-          positionString = oss.str();
+          p -= (groundSize[2]/2)*groundNormal;
+          positionString = vecToStr(p);
         }
         {
           std::ostringstream oss;
@@ -231,17 +232,16 @@ struct State {
           rot.col(2) = groundNormal.normalized();
           rot.col(1) = rot.col(2).cross(Eigen::Vector3f::UnitX()).normalized();
           rot.col(0) = rot.col(1).cross(rot.col(2)).normalized();
-          Eigen::Quaternionf q(rot);
-          oss << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z();
-          quaternionString = oss.str();
+          quaternionString = rotToStr(rot);
         }
+        dimensionString = vecToStr(groundSize);
         
         json += "    \"ground affordance\": {\n";
         json += "      \"classname\": \"BoxAffordanceItem\",\n";
         json += "      \"pose\": [[" + positionString + "], [" +
           quaternionString + "]],\n";
         json += "      \"uuid\": \"ground affordance\",\n";
-        json += "      \"Dimensions\": [100, 100, 0.01],\n";
+        json += "      \"Dimensions\": [" + dimensionString+ "],\n";
         json += "      \"Name\": \"ground affordance\",\n";
         json += "      \"Visible\": 0\n";
         json += "    }\n";
