@@ -31,9 +31,12 @@ class LCM2ROS{
     void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
     ros::Publisher robot_plan_pub_;
     void plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
+    void ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
     ros::Publisher planner_request_pub_;
     void robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
     ros::ServiceClient robot_plan_pause_service_;
+    ros::Publisher ik_request_pub_;
+
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
@@ -47,6 +50,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   robot_plan_pause_service_ = nh_.serviceClient<std_srvs::Empty>("stop_trajectory_execution");
   
   rosnode = new ros::NodeHandle();
+  lcm_->subscribe("IK_REQUEST",&LCM2ROS::ikRequestHandler, this);
+  ik_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/ik_request",10);
 }
 
 void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg) {
@@ -89,6 +94,15 @@ void LCM2ROS::plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::s
   m.poses = msg->poses;
   m.constraints = msg->constraints;
   planner_request_pub_.publish(m);
+}
+
+void LCM2ROS::ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg) {
+  ROS_ERROR("LCM2ROS got IK_REQUEST");
+  ipab_msgs::PlannerRequest m;
+  m.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+  m.poses = msg->poses;
+  m.constraints = msg->constraints;
+  ik_request_pub_.publish(m);
 }
 
 int main(int argc,char** argv) {
