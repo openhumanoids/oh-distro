@@ -196,5 +196,5 @@ bool AtlasFallDetector::isICPCaptured(Vector2d icp) {
 }
 
 bool AtlasFallDetector::isICPCapturable(Vector2d icp) {
-  return signedDistanceInsideConvexHull(this->getVirtualSupportPolygon(false), icp) < icp_capturable_radius;
+  return signedDistanceInsideConvexHull(this->getVirtualSupportPolygon(false), icp) > -icp_capturable_radius;
 }
