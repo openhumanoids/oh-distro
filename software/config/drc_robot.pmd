@@ -181,7 +181,7 @@ group "9.BDI_walking" {
 
 group "10.Driving" {
     cmd "Streaming Robot Side" {
-        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robotWithController";
+        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robot";
         host = "atlas2";
     }
 
@@ -283,12 +283,13 @@ script "2.stop_clean" {
 
 script "3.Start Streaming" {
     stop cmd "PlanEval";
-    start cmd "Streaming Robot Side";
+    start cmd "Streaming Robot Side with Driving Gains"";
 }
 
 script "4.Stop Streaming" {
     stop group "10.Driving";
     start cmd "PlanEval";
     stop group "1.state_mit";
+    wait ms 2000;
     start group "1.state_mit";
 }
