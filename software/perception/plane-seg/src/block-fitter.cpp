@@ -361,7 +361,11 @@ int main(const int iArgc, const char** iArgv) {
     }
   }
 
-  state.mBotWrapper.reset(new drc::BotWrapper());
+  do {
+    state.mBotWrapper.reset(new drc::BotWrapper());
+  }
+  while (state.mBotWrapper->getBotParam() == NULL);
+  std::cout << "got bot params" << std::endl;
   state.mLcmWrapper.reset(new drc::LcmWrapper(state.mBotWrapper->getLcm()));
 
   if (triggerChannel.length() > 0) {
