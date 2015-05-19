@@ -1,4 +1,4 @@
-group "0.params_and_model_pub" {
+group "00.params_and_model_pub" {
     cmd "pserver" {
         exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
         host = "atlas2";
@@ -11,7 +11,7 @@ group "0.params_and_model_pub" {
 
 }
 
-group "1.state_mit" {
+group "01.state_mit" {
 
     cmd "joints2frames" {
         exec = "drc-joints2frames";
@@ -37,7 +37,7 @@ group "1.state_mit" {
 }
 
 
-group "2.plan_and_control" {
+group "02.plan_and_control" {
 
     cmd "EncoderCalibration" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders(true);\"";
@@ -86,7 +86,7 @@ group "2.plan_and_control" {
 
 }
 
-group "4.perception_drivers" {
+group "04.perception_drivers" {
 
     cmd "multisense" {
         exec = "multisense-lcm-driver -o 0 -n hokuyo_joint";
@@ -101,7 +101,7 @@ group "4.perception_drivers" {
 }
 
 
-group "5.maps" {
+group "05.maps" {
 
     cmd "data-request-server" {
         exec = "data-request-server";
@@ -124,7 +124,7 @@ group "5.maps" {
     }
 }
 
-group "6.hands_robotiq" {
+group "06.hands_robotiq" {
 
     cmd "robotiq-left" {
         exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} robotiq_tcp_node LEFT 192.168.120.101'";
@@ -138,7 +138,7 @@ group "6.hands_robotiq" {
 
 }
 
-group "7.SA_cameras" {
+group "07.SA_cameras" {
 
     cmd "sa-left" {
         exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_LEFT -s 12491351 -r 270 --equalize 400";
@@ -151,14 +151,14 @@ group "7.SA_cameras" {
     }
 }
 
-group "8.logging" {
+group "08.logging" {
     cmd "atlas logger" {
         exec = "lcm-logger  --rotate=30 --split-mb=1000 -s /home/user/logs/rolling/log_split";
         host = "atlas2";
     }
 }
 
-group "9.BDI_walking" {
+group "09.BDI_walking" {
     cmd "RobotBDIStepTranslator" {
         exec = "drc-bdi-step-translator";
         host = "atlas2";
@@ -195,7 +195,7 @@ group "10.Driving" {
         exec = "$DRC_BASE/software/control/pod-build/bin/SteeringCommandDriver /dev/input/js0 STEERING_COMMAND";
         host = "base";
     }
-    
+
     cmd "April Tags" {
         exec = "drc-car-tags --threads=12  --window=true";
 	host = "base";
@@ -248,14 +248,14 @@ cmd "base_deputy" {
 script "0.prep" {
     start cmd "base_deputy";
     wait ms 1000;
-    start group "0.params_and_model_pub";
+    start group "00.params_and_model_pub";
     wait ms 1000;
-    start group "1.state_mit";
-    start group "2.plan_and_control";
-    start group "4.perception_drivers";
-    start group "5.maps";
-    start group "7.SA_cameras";
-    start group "8.logging";
+    start group "01.state_mit";
+    start group "02.plan_and_control";
+    start group "04.perception_drivers";
+    start group "05.maps";
+    start group "07.SA_cameras";
+    start group "08.logging";
     start cmd "atlas control panel";
 
     start cmd "atlas-off";
@@ -265,7 +265,7 @@ script "1.power_on" {
     stop cmd "atlas-off";
     wait ms 2000;
     start cmd "atlas-high";
-    start group "6.hands_robotiq";
+    start group "06.hands_robotiq";
 }
 
 script "2.stop_clean" {
@@ -292,7 +292,7 @@ script "3.Start Streaming" {
 script "4.Stop Streaming" {
     stop group "10.Driving";
     start cmd "PlanEval";
-    stop group "1.state_mit";
+    stop group "01.state_mit";
     wait ms 2000;
-    start group "1.state_mit";
+    start group "01.state_mit";
 }
