@@ -107,6 +107,7 @@ class AprilTagDetector {
         td->refine_pose = getopt_get_bool(getopt, "refine-pose");
 
         quiet = getopt_get_bool(getopt, "quiet");
+        tag_size = getopt_get_double(getopt, "size");
     }
 
     ~AprilTagDetector() {
@@ -162,8 +163,14 @@ class AprilTagDetector {
         
         return tag_matches;
     }
+    
+    double getTagSize() const {
+        return tag_size;
+    }
+
     private:
     int quiet;
+    double tag_size;
     apriltag_family_t *tf;
     apriltag_detector_t *td;
     getopt_t *getopt;
@@ -177,7 +184,7 @@ class CameraListener {
         mDetector = detector;
     }
 
-    bool setup() {
+    bool setup(bool show_window) {
         mBotWrapper.reset(new drc::BotWrapper());
 
         while (!mBotWrapper->getBotParam()) {
@@ -197,6 +204,8 @@ class CameraListener {
         K(1,1) = bot_camtrans_get_focal_length_y(mCamTransLeft);
         K(0,2) = bot_camtrans_get_principal_x(mCamTransLeft);
         K(1,2) = bot_camtrans_get_principal_y(mCamTransLeft);
+
+        mShowWindow = show_window;
         return true;
     }  
     
@@ -214,35 +223,40 @@ class CameraListener {
         cv::cvtColor(image, image, CV_GRAY2RGB);
         for (int i = 0; i < tags.size(); i++) { 
 
-            cv::line(image, tags[i].p0, tags[i].p1, cv::Scalar(255,0,0), 2, CV_AA);
-            cv::line(image, tags[i].p1, tags[i].p2, cv::Scalar(0,255,0), 2, CV_AA);
-            cv::line(image, tags[i].p2, tags[i].p3, cv::Scalar(0,0,255), 2, CV_AA);
-            cv::line(image, tags[i].p3, tags[i].p0, cv::Scalar(0,0,255), 2, CV_AA);
+            if (mShowWindow) {
+                cv::line(image, tags[i].p0, tags[i].p1, cv::Scalar(255,0,0), 2, CV_AA);
+                cv::line(image, tags[i].p1, tags[i].p2, cv::Scalar(0,255,0), 2, CV_AA);
+                cv::line(image, tags[i].p2, tags[i].p3, cv::Scalar(0,0,255), 2, CV_AA);
+                cv::line(image, tags[i].p3, tags[i].p0, cv::Scalar(0,0,255), 2, CV_AA);
 
-            Eigen::Vector3d x_axis(2,0,1);
-            Eigen::Vector3d y_axis(0,2,1);
-            Eigen::Vector3d origin(0,0,1);
+                Eigen::Vector3d x_axis(2,0,1);
+                Eigen::Vector3d y_axis(0,2,1);
+                Eigen::Vector3d origin(0,0,1);
 
-            Eigen::Vector3d px = tags[i].H * x_axis;
-            Eigen::Vector3d py = tags[i].H * y_axis;
-            Eigen::Vector3d o  = tags[i].H * origin;
+                Eigen::Vector3d px = tags[i].H * x_axis;
+                Eigen::Vector3d py = tags[i].H * y_axis;
+                Eigen::Vector3d o  = tags[i].H * origin;
 
-            px/= px[2];
-            py/= py[2];
-            o/= o[2];
+                px/= px[2];
+                py/= py[2];
+                o/= o[2];
 
-            cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(px[0], px[1]), cv::Scalar(255,0,255), 1, CV_AA);
-            cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(py[0], py[1]), cv::Scalar(255,255,0), 1, CV_AA);
+                cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(px[0], px[1]), cv::Scalar(255,0,255), 1, CV_AA);
+                cv::line(image, cv::Point2d(o[0], o[1]), cv::Point2d(py[0], py[1]), cv::Scalar(255,255,0), 1, CV_AA);
+            }
 
-            Eigen::Isometry3d tag_to_camera = getRelativeTransform(tags[i], K, 0.165);
+            Eigen::Isometry3d tag_to_camera = getRelativeTransform(tags[i], K, mDetector->getTagSize());
             bot_core::rigid_transform_t tag_to_camera_msg = encodeLCMFrame(tag_to_camera);
             tag_to_camera_msg.utime = msg->utime;
             mLcmWrapper->get()->publish("APRIL_TAG_TO_CAMERA_LEFT", &tag_to_camera_msg);
             break;
             
         }
-        cv::imshow("detections", image);
-        cv::waitKey(1);
+        if (mShowWindow) {
+            cv::imshow("detections", image);
+            cv::waitKey(1);
+        }
+        
         image_u8_destroy(image_u8);
     }
 
@@ -270,6 +284,7 @@ class CameraListener {
     }
 
     private:
+    bool mShowWindow;
     AprilTagDetector *mDetector;
     drc::LcmWrapper::Ptr mLcmWrapper;
     drc::BotWrapper::Ptr mBotWrapper;
@@ -285,6 +300,7 @@ int main(int argc, char *argv[])
 
     getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
     getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
+    getopt_add_bool(getopt, 'w', "window", 1, "Show the detected tags in a window");
     getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
     getopt_add_int(getopt, '\0', "border", "1", "Set tag family border size");
     getopt_add_int(getopt, 't', "threads", "4", "Use this many CPU threads");
@@ -293,6 +309,8 @@ int main(int argc, char *argv[])
     getopt_add_bool(getopt, '0', "refine-edges", 1, "Spend more time trying to align edges of tags");
     getopt_add_bool(getopt, '1', "refine-decode", 0, "Spend more time trying to decode tags");
     getopt_add_bool(getopt, '2', "refine-pose", 0, "Spend more time trying to precisely localize tags");
+    getopt_add_double(getopt, 's', "size", "0.1735", "Physical side-length of the tag (meters)");
+    
 
     if (!getopt_parse(getopt, argc, argv, 1) || getopt_get_bool(getopt, "help")) {
         printf("Usage: %s [options]\n", argv[0]);
@@ -302,8 +320,8 @@ int main(int argc, char *argv[])
 
     AprilTagDetector tag_detector(getopt);
     CameraListener camera_listener;
-    
-    if (camera_listener.setup()) {
+
+    if (camera_listener.setup(getopt_get_bool(getopt, "window"))) {
         camera_listener.setDetector(&tag_detector);
         camera_listener.start();
     }
