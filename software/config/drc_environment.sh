@@ -118,7 +118,7 @@ setup_network_sim()
 {
     export LCM_URL_DRC_ROBOT="udpm://239.255.76.68:7668?ttl=0"
     export LCM_URL_DRC_BASE="udpm://239.255.76.67:7667?ttl=1"
-    export LCM_URL_DRC_WINGMAN="udpm://239.255.76.67:7667?ttl=0"
+    export LCM_URL_DRC_WINGMAN="udpm://239.255.76.67:7667?ttl=1"
 }
 
 setup_lcm_communities()
