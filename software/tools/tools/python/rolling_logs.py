@@ -68,7 +68,7 @@ def main():
                                                               hours=args.hours[0])
     stop = dt.datetime.now()
     logs = db.getLogsInRange(start=start, stop=stop)
-    print db.spliceLogs(logs, outfile="lcmlog_from_{:s}_to_{:s}".format(start.isoformat(), stop.isoformat()))
+    print db.spliceLogs(logs, outfile="lcmlog_from_{:s}_to_{:s}".format(start.isoformat(), stop.isoformat()).replace(':', '.'))
 
 if __name__ == '__main__':
     main()
