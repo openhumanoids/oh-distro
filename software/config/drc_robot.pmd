@@ -281,6 +281,7 @@ script "2.stop_clean" {
     start cmd "fusion";
     start cmd "PlanEval";
     start cmd "InstQP";
+    start cmd "PressureControl";
 }
 
 
