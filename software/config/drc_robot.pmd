@@ -197,7 +197,7 @@ group "10.Driving" {
     }
 
     cmd "April Tags" {
-        exec = "drc-car-tags --threads=12  --window=true";
+        exec = "drc-car-tags --threads=12  --window=true --quiet";
 	host = "base";
     }
 }
