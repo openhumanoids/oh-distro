@@ -10,9 +10,11 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/plan_control_t.hpp"
 #include "lcmtypes/drc/planner_request_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
+#include <std_srvs/Empty.h>
 
 using namespace std;
 
@@ -30,7 +32,8 @@ class LCM2ROS{
     ros::Publisher robot_plan_pub_;
     void plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
     ros::Publisher planner_request_pub_;
-
+    void robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
+    ros::ServiceClient robot_plan_pause_service_;
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
@@ -39,6 +42,10 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 
   lcm_->subscribe("PLANNER_REQUEST",&LCM2ROS::plannerRequestHandler, this);
   planner_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/planner_request",10);
+
+  lcm_->subscribe("COMMITTED_PLAN_PAUSE",&LCM2ROS::robotPlanPauseHandler, this);
+  robot_plan_pause_service_ = nh_.serviceClient<std_srvs::Empty>("stop_trajectory_execution");
+  
   rosnode = new ros::NodeHandle();
 }
 
@@ -64,6 +71,16 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   robot_plan_pub_.publish(m);
 }
 
+void LCM2ROS::robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg) {
+  ROS_ERROR("LCM2ROS STOP button pressed");
+
+  std_srvs::Empty srv; // TODO: change to Trigger
+  if (robot_plan_pause_service_.call(srv)) {
+    ROS_ERROR("Successfully stopped trajectory execution");
+  } else {
+    ROS_ERROR("Could not stop trajectory execution - DANGER");
+  }
+}
 
 void LCM2ROS::plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg) {
   ROS_ERROR("LCM2ROS got PLANNER_REQUEST");
