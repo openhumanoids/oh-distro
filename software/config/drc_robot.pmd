@@ -286,7 +286,7 @@ script "2.stop_clean" {
 
 script "3.Start Streaming" {
     stop cmd "PlanEval";
-    start cmd "Streaming Robot Side with Driving Gains"";
+    start cmd "Streaming Robot Side with Driving Gains";
 }
 
 script "4.Stop Streaming" {
