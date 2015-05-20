@@ -203,6 +203,11 @@ group "10.Driving" {
 }
 
 group "11.Video" {
+    cmd "Camera Viewer" {
+        exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/scripts/cameraViewer.py";
+        host = "base";
+    }
+
     cmd "video encode" {
         exec = "drc-video-encode -k 60 -c CAMERA -o CAMERA_LEFT_STREAM";
         host = "atlas0";
