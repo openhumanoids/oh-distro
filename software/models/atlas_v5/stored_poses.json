@@ -1912,6 +1912,35 @@
       },
       "name": "egress-arms",
       "nominal_handedness": "none"
+      },
+      {
+      "description": "pre_egress_left_arm",
+      "joints": {
+        "l_arm_elx": 0.3746342062950134,
+        "l_arm_ely": 2.453354597091675,
+        "l_arm_lwy": 2.268620729446411,
+        "l_arm_mwx": 1.5556483268737793,
+        "l_arm_shx": 0.9667736887931824,
+        "l_arm_shz": -0.9393389225006104,
+        "l_arm_uwy": -0.006544101517647505
+      },
+      "name": "pre_egress_left_arm",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre_egress_right_arm",
+      "joints": {
+        "r_arm_elx": -1.7247310876846313,
+        "r_arm_ely": 1.9352130889892578,
+        "r_arm_lwy": 1.6045526266098022,
+        "r_arm_mwx": 0.7319188714027405,
+        "r_arm_shx": 0.14349842071533203,
+        "r_arm_shz": 0.1765691637992859,
+        "r_arm_uwy": -0.034537140280008316
+      },
+      "name": "pre_egress_right_arm",
+      "nominal_handedness": "right"
     }
   ],
   "table clearing": [
