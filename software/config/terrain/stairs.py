@@ -1,7 +1,7 @@
 import numpy as np
 
 blockName = 'stair'
-blockSize = np.array([0.28, 1.0, 0.22]) # meters
+blockSize = np.array([1.0, 0.28, 0.22]) # meters
 blockTiltAngle = 0 # degrees
 
 
@@ -27,7 +27,7 @@ blockLevels = [
 blockLevels.reverse()
 
 # map between block types and yaw angles (degrees)
-blockAngleMap = { 'A': 0, 'B': 0 }
+blockAngleMap = { 'A': 90, 'B': 90 }
 
 # TODO: this is just an example
 # which foot, block (row,col), offset (x,y), support

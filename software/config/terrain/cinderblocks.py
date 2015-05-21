@@ -1,7 +1,7 @@
 import numpy as np
 
 blockName = 'cinderblock'
-blockSize = np.array([15 + 3/8.0, 15 + 5/8.0, 5 + 5/8.0]) * 0.0254 # meters
+blockSize = np.array([15 + 5/8.0, 15 + 3/8.0, 5 + 5/8.0]) * 0.0254 # meters
 blockTiltAngle = 15 # degrees
 
 
