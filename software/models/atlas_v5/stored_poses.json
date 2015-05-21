@@ -1737,43 +1737,6 @@
     },
     {
       "allow_mirror": true,
-      "description": "egress-right-arm",
-      "joints": {
-        "r_arm_elx": -1.6188147068023682,
-        "r_arm_ely": 2.564171552658081,
-        "r_arm_lwy": 0.9999157190322876,
-        "r_arm_mwx": -0.8601318597793579,
-        "r_arm_shx": -0.7958008050918579,
-        "r_arm_shz": 0.7728909850120544,
-        "r_arm_uwy": 0.726915180683136
-      },
-      "name": "egress-right-arm",
-      "nominal_handedness": "right"
-    },
-    {
-      "allow_mirror": true,
-      "description": "egress-arms",
-      "joints": {
-        "l_arm_elx": 1.3880977630615234,
-        "l_arm_ely": 3.0732100009918213,
-        "l_arm_lwy": 0.06428340077400208,
-        "l_arm_mwx": -1.6546380519866943,
-        "l_arm_shx": 1.263519525527954,
-        "l_arm_shz": -1.434218406677246,
-        "l_arm_uwy": 0.03600066155195236,
-        "r_arm_elx": -1.6188147068023682,
-        "r_arm_ely": 2.564171552658081,
-        "r_arm_lwy": 0.9999157190322876,
-        "r_arm_mwx": -0.8601318597793579,
-        "r_arm_shx": -0.7958008050918579,
-        "r_arm_shz": 0.7728909850120544,
-        "r_arm_uwy": 0.726915180683136
-      },
-      "name": "egress-arms",
-      "nominal_handedness": "none"
-    },
-    {
-      "allow_mirror": true,
       "description": "car_entry_left_arm",
       "joints": {
         "l_arm_elx": 0.4940149188041687,
@@ -1911,6 +1874,43 @@
         "r_leg_kny": 0.7468665242195129
       },
       "name": "car_entry_new",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "egress-right-arm",
+      "joints": {
+        "r_arm_elx": -0.16578568518161774,
+        "r_arm_ely": 2.2179462909698486,
+        "r_arm_lwy": -0.0015095106791704893,
+        "r_arm_mwx": 0.028042754158377647,
+        "r_arm_shx": -0.48380640149116516,
+        "r_arm_shz": 1.3903777599334717,
+        "r_arm_uwy": 0.090204618871212
+      },
+      "name": "egress-right-arm",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "egress-arms",
+      "joints": {
+        "l_arm_elx": 0.16578568518161774,
+        "l_arm_ely": 2.2179462909698486,
+        "l_arm_lwy": -0.0015095106791704893,
+        "l_arm_mwx": -0.028042754158377647,
+        "l_arm_shx": 0.48380640149116516,
+        "l_arm_shz": -1.3903777599334717,
+        "l_arm_uwy": 0.090204618871212,
+        "r_arm_elx": -0.16578568518161774,
+        "r_arm_ely": 2.2179462909698486,
+        "r_arm_lwy": -0.0015095106791704893,
+        "r_arm_mwx": 0.028042754158377647,
+        "r_arm_shx": -0.48380640149116516,
+        "r_arm_shz": 1.3903777599334717,
+        "r_arm_uwy": 0.090204618871212
+      },
+      "name": "egress-arms",
       "nominal_handedness": "none"
     }
   ],
