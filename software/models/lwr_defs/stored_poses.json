@@ -1,7 +1,7 @@
 {
   "General": [
     {
-      "allow_mirror": true, 
+      "allow_mirror": false, 
       "description": "arm up pregrasp",  
       "joints": {
         "lwr_arm_0_joint": 0, 
@@ -13,6 +13,21 @@
         "lwr_arm_6_joint": 0
       }, 
       "name": "arm up pregrasp", 
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": false, 
+      "description": "handdown",  
+      "joints": {
+        "lwr_arm_0_joint": 0, 
+        "lwr_arm_1_joint": -9.047e-01, 
+        "lwr_arm_2_joint": 0, 
+        "lwr_arm_3_joint": 2.094, 
+        "lwr_arm_4_joint": 0, 
+        "lwr_arm_5_joint": 1.407, 
+        "lwr_arm_6_joint": 5.93411946e-02
+      }, 
+      "name": "handdown", 
       "nominal_handedness": "left"
     }
   ]
