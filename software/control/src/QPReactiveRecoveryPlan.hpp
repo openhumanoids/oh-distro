@@ -66,10 +66,10 @@ struct BipedDescription {
 BipedDescription getAtlasDefaults() {
   BipedDescription biped;
   biped.reachable_vertices[RIGHT] << -0.35, 0.35, 0.35, -0.35,
-                                    -0.2, -0.2, -0.45, -0.45,
+                                    -0.2, -0.2, -0.7, -0.7,
                                     0, 0, 0, 0;
   biped.reachable_vertices[LEFT] << -0.35, 0.35, 0.35, -0.35,
-                                    0.2, 0.2, 0.45, 0.45,
+                                    0.2, 0.2, 0.7, 0.7,
                                     0, 0, 0, 0;
   biped.foot_vertices[RIGHT] << -0.12, 0.12, 0.12, -0.12,
                                -0.06, -0.06, 0.06, 0.06,

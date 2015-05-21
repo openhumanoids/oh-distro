@@ -111,7 +111,7 @@ private:
 
   lcm::LCM lcm;
 
-  double icp_capturable_radius = 0.25;
+  double icp_capturable_radius = 0.10;
   double bracing_min_trigger_time = 0.4;
   bool bracing_latch = false;
 

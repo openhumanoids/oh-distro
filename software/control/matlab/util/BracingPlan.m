@@ -1,4 +1,8 @@
 classdef BracingPlan < QPControllerPlanMatlabImplementation
+  properties
+    lc
+  end
+
   methods
     function obj = BracingPlan(r, q_des)
       if (nargin < 2)
@@ -11,6 +15,7 @@ classdef BracingPlan < QPControllerPlanMatlabImplementation
       obj.default_qp_input_ = qp_input.to_lcm();
 
       obj.duration_ = inf;
+      obj.lc = lcm.lcm.LCM.getSingleton();
 
     end
 
@@ -19,6 +24,13 @@ classdef BracingPlan < QPControllerPlanMatlabImplementation
         obj.start_time = t;
       end
       qp_input = obj.default_qp_input_;
+
+      pressure_msg = drc.atlas_pump_command_t;
+      pressure_msg.desired_psi = 1000;
+      pressure_msg.desired_rpm = 5000;
+      pressure_msg.cmd_max = 60;
+      pressure_msg.utime = t * 1e6;
+      obj.lc.publish('ATLAS_PUMP_COMMAND', pressure_msg);
     end
   end
 end
