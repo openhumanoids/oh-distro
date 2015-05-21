@@ -417,36 +417,6 @@
     },
     {
       "allow_mirror": true,
-      "description": "pre-smash",
-      "joints": {
-        "l_arm_elx": 2.1818318367004395,
-        "l_arm_ely": 0.17592903971672058,
-        "l_arm_lwy": 0.0,
-        "l_arm_mwx": 0.3842903971672058,
-        "l_arm_shx": -0.9707543849945068,
-        "l_arm_shz": -1.3964413404464722,
-        "l_arm_uwy": 1.3010426069826053e-18
-      },
-      "name": "pre-smash",
-      "nominal_handedness": "left"
-    },
-    {
-      "allow_mirror": true,
-      "description": "smash",
-      "joints": {
-        "l_arm_elx": 0.501868486404419,
-        "l_arm_ely": 0.17592903971672058,
-        "l_arm_lwy": 0.0,
-        "l_arm_mwx": 9.62964972193618e-35,
-        "l_arm_shx": -0.496372789144516,
-        "l_arm_shz": -1.3964413404464722,
-        "l_arm_uwy": 2.7755575615628914e-17
-      },
-      "name": "smash",
-      "nominal_handedness": "left"
-    },
-    {
-      "allow_mirror": true,
       "description": "pre-reach non-grasping",
       "joints": {
         "l_arm_elx": 2.0209803581237793,
@@ -474,6 +444,51 @@
       },
       "name": "pre-reach grasping",
       "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre-smash",
+      "joints": {
+        "l_arm_elx": 2.1818318367004395,
+        "l_arm_ely": 0.681725025177002,
+        "l_arm_lwy": 0.0,
+        "l_arm_mwx": 0.3842903971672058,
+        "l_arm_shx": -0.9707543849945068,
+        "l_arm_shz": -1.3964413404464722,
+        "l_arm_uwy": 0.0
+      },
+      "name": "pre-smash",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "smash",
+      "joints": {
+        "l_arm_elx": 0.501868486404419,
+        "l_arm_ely": 0.17592903971672058,
+        "l_arm_lwy": 0.0,
+        "l_arm_mwx": 9.62964972193618e-35,
+        "l_arm_shx": -0.496372789144516,
+        "l_arm_shz": -1.3964413404464722,
+        "l_arm_uwy": 2.7755575615628914e-17
+      },
+      "name": "smash",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "smash 2",
+      "joints": {
+        "l_arm_elx": 0.501868486404419,
+        "l_arm_ely": 0.17592903971672058,
+        "l_arm_lwy": 0.0,
+        "l_arm_mwx": -4.336808689942018e-19,
+        "l_arm_shx": -0.496372789144516,
+        "l_arm_shz": -1.3964413404464722,
+        "l_arm_uwy": -1.7105200290679932
+      },
+      "name": "smash 2",
+      "nominal_handedness": "left"
     }
   ],
   "drill": [
