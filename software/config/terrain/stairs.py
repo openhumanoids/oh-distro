@@ -44,5 +44,9 @@ footstepData = [
     [ 'right', (2,0), (0.10, 0.10),  0 ]
 ]
 
+# where to stand, relative to front of first block
+startingPosition = np.array([-0.5, 0, 0])
+startingYaw = 0   # degrees
+
 blockColor = [0.4, 0.6, 0.4]
 blockColorMatched = [0.5, 0.8, 0.5]
