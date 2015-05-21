@@ -159,5 +159,18 @@ RectangleFitter::go() {
   for (auto& pt : hull.points) {
     result.mConvexHull.push_back(pt.getVector3fMap());
   }
+
+  // adjust result so that max dimension matches prior size
+  if (mRectangleSize.norm() > 1e-5) {
+    const auto& size1 = result.mSize;
+    const auto& size2 = mRectangleSize;
+    if (((size1[1] > size1[0]) && (size2[0] > size2[1])) ||
+        ((size1[0] > size1[1]) && (size2[1] > size2[0]))) {
+      Eigen::AngleAxisf angleAxis(M_PI/2, Eigen::Vector3f::UnitZ());
+      result.mPose.linear() *= angleAxis.matrix();
+      std::swap(result.mSize[0], result.mSize[1]);
+    }
+  }
+
   return result;
 }
