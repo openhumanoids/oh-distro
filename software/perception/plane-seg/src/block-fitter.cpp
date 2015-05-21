@@ -36,6 +36,7 @@ struct State {
   bool mDoTrigger;
   std::string mNamePrefix;
   bool mTriggered;
+  bool mProcessing;
 
   drc::map_scans_t mData;
   int64_t mLastDataTime;
@@ -59,6 +60,7 @@ struct State {
     mDoTrigger = false;
     mNamePrefix = "cinderblock";
     mTriggered = true;
+    mProcessing = false;
   }
 
   void start() {
@@ -79,6 +81,8 @@ struct State {
       // wait for data
       std::unique_lock<std::mutex> lock(mProcessMutex);
       mCondition.wait_for(lock, std::chrono::milliseconds(100));
+      if (!mProcessing) continue;
+      mProcessing = false;
 
       // grab data
       drc::map_scans_t data;
@@ -310,6 +314,7 @@ struct State {
     }
     mBotWrapper->getTransform("head", "local", mSensorPose, iMessage->utime);
     mBotWrapper->getTransform("ground", "local", mGroundPose, iMessage->utime);
+    mProcessing = true;
     mCondition.notify_one();
     if (mDoTrigger) mTriggered = false;
   }
