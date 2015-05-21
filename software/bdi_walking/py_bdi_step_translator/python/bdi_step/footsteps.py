@@ -257,4 +257,5 @@ def encode_footstep_plan(footsteps, params):
         plan.params = params
     else:
         plan.params = drc.footstep_plan_params_t()
+    plan.iris_region_assignments = [-1 for f in footsteps]
     return plan
