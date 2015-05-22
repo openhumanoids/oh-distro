@@ -280,6 +280,7 @@ script "2.stop_clean" {
     stop cmd "InstQP";
     stop cmd "fusion";
     stop cmd "state-sync";
+    stop group "10.Driving"
     wait ms 2000;
     start cmd "atlas-off";
     start cmd "state-sync";
@@ -287,6 +288,7 @@ script "2.stop_clean" {
     start cmd "PlanEval";
     start cmd "InstQP";
     start cmd "PressureControl";
+
 }
 
 
