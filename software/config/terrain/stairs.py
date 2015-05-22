@@ -36,12 +36,14 @@ blockAngleMap = { 'A': 90, 'B': 90 }
 # support is an enum indicating foot support type
 #   0=heel-toe, 1=midfoot-toe, 2=heel-midfoot
 footstepData = [
-    [ 'left',  (0,0), (0.00, 0.00),  0 ],
-    [ 'right', (0,0), (0.00, 0.00),  0 ],
-    [ 'left',  (1,0), (-0.10, 0.00), 0 ],
-    [ 'right', (1,0), (0.00, 0.05),  0 ],
-    [ 'left',  (2,0), (0.10, -0.05), 0 ],
-    [ 'right', (2,0), (0.10, 0.10),  0 ]
+    [ 'left',  (0,0), (-0.10,  0.10),  2 ],
+    [ 'right', (0,0), (-0.10, -0.10),  2 ],
+    [ 'left',  (1,0), (-0.10,  0.10),  2 ],
+    [ 'right', (1,0), (-0.10, -0.10),  2 ],
+    [ 'left',  (2,0), (-0.10,  0.10),  2 ],
+    [ 'right', (2,0), (-0.10, -0.10),  2 ],
+    [ 'left',  (3,0), (-0.10,  0.10),  2 ],
+    [ 'right', (3,0), (-0.10, -0.10),  2 ]
 ]
 
 # where to stand, relative to front of first block
