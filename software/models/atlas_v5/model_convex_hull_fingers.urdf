@@ -1940,6 +1940,12 @@
     <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <link name="left_palm">
+    <inertial>
+      <!-- Total mass of robotiq hand from the associated urdf -->
+      <mass value="2.3002"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
     <visual>
       <geometry>
         <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/palm.obj"/>
@@ -2265,6 +2271,12 @@
     <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
   </joint>
   <link name="right_palm">
+    <inertial>
+      <!-- Total mass of robotiq hand from the associated urdf -->
+      <mass value="2.3002"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
     <visual>
       <geometry>
         <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/palm.obj"/>

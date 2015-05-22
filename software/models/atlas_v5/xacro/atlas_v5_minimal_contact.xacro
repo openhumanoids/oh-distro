@@ -2,16 +2,6 @@
   <xacro:include filename="../components/atlas_v5_minimal_contact.urdf" />
   <xacro:include filename="../../common_components/multisense_sl/multisense_sl_no_collision.urdf" />
   <xacro:include filename="./atlas_v5_common.xacro" />
-  <xacro:include filename="../../common_components/robotiq_hand_description/robotiq_hand_no_joint_no_collision.xacro" />
-
-  <!-- Set the initial hand position and orientation by changing 'rpy' and 'xyz'
-  to mach the values in your actual robot. -->
-  <xacro:robotiq_hand side="left" parent="l_hand_force_torque" reflect="1">
-    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
-  </xacro:robotiq_hand>
-  <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="1">
-    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
-  </xacro:robotiq_hand>
 
   <xacro:robotiq_camera  side_letter="l" reflect="1" parent="l_hand_force_torque" >
     <origin xyz="0.0  0.0 0.0" rpy="0.0 0  0.0"/>
