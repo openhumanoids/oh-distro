@@ -1919,7 +1919,7 @@
       },
       "name": "driving",
       "nominal_handedness": "none"
-    }
+    },
     {
       "allow_mirror": true,
       "description": "car_entry_new",
@@ -1992,6 +1992,43 @@
         "r_leg_kny": 0.7556804418563843
       },
       "name": "left_foot_pedal",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "left-foot-up",
+      "joints": {
+        "back_bkx": -0.15695978701114655,
+        "back_bky": -0.12679800391197205,
+        "back_bkz": 0.6388068795204163,
+        "l_arm_elx": 1.3439050912857056,
+        "l_arm_ely": 2.8490564823150635,
+        "l_arm_lwy": 0.08451272547245026,
+        "l_arm_mwx": 0.9923897385597229,
+        "l_arm_shx": 0.8851072192192078,
+        "l_arm_shz": 0.3496020436286926,
+        "l_arm_uwy": -0.3132677972316742,
+        "l_leg_akx": -0.06246768310666084,
+        "l_leg_aky": -0.4208126962184906,
+        "l_leg_hpx": -0.004525700584053993,
+        "l_leg_hpy": -1.612339973449707,
+        "l_leg_hpz": -0.11166538298130035,
+        "l_leg_kny": 1.9343758821487427,
+        "r_arm_elx": -1.170515775680542,
+        "r_arm_ely": 2.5890045166015625,
+        "r_arm_lwy": 0.016969474032521248,
+        "r_arm_mwx": 0.5330583453178406,
+        "r_arm_shx": -0.06782400608062744,
+        "r_arm_shz": 1.0927257537841797,
+        "r_arm_uwy": 0.7084115147590637,
+        "r_leg_akx": 0.041650716215372086,
+        "r_leg_aky": 0.15902572870254517,
+        "r_leg_hpx": 0.02410377562046051,
+        "r_leg_hpy": -0.889788806438446,
+        "r_leg_hpz": -0.6779235601425171,
+        "r_leg_kny": 0.7473242878913879
+      },
+      "name": "left-foot-up",
       "nominal_handedness": "none"
     }
   ],
