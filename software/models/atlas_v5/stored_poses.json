@@ -1945,5 +1945,37 @@
       "name": "pre drop 2",
       "nominal_handedness": "left"
     }
+  ],
+  "valve": [
+    {
+      "allow_mirror": true,
+      "description": "reach-nominal-cw",
+      "joints": {
+        "r_arm_elx": -1.1322391033172607,
+        "r_arm_ely": 0.7156288623809814,
+        "r_arm_lwy": 2.7925267219543457,
+        "r_arm_mwx": 0.3694964647293091,
+        "r_arm_shx": 0.6075436472892761,
+        "r_arm_shz": 1.1388510465621948,
+        "r_arm_uwy": 0.050673820078372955
+      },
+      "name": "reach-nominal-cw",
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true,
+      "description": "reach-nominal-ccw",
+      "joints": {
+        "r_arm_elx": -1.7671231031417847,
+        "r_arm_ely": 1.3094680309295654,
+        "r_arm_lwy": -2.7925267219543457,
+        "r_arm_mwx": 0.7431957721710205,
+        "r_arm_shx": 0.61007159948349,
+        "r_arm_shz": 0.7028921246528625,
+        "r_arm_uwy": 0.24675984680652618
+      },
+      "name": "reach-nominal-ccw",
+      "nominal_handedness": "right"
+    }
   ]
 }
