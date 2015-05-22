@@ -19,13 +19,13 @@
       "allow_mirror": false, 
       "description": "handdown",  
       "joints": {
-        "lwr_arm_0_joint": 0, 
-        "lwr_arm_1_joint": -9.047e-01, 
-        "lwr_arm_2_joint": 0, 
-        "lwr_arm_3_joint": 2.094, 
-        "lwr_arm_4_joint": 0, 
-        "lwr_arm_5_joint": 1.407, 
-        "lwr_arm_6_joint": 5.93411946e-02
+        "lwr_arm_0_joint": -1.27409032e-06, 
+        "lwr_arm_1_joint": -5.86424112e-01, 
+        "lwr_arm_2_joint": -2.04552580e-05, 
+        "lwr_arm_3_joint": 1.91990530e+00, 
+        "lwr_arm_4_joint": 8.15068779e-06, 
+        "lwr_arm_5_joint": 1.12687373e+00, 
+        "lwr_arm_6_joint": 6.06091740e-03
       }, 
       "name": "handdown", 
       "nominal_handedness": "left"
