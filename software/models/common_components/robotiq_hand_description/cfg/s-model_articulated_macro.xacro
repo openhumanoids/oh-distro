@@ -14,6 +14,12 @@ there are multiple hands then a prefix followed by an "_" is needed.
 	<xacro:s-model_finger_articulated prefix="${prefix}finger_middle_"/>
 		<!-- link list -->
 		<link name="${prefix}palm">
+		    <inertial>
+		      <!-- Total mass of robotiq hand -->
+		      <mass value="2.3002"/>
+		      <origin xyz="0 0 0"/>
+		      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+		    </inertial>
 			<visual>
 				<geometry>
 					<mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/palm.STL" />
