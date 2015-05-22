@@ -29,13 +29,8 @@ class LCM2ROS{
     boost::shared_ptr<lcm::LCM> lcm_;
     ros::NodeHandle nh_;
     ros::NodeHandle* rosnode;
-
-    void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
     ros::Publisher robot_plan_pub_;
-    void plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
-    void ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
     ros::Publisher planner_request_pub_;
-    void robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
     ros::ServiceClient robot_plan_pause_service_;
     ros::Publisher ik_request_pub_;
     ros::Publisher poses_pub_;
@@ -46,6 +41,7 @@ class LCM2ROS{
     void ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
     void posesHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::planner_request_t* msg);
     void jointNamesHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_state_t* msg);
+    void robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
 
 
 };
