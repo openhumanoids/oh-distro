@@ -36,18 +36,18 @@ blockAngleMap = { 'A': 90, 'B': 90 }
 # support is an enum indicating foot support type
 #   0=heel-toe, 1=midfoot-toe, 2=heel-midfoot
 footstepData = [
-    [ 'left',  (0,0), (-0.10,  0.10),  2 ],
-    [ 'right', (0,0), (-0.10, -0.10),  2 ],
-    [ 'left',  (1,0), (-0.10,  0.10),  2 ],
-    [ 'right', (1,0), (-0.10, -0.10),  2 ],
-    [ 'left',  (2,0), (-0.10,  0.10),  2 ],
-    [ 'right', (2,0), (-0.10, -0.10),  2 ],
-    [ 'left',  (3,0), (-0.10,  0.10),  2 ],
-    [ 'right', (3,0), (-0.10, -0.10),  2 ]
+    [ 'left',  (0,0), (-0.09,  0.13),  2 ],
+    [ 'right', (0,0), (-0.09, -0.13),  2 ],
+    [ 'left',  (1,0), (-0.09,  0.13),  2 ],
+    [ 'right', (1,0), (-0.09, -0.13),  2 ],
+    [ 'left',  (2,0), (-0.09,  0.13),  2 ],
+    [ 'right', (2,0), (-0.09, -0.13),  2 ],
+    [ 'left',  (3,0), (-0.09,  0.13),  2 ],
+    [ 'right', (3,0), (-0.09, -0.13),  2 ]
 ]
 
 # where to stand, relative to front of first block
-startingPosition = np.array([-0.5, 0, 0])
+startingPosition = np.array([-0.34, 0, 0])
 startingYaw = 0   # degrees
 
 blockColor = [0.4, 0.6, 0.4]
