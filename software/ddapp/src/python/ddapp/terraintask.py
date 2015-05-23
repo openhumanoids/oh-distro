@@ -85,6 +85,7 @@ class TerrainTask(object):
         for f in files:
             self.terrainConfigList.append(os.path.basename(f).split('.')[0])
         if len(self.terrainConfigList)>0:
+            self.terrainConfigList.sort()
             self.loadTerrainConfig(self.terrainConfigList[0])
 
     def startBlockUpdater(self):
@@ -503,6 +504,8 @@ class TerrainTask(object):
             rays2 = np.vstack((rays2,norms2))
             u,_,v = np.linalg.svd(rays2.T.dot(rays1))
             rot = u.dot(v)
+            if np.sign(np.linalg.det(rot)) < 0:
+                rot = u.dot(np.diag(np.array([1,1,-1]))).dot(v)
             correction.PostMultiply()
             correction.Translate(-mean1)
             rotTransform = transformUtils.getTransformFromAxes(rot[0,:],rot[1,:],rot[2,:])
