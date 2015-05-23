@@ -130,6 +130,7 @@ classdef DRCPlanner
             if ismethod(plan, 'toLCM')
               plan = plan.toLCM();
             end
+            plan.utime = get_timestamp_now();
             obj.lc.publish(obj.response_channels{j}, plan);
           catch e
             report = e.getReport();
