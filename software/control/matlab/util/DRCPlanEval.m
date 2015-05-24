@@ -219,21 +219,9 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function pauseIfRequested(obj)
-      % TODO: should this use sensed foot contact instead of planned contact?
       if obj.pause_state == obj.STOP_WALKING_ASAP && ~isempty(obj.qp_input)
-        have_right_foot = 0;
-        have_left_foot = 0;
-        for i=1:length(obj.qp_input.support_data)
-          % If this support is not forbidden
-          if (any(obj.qp_input.support_data(i).support_logic_map))
-            % I'm sure this can be vectorized better
-            if (obj.qp_input.support_data(i).body_id == obj.robot.foot_body_id.right)
-              have_right_foot = 1;
-            elseif (obj.qp_input.support_data(i).body_id == obj.robot.foot_body_id.left)
-              have_left_foot = 1;
-            end
-          end
-        end
+        have_right_foot = obj.contact_force_detected(obj.robot.foot_body_id.right);
+        have_left_foot = obj.contact_force_detected(obj.robot.foot_body_id.left);
         if have_right_foot && have_left_foot
           disp('Got double support, pausing now.')
           obj.pause_state = obj.PAUSE_NONE;
