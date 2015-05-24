@@ -50,5 +50,8 @@ footstepData = [
 startingPosition = np.array([-0.34, 0, 0])
 startingYaw = 0   # degrees
 
+# whether to lock lateral footstep offset
+forceZeroLateralFootstepOffset = True
+
 blockColor = [0.4, 0.6, 0.4]
 blockColorMatched = [0.5, 0.8, 0.5]
