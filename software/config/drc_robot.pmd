@@ -295,6 +295,7 @@ script "2.stop_clean" {
 script "3.Start Streaming" {
     stop cmd "PlanEval";
     start cmd "Streaming Robot Side with Driving Gains";
+    stop cmd "PressureControl";
 }
 
 script "4.Stop Streaming" {
@@ -303,4 +304,5 @@ script "4.Stop Streaming" {
     stop group "01.state_mit";
     wait ms 2000;
     start group "01.state_mit";
+    start cmd "PressureControl";
 }
