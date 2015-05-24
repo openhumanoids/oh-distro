@@ -111,10 +111,6 @@ classdef DRCPlanner
       for j = 1:length(obj.monitors)
         obj.lc.subscribe(obj.request_channels{j}, obj.monitors{j});
       end
-      status_msg = drc.system_status_t();
-      status_msg.system = drc.system_status_t.PLANNING_BASE;
-      status_msg.importance = drc.system_status_t.VERY_IMPORTANT;
-      status_msg.frequency = drc.system_status_t.LOW_FREQUENCY;
 
       req_msg = [];
       disp('Combined Planner: ready for plan requests');
@@ -130,14 +126,11 @@ classdef DRCPlanner
             if ismethod(plan, 'toLCM')
               plan = plan.toLCM();
             end
-            plan.utime = get_timestamp_now();
+            plan.utime = now() * 24 * 60 * 60;
             obj.lc.publish(obj.response_channels{j}, plan);
           catch e
             report = e.getReport();
             disp(report)
-            status_msg.utime = get_timestamp_now();
-            status_msg.value = report;
-            obj.lc.publish('SYSTEM_STATUS', status_msg);
           end
           fprintf(1, '...done\n');
         end
