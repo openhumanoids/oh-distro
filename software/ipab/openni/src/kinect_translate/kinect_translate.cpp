@@ -26,8 +26,8 @@ class rgb_tool{
 
 rgb_tool::rgb_tool(lcm::LCM* &lcm_): lcm_(lcm_){
 
-  // lcm_->subscribe( "KINECT_DATA",&rgb_tool::kintinuousHandler,this);
-  lcm::Subscription* sub =lcm_->subscribe( "KINECT_FRAME",&rgb_tool::kinectHandler,this);
+  lcm_->subscribe( "KINECT_DATA",&rgb_tool::kintinuousHandler,this);
+  // lcm::Subscription* sub =lcm_->subscribe( "KINECT_FRAME",&rgb_tool::kinectHandler,this);
   sub->setQueueCapacity(1);
 }
 
