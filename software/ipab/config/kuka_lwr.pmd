@@ -57,16 +57,20 @@ group "3.actuators" {
     }
 }
 
+group "4.mapping" {
+    cmd "kintinuous" {
+        exec = "Kintinuous -vi -vc -s 3 -df -b";
+        host = "localhost";
+    }
+}
+
 cmd "drake-designer" {
     exec = "drake-designer -lwr -c $DRC_BASE/software/config/kuka_lwr.cfg";
     host = "localhost";
 }
 
 
-cmd "kintinuous" {
-    exec = "runkin";
-    host = "localhost";
-}
+
 
 script "start" {
     start group "0.params_and_model_pub";
