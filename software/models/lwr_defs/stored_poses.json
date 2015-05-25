@@ -30,5 +30,37 @@
       "name": "handdown", 
       "nominal_handedness": "left"
     }
+  ],
+  "table clearing": [
+    {
+      "allow_mirror": false, 
+      "description": "pre drop 1",  
+      "joints": {
+        "lwr_arm_0_joint":  1.58440989, 
+        "lwr_arm_1_joint": -9.42477796e-01, 
+        "lwr_arm_2_joint": 0, 
+        "lwr_arm_3_joint": 8.75457153e-01, 
+        "lwr_arm_4_joint": 0, 
+        "lwr_arm_5_joint": -9.60021496e-01, 
+        "lwr_arm_6_joint": -5.11206927e-05
+      }, 
+      "name": "pre drop 1", 
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": false, 
+      "description": "pre drop 2",  
+      "joints": {
+        "lwr_arm_0_joint":  1.58440989, 
+        "lwr_arm_1_joint": -9.42477796e-01, 
+        "lwr_arm_2_joint": 0, 
+        "lwr_arm_3_joint": 8.75457153e-01, 
+        "lwr_arm_4_joint": 0, 
+        "lwr_arm_5_joint": -9.60021496e-01, 
+        "lwr_arm_6_joint": -5.11206927e-05
+      }, 
+      "name": "pre drop 2", 
+      "nominal_handedness": "left"
+    }
   ]
 }
