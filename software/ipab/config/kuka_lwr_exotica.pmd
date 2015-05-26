@@ -1,0 +1,77 @@
+group "0.params_and_model_pub" {
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/lwr_defs/robots/lwr_hand.urdf";
+        host = "localhost";
+    }
+
+    cmd "kuka_bridge" {
+        exec = "roslaunch drc_translators kuka_bridge.launch";
+        host = "localhost";
+    }
+
+    cmd "param_server" {
+        exec = "bot-param-server $DRC_BASE/software/config/kuka_lwr.cfg";
+        host = "localhost";
+    }
+}
+
+group "1.state" {
+    cmd "joints2frames" {
+        exec = "drc-joints2frames-kuka";
+        host = "localhost";
+    }
+
+    cmd "kuka_robot_state_publisher" {
+	exec = "ipab-state-sync-kuka";
+	host = "localhost";
+    }
+}
+
+group "2.sensors" {
+
+    cmd "kinect" {
+        exec = "kinect-openni-lcm -j -z";
+        host = "localhost";
+    }
+
+    cmd "kinect-view" {
+        exec = "kinect-glview";
+        host = "localhost";
+    }
+
+    cmd "kinect-rgb-tool" {
+        exec = "kinect-rgb-tool";
+        host = "localhost";
+    }
+}
+
+group "3.actuators" {
+    cmd "arm_schunk_sdh" {
+        exec = "roslaunch schunk_sdh schunk_sdh.launch";
+        host = "localhost";
+    }
+
+    cmd "activate_sdh_hand" {
+        exec = "rosservice call /gripper/sdh_controller/init";
+        host = "localhost";
+    }
+}
+
+cmd "drake-designer" {
+    exec = "drake-designer -lwr -exo -c $DRC_BASE/software/config/kuka_lwr.cfg";
+    host = "localhost";
+}
+
+
+cmd "kintinuous" {
+    exec = "runkin";
+    host = "localhost";
+}
+
+script "start" {
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start group "1.state";
+    start group "2.sensors";
+    start cmd "drake-designer";
+}
