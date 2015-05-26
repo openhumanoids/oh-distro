@@ -128,7 +128,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
     simulated_data_(simulated_data_),
     collision_threshold_(collision_threshold_),
     delta_threshold_(delta_threshold_){
-  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+  do {
+    botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+  } while (botparam_ == NULL);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
   
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
