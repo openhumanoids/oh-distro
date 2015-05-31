@@ -179,7 +179,9 @@ classdef StatelessFootstepPlanner
     function plan = setStepParams(plan, request)
       for j = 1:length(plan.footsteps)
         plan.footsteps(j).id = j;
-        plan.footsteps(j).walking_params = request.default_step_params;
+        if j <= length(plan.footsteps) - request.num_goal_steps
+          plan.footsteps(j).walking_params = request.default_step_params;
+        end
         plan.footsteps(j).is_in_contact = true;
       end
     end
