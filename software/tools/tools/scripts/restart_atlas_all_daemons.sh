@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # field scripts
-ssh field -t 'bash -ic "\${DRC_BASE}/software/tools/tools/scripts/restart_atlas_deputies.sh; \${DRC_BASE}/software/tools/tools/scripts/restart_atlas_field_networking.sh"'
-
 ssh field -t 'bash -ic "sudo \${DRC_BASE}/software/tools/tools/scripts/atlas_sync_time.sh"'
 
+ssh field -t 'bash -ic "\${DRC_BASE}/software/tools/tools/scripts/restart_atlas_deputies.sh; \${DRC_BASE}/software/tools/tools/scripts/restart_atlas_field_networking.sh"'
 
 # network shaper
 killall -qw drc-network-shaper
