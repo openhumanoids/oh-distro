@@ -1,7 +1,5 @@
 #!/bin/bash
 
-service ntp stop
-ntpd -gq
-service ntp start
+service ntp restart
 
 echo synchronized clock on `hostname`
