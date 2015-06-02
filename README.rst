@@ -216,10 +216,20 @@ this file automatically in their ~/.bashrc file by adding this line to
 ::
 
     source /path-to/drc/software/config/drc_environment.sh
+    source /opt/ros/indigo/setup.bash
+    source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash
 
 If you have already done this, make sure your ~/.bashrc contains the
 correct path to the drc\_environment.sh file in the drc source code
 directory that you just cloned with git.
+
+Alternatively, if you wish to source the environemt in each terminal window manually, add the following line to your ~/.bash_aliases
+
+::
+
+    alias init_drc="source ~/dev/drc/software/config/drc_environment.sh;source /opt/ros/indigo/setup.bash;source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash;"
+
+The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the fist compilation.
 
 
 Matlab Environment Setup
@@ -265,6 +275,16 @@ Run make to build externals and then the main codebase:
     make
 
 
+ROS Catkin workspace
+--------------------
+
+The catkin workspace is located in source catkin_ws/drc_translators. The workspace is compiled separately by running
+
+::
+
+    catkin_make -DCATKIN_BUILD_MODE=RelWithDebInfo
+ 
+Run this command in the worspace folder. The release mode will greatly improve performance, especially when using EXOTica. Any additional ROS packages can be either put in this folder or symlinks can be created.
 
 
 Instructions for GUROBI
