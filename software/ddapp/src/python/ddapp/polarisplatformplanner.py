@@ -323,6 +323,9 @@ class PolarisPlatformPlanner(object):
     def spawnGroundAffordance(self):
         self.terrainTask.spawnGroundAffordance()
 
+    def spawnFootplaneGroundAffordance(self):
+        self.terrainTask.spawnFootplaneGroundAffordance('right')
+
     def planArmsUp(self, stepOffDirection):
         ikPlanner = self.robotSystem.ikPlanner
         startPose = self.getPlanningStartPose()
