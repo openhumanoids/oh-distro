@@ -4,7 +4,10 @@ service ntp stop
 
 if [ "atlas0" = $(hostname) ]
 then
-    ntpd -gq
+    ntpdate 10.5.3.254
+elif [ "paladin-12" = $(hostname) ]
+then
+    ntpdate 10.5.3.254
 else
     ntpdate inter-atlas0
 fi

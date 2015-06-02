@@ -164,8 +164,11 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
             disp('Entering reactive recovery mode!');
             obj.last_plan_msg_utime = msg.utime;
             obj.reactive_recovery_planner.resetInitialization();
+            disp('initialization reset');
             obj.switchToPlan(obj.reactive_recovery_planner);
+            disp('switched to plan');
             obj.recovery_state = obj.RECOVERY_ACTIVE;
+            disp('recovery active');
           end
         end
       else

@@ -16,7 +16,8 @@ classdef QPReactiveRecoveryPlan < QPControllerPlanMatlabImplementation
       rpc = atlasUtil.propertyCache(robot);
       obj.mex_ptr = constructRecoveryMexPointer(robot.getMexModelPtr(), qstar, V.S, rpc); 
 
-      % Make sure the mex file gets loaded
+      % Make sure the mex files get loaded
+      obj.resetInitialization();
       obj.publishQPControllerInput();
     end
 
