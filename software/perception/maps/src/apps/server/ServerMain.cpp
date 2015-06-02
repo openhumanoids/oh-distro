@@ -627,11 +627,14 @@ int main(const int iArgc, const char** iArgv) {
   string laserChannel = "SCAN_FREE";
   float publishPeriod = 0;
   float defaultResolution = 0.1;
+  bool latestSwath = false;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(laserChannel, "l", "laser_channel",
           "laser channel to use in map creation");
   opt.add(publishPeriod, "p", "publish_period",
           "interval between map publications, in s (0 for none)");
+  opt.add(latestSwath, "s", "latest-swath",
+          "whether to always get latest 180-degree swath");
   opt.add(defaultResolution, "r", "resolution",
           "resolution of default contextual map, in m");
   opt.add(state.mCatalogPublishPeriod, "c", "catalog",
@@ -714,9 +717,16 @@ int main(const int iArgc, const char** iArgv) {
   request.resolution = 0.005;
   request.frequency = 1.0f/publishPeriod;
   request.quantization_max = 0.005;
-  request.time_min = -3;
-  request.time_max = 182;
-  request.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
+  if (latestSwath) {
+    request.time_mode = drc::map_request_t::ROLL_ANGLE_RELATIVE;
+    request.time_min = -190;
+    request.time_max = 0;
+  }
+  else {
+    request.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
+    request.time_min = -3;
+    request.time_max = 182;
+  }
   request.relative_location = false;
   request.num_clip_planes = 0;
   request.active = true;
