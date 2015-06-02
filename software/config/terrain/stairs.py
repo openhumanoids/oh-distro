@@ -44,6 +44,8 @@ footstepData = [
     [ 'left',  (3,0), (-0.09,  0.11),  1 ],
 ]
 
+numSteps = [-1]
+
 # where to stand, relative to front of first block
 startingPosition = np.array([-0.34, 0, 0])
 startingYaw = 0   # degrees
