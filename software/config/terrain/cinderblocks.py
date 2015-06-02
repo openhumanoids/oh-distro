@@ -2,11 +2,11 @@ import numpy as np
 
 blockName = 'cinderblock'
 blockSize = np.array([15 + 5/8.0, 15 + 3/8.0, 5 + 5/8.0]) * 0.0254 # meters
-blockTiltAngle = 15 # degrees
 
 
 # F=sloping up forward (+x), B=sloping up backward (-x),
 # R=sloping up rightward (-y), L=sloping up leftward (+y)
+# N=not sloped (flat)
 # last row is closest to robot (robot is on bottom looking up)
 # column order is left-to-right on robot (+y to -y)
 blockTypes = [
@@ -16,7 +16,7 @@ blockTypes = [
     [ 'R', 'B', 'L', 'F', 'R', 'B' ],
     [ 'B', 'L', 'F', 'R', 'B', 'L' ],
     [ 'L', 'F', 'R', 'B', 'L', 'F' ],
-    [ 'F', 'R', 'B', 'L', 'F', 'R' ]
+    [ 'F', 'R', 'B', 'L', 'F', 'R' ],
 ]
 blockTypes.reverse()
 
@@ -28,12 +28,12 @@ blockLevels = [
     [ 0, 1, 1, 1, 1, 0 ],
     [ 0, 0, 1, 1, 0, 0 ],
     [ 0, 0, 1, 1, 0, 0 ],
-    [ 0, 0, 0, 0, 0, 0 ]
+    [ 0, 0, 0, 0, 0, 0 ],
 ]
 blockLevels.reverse()
 
-# map between block types and yaw angles (degrees)
-blockAngleMap = { 'F': 180, 'B': 0, 'R': 90, 'L': 270 }
+# map between block types and (pitch,yaw) angles (degrees)
+blockAngleMap = { 'F': (15,180), 'B': (15,0), 'R': (15,90), 'L': (15,270), 'N': (0,0) }
 
 # TODO: this is just an example
 # which foot, block (row,col), offset (x,y), support
