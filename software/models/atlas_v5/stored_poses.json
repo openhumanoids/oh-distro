@@ -489,6 +489,21 @@
       },
       "name": "smash 2",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre-reach chop",
+      "joints": {
+        "l_arm_elx": 1.9762924909591675,
+        "l_arm_ely": 2.9848103523254395,
+        "l_arm_lwy": -0.6888546347618103,
+        "l_arm_mwx": -0.9797512888908386,
+        "l_arm_shx": -0.6078000664710999,
+        "l_arm_shz": 0.4649222791194916,
+        "l_arm_uwy": 1.8550715446472168
+      },
+      "name": "pre-reach chop",
+      "nominal_handedness": "left"
     }
   ],
   "drill": [
