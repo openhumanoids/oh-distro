@@ -196,10 +196,6 @@ group "10.Driving" {
         host = "base";
     }
 
-    cmd "April Tags" {
-        exec = "drc-car-tags --threads=12  --window=true --quiet";
-	host = "base";
-    }
 }
 
 group "11.Video" {
@@ -250,6 +246,11 @@ cmd "base_deputy" {
     host = "localhost";
 }
 
+cmd "April Tags" {
+    exec = "drc-car-tags --threads=12  --window=true --quiet";
+    host = "base";
+}
+
 script "0.prep" {
     start cmd "base_deputy";
     wait ms 1000;
@@ -293,6 +294,7 @@ script "2.stop_clean" {
 
 
 script "3.Start Streaming" {
+    start cmd "April Tags";
     stop cmd "PlanEval";
     start cmd "Streaming Robot Side with Driving Gains";
     stop cmd "PressureControl";
