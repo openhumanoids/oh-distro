@@ -520,8 +520,8 @@ class CapturePanel(object):
     def onGroupComboChanged(self):
 
         if str(self.ui.groupCombo.currentText()) == 'New group...':
-            groupName, ok = QtGui.QInputDialog.getText(self.ui, 'Enter new group name', 'Group name:')
-            if not ok or not groupName:
+            groupName = self.ui.messageBoxInput('Enter new group name', 'Group name:')
+            if not groupName or groupName == '':
                 self.setSelectedGroup('General')
                 return
 
@@ -614,10 +614,13 @@ class MainWindow(QtGui.QWidget):
         self.sendTrajPanel = SendEETrajPanel(self)
 
     def showWarning(self, title, message):
-        self.messageBoxWarning(title, message)
+        return self.messageBoxWarning(title, message)
 
     def showQuestion(self, title, message, buttons, defaultButton):
         return self.messageBoxQuestion(title, message, buttons, defaultButton)
+
+    def showInput(self, title, message):
+        return self.messageBoxInput(title, message)
 
     def getSettings(self):
         return QtCore.QSettings('mitdrc', 'RobotPoseGUI')
