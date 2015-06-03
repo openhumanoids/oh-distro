@@ -28,6 +28,7 @@ private:
   ros::NodeHandle* rosnode;
 
   ros::ServiceClient rosserviceclient_Emergency_Release_;
+  ros::ServiceClient rosserviceclient_Recover_;
   ros::ServiceClient rosserviceclient_Tactile_Open_;
   ros::ServiceClient rosserviceclient_Tactile_Close_;
 
@@ -40,6 +41,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   hand_command_pub_ = nh_.advertise<ipab_msgs::RobotiqCommand>("/gripper/ddapp_command", 10);
 
   rosserviceclient_Emergency_Release_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/emergency_stop");
+  rosserviceclient_Recover_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/recover");
   rosserviceclient_Tactile_Open_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/tactile_open");
   rosserviceclient_Tactile_Close_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/tactile_close");
 
@@ -85,7 +87,7 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   hand_command_pub_.publish(m);
 
   // TODO: Implement direct call of driver services
-  if (msg->do_move == 1) {
+  if (msg->do_move) {
     // Command position, force, and velocity (TODO: only position implemented right now)
 
     // TODO: implement different modes
@@ -130,6 +132,15 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
     // 0 - inactive
     // int8_t isc;
     // int16_t positionS;
+  } else if (!msg->do_move && msg->activate) {
+    // Reset / calibrate
+    std_srvs::Trigger recover_trigger;
+    if (rosserviceclient_Recover_.call(recover_trigger)) {
+      ROS_INFO("Reset hand from emergency stop");
+    } else {
+      ROS_ERROR("Could not recover");
+    }
+    return;
   } else {
     ROS_WARN("Setting modes not supported - only basic mode supported!");
   }
