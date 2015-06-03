@@ -23,7 +23,7 @@ inline void quaternion_normalize(drc::quaternion_t& q)
 class RobotStateCodec : public CustomChannelCodec
 {
   public:
-    RobotStateCodec(const std::string loopback_channel, int frequency, bool add_joint_effort);
+    RobotStateCodec(const std::string loopback_channel, int frequency, bool add_joint_effort, double key_frame_period);
         
     bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
       
@@ -135,8 +135,7 @@ class RobotStateCodec : public CustomChannelCodec
     goby::uint64 last_key_time_;
     int frequency_;
     bool add_joint_effort_;
-    
-    enum { KEY_FRAME_PERIOD = 5 };
+    double key_frame_period_;
 };
 
 
