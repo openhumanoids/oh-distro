@@ -14,11 +14,11 @@ time.sleep(5)
 
 msg = command_t()
 msg.utime = timestamp_now()
-msg.rpm = 3
+msg.rpm = 5
 msg.fps = -1
 msg.gain = -1
 msg.agc = -1
 
 lc = lcm.LCM()
 lc.publish("MULTISENSE_COMMAND", msg.encode())
-print "Publishing Multisense command to spin at 3rpm"
+print "Publishing Multisense command to spin at 5rpm"
