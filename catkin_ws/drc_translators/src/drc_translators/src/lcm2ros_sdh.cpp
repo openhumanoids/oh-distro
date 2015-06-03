@@ -13,7 +13,7 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
 #include <ipab_msgs/RobotiqCommand.h>
-#include <std_srvs/Empty.h> // TODO: replace with Trigger once it's available
+#include <std_srvs/Trigger.h>
 
 using namespace std;
 
@@ -37,7 +37,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   lcm_->subscribe("ROBOTIQ_LEFT_COMMAND",&LCM2ROS::handCommandHandler, this);
   hand_command_pub_ = nh_.advertise<ipab_msgs::RobotiqCommand>("/gripper/ddapp_command",10);
 
-  rosserviceclient_Emergency_Release_ = nh_.serviceClient<std_srvs::Empty>("/gripper/sdh_controller/emergency_stop"); // TODO: change to trigger
+  rosserviceclient_Emergency_Release_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/emergency_stop");
 
   rosnode = new ros::NodeHandle();
 }
@@ -49,9 +49,9 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
 
   // Check whether to perform an emergency release
   if (msg->emergency_release == 1) {    
-    std_srvs::Empty er_trigger; // TODO: temporary until std_srvs::Trigger is available
+    std_srvs::Trigger er_trigger;
     if (rosserviceclient_Emergency_Release_.call(er_trigger)) {
-      ROS_ERROR("Emergency release activated");
+      ROS_ERROR("Emergency release activated"); // TODO: use returned information whether successful
     } else {
       ROS_ERROR("Emergency release NOT activated");
     }
