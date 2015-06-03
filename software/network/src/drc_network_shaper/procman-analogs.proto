@@ -47,7 +47,7 @@ message PMDOrdersDiff
   required int32 reference_time = 1 [(dccl.field) = { min: 0 max: 255 }];
 
   // time difference
-  optional double utime = 2 [(dccl.field) = { min: 0 max: 7200e6 precision: -3}];
+  optional double utime = 2 [(dccl.field) = { min: 0 max: 14400e6 precision: -3}];
 
   // set to absolute value, if different
   optional string sheriff_name = 3 [(dccl.field) = { max_length: 64   } ];
@@ -73,7 +73,7 @@ message PMDInfoDiff
 
   optional int64 reference_time = 1 [(dccl.field) = { min: 0 max: 255 }];
 
-  optional double utime = 2 [(dccl.field) = { min: 0 max: 7200e6 precision: -3 }];
+  optional double utime = 2 [(dccl.field) = { min: 0 max: 14400e6 precision: -3 }];
 
 
   repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field) = { max_repeat: 100}];
