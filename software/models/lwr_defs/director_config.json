@@ -63,7 +63,6 @@
   "fixedPointFile" : "../../control/matlab/data/kuka_lwr_fp.mat",
   "postureDatabaseFile" : "./stored_poses.json",
 
-  "pelvisLink" : "Pelvis",
   "kneeJoints" : ["LeftKneeExtensor", "RightKneeExtensor"],
   "kneeJointLimits" : [-1.9,-0.6],
   "baseZJointLimits" : [-0.1, 0.1],
