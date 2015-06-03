@@ -700,14 +700,14 @@ class ValveTaskPanel(TaskUserPanel):
     def addDefaultProperties(self):
         self.params.addProperty('Hand', 1, attributes=om.PropertyAttributes(enumNames=['Left',
                                                                                        'Right']))
-        self.params.addProperty('Turn direction', 0,
+        self.params.addProperty('Turn direction', 1,
                                 attributes=om.PropertyAttributes(enumNames=['Clockwise',
                                                                             'Counter clockwise']))
         self.params.addProperty('Valve size', 0,
                                 attributes=om.PropertyAttributes(enumNames=['Large', 'Small']))
         self.params.addProperty('Base', 0,
                                 attributes=om.PropertyAttributes(enumNames=['Fixed', 'Free']))
-        self.params.addProperty('Back', 0,
+        self.params.addProperty('Back', 1,
                                 attributes=om.PropertyAttributes(enumNames=['Fixed', 'Free']))
         self._syncProperties()
 
@@ -759,7 +759,7 @@ class ValveTaskPanel(TaskUserPanel):
             addFunc(func, name='plan motion', parent=group)
             addTask(rt.CheckPlanInfo(name='check manip plan info'), parent=group)
             addFunc(v.commitManipPlan, name='execute manip plan', parent=group)
-            addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'),
+            addTask(rt.UserPromptTask(name='wait for plan execution', message='Continue when plan finishes.'),
                     parent=group)
 
         def addLargeValveTurn(parent=None):
@@ -834,11 +834,11 @@ class ValveTaskPanel(TaskUserPanel):
 
         # add valve turns
         if v.smallValve:
-            for i in range(0, 3):
+            for i in range(0, 2):
                 addSmallValveTurn()
 
         else:
-            for i in range(0, 3):
+            for i in range(0, 2):
                 addLargeValveTurn()
 
 
