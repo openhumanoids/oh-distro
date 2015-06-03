@@ -5,3 +5,9 @@
 [submodule "software/pronto"]
 	path = software/pronto
 	url = git@github.com:mitdrc/pronto.git
+[submodule "catkin_ws/drc_translators/src/exotica_json"]
+	path = catkin_ws/drc_translators/src/exotica_json
+	url = git@bitbucket.org:IPAB-SLMC/exotica_json.git
+[submodule "catkin_ws/drc_translators/src/exotica"]
+	path = catkin_ws/drc_translators/src/exotica
+	url = git@bitbucket.org:IPAB-SLMC/exotica.git
