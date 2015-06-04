@@ -314,6 +314,21 @@
       },
       "name": "arms for bracing",
       "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "hands-forward-narrow",
+      "joints": {
+        "l_arm_elx": 1.5674762725830078,
+        "l_arm_ely": 0.2104865312576294,
+        "l_arm_lwy": 0.0009588301763869822,
+        "l_arm_mwx": 0.7864048480987549,
+        "l_arm_shx": -1.307056188583374,
+        "l_arm_shz": -1.5707999467849731,
+        "l_arm_uwy": 0.08743689954280853
+      },
+      "name": "hands-forward-narrow",
+      "nominal_handedness": "left"
     }
   ],
   "door": [

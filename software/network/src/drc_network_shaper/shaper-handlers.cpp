@@ -182,9 +182,13 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
         int add_joint_efforts = false;
         bot_param_get_boolean(app.bot_param, std::string(config_prefix + "add_ers_joint_efforts").c_str(), &add_joint_efforts);
 
-        load_ers_custom_codecs(add_joint_efforts);
+        double key_frame_period = 5;
+        bot_param_get_double(app.bot_param, std::string(config_prefix + "key_frame_period").c_str(), &key_frame_period);
+        
+        goby::glog.is(goby::common::logger::VERBOSE) && goby::glog << "Key frame period for EST_ROBOT_STATE: " << key_frame_period << std::endl;
+        
+        load_ers_custom_codecs(add_joint_efforts, key_frame_period);
     }
-
     
     bool disable_robot_plan_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, std::string(config_prefix + "disable_robot_plan_custom_codecs").c_str());
     if (!disable_robot_plan_custom_codecs){    
@@ -1034,7 +1038,7 @@ void DRCShaper::load_pmd_custom_codecs()
 
 }
 
-void DRCShaper::load_ers_custom_codecs(bool add_joint_efforts)
+void DRCShaper::load_ers_custom_codecs(bool add_joint_efforts, double key_frame_period)
 {
     int ers_freq = 0;
     for(int i = 0, n = app_.resendlist().size(); i < n; ++i)
@@ -1049,7 +1053,7 @@ void DRCShaper::load_ers_custom_codecs(bool add_joint_efforts)
     glog.is(VERBOSE) && glog << "EST_ROBOT_STATE frequency is: " << ers_freq << std::endl;
     
     const std::string& ers_channel = "EST_ROBOT_STATE";
-    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK", ers_freq, add_joint_efforts)))); // 118
+    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK", ers_freq, add_joint_efforts, key_frame_period)))); // 118
     custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
 
     {

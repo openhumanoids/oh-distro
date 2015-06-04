@@ -138,7 +138,7 @@ class DRCShaper
 
     void load_custom_codecs();
     void load_pmd_custom_codecs();
-    void load_ers_custom_codecs(bool add_joint_efforts);    
+    void load_ers_custom_codecs(bool add_joint_efforts, double key_frame_period);    
     void load_robot_plan_custom_codecs();
     void load_lzma_custom_codecs();
 

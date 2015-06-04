@@ -88,7 +88,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       % the plane at a specified frame on the robot (the right foot
       % sole by default)
       if nargin < 5
-        frame_name = 'r_foot_sole';
+        frame_name = 'l_foot_sole';
       end
       sizecheck(q, [biped.getNumPositions, 1]);
       fid = biped.findFrameId(frame_name);
