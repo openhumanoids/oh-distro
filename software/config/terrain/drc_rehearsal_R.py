@@ -42,7 +42,7 @@ blockAngleMap = { 'F': (15,180), 'B': (15,0), 'R': (15,90), 'L': (15,270), 'N': 
 footstepData = [
     [ 'left',  (0,0), (-0.05, -0.07), 0 ],
     [ 'right', (0,1), (0.03, 0.10),   0 ],
-    [ 'left',  (1,0), (-0.01, -0.10), 0 ],
+    [ 'left',  (1,0), (-0.01, -0.095), 0 ],
     [ 'right', (1,1), (0.03, 0.07),   0 ],
     [ 'left',  (2,0), (-0.05, -0.10), 0 ],
     [ 'right', (2,1), (0.0, 0.08),    0 ],
@@ -56,7 +56,7 @@ footstepData = [
     [ 'right', (5,1), (0.05, 0.08),  0 ],
 ]
 
-numSteps = [5, 2, -1]
+numSteps = [6, -1]
 
 # where to stand, relative to front of first block
 startingPosition = np.array([-0.39, 0.45, 0])
