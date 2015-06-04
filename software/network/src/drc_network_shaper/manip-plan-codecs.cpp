@@ -98,6 +98,15 @@ bool ManipPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::vec
     if(!to_minimal_robot_plan_control_type_new(lcm_object, dccl_plan))
         return false;
     
+
+    const int GOAL_MAX = drc::MinimalRobotStateDiff::descriptor()->FindFieldByName("utime_diff")->options().GetExtension(dccl::field).max_repeat();
+
+    if(dccl_plan.goal_diff().utime_diff_size() > GOAL_MAX)
+    {
+        glog.is(WARN) && glog << "Plan exceeds maximum number of goals of " << GOAL_MAX << ", discarding."  << std::endl;
+        return false;
+    }    
+    
     
     std::string encoded;
     dccl_->encode(&encoded, dccl_plan);
