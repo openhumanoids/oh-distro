@@ -377,9 +377,16 @@ struct ViewWorker {
         }
 
         else if (mRequest.type == drc::map_request_t::SCAN_BUNDLE) {
+          const int kMaxNumScans = 500;
           auto bundle = localMap->getAsScanBundle(bounds);
           bundle->setId(mRequest.view_id);
-          const auto& allScans = bundle->getScans();
+          auto allScans = bundle->getScans();
+          if (allScans.size() > kMaxNumScans) {
+            std::cout << "warning: too many scans (" << allScans.size() <<
+              "), reducing to " << kMaxNumScans << std::endl;
+            allScans = std::vector<LidarScan::Ptr>
+              (allScans.begin()+allScans.size()-kMaxNumScans, allScans.end());
+          }
           std::string chan =
             mRequest.channel.size()>0 ? mRequest.channel : "MAP_SCANS";
           int totalBytes = 0;
