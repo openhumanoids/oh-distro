@@ -43,7 +43,7 @@ footstepData = [
     [ 'right', (0,1), (-0.05, 0.08),  0 ],
     [ 'left',  (0,0), (0.14, -0.11),  2 ],
     [ 'right', (1,1), (-0.02, 0.12),  0 ],
-    [ 'left',  (1,0), (0.04, -0.08),  0 ],
+    [ 'left',  (1,0), (0.04, -0.07),  0 ],
     [ 'right', (2,1), (-0.05, 0.11),  0 ],
     [ 'left',  (2,0), (0.0, -0.08),   0 ],
     [ 'right', (2,1), (0.06, 0.11),   0 ],
@@ -55,7 +55,7 @@ footstepData = [
     [ 'right', (5,1), (0.05, 0.07),   0 ],
 ]
 
-numSteps = [5, 2, -1]
+numSteps = [7, -1]
 
 # where to stand, relative to front of first block
 startingPosition = np.array([-0.39, 0.4, 0])
