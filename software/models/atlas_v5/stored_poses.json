@@ -937,6 +937,21 @@
       },
       "name": "thumb raise for press 2",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "drop-drill",
+      "joints": {
+        "r_arm_elx": -0.9731090664863586,
+        "r_arm_ely": 1.559607744216919,
+        "r_arm_lwy": -0.026940518990159035,
+        "r_arm_mwx": -0.015243981964886189,
+        "r_arm_shx": 0.014528125524520874,
+        "r_arm_shz": 0.13906902074813843,
+        "r_arm_uwy": 0.047361794859170914
+      },
+      "name": "drop-drill",
+      "nominal_handedness": "right"
     }
   ],
   "driving": [
