@@ -196,6 +196,11 @@ group "10.Driving" {
         host = "base";
     }
 
+    cmd "sa-right-high-rate" {
+        exec = "ptgrey-gige -t -f 20 -q 50 -c CAMERACHEST_RIGHT -s 12502227 -r 180 --equalize 400";
+        host = "atlas1";
+    }
+
 }
 
 group "11.Video" {
@@ -294,10 +299,12 @@ script "2.stop_clean" {
 
 
 script "3.Start Streaming" {
-    start cmd "April Tags";
     stop cmd "PlanEval";
-    start cmd "Streaming Robot Side with Driving Gains";
     stop cmd "PressureControl";
+    stop cmd "sa-right";
+    start cmd "April Tags";
+    start cmd "Streaming Robot Side with Driving Gains";
+    start cmd "sa-right-high-rate";
 }
 
 script "4.Stop Streaming" {
@@ -307,4 +314,5 @@ script "4.Stop Streaming" {
     wait ms 2000;
     start group "01.state_mit";
     start cmd "PressureControl";
+    start cmd "sa-right";
 }
