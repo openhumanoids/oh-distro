@@ -109,7 +109,7 @@ group "05.maps" {
     }
 
     cmd "maps-server" {
-        exec = "maps-server -p 0.5";
+        exec = "maps-server -p 0.25";
         host = "atlas0";
     }
 
