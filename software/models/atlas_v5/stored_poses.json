@@ -2110,6 +2110,21 @@
       },
       "name": "egress-start",
       "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "egress_start_do_not_execute",
+      "joints": {
+        "l_arm_elx": 1.3880977630615234,
+        "l_arm_ely": 3.0732100009918213,
+        "l_arm_lwy": 0.06428340077400208,
+        "l_arm_mwx": -1.6546380519866943,
+        "l_arm_shx": 1.263519525527954,
+        "l_arm_shz": -1.434218406677246,
+        "l_arm_uwy": 0.03600066155195236
+      },
+      "name": "egress_start_do_not_execute",
+      "nominal_handedness": "left"
     }
   ],
   "table clearing": [
