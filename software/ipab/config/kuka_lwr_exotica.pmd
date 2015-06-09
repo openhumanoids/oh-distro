@@ -62,6 +62,18 @@ group "3.actuators" {
     }
 }
 
+group "4.exotica" {
+    cmd "exotica_json AICO" {
+      exec = "roslaunch exotica_json IKandAICO.launch";
+      host = "localhost";
+    }
+
+    cmd "exotica_json OMPL" {
+      exec = "roslaunch exotica_json IKandOMPL.launch";
+      host = "localhost";
+    }
+}
+
 cmd "drake-designer" {
     exec = "drake-designer -lwr -exo -c $DRC_BASE/software/config/kuka_lwr.cfg";
     host = "localhost";
@@ -75,8 +87,7 @@ cmd "kintinuous" {
 
 script "start" {
     start group "0.params_and_model_pub";
+    start cmd "exotica_json AICO";
     wait ms 1000;
-    start group "1.state";
-    start group "2.sensors";
     start cmd "drake-designer";
 }
