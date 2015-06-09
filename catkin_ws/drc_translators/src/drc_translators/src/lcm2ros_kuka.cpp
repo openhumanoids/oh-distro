@@ -11,7 +11,6 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 
 #include "lcmtypes/drc/robot_plan_t.hpp"
 #include "lcmtypes/drc/plan_control_t.hpp"
-#include "lcmtypes/drc/planner_request_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
