@@ -14,7 +14,7 @@
 #include <Eigen/Dense>
 
 #include <sensor_msgs/JointState.h>
-#include <trajectory_msgs/JointTrajectory.h>
+#include <ipab_msgs/PlannerResponse.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/joint_state_t.hpp"
@@ -32,11 +32,9 @@ private:
   ros::NodeHandle node_;
 
   ros::Subscriber  traj_sub_;
-  void traj_cb(const trajectory_msgs::JointTrajectoryConstPtr& msg);
-
   ros::Subscriber  ik_sub_;
-  void ik_cb(const trajectory_msgs::JointTrajectoryConstPtr& msg);
-
+  void traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg);
+  void ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg);
 };
 
 App::App(ros::NodeHandle node_) : node_(node_)
@@ -56,18 +54,18 @@ App::~App()  {
 }
 
 
-void App::traj_cb(const trajectory_msgs::JointTrajectoryConstPtr& msg)
+void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 {
     drc::robot_plan_w_keyframes_t msg_out;
     msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-    msg_out.robot_name = std::string("lwr");
+    msg_out.robot_name = msg->robot;
     int T = msg->points.size();
     msg_out.num_states = T;
     msg_out.num_keyframes = 0;
     msg_out.num_breakpoints = 0;
     msg_out.is_keyframe.assign(T,false);
     msg_out.is_breakpoint.assign(T,false);
-    msg_out.plan_info.assign(T,0);
+    msg_out.plan_info.assign(T,msg->info);
     msg_out.num_grasp_transitions = 0;
     msg_out.num_bytes = 0;
     msg_out.plan.resize(T);
@@ -92,18 +90,18 @@ void App::traj_cb(const trajectory_msgs::JointTrajectoryConstPtr& msg)
     lcm_publish_.publish("CANDIDATE_MANIP_PLAN", &msg_out);
 }
 
-void App::ik_cb(const trajectory_msgs::JointTrajectoryConstPtr& msg)
+void App::ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 {
     drc::robot_plan_w_keyframes_t msg_out;
     msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-    msg_out.robot_name = std::string("lwr");
+    msg_out.robot_name = msg->robot;
     int T = msg->points.size();
     msg_out.num_states = T;
     msg_out.num_keyframes = 0;
     msg_out.num_breakpoints = 0;
     msg_out.is_keyframe.assign(T,false);
     msg_out.is_breakpoint.assign(T,false);
-    msg_out.plan_info.assign(T,0);
+    msg_out.plan_info.assign(T,msg->info);
     msg_out.num_grasp_transitions = 0;
     msg_out.num_bytes = 0;
     msg_out.plan.resize(T);
