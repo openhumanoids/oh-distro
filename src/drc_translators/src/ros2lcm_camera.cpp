@@ -48,8 +48,11 @@ App::App(ros::NodeHandle node_) :
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  headLeftImageSub_ = node_.subscribe("/multisense/left/image_rect_color/compressed", 1, &App::headLeftImageCallback,this);
-  //headLeftImageSub_ = node_.subscribe("/left/image_rect_color", 1, &App::headLeftImageCallback,this);
+  std::string cameraTopic;
+  ros::NodeHandle nh_("~");
+  nh_.getParam("camera_topic", cameraTopic);
+  std::cout << "Subscribing to " << cameraTopic << std::endl;
+  headLeftImageSub_ = node_.subscribe(cameraTopic, 1, &App::headLeftImageCallback,this);
 };
 
 App::~App()  {

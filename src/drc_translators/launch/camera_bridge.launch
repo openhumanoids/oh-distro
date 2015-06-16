@@ -1,0 +1,13 @@
+<launch>
+	<node name="ros2lcm_camera" type="ros2lcm_camera" pkg="drc_translators" output="screen">
+		<param name="camera_topic" type="str" value="/usb_cam_node/image_raw" />
+	</node>
+	<node pkg="usb_cam" type="usb_cam_node" name="usb_cam_node">
+		<param name="device" type="str" value="/dev/video0" />
+		<param name="pixel_format" type="str" value="mjpeg" />
+		<param name="framerate" type="int" value="10" />
+		<param name="image_width" type="int" value="960" />
+		<param name="image_height" type="int" value="720" />
+		<param name="autofocus" type="bool" value="true" />
+	</node>
+</launch>
