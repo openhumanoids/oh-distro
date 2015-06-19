@@ -182,6 +182,7 @@
   ],
 
   "pelvisLink" : "pelvis",
+  "headLink" : "head",  
   "leftFootLink" : "l_foot",
   "rightFootLink" : "r_foot",
   "kneeJoints" : ["l_leg_kny", "r_leg_kny"],

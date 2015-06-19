@@ -172,6 +172,7 @@
   "mirrorJointSignFlips" : ["WaistRotator"],
 
   "pelvisLink" : "Pelvis",
+  "headLink" : "Head",
   "leftFootLink" : "LeftUpperFoot",
   "rightFootLink" : "RightUpperFoot",
   "kneeJoints" : ["LeftKneeExtensor", "RightKneeExtensor"],
