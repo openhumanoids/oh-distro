@@ -188,6 +188,9 @@
   "kneeJointLimits" : [0.6,2.5],
   "baseZJointLimits" : [0.61, 0.92],
 
+  "drivingThrottleJoint" : "l_leg_aky",
+  "drivingSteeringJoint" : "l_arm_lwy",
+
   "handCombinations": [
       { "side" : "left",
         "handType" : "left_robotiq",

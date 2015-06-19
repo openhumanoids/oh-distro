@@ -178,6 +178,9 @@
   "kneeJointLimits" : [-1.9,-0.6],
   "baseZJointLimits" : [0.955, 1.14],
 
+  "drivingThrottleJoint" : "LeftAnkleExtensor",
+  "drivingSteeringJoint" : "RightWrist",
+
   "handCombinations": [
       { "side" : "left",
         "handType" : "left_valkyrie",
