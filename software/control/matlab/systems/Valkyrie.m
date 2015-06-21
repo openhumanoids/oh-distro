@@ -4,10 +4,10 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
       if nargin < 1 || isempty(urdf)
         %urdf = strcat(getenv('DRC_PATH'),'/models/valkyrie/V1_sim_mit_drake.urdf');
         urdf = strcat(getenv('DRC_PATH'),'/models/valkyrie/V1_sim_shells_reduced_polygon_count_mit.urdf');
-
       else
         typecheck(urdf,'char');
       end
+
       if nargin < 2
         options = struct();
       end
@@ -35,6 +35,14 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
         %obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
       end
       warning(S);
+
+      obj.left_full_support = RigidBodySupportState(obj,obj.foot_body_id.left);
+      obj.left_toe_support = RigidBodySupportState(obj,obj.foot_body_id.left,struct('contact_groups',{{'toe'}}));
+      obj.right_full_support = RigidBodySupportState(obj,obj.foot_body_id.right);
+      obj.right_toe_support = RigidBodySupportState(obj,obj.foot_body_id.right,struct('contact_groups',{{'toe'}}));
+      obj.left_full_right_full_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right]);
+      obj.left_toe_right_full_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right],struct('contact_groups',{{{'toe'},{'heel','toe'}}}));
+      obj.left_full_right_toe_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right],struct('contact_groups',{{{'heel','toe'},{'toe'}}}));
     end
 
     function obj = compile(obj)
@@ -65,12 +73,20 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
     end
   end
 
-  properties
-    fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/valkyrie_fp.mat');
-  end
-
   properties (SetAccess = protected, GetAccess = public)
     x0
+    % preconstructing these for efficiency
+    left_full_support
+    left_toe_support
+    right_full_support
+    right_toe_support
+    left_full_right_full_support
+    left_toe_right_full_support
+    left_full_right_toe_support
+  end
+
+  properties
+    fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/valkyrie_fp.mat');
     default_footstep_params = struct('nom_forward_step', 0.15,... %m
                                   'max_forward_step', 0.3,...%m
                                   'max_backward_step', 0.2,...%m
