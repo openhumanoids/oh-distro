@@ -76,7 +76,7 @@ Add the *sandbox* remote. The *sandbox* is the location where branches can be sh
     git remote add sandbox git@github.com:drcbot/drc.git
     git fetch sandbox
 
-**Instruction for Edinburgh (May 2015)**
+**Additional Instructions for Edinburgh (May 2015)**
 
 **NB: this need to be checked**
 
@@ -117,7 +117,6 @@ When pushing, push to ipab on github:
 
 When creating a pull request make sure that it is relative to ipab/drc/master and not
 mitdrc/drc/master
- 
 
 Dependencies
 ============
@@ -216,21 +215,10 @@ this file automatically in their ~/.bashrc file by adding this line to
 ::
 
     source /path-to/drc/software/config/drc_environment.sh
-    source /opt/ros/indigo/setup.bash
-    source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash
 
 If you have already done this, make sure your ~/.bashrc contains the
 correct path to the drc\_environment.sh file in the drc source code
 directory that you just cloned with git.
-
-Alternatively, if you wish to source the environemt in each terminal window manually, add the following line to your ~/.bash_aliases
-
-::
-
-    alias init_drc="source ~/dev/drc/software/config/drc_environment.sh;source /opt/ros/indigo/setup.bash;source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash;"
-
-The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the fist compilation.
-
 
 Matlab Environment Setup
 ------------------------
@@ -277,6 +265,30 @@ Run make to build externals and then the main codebase:
 
 ROS Catkin workspace
 --------------------
+
+Missing repositories (June 2015):
+
+[submodule "catkin_ws/drc_translators/src/exotica_json"]
+        path = catkin_ws/drc_translators/src/exotica_json
+        url = git@bitbucket.org:IPAB-SLMC/exotica_json.git
+[submodule "catkin_ws/drc_translators/src/exotica"]
+        path = catkin_ws/drc_translators/src/exotica
+        url = git@bitbucket.org:IPAB-SLMC/exotica.git
+
+Add the following to bashrc for IPAB's ROS Catkin workspace
+
+::
+
+    source /opt/ros/indigo/setup.bash
+    source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash
+
+Alternatively, if you wish to source the environemt in each terminal window manually, add the following line to your ~/.bash_aliases
+
+::
+
+    alias init_drc="source ~/dev/drc/software/config/drc_environment.sh;source /opt/ros/indigo/setup.bash;source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash;"
+
+The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the first compilation.
 
 The catkin workspace is located in source catkin_ws/drc_translators. The workspace is compiled separately by running
 
