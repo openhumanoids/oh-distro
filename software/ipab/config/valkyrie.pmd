@@ -57,8 +57,8 @@ group "3.plan_and_control" {
         host = "localhost";
     }
 
-    cmd "CombinedPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner.withValkyrie(); p.run();\"";
+    cmd "planner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner.withValkyrie(); p.run();\"";
        host = "localhost";
        stop_signal = 15;
     }
