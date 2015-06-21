@@ -2762,7 +2762,6 @@
     </visual>
 
     </link>
-  <frame name="r_foot_sole" xyz="0.0925 0 0.07125" rpy="0 -1.4408 0" link="RightUpperFoot"/>
     <gazebo reference="RightUpperFoot">
         <material>Gazebo/White</material>
     </gazebo>
@@ -3274,6 +3273,10 @@
 
     </link>
   <frame name="l_foot_sole" xyz="0.0925 0 -0.07125" rpy="3.1416 1.4408 0" link="LeftUpperFoot"/>
+  <frame name="r_foot_sole" xyz="0.0925 0 0.07125" rpy="0 -1.4408 0" link="RightUpperFoot"/>
+  <frame name="l_foot_toe" xyz="0.0925 0 -0.07125" rpy="3.1416 1.4408 0" link="LeftUpperFoot"/>
+  <frame name="r_foot_toe" xyz="0.0925 0 0.07125" rpy="0 -1.4408 0" link="RightUpperFoot"/>
+
     <gazebo reference="LeftUpperFoot">
         <material>Gazebo/White</material>
     </gazebo>
