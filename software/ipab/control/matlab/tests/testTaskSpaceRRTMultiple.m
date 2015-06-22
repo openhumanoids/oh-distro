@@ -5,8 +5,7 @@ function [xtraj,info,v] = testTaskSpaceRRT(which_robot, scene, options, rng_seed
 % scene = 1 % 1. reach around an capsule   2. reach to object on a table through clutter
 %
 % supported combos:
-% 3 <was working currently broken>
-% 5 and 6 (val) with scene 1
+% 3,5 and 6 (val) with scene 1
 % 6 (val) with scene 2
 
 % issues:
@@ -103,7 +102,7 @@ if (which_robot < 6)
 
   if (which_robot == 3)
     hand_to_palm_offset = [0; 0.24449999999999988; 0.011200000000000071];
-    joint_inds_r_arm = [joints.r_arm_uwy; joints.r_arm_shx; joints.r_arm_ely; joints.r_arm_elx; joints.r_arm_uwy; joints.r_arm_mwx; joints.neck_ay];
+    joint_inds_r_arm = [joints.r_arm_usy; joints.r_arm_shx; joints.r_arm_ely; joints.r_arm_elx; joints.r_arm_uwy; joints.r_arm_mwx; joints.neck_ay];
   elseif (which_robot ==5)
     hand_to_palm_offset = [0; -0.24449999999999988; 0.011200000000000071];
     joint_inds_r_arm = [joints.r_arm_shz; joints.r_arm_shx; joints.r_arm_ely; joints.r_arm_elx; joints.r_arm_uwy; joints.r_arm_mwx; joints.r_arm_lwy; joints.neck_ay];

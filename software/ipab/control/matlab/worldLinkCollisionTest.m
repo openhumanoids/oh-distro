@@ -17,10 +17,10 @@ l_larm = robot.findLinkId('l_larm');
 obstacle = RigidBodyBox([.3 .3 .4], [.55 .35 1.1125], [0 0 0]);
 robot = addGeometryToBody(robot, world_link, obstacle);
 robot = robot.compile();
-active_collision_options.body_idx = [world_link, l_larm];
+active_collision_options.body_idx = [world_link, l_larm, l_foot];
 
 v = robot.constructVisualizer();
 v.draw(0, q);
 
-phi = robot.collisionDetect(q, false, active_collision_options);
+[phi,normal,xA,xB,idxA,idxB] = robot.collisionDetect(q, false, active_collision_options);
 valid = all(phi > 0);
