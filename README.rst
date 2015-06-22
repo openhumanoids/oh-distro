@@ -355,7 +355,6 @@ This rysnc command can easily transfer logs to Virgo:
 
     rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /home/drc/logs/<logname>  <username>@virgo.csail.mit.edu:/var/www/projects/drc-logs
 
-
 Currently Unused Modules
 ========================
 
