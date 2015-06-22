@@ -275,6 +275,12 @@ Missing repositories (June 2015):
         path = catkin_ws/drc_translators/src/exotica
         url = git@bitbucket.org:IPAB-SLMC/exotica.git
 
+Required ROS packages:
+
+::
+
+    ros-indigo-tf ros-indigo-image-transport ros-indigo-tf-conversions ros-indigo-image-geometry ros-indigo-cv-bridge 
+
 Add the following to bashrc for IPAB's ROS Catkin workspace
 
 ::
