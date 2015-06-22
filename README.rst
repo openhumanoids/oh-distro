@@ -279,7 +279,7 @@ Required ROS packages:
 
 ::
 
-    ros-indigo-tf ros-indigo-image-transport ros-indigo-tf-conversions ros-indigo-image-geometry ros-indigo-cv-bridge 
+    ros-indigo-tf ros-indigo-image-transport ros-indigo-tf-conversions ros-indigo-image-geometry ros-indigo-cv-bridge ros-indigo-std-srvs
 
 Add the following to bashrc for IPAB's ROS Catkin workspace
 
