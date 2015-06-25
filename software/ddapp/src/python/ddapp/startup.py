@@ -24,6 +24,7 @@ from ddapp import debrisdemo
 from ddapp import doordemo
 from ddapp import drilldemo
 from ddapp import tabledemo
+from ddapp import mappingdemo
 from ddapp import valvedemo
 from ddapp import drivingplanner
 from ddapp import egressplanner
@@ -60,6 +61,7 @@ from ddapp import atlasdriver
 from ddapp import atlasdriverpanel
 from ddapp import multisensepanel
 from ddapp import navigationpanel
+from ddapp import mappingpanel
 from ddapp import handcontrolpanel
 from ddapp import sensordatarequestpanel
 from ddapp import tasklaunchpanel
@@ -396,6 +398,8 @@ if usePlanning:
 
     ikPlanner.addPostureGoalListener(robotStateJointController)
 
+    if 'fixedBaseArm' in drcargs.getDirectorConfig()['userConfig']:
+        ikPlanner.fixedBaseArm = True
 
     playbackPanel = playbackpanel.init(planPlayback, playbackRobotModel, playbackJointController,
                                       robotStateModel, robotStateJointController, manipPlanner)
@@ -419,7 +423,7 @@ if usePlanning:
 
     tableDemo = tabledemo.TableDemo(robotStateModel, playbackRobotModel,
                     ikPlanner, manipPlanner, footstepsDriver, atlasdriver.driver, lHandDriver, rHandDriver,
-                    perception.multisenseDriver, view, robotStateJointController)
+                    perception.multisenseDriver, view, robotStateJointController, playPlans)
 
     drillDemo = drilldemo.DrillPlannerDemo(robotStateModel, playbackRobotModel, teleopRobotModel, footstepsDriver, manipPlanner, ikPlanner,
                     lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
@@ -442,6 +446,10 @@ if usePlanning:
                     lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
                     fitDrillMultisense, robotStateJointController,
                     playPlans, showPose, cameraview, segmentationpanel)
+
+    mappingDemo = mappingdemo.MappingDemo(robotStateModel, playbackRobotModel,
+                    ikPlanner, manipPlanner, footstepsDriver, atlasdriver.driver, lHandDriver, rHandDriver,
+                    perception.multisenseDriver, view, robotStateJointController, playPlans)
 
     doorDemo = doordemo.DoorDemo(robotStateModel, footstepsDriver, manipPlanner, ikPlanner,
                                       lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
@@ -497,6 +505,13 @@ if useNavigationPanel:
 if useLoggingWidget:
     w = lcmloggerwidget.LCMLoggerWidget(statusBar=app.getMainWindow().statusBar())
     app.getMainWindow().statusBar().addPermanentWidget(w.button)
+
+
+useMappingPanel = True
+if useMappingPanel:
+    mappingPanel = mappingpanel.init(robotStateJointController, footstepsDriver)
+
+
 
 
 if useControllerRate:
@@ -612,6 +627,8 @@ if useFootContactVis:
             else:
                 robotHighlighter.dehighlightLink(linkName)
 
+        #robotStateModel.model.setLinkColor(drcargs.getDirectorConfig()['leftFootLink'], contactColor if leftInContact else noContactColor)
+        #robotStateModel.model.setLinkColor(drcargs.getDirectorConfig()['rightFootLink'], contactColor if rightInContact else noContactColor)
 
     footContactSub = lcmUtils.addSubscriber('FOOT_CONTACT_ESTIMATE', lcmdrc.foot_contact_estimate_t, onFootContact)
     footContactSub.setSpeedLimit(60)
@@ -1014,3 +1031,35 @@ if useRandomWalk:
 
 if useCourseModel:
     courseModel = coursemodel.CourseModel()
+
+if 'useKuka' in drcargs.getDirectorConfig()['userConfig']:
+    import kinectlcm
+    #kinectlcm.init()
+    imageOverlayManager.viewName = "KINECT_RGB"
+    #ikPlanner.fixedBaseArm = True
+    #showImageOverlay()
+
+
+if 'exo' in drcargs.args():
+    if (drcargs.args().exo):
+        ikPlanner.pushToMatlab = False
+        showImageOverlay()
+
+def roomMap():
+    mappingPanel.onStartMappingButton()
+    t = mappingdemo.MappingDemo(robotStateModel, playbackRobotModel,
+                    ikPlanner, manipPlanner, footstepsDriver, atlasdriver.driver, lHandDriver, rHandDriver,
+                    perception.multisenseDriver, view, robotStateJointController, playPlans)
+    t.visOnly = False
+    t.optionalUserPromptEnabled = False
+    q = t.autonomousExecuteRoomMap()
+    q.connectTaskEnded(mappingSweepEnded)
+    q.start()
+
+def mappingSweepEnded(taskQ, task):
+    if task.func_name == 'doneIndicator':
+        import time as qq
+        mappingPanel.onStopMappingButton()
+        qq.sleep(3)
+        mappingPanel.onShowMapButton()
+        print "DONE WITH MAPPING ROOM"

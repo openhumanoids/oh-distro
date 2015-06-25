@@ -44,8 +44,20 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   if ~isfield(options,'end_effector_name') || isempty(options.end_effector_name)
     options.end_effector_name = 'l_hand'; 
   end
+  if ~isfield(options,'end_effector_name_left') || isempty(options.end_effector_name_left)
+    options.end_effector_name_left = 'l_hand';
+  end
+  if ~isfield(options,'end_effector_name_right') || isempty(options.end_effector_name_right)
+    options.end_effector_name_right = 'r_hand';
+  end
   if ~isfield(options,'end_effector_pt') || isempty(options.end_effector_pt)
     options.end_effector_pt = [0; 0; 0]; 
+  end
+  if ~isfield(options,'left_foot_link') || isempty(options.left_foot_link)
+    options.left_foot_link = 'l_foot';
+  end
+  if ~isfield(options,'right_foot_link') || isempty(options.right_foot_link)
+    options.right_foot_link = 'r_foot';
   end
   if ~isfield(options,'goal_bias'),options.goal_bias = 0.1; end;
   if ~isfield(options,'n_smoothing_passes'),options.n_smoothing_passes = 5; end;
@@ -126,7 +138,7 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   end
   nq = r.getNumPositions();
 
-  active_collision_options.body_idx = setdiff(1:r.getNumBodies(),[r.findLinkId('l_foot'), r.findLinkId('r_foot')]);
+  active_collision_options.body_idx = setdiff(1:r.getNumBodies(),[r.findLinkId( options.left_foot_link ), r.findLinkId( options.right_foot_link )]);
   switch options.planning_mode
     case {'rrt_connect', 'rrt'}
       % Create task-space planning tree
@@ -287,13 +299,13 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
       delta_r_all = drakeFunction.Difference(R3,(prog.N-1)*problem.n_interp_points);
       smooth_norm = drakeFunction.euclidean.SmoothNorm(R3,1e-2);
       smooth_norm_all = compose(drakeFunction.Sum(R1,(prog.N-1)*problem.n_interp_points-1),duplicate(smooth_norm,(prog.N-1)*problem.n_interp_points-1));
-      l_hand_fcn = drakeFunction.kinematic.WorldPosition(r,'l_hand');
+      l_hand_fcn = drakeFunction.kinematic.WorldPosition(r,options.end_effector_name_left);
       l_hand_fcn_all = duplicate(l_hand_fcn,(prog.N-1)*problem.n_interp_points);
       l_hand_step_lengths = smooth_norm_all(delta_r_all(l_hand_fcn_all(q_interp_all)));
       l_hand_arc_length_cost = DrakeFunctionConstraint(-Inf,Inf, ...
         k_pts*l_hand_step_lengths);
       prog = prog.addCost(l_hand_arc_length_cost,prog.q_inds);
-      r_hand_fcn = drakeFunction.kinematic.WorldPosition(r,'r_hand');
+      r_hand_fcn = drakeFunction.kinematic.WorldPosition(r,options.end_effector_name_right);
       r_hand_fcn_all = duplicate(r_hand_fcn,(prog.N-1)*problem.n_interp_points);
       r_hand_step_lengths = smooth_norm_all(delta_r_all(r_hand_fcn_all(q_interp_all)));
       r_hand_arc_length_cost = DrakeFunctionConstraint(-Inf,Inf, ...

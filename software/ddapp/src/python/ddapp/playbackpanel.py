@@ -84,6 +84,7 @@ class PlaybackPanel(object):
         self.ui.executeButton.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ui.executeButton.connect('customContextMenuRequested(const QPoint&)', self.showExecuteContextMenu)
 
+
         self.setPlan(None)
         self.hideClicked()
 
@@ -129,7 +130,14 @@ class PlaybackPanel(object):
 
 
     def getViewMode(self):
-      return str(self.ui.viewModeCombo.currentText)
+        return str(self.ui.viewModeCombo.currentText)
+
+    def setViewMode(self, mode):
+        '''
+        Set the mode of the view widget. input arg: 'continous', 'frames', 'hidden'
+        e.g. can hide all plan playback with 'hidden'
+        '''
+        self.ui.viewModeCombo.setCurrentIndex(self.ui.viewModeCombo.findText(mode))
 
     def getPlaybackSpeed(self):
       s = str(self.ui.playbackSpeedCombo.currentText).replace('x', '')

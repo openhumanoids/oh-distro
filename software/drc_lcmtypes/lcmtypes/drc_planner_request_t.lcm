@@ -1,0 +1,11 @@
+package drc;
+
+// Message to contain planning problem
+// encoded using json
+
+struct planner_request_t
+{
+   int64_t utime;
+   string poses;
+   string constraints;
+}

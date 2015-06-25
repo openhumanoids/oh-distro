@@ -14,9 +14,11 @@
 #include <Eigen/Dense>
 
 #include <sensor_msgs/JointState.h>
+#include <trajectory_msgs/JointTrajectory.h>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/pronto/robot_state_t.hpp"
+#include "lcmtypes/drc/joint_state_t.hpp"
+#include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 
 using namespace std;
 
@@ -34,50 +36,48 @@ private:
 
 };
 
-App::App(ros::NodeHandle node_) :
-    node_(node_){
-  ROS_INFO("Initializing Translator");
-  if(!lcm_publish_.good()){
-    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+App::App(ros::NodeHandle node_) : node_(node_)
+{
+  ROS_INFO_STREAM("Initializing KUKA LWR Joint State Translator");
+  if(!lcm_publish_.good())
+  {
+      ROS_ERROR_STREAM("lcm is not good()");
   }
-
   joint_states_sub_ = node_.subscribe(string("/joint_states"), 100, &App::joint_states_cb,this);
-
-};
+}
 
 App::~App()  {
 }
 
 
-void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
+{
   int n_joints = msg->position.size();
 
-  pronto::robot_state_t msg_out;
+  drc::joint_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  msg_out.pose.translation.x = 0;  msg_out.pose.translation.y = 0;  msg_out.pose.translation.z = 0;
-  msg_out.pose.rotation.w = 1;  msg_out.pose.rotation.x = 0;  msg_out.pose.rotation.y = 0;  msg_out.pose.rotation.z = 0;
-
+  
   msg_out.joint_position.assign(n_joints , 0  );
   msg_out.joint_velocity.assign(n_joints , 0  );
   msg_out.joint_effort.assign(n_joints , 0  );
   msg_out.num_joints = n_joints;
   msg_out.joint_name= msg->name;
-  for (int i = 0; i < n_joints; i++)  {
+  for (int i = 0; i < n_joints; i++)
+  {
     msg_out.joint_position[ i ] = msg->position[ i ];
     msg_out.joint_velocity[ i ] = msg->velocity[ i ];
     msg_out.joint_effort[ i ] = msg->effort[i];
   }
 
-  lcm_publish_.publish("EST_ROBOT_STATE", &msg_out);
+  lcm_publish_.publish("KUKA_STATE", &msg_out);
 }
-
 
 int main(int argc, char **argv){
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
   new App(nh);
-  std::cout << "ros2lcm translator ready\n";
-  ROS_ERROR("ROS2LCM Translator Ready");
+  ROS_INFO_STREAM("ros2lcm KUKA lwr translator ready");
+  ROS_ERROR_STREAM("ROS2LCM KUKA LWR Joint State Translator Ready");
   ros::spin();
   return 0;
 }

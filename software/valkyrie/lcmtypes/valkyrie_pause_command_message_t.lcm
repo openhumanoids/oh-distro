@@ -1,7 +1,0 @@
-package valkyrie;
-
-struct pause_command_message_t
-{
-    int64_t  utime;
-    boolean  pause;
-}

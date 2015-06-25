@@ -86,8 +86,10 @@ class StereoOdom{
     VoEstimator* estimator_;
     void featureAnalysis();
     void updateMotion();
-    void unpack_multisense(const multisense::images_t *msg);
-    void multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);
+    void multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);
+    void multisenseLRHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);
 
     // Kinematics
     boost::shared_ptr<ModelClient> model_;
@@ -158,7 +160,7 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
   pose_initialized_=false;
   imu_counter_=0;
 
-  lcm_->subscribe( cl_cfg_.input_channel,&StereoOdom::multisenseLDHandler,this);
+  lcm_->subscribe( cl_cfg_.input_channel,&StereoOdom::multisenseHandler,this);
   lcm_->subscribe("MICROSTRAIN_INS",&StereoOdom::microstrainHandler,this);
   cout <<"StereoOdom Constructed\n";
 }
@@ -285,7 +287,46 @@ int pixel_convert_8u_rgb_to_8u_gray (uint8_t *dest, int dstride, int width,
   return 0;
 }
 
-void StereoOdom::unpack_multisense(const multisense::images_t *msg){
+
+
+
+
+void StereoOdom::multisenseHandler(const lcm::ReceiveBuffer* rbuf,
+     const std::string& channel, const  bot_core::images_t* msg){
+
+  if (!pose_initialized_){
+    return;
+  }
+
+  utime_prev_ = utime_cur_;
+  utime_cur_ = msg->utime;
+
+  // Detect the image stream and process accordingly
+  if ( (msg->image_types[0] ==  bot_core::images_t::LEFT) &&
+       (msg->image_types[1] ==  bot_core::images_t::RIGHT) ) {
+
+    multisenseLRHandler(rbuf, channel, msg);
+    vo_->doOdometry(left_buf_,right_buf_, msg->utime);
+  }else if( (msg->image_types[0] ==  bot_core::images_t::LEFT) &&
+       (msg->image_types[1] ==  bot_core::images_t::DISPARITY_ZIPPED) ) {
+
+    multisenseLDHandler(rbuf, channel, msg);
+    vo_->doOdometry(left_buf_,disparity_buf_.data(), msg->utime );
+  }else{
+    std::cout << "StereoOdom::multisenseHandler | image pairings not understood\n";
+    return;
+  }
+  updateMotion();
+
+  if(cl_cfg_.feature_analysis)
+    featureAnalysis();
+
+}
+
+
+void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
+     const std::string& channel, const  bot_core::images_t* msg){
+
   int w = msg->images[0].width;
   int h = msg->images[0].height;
 
@@ -294,22 +335,23 @@ void StereoOdom::unpack_multisense(const multisense::images_t *msg){
   }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY ){
     rgb_buf_ = (uint8_t*) msg->images[0].data.data();
   }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG ){
-    jpeg_decompress_8u_rgb ( msg->images[0].data.data(), msg->images[0].size, rgb_buf_, w, h, w*3);
+    jpeg_decompress_8u_rgb ( msg->images[0].data.data(), msg->images[0].size, rgb_buf_, w, h, w* 3);
     pixel_convert_8u_rgb_to_8u_gray(  left_buf_, w, w, h, rgb_buf_,  w*3);
   }else{
-    std::cout << "StereoOdom::unpack_multisense | image type not understood\n";
+    std::cout << "StereoOdom image type not understood\n";
+    exit(-1);
+  }
+
+  // TODO: support other modes (as in the renderer)
+  if (msg->image_types[1] == bot_core::images_t::DISPARITY_ZIPPED) {
+    unsigned long dlen = w*h*2;
+    uncompress(decompress_disparity_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
+  } else{
+    std::cout << "StereoOdom depth type not understood\n";
     exit(-1);
   }
 
   // Convert Carnegie disparity format into floating point disparity. Store in local buffer
-  // TODO: support other modes (as in the renderer)
-  if (msg->image_types[1] == multisense::images_t::DISPARITY_ZIPPED) {
-    unsigned long dlen = w*h*2 ;//msg->depth.uncompressed_size;
-    uncompress(decompress_disparity_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
-  } else{
-    std::cout << "StereoOdom::unpack_multisense | depth type not understood\n";
-    exit(-1);
-  }
   Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
   disparity_orig_temp.data = (uchar*) decompress_disparity_buf_;   // ... is a simple assignment possible?
   cv::Mat_<float> disparity_orig(h, w);
@@ -318,19 +360,49 @@ void StereoOdom::unpack_multisense(const multisense::images_t *msg){
   cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
   disparity = disparity_orig / 16.0;
 
+  return;
 }
 
-void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, 
-     const std::string& channel, const  multisense::images_t* msg){
-  utime_prev_ = utime_cur_;
-  utime_cur_ = msg->utime;
 
-  unpack_multisense(msg);
-  vo_->doOdometry(left_buf_,disparity_buf_.data(), msg->utime );
-  updateMotion();
-  if(cl_cfg_.feature_analysis)
-    featureAnalysis();
+void StereoOdom::multisenseLRHandler(const lcm::ReceiveBuffer* rbuf,
+     const std::string& channel, const  bot_core::images_t* msg){
+
+  int w = msg->images[0].width;
+  int h = msg->images[0].height;
+
+  if (msg->images[0].pixelformat != msg->images[1].pixelformat){
+    std::cout << "Pixel formats not identical, not supported\n";
+    exit(-1);
+  }
+
+  switch (msg->images[0].pixelformat) {
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
+      memcpy(left_buf_,  msg->images[0].data.data() , msg->images[0].size);
+      memcpy(right_buf_,  msg->images[1].data.data() , msg->images[1].size);
+      break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
+      // image came in as raw RGB buffer.  convert to grayscale:
+      pixel_convert_8u_rgb_to_8u_gray(  left_buf_ , w, w, h, msg->images[0].data.data(),  w*3);
+      pixel_convert_8u_rgb_to_8u_gray(  right_buf_, w, w, h, msg->images[1].data.data(),  w*3);
+      break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
+      // not sure why but the same setting seem to work for both jpeg compressed color (left) and grey (right):
+      jpeg_decompress_8u_gray(msg->images[0].data.data(), msg->images[0].size,
+                              left_buf_, w, h, w);
+      jpeg_decompress_8u_gray(msg->images[1].data.data(), msg->images[1].size,
+                              right_buf_, w, h, w);
+      break;
+    default:
+      std::cout << "Unrecognized image format\n";
+      exit(-1);
+      break;
+  }
+
+  return;
 }
+
+
+
 
 
 // Transform the Microstrain IMU orientation into the head frame:
@@ -567,8 +639,8 @@ void StereoOdom::atlasStateHandler(const lcm::ReceiveBuffer* rbuf,
 int main(int argc, char **argv){
   CommandLineConfig cl_cfg;
   cl_cfg.camera_config = "CAMERA";
-  cl_cfg.input_channel = "CAMERA_BLACKENED";
-  cl_cfg.output_signal = "POSE_BODY_ALT";
+  cl_cfg.input_channel = "CAMERA";
+  cl_cfg.output_signal = "POSE_BODY";
   cl_cfg.feature_analysis = FALSE; 
   cl_cfg.fusion_mode = 0;
   cl_cfg.verbose = false;

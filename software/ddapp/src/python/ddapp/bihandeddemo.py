@@ -242,7 +242,7 @@ class BihandedPlannerDemo(object):
         #self.affordanceUpdater  = affordanceupdater.AffordanceGraspUpdater(self.playbackRobotModel, extraModels)
 
         extraModels = [self.robotModel]
-        self.affordanceUpdater  = affordanceupdater.AffordanceGraspUpdater(self.robotModel, extraModels)
+        self.affordanceUpdater  = affordanceupdater.AffordanceGraspUpdater(self.robotModel, self.ikPlanner, extraModels)
 
         # top level switch between BDI (locked base) and MIT (moving base and back)
         self.lockBack = False
@@ -257,9 +257,9 @@ class BihandedPlannerDemo(object):
         the feet, on the ground, with z-axis up and x-axis aligned with the
         robot pelvis x-axis.
         '''
-        t1 = robotModel.getLinkFrame('l_foot')
-        t2 = robotModel.getLinkFrame('r_foot')
-        pelvisT = robotModel.getLinkFrame('pelvis')
+        t1 = robotModel.getLinkFrame( self.ikPlanner.leftFootLink )
+        t2 = robotModel.getLinkFrame( self.ikPlanner.rightFootLink )
+        pelvisT = robotModel.getLinkFrame( self.ikPlanner.pelvisLink )
 
         xaxis = [1.0, 0.0, 0.0]
         pelvisT.TransformVector(xaxis, xaxis)

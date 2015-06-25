@@ -191,8 +191,8 @@ void multisense_utils::unpack_multisense(const bot_core::images_t *msg, cv::Mat_
     //        rgb_data, msg->image.width, msg->image.height, msg->image.width* 3);
     is_rgb = true;
   }else{
-    std::cout << "multisense_utils::unpack_multisense | image type not understood\n";
-    exit(-1);
+    std::cout << "WARNING: multisense_utils::unpack_multisense | image type not understood: "<< msg->image_types[1] << "\n";
+    return;
   }
   
   // TODO: support non-zipped modes (as in the renderer)
@@ -210,8 +210,8 @@ void multisense_utils::unpack_multisense(const bot_core::images_t *msg, cv::Mat_
     uncompress(depth_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
     is_disparity=false;
   } else{
-    std::cout << "multisense_utils::unpack_multisense | depth type not understood\n";
-    exit(-1);
+    std::cout << "WARNING: multisense_utils::unpack_multisense | depth type not understood: "<< msg->image_types[1] <<"\n";
+    return;
   }
   
   unpack_multisense(depth_buf_, rgb_buf_, msg->images[0].height, msg->images[0].width, repro_matrix, 

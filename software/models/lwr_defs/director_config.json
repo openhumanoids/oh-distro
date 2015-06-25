@@ -9,8 +9,19 @@
   },
 
   "teleopJointGroups" : [
+      { "name" : "Base",
+        "joints" : [
+          "base_x",
+          "base_y",
+          "base_z",
+          "base_roll",
+          "base_pitch",
+          "base_yaw"
+          ],
+        "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
+      },
 
-      { "name" : "Arm",
+      { "name" : "Left Arm",
         "joints" : [
           "lwr_arm_0_joint",
           "lwr_arm_1_joint",
@@ -50,6 +61,13 @@
     "lwr_arm_6_joint"
   ],
   "fixedPointFile" : "../../control/matlab/data/kuka_lwr_fp.mat",
+  "postureDatabaseFile" : "./stored_poses.json",
+
+  "drivingThrottleJoint" : "lwr_arm_0_joint",
+  "drivingSteeringJoint" : "lwr_arm_1_joint",
+  "leftFootLink" : "lwr_arm_2_link",
+  "rightFootLink" : "lwr_arm_3_link",
+  "headLink" : "lwr_arm_1_link",
 
   "handCombinations": [
       { "side" : "left",
@@ -60,5 +78,8 @@
         "robotMountLink" : "sdh_hand_force_torque",
         "palmLink" : "sdh_hand_face"
       }
-  ]
+  ],
+
+  "userConfig" : ["useKuka","fixedBaseArm"]
+
 }

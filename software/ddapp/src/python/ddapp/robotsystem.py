@@ -23,6 +23,7 @@ from ddapp import planplayback
 from ddapp import playbackpanel
 from ddapp import teleoppanel
 from ddapp import viewbehaviors
+from ddapp import plannerPublisher
 
 import os
 import json
@@ -89,9 +90,10 @@ class RobotSystem(object):
 
             def getSpindleAngleFunction():
                 if (robotStateJointController.lastRobotStateMessage):
-                    index = robotStateJointController.lastRobotStateMessage.joint_name.index('hokuyo_joint')
-                    return (float(robotStateJointController.lastRobotStateMessage.utime)/(1e6),
-                        robotStateJointController.lastRobotStateMessage.joint_position[index])
+                    if ('hokuyo_joint' in robotStateJointController.lastRobotStateMessage.joint_name):
+                        index = robotStateJointController.lastRobotStateMessage.joint_name.index('hokuyo_joint')
+                        return (float(robotStateJointController.lastRobotStateMessage.utime)/(1e6),
+                            robotStateJointController.lastRobotStateMessage.joint_position[index])
                 return (0, 0)
             spindleMonitor = perception.SpindleMonitor(getSpindleAngleFunction)
             robotStateModel.connectModelChanged(spindleMonitor.onRobotStateChanged)
@@ -115,7 +117,11 @@ class RobotSystem(object):
             ikJointController.addPose('q_end', ikJointController.getPose('q_nom'))
             ikJointController.addPose('q_start', ikJointController.getPose('q_nom'))
 
-            ikServer = ik.AsyncIKCommunicator(directorConfig['urdfConfig']['ik'], directorConfig['fixedPointFile'])
+
+            if 'leftFootLink' in directorConfig:
+                ikServer = ik.AsyncIKCommunicator(directorConfig['urdfConfig']['ik'], directorConfig['fixedPointFile'], directorConfig['leftFootLink'], directorConfig['rightFootLink'])
+            else: # assume that robot has no feet e.g. fixed base arm
+	        ikServer = ik.AsyncIKCommunicator(directorConfig['urdfConfig']['ik'], directorConfig['fixedPointFile'], "","")
 
             def startIkServer():
                 ikServer.startServerAsync()
@@ -153,6 +159,9 @@ class RobotSystem(object):
             affordanceitems.MeshAffordanceItem.getMeshManager().collection.sendEchoRequest()
             affordanceManager.collection.sendEchoRequest()
             segmentation.affordanceManager = affordanceManager
+
+            plannerPub = plannerPublisher.PlannerPublisher(ikPlanner,affordanceManager)
+            ikPlanner.setPublisher(plannerPub)
 
         applogic.resetCamera(viewDirection=[-1,0,0], view=view)
 

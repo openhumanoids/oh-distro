@@ -1,0 +1,17 @@
+package openni;
+
+struct disparity_msg_t
+{
+    // acquisition time (adjusted to host clock)
+    int64_t  timestamp;
+
+    int16_t  width;
+    int16_t  height;
+
+    int16_t  pixel_offset[2];
+
+    //Assumed to be a width x height array of 16-bit unsigned
+    //integers representing the disparity of each pixel.
+    int32_t  disparity_data_nbytes;
+    byte     disparity_data[disparity_data_nbytes];
+}

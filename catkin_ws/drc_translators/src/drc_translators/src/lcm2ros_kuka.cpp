@@ -10,7 +10,12 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/plan_control_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
+#include <ipab_msgs/PlannerRequest.h>
+#include <std_srvs/Empty.h>
+#include <std_msgs/String.h>
 
 using namespace std;
 
@@ -23,15 +28,19 @@ class LCM2ROS{
     boost::shared_ptr<lcm::LCM> lcm_;
     ros::NodeHandle nh_;
     ros::NodeHandle* rosnode;
+    ros::Publisher robot_plan_pub_;
+    ros::ServiceClient robot_plan_pause_service_;
 
     void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
-    ros::Publisher robot_plan_pub_;
+    void robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
   lcm_->subscribe("COMMITTED_ROBOT_PLAN",&LCM2ROS::robotPlanHandler, this);
   robot_plan_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/kuka/robot_plan",10);
-  rosnode = new ros::NodeHandle();
+
+  lcm_->subscribe("COMMITTED_PLAN_PAUSE",&LCM2ROS::robotPlanPauseHandler, this);
+  robot_plan_pause_service_ = nh_.serviceClient<std_srvs::Empty>("stop_trajectory_execution");
 }
 
 void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg) {
@@ -56,6 +65,16 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   robot_plan_pub_.publish(m);
 }
 
+void LCM2ROS::robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg) {
+  ROS_ERROR("LCM2ROS STOP button pressed");
+
+  std_srvs::Empty srv; // TODO: change to Trigger
+  if (robot_plan_pause_service_.call(srv)) {
+    ROS_ERROR("Successfully stopped trajectory execution");
+  } else {
+    ROS_ERROR("Could not stop trajectory execution - DANGER");
+  }
+}
 
 int main(int argc,char** argv) {
   ros::init(argc,argv,"lcm2ros",ros::init_options::NoSigintHandler);

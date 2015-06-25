@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>ipab_msgs</name>
+  <version>0.0.0</version>
+  <description>The ipab_msgs package</description>
+  <maintainer email="drc@todo.todo">drc</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+
+  <export>
+  </export>
+</package>

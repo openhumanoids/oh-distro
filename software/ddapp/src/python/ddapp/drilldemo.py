@@ -177,7 +177,7 @@ class DrillPlannerDemo(object):
         #self.affordanceUpdater  = affordanceupdater.AffordanceGraspUpdater(self.playbackRobotModel, extraModels)
 
         extraModels = [self.playbackRobotModel, self.teleopRobotModel]
-        self.affordanceUpdater  = affordanceupdater.AffordanceGraspUpdater(self.robotModel, extraModels)
+        self.affordanceUpdater  = affordanceupdater.AffordanceGraspUpdater(self.robotModel, self.ikPlanner, extraModels)
 
         # These changes are all that are required to run with different combinations
         if ( self.drill.model == 'dewalt_barrel' ):
@@ -311,9 +311,9 @@ class DrillPlannerDemo(object):
         the feet, on the ground, with z-axis up and x-axis aligned with the
         robot pelvis x-axis.
         '''
-        t1 = robotModel.getLinkFrame('l_foot')
-        t2 = robotModel.getLinkFrame('r_foot')
-        pelvisT = robotModel.getLinkFrame('pelvis')
+        t1 = robotModel.getLinkFrame( self.ikPlanner.leftFootLink )
+        t2 = robotModel.getLinkFrame( self.ikPlanner.rightFootLink )
+        pelvisT = robotModel.getLinkFrame( self.ikPlanner.pelvisLink )
 
         xaxis = [1.0, 0.0, 0.0]
         pelvisT.TransformVector(xaxis, xaxis)

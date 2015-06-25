@@ -123,6 +123,35 @@ class ValvePlannerDemo(object):
     def addPlan(self, plan):
         self.plans.append(plan)
 
+    def computeGroundFrame(self, robotModel):
+        '''
+        Given a robol model, returns a vtkTransform at a position between
+        the feet, on the ground, with z-axis up and x-axis aligned with the
+        robot pelvis x-axis.
+        '''
+        t1 = robotModel.getLinkFrame( self.ikPlanner.leftFootLink )
+        t2 = robotModel.getLinkFrame( self.ikPlanner.rightFootLink )
+        pelvisT = robotModel.getLinkFrame( self.ikPlanner.pelvisLink )
+
+        xaxis = [1.0, 0.0, 0.0]
+        pelvisT.TransformVector(xaxis, xaxis)
+        xaxis = np.array(xaxis)
+        zaxis = np.array([0.0, 0.0, 1.0])
+        yaxis = np.cross(zaxis, xaxis)
+        yaxis /= np.linalg.norm(yaxis)
+        xaxis = np.cross(yaxis, zaxis)
+
+        stancePosition = (np.array(t2.GetPosition()) + np.array(t1.GetPosition())) / 2.0
+
+        footHeight = 0.0811
+
+        t = transformUtils.getTransformFromAxes(xaxis, yaxis, zaxis)
+        t.PostMultiply()
+        t.Translate(stancePosition)
+        t.Translate([0.0, 0.0, -footHeight])
+
+        return t
+
     def computeRobotStanceFrame(self, objectTransform, relativeStanceTransform):
         '''
         Given a robot model, determine the height of the ground using an XY and
@@ -346,16 +375,16 @@ class ValvePlannerDemo(object):
             constraints.append(ik.WorldFixedBodyPoseConstraint(linkName='r_foot'))
 
             p = ik.RelativePositionConstraint()
-            p.bodyNameA = 'l_foot'
-            p.bodyNameB = 'r_foot'
+            p.bodyNameA = self.ikPlanner.leftFootLink
+            p.bodyNameB = self.ikPlanner.rightFootLink
             p.positionTarget = np.array([0, 0.3, 0])
             p.lowerBound = np.array([0, 0, -np.inf])
             p.upperBound = np.array([0, 0, np.inf])
             constraints.append(p)
 
             p = ik.RelativePositionConstraint()
-            p.bodyNameA = 'r_foot'
-            p.bodyNameB = 'l_foot'
+            p.bodyNameA = self.ikPlanner.rightFootLink
+            p.bodyNameB = self.ikPlanner.leftFootLink
             p.lowerBound = np.array([0, -np.inf, -np.inf])
             p.upperBound = np.array([0, np.inf, np.inf])
             constraints.append(p)
@@ -608,8 +637,62 @@ class ValvePlannerDemo(object):
         assert side in ('left', 'right')
         return self.lhandDriver if side == 'left' else self.rhandDriver
 
-    def openPinch(self, side):
+    def openHand(self,side):
+        self.getHandDriver(side).sendCustom(0.0, 100.0, 100.0, 0)
+
+    def openPinch(self,side):
         self.getHandDriver(side).sendCustom(20.0, 100.0, 100.0, 1)
+
+    def closeHand(self, side):
+        self.getHandDriver(side).sendCustom(100.0, 100.0, 100.0, 0)
+
+    def sendNeckPitchLookDown(self):
+        self.multisenseDriver.setNeckPitch(40)
+
+    def sendNeckPitchLookForward(self):
+        self.multisenseDriver.setNeckPitch(15)
+
+    def waitForAtlasBehaviorAsync(self, behaviorName):
+        assert behaviorName in self.atlasDriver.getBehaviorMap().values()
+        while self.atlasDriver.getCurrentBehaviorName() != behaviorName:
+            yield
+
+    def printAsync(self, s):
+        yield
+        print s
+
+    def optionalUserPrompt(self, message):
+        if not self.optionalUserPromptEnabled:
+            return
+
+        yield
+        result = raw_input(message)
+        if result != 'y':
+            raise Exception('user abort.')
+
+    def requiredUserPrompt(self, message):
+        if not self.requiredUserPromptEnabled:
+            return
+
+        yield
+        result = raw_input(message)
+        if result != 'y':
+            raise Exception('user abort.')
+
+    def delay(self, delayTimeInSeconds):
+        yield
+        t = SimpleTimer()
+        while t.elapsed() < delayTimeInSeconds:
+            yield
+
+    def waitForCleanLidarSweepAsync(self):
+        currentRevolution = self.multisenseDriver.displayedRevolution
+        desiredRevolution = currentRevolution + 2
+        while self.multisenseDriver.displayedRevolution < desiredRevolution:
+            yield
+
+    def getEstimatedRobotStatePose(self):
+        return self.sensorJointController.getPose('EST_ROBOT_STATE')
 
     def getPlanningStartPose(self):
         if self.planFromCurrentRobotState:

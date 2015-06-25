@@ -15,7 +15,7 @@ class AsyncIKCommunicator():
 
     STARTUP_COMPLETED = 'STARTUP_COMPLETED'
 
-    def __init__(self, robotURDF, fixedPointFile):
+    def __init__(self, robotURDF, fixedPointFile, leftFootLink, rightFootLink):
 
         self.comm = None
         self.outputConsole = None
@@ -23,6 +23,8 @@ class AsyncIKCommunicator():
         self.restarted = False
         self.robotURDF = robotURDF
         self.fixedPointFile = fixedPointFile
+        self.leftFootLink = leftFootLink
+        self.rightFootLink = rightFootLink
 
         self.seedName = 'q_nom'
         self.nominalName = 'q_nom'
@@ -43,6 +45,8 @@ class AsyncIKCommunicator():
         commands.append("addpath([getenv('DRC_BASE'), '/software/ddapp/src/matlab'])")
         commands.append("robotURDF = [getenv('DRC_BASE'), '/%s'];" % os.path.relpath(self.robotURDF, ddapp.getDRCBaseDir()))
         commands.append("fixed_point_file = [getenv('DRC_BASE'), '/%s'];" % os.path.relpath(self.fixedPointFile, ddapp.getDRCBaseDir()))
+        commands.append("left_foot_link = '%s';" % self.leftFootLink)
+        commands.append("right_foot_link = '%s';" % self.rightFootLink)
         commands.append('runIKServer')
         commands.append('\n%------ startup end ------\n')
         return self.comm.sendCommandsAsync(commands)
@@ -241,6 +245,8 @@ class AsyncIKCommunicator():
             timeSamples += np.linspace(timeSamples[0], timeSamples[-1], ikParameters.numberOfAddedKnots + 2).tolist()
             timeSamples = np.unique(timeSamples).tolist()
 
+        assert ikParameters.rrtHand in ('left', 'right')
+        collisionEndEffectorName = ( self.handModels[0].handLinkName if ikParameters.rrtHand == 'left' else self.handModels[1].handLinkName )
 
         commands = []
         commands.append('\n%-------- runIkTraj --------\n')
@@ -248,7 +254,10 @@ class AsyncIKCommunicator():
         commands.append('{0} = [{0}; zeros(r.getNumPositions()-numel({0}),1)];'.format(poseEnd))
         commands.append('{0} = [{0}; zeros(r.getNumPositions()-numel({0}),1)];'.format(nominalPose))
         commands.append('excluded_collision_groups = struct(\'name\',{},\'tspan\',{});\n')
-        commands.append("end_effector_name = '';")
+        commands.append("end_effector_name = '%s';" % collisionEndEffectorName)
+        commands.append("end_effector_name_left = '%s';" % self.handModels[0].handLinkName)
+        if (len(self.handModels) > 1):
+            commands.append("end_effector_name_right = '%s';" % self.handModels[1].handLinkName)
         commands.append("end_effector_pt = [];")
         commands.append('default_shrink_factor = %s;' % ikParameters.quasiStaticShrinkFactor)
 
@@ -287,7 +296,11 @@ class AsyncIKCommunicator():
             commands.append('options.t_max = %s;' % ikParameters.maxPlanDuration)
             commands.append('options.excluded_collision_groups = excluded_collision_groups;')
             commands.append('options.end_effector_name = end_effector_name;')
+            commands.append('options.end_effector_name_left = end_effector_name_left;')
+            commands.append('options.end_effector_name_right = end_effector_name_right;')
             commands.append('options.end_effector_pt = end_effector_pt;')
+            commands.append('options.left_foot_link = left_foot_link;')
+            commands.append('options.right_foot_link = right_foot_link;')
             commands.append("options.frozen_groups = %s;" % self.getFrozenGroupString())
             commands.append('options.RRTMaxEdgeLength = %s;' % ikParameters.rrtMaxEdgeLength)
             commands.append('options.RRTGoalBias = %s;' % ikParameters.rrtGoalBias)

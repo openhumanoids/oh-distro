@@ -49,6 +49,7 @@ set(python_files
   ddapp/ikconstraints.py
   ddapp/ikparameters.py
   ddapp/ikplanner.py
+  ddapp/ikconstraintencoder.py
   ddapp/__init__.py
   ddapp/ioUtils.py
   ddapp/irisUtils.py
@@ -61,6 +62,8 @@ set(python_files
   ddapp/lcmobjectcollection.py
   ddapp/lcmspy.py
   ddapp/lcmUtils.py
+  ddapp/mappingdemo.py
+  ddapp/mappingpanel.py
   ddapp/mapsregistrar.py
   ddapp/matlab.py
   ddapp/meshmanager.py
@@ -118,6 +121,7 @@ set(python_files
   ddapp/walkingtestdemo.py
   ddapp/wristforcetorquevisualizer.py
   ddapp/kinectlcm.py
+  ddapp/plannerPublisher.py
 
 
   ddapp/macros/segmentation_view/ortho_x.py

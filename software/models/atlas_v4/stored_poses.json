@@ -775,7 +775,7 @@
   "table clearing": [
     {
       "allow_mirror": true, 
-      "description": "pre drop 1", 
+      "description": "pre drop 1 a", 
       "joints": {
         "l_arm_elx": 0.7594979405403137, 
         "l_arm_ely": 2.635584831237793, 
@@ -789,7 +789,7 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "pre drop 2", 
+      "description": "pre drop 2 a", 
       "joints": {
         "l_arm_elx": 1.047195553779602, 
         "l_arm_ely": 2.348259210586548, 
@@ -797,6 +797,34 @@
         "l_arm_shx": -0.6505333185195923, 
         "l_arm_shz": -1.4518001079559326, 
         "l_arm_uwy": 1.5549284219741821
+      }, 
+      "name": "pre drop 2", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pre drop 1", 
+      "joints": {
+        "l_arm_elx": 1.8236910104751587, 
+        "l_arm_ely": 1.812697410583496, 
+        "l_arm_mwx": 0.6573798060417175, 
+        "l_arm_shx": 0.6188951730728149, 
+        "l_arm_shz": -0.4233315885066986, 
+        "l_arm_uwy": 0.40526512265205383
+      }, 
+      "name": "pre drop 1", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pre drop 2", 
+      "joints": {
+        "l_arm_elx": 1.371302604675293, 
+        "l_arm_ely": 2.2053961753845215, 
+        "l_arm_mwx": 1.0744272470474243, 
+        "l_arm_shx": 0.408407986164093, 
+        "l_arm_shz": -1.5707999467849731, 
+        "l_arm_uwy": 0.9519017934799194
       }, 
       "name": "pre drop 2", 
       "nominal_handedness": "left"

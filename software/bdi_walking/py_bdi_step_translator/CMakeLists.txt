@@ -11,3 +11,5 @@ find_package(PythonInterp REQUIRED)
 pods_install_python_packages(${CMAKE_CURRENT_SOURCE_DIR}/python)
 
 pods_install_python_script(drc-bdi-step-translator bdi_step.main)
+
+pods_install_python_script(drc-ihmc-step-translator bdi_step.main_ihmc)
