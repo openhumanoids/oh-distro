@@ -95,3 +95,6 @@ target_link_libraries(ros2lcm_kinect ${catkin_LIBRARIES} z)
 add_dependencies(ros2lcm_kinect ipab_msgs_generate_messages_cpp ihmc_msgs_generate_messages_cpp)
 pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-core eigen3 image_io_utils opencv)
 
+# add_executable(lcm2ros_botframes src/lcm2ros_botframes.cpp)
+# target_link_libraries(lcm2ros_botframes ${catkin_LIBRARIES})
+# pods_use_pkg_config_packages(lcm2ros_botframes lcm bot2-core)
