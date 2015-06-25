@@ -87,8 +87,8 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg,string channel ){
   if (!compress_images){
     lcm_img.pixelformat =bot_core::image_t::PIXEL_FORMAT_RGB;
     lcm_img.size = isize;
-    cv::cvtColor(mat, mat, CV_RGB2BGR);
-    // cv::cvtColor(mat, mat, CV_BGR2RGB);
+    cv::cvtColor(mat, mat, CV_RGB2BGR); // TODO: expose this as a param
+    //cv::cvtColor(mat, mat, CV_BGR2RGB);
     lcm_img.data.resize(mat.step*mat.rows);
     std::copy(mat.data, mat.data + mat.step*mat.rows,
                 lcm_img.data.begin());
@@ -97,6 +97,7 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg,string channel ){
     params.push_back(cv::IMWRITE_JPEG_QUALITY);
     params.push_back( 90 );
 
+    cv::cvtColor(mat, mat, CV_BGR2RGB); // wolfgang put this in to flip colors of webcam - TODO: we should do this via a param flag
     cv::imencode(".jpg", mat, lcm_img.data, params);
     lcm_img.size = lcm_img.data.size();
     lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
