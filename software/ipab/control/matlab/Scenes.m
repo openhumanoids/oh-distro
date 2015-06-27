@@ -346,7 +346,7 @@ classdef Scenes
     
     function constraints = addGoalConstraint(options, robot)
       hand = Scenes.getGraspingHand(options, robot);
-      ref_frame = [eye(3) Scenes.getTargetObjPos(options)'; 0 0 0 1];
+      goalFrame = [eye(3) Scenes.getTargetObjPos(options)'; 0 0 0 1];
       if strcmp(options.graspingHand, 'right')
         frameRotation = -1;
       else
@@ -370,10 +370,14 @@ classdef Scenes
           %                     trans_mat = [eye(3) -point_in_link_frame; [0 0 0 1]];
         case 'val'
           goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([-pi/2 0 0 ]'), 10*pi/180, [1.0, 1.0]);
+          goalEulerConstraint = WorldEulerConstraint(robot, hand, [-pi/2;0; -pi], [-pi/2; 0; pi]);
       end
-      goalPosConstraint = WorldPositionInFrameConstraint(robot, hand, point_in_link_frame, ref_frame,...
-        lower_bounds, upper_bounds, [1.0, 1.0]);
-      constraints = {goalPosConstraint, goalQuatConstraint};
+%       goalPosConstraint = WorldPositionInFrameConstraint(robot, hand, point_in_link_frame, goalFrame,...
+%         lower_bounds, upper_bounds, [1.0, 1.0]);
+      goalDistConstraint = Point2PointDistanceConstraint(robot, hand, robot.findLinkId('world'), point_in_link_frame, goalFrame(1:3, 4), 0, 0);
+%       constraints = {goalPosConstraint, goalQuatConstraint};
+      constraints = {goalDistConstraint, goalEulerConstraint};
+      
       
       %             drawFrame(ref_frame, 'Goal Frame')
       %             drawFrame(ref_frame*rot_mat*trans_mat, 'Goal Offset Frame');
