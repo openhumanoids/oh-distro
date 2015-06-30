@@ -9,7 +9,7 @@ function parCapabilityMap(options)
   
   if ~isfield(options,'diameter'), options.diameter = 0.05; end; 
   if ~isfield(options,'nPointsPerSphere'), options.nPointsPerSphere = 50; end;
-  if ~isfield(options,'nSamples'), options.nSamples = 100000; end;
+  if ~isfield(options,'nSamples'), options.nSamples = 1e6; end;
   if ~isfield(options,'nOrient'), options.nOrient = 5; end;
   if ~isfield(options,'angTolerance'), options.angTolerance = 1*pi/180; end;
   if ~isfield(options,'posTolerance'), options.posTolerance = 0.01; end;
