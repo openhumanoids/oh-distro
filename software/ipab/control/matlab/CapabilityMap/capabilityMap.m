@@ -51,7 +51,6 @@ function [map, options] = capabilityMap(options)
     v = r.constructVisualizer();
   end
   q = zeros(r.num_positions, 1);
-  v.draw(0,q)
   kinsol = r.doKinematics(q, [], options);
   palm = r.findLinkId('RightPalm');
   shoulder = r.findLinkId('RightShoulderAdductor');
