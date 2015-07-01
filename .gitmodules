@@ -5,3 +5,6 @@
 [submodule "software/pronto"]
 	path = software/pronto
 	url = git@github.com:mitdrc/pronto.git
+[submodule "software/ddapp"]
+	path = software/ddapp
+	url = git@github.com:RobotLocomotion/director.git

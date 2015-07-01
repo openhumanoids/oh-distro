@@ -14,7 +14,7 @@ network
 tools
 control
 bdi_walking
-ddapp
+ddapp/distro/pods/drc
 
 #viewer-trials
 
