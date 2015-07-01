@@ -108,7 +108,7 @@ endif()
 # PointCloudLibraryPlugin
 ExternalProject_Add(PointCloudLibraryPlugin
   GIT_REPOSITORY https://github.com/patmarion/PointCloudLibraryPlugin.git
-  GIT_TAG filters-library
+  GIT_TAG 8599fd0
   INSTALL_COMMAND ""
   CMAKE_CACHE_ARGS
     ${DRCExternals_DEFAULT_ARGS}
