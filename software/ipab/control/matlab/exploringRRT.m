@@ -22,8 +22,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
   if ~isfield(options,'scene'), options.scene = 1; end;
-  if ~isfield(options,'model'), options.model = 'v4'; end;
-  if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
+  if ~isfield(options,'model'), options.model = 'val'; end;
+  if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'costType'), options.costType = 'length'; end;
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
@@ -236,9 +236,10 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     case 'rrt*'
       [TA, info, cost, q_path] = TA.rrtStar(x_start, x_goal, options);
     case 'multiRRT'
+      load([fileparts(which('exploringRRT')) '/CapabilityMap/bestPos.mat'])
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem([TA, TB, TC, TD], [x_start, x_goal, xStartC, xStartD]);
+          multiTree = MultipleTreeProblem([TA, TB, TC, TD], [x_start, x_goal, xStartC, xStartD], 'bestpos', position);
         case 3
           multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC]);
         case 2
