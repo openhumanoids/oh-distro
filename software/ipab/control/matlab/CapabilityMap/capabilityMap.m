@@ -9,7 +9,7 @@ function [map, options] = capabilityMap(options)
   % PARAMETERS  
   if ~isfield(options,'diameter'), options.diameter = 0.05; end;
   if ~isfield(options,'nPointsPerSphere'), options.nPointsPerSphere = 50; end;
-  if ~isfield(options,'nSamples'), options.nSamples = 100; end;
+  if ~isfield(options,'nSamples'), options.nSamples = 10; end;
   if ~isfield(options,'nOrient'), options.nOrient = 22; end;
   if ~isfield(options,'angTolerance'), options.angTolerance = 1*pi/180; end;
   if ~isfield(options,'posTolerance'), options.posTolerance = 0.01; end;
@@ -21,8 +21,7 @@ function [map, options] = capabilityMap(options)
   posTolerance = options.posTolerance;
   
   options.floating = false;
-  options.use_mex = false;
-  options.rotation_type = 0;
+  options.rotation_type = 2;
   
   %Use complete model to compute arm length
   
@@ -39,9 +38,9 @@ function [map, options] = capabilityMap(options)
   
   shoulder = r.findLinkId('RightShoulderAdductor');
   palm = r.findLinkId('RightPalm');
-  shoulderT = cell2mat(kinsol.T(shoulder));
-  palmT = cell2mat(kinsol.T(palm));
-  distance = sqrt(sum((shoulderT(1:3,4)-palmT(1:3,4)).^2));
+  shoulderPos = r.forwardKin(kinsol, shoulder, [0;0;0], options);
+  palmPos = r.forwardKin(kinsol, palm, [0;0;0], options);
+  distance = sqrt(sum((shoulderPos-palmPos).^2));
   
   %Use an arm-only robot for the computation  
   
@@ -54,8 +53,8 @@ function [map, options] = capabilityMap(options)
   kinsol = r.doKinematics(q, [], options);
   palm = r.findLinkId('RightPalm');
   shoulder = r.findLinkId('RightShoulderAdductor');
-  shoulderT = cell2mat(kinsol.T(shoulder));
-%   drawTreePoints([shoulderT(1:3,4); rotmat2quat(shoulderT(1:3,1:3))], 'frame', true);
+  shoulderPose = r.forwardKin(kinsol, shoulder, [0;0;0], options);
+%   drawTreePoints(shoulderPose, 'frame', true);
   
   % Workspace discretization
   nSphPerEdge = 2*ceil(distance/diameter);
@@ -90,6 +89,9 @@ function [map, options] = capabilityMap(options)
   ikoptions = ikoptions.setQ(Q);
   ikoptions = ikoptions.setMajorOptimalityTolerance(1e-3);
   
+  options.rotation_type = 0;
+  
+  global IKTimes
   for sample = 1:nSamples
     fprintf('Sample %d of %d\n', sample, nSamples)
     q = r.joint_limit_min + (r.joint_limit_max-r.joint_limit_min).*rand(r.num_positions,1);
