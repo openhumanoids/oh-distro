@@ -7,12 +7,13 @@ classdef MultipleTreeProblem
     status
     mergingThreshold
     iterations
+    bestPos
   end
   
   methods
     
     function obj = MultipleTreeProblem(trees, startPoints, varargin)
-      opt = struct('mergingthreshold', 0.2);
+      opt = struct('mergingthreshold', 0.2, 'bestpos', [0;0;0]);
       optNames = fieldnames(opt);
       nArgs = length(varargin);
       if round(nArgs/2)~=nArgs/2
@@ -32,6 +33,7 @@ classdef MultipleTreeProblem
       obj.nTrees = numel(trees);
       obj.status = Status.EXPLORING;
       obj.mergingThreshold = opt.mergingthreshold;
+      obj.bestPos = opt.bestpos;
     end
     
     function [obj, info, cost, qPath, times] = rrt(obj, xStart, xGoal, options)
@@ -47,6 +49,8 @@ classdef MultipleTreeProblem
       defaultOptions.visualize = true;
       defaultOptions.firstFeasibleTraj = false;
       options = applyDefaults(options, defaultOptions);
+      
+      q = obj.findGoalPose();
       
       [~, startTree] = ismember(xStart', obj.startPoints', 'rows');
       [~, goalTree] = ismember(xGoal', obj.startPoints', 'rows');
@@ -224,6 +228,22 @@ classdef MultipleTreeProblem
           end
         end
       end
+    end
+    
+    function q = findGoalPose(obj)
+      r = obj.trees(1).trees{2}.rbm;
+      kinsol = r.doKinematics(obj.startPoints(8:end, 1));
+      sh = r.findLinkId('RightShoulderAdductor');
+      tr = r.findLinkId('Trunk');
+      options.rotation_type = 2;
+      shPose = r.forwardKin(kinsol, sh, [0;0;0], options);
+      trPose = r.forwardKin(kinsol, tr, [0;0;0], options);
+      tr2sh = quat2rotmat(trPose(4:end))*(shPose(1:3)-trPose(1:3));
+      point = quat2rotmat(trPose(4:end))*obj.bestPos + tr2sh;
+      constraint = WorldPositionConstraint(r, tr, point, obj.startPoints(1:3, 2), obj.startPoints(1:3, 2));
+      [q, info, infeasible_constraints] = obj.trees(1).trees{2}.solveIK(obj.startPoints(8:end, 2), obj.startPoints(8:end, 2), {constraint});
+      v = r.constructVisualizer();
+      v.draw(0, q);
     end
     
   end
