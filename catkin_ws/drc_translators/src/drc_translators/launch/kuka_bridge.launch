@@ -1,7 +1,0 @@
-<launch>
-  <node name="lcm2ros_kuka" pkg="drc_translators" type="lcm2ros_kuka" output="screen" />
-  <node name="ros2lcm_kuka" pkg="drc_translators" type="ros2lcm_kuka" output="screen" />
-
-  <node name="ros2lcm_sdh" pkg="drc_translators" type="ros2lcm_sdh" output="screen" />
-  <node name="lcm2ros_sdh" pkg="drc_translators" type="lcm2ros_sdh" output="screen" />
-</launch>

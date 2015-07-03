@@ -1,8 +1,0 @@
-<launch>
-  <node name="ros2lcm_ihmc" type="ros2lcm_ihmc" pkg="drc_translators" output="screen" args="mode_state_estimation" >
-                <remap from="/multisense/joint_states" to="/joint_states" />
-                <remap from="/multisense/lidar_scan" to="/lidar_scan" />
-  </node>
-  <node name="ros2lcm_stereo" type="ros2lcm_stereo" pkg="drc_translators" output="screen">
-  </node>
-</launch>
