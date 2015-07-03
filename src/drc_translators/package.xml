@@ -60,6 +60,11 @@
   <build_depend>ihmc_msgs</build_depend>
   <run_depend>ihmc_msgs</run_depend>
 
+  <build_depend>ipab_lwr_msgs</build_depend>
+  <run_depend>ipab_lwr_msgs</run_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>geometry_msgs</run_depend>
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
