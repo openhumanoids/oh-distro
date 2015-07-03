@@ -1,65 +1,217 @@
 {
   "General": [
     {
-      "allow_mirror": false, 
-      "description": "arm up pregrasp", 
+      "allow_mirror": false,
+      "description": "arm up pregrasp",
       "joints": {
-        "lwr_arm_0_joint": 0, 
-        "lwr_arm_1_joint": 0, 
-        "lwr_arm_2_joint": 0, 
-        "lwr_arm_3_joint": 1.5707, 
-        "lwr_arm_4_joint": 0, 
-        "lwr_arm_5_joint": -0.960019767, 
+        "lwr_arm_0_joint": 0,
+        "lwr_arm_1_joint": 0,
+        "lwr_arm_2_joint": 0,
+        "lwr_arm_3_joint": 1.5707,
+        "lwr_arm_4_joint": 0,
+        "lwr_arm_5_joint": -0.960019767,
         "lwr_arm_6_joint": 0
-      }, 
-      "name": "arm up pregrasp", 
+      },
+      "name": "arm up pregrasp",
       "nominal_handedness": "left"
-    }, 
+    },
     {
-      "allow_mirror": false, 
-      "description": "handdown", 
+      "allow_mirror": false,
+      "description": "handdown",
       "joints": {
-        "lwr_arm_0_joint": -1.27409032e-06, 
-        "lwr_arm_1_joint": -0.586424112, 
-        "lwr_arm_2_joint": -2.0455258e-05, 
-        "lwr_arm_3_joint": 1.9199053, 
-        "lwr_arm_4_joint": 8.15068779e-06, 
-        "lwr_arm_5_joint": 1.12687373, 
+        "lwr_arm_0_joint": -1.27409032e-06,
+        "lwr_arm_1_joint": -0.586424112,
+        "lwr_arm_2_joint": -2.0455258e-05,
+        "lwr_arm_3_joint": 1.9199053,
+        "lwr_arm_4_joint": 8.15068779e-06,
+        "lwr_arm_5_joint": 1.12687373,
         "lwr_arm_6_joint": 0.0060609174
-      }, 
-      "name": "handdown", 
+      },
+      "name": "handdown",
       "nominal_handedness": "left"
     }
-  ], 
+  ],
+  "roomMapping": [
+    {
+      "allow_mirror": true,
+      "description": "p1_down",
+      "joints": {
+        "lwr_arm_0_joint": 0.5815510749816895,
+        "lwr_arm_1_joint": 0.7833104133605957,
+        "lwr_arm_2_joint": 1.021017578750616e-05,
+        "lwr_arm_3_joint": 1.57499361038208,
+        "lwr_arm_4_joint": 0.017695963382720947,
+        "lwr_arm_5_joint": -1.709125280380249,
+        "lwr_arm_6_joint": 2.7262043658993207e-05
+      },
+      "name": "p1_down",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p1_up",
+      "joints": {
+        "lwr_arm_0_joint": 0.5815510749816895,
+        "lwr_arm_1_joint": 0.783312976360321,
+        "lwr_arm_2_joint": 1.021017578750616e-05,
+        "lwr_arm_3_joint": 1.574975609779358,
+        "lwr_arm_4_joint": 0.01793118193745613,
+        "lwr_arm_5_joint": -0.7999642491340637,
+        "lwr_arm_6_joint": 2.7262043658993207e-05
+      },
+      "name": "p1_up",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p2_up",
+      "joints": {
+        "lwr_arm_0_joint": 0.33231380581855774,
+        "lwr_arm_1_joint": 0.78330397605896,
+        "lwr_arm_2_joint": 1.021017578750616e-05,
+        "lwr_arm_3_joint": 1.57499361038208,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -0.7999948859214783,
+        "lwr_arm_6_joint": 2.7262043658993207e-05
+      },
+      "name": "p2_up",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p2_down",
+      "joints": {
+        "lwr_arm_0_joint": 0.33231639862060547,
+        "lwr_arm_1_joint": 0.7832937836647034,
+        "lwr_arm_2_joint": 1.021017578750616e-05,
+        "lwr_arm_3_joint": 1.5749949216842651,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -1.6965570449829102,
+        "lwr_arm_6_joint": 2.7262043658993207e-05
+      },
+      "name": "p2_down",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p3_down",
+      "joints": {
+        "lwr_arm_0_joint": 0.011870438233017921,
+        "lwr_arm_1_joint": 0.7832937836647034,
+        "lwr_arm_2_joint": 1.021017578750616e-05,
+        "lwr_arm_3_joint": 1.57499361038208,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -1.6965585947036743,
+        "lwr_arm_6_joint": 2.8972464860999025e-05
+      },
+      "name": "p3_down",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p3_up",
+      "joints": {
+        "lwr_arm_0_joint": 0.011871712282299995,
+        "lwr_arm_1_joint": 0.783312976360321,
+        "lwr_arm_2_joint": 1.021017578750616e-05,
+        "lwr_arm_3_joint": 1.5749949216842651,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -0.7915852069854736,
+        "lwr_arm_6_joint": 2.8972464860999025e-05
+      },
+      "name": "p3_up",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p4_up",
+      "joints": {
+        "lwr_arm_0_joint": -0.5281418561935425,
+        "lwr_arm_1_joint": 0.783312976360321,
+        "lwr_arm_2_joint": 1.021017578750616e-05,
+        "lwr_arm_3_joint": 1.5749949216842651,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -0.7915852069854736,
+        "lwr_arm_6_joint": 2.8972464860999025e-05
+      },
+      "name": "p4_up",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p4_down",
+      "joints": {
+        "lwr_arm_0_joint": -0.5281418561935425,
+        "lwr_arm_1_joint": 0.7832937836647034,
+        "lwr_arm_2_joint": 1.1484266906336416e-05,
+        "lwr_arm_3_joint": 1.5749808549880981,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -1.6923538446426392,
+        "lwr_arm_6_joint": 2.8972464860999025e-05
+      },
+      "name": "p4_down",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p5_down",
+      "joints": {
+        "lwr_arm_0_joint": -1.0859392881393433,
+        "lwr_arm_1_joint": 0.7832937836647034,
+        "lwr_arm_2_joint": 1.2775810318998992e-05,
+        "lwr_arm_3_joint": 1.5749808549880981,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -1.6923503875732422,
+        "lwr_arm_6_joint": 2.8972464860999025e-05
+      },
+      "name": "p5_down",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "p5_up",
+      "joints": {
+        "lwr_arm_0_joint": -1.0859379768371582,
+        "lwr_arm_1_joint": 0.783312976360321,
+        "lwr_arm_2_joint": 1.4049900528334547e-05,
+        "lwr_arm_3_joint": 1.5749794244766235,
+        "lwr_arm_4_joint": 0.017794137820601463,
+        "lwr_arm_5_joint": -0.800015389919281,
+        "lwr_arm_6_joint": 2.8972464860999025e-05
+      },
+      "name": "p5_up",
+      "nominal_handedness": "left"
+    }
+  ],
   "table clearing": [
     {
-      "allow_mirror": false, 
-      "description": "pre drop 1", 
+      "allow_mirror": false,
+      "description": "pre drop 1",
       "joints": {
-        "lwr_arm_0_joint": 1.58440989, 
-        "lwr_arm_1_joint": -0.942477796, 
-        "lwr_arm_2_joint": 0, 
-        "lwr_arm_3_joint": 0.875457153, 
-        "lwr_arm_4_joint": 0, 
-        "lwr_arm_5_joint": -0.960021496, 
+        "lwr_arm_0_joint": 1.58440989,
+        "lwr_arm_1_joint": -0.942477796,
+        "lwr_arm_2_joint": 0,
+        "lwr_arm_3_joint": 0.875457153,
+        "lwr_arm_4_joint": 0,
+        "lwr_arm_5_joint": -0.960021496,
         "lwr_arm_6_joint": -5.11206927e-05
-      }, 
-      "name": "pre drop 1", 
+      },
+      "name": "pre drop 1",
       "nominal_handedness": "left"
-    }, 
+    },
     {
-      "allow_mirror": false, 
-      "description": "pre drop 2", 
+      "allow_mirror": false,
+      "description": "pre drop 2",
       "joints": {
-        "lwr_arm_0_joint": 1.58440989, 
-        "lwr_arm_1_joint": -0.942477796, 
-        "lwr_arm_2_joint": 0, 
-        "lwr_arm_3_joint": 0.875457153, 
-        "lwr_arm_4_joint": 0, 
-        "lwr_arm_5_joint": -0.960021496, 
+        "lwr_arm_0_joint": 1.58440989,
+        "lwr_arm_1_joint": -0.942477796,
+        "lwr_arm_2_joint": 0,
+        "lwr_arm_3_joint": 0.875457153,
+        "lwr_arm_4_joint": 0,
+        "lwr_arm_5_joint": -0.960021496,
         "lwr_arm_6_joint": -5.11206927e-05
-      }, 
-      "name": "pre drop 2", 
+      },
+      "name": "pre drop 2",
       "nominal_handedness": "left"
     }
   ]
