@@ -118,6 +118,14 @@ When pushing, push to ipab on github:
 When creating a pull request make sure that it is relative to ipab/drc/master and not
 mitdrc/drc/master
 
+The Edinburgh ROS workspace containing ROS message types and LCM<>ROS translators for the NASA Valkyrie (to IHMC SCS) and Kuka LWR arm has been moved to its own repository which can be added as a submodule:
+
+::
+
+    git submodule add git@github.com:ipab-slmc/drc-ros-workspace.git
+
+
+
 Dependencies
 ============
 
