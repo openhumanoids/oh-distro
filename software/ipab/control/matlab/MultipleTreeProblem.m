@@ -7,13 +7,14 @@ classdef MultipleTreeProblem
     status
     mergingThreshold
     iterations
-    bestPos
+    capabilityMap
+    goalConstraints
   end
   
   methods
     
-    function obj = MultipleTreeProblem(trees, startPoints, varargin)
-      opt = struct('mergingthreshold', 0.2, 'bestpos', [0;0;0]);
+    function obj = MultipleTreeProblem(trees, startPoints, goalConstraints, varargin)
+      opt = struct('mergingthreshold', 0.2, 'capabilitymap', []);
       optNames = fieldnames(opt);
       nArgs = length(varargin);
       if round(nArgs/2)~=nArgs/2
@@ -30,10 +31,11 @@ classdef MultipleTreeProblem
       
       obj.trees = trees;
       obj.startPoints = startPoints;
+      obj.goalConstraints = goalConstraints;
       obj.nTrees = numel(trees);
       obj.status = Status.EXPLORING;
       obj.mergingThreshold = opt.mergingthreshold;
-      obj.bestPos = opt.bestpos;
+      obj.capabilityMap = opt.capabilitymap;
     end
     
     function [obj, info, cost, qPath, times] = rrt(obj, xStart, xGoal, options)
@@ -230,20 +232,71 @@ classdef MultipleTreeProblem
       end
     end
     
-    function q = findGoalPose(obj)
-      r = obj.trees(1).trees{2}.rbm;
+    function qOpt = findGoalPose(obj)     
+      
+      tree = obj.trees(1);
+      cSpaceTree = tree.trees{tree.cspace_idx};
+      r = cSpaceTree.rbm;
+      targetObjectPos = obj.startPoints(1:3, 2);
       kinsol = r.doKinematics(obj.startPoints(8:end, 1));
       sh = r.findLinkId('RightShoulderAdductor');
       tr = r.findLinkId('Trunk');
-      options.rotation_type = 2;
-      shPose = r.forwardKin(kinsol, sh, [0;0;0], options);
-      trPose = r.forwardKin(kinsol, tr, [0;0;0], options);
+      palm = r.findLinkId('RightPalm');
+      shPose = r.forwardKin(kinsol, sh, [0;0;0], 2);
+      trPose = r.forwardKin(kinsol, tr, [0;0;0], 2);
       tr2sh = quat2rotmat(trPose(4:end))*(shPose(1:3)-trPose(1:3));
-      point = quat2rotmat(trPose(4:end))*obj.bestPos + tr2sh;
-      constraint = WorldPositionConstraint(r, tr, point, obj.startPoints(1:3, 2), obj.startPoints(1:3, 2));
-      [q, info, infeasible_constraints] = obj.trees(1).trees{2}.solveIK(obj.startPoints(8:end, 2), obj.startPoints(8:end, 2), {constraint});
+      armDof = 13:19;
+      collisionLinks = [1, 5, 9:15];
+       
+      reachabilityThreshold = 40;
+      D = obj.capabilityMap.reachabilityIndex;
+      sphCenters = obj.capabilityMap.sphCenters;
+      nSph = nnz( D > reachabilityThreshold);
+      iter = 0;
+      qOpt = zeros(r.num_positions,1);
+      qNom = cSpaceTree.q_nom;
       v = r.constructVisualizer();
-      v.draw(0, q);
+      
+%       tic
+      indices = find(D > reachabilityThreshold)';
+      for sph = indices(randperm(nSph))
+        iter = iter + 1;
+        fprintf('sphere %d of %d\n', iter, nSph);
+        point = quat2rotmat(trPose(4:end))* sphCenters(:,sph) + tr2sh;
+        constraint = WorldPositionConstraint(r, tr, point, targetObjectPos, targetObjectPos);
+        [q, valid, ~] = cSpaceTree.solveIK(qNom, qNom, [{constraint}, obj.goalConstraints]);
+        if valid
+          valid = false;
+          kinsol = r.doKinematics(q);
+          J = r.geometricJacobian(kinsol, tr, palm, palm);
+          nullSpace = null(J);
+          bounds = (r.joint_limit_min(armDof) - q(armDof))./nullSpace;
+          bounds(:,2) = (r.joint_limit_max(armDof) - q(armDof))./nullSpace;
+          bounds = sort(bounds,2);
+          bounds = [max(bounds(:,1)), min(bounds(:,2))];
+          for i = 1:100
+            nullq = nullSpace * (rand() * (bounds(2) - bounds(1)) + bounds(1));
+            qNew = q;
+            qNew(13:19) = q(13:19) + nullq;
+%             v.draw(0, qNew)
+            phi = r.collisionDetect(qNew, false, struct('body_idx', collisionLinks));
+            if all(phi > cSpaceTree.min_distance) && cSpaceTree.checkKinematicConstraints(qNew) && cSpaceTree.isCollisionFree(qNew)
+              qOpt = qNew;
+              valid = true;
+              v.draw(0,qOpt)
+              break
+            end
+          end
+          if valid
+            break
+          end
+        end
+      end
+%       toc
+      
+%       weightFactor = 0.0;
+%       minCost = Inf;
+%       cost = (qNom - q)'*cSpaceTree.ikoptions.Q*(qNom - q)- weightFactor * D(sph);
     end
     
   end

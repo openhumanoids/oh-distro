@@ -105,10 +105,10 @@ classdef Scenes
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);       
         case 4
-          table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+          table = RigidBodyBox([1 1 .025], [.8 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
-          obstacle = RigidBodyBox([.1 .3 .2], [.55 0 1.0125], [0 0 0]);
+          obstacle = RigidBodyBox([.1 .3 .2], [.35 0 1.0125], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, obstacle);
           
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
@@ -146,7 +146,7 @@ classdef Scenes
     
     function targetObjectPos = getTargetObjPos(options)
       switch options.scene
-        case {1, 2, 4}
+        case {1, 2}
           targetObjectPos = [0.8 0 1.0625];
         case 3
           if strcmp(options.model, 'val')
@@ -154,6 +154,8 @@ classdef Scenes
           else
             targetObjectPos = [0.8 0 0.6];
           end
+        case 4
+          targetObjectPos = [0.6 0 1.0625];
       end
     end
     
@@ -321,16 +323,16 @@ classdef Scenes
     end
     
     function constraint = nonGraspingHandDistanceConstraint(options, robot, dist)
-      hand = Scenes.getNonGraspingHand(options, robot);
+      trunkNames = {'Trunk', 'utorso'};
       model = strcmp(options.model,{'val', 'v4'});
       if strcmp(options.graspingHand, 'left')
-        linkNames = {'RightLeg', 'r_uleg'};
-        leg = robot.findLinkId(linkNames{model});
+        elbowNames = {'RightElbowExtensor', 'r_larm'};
       else
-        linkNames = {'RightLeg', 'r_uleg'};
-        leg = robot.findLinkId(linkNames{model});
+        elbowNames = {'LeftElbowExtensor', 'r_larm'};
       end
-      constraint = Point2PointDistanceConstraint(robot, hand, leg, [0; 0; 0], [0; 0; 0], dist, Inf);
+        elbow = robot.findLinkId(elbowNames{model});
+        trunk = robot.findLinkId(trunkNames{model});
+      constraint = Point2PointDistanceConstraint(robot, elbow, trunk, [0; 0; 0], [0; 0; 0], dist, Inf);
     end
     
     function constraint = pelvisOffsetConstraint(options, robot, offset, state)
