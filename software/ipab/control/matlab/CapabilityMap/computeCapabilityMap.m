@@ -1,4 +1,4 @@
-function [map, options] = capabilityMap(options)
+function [map, options] = computeCapabilityMap(options)
   if nargin < 1 || isempty(options), options = struct(); end
   warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
   warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
