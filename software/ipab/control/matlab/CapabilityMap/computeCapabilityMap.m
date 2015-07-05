@@ -91,6 +91,7 @@ function [map, options] = computeCapabilityMap(options)
   
   options.rotation_type = 0;
   
+  global IKTimes
   for sample = 1:nSamples
     fprintf('Sample %d of %d\n', sample, nSamples)
     q = r.joint_limit_min + (r.joint_limit_max-r.joint_limit_min).*rand(r.num_positions,1);
