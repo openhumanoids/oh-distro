@@ -21,7 +21,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 1; end;
+  if ~isfield(options,'scene'), options.scene = 4; end;
   if ~isfield(options,'model'), options.model = 'val'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -93,15 +93,14 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   end
   
   %Set end pose constraints and compute end configuration
-  endPoseConstraints = [startPoseConstraints, Scenes.addGoalConstraint(options, r)];
+  goalConstraints = Scenes.addGoalConstraint(options, r);
+  endPoseConstraints = [startPoseConstraints, goalConstraints];
   switch options.scene
-    case 1
-      endPoseConstraints = [endPoseConstraints, {Scenes.nonGraspingHandPositionConstraint(options, r)}];
     case 2
 %       if strcmp(options.model, 'val')
 %         endPoseConstraints = [endPoseConstraints, {Scenes.nonGraspingHandPositionConstraint(options, r)}];
 %       else
-        endPoseConstraints = [endPoseConstraints, {Scenes.nonGraspingHandPositionConstraint(options, r), Scenes.graspingForearmAlignConstraint(options, r)}];
+        endPoseConstraints = [endPoseConstraints, {Scenes.graspingForearmAlignConstraint(options, r)}];
 %       end
     case 3
       endPoseConstraints = [endPoseConstraints, {Scenes.pelvisOffsetConstraint(options,r)}];%, Scenes.nonGraspingHandPositionConstraint(options, r)}];
@@ -237,13 +236,14 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       [TA, info, cost, q_path] = TA.rrtStar(x_start, x_goal, options);
     case 'multiRRT'
       load([fileparts(which('exploringRRT')) '/CapabilityMap/bestPos.mat'])
+      cm = CapabilityMap([fileparts(which('exploringRRT')) '/CapabilityMap/capabilityMap.mat']);
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem([TA, TB, TC, TD], [x_start, x_goal, xStartC, xStartD], 'bestpos', position);
+          multiTree = MultipleTreeProblem([TA, TB, TC, TD], [x_start, x_goal, xStartC, xStartD], goalConstraints, 'capabilityMap', cm);
         case 3
-          multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC]);
+          multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm);
         case 2
-          multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal]);
+          multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal], goalConstraints, 'capabilityMap', cm);
       end
       [multiTree, info, cost, q_path, times] = multiTree.rrt(x_start, x_goal, options);
   end
