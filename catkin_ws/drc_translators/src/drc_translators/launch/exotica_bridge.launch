@@ -1,4 +1,0 @@
-<launch>
-  <node name="lcm2ros_exotica" pkg="drc_translators" type="lcm2ros_exotica" output="screen" />
-  <node name="ros2lcm_exotica" pkg="drc_translators" type="ros2lcm_exotica" output="screen" />
-</launch>

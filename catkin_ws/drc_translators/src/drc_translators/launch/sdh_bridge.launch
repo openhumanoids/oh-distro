@@ -1,5 +1,0 @@
-<launch>
-  <node name="ros2lcm_sdh" pkg="drc_translators" type="ros2lcm_sdh"  output="screen"/>
-  <node name="lcm2ros_sdh" pkg="drc_translators" type="lcm2ros_sdh" output="screen" />
-  <!-- launch hand before - include here TODO -->
-</launch>
