@@ -4,3 +4,6 @@
 [submodule "src/exotica_json"]
 	path = src/exotica_json
 	url = git@bitbucket.org:IPAB-SLMC/exotica_json.git
+[submodule "src/ipab_lwr_msgs"]
+	path = src/ipab_lwr_msgs
+	url = git@github.com:ipab-slmc/ipab_lwr_msgs.git
