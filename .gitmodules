@@ -1,3 +1,6 @@
 [submodule "src/exotica"]
 	path = src/exotica
 	url = git@bitbucket.org:IPAB-SLMC/exotica.git
+[submodule "src/exotica_json"]
+	path = src/exotica_json
+	url = git@bitbucket.org:IPAB-SLMC/exotica_json.git
