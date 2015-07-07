@@ -21,7 +21,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 6; end;
+  if ~isfield(options,'scene'), options.scene = 4; end;
   if ~isfield(options,'model'), options.model = 'val'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -29,7 +29,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'nTrees'), options.nTrees = 4; end;
-  if ~isfield(options,'goalObject'), options.goalObject = 2; end;
+  if ~isfield(options,'goalObject'), options.goalObject = 1; end;
   
   
   options.floating = true;
@@ -239,7 +239,11 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       cm = CapabilityMap([fileparts(which('exploringRRT')) '/CapabilityMap/capabilityMap.mat']);
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem([TA, TB, TC, TD], [x_start, x_goal, xStartC, xStartD], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
+          multiTree = MultipleTreeProblem(r, g_hand, point_in_link_frame, ...
+            x_start, x_goal(1:7), [xStartC, xStartD], goalConstraints,...
+            startPoseConstraints, q_nom,...
+            'capabilityMap', cm, 'graspingHand', options.graspingHand,...
+            'activecollisionoptions', struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)));
         case 3
           multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
         case 2
