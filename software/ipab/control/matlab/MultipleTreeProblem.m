@@ -9,12 +9,13 @@ classdef MultipleTreeProblem
     iterations
     capabilityMap
     goalConstraints
+    graspingHand
   end
   
   methods
     
     function obj = MultipleTreeProblem(trees, startPoints, goalConstraints, varargin)
-      opt = struct('mergingthreshold', 0.2, 'capabilitymap', []);
+      opt = struct('mergingthreshold', 0.2, 'capabilitymap', [], 'graspinghand', 'right');
       optNames = fieldnames(opt);
       nArgs = length(varargin);
       if round(nArgs/2)~=nArgs/2
@@ -36,6 +37,7 @@ classdef MultipleTreeProblem
       obj.status = Status.EXPLORING;
       obj.mergingThreshold = opt.mergingthreshold;
       obj.capabilityMap = opt.capabilitymap;
+      obj.graspingHand = opt.graspinghand;
     end
     
     function [obj, info, cost, qPath, times] = rrt(obj, xStart, xGoal, options)
@@ -232,21 +234,27 @@ classdef MultipleTreeProblem
       end
     end
     
-    function qOpt = findGoalPose(obj)     
+    function qOpt = findGoalPose(obj)
       
       tree = obj.trees(1);
       cSpaceTree = tree.trees{tree.cspace_idx};
       r = cSpaceTree.rbm;
       targetObjectPos = obj.startPoints(1:3, 2);
       kinsol = r.doKinematics(obj.startPoints(8:end, 1));
-      sh = r.findLinkId('RightShoulderAdductor');
+      
+      shNames = {'RightShoulderAdductor', 'LeftShoulderAdductor'};
+      palmNames = {'RightPalm', 'LeftPalm'};
+      grHand = strcmp(obj.graspingHand, {'right', 'left'});
+      sh = r.findLinkId(shNames{grHand});
+      palm = r.findLinkId(palmNames{grHand});
       tr = r.findLinkId('Trunk');
-      palm = r.findLinkId('RightPalm');
+      
       shPose = r.forwardKin(kinsol, sh, [0;0;0], 2);
       trPose = r.forwardKin(kinsol, tr, [0;0;0], 2);
       tr2sh = quat2rotmat(trPose(4:end))*(shPose(1:3)-trPose(1:3));
       armDof = 13:19;
       collisionLinks = [1, 5, 9:15];
+      mapMirror = [[1; 1; 1] [1; -1; 1]];
        
       reachabilityThreshold = 40;
       D = obj.capabilityMap.reachabilityIndex;
@@ -258,11 +266,12 @@ classdef MultipleTreeProblem
       v = r.constructVisualizer();
       
 %       tic
+      
       indices = find(D > reachabilityThreshold)';
       for sph = indices(randperm(nSph))
         iter = iter + 1;
         fprintf('sphere %d of %d\n', iter, nSph);
-        point = quat2rotmat(trPose(4:end))* sphCenters(:,sph) + tr2sh;
+        point = quat2rotmat(trPose(4:end))* (sphCenters(:,sph).*mapMirror(:, grHand)) + tr2sh;
         constraint = WorldPositionConstraint(r, tr, point, targetObjectPos, targetObjectPos);
         [q, valid, ~] = cSpaceTree.solveIK(qNom, qNom, [{constraint}, obj.goalConstraints]);
         if valid
