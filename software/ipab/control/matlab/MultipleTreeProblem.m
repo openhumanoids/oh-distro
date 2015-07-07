@@ -1,21 +1,30 @@
 classdef MultipleTreeProblem
   
   properties
-    trees
-    startPoints
-    nTrees
-    status
-    mergingThreshold
-    iterations
-    capabilityMap
+    robot
+    endEffectorId
+    endEffectorPoint
     goalConstraints
+    additionalConstraints
+    qNom
+    mergingThreshold
+    capabilityMap
     graspingHand
+    minDistance
+    trees
+    nTrees
+    startPoints
+    activeCollisionOptions
+    status
+    iterations
   end
   
   methods
     
-    function obj = MultipleTreeProblem(trees, startPoints, goalConstraints, varargin)
-      opt = struct('mergingthreshold', 0.2, 'capabilitymap', [], 'graspinghand', 'right');
+    function obj = MultipleTreeProblem(robot, endEffectorId, endEffectorPoint,...
+        xStart, xGoal, xStartAddTrees, goalConstraints, additionalConstraints, qNom, varargin)
+      opt = struct('mergingthreshold', 0.2, 'capabilitymap', [], 'graspinghand', 'right',...
+        'mindistance', 0.01, 'activecollisionoptions', struct());
       optNames = fieldnames(opt);
       nArgs = length(varargin);
       if round(nArgs/2)~=nArgs/2
@@ -30,14 +39,24 @@ classdef MultipleTreeProblem
         end
       end
       
-      obj.trees = trees;
-      obj.startPoints = startPoints;
+      obj.robot = robot;
+      obj.nTrees = size(xStartAddTrees, 2) + 2;
       obj.goalConstraints = goalConstraints;
-      obj.nTrees = numel(trees);
-      obj.status = Status.EXPLORING;
+      obj.additionalConstraints = additionalConstraints;
+      obj.qNom = qNom;
       obj.mergingThreshold = opt.mergingthreshold;
       obj.capabilityMap = opt.capabilitymap;
       obj.graspingHand = opt.graspinghand;
+      obj.minDistance = opt.mindistance;
+      obj.activeCollisionOptions = opt.activecollisionoptions;
+      obj.status = Status.EXPLORING;
+      
+      obj.trees = OptimalMotionPlanningTree.empty(obj.nTrees, 0);
+      for t = 1:obj.nTrees
+        obj.trees(t) = OptimalMotionPlanningTree(obj.robot, endEffectorId, endEffectorPoint);
+      end
+      qGoal = obj.findGoalPose(xStart, xGoal);
+      obj.startPoints = [xStart, [xGoal; qGoal], xStartAddTrees];
     end
     
     function [obj, info, cost, qPath, times] = rrt(obj, xStart, xGoal, options)
@@ -53,8 +72,6 @@ classdef MultipleTreeProblem
       defaultOptions.visualize = true;
       defaultOptions.firstFeasibleTraj = false;
       options = applyDefaults(options, defaultOptions);
-      
-      q = obj.findGoalPose();
       
       [~, startTree] = ismember(xStart', obj.startPoints', 'rows');
       [~, goalTree] = ismember(xGoal', obj.startPoints', 'rows');
@@ -234,26 +251,25 @@ classdef MultipleTreeProblem
       end
     end
     
-    function qOpt = findGoalPose(obj)
+    function qOpt = findGoalPose(obj, xStart, xGoal)
       
       tree = obj.trees(1);
       cSpaceTree = tree.trees{tree.cspace_idx};
-      r = cSpaceTree.rbm;
-      targetObjectPos = obj.startPoints(1:3, 2);
-      kinsol = r.doKinematics(obj.startPoints(8:end, 1));
+      kinsol = obj.robot.doKinematics(xStart(8:end));
       
       shNames = {'RightShoulderAdductor', 'LeftShoulderAdductor'};
       palmNames = {'RightPalm', 'LeftPalm'};
       grHand = strcmp(obj.graspingHand, {'right', 'left'});
-      sh = r.findLinkId(shNames{grHand});
-      palm = r.findLinkId(palmNames{grHand});
-      tr = r.findLinkId('Trunk');
+      sh = obj.robot.findLinkId(shNames{grHand});
+      palm = obj.robot.findLinkId(palmNames{grHand});
+      tr = obj.robot.findLinkId('Trunk');
       
-      shPose = r.forwardKin(kinsol, sh, [0;0;0], 2);
-      trPose = r.forwardKin(kinsol, tr, [0;0;0], 2);
+      shPose = obj.robot.forwardKin(kinsol, sh, [0;0;0], 2);
+      trPose = obj.robot.forwardKin(kinsol, tr, [0;0;0], 2);
       tr2sh = quat2rotmat(trPose(4:end))*(shPose(1:3)-trPose(1:3));
       armDof = 13:19;
-      collisionLinks = [1, 5, 9:15];
+      collisionLinksArm = [1, 5, 9:15];
+      collisionLinksBody = [1, setdiff(obj.activeCollisionOptions.body_idx, collisionLinksArm)];
       mapMirror = [[1; 1; 1] [1; -1; 1]];
        
       reachabilityThreshold = 40;
@@ -261,9 +277,8 @@ classdef MultipleTreeProblem
       sphCenters = obj.capabilityMap.sphCenters;
       nSph = nnz( D > reachabilityThreshold);
       iter = 0;
-      qOpt = zeros(r.num_positions,1);
-      qNom = cSpaceTree.q_nom;
-      v = r.constructVisualizer();
+      qOpt = zeros(obj.robot.num_positions,1);
+      v = obj.robot.constructVisualizer();
       
 %       tic
       
@@ -272,28 +287,35 @@ classdef MultipleTreeProblem
         iter = iter + 1;
         fprintf('sphere %d of %d\n', iter, nSph);
         point = quat2rotmat(trPose(4:end))* (sphCenters(:,sph).*mapMirror(:, grHand)) + tr2sh;
-        constraint = WorldPositionConstraint(r, tr, point, targetObjectPos, targetObjectPos);
-        [q, valid, ~] = cSpaceTree.solveIK(qNom, qNom, [{constraint}, obj.goalConstraints]);
+        shConstraint = WorldPositionConstraint(obj.robot, tr, point, xGoal(1:3), xGoal(1:3));
+        constraints = [{shConstraint}, obj.goalConstraints, obj.additionalConstraints];
+        [q, valid, ~] = cSpaceTree.solveIK(obj.qNom, obj.qNom, constraints);
         if valid
+          phiBody = obj.robot.collisionDetect(q, false, struct('body_idx', collisionLinksBody));
           valid = false;
-          kinsol = r.doKinematics(q);
-          J = r.geometricJacobian(kinsol, tr, palm, palm);
-          nullSpace = null(J);
-          bounds = (r.joint_limit_min(armDof) - q(armDof))./nullSpace;
-          bounds(:,2) = (r.joint_limit_max(armDof) - q(armDof))./nullSpace;
-          bounds = sort(bounds,2);
-          bounds = [max(bounds(:,1)), min(bounds(:,2))];
-          for i = 1:100
-            nullq = nullSpace * (rand() * (bounds(2) - bounds(1)) + bounds(1));
-            qNew = q;
-            qNew(13:19) = q(13:19) + nullq;
-%             v.draw(0, qNew)
-            phi = r.collisionDetect(qNew, false, struct('body_idx', collisionLinks));
-            if all(phi > cSpaceTree.min_distance) && cSpaceTree.checkKinematicConstraints(qNew) && cSpaceTree.isCollisionFree(qNew)
-              qOpt = qNew;
-              valid = true;
-              v.draw(0,qOpt)
-              break
+          if all(phiBody > obj.minDistance)
+            kinsol = obj.robot.doKinematics(q);
+            J = obj.robot.geometricJacobian(kinsol, tr, palm, palm);
+            nullSpace = null(J);
+            bounds = (obj.robot.joint_limit_min(armDof) - q(armDof))./nullSpace;
+            bounds(:,2) = (obj.robot.joint_limit_max(armDof) - q(armDof))./nullSpace;
+            bounds = sort(bounds,2);
+            bounds = [max(bounds(:,1)), min(bounds(:,2))];
+            for i = 1:100
+              nullq = nullSpace * (rand() * (bounds(2) - bounds(1)) + bounds(1));
+              qNew = q;
+              qNew(13:19) = q(13:19) + nullq;
+              v.draw(0, qNew)
+              phiArm = obj.robot.collisionDetect(qNew, false, struct('body_idx', collisionLinksArm));
+              if all(phiArm > obj.minDistance) && obj.checkConstraints(qNew, constraints)
+                phiBody = obj.robot.collisionDetect(qNew, false, obj.activeCollisionOptions);
+                if all(phiBody > obj.minDistance)
+                  qOpt = qNew;
+                  valid = true;
+                  v.draw(0,qOpt)
+                  break
+                end
+              end
             end
           end
           if valid
@@ -305,7 +327,28 @@ classdef MultipleTreeProblem
       
 %       weightFactor = 0.0;
 %       minCost = Inf;
-%       cost = (qNom - q)'*cSpaceTree.ikoptions.Q*(qNom - q)- weightFactor * D(sph);
+%       cost = (obj.qNom - q)'*cSpaceTree.ikoptions.Q*(obj.qNom - q)- weightFactor * D(sph);
+    end
+
+    function valid = checkConstraints(obj, q, constraints)
+      valid = true;
+      kinsol = obj.robot.doKinematics(q);
+      tol = 1e-3;
+      for i = 1:numel(constraints)
+        if isa(constraints{i}, 'QuasiStaticConstraint')
+          valid = valid && constraints{i}.checkConstraint(kinsol);
+        else
+          if valid
+            [lb, ub] = constraints{i}.bounds(0);
+            if isa(constraints{i}, 'PostureConstraint')
+              y = q;
+            else
+              y = eval(constraints{i}, 0, kinsol);
+            end
+            valid = all(y - lb > -tol) && all(ub - y > -tol);
+          end
+        end
+      end
     end
     
   end

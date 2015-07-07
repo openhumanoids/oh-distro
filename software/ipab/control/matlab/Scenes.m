@@ -434,7 +434,7 @@ classdef Scenes
       end
 %       goalPosConstraint = WorldPositionInFrameConstraint(robot, hand, point_in_link_frame, goalFrame,...
 %         lower_bounds, upper_bounds, [1.0, 1.0]);
-      goalDistConstraint = Point2PointDistanceConstraint(robot, hand, robot.findLinkId('world'), point_in_link_frame, goalFrame(1:3, 4), 0, 0);
+      goalDistConstraint = Point2PointDistanceConstraint(robot, hand, robot.findLinkId('world'), point_in_link_frame, goalFrame(1:3, 4), -0.001, 0.001);
 %       constraints = {goalPosConstraint, goalQuatConstraint};
       constraints = {goalDistConstraint, goalEulerConstraint};
       
