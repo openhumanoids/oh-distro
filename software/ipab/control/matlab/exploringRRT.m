@@ -21,7 +21,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 4; end;
+  if ~isfield(options,'scene'), options.scene = 6; end;
   if ~isfield(options,'model'), options.model = 'val'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -29,6 +29,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'nTrees'), options.nTrees = 4; end;
+  if ~isfield(options,'goalObject'), options.goalObject = 2; end;
   
   
   options.floating = true;
@@ -235,15 +236,14 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     case 'rrt*'
       [TA, info, cost, q_path] = TA.rrtStar(x_start, x_goal, options);
     case 'multiRRT'
-      load([fileparts(which('exploringRRT')) '/CapabilityMap/bestPos.mat'])
       cm = CapabilityMap([fileparts(which('exploringRRT')) '/CapabilityMap/capabilityMap.mat']);
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem([TA, TB, TC, TD], [x_start, x_goal, xStartC, xStartD], goalConstraints, 'capabilityMap', cm);
+          multiTree = MultipleTreeProblem([TA, TB, TC, TD], [x_start, x_goal, xStartC, xStartD], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
         case 3
-          multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm);
+          multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
         case 2
-          multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal], goalConstraints, 'capabilityMap', cm);
+          multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
       end
       [multiTree, info, cost, q_path, times] = multiTree.rrt(x_start, x_goal, options);
   end
