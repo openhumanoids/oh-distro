@@ -387,9 +387,9 @@
                               origin_rpy="-1.57 1.57 0.0" />
 -->
   <!-- params="name mass origin_rpy origin_xyz ixx ixy ixz iyy iyz izz visual_mesh material collision_mesh" -->
-  <joint name="MultisenseSLSpinnyJointFrame" type="continuous">
+  <joint name="MultisenseSLSpinnyJointFrame" type="fixed">
     <origin rpy="0.0 0.1309 0.0" xyz="0.001654 0.0 0.012564"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="Head"/>
     <child link="hokuyo_link"/>
   </joint>
@@ -818,50 +818,30 @@
   <gazebo reference="RightThumbPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="RightThumbRoll" type="revolute">
+  <joint name="RightThumbRoll" type="fixed">
     <origin rpy="0.3491 0.0 0.0" xyz="0.0049 -0.0351 0.0228"/>
-    <axis xyz="0 1 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="RightPalm"/>
     <child link="RightThumbRollLink"/>
-    <limit effort="10" lower="-0.087" upper="2.356" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightThumbRoll">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightThumbPitch1" type="revolute">
+  <joint name="RightThumbPitch1" type="fixed">
     <origin rpy="-0.3491 0.0 0.0" xyz="0.0 0.0 0.0229"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="RightThumbRollLink"/>
     <child link="RightThumbPitch1Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightThumbPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightThumbPitch2" type="revolute">
+  <joint name="RightThumbPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0066 0.0375"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="RightThumbPitch1Link"/>
     <child link="RightThumbPitch2Link"/>
-    <limit effort="10" lower="-1.92" upper="0.0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightThumbPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightThumbPitch3" type="revolute">
+  <joint name="RightThumbPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0049 0.0275"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="RightThumbPitch2Link"/>
     <child link="RightThumbPitch3Link"/>
-    <limit effort="10" lower="-1.57" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightThumbPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <link name="RightIndexFingerPitch1Link">
     <inertial>
       <mass value="0.006"/>
@@ -931,39 +911,24 @@
   <gazebo reference="RightIndexFingerPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="RightIndexFingerPitch1" type="revolute">
+  <joint name="RightIndexFingerPitch1" type="fixed">
     <origin rpy="-0.1745 0.0 0.0" xyz="0.0022 -0.0976 0.0235"/>
     <axis xyz="0 0 1"/>
     <parent link="RightPalm"/>
     <child link="RightIndexFingerPitch1Link"/>
-    <limit effort="10" lower="-0.087" upper="0.087" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightIndexFingerPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightIndexFingerPitch2" type="revolute">
+  <joint name="RightIndexFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="RightIndexFingerPitch1Link"/>
     <child link="RightIndexFingerPitch2Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightIndexFingerPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightIndexFingerPitch3" type="revolute">
+  <joint name="RightIndexFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0"/>
     <axis xyz="0 0 1"/>
     <parent link="RightIndexFingerPitch2Link"/>
     <child link="RightIndexFingerPitch3Link"/>
-    <limit effort="10" lower="-1.92" upper="0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightIndexFingerPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <link name="RightMiddleFingerPitch1Link">
     <inertial>
       <mass value="0.02"/>
@@ -1033,39 +998,24 @@
   <gazebo reference="RightMiddleFingerPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="RightMiddleFingerPitch1" type="revolute">
+  <joint name="RightMiddleFingerPitch1" type="fixed">
     <origin rpy="0.1222 0.0 0.0" xyz="0.0022 -0.097 -0.0119"/>
     <axis xyz="0 0 1"/>
     <parent link="RightPalm"/>
     <child link="RightMiddleFingerPitch1Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightMiddleFingerPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightMiddleFingerPitch2" type="revolute">
+  <joint name="RightMiddleFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="RightMiddleFingerPitch1Link"/>
     <child link="RightMiddleFingerPitch2Link"/>
-    <limit effort="10" lower="-1.92" upper="0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightMiddleFingerPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightMiddleFingerPitch3" type="revolute">
+  <joint name="RightMiddleFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="RightMiddleFingerPitch2Link"/>
     <child link="RightMiddleFingerPitch3Link"/>
-    <limit effort="10" lower="-1.57" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightMiddleFingerPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <link name="RightPinkyPitch1Link">
     <inertial>
       <mass value="0.047"/>
@@ -1135,39 +1085,24 @@
   <gazebo reference="RightPinkyPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="RightPinkyPitch1" type="revolute">
+  <joint name="RightPinkyPitch1" type="fixed">
     <origin rpy="0.1222 0.0 0.0" xyz="0.0022 -0.0838 -0.041"/>
     <axis xyz="0 0 1"/>
     <parent link="RightPalm"/>
     <child link="RightPinkyPitch1Link"/>
-    <limit effort="10" lower="-0.262" upper="0.0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightPinkyPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightPinkyPitch2" type="revolute">
+  <joint name="RightPinkyPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="RightPinkyPitch1Link"/>
     <child link="RightPinkyPitch2Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightPinkyPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="RightPinkyPitch3" type="revolute">
+  <joint name="RightPinkyPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="RightPinkyPitch2Link"/>
     <child link="RightPinkyPitch3Link"/>
-    <limit effort="10" lower="-1.92" upper="0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="RightPinkyPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <!-- LINKS -->
   <link name="LeftShoulderPitchLink">
     <inertial>
@@ -1524,50 +1459,30 @@
   <gazebo reference="LeftThumbPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="LeftThumbRoll" type="revolute">
+  <joint name="LeftThumbRoll" type="fixed">
     <origin rpy="-0.3491 0.0 0.0" xyz="0.0049 0.0351 0.0228"/>
-    <axis xyz="0 1 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="LeftPalm"/>
     <child link="LeftThumbRollLink"/>
-    <limit effort="10" lower="-0.087" upper="2.356" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftThumbRoll">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftThumbPitch1" type="revolute">
+  <joint name="LeftThumbPitch1" type="fixed">
     <origin rpy="0.3491 0.0 0.0" xyz="0.0 0.0 0.0229"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="LeftThumbRollLink"/>
     <child link="LeftThumbPitch1Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftThumbPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftThumbPitch2" type="revolute">
+  <joint name="LeftThumbPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0066 0.0375"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="LeftThumbPitch1Link"/>
     <child link="LeftThumbPitch2Link"/>
-    <limit effort="10" lower="-1.92" upper="0.0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftThumbPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftThumbPitch3" type="revolute">
+  <joint name="LeftThumbPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0049 0.0275"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 0 1"/>
     <parent link="LeftThumbPitch2Link"/>
     <child link="LeftThumbPitch3Link"/>
-    <limit effort="10" lower="-1.57" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftThumbPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <link name="LeftIndexFingerPitch1Link">
     <inertial>
       <mass value="0.006"/>
@@ -1637,39 +1552,24 @@
   <gazebo reference="LeftIndexFingerPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="LeftIndexFingerPitch1" type="revolute">
+  <joint name="LeftIndexFingerPitch1" type="fixed">
     <origin rpy="0.1745 0.0 0.0" xyz="0.0022 0.0976 0.0235"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftPalm"/>
     <child link="LeftIndexFingerPitch1Link"/>
-    <limit effort="10" lower="-0.087" upper="0.087" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftIndexFingerPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftIndexFingerPitch2" type="revolute">
+  <joint name="LeftIndexFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0381 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftIndexFingerPitch1Link"/>
     <child link="LeftIndexFingerPitch2Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftIndexFingerPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftIndexFingerPitch3" type="revolute">
+  <joint name="LeftIndexFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0229 0"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftIndexFingerPitch2Link"/>
     <child link="LeftIndexFingerPitch3Link"/>
-    <limit effort="10" lower="-1.92" upper="0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftIndexFingerPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <link name="LeftMiddleFingerPitch1Link">
     <inertial>
       <mass value="0.02"/>
@@ -1739,39 +1639,24 @@
   <gazebo reference="LeftMiddleFingerPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="LeftMiddleFingerPitch1" type="revolute">
+  <joint name="LeftMiddleFingerPitch1" type="fixed">
     <origin rpy="-0.1222 0.0 0.0" xyz="0.0022 0.097 -0.0119"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftPalm"/>
     <child link="LeftMiddleFingerPitch1Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftMiddleFingerPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftMiddleFingerPitch2" type="revolute">
+  <joint name="LeftMiddleFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0381 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftMiddleFingerPitch1Link"/>
     <child link="LeftMiddleFingerPitch2Link"/>
-    <limit effort="10" lower="-1.92" upper="0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftMiddleFingerPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftMiddleFingerPitch3" type="revolute">
+  <joint name="LeftMiddleFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0229 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftMiddleFingerPitch2Link"/>
     <child link="LeftMiddleFingerPitch3Link"/>
-    <limit effort="10" lower="-1.57" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftMiddleFingerPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <link name="LeftPinkyPitch1Link">
     <inertial>
       <mass value="0.047"/>
@@ -1841,39 +1726,24 @@
   <gazebo reference="LeftPinkyPitch3Link">
     <material>Gazebo/Gold</material>
   </gazebo>
-  <joint name="LeftPinkyPitch1" type="revolute">
+  <joint name="LeftPinkyPitch1" type="fixed">
     <origin rpy="-0.1222 0.0 0.0" xyz="0.0022 0.0838 -0.041"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftPalm"/>
     <child link="LeftPinkyPitch1Link"/>
-    <limit effort="10" lower="-0.262" upper="0.0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftPinkyPitch1">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftPinkyPitch2" type="revolute">
+  <joint name="LeftPinkyPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0381 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftPinkyPitch1Link"/>
     <child link="LeftPinkyPitch2Link"/>
-    <limit effort="10" lower="-1.658" upper="0.175" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftPinkyPitch2">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
-  <joint name="LeftPinkyPitch3" type="revolute">
+  <joint name="LeftPinkyPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0229 0.0"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftPinkyPitch2Link"/>
     <child link="LeftPinkyPitch3Link"/>
-    <limit effort="10" lower="-1.92" upper="0" velocity="1"/>
-    <dynamics damping="1.0" friction="0.0"/>
   </joint>
-  <gazebo reference="LeftPinkyPitch3">
-    <provideFeedback>1</provideFeedback>
-  </gazebo>
   <link name="RightHipYawLink">
     <inertial>
       <mass value="2.39"/>

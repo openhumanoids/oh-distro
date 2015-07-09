@@ -175,8 +175,8 @@
   "headLink" : "Head",
   "leftFootLink" : "LeftFoot",
   "rightFootLink" : "RightFoot",
-  "kneeJoints" : ["LeftKneeExtensor", "RightKneeExtensor"],
-  "kneeJointLimits" : [-1.9,-0.6],
+  "kneeJoints" : ["LeftKneePitch", "RightKneePitch"],
+  "kneeJointLimits" : [0.6,1.9],
   "baseZJointLimits" : [0.955, 1.14],
 
   "drivingThrottleJoint" : "LeftAnklePitch",
