@@ -2354,10 +2354,10 @@
                             name5="${leftleg_name5}" type5="${leg_type5}"
                             name6="${leftleg_name6}" type6="${leg_type6}"/> -->
   <!-- edinburgh extra stuff feet-->
-  <frame link="LeftFoot" name="l_foot_sole" rpy="3.1416 1.4408 0" xyz="0.0925 0 -0.07125"/>
-  <frame link="RightFoot" name="r_foot_sole" rpy="0 -1.4408 0" xyz="0.0925 0 0.07125"/>
-  <frame link="LeftFoot" name="l_foot_toe" rpy="3.1416 1.4408 0" xyz="0.0925 0 -0.07125"/>
-  <frame link="RightFoot" name="r_foot_toe" rpy="0 -1.4408 0" xyz="0.0925 0 0.07125"/>
+  <frame link="LeftFoot"  name="l_foot_sole" rpy="0 0 0" xyz="0.0426  0.0017 -0.07645"/>
+  <frame link="RightFoot" name="r_foot_sole" rpy="0 0 0" xyz="0.0426 -0.0017 -0.07645"/>
+  <frame link="LeftFoot"  name="l_foot_toe"  rpy="0 0 0" xyz="0.1728  0.0017 -0.07645"/>
+  <frame link="RightFoot" name="r_foot_toe"  rpy="0 0 0" xyz="0.1728 -0.0017 -0.07645"/>
   <!-- end edinburgh extra stuff feet-->
   <!-- edinburgh extra stuff left hand-->
   <link name="l_hand_force_torque">

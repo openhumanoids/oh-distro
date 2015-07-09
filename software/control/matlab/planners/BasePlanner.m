@@ -4,8 +4,8 @@ classdef BasePlanner < DRCPlanner
       obj = BasePlanner(BasePlanner.constructAtlas());
     end
 
-    function obj = withValkyrie()
-      obj = BasePlanner(BasePlanner.constructValkyrie());
+    function obj = withValkyrie(varargin)
+      obj = BasePlanner(BasePlanner.constructValkyrie(varargin{:}));
     end
   end
 

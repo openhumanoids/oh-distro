@@ -26,7 +26,10 @@ classdef DRCPlanner
       r = compile(r);
     end
 
-    function r = constructValkyrie()
+    function r = constructValkyrie(valkyrie_version)
+      if nargin >= 1
+        options.valkyrie_version = valkyrie_version;
+      end
       options.floating = true;
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
