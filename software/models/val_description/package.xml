@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>valkyrie_description</name>
+  <version>0.0.0</version>
+  <description>Valkyrie Description</description>
+
+  <maintainer email="a.n.other@nasa.gov">A.N. Other</maintainer>
+
+  <license>TODO</license>
+
+
+  <!--   <test_depend>gtest</test_depend> -->
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
+

@@ -16,7 +16,7 @@ group "1.params_and_model_pub" {
     }
 
     cmd "model_LR_RR" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/val_description/model.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/valkyrie/V1_sim_shells_reduced_polygon_count_mit.urdf";
         host = "localhost";
     }
 
@@ -58,7 +58,7 @@ group "3.plan_and_control" {
     }
 
     cmd "planner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner.withValkyrie(2); p.run();\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner.withValkyrie(1); p.run();\"";
        host = "localhost";
        stop_signal = 15;
     }
@@ -85,7 +85,7 @@ group "4.maps" {
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc.cfg -val2";
+    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc.cfg -val1";
     host = "localhost";
 }
 

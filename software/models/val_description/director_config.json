@@ -1,0 +1,206 @@
+{
+  "urdfConfig": {
+    "default": "./model.urdf",
+    "robotState": "./model.urdf",
+    "ik":         "./model.urdf",
+    "chull":      "./model.urdf",
+    "playback":   "./model.urdf",
+    "teleop":     "./model.urdf"
+  },
+
+  "teleopJointGroups" : [
+      { "name" : "Base",
+        "joints" : [
+          "base_x",
+          "base_y",
+          "base_z",
+          "base_roll",
+          "base_pitch",
+          "base_yaw"
+          ],
+        "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
+      },
+
+      { "name" : "Back",
+        "joints" : [
+          "TorsoRoll",
+          "TorsoPitch",
+          "TorsoYaw"
+          ],
+        "labels" : ["roll (x)", "pitch (y)", "yaw (z)"]
+      },
+
+      { "name" : "Left Arm",
+        "joints" : [
+          "LeftShoulderPitch",
+          "LeftShoulderRoll",
+          "LeftShoulderYaw",
+          "LeftElbowPitch",
+          "LeftForearmYaw",
+          "LeftWristRoll",
+          "LeftWristPitch"
+          ],
+        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx", "lwy"]
+      },
+
+      { "name" : "Right Arm",
+        "joints" : [
+          "RightShoulderPitch",
+          "RightShoulderRoll",
+          "RightShoulderYaw",
+          "RightElbowPitch",
+          "RightForearmYaw",
+          "RightWristRoll",
+          "RightWristPitch"
+          ],
+        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx", "lwy"]
+      },
+
+      { "name" : "Neck",
+        "joints" : [
+          "LowerNeckPitch",
+          "NeckYaw",
+          "UpperNeckPitch"
+          ],
+        "labels" : ["Low", "Mid", "Up"]
+      },
+
+      { "name" : "Left Leg",
+        "joints" : [
+          "LeftHipYaw",
+          "LeftHipRoll",
+          "LeftHipPitch",
+          "LeftKneePitch",
+          "LeftAnklePitch",
+          "LeftAnkleRoll"
+          ],
+        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
+      },
+
+      { "name" : "Right Leg",
+        "joints" : [
+          "RightHipYaw",
+          "RightHipRoll",
+          "RightHipPitch",
+          "RightKneePitch",
+          "RightAnklePitch",
+          "RightAnkleRoll"
+          ],
+        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
+      }
+
+    ],
+
+  "drakeJointNames": [
+    "base_x",
+    "base_y",
+    "base_z",
+    "base_roll",
+    "base_pitch",
+    "base_yaw",
+    "TorsoRoll",
+    "TorsoPitch",
+    "TorsoYaw",
+    "LowerNeckPitch",
+    "NeckYaw",
+    "UpperNeckPitch",
+    "RightShoulderPitch",
+    "RightShoulderRoll",
+    "RightShoulderYaw",
+    "RightElbowPitch",
+    "RightForearmYaw",
+    "RightWristRoll",
+    "RightWristPitch",
+    "LeftShoulderPitch",
+    "LeftShoulderRoll",
+    "LeftShoulderYaw",
+    "LeftElbowPitch",
+    "LeftForearmYaw",
+    "LeftWristRoll",
+    "LeftWristPitch",
+    "RightHipYaw",
+    "RightHipRoll",
+    "RightHipPitch",
+    "RightKneePitch",
+    "RightAnklePitch",
+    "RightAnkleRoll",
+    "LeftHipYaw",
+    "LeftHipRoll",
+    "LeftHipPitch",
+    "LeftKneePitch",
+    "LeftAnklePitch",
+    "LeftAnkleRoll"
+  ],
+  "robotStateJointNames": [
+    "TorsoRoll",
+    "TorsoPitch",
+    "TorsoYaw",
+    "LowerNeckPitch",
+    "NeckYaw",
+    "UpperNeckPitch",
+    "RightShoulderPitch",
+    "RightShoulderRoll",
+    "RightShoulderYaw",
+    "RightElbowPitch",
+    "RightForearmYaw",
+    "RightWristRoll",
+    "RightWristPitch",
+    "LeftShoulderPitch",
+    "LeftShoulderRoll",
+    "LeftShoulderYaw",
+    "LeftElbowPitch",
+    "LeftForearmYaw",
+    "LeftWristRoll",
+    "LeftWristPitch",
+    "LeftHipYaw",
+    "LeftHipRoll",
+    "LeftHipPitch",
+    "LeftKneePitch",
+    "LeftAnklePitch",
+    "LeftAnkleRoll",
+    "RightHipYaw",
+    "RightHipRoll",
+    "RightHipPitch",
+    "RightKneePitch",
+    "RightAnklePitch",
+    "RightAnkleRoll"
+  ],
+  "fixedPointFile" : "../../control/matlab/data/valkyrie_fp_june2015.mat",
+  "leftFootMeshFiles" : ["meshes/foot_Left_7_5_degrees.stl"],
+  "rightFootMeshFiles" : ["meshes/foot_Right_7_5_degrees.stl"],
+  "postureDatabaseFile" : "./stored_poses.json",
+  "mirrorJointSignFlips" : ["WaistRotator"],
+
+  "pelvisLink" : "Pelvis",
+  "headLink" : "Head",
+  "leftFootLink" : "LeftFoot",
+  "rightFootLink" : "RightFoot",
+  "kneeJoints" : ["LeftKneePitch", "RightKneePitch"],
+  "kneeJointLimits" : [0.6,1.9],
+  "baseZJointLimits" : [0.955, 1.14],
+
+  "drivingThrottleJoint" : "LeftAnklePitch",
+  "drivingSteeringJoint" : "LeftWristPitch",
+
+  "handCombinations": [
+      { "side" : "left",
+        "handType" : "left_valkyrie",
+        "handLinkName" : "LeftPalm",
+        "handUrdf" : "valkyrie_hand_left.urdf",
+        "handRootLink" : "left_palm",
+        "robotMountLink" : "l_hand_force_torque",
+        "palmLink" : "l_hand_face"
+      },
+      { "side" : "right",
+        "handType" : "right_valkyrie",
+        "handLinkName" : "RightPalm",
+        "handUrdf" : "valkyrie_hand_right.urdf",
+        "handRootLink" : "right_palm",
+        "robotMountLink" : "r_hand_force_torque",
+        "palmLink" : "r_hand_face"
+      }
+  ],
+
+  "userConfig" : []
+
+}
