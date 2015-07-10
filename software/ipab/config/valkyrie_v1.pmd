@@ -58,7 +58,7 @@ group "3.plan_and_control" {
     }
 
     cmd "planner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner.withValkyrie(); p.run();\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner.withValkyrie(1); p.run();\"";
        host = "localhost";
        stop_signal = 15;
     }
@@ -85,7 +85,7 @@ group "4.maps" {
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc.cfg -val";
+    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc.cfg -val1";
     host = "localhost";
 }
 
