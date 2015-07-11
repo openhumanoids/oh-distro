@@ -222,27 +222,44 @@ def storePose(poseType, captureMethod, group, name, description, outFile):
 def applyMirror(joints):
     '''
     joints is a dict where the keys are joint name strings and the values are
-    joint positions.  This function renames l_arm <--> r_arm and flips the sign
-    of the joint position as required, and also flips the sign on back_bkz.
-    Note that other back joints are not modified by this function.  Returns the
-    result as a new dictionary in the same format.
+    joint positions.  This function renames left arm and right arm joints
+    and flips the sign of the joint position as required, and also flips the sign
+    on back_bkz. Note that other back joints are not modified by this function.
+    Returns the result as a new dictionary in the same format.
     '''
 
     def toLeft(jointName):
-        return jointName.replace('r_arm', 'l_arm')
+        '''
+        If the right arm joint can be found in the list, insert the left
+        hand instead. this assumes that the corresponding joint is in the
+        same position in each list
+        '''
+        if jointName in rightArmJointList:
+            return leftArmJointList[rightArmJointList.index(jointName)]
+        return jointName
 
     def toRight(jointName):
-        return jointName.replace('l_arm', 'r_arm')
+        if jointName in leftArmJointList:
+            return rightArmJointList[leftArmJointList.index(jointName)]
+        return jointName
 
     def flipLeftRight(jointName):
-          return toLeft(jointName) if jointName.startswith('r_arm') else toRight(jointName)
+        if jointName in leftArmJointList:
+            return toRight(jointName)
+        else:
+            return toLeft(jointName)
 
     signFlips = getDirectorConfig()['mirrorJointSignFlips']
+
+    configFile = getDirectorConfig()
+    jointGroups = configFile['teleopJointGroups']
+    leftArmJointList = filter(lambda thisJointGroup: thisJointGroup['name'] == 'Left Arm', jointGroups)[0]['joints']
+    rightArmJointList = filter(lambda thisJointGroup: thisJointGroup['name'] == 'Right Arm', jointGroups)[0]['joints']
 
     flipped = {}
     for name, position in joints.iteritems():
         name = flipLeftRight(name)
-        if toLeft(name) in signFlips:
+        if name in signFlips:
             position = -position
 
         flipped[name] = position
