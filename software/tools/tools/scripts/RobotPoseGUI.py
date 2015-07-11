@@ -114,20 +114,19 @@ def getJointSets():
     return jointSets
 
 
-def findPrefixInJointNames(jointNames, prefix):
+def findPrefixInJointNames(jointNames, armJointList):
     for name in jointNames:
-        if name.startswith(prefix):
+        if name in armJointList:
             return True
     return False
 
-def getLeftArmInJoints(joints):
-    return findPrefixInJointNames(joints.keys(), 'l_arm')
+def getLeftArmInJoints(joints, jointGroups):
+    armJointList = filter(lambda thisJointGroup: thisJointGroup['name'] == 'Left Arm', jointGroups)[0]['joints']
+    return findPrefixInJointNames(joints.keys(), armJointList)
 
-def getRightArmInJoints(joints):
-    return findPrefixInJointNames(joints.keys(), 'r_arm')
-
-def getBackInJoints(joints):
-    return findPrefixInJointNames(joints.keys(), 'back')
+def getRightArmInJoints(joints, jointGroups):
+    armJointList = filter(lambda thisJointGroup: thisJointGroup['name'] == 'Right Arm', jointGroups)[0]['joints']
+    return findPrefixInJointNames(joints.keys(), armJointList)
 
 def getJointNamesForPoseType(poseType):
     '''
@@ -142,7 +141,6 @@ def getJointNamesForPoseType(poseType):
         if name in poseType:
             jointNames += jointSet
     return jointNames
-
 
 
 def updateComboStrings(combo, strings, defaultSelection):
@@ -200,9 +198,12 @@ def storePose(poseType, captureMethod, group, name, description, outFile):
     posture['allow_mirror'] = True
     posture['joints'] = joints
 
+    configFile = getDirectorConfig()
+    jointGroups = configFile['teleopJointGroups']
+
     # determine a default value for nominal_handedness
-    hasLeft = getLeftArmInJoints(joints)
-    hasRight = getRightArmInJoints(joints)
+    hasLeft = getLeftArmInJoints(joints, jointGroups)
+    hasRight = getRightArmInJoints(joints, jointGroups)
     posture['nominal_handedness'] = 'none'
     if hasLeft != hasRight:
         posture['nominal_handedness'] = 'left' if hasLeft else 'right'
