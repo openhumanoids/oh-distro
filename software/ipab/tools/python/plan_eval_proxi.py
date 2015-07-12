@@ -11,6 +11,7 @@ sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 from drc.robot_plan_t import robot_plan_t
 from drc.plan_status_t import plan_status_t
 from drc.robot_state_t import robot_state_t
+from drc.walking_plan_request_t import walking_plan_request_t
 
 def timestamp_now (): return int (time.time () * 1000000)
 
@@ -19,6 +20,8 @@ class State:
         self.last_utime = 0
         self.init_status()
         self.manip_until_utime = 0
+        self.walk_until_utime = 0
+        self.seconds_per_step = 2.9 # guesstimated time per step
 
 
     def init_status(self):
@@ -32,7 +35,6 @@ class State:
         self.status.bracing_enabled = False
 
 
-
 def on_manip_plan(channel, data):
     m = robot_plan_t.decode(data)
     print "got manip plan"
@@ -41,6 +43,13 @@ def on_manip_plan(channel, data):
     s.status.last_plan_start_utime = s.last_utime
     s.manip_until_utime = s.last_utime + m.plan[m.num_states-1].utime
 
+
+def on_walking_plan_request(channel, data):
+    m = walking_plan_request_t.decode(data)
+    print "got walking plan request: ",  m.footstep_plan.num_steps , " steps - 2 initial and ", (m.footstep_plan.num_steps-2), " actual"
+    s.status.last_plan_msg_utime = s.last_utime
+    s.status.last_plan_start_utime = s.last_utime
+    s.walk_until_utime = s.last_utime + (m.footstep_plan.num_steps-2)*s.seconds_per_step*1E6
 
 
 def on_est_robot_state(channel, data):
@@ -53,7 +62,13 @@ def on_est_robot_state(channel, data):
         s.status.execution_status = 0 # EXECUTION_STATUS_EXECUTING
         s.status.plan_type = 8 # manip
         utime_remaining = (s.manip_until_utime - m.utime)*1E-6
-        print "remaining: ", utime_remaining
+        print "manip, remaining: ", utime_remaining
+    elif (s.walk_until_utime > m.utime):
+        # manip plan still being executed - publish
+        s.status.execution_status = 0 # EXECUTION_STATUS_EXECUTING
+        s.status.plan_type = 2 # walking
+        utime_remaining = (s.walk_until_utime - m.utime)*1E-6
+        print "walking, remaining: ", utime_remaining
     else:
         # manip plan not being executed
         if (s.status.execution_status == 0):
@@ -71,8 +86,9 @@ print "started"
 s = State();
 
 
-sub1 = lc.subscribe("COMMITTED_ROBOT_PLAN", on_manip_plan) # required
-sub2 = lc.subscribe("EST_ROBOT_STATE", on_est_robot_state) # required
+sub1 = lc.subscribe("COMMITTED_ROBOT_PLAN", on_manip_plan)
+sub2 = lc.subscribe("EST_ROBOT_STATE", on_est_robot_state)
+sub3 = lc.subscribe("WALKING_CONTROLLER_PLAN_REQUEST", on_walking_plan_request)
 
 while True:
     ## Handle LCM if new messages have arrived.
