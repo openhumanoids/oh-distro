@@ -1,97 +1,82 @@
 {
   "General": [
     {
-      "allow_mirror": true, 
-      "description": "arm up pregrasp", 
+      "allow_mirror": true,
+      "description": "arm up pregrasp",
       "joints": {
-        "LeftElbowExtensor": -1.2, 
-        "LeftForearmSupinator": -1.35, 
-        "LeftShoulderAdductor": -1.45, 
-        "LeftShoulderExtensor": 0, 
-        "LeftShoulderSupinator": 0, 
-        "LeftWrist": 0.0, 
+        "LeftElbowExtensor": -1.2,
+        "LeftForearmSupinator": -1.35,
+        "LeftShoulderAdductor": -1.45,
+        "LeftShoulderExtensor": 0,
+        "LeftShoulderSupinator": 0,
+        "LeftWrist": 0.0,
         "LeftWristExtensor": 0.0
-      }, 
-      "name": "arm up pregrasp", 
+      },
+      "name": "arm up pregrasp",
       "nominal_handedness": "left"
-    }, 
+    },
     {
-      "allow_mirror": true, 
-      "description": "handdown", 
+      "allow_mirror": true,
+      "description": "handdown",
       "joints": {
-        "LeftElbowExtensor": -0.8, 
-        "LeftForearmSupinator": 0.0, 
-        "LeftShoulderAdductor": -0.2, 
-        "LeftShoulderExtensor": 0.3, 
-        "LeftShoulderSupinator": 0.0, 
-        "LeftWrist": 0.0, 
+        "LeftElbowExtensor": -0.8,
+        "LeftForearmSupinator": 0.0,
+        "LeftShoulderAdductor": -0.2,
+        "LeftShoulderExtensor": 0.3,
+        "LeftShoulderSupinator": 0.0,
+        "LeftWrist": 0.0,
         "LeftWristExtensor": 0.0
-      }, 
-      "name": "handdown", 
+      },
+      "name": "handdown",
       "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "mfallontest", 
-      "joints": {
-        "LeftElbowExtensor": -1.7204679250717163, 
-        "LeftForearmSupinator": -0.5389625430107117, 
-        "LeftShoulderAdductor": -0.757742702960968, 
-        "LeftShoulderExtensor": 0.36474886536598206, 
-        "LeftShoulderSupinator": -0.27187857031822205, 
-        "LeftWrist": 0.40867558121681213, 
-        "LeftWristExtensor": -0.16899609565734863
-      }, 
-      "name": "mfallontest", 
-      "nominal_handedness": "none"
     }
-  ], 
+  ],
   "bihanded": [
     {
-      "allow_mirror": true, 
-      "description": "board pregrasp", 
+      "allow_mirror": true,
+      "description": "board pregrasp",
       "joints": {
-        "LeftElbowExtensor": -1.3696403503417969, 
-        "LeftForearmSupinator": -1.702666997909546, 
-        "LeftShoulderAdductor": -0.1745329201221466, 
-        "LeftShoulderExtensor": 0.20167237520217896, 
-        "LeftShoulderSupinator": 0.24836266040802002, 
-        "LeftWrist": -0.22391527891159058, 
+        "LeftElbowExtensor": -1.3696403503417969,
+        "LeftForearmSupinator": -1.702666997909546,
+        "LeftShoulderAdductor": -0.1745329201221466,
+        "LeftShoulderExtensor": 0.20167237520217896,
+        "LeftShoulderSupinator": 0.24836266040802002,
+        "LeftWrist": -0.22391527891159058,
         "LeftWristExtensor": -0.42069876194000244
-      }, 
-      "name": "board pregrasp", 
+      },
+      "name": "board pregrasp",
       "nominal_handedness": "left"
     }
-  ], 
+  ],
   "table clearing": [
     {
-      "allow_mirror": true, 
-      "description": "pre drop 1", 
+      "allow_mirror": true,
+      "description": "pre drop 1",
       "joints": {
-        "LeftElbowExtensor": -0.3035127520561218, 
-        "LeftForearmSupinator": -1.4325662851333618, 
-        "LeftShoulderAdductor": -2.602198600769043, 
-        "LeftShoulderExtensor": 1.6022123098373413, 
-        "LeftShoulderSupinator": -0.8513715863227844, 
-        "LeftWrist": 0.0, 
+        "LeftElbowExtensor": -0.3035127520561218,
+        "LeftForearmSupinator": -1.4325662851333618,
+        "LeftShoulderAdductor": -2.602198600769043,
+        "LeftShoulderExtensor": 1.6022123098373413,
+        "LeftShoulderSupinator": -0.8513715863227844,
+        "LeftWrist": 0.0,
         "LeftWristExtensor": -0.2019345909357071
-      }, 
-      "name": "pre drop 1", 
+      },
+      "name": "pre drop 1",
       "nominal_handedness": "left"
-    }, 
+    },
     {
-      "allow_mirror": true, 
-      "description": "pre drop 2", 
+      "allow_mirror": true,
+      "description": "pre drop 2",
       "joints": {
-        "LeftElbowExtensor": -0.7085164189338684, 
-        "LeftForearmSupinator": -0.8340928554534912, 
-        "LeftShoulderAdductor": -2.887298107147217, 
-        "LeftShoulderExtensor": 1.910088300704956, 
-        "LeftShoulderSupinator": -0.7131415605545044, 
-        "LeftWrist": 0.0, 
+        "LeftElbowExtensor": -0.7085164189338684,
+        "LeftForearmSupinator": -0.8340928554534912,
+        "LeftShoulderAdductor": -2.887298107147217,
+        "LeftShoulderExtensor": 1.910088300704956,
+        "LeftShoulderSupinator": -0.7131415605545044,
+        "LeftWrist": 0.0,
         "LeftWristExtensor": -0.412421315908432
-      }, 
-      "name": "pre drop 2", 
+      },
+      "name": "pre drop 2",
       "nominal_handedness": "left"
     }
   ]
