@@ -4,7 +4,6 @@ import lcm
 import time
 
 home_dir =os.getenv("HOME")
-#print home_dir
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
@@ -22,7 +21,6 @@ class State:
         self.manip_until_utime = 0
         self.walk_until_utime = 0
         self.seconds_per_step = 2.9 # guesstimated time per step
-
 
     def init_status(self):
         self.status = plan_status_t()
@@ -51,30 +49,25 @@ def on_walking_plan_request(channel, data):
     s.status.last_plan_start_utime = s.last_utime
     s.walk_until_utime = s.last_utime + (m.footstep_plan.num_steps-2)*s.seconds_per_step*1E6
 
-
 def on_est_robot_state(channel, data):
     m = robot_state_t.decode(data)
     s.last_utime = m.utime
-
     s.status.utime = m.utime
+
     if (s.manip_until_utime > m.utime):
-        # manip plan still being executed - publish 
+        # manip plan still being executed
         s.status.execution_status = 0 # EXECUTION_STATUS_EXECUTING
         s.status.plan_type = 8 # manip
-        utime_remaining = (s.manip_until_utime - m.utime)*1E-6
-        print "manip, remaining: ", utime_remaining
+        time_remaining = (s.manip_until_utime - m.utime)*1E-6
+        print "manip, time remaining: ", time_remaining
     elif (s.walk_until_utime > m.utime):
-        # manip plan still being executed - publish
+        # manip plan still being executed
         s.status.execution_status = 0 # EXECUTION_STATUS_EXECUTING
         s.status.plan_type = 2 # walking
-        utime_remaining = (s.walk_until_utime - m.utime)*1E-6
-        print "walking, remaining: ", utime_remaining
+        time_remaining = (s.walk_until_utime - m.utime)*1E-6
+        print "walking, time remaining: ", time_remaining
     else:
-        # manip plan not being executed
-        if (s.status.execution_status == 0):
-            print "no longer executing"
-            s.status.execution_status = 2 # EXECUTION_STATUS_FINISHED
-
+        # manip or walking plan not being executed
         s.status.plan_type = 1 # standing
         s.status.execution_status = 2 # NO PLAN
 
@@ -85,11 +78,9 @@ lc = lcm.LCM()
 print "started"
 s = State();
 
-
 sub1 = lc.subscribe("COMMITTED_ROBOT_PLAN", on_manip_plan)
 sub2 = lc.subscribe("EST_ROBOT_STATE", on_est_robot_state)
 sub3 = lc.subscribe("WALKING_CONTROLLER_PLAN_REQUEST", on_walking_plan_request)
 
 while True:
-    ## Handle LCM if new messages have arrived.
     lc.handle()
