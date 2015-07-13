@@ -19,6 +19,7 @@ RWExt = False
 RSExt = False
 Trunk = False
 visual = False
+coll = False
 
 for line in range(len(lines)):
     matchRobotStart = re.match('.*(<robot name=).*', lines[line])
@@ -46,6 +47,7 @@ for line in range(len(lines)):
 for line in range(len(newLines)):    
     matchTrunk = re.match('.*link name="Trunk.*$', newLines[line])
     matchVisual = re.match('.*<visual', newLines[line])
+    matchColl = re.match('.*<collision', newLines[line])
     matchRWExtensor = re.match('.*joint name="RightWristExtensor.*$', newLines[line])
     matchRSExtensor = re.match('.*joint name="RightShoulderExtensor.*$', newLines[line])
     if matchTrunk:
@@ -58,8 +60,16 @@ for line in range(len(newLines)):
             if matchOrigin:
                 newLines[line] = '{:s}0 -1.57079632679 3.14159265359{:s}0.03157 0.246 -0.29842{:s}\n'.format(
                 matchOrigin.group(1), matchOrigin.group(2), matchOrigin.group(3))
-                Trunk = False
                 visual = False
+        if matchColl:
+            coll = True
+        if coll:
+            matchOrigin = re.match('(.*<origin rpy=").*(" xyz=").*("/>.*)', newLines[line])
+            if matchOrigin:
+                newLines[line] = '{:s}0 -1.57079632679 3.14159265359{:s}0.03157 0.246 -0.29842{:s}\n'.format(
+                matchOrigin.group(1), matchOrigin.group(2), matchOrigin.group(3))
+                Trunk = False
+                coll = False
     if matchRSExtensor:
         RSExt = True
     if RSExt:

@@ -23,7 +23,7 @@
             <geometry>
                 <mesh filename="package://V1/meshes/reduced_polygon_meshes/wj3.stl"/>
             </geometry>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="0 -1.57079632679 3.14159265359" xyz="0.03157 0.246 -0.29842"/>
         </collision>
     </link>
     <link name="RightShoulderExtensor">
