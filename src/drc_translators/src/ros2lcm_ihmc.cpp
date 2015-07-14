@@ -43,6 +43,7 @@
 #include "lcmtypes/pronto/atlas_raw_imu_batch_t.hpp"
 #include "lcmtypes/pronto/atlas_behavior_t.hpp"
 #include "lcmtypes/pronto/multisense_state_t.hpp"
+#include "lcmtypes/pronto/plan_status_t.hpp"
 #include "lcmtypes/mav/ins_t.hpp"
 
 #include <tf/transform_listener.h>
@@ -229,12 +230,44 @@ void App::rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg){
 }
 
 void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg){
-  pronto::atlas_behavior_t msg_out;
+  // IHMC publish: 3 when standing or manipulating, 4 when walking (as atlas_behavior_t)
+  // BDI publishs: 3 stand, 4 walk, 5 step, 6 manip (as atlas_behavior_t)
+  // MIT publish: 1 stand, 2 walk, 8 mani  (as plan_status_t)
+  // We (i.e. ddapp) need either:
+  // - drc.atlas_behavior_t which comes from BDI typically) - and matches with IHMC output
+  // - drc.plan_status_t which comes from MIT controller typically) - typically atlas_behavior_t is 'user' than
+  // ddapp requires plan_status_t messages for autonomy. (pronto uses controller_status_t to contact ground points)
+  bool behaviorMode = 0;
 
-  msg_out.utime = lastJointStateUtime_;
-  int temp = (int) msg->data;
-  msg_out.behavior = (int) temp;
-  lcmPublish_.publish("ATLAS_BEHAVIOR", &msg_out);
+  if (behaviorMode == 0){
+    pronto::atlas_behavior_t msg_out;
+
+    msg_out.utime = lastJointStateUtime_;
+    int temp = (int) msg->data;
+    msg_out.behavior = (int) temp;
+    lcmPublish_.publish("ATLAS_BEHAVIOR", &msg_out);
+  }else{
+
+    pronto::plan_status_t msg_out;
+    msg_out.utime = lastJointStateUtime_;
+    if (msg->data == 3){ // stand
+      msg_out.plan_type = 1; // stand
+    }else if (msg->data == 4){ // walk for ihmc. NB: this is different to step from bdi
+      msg_out.plan_type = 2; // walk
+      msg_out.execution_status = 0; // 'executing'
+    }else{
+      std::cout << "behavior not understood\n";
+      return;
+    }
+    lcmPublish_.publish("PLAN_EXECUTION_STATUS", &msg_out);
+
+    pronto::atlas_behavior_t msg_out_beh;
+    msg_out_beh.utime = lastJointStateUtime_;
+    msg_out_beh.behavior = 7; // user
+    lcmPublish_.publish("ATLAS_BEHAVIOR", &msg_out);    
+    
+  }
+
 }
 
 
