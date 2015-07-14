@@ -255,7 +255,9 @@ classdef MultipleTreeProblem
       
       tree = obj.trees(1);
       cSpaceTree = tree.trees{tree.cspace_idx};
-      kinsol = obj.robot.doKinematics(xStart(8:end));
+      kinSol = obj.robot.doKinematics(xStart(8:end));
+      options.rotation_type = 2;
+      options.use_mex = false;
       
       shNames = {'RightShoulderAdductor', 'LeftShoulderAdductor'};
       palmNames = {'RightPalm', 'LeftPalm'};
@@ -264,12 +266,13 @@ classdef MultipleTreeProblem
       palm = obj.robot.findLinkId(palmNames{grHand});
       tr = obj.robot.findLinkId('Trunk');
       
-      shPose = obj.robot.forwardKin(kinsol, sh, [0;0;0], 2);
-      trPose = obj.robot.forwardKin(kinsol, tr, [0;0;0], 2);
+      shPose = obj.robot.forwardKin(kinSol, sh, [0;0;0], 2);
+      trPose = obj.robot.forwardKin(kinSol, tr, [0;0;0], 2);
       tr2sh = quat2rotmat(trPose(4:end))*(shPose(1:3)-trPose(1:3));
-      armDof = 13:19;
-      collisionLinksArm = [1, 5, 9:15];
-      collisionLinksBody = [1, setdiff(obj.activeCollisionOptions.body_idx, collisionLinksArm)];
+      armJoints = 13:19;
+      nArmJoints = size(armJoints, 2);
+      np = obj.robot.num_positions;
+      collisionLinksBody = [1, setdiff(obj.activeCollisionOptions.body_idx, 9:15)];
       mapMirror = [[1; 1; 1] [1; -1; 1]];
        
       reachabilityThreshold = 40;
@@ -278,6 +281,7 @@ classdef MultipleTreeProblem
       nSph = nnz( D > reachabilityThreshold);
       iter = 0;
       qOpt = zeros(obj.robot.num_positions,1);
+      c = 1/obj.minDistance;
       v = obj.robot.constructVisualizer();
       
 %       tic
@@ -290,44 +294,107 @@ classdef MultipleTreeProblem
         shConstraint = WorldPositionConstraint(obj.robot, tr, point, xGoal(1:3), xGoal(1:3));
         constraints = [{shConstraint}, obj.goalConstraints, obj.additionalConstraints];
         [q, valid, ~] = cSpaceTree.solveIK(obj.qNom, obj.qNom, constraints);
+        kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
+        palmPose = obj.robot.forwardKin(kinSol, palm, [0;0;0], options);
+        targetPos = [palmPose(1:3); quat2rpy(palmPose(4:7))];
+        deltaX = zeros(6,1);
+        v.draw(0, q)
         if valid
           phiBody = obj.robot.collisionDetect(q, false, struct('body_idx', collisionLinksBody));
-          valid = false;
           if all(phiBody > obj.minDistance)
-            kinsol = obj.robot.doKinematics(q);
-            J = obj.robot.geometricJacobian(kinsol, tr, palm, palm);
-            nullSpace = null(J);
-            bounds = (obj.robot.joint_limit_min(armDof) - q(armDof))./nullSpace;
-            bounds(:,2) = (obj.robot.joint_limit_max(armDof) - q(armDof))./nullSpace;
-            bounds = sort(bounds,2);
-            bounds = [max(bounds(:,1)), min(bounds(:,2))];
-            for i = 1:100
-              nullq = nullSpace * (rand() * (bounds(2) - bounds(1)) + bounds(1));
-              qNew = q;
-              qNew(13:19) = q(13:19) + nullq;
-              v.draw(0, qNew)
-              phiArm = obj.robot.collisionDetect(qNew, false, struct('body_idx', collisionLinksArm));
-              if all(phiArm > obj.minDistance) && obj.checkConstraints(qNew, constraints)
-                phiBody = obj.robot.collisionDetect(qNew, false, obj.activeCollisionOptions);
-                if all(phiBody > obj.minDistance)
-                  qOpt = qNew;
-                  valid = true;
-                  v.draw(0,qOpt)
-                  break
+            eps  = Inf;
+            nIter = 0;
+            [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
+            while (eps > 1e-3 || any(phi < 0)) && nIter < 100
+              phi = phi - obj.minDistance;
+              qNdot = zeros(nArmJoints, 1);
+              for joint = 1:nArmJoints
+                jointIdx = armJoints(joint);
+                dgamma_dq = zeros(size(phi));
+                for coll = 1:size(phi,1)
+                  if phi(coll) < 0
+                    JA = obj.computeJacobian(kinSol, armJoints, idxA(coll));
+                    JB = obj.computeJacobian(kinSol, armJoints, idxB(coll));
+                    dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
+                    dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
+                  else
+                    dgamma_dq(coll) = 0;
+                  end
                 end
+                qNdot(joint) = sum(dgamma_dq);
               end
+              J = obj.computeJacobian(kinSol, armJoints, palm);
+              Jpsi = J'*inv(J*J');
+              deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
+              q(armJoints) = q(armJoints) + 0.1*deltaQ;              
+              v.draw(0, q)
+              [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
+              kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
+              palmPose = obj.robot.forwardKin(kinSol, palm, [0;0;0], options);
+              deltaX = targetPos - [palmPose(1:3); quat2rpy(palmPose(4:7))];
+              eps = norm(deltaX);
+              nIter = nIter + 1;
+            end
+            if eps < 1e-3 && all(phi >= 0)
+              pause
             end
           end
-          if valid
-            break
-          end
         end
+        
+%         if valid
+%           phiBody = obj.robot.collisionDetect(q, false, struct('body_idx', collisionLinksBody));
+%           valid = false;
+%           if all(phiBody > obj.minDistance)
+%             kinsol = obj.robot.doKinematics(q);
+%             J = obj.robot.geometricJacobian(kinsol, tr, palm, palm);
+%             nullSpace = null(J);
+%             bounds = (obj.robot.joint_limit_min(armDof) - q(armDof))./nullSpace;
+%             bounds(:,2) = (obj.robot.joint_limit_max(armDof) - q(armDof))./nullSpace;
+%             bounds = sort(bounds,2);
+%             bounds = [max(bounds(:,1)), min(bounds(:,2))];
+%             qNew = q;
+%             for i = 1:100
+%               nullq = nullSpace * (rand() * (bounds(2) - bounds(1)) + bounds(1));
+% %               qNew = q;
+%               qNew(13:19) = qNew(13:19) + nullq;
+%               [qNew, valid, ~] = cSpaceTree.solveIK(qNew, qNew, constraints);
+%               v.draw(0, qNew)
+%               phiArm = obj.robot.collisionDetect(qNew, false, struct('body_idx', collisionLinksArm));
+%               if all(phiArm > obj.minDistance) && obj.checkConstraints(qNew, constraints)
+%                 phiBody = obj.robot.collisionDetect(qNew, false, obj.activeCollisionOptions);
+%                 if all(phiBody > obj.minDistance)
+%                   qOpt = qNew;
+%                   valid = true;
+%                   v.draw(0,qOpt)
+%                   break
+%                 end
+%               end
+%             end
+%           end
+%           if valid
+%             break
+%           end
+%         end
       end
 %       toc
       
 %       weightFactor = 0.0;
 %       minCost = Inf;
 %       cost = (obj.qNom - q)'*cSpaceTree.ikoptions.Q*(obj.qNom - q)- weightFactor * D(sph);
+    end
+    
+    function J = computeJacobian(obj, kinSol, joints, endEffector)
+      np = obj.robot.num_positions;
+      nj = length(joints);
+      J = zeros(6, nj);
+      T = kinSol.T{endEffector}(1:3, 1:3);
+      J(1,:) = kinSol.dTdq{endEffector}(joints,4)';
+      J(2,:) = kinSol.dTdq{endEffector}(np + joints,4)';
+      J(3,:) = kinSol.dTdq{endEffector}(np*2 + joints,4)';
+      for j = 1:nj
+        S = T' * kinSol.dTdq{endEffector}([joints(j),np+joints(j),2*np+joints(j)],1:3);        
+        J(4:6, j) = T * [S(3,2);S(1,3);S(2,1)];
+      end
     end
 
     function valid = checkConstraints(obj, q, constraints)
