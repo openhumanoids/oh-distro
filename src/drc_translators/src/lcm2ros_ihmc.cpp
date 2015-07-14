@@ -335,7 +335,7 @@ void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string
     it = find (input_joint_names.begin(), input_joint_names.end(), name );
     int index = std::distance( input_joint_names.begin(), it );
     if ( index < input_joint_names.size() ){
-      std::cout << name << " found in input_joint_names at " << index << '\n';
+      //std::cout << name << " found in input_joint_names at " << index << '\n';
       arm_indices.push_back(index);
     }else{
       ROS_ERROR("%s not found in input_joint_names, not sending plan", name.c_str());
