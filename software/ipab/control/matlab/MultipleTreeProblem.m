@@ -275,10 +275,10 @@ classdef MultipleTreeProblem
       collisionLinksBody = [1, setdiff(obj.activeCollisionOptions.body_idx, 9:15)];
       mapMirror = [[1; 1; 1] [1; -1; 1]];
        
-      reachabilityThreshold = 40;
+      obj = obj.pruneCapabilityMap(0, 0, 0.5, 0.8, 2.5);
       D = obj.capabilityMap.reachabilityIndex;
       sphCenters = obj.capabilityMap.sphCenters;
-      nSph = nnz( D > reachabilityThreshold);
+      nSph = obj.capabilityMap.nSph;
       iter = 0;
       qOpt = zeros(obj.robot.num_positions,1);
       c = 1/obj.minDistance;
@@ -286,8 +286,7 @@ classdef MultipleTreeProblem
       
 %       tic
       
-      indices = find(D > reachabilityThreshold)';
-      for sph = indices(randperm(nSph))
+      for sph = randperm(nSph)
         iter = iter + 1;
         fprintf('sphere %d of %d\n', iter, nSph);
         point = quat2rotmat(trPose(4:end))* (sphCenters(:,sph).*mapMirror(:, grHand)) + tr2sh;
@@ -340,47 +339,35 @@ classdef MultipleTreeProblem
             end
           end
         end
-        
-%         if valid
-%           phiBody = obj.robot.collisionDetect(q, false, struct('body_idx', collisionLinksBody));
-%           valid = false;
-%           if all(phiBody > obj.minDistance)
-%             kinsol = obj.robot.doKinematics(q);
-%             J = obj.robot.geometricJacobian(kinsol, tr, palm, palm);
-%             nullSpace = null(J);
-%             bounds = (obj.robot.joint_limit_min(armDof) - q(armDof))./nullSpace;
-%             bounds(:,2) = (obj.robot.joint_limit_max(armDof) - q(armDof))./nullSpace;
-%             bounds = sort(bounds,2);
-%             bounds = [max(bounds(:,1)), min(bounds(:,2))];
-%             qNew = q;
-%             for i = 1:100
-%               nullq = nullSpace * (rand() * (bounds(2) - bounds(1)) + bounds(1));
-% %               qNew = q;
-%               qNew(13:19) = qNew(13:19) + nullq;
-%               [qNew, valid, ~] = cSpaceTree.solveIK(qNew, qNew, constraints);
-%               v.draw(0, qNew)
-%               phiArm = obj.robot.collisionDetect(qNew, false, struct('body_idx', collisionLinksArm));
-%               if all(phiArm > obj.minDistance) && obj.checkConstraints(qNew, constraints)
-%                 phiBody = obj.robot.collisionDetect(qNew, false, obj.activeCollisionOptions);
-%                 if all(phiBody > obj.minDistance)
-%                   qOpt = qNew;
-%                   valid = true;
-%                   v.draw(0,qOpt)
-%                   break
-%                 end
-%               end
-%             end
-%           end
-%           if valid
-%             break
-%           end
-%         end
       end
 %       toc
       
 %       weightFactor = 0.0;
 %       minCost = Inf;
 %       cost = (obj.qNom - q)'*cSpaceTree.ikoptions.Q*(obj.qNom - q)- weightFactor * D(sph);
+    end
+    
+    function obj = pruneCapabilityMap(obj, sagittalAngle,...
+        transverseAngle, sagittalWeight, transverseWeight, reachabilityWeight)
+      
+      Dmax = max(obj.capabilityMap.reachabilityIndex);
+      nSph = length(obj.capabilityMap.map);
+      indices = [];
+      
+      for sph = 1:nSph
+        sa = atan2(obj.capabilityMap.sphCenters(3,sph), obj.capabilityMap.sphCenters(1,sph));
+        ta = atan2(obj.capabilityMap.sphCenters(2,sph), obj.capabilityMap.sphCenters(1,sph));
+        sagittalCost = sagittalWeight * abs(sa - tan(sagittalAngle));
+        transverseCost = transverseWeight * abs(ta - tan(transverseAngle));
+        reachabilityCost = reachabilityWeight * (Dmax - obj.capabilityMap.reachabilityIndex(sph));
+        if sqrt(sagittalCost^2 + transverseCost^2) + reachabilityCost < 1
+          indices(end + 1) = sph;
+        end
+      end
+      obj.capabilityMap.nSph = length(indices);
+      obj.capabilityMap.reachabilityIndex = obj.capabilityMap.reachabilityIndex(indices);
+      obj.capabilityMap.map = obj.capabilityMap.map(indices, :);
+      obj.capabilityMap.sphCenters = obj.capabilityMap.sphCenters(:, indices);
     end
     
     function J = computeJacobian(obj, kinSol, joints, endEffector)
