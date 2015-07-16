@@ -21,7 +21,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 4; end;
+  if ~isfield(options,'scene'), options.scene = 3; end;
   if ~isfield(options,'model'), options.model = 'val'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -29,7 +29,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'nTrees'), options.nTrees = 4; end;
-  if ~isfield(options,'goalObject'), options.goalObject = 1; end;
+  if ~isfield(options,'goalObject'), options.goalObject = 4; end;
   
   
   options.floating = true;
@@ -74,6 +74,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         cost(r.getBody(r.getBody(i).parent).position_num) + cost(r.getBody(i).position_num);
     end
   end
+  cost(1:6) = max(cost(7:end))/2;
   cost = cost/min(cost);
   Q = diag(cost);
   ikoptions = IKoptions(r);
@@ -243,7 +244,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
             x_start, x_goal(1:7), [xStartC, xStartD], goalConstraints,...
             startPoseConstraints, q_nom,...
             'capabilityMap', cm, 'graspingHand', options.graspingHand,...
-            'activecollisionoptions', struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)));
+            'activecollisionoptions', struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+            'ikoptions', ikoptions);
         case 3
           multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
         case 2
