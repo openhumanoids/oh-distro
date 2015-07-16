@@ -24,7 +24,7 @@ classdef MultipleTreeProblem
     function obj = MultipleTreeProblem(robot, endEffectorId, endEffectorPoint,...
         xStart, xGoal, xStartAddTrees, goalConstraints, additionalConstraints, qNom, varargin)
       opt = struct('mergingthreshold', 0.2, 'capabilitymap', [], 'graspinghand', 'right',...
-        'mindistance', 0.01, 'activecollisionoptions', struct());
+        'mindistance', 0.01, 'activecollisionoptions', struct(), 'ikoptions', struct());
       optNames = fieldnames(opt);
       nArgs = length(varargin);
       if round(nArgs/2)~=nArgs/2
@@ -54,6 +54,7 @@ classdef MultipleTreeProblem
       obj.trees = OptimalMotionPlanningTree.empty(obj.nTrees, 0);
       for t = 1:obj.nTrees
         obj.trees(t) = OptimalMotionPlanningTree(obj.robot, endEffectorId, endEffectorPoint);
+        obj.trees(t).trees{obj.trees(t).cspace_idx}.ikoptions = opt.ikoptions;
       end
       qGoal = obj.findGoalPose(xStart, xGoal);
       obj.startPoints = [xStart, [xGoal; qGoal], xStartAddTrees];
@@ -282,9 +283,12 @@ classdef MultipleTreeProblem
       iter = 0;
       qOpt = zeros(obj.robot.num_positions,1);
       c = 1/obj.minDistance;
+      deltaQmax = 0.05;
       v = obj.robot.constructVisualizer();
+      validConfs =  NaN(np+1, nSph);
+      succ = zeros(nSph, 2);
       
-%       tic
+      tic
       
       for sph = randperm(nSph)
         iter = iter + 1;
@@ -292,7 +296,7 @@ classdef MultipleTreeProblem
         point = quat2rotmat(trPose(4:end))* (sphCenters(:,sph).*mapMirror(:, grHand)) + tr2sh;
         shConstraint = WorldPositionConstraint(obj.robot, tr, point, xGoal(1:3), xGoal(1:3));
         constraints = [{shConstraint}, obj.goalConstraints, obj.additionalConstraints];
-        [q, valid, ~] = cSpaceTree.solveIK(obj.qNom, obj.qNom, constraints);
+        [q, valid, infConst] = cSpaceTree.solveIK(obj.qNom, obj.qNom, constraints);
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, palm, [0;0;0], options);
         targetPos = [palmPose(1:3); quat2rpy(palmPose(4:7))];
@@ -304,43 +308,64 @@ classdef MultipleTreeProblem
             eps  = Inf;
             nIter = 0;
             [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
-            while (eps > 1e-3 || any(phi < 0)) && nIter < 100
-              phi = phi - obj.minDistance;
-              qNdot = zeros(nArmJoints, 1);
-              for joint = 1:nArmJoints
-                jointIdx = armJoints(joint);
-                dgamma_dq = zeros(size(phi));
-                for coll = 1:size(phi,1)
-                  if phi(coll) < 0
-                    JA = obj.computeJacobian(kinSol, armJoints, idxA(coll));
-                    JB = obj.computeJacobian(kinSol, armJoints, idxB(coll));
-                    dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
-                    dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
-                  else
-                    dgamma_dq(coll) = 0;
+            if any(phi < obj.minDistance)
+              while (eps > 1e-3 || any(phi < 0)) && nIter < 5
+                phi = phi - obj.minDistance;
+                qNdot = zeros(nArmJoints, 1);
+                for joint = 1:nArmJoints
+                  dgamma_dq = zeros(size(phi));
+                  for coll = 1:size(phi,1)
+                    if phi(coll) < 0
+                      JA = obj.computeJacobian(kinSol, armJoints, idxA(coll));
+                      JB = obj.computeJacobian(kinSol, armJoints, idxB(coll));
+                      dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
+                      dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
+                    else
+                      dgamma_dq(coll) = 0;
+                    end
                   end
+                  qNdot(joint) = sum(dgamma_dq);
                 end
-                qNdot(joint) = sum(dgamma_dq);
+                J = obj.computeJacobian(kinSol, armJoints, palm);
+                Jpsi = J'*inv(J*J');
+                deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
+                if any(abs(deltaQ) > deltaQmax)
+                  alpha = deltaQmax/abs(deltaQ);
+                elseif all(deltaQ < 1e-3)
+                  break
+                else
+                  alpha = 1;
+                end
+                q(armJoints) = q(armJoints) + alpha*deltaQ;              
+                v.draw(0, q)
+                [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
+                kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
+                palmPose = obj.robot.forwardKin(kinSol, palm, [0;0;0], options);
+                deltaX = targetPos - [palmPose(1:3); quat2rpy(palmPose(4:7))];
+                eps = norm(deltaX);
+                nIter = nIter + 1;
               end
-              J = obj.computeJacobian(kinSol, armJoints, palm);
-              Jpsi = J'*inv(J*J');
-              deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
-              q(armJoints) = q(armJoints) + 0.1*deltaQ;              
-              v.draw(0, q)
-              [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
-              kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
-              palmPose = obj.robot.forwardKin(kinSol, palm, [0;0;0], options);
-              deltaX = targetPos - [palmPose(1:3); quat2rpy(palmPose(4:7))];
-              eps = norm(deltaX);
-              nIter = nIter + 1;
             end
             if eps < 1e-3 && all(phi >= 0)
-              pause
+              cost = (obj.qNom - q)'*cSpaceTree.ikoptions.Q*(obj.qNom - q);
+              validConfs(:,sph) = [cost; q];
+              succ(sph, :) = [1, nIter];
+            else              
+              succ(sph, :) = [0, nIter];
             end
+          end
+        else
+          for con = 1:numel(infConst)
+            fprintf('%s\n', infConst{con})
           end
         end
       end
-%       toc
+      if ~isempty(validConfs)
+        [~, qOptIdx] =  min(validConfs(1,:));
+        qOpt = validConfs(2:end, qOptIdx);
+        v.draw(0, qOpt);
+      end
+      toc
       
 %       weightFactor = 0.0;
 %       minCost = Inf;
@@ -357,8 +382,8 @@ classdef MultipleTreeProblem
       for sph = 1:nSph
         sa = atan2(obj.capabilityMap.sphCenters(3,sph), obj.capabilityMap.sphCenters(1,sph));
         ta = atan2(obj.capabilityMap.sphCenters(2,sph), obj.capabilityMap.sphCenters(1,sph));
-        sagittalCost = sagittalWeight * abs(sa - tan(sagittalAngle));
-        transverseCost = transverseWeight * abs(ta - tan(transverseAngle));
+        sagittalCost = sagittalWeight * abs(sa - sagittalAngle);
+        transverseCost = transverseWeight * abs(ta - transverseAngle);
         reachabilityCost = reachabilityWeight * (Dmax - obj.capabilityMap.reachabilityIndex(sph));
         if sqrt(sagittalCost^2 + transverseCost^2) + reachabilityCost < 1
           indices(end + 1) = sph;
