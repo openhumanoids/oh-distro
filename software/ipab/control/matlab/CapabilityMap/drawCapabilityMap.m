@@ -16,9 +16,11 @@ function drawCapabilityMap(mapFile, center)
     center = r.forwardKin(kinsol, shoulder, [0;0;0], 0);
   elseif nargin < 2
     center = [0;0;0];
-  end  
+  end
   
-  [map, reachabilityIndex, sphCenters] = pruneCapabiltiyMap(mapFile, 0, 0, 0.5, 0.8, 2.5);
+  gui = capabilityMapControls(0, -pi/6, 0.8, 1.5, 5.5, mapFile, center);
+  
+  [map, reachabilityIndex, sphCenters] = pruneCapabilityMap(mapFile, 0, -pi/6, 0.8, 1.5, 5.5);
   sphCentersShoulder = sphCenters + repmat(center, 1, size(sphCenters, 2));
   diameter = options.sphDiameter;
   
