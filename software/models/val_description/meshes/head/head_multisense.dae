@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 2.75.0 commit date:2015-07-01, commit time:12:00, hash:c6b042b</authoring_tool>
     </contributor>
-    <created>2015-07-15T11:58:56</created>
-    <modified>2015-07-15T11:58:56</modified>
+    <created>2015-07-20T10:08:17</created>
+    <modified>2015-07-20T10:08:17</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -34,7 +34,7 @@
               <color sid="emission">0 0 0 1</color>
             </emission>
             <ambient>
-              <color sid="ambient">0 0 0 1</color>
+              <color sid="ambient">1 1 1 1</color>
             </ambient>
             <diffuse>
               <texture texture="HeadTextureMultisense_png-sampler" texcoord="UVMap"/>
@@ -103,7 +103,6 @@
       </mesh>
     </geometry>
   </library_geometries>
-  <library_controllers/>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
       <node id="Cylinder" name="Cylinder" type="NODE">
