@@ -2130,7 +2130,7 @@
     </inertial>
   </link>
   <joint name="RightLegSixAxis_Offset" type="fixed">
-    <origin rpy="3.14 0.0 -1.047" xyz="0.022 0.0 -0.059"/>
+    <origin rpy="3.14 0.0 -1.047" xyz="0.0215594 0.0 -0.0585488"/>
     <axis xyz="0 0 1"/>
     <parent link="RightFoot"/>
     <child link="RightLegSixAxis_Frame"/>
@@ -2427,7 +2427,7 @@
     </inertial>
   </link>
   <joint name="LeftLegSixAxis_Offset" type="fixed">
-    <origin rpy="3.14 0.0 -1.047" xyz="0.022 0.0 -0.059"/>
+    <origin rpy="3.14 0.0 -1.047" xyz="0.0215594 0.0 -0.0585488"/>
     <axis xyz="0 0 1"/>
     <parent link="LeftFoot"/>
     <child link="LeftLegSixAxis_Frame"/>
