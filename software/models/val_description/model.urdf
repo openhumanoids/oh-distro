@@ -22,7 +22,6 @@
   </material>
   <!-- Properties -->
   <!-- Actuators -->
-  <!-- Sensors -->
   <!-- Actuators -->
   <!-- <xacro:property name="LJ1_Link_Origin_X" value="1.3078570e-03"/>
   <xacro:property name="LJ1_Link_Origin_Y" value="2.1764163e-02"/>
@@ -48,9 +47,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="Pelvis">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightPelvisIMU_Frame">
     <!-- Virtual Link -->
     <inertial>
@@ -99,9 +98,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="TorsoYawLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="TorsoPitchLink">
     <inertial>
       <mass value="1e-05"/>
@@ -122,9 +121,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="TorsoPitchLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="Torso">
     <inertial>
       <mass value="42.6"/>
@@ -145,9 +144,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="Torso">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="TorsoYaw" type="revolute">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
     <axis xyz="0 0 1"/>
@@ -340,9 +339,9 @@
       </geometry>
     </collision>
   </link>
-  <gazebo reference="Head">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="LowerNeckPitch" type="revolute">
     <origin rpy="0.0 0.0 0.0" xyz="0.0204 0.0 0.3385"/>
     <axis xyz="0 1 0"/>
@@ -387,7 +386,7 @@
   <!-- params="name mass origin_rpy origin_xyz ixx ixy ixz iyy iyz izz visual_mesh material collision_mesh" -->
   <joint name="MultisenseSLSpinnyJointFrame" type="fixed">
     <origin rpy="0.0 0.1309 0.0" xyz="0.001654 0.0 0.012564"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="1 0 0"/>
     <parent link="Head"/>
     <child link="hokuyo_link"/>
   </joint>
@@ -411,9 +410,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="hokuyo_link">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="head_hokuyo_frame_offset">
     <!-- Virtual Link -->
     <inertial>
@@ -477,9 +476,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightShoulderPitchLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightShoulderRollLink">
     <inertial>
       <mass value="2.87"/>
@@ -500,9 +499,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightShoulderRollLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightShoulderYawLink">
     <inertial>
       <mass value="2.575"/>
@@ -523,9 +522,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightShoulderYawLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightElbowPitchLink">
     <inertial>
       <mass value="2.367"/>
@@ -546,9 +545,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightElbowPitchLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <!-- AJ1 -->
   <joint name="RightShoulderPitch" type="revolute">
     <origin rpy="0.0 0.0 0.0" xyz="-0.0316 0.0 0.2984"/>
@@ -622,9 +621,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightForearmLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightWristRollLink">
     <inertial>
       <mass value="0.1"/>
@@ -645,12 +644,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightWristRollLink">
-    <material>Gazebo/White</material>
-  </gazebo>
-  /&gt;
-
-    
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightPalm">
     <inertial>
       <mass value="0.712"/>
@@ -671,9 +667,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightPalm">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <!-- AJ5 -->
   <joint name="RightForearmYaw" type="revolute">
     <origin rpy="0.0 0.0 0.0" xyz="-0.0254 0 0"/>
@@ -733,9 +729,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightThumbRollLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightThumbPitch1Link">
     <inertial>
       <mass value="0.02"/>
@@ -756,9 +752,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightThumbPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightThumbPitch2Link">
     <inertial>
       <mass value="0.013"/>
@@ -779,9 +775,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightThumbPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightThumbPitch3Link">
     <inertial>
       <mass value="0.006"/>
@@ -802,9 +798,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightThumbPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="RightThumbRoll" type="fixed">
     <origin rpy="0.3491 0.0 0.0" xyz="0.0049 -0.0351 0.0228"/>
     <axis xyz="0 0 1"/>
@@ -849,9 +845,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightIndexFingerPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightIndexFingerPitch2Link">
     <inertial>
       <mass value="0.018"/>
@@ -872,9 +868,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightIndexFingerPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightIndexFingerPitch3Link">
     <inertial>
       <mass value="0.01"/>
@@ -895,9 +891,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightIndexFingerPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="RightIndexFingerPitch1" type="fixed">
     <origin rpy="-0.1745 0.0 0.0" xyz="0.0022 -0.0976 0.0235"/>
     <axis xyz="0 0 1"/>
@@ -936,9 +932,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightMiddleFingerPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightMiddleFingerPitch2Link">
     <inertial>
       <mass value="0.011"/>
@@ -959,9 +955,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightMiddleFingerPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightMiddleFingerPitch3Link">
     <inertial>
       <mass value="0.006"/>
@@ -982,9 +978,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightMiddleFingerPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="RightMiddleFingerPitch1" type="fixed">
     <origin rpy="0.1222 0.0 0.0" xyz="0.0022 -0.097 -0.0119"/>
     <axis xyz="0 0 1"/>
@@ -1023,9 +1019,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightPinkyPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightPinkyPitch2Link">
     <inertial>
       <mass value="0.02"/>
@@ -1046,9 +1042,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightPinkyPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightPinkyPitch3Link">
     <inertial>
       <mass value="0.011"/>
@@ -1069,9 +1065,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightPinkyPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="RightPinkyPitch1" type="fixed">
     <origin rpy="0.1222 0.0 0.0" xyz="0.0022 -0.0838 -0.041"/>
     <axis xyz="0 0 1"/>
@@ -1111,9 +1107,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftShoulderPitchLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftShoulderRollLink">
     <inertial>
       <mass value="2.87"/>
@@ -1134,9 +1130,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftShoulderRollLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftShoulderYawLink">
     <inertial>
       <mass value="2.575"/>
@@ -1157,9 +1153,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftShoulderYawLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftElbowPitchLink">
     <inertial>
       <mass value="2.367"/>
@@ -1180,9 +1176,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftElbowPitchLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <!-- AJ1 -->
   <joint name="LeftShoulderPitch" type="revolute">
     <origin rpy="0.0 0.0 0.0" xyz="-0.0316 0.0 0.2984"/>
@@ -1256,9 +1252,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftForearmLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftWristRollLink">
     <inertial>
       <mass value="0.1"/>
@@ -1279,12 +1275,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftWristRollLink">
-    <material>Gazebo/White</material>
-  </gazebo>
-  /&gt;
-
-    
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftPalm">
     <inertial>
       <mass value="0.712"/>
@@ -1305,9 +1298,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftPalm">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <!-- AJ5 -->
   <joint name="LeftForearmYaw" type="revolute">
     <origin rpy="0.0 0.0 0.0" xyz="-0.0254 0 0"/>
@@ -1367,9 +1360,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftThumbRollLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftThumbPitch1Link">
     <inertial>
       <mass value="0.02"/>
@@ -1390,9 +1383,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftThumbPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftThumbPitch2Link">
     <inertial>
       <mass value="0.013"/>
@@ -1413,9 +1406,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftThumbPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftThumbPitch3Link">
     <inertial>
       <mass value="0.006"/>
@@ -1436,9 +1429,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftThumbPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="LeftThumbRoll" type="fixed">
     <origin rpy="-0.3491 0.0 0.0" xyz="0.0049 0.0351 0.0228"/>
     <axis xyz="0 0 1"/>
@@ -1483,9 +1476,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftIndexFingerPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftIndexFingerPitch2Link">
     <inertial>
       <mass value="0.018"/>
@@ -1506,9 +1499,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftIndexFingerPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftIndexFingerPitch3Link">
     <inertial>
       <mass value="0.01"/>
@@ -1529,9 +1522,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftIndexFingerPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="LeftIndexFingerPitch1" type="fixed">
     <origin rpy="0.1745 0.0 0.0" xyz="0.0022 0.0976 0.0235"/>
     <axis xyz="0 0 1"/>
@@ -1570,9 +1563,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftMiddleFingerPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftMiddleFingerPitch2Link">
     <inertial>
       <mass value="0.011"/>
@@ -1593,9 +1586,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftMiddleFingerPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftMiddleFingerPitch3Link">
     <inertial>
       <mass value="0.006"/>
@@ -1616,9 +1609,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftMiddleFingerPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="LeftMiddleFingerPitch1" type="fixed">
     <origin rpy="-0.1222 0.0 0.0" xyz="0.0022 0.097 -0.0119"/>
     <axis xyz="0 0 1"/>
@@ -1657,9 +1650,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftPinkyPitch1Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftPinkyPitch2Link">
     <inertial>
       <mass value="0.02"/>
@@ -1680,9 +1673,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftPinkyPitch2Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftPinkyPitch3Link">
     <inertial>
       <mass value="0.011"/>
@@ -1703,9 +1696,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftPinkyPitch3Link">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <joint name="LeftPinkyPitch1" type="fixed">
     <origin rpy="-0.1222 0.0 0.0" xyz="0.0022 0.0838 -0.041"/>
     <axis xyz="0 0 1"/>
@@ -1744,9 +1737,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightHipYawLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightHipRollLink">
     <inertial>
       <mass value="5.95"/>
@@ -1767,9 +1760,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightHipRollLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightHipPitchLink">
     <inertial>
       <mass value="10.3"/>
@@ -1790,9 +1783,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightHipPitchLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightKneePitchLink">
     <inertial>
       <mass value="7.4"/>
@@ -1813,9 +1806,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightKneePitchLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightAnklePitchLink">
     <inertial>
       <mass value="0.395"/>
@@ -1836,9 +1829,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="RightAnklePitchLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="RightFoot">
     <inertial>
       <mass value="1.888"/>
@@ -1909,9 +1902,9 @@
     </visual>
 
   </link>
-  <gazebo reference="RightFoot">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <gazebo reference="RightFoot">
     <kp>100000.0</kp>
     <kd>1000.0</kd>
@@ -2041,9 +2034,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftHipYawLink">
-    <material>Gazebo/Gold</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftHipRollLink">
     <inertial>
       <mass value="5.95"/>
@@ -2064,9 +2057,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftHipRollLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftHipPitchLink">
     <inertial>
       <mass value="10.3"/>
@@ -2087,9 +2080,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftHipPitchLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftKneePitchLink">
     <inertial>
       <mass value="7.4"/>
@@ -2110,9 +2103,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftKneePitchLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftAnklePitchLink">
     <inertial>
       <mass value="0.395"/>
@@ -2133,9 +2126,9 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="LeftAnklePitchLink">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <link name="LeftFoot">
     <inertial>
       <mass value="1.888"/>
@@ -2206,9 +2199,9 @@
     </visual>
 
   </link>
-  <gazebo reference="LeftFoot">
-    <material>Gazebo/White</material>
-  </gazebo>
+  <!--    <gazebo reference="${name}">
+      <material>Gazebo/${material}</material>
+    </gazebo> -->
   <gazebo reference="LeftFoot">
     <kp>100000.0</kp>
     <kd>1000.0</kd>
