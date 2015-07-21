@@ -54,11 +54,11 @@ function capabilityMapControls_OpeningFcn(hObject, eventdata, handles, varargin)
 
 set(handles.slider1, 'Min', -pi/2);
 set(handles.slider1, 'Max', pi/2);
-set(handles.slider1, 'SliderStep', [pi/180, pi/18]);
+set(handles.slider1, 'SliderStep', [1/180, 1/18]);
 set(handles.slider1, 'Value', varargin{1});
 set(handles.slider2, 'Min', -pi);
 set(handles.slider2, 'Max', pi);
-set(handles.slider2, 'SliderStep', [pi/180, pi/18]);
+set(handles.slider2, 'SliderStep', [1/360, 1/36]);
 set(handles.slider2, 'Value', varargin{2});
 set(handles.slider3, 'Min', 0);
 set(handles.slider3, 'Max', 10);
@@ -74,6 +74,7 @@ set(handles.text7, 'String', varargin{2}/pi*180);
 set(handles.text8, 'String', varargin{3});
 set(handles.text9, 'String', varargin{4});
 set(handles.text10, 'String', varargin{5});
+set(handles.text11, 'String',  sprintf('n Spheres: %d', varargin{8}));
 set(hObject, 'UserData', {varargin{6}, varargin{7}});
 
 % Choose default command line output for capabilityMapControls
