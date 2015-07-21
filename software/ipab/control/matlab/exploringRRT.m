@@ -1,27 +1,15 @@
 function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
-      
-  %%TIMING
-  global IKTimes
-  global collisionTimes
-  global collisionFails
-  global tree
-  tree = 5;
-  IKTimes = [];
-  collisionTimes = [];
-  collisionFails = []; %1: SE3.isCollisionFree
-                       %2: JointSpaceTree.isCollisionFree
-                       %3: OptimalTree.checkEdge
   
   if nargin < 1 || isempty(options), options = struct(); end
   
-  w = warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
+  warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
   warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
   if ~isfield(options,'goal_bias'), options.goal_bias = 0.5; end;
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 3; end;
+  if ~isfield(options,'scene'), options.scene = 6; end;
   if ~isfield(options,'model'), options.model = 'val'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -56,7 +44,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   point_in_link_frame = Scenes.getPointInLinkFrame(options);
   
   q_nom = Scenes.getFP(options.model, r);
-  warning(w);
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if options.visualize
@@ -133,25 +120,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   else
     inactive_collision_bodies = [lFoot,rFoot];
   end
-  
-  min_distance = 0.01;
-  active_collision_options.body_idx = setdiff(1:r.getNumBodies(),inactive_collision_bodies);
-  options.display_after_every = 1;
-  if any(strcmp(options.planning_mode, {'rrt*', 'multiRRT'}))
-    TA = OptimalMotionPlanningTree(r, g_hand, point_in_link_frame);
-    TA.steerFactor = 0.1;
-  else
-    TA = TaskSpaceMotionPlanningTree(r, g_hand, point_in_link_frame);
-  end
-  TA  = TA.setMinDistance(min_distance);
-  TA  = TA.setOrientationWeight(1);
-  TA.max_edge_length = 0.05;
-  TA.max_length_between_constraint_checks = TA.max_edge_length;
-  TA.angle_tol = 10*pi/180;
-  TA.position_tol = 1e-3;
-  TA.trees{TA.cspace_idx}.active_collision_options.body_idx = setdiff(1:r.getNumBodies(), inactive_collision_bodies);
-  TA.trees{TA.cspace_idx}.ikoptions = ikoptions;
-  
+
   kinsol = r.doKinematics(q_start);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
   kinsol = r.doKinematics(q_end);
@@ -159,21 +128,45 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   x_start = [xyz_quat_start;q_start];
   x_goal = [xyz_quat_goal;q_end];
   xyz_box_edge_length = 2;
-  xyz_min = min(xyz_quat_start(1:3),xyz_quat_goal(1:3)) - xyz_box_edge_length/2;
-  xyz_max = max(xyz_quat_start(1:3),xyz_quat_goal(1:3)) + xyz_box_edge_length/2;
   
-  %Naive reduction of the task space
-  xyz_min = [x_start(1) - 0.2; min([x_start(2), x_goal(2)]) - 0.5; 0];
-  xyz_max = [x_goal(1) + 0.2; max([x_start(2), x_goal(2)]) + 0.5; xyz_max(3)];
+  if ~strcmp(options.planning_mode, 'multiRRT')
+    min_distance = 0.01;
+    active_collision_options.body_idx = setdiff(1:r.getNumBodies(),inactive_collision_bodies);
+    options.display_after_every = 1;
+    if any(strcmp(options.planning_mode, 'rrt*'))
+      TA = OptimalMotionPlanningTree(r, g_hand, point_in_link_frame);
+    else
+      TA = TaskSpaceMotionPlanningTree(r, g_hand, point_in_link_frame);
+    end
+    TA  = TA.setMinDistance(min_distance);
+    TA  = TA.setOrientationWeight(1);
+    TA.max_edge_length = 0.05;
+    TA.max_length_between_constraint_checks = TA.max_edge_length;
+    TA.angle_tol = 10*pi/180;
+    TA.position_tol = 1e-3;
+    TA.trees{TA.cspace_idx}.active_collision_options.body_idx = setdiff(1:r.getNumBodies(), inactive_collision_bodies);
+    TA.trees{TA.cspace_idx}.ikoptions = ikoptions;
+    xyz_min = min(xyz_quat_start(1:3),xyz_quat_goal(1:3)) - xyz_box_edge_length/2;
+    xyz_max = max(xyz_quat_start(1:3),xyz_quat_goal(1:3)) + xyz_box_edge_length/2;
+
+    %Naive reduction of the task space
+    xyz_min = [x_start(1) - 0.2; min([x_start(2), x_goal(2)]) - 0.5; 0];
+    xyz_max = [x_goal(1) + 0.2; max([x_start(2), x_goal(2)]) + 0.5; xyz_max(3)];
+
+    TA = TA.setTranslationSamplingBounds(xyz_min, xyz_max);
+    TA = TA.addKinematicConstraint(startPoseConstraints{:});
+    TA = TA.setNominalConfiguration(q_nom);
+
+    TA = TA.compile();
+    TB = TA;
+    TC = TA;
+    TD = TA;
+    assert(TA.checkConstraints(x_start))
+    assert(TB.checkConstraints(x_goal))
   
-  TA = TA.setTranslationSamplingBounds(xyz_min, xyz_max);
-  TA = TA.addKinematicConstraint(startPoseConstraints{:});
-  TA = TA.setNominalConfiguration(q_nom);
-  
-  TA = TA.compile();
-  TB = TA;
-  TC = TA;
-  TD = TA;
+    TA = TA.setLCMGL('TA',[1,0,0]);
+    TB = TB.setLCMGL('TB',[0,0,1]);
+  end
   
   switch options.model
     case 'val'
@@ -205,27 +198,11 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   kinsol = r.doKinematics(qStartD);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
   xStartD = [xyz_quat_start; qStartD];
-  assert(TA.checkConstraints(x_start))
-  assert(TB.checkConstraints(x_goal))
-  assert(TB.checkConstraints(xStartD))
-  assert(TB.checkConstraints(xStartD))
   
   if options.visualize
     v.draw(0, q_start);
   end
   
-  % n_ee_poses_tried = 1;
-  %sample_prog = InverseKinematics(r,ik_nominal_pose,base_constraints{:},collision_constraint);
-  % sample_prog = InverseKinematics(r,ik_nominal_pose,base_constraints{:});
-  % sample_prog = sample_prog.setQ(0.1*ikoptions.Q);
-  % sample_prog = sample_prog.setSolverOptions('snopt','MajorIterationsLimit',ikoptions.SNOPT_IterationsLimit);
-  % sample_prog.setSolverOptions('snopt','MajorFeasibilityTolerance',ikoptions.SNOPT_MajorFeasibilityTolerance);
-  % sample_prog.setSolverOptions('snopt','MajorOptimalityTolerance',1e-3);
-  TA = TA.setLCMGL('TA',[1,0,0]);
-  %TA.TB = TA.TB.setLCMGL('TA.TB',[1,0,0]);
-  TB = TB.setLCMGL('TB',[0,0,1]);
-  TC = TC.setLCMGL('TC',[1,0,1]);
-  TD = TD.setLCMGL('TD',[0,1,1]);
   rrt_timer = tic;
   %display('About to plan ...')
   switch options.planning_mode
@@ -240,25 +217,21 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       cm = CapabilityMap([fileparts(which('exploringRRT')) '/CapabilityMap/capabilityMap.mat']);
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem(r, g_hand, point_in_link_frame, ...
-            x_start, x_goal(1:7), [xStartC, xStartD], goalConstraints,...
-            startPoseConstraints, q_nom,...
-            'capabilityMap', cm, 'graspingHand', options.graspingHand,...
-            'activecollisionoptions', struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
-            'ikoptions', ikoptions);
+          load('scene2Goal.mat')
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_goal(1:7),...
+            [xStartC, xStartD], goalConstraints, startPoseConstraints, q_nom,...
+            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
         case 3
           multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
         case 2
           multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
       end
-      [multiTree, info, cost, q_path, times] = multiTree.rrt(x_start, x_goal, options);
+      [multiTree, info, cost, q_path] = multiTree.rrt(x_start, x_goal(1:7), options);
+      TA = multiTree.trees(1);
   end
-  rrt_time = toc(rrt_timer);
-  if options.visualize
-    fprintf('  Timing:\n');
-    fprintf('    RRT:       %5.2f s\n', rrt_time);
-  end
-  
+  rrt_time = toc(rrt_timer);  
   
   if (info == Info.SUCCESS)
     if ~any(strcmp(options.planning_mode, {'rrt*', 'multiRRT'}))
@@ -278,7 +251,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         path_ids_A = T_smooth.getPathToVertex(id_last);
         smoothing_time = toc(smoothing_timer);
         if options.visualize
-          fprintf('    Smoothing: %5.2f s\n', smoothing_time);
           drawTree(TA);
           drawTree(TB);
           drawPath(T_smooth, path_ids_A);
@@ -326,7 +298,11 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.TBn = TB.n;
         statVars.TCn = simVars.TConnected.n;
         statVars.TSn = T_smooth.n;
-        statVars.info = info;
+        if info == 1
+          statVars.info = Info(Info.SUCCESS);
+        else
+          statVars.info = Info(Info.FAIL_OTHER);
+        end
         q_path = extractPath(T_smooth, path_ids_A);
         TSlengths = q_path(1:3,2:end)-q_path(1:3, 1:end-1);
         statVars.TSlength = sum(diag(sqrt(TSlengths'*TSlengths)));
@@ -345,22 +321,22 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.options = rmfield(options, {'robot', 'terrain'});
       case 'multiRRT'       
         simVars.info = info;
-        statVars.time = rrt_time;
-        statVars.reachingTime = times.reaching;
-        statVars.improvingTime = times.improving;
-        statVars.checkingTime = times.checking;
         if options.visualize
-          fprintf('Reaching Time: %.2f\nImproving Time: %.2f\nShortcut Time: %.2f\nrebuild Time: %.2f\ntotal Time: %.2f\n',...
-            times.reaching, times.improving, times.shortcut, times.rebuild, rrt_time);
+          fprintf(['TIMING:\n',...
+                  '\tFinalPoseTime: %.2f\n',...
+                  '\tReaching Time: %.2f\n',...
+                  '\tImproving Time: %.2f\n',...
+                  '\tShortcut Time: %.2f\n',...
+                  '\trebuild Time: %.2f\n',...
+                  '\ttotal Time: %.2f\n'],...
+                  info.finalPoseTime, info.reachingTime, info.improvingTime,...
+                  info.shortcutTime, info.rebuildTime, rrt_time);
         end
 %         statVars.numberOfVertices = TA.n;
         statVars.info = info;
         statVars.cost = cost;
         statVars.rndSeed = rndSeed; 
         statVars.options = rmfield(options, {'robot', 'terrain'});
-        statVars.collisionTimes = collisionTimes;
-        statVars.IKTimes = IKTimes;
-        statVars.collisionFails = collisionFails;
     end
     
     if options.visualize

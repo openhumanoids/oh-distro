@@ -1,7 +1,7 @@
 function drawCapabilityMap(mapFile, center)
   load(mapFile);
   
-  if ~isfield(options, 'drawRobot'), options.drawRobot = false; end
+  if ~isfield(options, 'drawRobot'), options.drawRobot = true; end
   
   if options.drawRobot
     options.floating = false;
@@ -18,9 +18,8 @@ function drawCapabilityMap(mapFile, center)
     center = [0;0;0];
   end
   
-  gui = capabilityMapControls(0, -pi/6, 0.8, 1.5, 5.5, mapFile, center);
   
-  [map, reachabilityIndex, sphCenters] = pruneCapabilityMap(mapFile, 0, -pi/6, 0.8, 1.5, 5.5);
+  [map, reachabilityIndex, sphCenters] = pruneCapabilityMap(mapFile, 0, 0, 0.6, 0.9, 7.5);
   sphCentersShoulder = sphCenters + repmat(center, 1, size(sphCenters, 2));
   diameter = options.sphDiameter;
   
@@ -32,4 +31,6 @@ function drawCapabilityMap(mapFile, center)
     lcmClient.sphere(sphCentersShoulder(:,sph), diameter/2, 20, 20);   
   end
   lcmClient.switchBuffers();
+  
+  capabilityMapControls(0, 0, 0.6, 0.9, 7.5, mapFile, center, nSph);
 end

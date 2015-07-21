@@ -6,13 +6,19 @@ classdef Info
     FAIL_COLLISION = 3
     FAIL_TOO_MANY_ITERATIONS = 4
     FAIL_OTHER = 5
-    NEW_POINT_ADDED = 6
+    FAIL_NO_FINAL_POSE = 6
   end
   
   properties
     status
     failingConfiguration
     infeasibleConstraints
+    finalPoseTime
+    reachingTime
+    improvingTime
+    checkingTime
+    shortcutTime
+    rebuildTime
   end
   
   methods
@@ -34,6 +40,10 @@ classdef Info
     function status = getStatus(obj)
       constProps = obj.getConstProps();
       status = constProps{obj.status};
+    end
+    
+    function obj = setStatus(obj, status)
+      obj.status = status;
     end
     
     function res = eq(obj, val)
