@@ -64,6 +64,28 @@
     <parent link="Pelvis"/>
     <child link="RightPelvisIMU_Frame"/>
   </joint>
+  <gazebo reference="RightPelvisIMU_Frame">
+    <sensor name="RightPelvisIMU" type="imu">
+      <pose>0.0515 -0.115 -0.042 -1.57 0.0 1.274 </pose>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <rate>
+            <mean>0</mean>
+            <stddev>0.0002</stddev>
+            <bias_mean>7.5e-06</bias_mean>
+            <bias_stddev>8e-07</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0</mean>
+            <stddev>0.017</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </sensor>
+  </gazebo>
   <link name="LeftPelvisIMU_Frame">
     <!-- Virtual Link -->
     <inertial>
@@ -78,6 +100,28 @@
     <parent link="Pelvis"/>
     <child link="LeftPelvisIMU_Frame"/>
   </joint>
+  <gazebo reference="LeftPelvisIMU_Frame">
+    <sensor name="LeftPelvisIMU" type="imu">
+      <pose>0.0515 0.115 -0.042 1.57 0 -1.274 </pose>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <rate>
+            <mean>0</mean>
+            <stddev>0.0002</stddev>
+            <bias_mean>7.5e-06</bias_mean>
+            <bias_stddev>8e-07</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0</mean>
+            <stddev>0.017</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </sensor>
+  </gazebo>
   <link name="TorsoYawLink">
     <inertial>
       <mass value="1e-05"/>
@@ -197,6 +241,28 @@
     <parent link="Torso"/>
     <child link="RightIMU_Frame"/>
   </joint>
+  <gazebo reference="RightIMU_Frame">
+    <sensor name="RightIMU" type="imu">
+      <pose>-0.047 -0.134 0.363 -1.57 0.0 3.14 </pose>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <rate>
+            <mean>0</mean>
+            <stddev>0.0002</stddev>
+            <bias_mean>7.5e-06</bias_mean>
+            <bias_stddev>8e-07</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0</mean>
+            <stddev>0.017</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </sensor>
+  </gazebo>
   <link name="LeftIMU_Frame">
     <!-- Virtual Link -->
     <inertial>
@@ -211,6 +277,28 @@
     <parent link="Torso"/>
     <child link="LeftIMU_Frame"/>
   </joint>
+  <gazebo reference="LeftIMU_Frame">
+    <sensor name="LeftIMU" type="imu">
+      <pose>-0.047 0.134 0.363 1.57 0.0 3.14 </pose>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <rate>
+            <mean>0</mean>
+            <stddev>0.0002</stddev>
+            <bias_mean>7.5e-06</bias_mean>
+            <bias_stddev>8e-07</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0</mean>
+            <stddev>0.017</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </sensor>
+  </gazebo>
   <link name="RightHazardCamera_Frame">
     <!-- Virtual Link -->
     <inertial>
@@ -378,12 +466,6 @@
   <gazebo reference="UpperNeckPitch">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <!-- <xacro:microstrain_sensor sensorName="HeadIMU"
-                              parentLink="${UpperNeckPitchLinkName}"
-                              origin_xyz="0.098 0.0 0.052"
-                              origin_rpy="-1.57 1.57 0.0" />
--->
-  <!-- params="name mass origin_rpy origin_xyz ixx ixy ixz iyy iyz izz visual_mesh material collision_mesh" -->
   <joint name="MultisenseSLSpinnyJointFrame" type="fixed">
     <origin rpy="0.0 0.1309 0.0" xyz="0.001654 0.0 0.012564"/>
     <axis xyz="1 0 0"/>
@@ -413,6 +495,12 @@
   <!--    <gazebo reference="${name}">
       <material>Gazebo/${material}</material>
     </gazebo> -->
+  <joint name="head_hokuyo_frame_joint" type="fixed">
+    <origin rpy="3.14 0.0 0.0" xyz="0.16018 0.0 -0.015"/>
+    <axis xyz="0 0 1"/>
+    <parent link="hokuyo_link"/>
+    <child link="head_hokuyo_frame_offset"/>
+  </joint>
   <link name="head_hokuyo_frame_offset">
     <!-- Virtual Link -->
     <inertial>
@@ -421,11 +509,38 @@
       <inertia ixx="3.33333333333e-22" ixy="0.0" ixz="0.0" iyy="3.33333333333e-22" iyz="0.0" izz="5e-22"/>
     </inertial>
   </link>
-  <joint name="head_hokuyo_frame_joint" type="fixed">
-    <origin rpy="3.14 0.0 0.0" xyz="0.16018 0.0 -0.015"/>
+  <gazebo reference="head_hokuyo_frame_offset">
+    <sensor name="head_hokuyo_sensor" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+    </sensor>
+  </gazebo>
+  <joint name="left_camera_frame_joint" type="fixed">
+    <origin rpy="-3.14 0.1309 0.0" xyz="0.18335 0.035 0.0774"/>
     <axis xyz="0 0 1"/>
-    <parent link="hokuyo_link"/>
-    <child link="head_hokuyo_frame_offset"/>
+    <parent link="Head"/>
+    <child link="left_camera_frame_offset"/>
   </joint>
   <link name="left_camera_frame_offset">
     <!-- Virtual Link -->
@@ -435,11 +550,17 @@
       <inertia ixx="3.33333333333e-22" ixy="0.0" ixz="0.0" iyy="3.33333333333e-22" iyz="0.0" izz="5e-22"/>
     </inertial>
   </link>
-  <joint name="left_camera_frame_joint" type="fixed">
-    <origin rpy="-3.14 0.1309 0.0" xyz="0.18335 0.035 0.0774"/>
+  <gazebo reference="left_camera_frame_offset">
+    <sensor name="multisense_left_camera" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
+  <joint name="right_camera_frame_joint" type="fixed">
+    <origin rpy="-3.14 0.1309 0.0" xyz="0.18335 -0.035 0.0774"/>
     <axis xyz="0 0 1"/>
     <parent link="Head"/>
-    <child link="left_camera_frame_offset"/>
+    <child link="right_camera_frame_offset"/>
   </joint>
   <link name="right_camera_frame_offset">
     <!-- Virtual Link -->
@@ -449,12 +570,12 @@
       <inertia ixx="3.33333333333e-22" ixy="0.0" ixz="0.0" iyy="3.33333333333e-22" iyz="0.0" izz="5e-22"/>
     </inertial>
   </link>
-  <joint name="right_camera_frame_joint" type="fixed">
-    <origin rpy="-3.14 0.1309 0.0" xyz="0.18335 -0.035 0.0774"/>
-    <axis xyz="0 0 1"/>
-    <parent link="Head"/>
-    <child link="right_camera_frame_offset"/>
-  </joint>
+  <gazebo reference="right_camera_frame_offset">
+    <sensor name="multisense_right_camera" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
   <!-- LINKS -->
   <link name="RightShoulderPitchLink">
     <inertial>
