@@ -157,8 +157,6 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
     end
     
     function [valid, qPath] = checkEdge(obj, x1, x2)
-      global collisionFails
-      global tree
       
       info = Info(Info.SUCCESS);
       cSpaceTree = obj.trees{obj.cspace_idx};
@@ -184,10 +182,6 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
           else % if kinematics is valid check collisions
             phi = cSpaceTree.rbm.collisionDetect(qNew, false, cSpaceTree.active_collision_options);
             valid = all(phi > cSpaceTree.min_distance);
-            collisionFails(1, end +1) = valid;
-            collisionFails(2, end) = obj.n;
-            collisionFails(3, end) = 3;
-            collisionFails(4, end) = tree;
             if ~valid % if collision check fail return a collision fail
               info = Info(Info.FAIL_COLLISION, qNew);
             end
