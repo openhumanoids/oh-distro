@@ -15,7 +15,6 @@
 #include "lcmtypes/drc/atlas_state_t.hpp"
 #include "lcmtypes/drc/atlas_state_extra_t.hpp"
 #include "lcmtypes/drc/atlas_status_t.hpp"
-#include "lcmtypes/drc/drill_control_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
@@ -391,9 +390,6 @@ define_array_handler(AtlasControlJointsFFConstHandler, drc::atlas_command_t, ff_
 define_array_handler(AtlasControlJointsKEffortHandler, drc::atlas_command_t, k_effort, JointNames::jointNames());
 define_field_handler(AtlasControlJointsDesiredControllerPeriodHandler, drc::atlas_command_t, desired_controller_period_ms);
 
-// drill_control_t
-define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexList(100));
-
 
 // foot_contact_estimate_t
 define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
@@ -541,7 +537,6 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasControlJointsFFConstHandler>();
     factory.registerClass<AtlasControlJointsKEffortHandler>();
     factory.registerClass<AtlasControlJointsDesiredControllerPeriodHandler>();
-    factory.registerClass<DrillControlData>();
     factory.registerClass<FootContactLeft>();
     factory.registerClass<FootContactRight>();
     factory.registerClass<MavStateHandler>();
