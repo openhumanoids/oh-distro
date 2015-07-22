@@ -1,5 +1,0 @@
-#!/bin/bash
-
-export DISPLAY=:0
-python $DRC_BASE/software/tools/tools/scripts/oggStreamLCM.py --server
-

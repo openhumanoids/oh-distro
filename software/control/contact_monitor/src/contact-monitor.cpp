@@ -1,9 +1,11 @@
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
 #include <ConciseArgs>
-#include <frequency/frequency.hpp>
+#include <map>
+
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
+
 
 enum FootID {RIGHT, LEFT};
 
