@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Terminal=false
-Name=bot-procman-sheriff
-Icon=/home/drc/drc/misc/hal/hal.jpg
-Exec=/home/drc/drc/software/build/bin/bot-procman-sheriff /home/drc/drc/software/config/drc_robot.pmd
-StartupNotify=true
-

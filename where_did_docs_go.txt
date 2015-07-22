@@ -1,2 +1,0 @@
-The entire drc/docs tree has been migrated to
-https://github.com/mitdrc/drc-docs
