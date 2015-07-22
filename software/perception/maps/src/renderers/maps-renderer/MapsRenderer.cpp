@@ -4,8 +4,6 @@
 
 #include <bot_vis/viewer.h>
 
-#include <lcmtypes/drc/map_request_bbox_t.hpp>
-
 #include <drc_utils/Clock.hpp>
 
 using namespace maps;
@@ -36,10 +34,6 @@ MapsRenderer(BotViewer* iViewer, const int iPriority,
   mViewClient.addViewChannel("MAP_CONTROL_HEIGHT");
   mViewClient.addViewChannel("MAP_DEBUG");
 
-  // set callback for bbox
-  getLcm()->subscribe("WORLD_BOX_PTCLD_REQUEST",
-                      &MapsRenderer::onBoxPointCloudRequest, this);
-
   // start listening for view data
   mViewClient.start();
 }
@@ -48,22 +42,6 @@ MapsRenderer::
 ~MapsRenderer() {
 }
 
-
-void MapsRenderer::
-onBoxPointCloudRequest(const lcm::ReceiveBuffer* iBuf,
-                       const std::string& iChannel,
-                       const drc::world_box_t* iMessage) {
-  Eigen::Vector3f pos(iMessage->origin_x, iMessage->origin_y,
-                      iMessage->origin_z);
-  Eigen::Vector3f scale(iMessage->span_x, iMessage->span_y,
-                        iMessage->span_z);
-  Eigen::Quaternionf quat = Eigen::Quaternionf::Identity();
-  mInteractiveBox.setBoxParameters(pos, scale, quat);
-  mRequestBoxInit = true;
-  mShowRequestBoxToggle->set_active(false);
-  sendBoxRequest();
-  requestDraw();
-}
 
 void MapsRenderer::
 onAdjustBoxToggleChanged() {
