@@ -46,9 +46,3 @@ pods_use_pkg_config_packages(drc-network-shaper lcm
 	     lcmtypes_drc_lcmtypes eigen3)
 
 pods_install_executables(drc-network-shaper)
-
-add_executable(drc-network-test network-test.cpp)
-target_link_libraries (drc-network-test goby_common)
-pods_use_pkg_config_packages(drc-network-test lcm 
-	     lcmtypes_drc_lcmtypes)
-pods_install_executables(drc-network-test)

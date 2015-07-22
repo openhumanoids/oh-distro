@@ -1,9 +1,0 @@
-package drc;
-
-// This basic type used to request 
-// printf
-
-struct printf_request_t
-{
-   int32_t sheriff_id;
-}

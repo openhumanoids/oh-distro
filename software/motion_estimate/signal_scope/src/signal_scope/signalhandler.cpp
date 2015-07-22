@@ -17,8 +17,6 @@
 #include "lcmtypes/drc/atlas_status_t.hpp"
 #include "lcmtypes/drc/drill_control_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
-#include "lcmtypes/drc/ins_update_request_t.hpp"
-#include "lcmtypes/drc/ins_update_packet_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 #include "lcmtypes/drc/controller_debug_t.hpp"
@@ -393,71 +391,6 @@ define_array_handler(AtlasControlJointsFFConstHandler, drc::atlas_command_t, ff_
 define_array_handler(AtlasControlJointsKEffortHandler, drc::atlas_command_t, k_effort, JointNames::jointNames());
 define_field_handler(AtlasControlJointsDesiredControllerPeriodHandler, drc::atlas_command_t, desired_controller_period_ms);
 
-// ins_update_request_t
-
-define_field_field_field_handler(INSUpdateRequestPoseTranslationXHandler, drc::ins_update_request_t, pose, translation, x);
-define_field_field_field_handler(INSUpdateRequestPoseTranslationYHandler, drc::ins_update_request_t, pose, translation, y);
-define_field_field_field_handler(INSUpdateRequestPoseTranslationZHandler, drc::ins_update_request_t, pose, translation, z);
-
-define_field_field_field_handler(INSUpdateRequestTwistLinearVelocityXHandler, drc::ins_update_request_t, twist, linear_velocity, x);
-define_field_field_field_handler(INSUpdateRequestTwistLinearVelocityYHandler, drc::ins_update_request_t, twist, linear_velocity, y);
-define_field_field_field_handler(INSUpdateRequestTwistLinearVelocityZHandler, drc::ins_update_request_t, twist, linear_velocity, z);
-
-define_field_field_field_handler(INSUpdateRequestPoseRotationWHandler, drc::ins_update_request_t, pose, rotation, w);
-define_field_field_field_handler(INSUpdateRequestPoseRotationXHandler, drc::ins_update_request_t, pose, rotation, x);
-define_field_field_field_handler(INSUpdateRequestPoseRotationYHandler, drc::ins_update_request_t, pose, rotation, y);
-define_field_field_field_handler(INSUpdateRequestPoseRotationZHandler, drc::ins_update_request_t, pose, rotation, z);
-
-define_field_field_handler(INSUpdateRequestGyroBiasEstX, drc::ins_update_request_t, gyroBiasEst, x);
-define_field_field_handler(INSUpdateRequestGyroBiasEstY, drc::ins_update_request_t, gyroBiasEst, y);
-define_field_field_handler(INSUpdateRequestGyroBiasEstZ, drc::ins_update_request_t, gyroBiasEst, z);
-
-define_field_field_handler(INSUpdateRequestAccBiasEstX, drc::ins_update_request_t, accBiasEst, x);
-define_field_field_handler(INSUpdateRequestAccBiasEstY, drc::ins_update_request_t, accBiasEst, y);
-define_field_field_handler(INSUpdateRequestAccBiasEstZ, drc::ins_update_request_t, accBiasEst, z);
-
-define_field_field_handler(INSUpdateRequestLocalLinearAccelerationX, drc::ins_update_request_t, local_linear_acceleration, x);
-define_field_field_handler(INSUpdateRequestLocalLinearAccelerationY, drc::ins_update_request_t, local_linear_acceleration, y);
-define_field_field_handler(INSUpdateRequestLocalLinearAccelerationZ, drc::ins_update_request_t, local_linear_acceleration, z);
-
-define_field_field_handler(INSUpdateRequestLocalLinearForceX, drc::ins_update_request_t, local_linear_force, x);
-define_field_field_handler(INSUpdateRequestLocalLinearForceY, drc::ins_update_request_t, local_linear_force, y);
-define_field_field_handler(INSUpdateRequestLocalLinearForceZ, drc::ins_update_request_t, local_linear_force, z);
-
-define_field_field_handler(INSUpdateRequestReferencePosLocalX, drc::ins_update_request_t, referencePos_local, x);
-define_field_field_handler(INSUpdateRequestReferencePosLocalY, drc::ins_update_request_t, referencePos_local, y);
-define_field_field_handler(INSUpdateRequestReferencePosLocalZ, drc::ins_update_request_t, referencePos_local, z);
-
-define_field_field_handler(INSUpdateRequestReferenceVelLocalX, drc::ins_update_request_t, referenceVel_local, x);
-define_field_field_handler(INSUpdateRequestReferenceVelLocalY, drc::ins_update_request_t, referenceVel_local, y);
-define_field_field_handler(INSUpdateRequestReferenceVelLocalZ, drc::ins_update_request_t, referenceVel_local, z);
-
-define_field_field_handler(INSUpdateRequestReferenceVelBodyX, drc::ins_update_request_t, referenceVel_body, x);
-define_field_field_handler(INSUpdateRequestReferenceVelBodyY, drc::ins_update_request_t, referenceVel_body, y);
-define_field_field_handler(INSUpdateRequestReferenceVelBodyZ, drc::ins_update_request_t, referenceVel_body, z);
-
-
-// ins_update_packet_t
-define_field_field_handler(INSUpdatePacketDBiasGyroBX, drc::ins_update_packet_t, dbiasGyro_b, x);
-define_field_field_handler(INSUpdatePacketDBiasGyroBY, drc::ins_update_packet_t, dbiasGyro_b, y);
-define_field_field_handler(INSUpdatePacketDBiasGyroBZ, drc::ins_update_packet_t, dbiasGyro_b, z);
-
-define_field_field_handler(INSUpdatePacketDBiasAccBX, drc::ins_update_packet_t, dbiasAcc_b, x);
-define_field_field_handler(INSUpdatePacketDBiasAccBY, drc::ins_update_packet_t, dbiasAcc_b, y);
-define_field_field_handler(INSUpdatePacketDBiasAccBZ, drc::ins_update_packet_t, dbiasAcc_b, z);
-
-define_field_field_handler(INSUpdatePacketDEX, drc::ins_update_packet_t, dE_l, x);
-define_field_field_handler(INSUpdatePacketDEY, drc::ins_update_packet_t, dE_l, y);
-define_field_field_handler(INSUpdatePacketDEZ, drc::ins_update_packet_t, dE_l, z);
-
-define_field_field_handler(INSUpdatePacketDVelX, drc::ins_update_packet_t, dVel_l, x);
-define_field_field_handler(INSUpdatePacketDVelY, drc::ins_update_packet_t, dVel_l, y);
-define_field_field_handler(INSUpdatePacketDVelZ, drc::ins_update_packet_t, dVel_l, z);
-
-define_field_field_handler(INSUpdatePacketDPosX, drc::ins_update_packet_t, dPos_l, x);
-define_field_field_handler(INSUpdatePacketDPosY, drc::ins_update_packet_t, dPos_l, y);
-define_field_field_handler(INSUpdatePacketDPosZ, drc::ins_update_packet_t, dPos_l, z);
-
 // drill_control_t
 define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexList(100));
 
@@ -608,52 +541,6 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasControlJointsFFConstHandler>();
     factory.registerClass<AtlasControlJointsKEffortHandler>();
     factory.registerClass<AtlasControlJointsDesiredControllerPeriodHandler>();
-    factory.registerClass<INSUpdateRequestPoseTranslationXHandler>();
-    factory.registerClass<INSUpdateRequestPoseTranslationYHandler>();
-    factory.registerClass<INSUpdateRequestPoseTranslationZHandler>();
-    factory.registerClass<INSUpdateRequestTwistLinearVelocityXHandler>();
-    factory.registerClass<INSUpdateRequestTwistLinearVelocityYHandler>();
-    factory.registerClass<INSUpdateRequestTwistLinearVelocityZHandler>();
-    factory.registerClass<INSUpdateRequestPoseRotationWHandler>();
-    factory.registerClass<INSUpdateRequestPoseRotationXHandler>();
-    factory.registerClass<INSUpdateRequestPoseRotationYHandler>();
-    factory.registerClass<INSUpdateRequestPoseRotationZHandler>();
-    factory.registerClass<INSUpdateRequestGyroBiasEstX>();
-    factory.registerClass<INSUpdateRequestGyroBiasEstY>();
-    factory.registerClass<INSUpdateRequestGyroBiasEstZ>();
-    factory.registerClass<INSUpdateRequestAccBiasEstX>();
-    factory.registerClass<INSUpdateRequestAccBiasEstY>();
-    factory.registerClass<INSUpdateRequestAccBiasEstZ>();
-    factory.registerClass<INSUpdateRequestLocalLinearAccelerationX>();
-    factory.registerClass<INSUpdateRequestLocalLinearAccelerationY>();
-    factory.registerClass<INSUpdateRequestLocalLinearAccelerationZ>();
-    factory.registerClass<INSUpdateRequestLocalLinearForceX>();
-    factory.registerClass<INSUpdateRequestLocalLinearForceY>();
-    factory.registerClass<INSUpdateRequestLocalLinearForceZ>();
-    factory.registerClass<INSUpdateRequestReferencePosLocalX>();
-    factory.registerClass<INSUpdateRequestReferencePosLocalY>();
-    factory.registerClass<INSUpdateRequestReferencePosLocalZ>();
-    factory.registerClass<INSUpdateRequestReferenceVelLocalZ>();
-    factory.registerClass<INSUpdateRequestReferenceVelLocalY>();
-    factory.registerClass<INSUpdateRequestReferenceVelLocalZ>();
-    factory.registerClass<INSUpdateRequestReferenceVelBodyZ>();
-    factory.registerClass<INSUpdateRequestReferenceVelBodyY>();
-    factory.registerClass<INSUpdateRequestReferenceVelBodyZ>();
-    factory.registerClass<INSUpdatePacketDBiasGyroBX>();
-    factory.registerClass<INSUpdatePacketDBiasGyroBY>();
-    factory.registerClass<INSUpdatePacketDBiasGyroBZ>();
-    factory.registerClass<INSUpdatePacketDBiasAccBX>();
-    factory.registerClass<INSUpdatePacketDBiasAccBY>();
-    factory.registerClass<INSUpdatePacketDBiasAccBZ>();
-    factory.registerClass<INSUpdatePacketDEX>();
-    factory.registerClass<INSUpdatePacketDEY>();
-    factory.registerClass<INSUpdatePacketDEZ>();
-    factory.registerClass<INSUpdatePacketDVelX>();
-    factory.registerClass<INSUpdatePacketDVelY>();
-    factory.registerClass<INSUpdatePacketDVelZ>();
-    factory.registerClass<INSUpdatePacketDPosX>();
-    factory.registerClass<INSUpdatePacketDPosY>();
-    factory.registerClass<INSUpdatePacketDPosZ>();
     factory.registerClass<DrillControlData>();
     factory.registerClass<FootContactLeft>();
     factory.registerClass<FootContactRight>();

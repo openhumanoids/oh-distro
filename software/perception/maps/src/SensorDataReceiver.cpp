@@ -7,7 +7,6 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
-#include <lcmtypes/drc/pointcloud2_t.hpp>
 
 #include "Types.hpp"
 #include "LidarScan.hpp"
@@ -113,34 +112,6 @@ struct SensorDataReceiver::Helper {
     oPosition[3] = 1;
     oOrientation = rotation;
     return true;
-  }
-
-  void onCloud(const lcm::ReceiveBuffer* iBuf,
-               const std::string& iChannel,
-               const drc::pointcloud2_t* iMessage) {
-    if (!mIsRunning) return;
-
-    pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
-    pointCloud.width = iMessage->width;
-    pointCloud.height = iMessage->height;
-    pointCloud.resize(iMessage->width * iMessage->height);
-    pointCloud.is_dense = false;
-    uint8_t* cloudData = (uint8_t*)(&pointCloud[0]);
-    const uint8_t* messageData = (uint8_t*)(&iMessage->data[0]);
-    memcpy(cloudData, messageData, iMessage->data_nbytes);
-    maps::PointCloud::Ptr newCloud(new maps::PointCloud());
-    pcl::copyPointCloud(pointCloud, *newCloud);
-
-    SensorData data;
-    data.mPointSet.reset(new PointSet());
-    data.mPointSet->mTimestamp = iMessage->utime;
-    data.mPointSet->mCloud = newCloud;
-    data.mChannel = iChannel;
-    mImmediateBuffer.push(data);
-    {
-      std::lock_guard<std::mutex> lock(mPoseUpdater.mMutex);
-      mPoseUpdater.mPendingData.push_back(data);
-    }
   }
 
   void onLidar(const lcm::ReceiveBuffer* iBuf,
@@ -255,10 +226,6 @@ addChannel(const std::string& iSensorChannel,
   case SensorTypePlanarLidar:
     sub = mHelper->mBotWrapper->getLcm()->subscribe
       (iSensorChannel, &SensorDataReceiver::Helper::onLidar, mHelper.get());
-    break;
-  case SensorTypePointCloud:
-    sub = mHelper->mBotWrapper->getLcm()->subscribe
-      (iSensorChannel, &SensorDataReceiver::Helper::onCloud, mHelper.get());
     break;
   default:
     return false;
