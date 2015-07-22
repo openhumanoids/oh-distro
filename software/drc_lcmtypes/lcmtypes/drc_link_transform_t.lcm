@@ -1,8 +1,0 @@
-package drc;
-
-struct link_transform_t
-{
-    string link_name;
-    transform_t tf;
-}
-

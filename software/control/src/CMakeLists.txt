@@ -122,17 +122,12 @@ set(java_src_files
   AffordanceFullStateCoder.java
   AtlasCommandCoder.java
   CandidateGraspPublisher.java
-  EndEffectorGoalCoder.java
   ForceTorqueStateCoder.java
-  GraspGoalCoder.java
   GraspOptStatusPublisher.java
   GraspSeedOptCoder.java
   GraspStateCoder.java
   JointAnglesCoder.java
-  NavGoalCoder.java
   PoseGroundMonitor.java
-  RobotBodyCoder.java
-  RobotNavGoalListener.java
   RobotPlanPublisher.java
   RobotStateCoder.java
   AtlasStateExtraCoder.java

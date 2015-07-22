@@ -1,8 +1,0 @@
-package drc;
-
-struct sandia_simple_grasp_t
-{
-   int64_t utime;
-   string name;
-   float closed_amount;
-}
