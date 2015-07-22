@@ -9,7 +9,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 1; end;
+  if ~isfield(options,'scene'), options.scene = 6; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -17,7 +17,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'nTrees'), options.nTrees = 4; end;
-  if ~isfield(options,'goalObject'), options.goalObject = 4; end;
+  if ~isfield(options,'goalObject'), options.goalObject = 1; end;
   
   
   options.floating = true;
@@ -30,6 +30,12 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   else
     r = options.robot;
   end
+  
+  addpath('/home/marco/drc/software/ddapp/src/matlab')
+  fixed_point_file = '/home/marco/drc/software/control/matlab/data/valkyrie_fp_june2015.mat';
+  left_foot_link = 'LeftFoot';
+  right_foot_link = 'RightFoot';
+  runRRTIKServer
   
   if nargin > 1
     rng(rng_seed);
@@ -47,8 +53,13 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if options.visualize
-    v = r.constructVisualizer();
-    v.draw(0, q_nom);
+    visWorld = RigidBodyManipulator();
+    for b = 1:numel(r.body(1).visual_geometry)
+      visWorld = addGeometryToBody(visWorld, 1, r.body(1).visual_geometry{b});
+    end
+    visWorld = visWorld.compile();
+    visWorld.constructVisualizer();
+    s.publishTraj(PPTrajectory(q_nom), 1)
   end
   
   %Set IK options
@@ -75,7 +86,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
                           Scenes.nonGraspingHandDistanceConstraint(options, r, 0.4)}];
   [q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
   if options.visualize
-    v.draw(0, q_start);
+    s.publishTraj(PPTrajectory(q_start), 1)
     %     drawLinkFrame(r, g_hand, q_start, 'Grasping Hand Start');
     %     drawLinkFrame(r, Scenes.getNonGraspingHand(options, r), q_start, 'Non Grasping Hand Start');
     %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_start, 'Forearm Start');
@@ -96,7 +107,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   end
   [q_end, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, endPoseConstraints{:}, ikoptions);
   if options.visualize
-    v.draw(0, q_end);
+    s.publishTraj(PPTrajectory(q_end), 1)
     %     drawLinkFrame(r, g_hand, q_end, 'Grasping Hand End');
     %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_end, 'Forearm End');
   end
@@ -181,7 +192,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   constraints = [startPoseConstraints, Scenes.generateEEConstraints(r, options, EEpose)];
   [qStartC, info, infeasible_constraint] = inverseKin(r, qNominalC, qNominalC, constraints{:}, ikoptions);
   if options.visualize
-    v.draw(0, qStartC);
+    s.publishTraj(PPTrajectory(qStartC), 1);
   end
   kinsol = r.doKinematics(qStartC);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
@@ -192,14 +203,14 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   constraints = [startPoseConstraints, Scenes.generateEEConstraints(r, options, EEpose)];
   [qStartD, info, infeasible_constraint] = inverseKin(r, qNominalD, qNominalD, constraints{:}, ikoptions);
   if options.visualize
-    v.draw(0, qStartD);
+    s.publishTraj(PPTrajectory(qStartD), 1);
   end
   kinsol = r.doKinematics(qStartD);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
   xStartD = [xyz_quat_start; qStartD];
   
   if options.visualize
-    v.draw(0, q_start);
+    s.publishTraj(PPTrajectory(q_start), 1);
   end
   
   rrt_timer = tic;
@@ -338,8 +349,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.options = rmfield(options, {'robot', 'terrain'});
     end
     
-    if options.visualize
-      v.playback(xtraj);
+    if options.visualize      
+      s.publishTraj(q_traj, 1);
     end
   else
     xtraj = [];
