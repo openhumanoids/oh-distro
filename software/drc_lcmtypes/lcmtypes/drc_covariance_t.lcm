@@ -1,8 +1,0 @@
-package drc;
-
-struct covariance_t
-{
-   double position_cov[6][6];
-   double twist_cov[6][6];
-}
-

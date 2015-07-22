@@ -1,8 +1,0 @@
-package drc;
-
-struct atlas_push_t
-{
-	int64_t utime;
-	double duration; // s
-	vector_3d_t velocity; // N
-}

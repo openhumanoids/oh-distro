@@ -1,8 +1,0 @@
-package drc;
-
-struct color_list_t
-{
-    int64_t utime;
-    int8_t n_rgb;
-    int8_t rgb[n_rgb][3];
-}

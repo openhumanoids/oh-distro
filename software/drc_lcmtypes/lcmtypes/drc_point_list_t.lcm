@@ -1,8 +1,0 @@
-package drc;
-
-struct point_list_t
-{
-    int64_t utime;
-    int8_t n_points;
-    int16_t uv[n_points][2];
-}
