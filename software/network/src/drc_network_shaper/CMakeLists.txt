@@ -25,7 +25,6 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR}
   robot-state-analogs.proto
   footstep-plan-analogs.proto
   robot-plan-analogs.proto
-  grasp-analogs.proto
   ) 
 add_executable(drc-network-shaper 
   shaper-app.cpp 
@@ -35,7 +34,6 @@ add_executable(drc-network-shaper
   robot-state-codecs.cpp
   footstep-plan-codecs.cpp
   manip-plan-codecs.cpp
-  grasp-codecs.cpp
   drc_udp_driver.cpp
   ${ldpc_sources}
   ${PROTO_SRCS} ${PROTO_HDRS})

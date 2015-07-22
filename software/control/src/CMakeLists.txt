@@ -121,11 +121,9 @@ set(java_src_files
   AtlasStateCommandLogParser.java
   AffordanceFullStateCoder.java
   AtlasCommandCoder.java
-  CandidateGraspPublisher.java
   ForceTorqueStateCoder.java
   GraspOptStatusPublisher.java
   GraspSeedOptCoder.java
-  GraspStateCoder.java
   JointAnglesCoder.java
   PoseGroundMonitor.java
   RobotPlanPublisher.java

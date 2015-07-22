@@ -19,7 +19,6 @@
 #include "robot-state-codecs.h"
 #include "footstep-plan-codecs.h"
 #include "manip-plan-codecs.h"
-#include "grasp-codecs.h"
 #include "lzma-codec.h"
 
 using namespace boost; 
@@ -1165,10 +1164,6 @@ void DRCShaper::load_robot_plan_custom_codecs()
 
 void DRCShaper::load_custom_codecs()
 {    
-    const std::string& grasp_channel = "COMMITTED_GRASP";
-    custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
-    custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
-
 
     const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
     custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
