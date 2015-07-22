@@ -27,7 +27,7 @@ classdef MultipleTreeProblem
         xStart, xGoal, xStartAddTrees, goalConstraints, additionalConstraints, qNom, varargin)
       
       opt = struct('mergingthreshold', 0.2, 'capabilitymap', [], 'graspinghand', 'right',...
-        'mindistance', 0.01, 'activecollisionoptions', struct(), 'ikoptions', struct(),...
+        'mindistance', 0.005, 'activecollisionoptions', struct(), 'ikoptions', struct(),...
         'steerfactor', 0.1, 'orientationweight', 1, 'maxedgelength', 0.05,...
         'angletol', 10*pi/180, 'positiontol', 1e-3, 'endeffectorpoint', [0; 0; 0]);
       optNames = fieldnames(opt);
@@ -107,7 +107,10 @@ classdef MultipleTreeProblem
         qGoal = obj.findGoalPose(xStart, xGoal);
         if isempty(qGoal)
           info = info.setStatus(Info.FAIL_NO_FINAL_POSE);
+          cost = [];
+          qPath = [];
           disp('Failed to find a feasible final configuration')
+          return
         else
           obj.xGoal = [obj.xGoal; qGoal];
           disp('Final configuration found')
@@ -298,21 +301,21 @@ classdef MultipleTreeProblem
       options.rotation_type = 2;
       options.use_mex = false;
       
-      shNames = {'RightShoulderAdductor', 'LeftShoulderAdductor'};
-      palmNames = {'RightPalm', 'LeftPalm'};
-      grHand = strcmp(obj.graspingHand, {'right', 'left'});
-      sh = obj.robot.findLinkId(shNames{grHand});
-      palm = obj.robot.findLinkId(palmNames{grHand});
-      tr = obj.robot.findLinkId('Trunk');
+      root = obj.capabilityMap.rootLink.(obj.graspingHand);
+      endEffector = obj.capabilityMap.endEffectorLink.(obj.graspingHand);
+      rootPoint = obj.capabilityMap.rootPoint.(obj.graspingHand);
+      EEPoint = obj.capabilityMap.endEffectorPoint.(obj.graspingHand);
+      base = obj.capabilityMap.baseLink;
       
-      shPose = obj.robot.forwardKin(kinSol, sh, [0;0;0], 2);
-      trPose = obj.robot.forwardKin(kinSol, tr, [0;0;0], 2);
-      tr2sh = quat2rotmat(trPose(4:end))*(shPose(1:3)-trPose(1:3));
+      rootPose = obj.robot.forwardKin(kinSol, root, rootPoint, 2);
+      trPose = obj.robot.forwardKin(kinSol, base, [0;0;0], 2);
+      tr2root = quat2rotmat(trPose(4:end))*(rootPose(1:3)-trPose(1:3));
       armJoints = 13:19;
       nArmJoints = size(armJoints, 2);
       np = obj.robot.num_positions;
-      collisionLinksBody = [1, setdiff(obj.activeCollisionOptions.body_idx, 9:15)];
-      mapMirror = [[1; 1; 1] [1; -1; 1]];
+      collisionLinksBody = setdiff(obj.activeCollisionOptions.body_idx, 9:15);
+      mapMirror.right = [1; 1; 1];
+      mapMirror.left = [1; -1; 1];
        
       obj = obj.pruneCapabilityMap(0, 0, 0.6, 0.9, 7.5);
       D = obj.capabilityMap.reachabilityIndex;
@@ -329,12 +332,12 @@ classdef MultipleTreeProblem
       for sph = randperm(nSph)
         iter = iter + 1;
 %         fprintf('sphere %d of %d\n', iter, nSph);
-        point = quat2rotmat(trPose(4:end))* (sphCenters(:,sph).*mapMirror(:, grHand)) + tr2sh;
-        shConstraint = WorldPositionConstraint(obj.robot, tr, point, xGoal(1:3), xGoal(1:3));
+        point = quat2rotmat(trPose(4:end))* (sphCenters(:,sph).*mapMirror.(obj.graspingHand)) + tr2root;
+        shConstraint = WorldPositionConstraint(obj.robot, base, point, xGoal(1:3), xGoal(1:3));
         constraints = [{shConstraint}, obj.goalConstraints];
         [q, valid, ~] = cSpaceTree.solveIK(obj.qNom, obj.qNom, constraints);
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
-        palmPose = obj.robot.forwardKin(kinSol, palm, [0;0;0], options);
+        palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
         targetPos = [palmPose(1:3); quat2rpy(palmPose(4:7))];
         deltaX = zeros(6,1);
 %         v.draw(0, q)
@@ -362,7 +365,7 @@ classdef MultipleTreeProblem
                   end
                   qNdot(joint) = sum(dgamma_dq);
                 end
-                J = obj.computeJacobian(kinSol, armJoints, palm);
+                J = obj.computeJacobian(kinSol, armJoints, endEffector);
                 Jpsi = J'*inv(J*J');
                 deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
                 if any(abs(deltaQ) > deltaQmax)
@@ -376,7 +379,7 @@ classdef MultipleTreeProblem
 %                 v.draw(0, q)
                 [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
                 kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
-                palmPose = obj.robot.forwardKin(kinSol, palm, [0;0;0], options);
+                palmPose = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
                 deltaX = targetPos - [palmPose(1:3); quat2rpy(palmPose(4:7))];
                 eps = norm(deltaX);
                 nIter = nIter + 1;

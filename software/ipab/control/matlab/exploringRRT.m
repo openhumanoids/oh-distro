@@ -9,8 +9,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 6; end;
-  if ~isfield(options,'model'), options.model = 'val'; end;
+  if ~isfield(options,'scene'), options.scene = 1; end;
+  if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'costType'), options.costType = 'length'; end;
@@ -104,19 +104,18 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   %Create RRTs
   
   % internal parts removed as they created self collisions:
-  if strcmp(options.model, 'val')
-    LeftHipRotator = r.findLinkId('LeftHipRotator');
-    RightHipRotator = r.findLinkId('RightHipRotator');
-    LeftHipAdductor = r.findLinkId('LeftHipAdductor');
-    RightHipAdductor = r.findLinkId('RightHipAdductor');
-    LowerNeckExtensor = r.findLinkId('LowerNeckExtensor');
+  if strcmp(options.model, 'val2')
+    LeftHipRollLink = r.findLinkId('LeftHipRollLink');
+    RightHipRollLink = r.findLinkId('RightHipRollLink');
+    LeftHipYawLink = r.findLinkId('LeftHipYawLink');
+    RightHipYawLink = r.findLinkId('RightHipYawLink');
+    LowerNeckPitchLink = r.findLinkId('LowerNeckPitchLink');
+    TorsoPitchLink = r.findLinkId('TorsoPitchLink');
+    TorsoYawLink = r.findLinkId('TorsoYawLink');
+    Head = r.findLinkId('Head');
     
-    % these shouldn't be culled from the link list but its easier too do than
-    % fixing meshes now:
-    RightForearm = r.findLinkId('RightForearm'); % main welding link
-    LeftForearm = r.findLinkId('LeftForearm'); % main welding link
-    Head = r.findLinkId('Head'); % main welding link
-    inactive_collision_bodies = [lFoot,rFoot];%, LeftHipAdductor, RightHipAdductor,  LeftHipRotator, RightHipRotator, LowerNeckExtensor];%, LeftForearm, RightForearm, Head];
+    inactive_collision_bodies = [lFoot,rFoot, LowerNeckPitchLink, RightHipYawLink,...
+      LeftHipYawLink, RightHipRollLink, LeftHipRollLink,TorsoPitchLink, TorsoYawLink, Head];
   else
     inactive_collision_bodies = [lFoot,rFoot];
   end
@@ -169,7 +168,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   end
   
   switch options.model
-    case 'val'
+    case {'val1', 'val2'}
       qNominalC = Scenes.getFP('valkyrie_fp_rHand_up', r);
       qNominalD = Scenes.getFP('valkyrie_fp_rHand_up_right', r);
     case 'v4'
