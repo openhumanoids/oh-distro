@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "drc_translators")
+set(drc_translators_MAINTAINER "drc <drc@todo.todo>")
+set(drc_translators_DEPRECATED "")
+set(drc_translators_VERSION "0.0.0")
+set(drc_translators_BUILD_DEPENDS "roscpp" "rospy" "std_msgs")
+set(drc_translators_RUN_DEPENDS "roscpp" "rospy" "std_msgs")
+set(drc_translators_BUILDTOOL_DEPENDS "catkin")

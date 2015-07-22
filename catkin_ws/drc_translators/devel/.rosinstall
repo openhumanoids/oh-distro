@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/marco/drc/catkin_ws/drc_translators/devel/setup.sh

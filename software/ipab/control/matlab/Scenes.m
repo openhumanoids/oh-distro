@@ -33,15 +33,18 @@ classdef Scenes
           else
             urdf = fullfile(getDrakePath(),'..','models','atlas_v5','model_full.urdf');
           end
-        case 'val'
+        case 'val1'
           if options.convex_hull
-            urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_simplified.urdf');
+            urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
           else
-%             urdf = fullfile(getDrakePath(),'..','models','valkyrie','oldValkyrie.urdf');
             urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
           end
-          %     case 'lwr'
-          %         urdf = fullfile(getDrakePath(),'..','models','lwr_defs','robots','lwr_drake.urdf');
+        case 'val2'
+          if options.convex_hull
+            urdf = fullfile(getDrakePath(),'..','models','val_description','model.urdf');
+          else
+            urdf = fullfile(getDrakePath(),'..','models','val_description','model.urdf');
+          end
         otherwise
           error('Unknown robot model "%s"\n', options.model);
       end
@@ -179,8 +182,10 @@ classdef Scenes
           %                     fp = load([getDrakePath(), '/../valkyrie/matlab/atlas_v4_fp.mat']);
         case 'v5'
           fp = load([getDrakePath(), '/../control/matlab/data/atlas_v5_fp.mat']);
-        case 'val'
+        case 'val1'
           fp = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp.mat']);
+        case 'val2'
+          fp = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp_june2015.mat']);
         otherwise
           fp = load([getDrakePath(), sprintf('/../control/matlab/data/%s.mat', model)]);
           %                 case 'lwr'
@@ -194,7 +199,7 @@ classdef Scenes
         case {1, 2}
           targetObjectPos = [0.8 0 1.0625];
         case 3
-          if strcmp(options.model, 'val')
+          if any(strcmp(options.model, {'val1', 'val2'}))
             targetObjectPos = [0.7 0 0.6];
           else
             targetObjectPos = [0.8 0 0.6];
@@ -219,13 +224,13 @@ classdef Scenes
     
     function hand = getGraspingHand(options, robot)
       if strcmp(options.graspingHand, 'left')
-        if strcmp(options.model, 'val')
+        if any(strcmp(options.model, {'val1', 'val2'}))
           hand = robot.findLinkId('LeftPalm');
         else
           hand = robot.findLinkId('l_hand');
         end
       else
-        if strcmp(options.model, 'val')
+        if any(strcmp(options.model, {'val1', 'val2'}))
           hand = robot.findLinkId('RightPalm');
         else
           hand = robot.findLinkId('r_hand');
@@ -235,13 +240,13 @@ classdef Scenes
     
     function hand = getNonGraspingHand(options, robot)
       if strcmp(options.graspingHand, 'left')
-        if strcmp(options.model, 'val')
+        if any(strcmp(options.model, {'val1', 'val2'}))
           hand = robot.findLinkId('RightPalm');
         else
           hand = robot.findLinkId('r_hand');
         end
       else
-        if strcmp(options.model, 'val')
+        if any(strcmp(options.model, {'val1', 'val2'}))
           hand = robot.findLinkId('LeftPalm');
         else
           hand = robot.findLinkId('l_hand');
@@ -253,8 +258,10 @@ classdef Scenes
       switch options.model
         case {'v3', 'v4', 'v5'}
           lFoot = robot.findLinkId('l_foot');
-        case 'val'
+        case 'val1'
           lFoot = robot.findLinkId('LeftUpperFoot');
+        case 'val2'
+          lFoot = robot.findLinkId('LeftFoot');
       end
     end
     
@@ -262,8 +269,10 @@ classdef Scenes
       switch options.model
         case {'v3', 'v4', 'v5'}
           rFoot = robot.findLinkId('r_foot');
-        case 'val'
+        case 'val1'
           rFoot = robot.findLinkId('RightUpperFoot');
+        case 'val2'
+          rFoot = robot.findLinkId('RightFoot');
       end
     end
     
@@ -274,7 +283,7 @@ classdef Scenes
             frame = [0; 0.4; 0];
           case {'v4', 'v5'}
             frame = [0; -0.3; 0];
-          case 'val'
+          case {'val1', 'val2'}
             frame = [0.08; 0.0; -0.07];
         end
       else
@@ -283,20 +292,17 @@ classdef Scenes
             frame = [0; -0.4; 0];
           case {'v4', 'v5'}
             frame = [0; -0.3; 0];
-          case 'val'
+          case 'val1'
             frame = [0.08; 0.0; 0.07];
+          case 'val2'
+            frame = [0.08; -0.07; 0];
         end
       end
     end
     
     function quasiStaticConstraint = addQuasiStaticConstraint(options, robot)
-      if strcmp(options.model, 'val')
-        l_foot = robot.findLinkId('LeftUpperFoot');
-        r_foot = robot.findLinkId('RightUpperFoot');
-      else
-        l_foot = robot.findLinkId('l_foot');
-        r_foot = robot.findLinkId('r_foot');
-      end
+      l_foot = Scenes.getLeftFoot(options, robot);
+      r_foot = Scenes.getRightFoot(options, robot);
       l_foot_pts = robot.getBody(l_foot).getTerrainContactPoints();
       r_foot_pts = robot.getBody(r_foot).getTerrainContactPoints();
       quasiStaticConstraint = QuasiStaticConstraint(robot, [-inf, inf], 1);
@@ -314,13 +320,8 @@ classdef Scenes
       leftConstraints = {};
       rightConstraints = {};
       kinsol = robot.doKinematics(state);
-      if strcmp(options.model, 'val')
-        l_foot = robot.findLinkId('LeftUpperFoot');
-        r_foot = robot.findLinkId('RightUpperFoot');
-      else
-        l_foot = robot.findLinkId('l_foot');
-        r_foot = robot.findLinkId('r_foot');
-      end
+      l_foot = Scenes.getLeftFoot(options, robot);
+      r_foot = Scenes.getRightFoot(options, robot);
       if any(strcmp(foot, {'both', 'left'}))
         footPose = robot.forwardKin(kinsol,l_foot, [0; 0; 0], 2);
         %                 drawLinkFrame(robot, l_foot, state, 'Left Foot Frame');
@@ -381,12 +382,12 @@ classdef Scenes
     end
     
     function constraint = nonGraspingHandDistanceConstraint(options, robot, dist)
-      trunkNames = {'Trunk', 'utorso'};
-      model = strcmp(options.model,{'val', 'v4'});
+      trunkNames = {'Trunk', 'Torso', 'utorso'};
+      model = strcmp(options.model,{'val1', 'val2', 'v4'});
       if strcmp(options.graspingHand, 'left')
-        elbowNames = {'RightElbowExtensor', 'r_larm'};
+        elbowNames = {'RightElbowExtensor', 'RightElbowPitchLink', 'r_larm'};
       else
-        elbowNames = {'LeftElbowExtensor', 'r_larm'};
+        elbowNames = {'LeftElbowExtensor', 'LeftElbowPitchLink', 'r_larm'};
       end
         elbow = robot.findLinkId(elbowNames{model});
         trunk = robot.findLinkId(trunkNames{model});
@@ -428,9 +429,12 @@ classdef Scenes
           goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([1; frameRotation; 1].*[0 -pi/2 pi/2]'), 10*pi/180, [1.0, 1.0]);
           %                     rot_mat = [rpy2rotmat([0 pi/2 pi/2]) [0; 0; 0]; [0 0 0 1]];
           %                     trans_mat = [eye(3) -point_in_link_frame; [0 0 0 1]];
-        case 'val'
+        case 'val1'
           goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([-pi/2 0 0 ]'), 10*pi/180, [1.0, 1.0]);
           goalEulerConstraint = WorldEulerConstraint(robot, hand, [-pi/2;0; -pi], [-pi/2; 0; pi]);
+        case 'val2'
+          goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([-pi/2 0 0 ]'), 10*pi/180, [1.0, 1.0]);
+          goalEulerConstraint = WorldEulerConstraint(robot, hand, [0;0; -pi], [0; 0; pi]);
       end
 %       goalPosConstraint = WorldPositionInFrameConstraint(robot, hand, point_in_link_frame, goalFrame,...
 %         lower_bounds, upper_bounds, [1.0, 1.0]);
