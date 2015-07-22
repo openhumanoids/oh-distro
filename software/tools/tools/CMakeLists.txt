@@ -26,7 +26,6 @@ pods_install_python_script(drc_latency_odometry latency.latency_odometry)
 
 
 # not using python interp:
-file(COPY scripts/drc-svn-stat.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 file(COPY scripts/drc-lcm-logger.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 file(COPY scripts/drc-robot-pose-util DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 file(COPY scripts/drc-webcam-audio-client DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
