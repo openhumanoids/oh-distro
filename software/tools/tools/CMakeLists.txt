@@ -7,8 +7,6 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-add_subdirectory(src/frequency)
-add_subdirectory(src/systemwide-tests)
 add_subdirectory(src/contact-passthrough)
 
 # require python
