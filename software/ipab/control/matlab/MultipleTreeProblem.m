@@ -99,6 +99,8 @@ classdef MultipleTreeProblem
       if nargin < 2, options = struct(); end
       
       info = Info(Info.SUCCESS);
+      qPath = [];
+      cost = [];
       
       %compute final pose
       tic
@@ -107,8 +109,6 @@ classdef MultipleTreeProblem
         qGoal = obj.findGoalPose(xStart, xGoal);
         if isempty(qGoal)
           info = info.setStatus(Info.FAIL_NO_FINAL_POSE);
-          cost = [];
-          qPath = [];
           disp('Failed to find a feasible final configuration')
           return
         else
@@ -221,15 +221,14 @@ classdef MultipleTreeProblem
         info.shortcutTime = toc(shortcut);
         rebuildTimer = tic;
         qPath = obj.trees(1).rebuildTraj(obj.xStart, obj.xGoal);
+        info.rebuildTime = toc(rebuildTimer);
         cost = obj.trees(1).C(obj.trees(1).traj(1));
         if options.visualize
           fprintf('Final Cost = %.4f\n', cost)
         end
       else
         info = info.setStatus(Info.FAIL_TOO_MANY_ITERATIONS);
-        qPath = [];
       end
-      info.rebuildTime = toc(rebuildTimer);
     end
     
     function [obj, prevRoot] = mergeTrees(obj, ptAidx, ptBidx, treeAidx, treeBidx, options)
@@ -325,7 +324,7 @@ classdef MultipleTreeProblem
       qOpt = [];
       c = 1/obj.minDistance;
       deltaQmax = 0.05;
-      v = obj.robot.constructVisualizer();
+%       v = obj.robot.constructVisualizer();
       validConfs =  double.empty(np+1, 0);
       succ = zeros(nSph, 2);
       
@@ -402,7 +401,7 @@ classdef MultipleTreeProblem
         validConfs = validConfs(:, validConfs(1,:) > 0);
         [~, qOptIdx] =  min(validConfs(1,:));
         qOpt = validConfs(2:end, qOptIdx);
-        v.draw(0, qOpt);
+%         v.draw(0, qOpt);
       end
     end
     
