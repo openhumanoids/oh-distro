@@ -10,6 +10,11 @@ classdef CapabilityMap
     posTolerance
     urdf
     nSph
+    rootLink
+    rootPoint
+    endEffectorLink
+    endEffectorPoint
+    baseLink
   end
   
   methods
@@ -31,6 +36,11 @@ classdef CapabilityMap
       obj.posTolerance = vars.options.posTolerance;
       obj.urdf = vars.options.urdf;
       obj.nSph = size(obj.map, 1);
+      obj.rootLink = vars.options.rootLink;
+      obj.rootPoint = vars.options.rootPoint;
+      obj.endEffectorLink = vars.options.endEffectorLink;
+      obj.endEffectorPoint = vars.options.endEffectorPoint;
+      obj.baseLink = vars.options.baseLink;
     end
     
   end
