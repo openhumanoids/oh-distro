@@ -100,7 +100,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
       this->bracing_latch = true;
     }
 
-    drc::atlas_fall_detector_status_t fall_msg;
+    drc::fall_detector_status_t fall_msg;
     fall_msg.utime = static_cast<int64_t> (robot_state.t * 1e6);
     fall_msg.falling = !icp_is_ok;
     fall_msg.bracing = bracing_latch;
@@ -110,7 +110,7 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
     fall_msg.measured_cop[0] = NAN;
     fall_msg.measured_cop[1] = NAN;
     fall_msg.measured_cop[2] = NAN;
-    this->lcm.publish("ATLAS_FALL_STATE", &fall_msg);
+    this->lcm.publish("FALL_STATE", &fall_msg);
 
     if (this->bracing_latch){
       // goto bracing

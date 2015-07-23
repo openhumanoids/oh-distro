@@ -3,7 +3,7 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "drake/RigidBodyManipulator.h"
-#include "lcmtypes/drc/atlas_fall_detector_status_t.hpp"
+#include "lcmtypes/drc/fall_detector_status_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/controller_status_t.hpp"
