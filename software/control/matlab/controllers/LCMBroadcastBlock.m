@@ -501,7 +501,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       
       % state_sync expects separate message for the hand state
-      robotiq_state = drc.hand_state_t();
+      robotiq_state = drc.joint_state_t();
       if (~obj.publish_truth && ~isempty(right_hand_state))
         robotiq_state.utime = t*1000*1000;
         robotiq_state.num_joints = 11;
