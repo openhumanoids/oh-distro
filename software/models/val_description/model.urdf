@@ -2537,5 +2537,21 @@
     <parent link="r_hand_force_torque"/>
     <child link="r_hand_face"/>
   </joint>
+  <!-- avoid collisions between close links-->
+  <collision_filter_group name='ignoreCloseLinks1'>
+    <member link='RightShoulderYawLink'/>
+    <member link='Head'/>
+    <member link='LeftHipRollLink'/>
+    <member link='RightHipRollLink'/>
+    <ignored_collision_filter_group collision_filter_group='ignoreCloseLinks2'/>
+  </collision_filter_group>
+  <collision_filter_group name='ignoreCloseLinks2'>
+    <member link='RightForearmLink'/>
+    <member link='Torso'/>
+    <member link='Pelvis'/>
+    <member link='LeftHipPitchLink'/>
+    <member link='RightHipPitchLink'/>
+    <ignored_collision_filter_group collision_filter_group='ignoreCloseLinks1'/>
+  </collision_filter_group>
   <!-- end edinburgh extra stuff right hand-->
 </robot>
