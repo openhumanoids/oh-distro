@@ -1,8 +1,0 @@
-package drc;
-//CONTROLLER_MODE
-struct controller_mode_t 
-{
-   int64_t utime;
-   int8_t mode;  // see constants below 
-   const int8_t BDI=0, MIT=1;
-} 

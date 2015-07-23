@@ -1,8 +1,0 @@
-package drc;
-
-struct plan_adjust_mode_t
-{
-   int64_t utime;
-   int16_t mode;  // see constants below 
-   const int16_t RIGHT_HAND=0, LEFT_HAND=1,BOTH_HANDS=2, LEFT_FOOT=3, RIGHT_FOOT=4,BOTH_FEET=5,ALL=6;
-} 

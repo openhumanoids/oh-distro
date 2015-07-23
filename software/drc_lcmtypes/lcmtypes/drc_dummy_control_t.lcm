@@ -1,7 +1,0 @@
-package drc;
-
-struct dummy_control_t
-{
-	int64_t utime;
-	int64_t timestamp;
-}

@@ -1,8 +1,0 @@
-package drc;
-
-struct robot_collision_array_t
-{
-  int64_t utime;
-  int32_t num_collision_states;
-  robot_collision_t collision_states[num_collision_states];
-}
