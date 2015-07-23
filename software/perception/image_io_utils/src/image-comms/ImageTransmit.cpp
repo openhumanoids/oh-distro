@@ -9,7 +9,7 @@
 
 #include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/drc/camera_settings_t.hpp>
+// #include <lcmtypes/drc/camera_settings_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
 #include <lcmtypes/drc/subimage_request_t.hpp>
 #include <lcmtypes/drc/subimage_response_t.hpp>
@@ -17,6 +17,11 @@
 #include <opencv2/opencv.hpp>
 
 #include <ConciseArgs>
+
+#define QUALITY_LOW   1
+#define QUALITY_MED   2
+#define QUALITY_HIGH  3
+#define QUALITY_SUPER 4
 
 struct ChannelData {
   typedef std::shared_ptr<ChannelData> Ptr;
@@ -34,24 +39,24 @@ struct ChannelData {
 
   ChannelData() {
     mLatestImage.size = 0;
-    setQuality(drc::camera_settings_t::QUALITY_LOW);
+    setQuality(QUALITY_LOW);
   }
 
   void setQuality(const int iQuality) {
     switch (iQuality) {
-    case drc::camera_settings_t::QUALITY_LOW:
+    case QUALITY_LOW:
       mJpegQuality = 50;
       mDownSampleFactor = 4;
       break;
-    case drc::camera_settings_t::QUALITY_MED:
+    case QUALITY_MED:
       mJpegQuality = 70;
       mDownSampleFactor = 4;
       break;
-    case drc::camera_settings_t::QUALITY_HIGH:
+    case QUALITY_HIGH:
       mJpegQuality = 50;
       mDownSampleFactor = 2;
       break;
-    case drc::camera_settings_t::QUALITY_SUPER:
+    case QUALITY_SUPER:
       mJpegQuality = 90;
       mDownSampleFactor = 1;
     default:
@@ -194,7 +199,7 @@ struct ImageTransmit {
   ImageTransmit() {
     mLcmWrapper.reset(new drc::LcmWrapper());
     mLcm = mLcmWrapper->get();
-    mLcm->subscribe("CAMERA_SETTINGS", &ImageTransmit::onCameraSettings, this);
+    //mLcm->subscribe("CAMERA_SETTINGS", &ImageTransmit::onCameraSettings, this);
     mLcm->subscribe("TRIGGER_CAMERA", &ImageTransmit::onTrigger, this);
     mLcm->subscribe("SUBIMAGE_REQUEST", &ImageTransmit::onSubRequest, this);
   }
@@ -233,6 +238,7 @@ struct ImageTransmit {
     mLcmWrapper->startHandleThread(true);
   }
 
+  /*
   void onCameraSettings(const lcm::ReceiveBuffer* iBuf,
                         const std::string& iChannel,
                         const drc::camera_settings_t* iMessage) {
@@ -240,6 +246,7 @@ struct ImageTransmit {
     if (item == mChannels.end()) return;
     item->second->setQuality(iMessage->quality);
   }
+  */
 
   void onSubRequest(const lcm::ReceiveBuffer* iBuf,
                     const std::string& iChannel,
