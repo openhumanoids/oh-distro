@@ -108,10 +108,10 @@ classdef Scenes
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);       
         case 4
-          table = RigidBodyBox([1 1 .025], [.8 0 .9], [0 0 0]);
+          table = RigidBodyBox([1 1 .025], [.7 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
-          obstacle = RigidBodyBox([.1 .3 .2], [.35 0 1.0125], [0 0 0]);
+          obstacle = RigidBodyBox([.1 .2 .2], [.25 0 1.0125], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, obstacle);
           
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
@@ -205,7 +205,7 @@ classdef Scenes
             targetObjectPos = [0.8 0 0.6];
           end
         case 4
-          targetObjectPos = [0.6 0 1.0625];
+          targetObjectPos = [0.5 0 1.0625];
         case 5
           targetObjectPos = [0.65 0 1.1];
         case 6
@@ -340,33 +340,32 @@ classdef Scenes
     end
     
     function constraint = graspingForearmAlignConstraint(options, robot)
-      if strcmp(options.graspingHand, 'left')
-        side = [true false];
-      else
-        side = [false true];
-      end
-      rotation = [0; 0; 0];
+      grHand = options.graspingHand;
       switch options.model
         case 'v3'
-          names = {'l_farm', 'r_farm'};
+          name.right = 'r_farm';
+          name.left = 'l_farm';
         case 'v4'
-          names = {'l_ufarm', 'r_ufarm'};
+          name.right = 'r_ufarm';
+          name.left = 'l_ufarm';
         case 'v5'
-          if strcmp(options.graspingHand, 'left')
-            rotation = [0; pi; 0];
-          end
-          names = {'l_ufarm', 'r_ufarm'};
-        case 'val'
-          if strcmp(options.graspingHand, 'left')
-            rotation = [0; pi/2; -pi/2];
-          else
-            rotation = [0; -pi/2; -pi/2];
-          end
-          names = {'LeftForearm', 'RightForearm'};
+          rotation.right = [0; 0; 0];
+          rotation.left = [0; pi; 0];
+          name.right = 'r_ufarm';
+          name.left = 'l_ufarm';
+        case 'val1'
+          rotation.right = [0; -pi/2; -pi/2];
+          rotation.left = [0; pi/2; -pi/2];
+          name.right = 'RightForearm';
+          name.left = 'LeftForearm';
+        case 'val2'
+          rotation.right = [0; -pi/2; -pi/2];
+          rotation.left = [0; pi/2; -pi/2];
+          name.right = 'RightForearmLink';
+          name.left = 'LeftForearmLink';
       end
-      farm = robot.findLinkId(names{side});
       hand = Scenes.getGraspingHand(options, robot);
-      constraint = RelativeQuatConstraint(robot, hand, farm, rpy2quat(rotation), 0);
+      constraint = RelativeQuatConstraint(robot, hand, name.(grHand), rpy2quat(rotation.(grHand)), 0);
     end
     
     function constraint = nonGraspingHandPositionConstraint(options, robot)
