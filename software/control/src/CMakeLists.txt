@@ -122,15 +122,10 @@ set(java_src_files
   AffordanceFullStateCoder.java
   AtlasCommandCoder.java
   ForceTorqueStateCoder.java
-  GraspOptStatusPublisher.java
-  GraspSeedOptCoder.java
-  JointAnglesCoder.java
   PoseGroundMonitor.java
   RobotPlanPublisher.java
   RobotStateCoder.java
   AtlasStateExtraCoder.java
-  IrobotJointCommandCoder.java
-  SandiaJointCommandCoder.java
   HandStateListener.java
   LCMGLLineBuffer.java
   ViconBodyPointCoder.java

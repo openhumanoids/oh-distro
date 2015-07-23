@@ -1,9 +1,0 @@
-package drc;
-
-struct com_goal_t
-{
-	int64_t utime;
-	string robot_name;
-	vector_3d_t com_goal;
-}
-
