@@ -95,7 +95,7 @@ classdef MultipleTreeProblem
       obj.startPoints = [obj.xStart, zeros(obj.robot.num_positions + 7, 1), xStartAddTrees];
     end
     
-    function [obj, info, cost, qPath] = rrt(obj, xStart, xGoal, options)
+    function [obj, info, cost, qPath] = rrt(obj, options)
       if nargin < 2, options = struct(); end
       
       info = Info(Info.SUCCESS);
@@ -104,14 +104,16 @@ classdef MultipleTreeProblem
       
       %compute final pose
       tic
-      if length(xGoal) == 7
+      if length(obj.xGoal) == 3
         disp('Searching for a feasible final configuration...')
-        qGoal = obj.findGoalPose(xStart, xGoal);
+        qGoal = obj.findGoalPose(obj.xStart, obj.xGoal);
         if isempty(qGoal)
           info = info.setStatus(Info.FAIL_NO_FINAL_POSE);
           disp('Failed to find a feasible final configuration')
           return
         else
+          kinsol = obj.robot.doKinematics(qGoal);
+          obj.xGoal = obj.robot.forwardKin(kinsol, obj.endEffectorId, obj.endEffectorPoint, 2);
           obj.xGoal = [obj.xGoal; qGoal];
           disp('Final configuration found')
         end
@@ -347,8 +349,8 @@ classdef MultipleTreeProblem
             nIter = 0;
             [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
             if any(phi < obj.minDistance)
+              phi = phi - obj.minDistance;
               while (eps > 1e-3 || any(phi < 0)) && nIter < 5
-                phi = phi - obj.minDistance;
                 qNdot = zeros(nArmJoints, 1);
                 for joint = 1:nArmJoints
                   dgamma_dq = zeros(size(phi));
@@ -382,9 +384,13 @@ classdef MultipleTreeProblem
                 deltaX = targetPos - [palmPose(1:3); quat2rpy(palmPose(4:7))];
                 eps = norm(deltaX);
                 nIter = nIter + 1;
+                phi = phi - obj.minDistance;
               end
+            else
+              phi = phi - obj.minDistance;
+              eps = 1e-3;
             end
-            if eps < 1e-3 && all(phi >= 0)
+            if eps <= 1e-3 && all(phi >= 0)
               cost = (obj.qNom - q)'*cSpaceTree.ikoptions.Q*(obj.qNom - q);
               validConfs(:,sph) = [cost; q];
               succ(sph, :) = [1, nIter];

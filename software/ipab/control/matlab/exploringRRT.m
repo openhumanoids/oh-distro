@@ -116,17 +116,14 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
   % internal parts removed as they created self collisions:
   if strcmp(options.model, 'val2')
-    LeftHipRollLink = r.findLinkId('LeftHipRollLink');
-    RightHipRollLink = r.findLinkId('RightHipRollLink');
     LeftHipYawLink = r.findLinkId('LeftHipYawLink');
     RightHipYawLink = r.findLinkId('RightHipYawLink');
     LowerNeckPitchLink = r.findLinkId('LowerNeckPitchLink');
     TorsoPitchLink = r.findLinkId('TorsoPitchLink');
     TorsoYawLink = r.findLinkId('TorsoYawLink');
-    Head = r.findLinkId('Head');
     
     inactive_collision_bodies = [lFoot,rFoot, LowerNeckPitchLink, RightHipYawLink,...
-      LeftHipYawLink, RightHipRollLink, LeftHipRollLink,TorsoPitchLink, TorsoYawLink, Head];
+      LeftHipYawLink, TorsoPitchLink, TorsoYawLink];
   else
     inactive_collision_bodies = [lFoot,rFoot];
   end
@@ -179,9 +176,12 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   end
   
   switch options.model
-    case {'val1', 'val2'}
+    case 'val1'
       qNominalC = Scenes.getFP('valkyrie_fp_rHand_up', r);
       qNominalD = Scenes.getFP('valkyrie_fp_rHand_up_right', r);
+    case 'val2'
+      qNominalC = Scenes.getFP('valkyrie2_fp_rHand_up', r);
+      qNominalD = Scenes.getFP('valkyrie2_fp_rHand_up_right', r);
     case 'v4'
       qNominalC = Scenes.getFP('atlas_fp_rHand_up', r);
       qNominalD = Scenes.getFP('atlas_fp_rHand_up_right', r);
@@ -228,7 +228,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       switch options.nTrees
         case 4
           load('scene2Goal.mat')
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_goal(1:7),...
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, Scenes.getTargetObjPos(options)',...
             [xStartC, xStartD], goalConstraints, startPoseConstraints, q_nom,...
             'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
@@ -238,7 +238,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         case 2
           multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
       end
-      [multiTree, info, cost, q_path] = multiTree.rrt(x_start, x_goal(1:7), options);
+      [multiTree, info, cost, q_path] = multiTree.rrt(options);
       TA = multiTree.trees(1);
   end
   rrt_time = toc(rrt_timer);  
