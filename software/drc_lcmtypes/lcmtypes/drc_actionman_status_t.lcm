@@ -1,7 +1,0 @@
-package drc;
-
-struct actionman_status_t
-{
-   int64_t utime;
-   string status;
-}

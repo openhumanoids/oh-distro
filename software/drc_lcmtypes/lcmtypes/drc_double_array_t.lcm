@@ -1,8 +1,0 @@
-package drc;
-
-struct double_array_t
-{
-  int64_t utime;
-  int32_t num_values;
-  double values[num_values];
-}
