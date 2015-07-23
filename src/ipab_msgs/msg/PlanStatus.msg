@@ -1,0 +1,5 @@
+uint64 utime
+uint8 execution_status
+uint8 plan_type
+uint64 last_plan_msg_utime
+uint64 last_plan_start_utime

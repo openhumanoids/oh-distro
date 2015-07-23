@@ -15,10 +15,12 @@
 
 #include <sensor_msgs/JointState.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <ipab_msgs/PlanStatus.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/joint_state_t.hpp"
 #include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
+#include "lcmtypes/drc/plan_status_t.hpp"
 
 using namespace std;
 
@@ -31,8 +33,9 @@ private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
 
-  ros::Subscriber  joint_states_sub_;
+  ros::Subscriber  joint_states_sub_, plan_status_sub_;
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);
+  void plan_status_cb(const ipab_msgs::PlanStatusConstPtr& msg);
 
 };
 
@@ -44,6 +47,7 @@ App::App(ros::NodeHandle node_) : node_(node_)
       ROS_ERROR_STREAM("lcm is not good()");
   }
   joint_states_sub_ = node_.subscribe(string("/joint_states"), 100, &App::joint_states_cb,this);
+  plan_status_sub_ = node_.subscribe(string("/kuka/plan_status"), 100, &App::plan_status_cb,this);
 }
 
 App::~App()  {
@@ -70,6 +74,18 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
   }
 
   lcm_publish_.publish("KUKA_STATE", &msg_out);
+}
+
+void App::plan_status_cb(const ipab_msgs::PlanStatusConstPtr& msg)
+{
+  drc::plan_status_t msg_out;
+  msg_out.utime = msg->utime;
+  msg_out.execution_status = msg->execution_status;
+  msg_out.plan_type = msg->plan_type;
+  msg_out.last_plan_msg_utime = msg->last_plan_msg_utime;
+  msg_out.last_plan_start_utime = msg->last_plan_start_utime;
+
+  lcm_publish_.publish("PLAN_EXECUTION_STATUS", &msg_out);
 }
 
 int main(int argc, char **argv){
