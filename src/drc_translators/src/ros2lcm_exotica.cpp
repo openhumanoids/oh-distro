@@ -12,7 +12,7 @@
 #include <map>
 
 #include <Eigen/Dense>
-
+#include <kdl/frames.hpp>
 #include <sensor_msgs/JointState.h>
 #include <ipab_msgs/PlannerResponse.h>
 
@@ -39,7 +39,7 @@ private:
 
 App::App(ros::NodeHandle node_) : node_(node_)
 {
-  ROS_INFO_STREAM("Initializing KUKA LWR Joint State Translator");
+  ROS_INFO_STREAM("Initializing LCM EXOTica Joint State Translator");
   if(!lcm_publish_.good())
   {
       ROS_ERROR_STREAM("lcm is not good()");
@@ -76,13 +76,24 @@ void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
         msg_out.plan[t].joint_position.assign(n_joints , 0  );
         msg_out.plan[t].joint_velocity.assign(n_joints , 0  );
         msg_out.plan[t].joint_effort.assign(n_joints , 0  );
-        msg_out.plan[t].pose.rotation.w=1.0;
+
         msg_out.plan[t].num_joints = n_joints;
         msg_out.plan[t].joint_name= msg->joint_names;
+
         for (int i = 0; i < n_joints; i++)
         {
           msg_out.plan[t].joint_position[ i ] = msg->points[t].positions[ i ];
           // Ignoring velocity and effort for now
+        }
+
+        //	Actually, this applies to all base types
+        //if(msg->base_type == 10)
+        {
+        	msg_out.plan[t].pose.translation.x=msg->points[t].positions[0];
+        	msg_out.plan[t].pose.translation.y=msg->points[t].positions[1];
+        	msg_out.plan[t].pose.translation.z=msg->points[t].positions[2];
+        	KDL::Rotation base_rot = KDL::Rotation::RPY(msg->points[t].positions[3],msg->points[t].positions[4],msg->points[t].positions[5]);
+        	base_rot.GetQuaternion(msg_out.plan[t].pose.rotation.x,msg_out.plan[t].pose.rotation.y,msg_out.plan[t].pose.rotation.z,msg_out.plan[t].pose.rotation.w);
         }
     }
 
@@ -120,6 +131,14 @@ void App::ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
           msg_out.plan[t].joint_position[ i ] = msg->points[t].positions[ i ];
           // Ignoring velocity and effort for now
         }
+        if(msg->base_type == 10)
+        {
+        	msg_out.plan[t].pose.translation.x=msg->points[t].positions[0];
+        	msg_out.plan[t].pose.translation.y=msg->points[t].positions[1];
+        	msg_out.plan[t].pose.translation.z=msg->points[t].positions[2];
+        	KDL::Rotation base_rot = KDL::Rotation::RPY(msg->points[t].positions[3],msg->points[t].positions[4],msg->points[t].positions[5]);
+        	base_rot.GetQuaternion(msg_out.plan[t].pose.rotation.x,msg_out.plan[t].pose.rotation.y,msg_out.plan[t].pose.rotation.z,msg_out.plan[t].pose.rotation.w);
+        }
     }
 
 
@@ -130,8 +149,8 @@ int main(int argc, char **argv){
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
   new App(nh);
-  ROS_INFO_STREAM("ros2lcm KUKA lwr translator ready");
-  ROS_ERROR_STREAM("ROS2LCM KUKA LWR Joint State Translator Ready");
+  ROS_INFO_STREAM("ros2lcm translator ready");
+  ROS_ERROR_STREAM("ROS2LCM Joint State Translator Ready");
   ros::spin();
   return 0;
 }

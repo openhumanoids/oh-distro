@@ -5,3 +5,7 @@ string[] joint_names
 trajectory_msgs/JointTrajectoryPoint[] points
 int32 info
 string robot
+int32 base_type
+#0 fixed base
+#10 floating base
+#20 planar base
