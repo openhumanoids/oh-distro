@@ -148,7 +148,7 @@ set(libmultisense_external_args
   )
 
 set(multisense-lcm_url http://github.com/mitdrc/multisense-lcm.git)
-set(multisense-lcm_revision 0941692481ed08d97fec90bcbc39603ebe9680b6)
+set(multisense-lcm_revision b05368f47219642fdebe06f93fe8193f740ed34f)
 set(multisense-lcm_depends libmultisense)
 
 
