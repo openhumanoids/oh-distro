@@ -14,13 +14,13 @@ find_package(catkin REQUIRED COMPONENTS
 
 
 ## Generate messages in the 'msg' folder
-add_message_files(   FILES PlannerResponse.msg PlannerRequest.msg RobotiqCommand.msg)
+add_message_files(   FILES PlannerResponse.msg PlannerRequest.msg RobotiqCommand.msg PlanStatus.msg)
 
 ## Generate service types
-#add_service_files(
-#  FILES
-#  RobotiqCommand.srv
-#)
+add_service_files(
+  FILES
+  CollisionCheck.srv
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(  DEPENDENCIES  std_msgs trajectory_msgs )
