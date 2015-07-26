@@ -1,0 +1,14 @@
+mode 1:
+- use multisense laser at horizontal (both sensor and SL) to estimate motion in xy yaw
+  - Why? to demostrate scanmatching and to do a little kintinuous at scale
+- use a laser bolted onto the multisense to estimate motion in xy and yaw
+  - Why? to demostrate scanmatching and to do a little kintinuous but also to build a 3D model with lidar
+
+- produce an estimate at the laser scan but publish a position estimate at the body frame
+
+mode 2:
+- have the lidar tilted and estimate the motion with low drift for a few cm
+  - 
+- also look at the cmu estimator too
+
+
