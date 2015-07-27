@@ -138,7 +138,7 @@ set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
 set(kinematics-utils_depends Eigen_pod)
 
 set(libmultisense_url https://bitbucket.org/crl/libmultisense)
-set(libmultisense_hg_tag efb8099)
+set(libmultisense_hg_tag a57026c)
 set(libmultisense_depends opencv-drc)
 set(libmultisense_external_args
   CMAKE_CACHE_ARGS
@@ -247,7 +247,7 @@ endmacro()
 macro(add_mercurial_external proj)
     ExternalProject_Add(${proj}
       HG_REPOSITORY ${${proj}_url}
-      HG_TAG ${${proj}_revision}
+      HG_TAG ${${proj}_hg_tag}
       DEPENDS ${${proj}_depends}
       SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
       ${${proj}_external_args}
