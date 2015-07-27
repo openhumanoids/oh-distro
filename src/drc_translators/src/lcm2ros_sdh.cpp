@@ -32,6 +32,9 @@ private:
   ros::ServiceClient rosserviceclient_Tactile_Open_;
   ros::ServiceClient rosserviceclient_Tactile_Close_;
 
+  ros::ServiceClient rosserviceclient_Engage_;
+  ros::ServiceClient rosserviceclient_Disengage_;
+
   void handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const robotiqhand::command_t* msg);
   ros::Publisher hand_command_pub_;
 };
@@ -44,6 +47,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   rosserviceclient_Recover_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/recover");
   rosserviceclient_Tactile_Open_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/tactile_open");
   rosserviceclient_Tactile_Close_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/tactile_close");
+
+  rosserviceclient_Engage_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/engage");
+  rosserviceclient_Disengage_ = nh_.serviceClient<std_srvs::Trigger>("/gripper/sdh_controller/disengage");
 
   rosnode = new ros::NodeHandle();
 }
@@ -62,6 +68,22 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
       ROS_ERROR("Emergency release NOT activated");
     }
     return;
+  }
+
+  // Check whether to disengage hand (activate = 0)
+  if (msg->activate == 0) {
+    std_srvs::Trigger disengage_trigger;
+    if (rosserviceclient_Disengage_.call(disengage_trigger))
+      ROS_DEBUG("Disengaged hand");
+    else
+      ROS_ERROR("Error disengaging hand");
+    return;
+  } else if (msg->activate == 0 && msg->do_move == 0) {
+    std_srvs::Trigger engage_trigger;
+    if (rosserviceclient_Engage_.call(engage_trigger))
+      ROS_DEBUG("Engaged hand");
+    else
+      ROS_ERROR("Error engaging hand");
   }
 
   ipab_msgs::RobotiqCommand m;
@@ -132,7 +154,7 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
     // 0 - inactive
     // int8_t isc;
     // int16_t positionS;
-  } else if (!msg->do_move && msg->activate) {
+  } /*else if (!msg->do_move && msg->activate) {
     // Reset / calibrate
     std_srvs::Trigger recover_trigger;
     if (rosserviceclient_Recover_.call(recover_trigger)) {
@@ -143,7 +165,7 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
     return;
   } else {
     ROS_WARN("Setting modes not supported - only basic mode supported!");
-  }
+  }*/
 }
 
 int main(int argc, char** argv) {
