@@ -138,7 +138,7 @@ set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
 set(kinematics-utils_depends Eigen_pod)
 
 set(libmultisense_url https://bitbucket.org/crl/libmultisense)
-set(libmultisense_hg_tag efb8099)
+set(libmultisense_hg_tag a57026c)
 set(libmultisense_depends opencv-drc)
 set(libmultisense_external_args
   CMAKE_CACHE_ARGS
