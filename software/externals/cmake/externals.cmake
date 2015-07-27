@@ -247,7 +247,7 @@ endmacro()
 macro(add_mercurial_external proj)
     ExternalProject_Add(${proj}
       HG_REPOSITORY ${${proj}_url}
-      HG_TAG ${${proj}_revision}
+      HG_TAG ${${proj}_hg_tag}
       DEPENDS ${${proj}_depends}
       SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
       ${${proj}_external_args}
