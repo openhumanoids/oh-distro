@@ -8,7 +8,6 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/data_request_list_t.hpp>
-#include <lcmtypes/drc/map_request_bbox_t.hpp>
 #include <lcmtypes/drc/map_request_t.hpp>
 #include <lcmtypes/drc/shaper_data_request_t.hpp>
 
@@ -588,90 +587,6 @@ struct State {
     }
   }
 
-  void onBoxRequest(const lcm::ReceiveBuffer* iBuf,
-                    const std::string& iChannel,
-                    const drc::map_request_bbox_t* iMessage) {
-    drc::map_request_t msg;
-    bool rawPoints = iMessage->params & drc::map_request_bbox_t::RAW_MASK;
-    int dataSource = (iMessage->params & drc::map_request_bbox_t::SOURCE_MASK);
-    msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.map_id = rawPoints ? 2 : 1;
-    msg.type = drc::map_request_t::DEPTH_IMAGE;
-    msg.resolution = 0.01;
-    msg.quantization_max = 0.01;
-    switch (dataSource) {
-    case drc::map_request_bbox_t::LASER:
-      msg.type = drc::map_request_t::POINT_CLOUD;
-      msg.resolution = 0.005;
-      msg.quantization_max = 0.005;
-      msg.view_id = drc::data_request_t::DENSE_CLOUD_BOX;
-      break;
-    case drc::map_request_bbox_t::STEREO_HEAD:
-      msg.view_id = drc::data_request_t::STEREO_MAP_HEAD;
-      break;
-    case drc::map_request_bbox_t::STEREO_LHAND:
-      msg.view_id = drc::data_request_t::STEREO_MAP_LHAND;
-      break;
-    case drc::map_request_bbox_t::STEREO_RHAND:
-      msg.view_id = drc::data_request_t::STEREO_MAP_RHAND;
-      break;
-    default:
-      std::cout << "Warning: bad data source in box request" << std::endl;
-      break;
-    }
-    msg.frequency = 0;
-    if (iMessage->time_window > 0) {
-      msg.time_min = -iMessage->time_window*1e6;
-      msg.time_max = 0;
-      msg.time_mode = drc::map_request_t::RELATIVE;
-    }
-    else {
-      msg.time_min = msg.time_max = -1;
-      msg.time_mode = drc::map_request_t::ABSOLUTE;
-    }
-    msg.relative_location = false;
-    msg.active = true;
-    msg.width = msg.height = 0;
-    Worker::setTransform(Eigen::Projective3f::Identity(), msg);
-
-    const float kPi = acos(-1);
-    Eigen::Vector3f scale(iMessage->size[0]/64.0, iMessage->size[1]/64.0,
-                          iMessage->size[2]/64.0);
-    Eigen::Vector3f translation(iMessage->center[0]/128.0,
-                                iMessage->center[1]/128.0,
-                                iMessage->center[2]/128.0);
-    Eigen::Vector3f rpy(iMessage->rpy[0]*kPi/1800, iMessage->rpy[1]*kPi/1800,
-                        iMessage->rpy[2]*kPi/1800);
-    Eigen::Matrix4f planeTransform = Eigen::Matrix4f::Identity();
-    planeTransform.block<3,3>(0,0).diagonal() = scale;
-    Eigen::Matrix3f rotation;
-    rotation = Eigen::AngleAxisf(rpy[2], Eigen::Vector3f::UnitZ()) *
-      Eigen::AngleAxisf(rpy[1], Eigen::Vector3f::UnitY()) *
-      Eigen::AngleAxisf(rpy[0], Eigen::Vector3f::UnitX());
-    planeTransform.block<3,3>(0,0) =
-      rotation.transpose()*planeTransform.block<3,3>(0,0);
-    planeTransform.block<3,1>(0,3) = translation;
-    planeTransform = planeTransform.inverse().transpose();
-
-    std::vector<Eigen::Vector4f> planes(6);
-    planes[0] = Eigen::Vector4f( 1, 0, 0, 0.5);
-    planes[1] = Eigen::Vector4f(-1, 0, 0, 0.5);
-    planes[2] = Eigen::Vector4f( 0, 1, 0, 0.5);
-    planes[3] = Eigen::Vector4f( 0,-1, 0, 0.5);
-    planes[4] = Eigen::Vector4f( 0, 0, 1, 0.5);
-    planes[5] = Eigen::Vector4f( 0, 0,-1, 0.5);
-    msg.clip_planes.resize(planes.size());
-    for (int i = 0; i < planes.size(); ++i) {
-      planes[i] = planeTransform*planes[i];
-      msg.clip_planes[i].resize(4);
-      for (int j = 0; j < 4; ++j) {
-        msg.clip_planes[i][j] = planes[i][j];
-      }
-    }
-    msg.num_clip_planes = msg.clip_planes.size();
-
-    mLcm->publish("MAP_REQUEST", &msg);
-  }
   
 };
 
@@ -680,7 +595,6 @@ int main(const int iArgc, const char** iArgv) {
 
   // parse arguments
   string requestChannel = "DATA_REQUEST";
-  string boxChannel = "MAP_REQUEST_BBOX";
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(requestChannel, "r", "request_channel",
           "channel for incoming data requests");
@@ -688,7 +602,6 @@ int main(const int iArgc, const char** iArgv) {
 
   // subscribe to channels
   state.mLcm->subscribe(requestChannel, &State::onDataRequest, &state);
-  state.mLcm->subscribe(boxChannel, &State::onBoxRequest, &state);
 
   cout << "Waiting for input..." << endl;
 

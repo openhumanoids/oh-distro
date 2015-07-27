@@ -1,6 +1,0 @@
-package drc;
-
-struct actionman_resume_t
-{
-   int64_t utime;
-}

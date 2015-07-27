@@ -1,8 +1,0 @@
-package drc;
-
-struct plan_execution_speed_t
-{
-   int64_t utime;
-   double speed;
-}
-

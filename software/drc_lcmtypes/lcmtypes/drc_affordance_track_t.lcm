@@ -1,8 +1,0 @@
-package drc;
-
-struct affordance_track_t
-{
-  string segment;        //corresponding segment (or link) name from the otdf
-  int32_t id;		 //id of the point, should be persistent and unique to the segment
-  vector_3d_t position;  //observation
-}

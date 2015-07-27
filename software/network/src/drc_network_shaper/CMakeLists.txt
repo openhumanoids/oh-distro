@@ -25,7 +25,6 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR}
   robot-state-analogs.proto
   footstep-plan-analogs.proto
   robot-plan-analogs.proto
-  grasp-analogs.proto
   ) 
 add_executable(drc-network-shaper 
   shaper-app.cpp 
@@ -35,7 +34,6 @@ add_executable(drc-network-shaper
   robot-state-codecs.cpp
   footstep-plan-codecs.cpp
   manip-plan-codecs.cpp
-  grasp-codecs.cpp
   drc_udp_driver.cpp
   ${ldpc_sources}
   ${PROTO_SRCS} ${PROTO_HDRS})
@@ -46,9 +44,3 @@ pods_use_pkg_config_packages(drc-network-shaper lcm
 	     lcmtypes_drc_lcmtypes eigen3)
 
 pods_install_executables(drc-network-shaper)
-
-add_executable(drc-network-test network-test.cpp)
-target_link_libraries (drc-network-test goby_common)
-pods_use_pkg_config_packages(drc-network-test lcm 
-	     lcmtypes_drc_lcmtypes)
-pods_install_executables(drc-network-test)

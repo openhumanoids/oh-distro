@@ -19,7 +19,6 @@
 #include "robot-state-codecs.h"
 #include "footstep-plan-codecs.h"
 #include "manip-plan-codecs.h"
-#include "grasp-codecs.h"
 #include "lzma-codec.h"
 
 using namespace boost; 
@@ -164,12 +163,6 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
         config_prefix += std::string(app.cl_cfg.id + ".");
     
     
-    // mfallon, sept 2013
-    bool disable_custom_codecs = true;
-    if (!disable_custom_codecs){    
-        load_custom_codecs();
-    }
-
     bool disable_pmd_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, std::string(config_prefix + "disable_pmd_custom_codecs").c_str());
     if (!disable_pmd_custom_codecs){    
         load_pmd_custom_codecs();
@@ -1093,9 +1086,6 @@ void DRCShaper::load_ers_custom_codecs(bool add_joint_efforts, double key_frame_
 
 void DRCShaper::load_robot_plan_custom_codecs()
 {
-    const std::string& manip_plan_channel = "COMMITTED_ROBOT_PLAN";
-    custom_codecs_.insert(std::make_pair(manip_plan_channel, boost::shared_ptr<CustomChannelCodec>(new ManipPlanCodec(manip_plan_channel + "_COMPRESSED_LOOPBACK")))); 
-    custom_codecs_[manip_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_plan_channel];
     
         // test minimal robot state
     {
@@ -1163,18 +1153,6 @@ void DRCShaper::load_robot_plan_custom_codecs()
     
 }
 
-void DRCShaper::load_custom_codecs()
-{    
-    const std::string& grasp_channel = "COMMITTED_GRASP";
-    custom_codecs_.insert(std::make_pair(grasp_channel, boost::shared_ptr<CustomChannelCodec>(new GraspCodec(grasp_channel + "_COMPRESSED_LOOPBACK")))); 
-    custom_codecs_[grasp_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[grasp_channel];
-
-
-    const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
-    custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
-    custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
-        
-}
 
 void DRCShaper::begin_slot(const boost::system::error_code& e)
 {        

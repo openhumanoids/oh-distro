@@ -1,9 +1,0 @@
-package drc;
-
-struct contact_state_t
-{
-   int32_t num_contacts;
-   string id [num_contacts];
-   vector_3d_t contact_torque [num_contacts];
-   vector_3d_t contact_force [num_contacts];
-}

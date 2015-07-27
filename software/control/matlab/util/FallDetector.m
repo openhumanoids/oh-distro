@@ -85,12 +85,12 @@ classdef FallDetector
                   end
                 end
               end
-              msg = drc.atlas_fall_detector_status_t();
+              msg = drc.fall_detector_status_t();
               msg.utime = t*10e6;
               msg.icp = icp;
               msg.measured_cop = cop;
               msg.falling=falling_debounced;
-              obj.lc.publish('ATLAS_FALL_STATE',msg);
+              obj.lc.publish('FALL_STATE',msg);
               if msg.falling
                 recovery_msg = drc.recovery_trigger_t();
                 recovery_msg.activate = true;

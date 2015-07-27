@@ -11,7 +11,7 @@ import select
 import drc
 from time import sleep, time
 from datetime import datetime
-from drc.hand_state_t import hand_state_t
+from drc.joint_state_t import joint_state_t
 
 import pyrobotiqhand.baseSModel as baseSModel
 import pyrobotiqhand.comModbusTcp as comModbusTcp
@@ -59,7 +59,7 @@ def publishJointStates(side, lcm, status):
     global l_names
     global r_names
 
-    state = hand_state_t()
+    state = joint_state_t()
     state.utime = status.utime
     state.num_joints = 11
 

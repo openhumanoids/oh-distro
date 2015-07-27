@@ -10,10 +10,9 @@
 #include <drc_utils/joint_utils.hpp>
 
 #include "lcmtypes/bot_core.hpp"
-#include "lcmtypes/multisense.hpp"
 #include "lcmtypes/drc/atlas_state_t.hpp"
 #include "lcmtypes/drc/atlas_state_extra_t.hpp"
-#include "lcmtypes/drc/hand_state_t.hpp"
+#include "lcmtypes/drc/joint_state_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/system_status_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
@@ -99,10 +98,10 @@ class state_sync{
     
     long utime_prev_;
     
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
     void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
-    void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg);
-    void rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg);
+    void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
+    void rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);

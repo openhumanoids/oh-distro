@@ -5,7 +5,6 @@
 
 #include "lcmtypes/drc/robot_plan_t.hpp"
 #include "lcmtypes/drc/robot_plan_with_supports_t.hpp"
-#include "lcmtypes/drc/aff_indexed_robot_plan_t.hpp"
 
 #include "robot-plan-analogs.pb.h"
 
@@ -25,20 +24,6 @@ class ManipPlanCodec : public CustomChannelCodec
     goby::acomms::DCCLCodec* dccl_;        
 };
 
-class ManipMapCodec : public CustomChannelCodec
-{
-  public:
-    ManipMapCodec(const std::string loopback_channel = "");
-        
-    bool encode(const std::vector<unsigned char>& lcm_data, std::vector<unsigned char>* transmit_data);
-      
-    bool decode(std::vector<unsigned char>* lcm_data, const std::vector<unsigned char>& transmit_data);
-    
-  private:
-    goby::acomms::DCCLCodec* dccl_;
-        
-        
-};
 
 class SupportsPlanCodec : public CustomChannelCodec
 {

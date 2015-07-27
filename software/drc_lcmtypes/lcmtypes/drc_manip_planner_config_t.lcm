@@ -1,7 +1,0 @@
-package drc;
-
-struct manip_planner_config_t
-{
-  int64_t utime;
-  manip_plan_control_t control;
-}

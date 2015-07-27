@@ -5,7 +5,7 @@ image_io_utils
 opencv-utils
 # library to create depth masks:
 rgbd_simulation
-affordance
+#affordance
 maps
 # to check for self-collisions
 #lidar-plancheck
