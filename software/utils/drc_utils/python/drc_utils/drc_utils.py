@@ -133,7 +133,13 @@ def quat_to_euler(q) :
   yaw = math.atan2 (yaw_a, yaw_b);
   return [roll,pitch,yaw]
 
-def euler_to_quat(roll, pitch, yaw):
+
+# was (roll, pitch, yaw)
+def euler_to_quat(rpy):
+  roll =  rpy[0]
+  pitch = rpy[1]
+  yaw =   rpy[2]
+
   sy = math.sin(yaw*0.5);
   cy = math.cos(yaw*0.5);
   sp = math.sin(pitch*0.5);

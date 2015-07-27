@@ -164,7 +164,7 @@ set(externals
   multisense-lcm
   occ-map
   common_utils
-  #scanmatch
+  scanmatch
   jpeg-utils
   isam_include
   visualization
