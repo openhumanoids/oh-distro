@@ -1,16 +1,8 @@
 #include "lidar-odometry.hpp"
 
-using namespace std;
-
 LidarOdom::LidarOdom(boost::shared_ptr<lcm::LCM> &lcm_):
   lcm_(lcm_)
 {
-
-
-  // Set up frames and config:
-  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
-  botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
-
 
   laserType_ = SM_HOKUYO_UTM;
   //parameters for a hokuyo with the helicopters mirror's attached
@@ -76,8 +68,10 @@ LidarOdom::~LidarOdom()
 }
 
 
-void 
-sm_roll_pitch_yaw_to_quat (const double rpy[3], double q[4])
+
+
+
+void sm_roll_pitch_yaw_to_quat (const double rpy[3], double q[4])
 {
     double roll = rpy[0], pitch = rpy[1], yaw = rpy[2];
 
@@ -97,6 +91,21 @@ sm_roll_pitch_yaw_to_quat (const double rpy[3], double q[4])
     q[1] = sin_r2 * cos_p2 * cos_y2 - cos_r2 * sin_p2 * sin_y2;
     q[2] = cos_r2 * sin_p2 * cos_y2 + sin_r2 * cos_p2 * sin_y2;
     q[3] = cos_r2 * cos_p2 * sin_y2 - sin_r2 * sin_p2 * cos_y2;
+}
+
+
+Eigen::Isometry3d getScanTransformAsIsometry3d(ScanTransform tf){
+  Eigen::Isometry3d tf_out;
+  tf_out.setIdentity();
+  tf_out.translation()  << tf.x, tf.y, 0;
+
+  double rpy[3] = { 0, 0, tf.theta };
+  double quat[4];
+  sm_roll_pitch_yaw_to_quat(rpy, quat);
+  Eigen::Quaterniond q(quat[0], quat[1],quat[2],quat[3]);
+  tf_out.rotate(q);
+
+  return tf_out;
 }
 
 
@@ -123,100 +132,30 @@ void LidarOdom::doOdometry(const float* ranges, int nranges, float rad0, float r
     ////////////////////////////////////////////////////////////////////
     ScanTransform r = sm_->matchSuccessive(points, numValidPoints,
             laserType_, utime, NULL); //don't have a better estimate than prev, so just set prior to NULL
-                                                //utime is ONLY used to tag the scans that get added to the map, doesn't actually matter
+                                      //utime is ONLY used to tag the scans that get added to the map, doesn't actually matter
+    Eigen::Isometry3d r_Iso = getScanTransformAsIsometry3d(r);
+    prevOdom_ = currOdom_;
+    currOdom_ = r_Iso;
+    prevUtime_ = currUtime_;
+    currUtime_ = utime;
 
-    ////////////////////////////////////////////////////////////////////
-    //Publish
-    ////////////////////////////////////////////////////////////////////
-    //publish integrated absolute position instead of delta to last scan
-    sm::rigid_transform_2d_t odom;
-    odom.utime = utime;
-    memset(&odom, 0, sizeof(odom));
-    odom.pos[0] = r.x;
-    odom.pos[1] = r.y;
-    odom.theta = r.theta;
-
-    //publish integrated absolute position instead of delta to last scan
-    sm::rigid_transform_2d_t cur_odom;
-    memset(&cur_odom, 0, sizeof(cur_odom));
-    cur_odom.utime = utime;
-    cur_odom.pos[0] = r.x;
-    cur_odom.pos[1] = r.y;
-    cur_odom.theta = r.theta;
-    memcpy(cur_odom.cov, r.sigma, 9 * sizeof(double));
-
-    if (!publishRelative_)
-        lcm_->publish("ODOM_CHANNEL", &cur_odom);
-        //sm::rigid_transform_2d_t_publish(app->lcm, app->odom_chan, &cur_odom);
-    else {
-        //compute the relative odometry
-        if (prevOdom_.utime > 0) {
-            sm::rigid_transform_2d_t rel_odom;
-            rel_odom.utime = cur_odom.utime;
-            rel_odom.utime_prev = prevOdom_.utime;
-            double delta[2];
-            sm_vector_sub_2d(cur_odom.pos, prevOdom_.pos, delta);
-
-            sm_rotate2D(delta, -cur_odom.theta, rel_odom.pos);
-            rel_odom.theta = sm_angle_subtract(cur_odom.theta,
-                    prevOdom_.theta);
-            //rotate the covariance estimate to body frame
-            sm_rotateCov2D(cur_odom.cov, -cur_odom.theta, rel_odom.cov);
-            lcm_->publish("ODOM_CHANNEL", &rel_odom);
-            //sm::rigid_transform_2d_t_publish(app->lcm, app->odom_chan,
-            //        &rel_odom);
-        }
-
-    }
-
-    if (publishPose_) {
-        bot_core::pose_t pose;
-        memset(&pose, 0, sizeof(pose));
-        pose.utime = cur_odom.utime;
-
-        memcpy(pose.pos, cur_odom.pos, 2 * sizeof(double));
-
-        double rpy[3] =
-            { 0, 0, cur_odom.theta };
-        sm_roll_pitch_yaw_to_quat(rpy, pose.orientation);
-
-        //sm_pose_t_publish(app->lcm, app->pose_chan, &pose);
-        lcm_->publish("POSE_BODY", &pose);
-    }
-    sm_tictoc("recToSend");
-
-    prevOdom_ = cur_odom;
-
-    ////////////////////////////////////////////////////////////////////
-    //Print current position periodically!
-    ////////////////////////////////////////////////////////////////////
+    //Print current position periodically
     static double lastPrintTime = 0;
     if (sm_get_time() - lastPrintTime > 2.0) {
         lastPrintTime = sm_get_time();
-        //print out current state
-        fprintf(
-                stderr,
+        fprintf(stderr,
                 "x=%+7.3f y=%+7.3f t=%+7.3f\t score=%f hits=%.2f sx=%.2f sxy=%.2f sy=%.2f st=%.2f, numValid=%d\n",
-                r.x, r.y, r.theta, r.score, (double) r.hits
-                        / (double) numValidPoints, r.sigma[0], r.sigma[1],
+                r.x, r.y, r.theta, r.score, (double) r.hits / (double) numValidPoints, r.sigma[0], r.sigma[1],
                 r.sigma[4], r.sigma[8], numValidPoints);
     }
 
-    ////////////////////////////////////////////////////////////////////
-    //Do drawing periodically!
-    ////////////////////////////////////////////////////////////////////
+    //Do drawing periodically
     static double lastDrawTime = 0;
     if (doDrawing_ && sm_get_time() - lastDrawTime > .2) {
         lastDrawTime = sm_get_time();
-        sm_tictoc("drawing");
         sm_->drawGUI(points, numValidPoints, r, NULL);
-        sm_tictoc("drawing");
     }
 
-    ////////////////////////////////////////////////////////////////////
-    //cleanup!
-    ////////////////////////////////////////////////////////////////////
-
+    //cleanup
     free(points);
-    sm_tictoc("process_laser");
 }

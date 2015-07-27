@@ -12,3 +12,8 @@ mode 2:
 - also look at the cmu estimator too
 
 
+
+
+currently estimate pose of a lidar
+- want to support a lidar - any lidar
+- and then theough frames, get the pose of the body frame

@@ -5,13 +5,7 @@ add_definitions(-Wall )
 #add_definitions(-Wall -std=gnu99) # .... compiler warning
 
 add_library(lidar-odom SHARED lidar-odometry.cpp )
-pods_use_pkg_config_packages(lidar-odom eigen3 scanmatch bot2-core bot2-frames)
-
-#target_link_libraries(lidar-odom 
-#       lcmtypes_fovis-bot2   
-#       lcmtypes_bot2-core
-#    boost_thread      
-#    boost_program_options)
+pods_use_pkg_config_packages(lidar-odom eigen3 scanmatch bot2-core)
 
 set_target_properties(lidar-odom PROPERTIES SOVERSION 1)
 pods_install_libraries(lidar-odom)
@@ -26,8 +20,20 @@ pods_install_pkg_config_file(lidar-odom
 add_executable (se-lidar-odometry lidar-odometry-app.cpp)
 target_link_libraries(se-lidar-odometry boost_system)
 pods_use_pkg_config_packages(se-lidar-odometry eigen3
-  lcm   
+  lcm    bot2-frames_cpp
   lcmtypes_bot2-core  
   opencv lidar-odom
   ${FK_PACKAGES})
 pods_install_executables(se-lidar-odometry)
+
+
+##############################################
+# Basic Test Program
+add_executable (se-lidar-odometry-simple lidar-odometry-app-simple.cpp)
+target_link_libraries(se-lidar-odometry-simple boost_system)
+pods_use_pkg_config_packages(se-lidar-odometry-simple eigen3
+  lcm
+  lcmtypes_bot2-core
+  opencv lidar-odom
+  ${FK_PACKAGES})
+pods_install_executables(se-lidar-odometry-simple)
