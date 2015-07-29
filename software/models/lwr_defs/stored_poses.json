@@ -186,21 +186,6 @@
   "table clearing": [
     {
       "allow_mirror": false,
-      "description": "pre drop 1",
-      "joints": {
-        "lwr_arm_0_joint": 1.58440989,
-        "lwr_arm_1_joint": -0.942477796,
-        "lwr_arm_2_joint": 0,
-        "lwr_arm_3_joint": 0.875457153,
-        "lwr_arm_4_joint": 0,
-        "lwr_arm_5_joint": -0.960021496,
-        "lwr_arm_6_joint": -5.11206927e-05
-      },
-      "name": "pre drop 1",
-      "nominal_handedness": "left"
-    },
-    {
-      "allow_mirror": false,
       "description": "pre drop 2",
       "joints": {
         "lwr_arm_0_joint": 1.58440989,
@@ -212,6 +197,21 @@
         "lwr_arm_6_joint": -5.11206927e-05
       },
       "name": "pre drop 2",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre drop 1",
+      "joints": {
+        "lwr_arm_0_joint": 1.5532407760620117,
+        "lwr_arm_1_joint": 0.0005074719083495438,
+        "lwr_arm_2_joint": 3.822271082754014e-06,
+        "lwr_arm_3_joint": 1.5706881284713745,
+        "lwr_arm_4_joint": 1.837831769080367e-05,
+        "lwr_arm_5_joint": -0.9604151844978333,
+        "lwr_arm_6_joint": 0.0
+      },
+      "name": "pre drop 1",
       "nominal_handedness": "left"
     }
   ]
