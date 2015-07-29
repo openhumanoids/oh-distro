@@ -121,20 +121,16 @@ def findPrefixInJointNames(jointNames, armJointList):
     return False
 
 def getLeftArmInJoints(joints, jointGroups):
-    armJointList = None
     for jointGroup in jointGroups:
         if jointGroup['name'] == 'Left Arm':
-            armJointList = jointGroup['joints']
-    
-    return findPrefixInJointNames(joints.keys(), armJointList) if armJointList is not None else False
+            return findPrefixInJointNames(joints.keys(), jointGroup['joints'])
+    return False
 
 def getRightArmInJoints(joints, jointGroups):
-    armJointList = None
     for jointGroup in jointGroups:
         if jointGroup['name'] == 'Right Arm':
-            armJointList = jointGroup['joints']
-
-    return findPrefixInJointNames(joints.keys(), armJointList) if armJointList is not None else False
+            return findPrefixInJointNames(joints.keys(), jointGroup['joints'])
+    return False
 
 def getJointNamesForPoseType(poseType):
     '''
