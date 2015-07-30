@@ -1,3 +1,6 @@
+// simple test program:
+// se-simple-vo -L ~/drc-testing-data/state_est/run1_field_camera_snippet.lcmlog -P drc_robot.cfg -p
+
 // Just do VO, not do any imu integration, dont correct for any urdf/cfg offsets
 // Output motion in x forward, z up frame
 
@@ -25,7 +28,7 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
-
+#include <path_util/path_util.h>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <opencv/cv.h> // for disparity 
@@ -43,11 +46,13 @@ struct CommandLineConfig
   bool vicon_init; // initializae off of vicon
   std::string input_channel;
   bool verbose;
+  std::string in_log_fname;
+  std::string param_file;
 };
 
 class StereoOdom{
   public:
-    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_);
+    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_recv_, boost::shared_ptr<lcm::LCM> &lcm_pub_, const CommandLineConfig& cl_cfg_);
     
     ~StereoOdom(){
       free (left_buf_);
@@ -67,7 +72,8 @@ class StereoOdom{
     
     int64_t utime_cur_;
 
-    boost::shared_ptr<lcm::LCM> lcm_;
+    boost::shared_ptr<lcm::LCM> lcm_recv_;
+    boost::shared_ptr<lcm::LCM> lcm_pub_;
     BotParam* botparam_;
     BotFrames* botframes_;
     bot::frames* botframes_cpp_;
@@ -101,13 +107,24 @@ class StereoOdom{
 
 };    
 
-StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_) : 
-       lcm_(lcm_), cl_cfg_(cl_cfg_), utime_cur_(0), utime_prev_(0), 
+StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_recv_, boost::shared_ptr<lcm::LCM> &lcm_pub_, const CommandLineConfig& cl_cfg_) : 
+       lcm_recv_(lcm_recv_), lcm_pub_(lcm_pub_), cl_cfg_(cl_cfg_), utime_cur_(0), utime_prev_(0), 
        ref_utime_(0), changed_ref_frames_(false)
 {
-  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
-  botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
+  if (cl_cfg_.param_file.empty()) {
+    std::cout << "Get param from LCM\n";
+    botparam_ = bot_param_get_global(lcm_recv_->getUnderlyingLCM(), 0);
+  } else {
+    std::cout << "Get param from file\n";
+    botparam_ = bot_param_new_from_file(cl_cfg_.param_file.c_str());
+  }
+  if (botparam_ == NULL) {
+    exit(1);
+  }
+  botframes_ = bot_frames_get_global(lcm_recv_->getUnderlyingLCM(), botparam_);
   botframes_cpp_ = new bot::frames(botframes_);
+
+
   
   // Read config from file:
   config = new voconfig::KmclConfiguration(botparam_, cl_cfg_.camera_config);
@@ -122,10 +139,10 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
   decompress_disparity_buf_ = (uint8_t*) malloc( 4*image_size_*sizeof(uint8_t));  // arbitary size chosen..
   
 
-  vo_ = new FoVision(lcm_ , stereo_calibration_);
-  features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
-  estimator_ = new VoEstimator(lcm_ , botframes_, cl_cfg_.output_extension );
-  lcm_->subscribe( cl_cfg_.input_channel,&StereoOdom::multisenseHandler,this);
+  vo_ = new FoVision(lcm_pub_ , stereo_calibration_);
+  features_ = new VoFeatures(lcm_pub_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
+  estimator_ = new VoEstimator(lcm_pub_ , botframes_, cl_cfg_.output_extension );
+  lcm_recv_->subscribe( cl_cfg_.input_channel,&StereoOdom::multisenseHandler,this);
 
  
   pose_initialized_ = false;
@@ -143,11 +160,11 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
     world_to_camera_.translation().z() = 1.65; // nominal head height
     pose_initialized_ = true;
   }else{
-    lcm_->subscribe("VICON_BODY|VICON_FRONTPLATE",&StereoOdom::viconHandler,this);
+    lcm_recv_->subscribe("VICON_BODY|VICON_FRONTPLATE",&StereoOdom::viconHandler,this);
   }
   
   
-  imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_calibration_->getWidth(), 2*stereo_calibration_->getHeight()); // extra space for stereo tasks
+  imgutils_ = new image_io_utils( lcm_pub_->getUnderlyingLCM(), stereo_calibration_->getWidth(), 2*stereo_calibration_->getHeight()); // extra space for stereo tasks
   cout <<"StereoOdom Constructed\n";
 }
 
@@ -235,7 +252,7 @@ void StereoOdom::updateMotion(int64_t utime){
   status_msg.importance = 0;// use enums!!
   status_msg.frequency = 1;// use enums!!
   status_msg.value = ss.str();
-  lcm_->publish("SYSTEM_STATUS", &status_msg);
+  lcm_pub_->publish("SYSTEM_STATUS", &status_msg);
   */
 }
 
@@ -402,7 +419,7 @@ void StereoOdom::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     Eigen::Isometry3d worldvicon_to_camera = worldvicon_to_frontplate_vicon* frontplate_vicon_to_body_vicon * body_to_camera;
     
     bot_core::pose_t pose_msg = getPoseAsBotPose(worldvicon_to_camera, msg->utime);
-    lcm_->publish("POSE_BODY_ALT", &pose_msg );
+    lcm_pub_->publish("POSE_BODY_ALT", &pose_msg );
     
     world_to_camera_ =  worldvicon_to_camera;
     // prev_vicon_utime_ = msg->utime;
@@ -425,6 +442,9 @@ int main(int argc, char **argv){
   cl_cfg.vicon_init = FALSE;
   cl_cfg.fusion_mode = 0;
   cl_cfg.output_extension = "";
+  cl_cfg.in_log_fname = "";
+  std::string param_file = ""; // actual file
+  cl_cfg.param_file = ""; // full path to file
 
   ConciseArgs parser(argc, argv, "fovision-odometry");
   parser.add(cl_cfg.camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
@@ -434,15 +454,38 @@ int main(int argc, char **argv){
   parser.add(cl_cfg.fusion_mode, "m", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
   parser.add(cl_cfg.input_channel, "i", "input_channel", "input_channel - CAMERA or CAMERA_BLACKENED");
   parser.add(cl_cfg.output_extension, "o", "output_extension", "Extension to pose channels (e.g. '_VO' ");
+  parser.add(cl_cfg.in_log_fname, "L", "in_log_fname", "Process this log file");
+  parser.add(param_file, "P", "param_file", "Pull params from this file instead of LCM");
   parser.parse();
   cout << cl_cfg.fusion_mode << " is fusion_mode\n";
   cout << cl_cfg.camera_config << " is camera_config\n";
   
-  
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
-  if(!lcm->good()){
-    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+  cl_cfg.param_file = std::string(getConfigPath()) +'/' + std::string(param_file);
+  if (param_file.empty()) { // get param from lcm
+    cl_cfg.param_file = "";
   }
-  StereoOdom fo= StereoOdom(lcm, cl_cfg);
-  while(0 == lcm->handle());
+
+  //
+  bool running_from_log = !cl_cfg.in_log_fname.empty();
+  boost::shared_ptr<lcm::LCM> lcm_recv;
+  boost::shared_ptr<lcm::LCM> lcm_pub;
+  if (running_from_log) {
+    printf("running from log file: %s\n", cl_cfg.in_log_fname.c_str());
+    //std::string lcmurl = "file://" + in_log_fname + "?speed=0";
+    std::stringstream lcmurl;
+    //lcmurl << "file://" << in_log_fname << "?speed=" << processing_rate << "&start_timestamp=" << begin_timestamp;
+    lcmurl << "file://" << cl_cfg.in_log_fname ;
+    lcm_recv = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcmurl.str()));
+    if (!lcm_recv->good()) {
+      fprintf(stderr, "Error couldn't load log file %s\n", lcmurl.str().c_str());
+      exit(1);
+    }
+  }
+  else {
+    lcm_recv = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
+  }
+  lcm_pub = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
+
+  StereoOdom fo= StereoOdom(lcm_recv, lcm_pub, cl_cfg);
+  while(0 == lcm_recv->handle());
 }
