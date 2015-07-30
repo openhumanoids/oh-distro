@@ -100,7 +100,8 @@ public class DRCDemo01NavigationEnvironment implements CommonAvatarEnvironmentIn
       addEdinburghTable02(combinedTerrainObject3D);
       addEdinburghTable03(combinedTerrainObject3D);
       addEdinburghTable04(combinedTerrainObject3D);
-      
+      combinedTerrainObject3D.addTerrainObject(addEdinburghValve("Quals"));
+
       if (addLimboBar)
          addLimboBar(combinedTerrainObject3D);
 
@@ -1586,15 +1587,61 @@ public class DRCDemo01NavigationEnvironment implements CommonAvatarEnvironmentIn
    }   
    
    private static void addTableObject(CombinedTerrainObject3D combinedTerrainObject, double x, double y, double z, double lx, double ly, double lz, AppearanceDefinition color, int type){
-	      combinedTerrainObject.getLinkGraphics().translate(x, y, z);
+	  combinedTerrainObject.getLinkGraphics().translate(x, y, z);
 	      
-	      if (type == 0){
+	  if (type == 0){
 	      combinedTerrainObject.getLinkGraphics().addCylinder(lz, ly/2, color);
-	      }else{
+	  }else{
   	        combinedTerrainObject.getLinkGraphics().addCube( lx, ly, lz, color);
-	      }
-	      combinedTerrainObject.getLinkGraphics().translate(-x, -y, -z); 	   
+	  }
+	  combinedTerrainObject.getLinkGraphics().translate(-x, -y, -z); 	   
    }
+
+
+   private CombinedTerrainObject3D addEdinburghValve(String name)
+   {
+      CombinedTerrainObject3D combinedTerrainObject = new CombinedTerrainObject3D(name);
+
+      double courseAngleDeg = -65;
+      AppearanceDefinition color = YoAppearance.Gray();
+
+      double borderWidth = 0.1;
+
+      // 3.15 and 2.9
+      double[] point = {1.15, 0};
+      double[] rotatedPoint;
+
+      // Setup Door
+      double wallWidth = 0.80;
+      double wallHeight = 2.0;    // 82 inches.
+      double wallCenter = 0;
+
+      // Walls
+      rotatedPoint = rotateAroundOrigin(point, courseAngleDeg);
+      setUpSlopedBox(combinedTerrainObject, rotatedPoint[0], rotatedPoint[1], (wallHeight + borderWidth) / 2, borderWidth,
+                     Math.abs(wallCenter) * 2 - wallWidth - 2 * borderWidth, wallHeight + borderWidth, 0, courseAngleDeg, color);
+
+      // valve (graphics only)
+      for (int i = 0; i < 1; i++)
+      {
+         Graphics3DObject linkGraphics = new Graphics3DObject();
+
+         // Vector3d translation = new Vector3d(-1.0, 0, startDistance);// startDistance);
+         Vector3d translation = new Vector3d(-1, 0, 0.9);    // startDistance);
+
+         linkGraphics.rotate(Math.PI / 2, Axis.Y);
+         linkGraphics.rotate(Math.toRadians(-courseAngleDeg), Axis.X);
+         linkGraphics.translate(translation);
+
+         double outsideRadius = 0.2;
+         double gripRadius = 0.022;
+         linkGraphics.addArcTorus(0, Math.PI * 2, outsideRadius, gripRadius, YoAppearance.randomColor(random));
+
+         combinedTerrainObject.addStaticLinkGraphics(linkGraphics);    // new
+      }
+
+      return combinedTerrainObject;
+   }  
       
    private CombinedTerrainObject3D addRocks3D(String name)
    {
