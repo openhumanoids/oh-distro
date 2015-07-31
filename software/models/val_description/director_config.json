@@ -98,9 +98,9 @@
     "base_roll",
     "base_pitch",
     "base_yaw",
-    "TorsoRoll",
-    "TorsoPitch",
     "TorsoYaw",
+    "TorsoPitch",
+    "TorsoRoll",
     "LowerNeckPitch",
     "NeckYaw",
     "UpperNeckPitch",
@@ -132,9 +132,9 @@
     "LeftAnkleRoll"
   ],
   "robotStateJointNames": [
-    "TorsoRoll",
-    "TorsoPitch",
     "TorsoYaw",
+    "TorsoPitch",
+    "TorsoRoll",
     "LowerNeckPitch",
     "NeckYaw",
     "UpperNeckPitch",

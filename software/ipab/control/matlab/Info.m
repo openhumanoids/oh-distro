@@ -2,11 +2,11 @@ classdef Info
   
   properties (Constant)
     SUCCESS = 1
-    FAIL_KINEMATIC_CONSTRAINT = 2
-    FAIL_COLLISION = 3
-    FAIL_TOO_MANY_ITERATIONS = 4
-    FAIL_OTHER = 5
-    FAIL_NO_FINAL_POSE = 6
+    FAIL_KINEMATIC_CONSTRAINT = 11
+    FAIL_COLLISION = 12
+    FAIL_TOO_MANY_ITERATIONS = 13
+    FAIL_OTHER = 14
+    FAIL_NO_FINAL_POSE = 15
   end
   
   properties

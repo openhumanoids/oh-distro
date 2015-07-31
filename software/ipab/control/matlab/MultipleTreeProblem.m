@@ -89,6 +89,8 @@ classdef MultipleTreeProblem
           obj.trees(t) = obj.trees(t).setLCMGL(sprintf('Tree %d', t),[1,0,1]);
         end
       end
+%       v = obj.robot.constructVisualizer();
+%       v.draw(0, xStart(8:end))
       assert(obj.trees(1).isValid(xStart))
       
       %set tree starting points
@@ -227,6 +229,8 @@ classdef MultipleTreeProblem
         cost = obj.trees(1).C(obj.trees(1).traj(1));
         if options.visualize
           fprintf('Final Cost = %.4f\n', cost)
+%           v = obj.robot.constructVisualizer();
+%           v.draw(0, qPath(8:end, end))
         end
       else
         info = info.setStatus(Info.FAIL_TOO_MANY_ITERATIONS);
@@ -310,7 +314,7 @@ classdef MultipleTreeProblem
       
       rootPose = obj.robot.forwardKin(kinSol, root, rootPoint, 2);
       trPose = obj.robot.forwardKin(kinSol, base, [0;0;0], 2);
-      tr2root = quat2rotmat(trPose(4:end))*(rootPose(1:3)-trPose(1:3));
+      tr2root = quat2rotmat(trPose(4:end))\(rootPose(1:3)-trPose(1:3));
       armJoints = 13:19;
       nArmJoints = size(armJoints, 2);
       np = obj.robot.num_positions;
@@ -333,7 +337,7 @@ classdef MultipleTreeProblem
       for sph = randperm(nSph)
         iter = iter + 1;
 %         fprintf('sphere %d of %d\n', iter, nSph);
-        point = quat2rotmat(trPose(4:end))* (sphCenters(:,sph).*mapMirror.(obj.graspingHand)) + tr2root;
+        point = (sphCenters(:,sph).*mapMirror.(obj.graspingHand)) + tr2root;
         shConstraint = WorldPositionConstraint(obj.robot, base, point, xGoal(1:3), xGoal(1:3));
         constraints = [{shConstraint}, obj.goalConstraints];
         [q, valid, ~] = cSpaceTree.solveIK(obj.qNom, obj.qNom, constraints);
