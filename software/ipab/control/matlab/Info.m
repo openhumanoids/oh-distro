@@ -19,6 +19,11 @@ classdef Info
     checkingTime
     shortcutTime
     rebuildTime
+    nTrees
+    reachingNpoints
+    improvingNpoints
+    shortcutNpoints
+    rebuildNpoints
   end
   
   methods
