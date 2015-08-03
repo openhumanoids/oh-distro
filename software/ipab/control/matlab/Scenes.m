@@ -10,7 +10,7 @@ classdef Scenes
     end
     
     function nScenes = getnScenes()
-      nScenes = length(Scenes.getSceneNames());
+      nScenes = 9;
     end
     
     function robot = generateRobot(options)
@@ -139,7 +139,7 @@ classdef Scenes
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);
-        case 6
+        case {6, 7, 8, 9}
           table = RigidBodyBox([.5 1 .05], [.65 0 .825], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
@@ -156,7 +156,7 @@ classdef Scenes
           goals{3} = RigidBodyBox([.07 .07 .25], [.7 .1 .975], [0 0 0]);
           goals{4} = RigidBodyBox([.08 .08 .24], [.5 .3 .97], [0 0 0]);
           
-          goals{options.goalObject} = goals{options.goalObject}.setColor([1 0 0]);
+          goals{options.scenes-5} = goals{options.scenes-5}.setColor([1 0 0]);
           
           robot = addGeometryToBody(robot, world_link, goals{1});
           robot = addGeometryToBody(robot, world_link, goals{2});
@@ -209,16 +209,13 @@ classdef Scenes
         case 5
           targetObjectPos = [0.65 0 1.1];
         case 6
-          switch options.goalObject
-            case 1
-              targetObjectPos = [.5 -.2 .96];
-            case 2
-              targetObjectPos = [.7 -.1 .96];
-            case 3
-              targetObjectPos = [.7 .1 .975];
-            case 4
-              targetObjectPos = [.5 .3 .97];
-          end
+          targetObjectPos = [.5 -.2 .96];
+        case 7
+          targetObjectPos = [.7 -.1 .96];
+        case 8
+          targetObjectPos = [.7 .1 .975];
+        case 9
+          targetObjectPos = [.5 .3 .97];
       end
     end
     

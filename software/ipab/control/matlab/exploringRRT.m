@@ -328,7 +328,25 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.info = info;
         statVars.cost = cost;
         statVars.options = rmfield(options, {'robot', 'terrain'});
-      case 'multiRRT'       
+      case 'multiRRT'
+        info.collisionFinalPoseTime = sum(info.collisionFinalPoseTime(1,:));
+        info.collisionImprovingTime = sum(info.collisionImprovingTime(1,:));
+        info.collisionReachingTime = sum(info.collisionReachingTime(1,:));
+        info.collisionShortcutTime = sum(info.collisionShortcutTime(1,:));
+        info.IKFinalPoseTime = sum(info.IKFinalPoseTime(1,:));
+        info.IKImprovingTime = sum(info.IKImprovingTime(1,:));
+        info.IKReachingTime = sum(info.IKReachingTime(1,:));
+        info.IKRebuildTime = sum(info.IKRebuildTime(1,:));
+        info.IKShortcutTime = sum(info.IKShortcutTime(1,:));
+        info.collisionTime = sum([info.collisionFinalPoseTime,...
+                                  info.collisionImprovingTime,...
+                                  info.collisionReachingTime,...
+                                  info.collisionShortcutTime]);
+        info.IKTime = sum([info.IKFinalPoseTime,...
+                          info.IKImprovingTime,...
+                          info.IKReachingTime,...
+                          info.IKRebuildTime,...
+                          info.IKShortcutTime]);
         simVars.info = info;
         if options.visualize
           fprintf(['TIMING:\n',...

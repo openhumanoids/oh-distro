@@ -16,14 +16,27 @@ classdef Info
     finalPoseTime
     reachingTime
     improvingTime
-    checkingTime
     shortcutTime
     rebuildTime
-    nTrees
     reachingNpoints
     improvingNpoints
     shortcutNpoints
     rebuildNpoints
+    IKTime
+    IKFinalPoseTime
+    IKReachingTime
+    IKImprovingTime
+    IKShortcutTime
+    IKRebuildTime
+    collisionTime
+    collisionFinalPoseTime
+    collisionReachingTime
+    collisionImprovingTime
+    collisionShortcutTime
+    costReaching
+    costImproving
+    costShortcut
+    nPoints
   end
   
   methods
