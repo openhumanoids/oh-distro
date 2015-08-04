@@ -50,11 +50,12 @@ bot_core::pose_t getPoseAsBotPose(Eigen::Isometry3d pose, int64_t utime){
 
 void App::lidarHandler(const lcm::ReceiveBuffer* rbuf,
      const std::string& channel, const  bot_core::planar_lidar_t* msg){
-    const float* ranges = &msg->ranges[0];
-    lidarOdom_->doOdometry(ranges, msg->nranges, msg->rad0, msg->radstep, msg->utime);
+  std::vector<float> ranges_copy = msg->ranges;
+  float* ranges = &ranges_copy[0];
+  lidarOdom_->doOdometry(ranges, msg->nranges, msg->rad0, msg->radstep, msg->utime);
     
-    bot_core::pose_t pose_msg = getPoseAsBotPose( lidarOdom_->getCurrentPose() , msg->utime);
-    lcm_->publish("POSE_BODY", &pose_msg );
+  bot_core::pose_t pose_msg = getPoseAsBotPose( lidarOdom_->getCurrentPose() , msg->utime);
+  lcm_->publish("POSE_BODY", &pose_msg );
 }
 
 int main(int argc, char **argv){

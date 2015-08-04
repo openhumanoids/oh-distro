@@ -4,7 +4,7 @@ LidarOdom::LidarOdom(boost::shared_ptr<lcm::LCM> &lcm_):
   lcm_(lcm_)
 {
 
-  laserType_ = SM_HOKUYO_UTM;
+  laserType_ = FRSM_HOKUYO_UTM;
   //parameters for a hokuyo with the helicopters mirror's attached
   validBeamAngles_[0] = -2.1;
   validBeamAngles_[1] = 2.1;
@@ -17,40 +17,40 @@ LidarOdom::LidarOdom(boost::shared_ptr<lcm::LCM> &lcm_):
   publishPose_ = TRUE;
   doDrawing_ = TRUE;
 
-    //hardcoded scan matcher params
-    double metersPerPixel = .02; //translational resolution for the brute force search
-    double thetaResolution = .01; //angular step size for the brute force search
-    sm_incremental_matching_modes_t  matchingMode= SM_COORD_ONLY; //use gradient descent to improve estimate after brute force search
-    int useMultires = 3; // low resolution will have resolution metersPerPixel * 2^useMultiRes
+  //hardcoded scan matcher params
+  double metersPerPixel = .02; //translational resolution for the brute force search
+  double thetaResolution = .01; //angular step size for the brute force search
+  frsm_incremental_matching_modes_t  matchingMode= FRSM_COORD_ONLY; //use gradient descent to improve estimate after brute force search
+  int useMultires = 3; // low resolution will have resolution metersPerPixel * 2^useMultiRes
 
-    double initialSearchRangeXY = .15; //nominal range that will be searched over
-    double initialSearchRangeTheta = .1;
+  double initialSearchRangeXY = .15; //nominal range that will be searched over
+  double initialSearchRangeTheta = .1;
 
-    //SHOULD be set greater than the initialSearchRange
-    double maxSearchRangeXY = .3; //if a good match isn't found I'll expand and try again up to this size...
-    double maxSearchRangeTheta = .2; //if a good match isn't found I'll expand and try again up to this size...
+  //SHOULD be set greater than the initialSearchRange
+  double maxSearchRangeXY = .3; //if a good match isn't found I'll expand and try again up to this size...
+  double maxSearchRangeTheta = .2; //if a good match isn't found I'll expand and try again up to this size...
 
-    int maxNumScans = 30; //keep around this many scans in the history
-    double addScanHitThresh = .80; //add a new scan to the map when the number of "hits" drops below this
+  int maxNumScans = 30; //keep around this many scans in the history
+  double addScanHitThresh = .80; //add a new scan to the map when the number of "hits" drops below this
 
-    bool stationaryMotionModel = false; //use constant velocity model
-    double motionModelPriorWeight =0; //don't use the prior for anything other than centering the window
+  bool stationaryMotionModel = false; //use constant velocity model
+  double motionModelPriorWeight =0; //don't use the prior for anything other than centering the window
 
-    int useThreads = 1;
+  int useThreads = 1;
 
-    //create the actual scan matcher object
-    sm_ = new ScanMatcher(metersPerPixel, thetaResolution, useMultires,
+  //create the actual scan matcher object
+  sm_ = new ScanMatcher(metersPerPixel, thetaResolution, useMultires,
             useThreads,true);
 
-    if (sm_->isUsingIPP())
-        fprintf(stderr, "Using IPP\n");
-    else
-        fprintf(stderr, "NOT using IPP\n");
+  if (sm_->isUsingIPP())
+      fprintf(stderr, "Using IPP\n");
+  else
+      fprintf(stderr, "NOT using IPP\n");
 
 
-    ScanTransform startPose;
-    memset(&startPose, 0, sizeof(startPose));
-    startPose.theta = 0; //set the scan matcher to start at 0 heading... cuz pi/2 would be rediculous
+  ScanTransform startPose;
+  memset(&startPose, 0, sizeof(startPose));
+  startPose.theta = 0; //set the scan matcher to start at 0 heading... cuz pi/2 would be rediculous
   sm_->initSuccessiveMatchingParams(maxNumScans, initialSearchRangeXY,
             maxSearchRangeXY, initialSearchRangeTheta, maxSearchRangeTheta,
             matchingMode, addScanHitThresh,
@@ -109,14 +109,14 @@ Eigen::Isometry3d getScanTransformAsIsometry3d(ScanTransform tf){
 }
 
 
-void LidarOdom::doOdometry(const float* ranges, int nranges, float rad0, float radstep, int64_t utime){
+void LidarOdom::doOdometry(float* ranges, int nranges, float rad0, float radstep, int64_t utime){
 
 
     ////////////////////////////////////////////////////////////////////
     //Project ranges into points, and decimate points so we don't have too many
     ////////////////////////////////////////////////////////////////////
-    smPoint * points = (smPoint *) calloc(nranges, sizeof(smPoint));
-    int numValidPoints = sm_projectRangesAndDecimate(beamSkip_,
+    frsmPoint * points = (frsmPoint *) calloc(nranges, sizeof(frsmPoint));
+    int numValidPoints = frsm_projectRangesAndDecimate(beamSkip_,
             spatialDecimationThresh_, ranges, nranges, rad0,
             radstep, points, maxRange_, validBeamAngles_[0],
             validBeamAngles_[1]);
@@ -141,8 +141,8 @@ void LidarOdom::doOdometry(const float* ranges, int nranges, float rad0, float r
 
     //Print current position periodically
     static double lastPrintTime = 0;
-    if (sm_get_time() - lastPrintTime > 2.0) {
-        lastPrintTime = sm_get_time();
+    if (frsm_get_time() - lastPrintTime > 2.0) {
+        lastPrintTime = frsm_get_time();
         fprintf(stderr,
                 "x=%+7.3f y=%+7.3f t=%+7.3f\t score=%f hits=%.2f sx=%.2f sxy=%.2f sy=%.2f st=%.2f, numValid=%d\n",
                 r.x, r.y, r.theta, r.score, (double) r.hits / (double) numValidPoints, r.sigma[0], r.sigma[1],
@@ -150,10 +150,11 @@ void LidarOdom::doOdometry(const float* ranges, int nranges, float rad0, float r
     }
 
     //Do drawing periodically
+    // This was disabled when moving to the frsm library. it would be easily re-added on a fork
     static double lastDrawTime = 0;
-    if (doDrawing_ && sm_get_time() - lastDrawTime > .2) {
-        lastDrawTime = sm_get_time();
-        sm_->drawGUI(points, numValidPoints, r, NULL);
+    if (doDrawing_ && frsm_get_time() - lastDrawTime > .2) {
+        //lastDrawTime = frsm_get_time();
+        //sm_->drawGUI(points, numValidPoints, r, NULL);
     }
 
     //cleanup

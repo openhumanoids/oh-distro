@@ -113,7 +113,8 @@ void App::lidarHandler(const lcm::ReceiveBuffer* rbuf,
   }
 
   // 1. Update LIDAR Odometry
-  const float* ranges = &msg->ranges[0];
+  std::vector<float> ranges_copy = msg->ranges;
+  float* ranges = &ranges_copy[0];
   lidarOdom_->doOdometry(ranges, msg->nranges, msg->rad0, msg->radstep, msg->utime);
 
   // 2. Determine the body position using the LIDAR motion estimate:

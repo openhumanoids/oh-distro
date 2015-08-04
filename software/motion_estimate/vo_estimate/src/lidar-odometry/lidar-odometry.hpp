@@ -10,14 +10,15 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/scanmatch.hpp>
-#include <scanmatch/ScanMatcher.hpp>
+// #include <lcmtypes/scanmatch.hpp>
+// #include <scanmatch/ScanMatcher.hpp>
+#include <frsm/frsm.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
 using namespace std;
-using namespace scanmatch;
+using namespace frsm;
 
 
 class LidarOdom
@@ -27,7 +28,7 @@ public:
     
     ~LidarOdom();
 
-    void doOdometry(const float* ranges, int nranges, float rad0, float radstep, int64_t utime);
+    void doOdometry(float* ranges, int nranges, float rad0, float radstep, int64_t utime);
 
     Eigen::Isometry3d getCurrentPose(){  return currOdom_;  }
 
@@ -40,7 +41,7 @@ private:
     int64_t utime_cur_, utime_prev_;
 
     ScanMatcher* sm_;
-    sm_laser_type_t laserType_;
+    frsm_laser_type_t laserType_;
     int beamSkip_; //downsample ranges by only taking 1 out of every beam_skip points
     double spatialDecimationThresh_; //don't discard a point if its range is more than this many std devs from the mean range (end of hallway)
     double maxRange_; //discard beams with reading further than this value

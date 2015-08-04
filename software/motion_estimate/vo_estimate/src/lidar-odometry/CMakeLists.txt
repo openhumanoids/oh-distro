@@ -5,7 +5,7 @@ add_definitions(-Wall )
 #add_definitions(-Wall -std=gnu99) # .... compiler warning
 
 add_library(lidar-odom SHARED lidar-odometry.cpp )
-pods_use_pkg_config_packages(lidar-odom eigen3 scanmatch bot2-core)
+pods_use_pkg_config_packages(lidar-odom eigen3 frsm bot2-core)
 
 set_target_properties(lidar-odom PROPERTIES SOVERSION 1)
 pods_install_libraries(lidar-odom)
