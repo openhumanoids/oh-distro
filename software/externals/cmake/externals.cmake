@@ -44,9 +44,9 @@ set(common_utils_url https://svn.csail.mit.edu/common_utils)
 set(common_utils_revision 301)
 set(common_utils_depends Eigen_pod libbot-drc occ-map octomap-drc)
 
-set(scanmatch_url https://svn.csail.mit.edu/scanmatch/trunk)
-set(scanmatch_revision 49)
-set(scanmatch_depends opencv-drc)
+set(frsm_url ssh://git@github.com/mitdrc/frsm.git)
+set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
+set(frsm_depends)
 
 set(jpeg-utils_url https://svn.csail.mit.edu/drc/trunk/software/externals/jpeg-utils)
 set(jpeg-utils_revision 8298)
@@ -164,7 +164,7 @@ set(externals
   multisense-lcm
   occ-map
   common_utils
-  scanmatch
+  frsm
   jpeg-utils
   isam_include
   visualization

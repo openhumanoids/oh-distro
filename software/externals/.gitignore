@@ -8,6 +8,7 @@ common_utils
 estimate-pose
 flycapture
 fovis-git
+frsm
 gurobi
 isam_include
 jpeg-utils
