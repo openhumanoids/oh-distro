@@ -1,5 +1,4 @@
-#findLCMTypes(os.path.expanduser('../../build/lib/python2.7/dist-packages/*'))
-findLCMTypes(os.path.expanduser('../../build/lib/python2.7/dist-packages/drc/'))
+findLCMTypes(os.path.expanduser('../lib/python2.7/dist-packages/*'))
 
 joints = ['l_leg_kny','r_leg_kny']
 #addSignals('ATLAS_STATE', msg.utime, msg.joint_position, joints, keyLookup=msg.joint_name)
