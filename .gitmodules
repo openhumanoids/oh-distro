@@ -8,3 +8,6 @@
 [submodule "software/ddapp"]
 	path = software/ddapp
 	url = git@github.com:RobotLocomotion/director.git
+[submodule "software/motion_estimate/signal-scope"]
+	path = software/motion_estimate/signal-scope
+	url = git@github.com:mitdrc/signal-scope.git
