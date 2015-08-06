@@ -137,7 +137,7 @@ public:
     result.mNumIterations = iterationCount;
 
     // refine result using all inliers if specified
-    if (mRefineUsingInliers) {
+    if (result.mSuccess && mRefineUsingInliers) {
       result.mSolution = iProblem.estimate(result.mInliers);
     }
 
