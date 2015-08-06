@@ -46,7 +46,7 @@ set(common_utils_depends Eigen_pod libbot-drc occ-map octomap-drc)
 
 set(frsm_url ssh://git@github.com/mitdrc/frsm.git)
 set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
-set(frsm_depends)
+set(frsm_depends libbot-drc)
 
 set(jpeg-utils_url https://svn.csail.mit.edu/drc/trunk/software/externals/jpeg-utils)
 set(jpeg-utils_revision 8298)
