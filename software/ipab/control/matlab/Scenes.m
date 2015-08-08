@@ -78,14 +78,14 @@ classdef Scenes
           collision_object = RigidBodyCapsule(0.05,1,[0;0;0],[0,pi/2,0]);
           collision_object.c = [0.5;0.4;0.3];
         case 1
-          table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+          table = RigidBodyBox([.6 1 .025], [.7 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);          
         case 2
-          table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+          table = RigidBodyBox([.6 1 .025], [.7 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
           obstacle = RigidBodyBox([.3 .3 .4], [.55 .35 1.1125], [0 0 0]);
@@ -101,7 +101,7 @@ classdef Scenes
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);
         case 3
-          table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+          table = RigidBodyBox([.6 1 .025], [.7 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
@@ -156,7 +156,7 @@ classdef Scenes
           goals{3} = RigidBodyBox([.07 .07 .25], [.7 .1 .975], [0 0 0]);
           goals{4} = RigidBodyBox([.08 .08 .24], [.5 .3 .97], [0 0 0]);
           
-          goals{options.scenes-5} = goals{options.scenes-5}.setColor([1 0 0]);
+          goals{options.scene-5} = goals{options.scene-5}.setColor([1 0 0]);
           
           robot = addGeometryToBody(robot, world_link, goals{1});
           robot = addGeometryToBody(robot, world_link, goals{2});

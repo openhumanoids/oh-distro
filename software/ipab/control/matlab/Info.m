@@ -37,6 +37,7 @@ classdef Info
     costImproving
     costShortcut
     nPoints
+    finalPoseCost
   end
   
   methods
@@ -56,8 +57,7 @@ classdef Info
     end
     
     function status = getStatus(obj)
-      constProps = obj.getConstProps();
-      status = constProps{obj.status};
+      status = obj.status;
     end
     
     function obj = setStatus(obj, status)

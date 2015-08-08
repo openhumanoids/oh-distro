@@ -110,7 +110,7 @@ classdef MultipleTreeProblem
       tic
       if length(obj.xGoal) == 3
         disp('Searching for a feasible final configuration...')
-        qGoal = obj.findGoalPose(obj.xStart, obj.xGoal);
+        [qGoal, finalPoseCost] = obj.findGoalPose(obj.xStart, obj.xGoal);
         if isempty(qGoal)
           info = info.setStatus(Info.FAIL_NO_FINAL_POSE);
           disp('Failed to find a feasible final configuration')
@@ -129,6 +129,7 @@ classdef MultipleTreeProblem
       info.finalPoseTime = toc;
       info.IKFinalPoseTime = IKTimes;
       info.collisionFinalPoseTime = collisionTimes;
+      info.finalPoseCost = finalPoseCost;
       IKTimes = [];
       collisionTimes = [];
       
@@ -325,7 +326,7 @@ classdef MultipleTreeProblem
       end
     end
     
-    function qOpt = findGoalPose(obj, xStart, xGoal)
+    function [qOpt, cost] = findGoalPose(obj, xStart, xGoal)
       global IKTimes
       
       tree = obj.trees(1);
@@ -352,10 +353,12 @@ classdef MultipleTreeProblem
        
       obj = obj.pruneCapabilityMap(0, 0, 0.6, 0.9, 7.5);
       D = obj.capabilityMap.reachabilityIndex;
+      disp(size(D, 1))
       sphCenters = obj.capabilityMap.sphCenters;
       nSph = obj.capabilityMap.nSph;
       iter = 0;
       qOpt = [];
+      cost = [];
       c = 1/obj.minDistance;
       deltaQmax = 0.05;
 %       v = obj.robot.constructVisualizer();
@@ -441,7 +444,7 @@ classdef MultipleTreeProblem
       end
       if ~isempty(validConfs)
         validConfs = validConfs(:, validConfs(1,:) > 0);
-        [~, qOptIdx] =  min(validConfs(1,:));
+        [cost, qOptIdx] =  min(validConfs(1,:));
         qOpt = validConfs(2:end, qOptIdx);
 %         v.draw(0, qOpt);
       end
