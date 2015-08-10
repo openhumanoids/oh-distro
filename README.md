@@ -35,28 +35,20 @@ Missing repositories (June 2015):
 
 Required ROS packages:
 
-::
-
     ros-indigo-tf ros-indigo-image-transport ros-indigo-tf-conversions ros-indigo-image-geometry ros-indigo-cv-bridge ros-indigo-std-srvs
 
 Add the following to bashrc for IPAB's ROS Catkin workspace
-
-::
 
     source /opt/ros/indigo/setup.bash
     source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash
 
 Alternatively, if you wish to source the environemt in each terminal window manually, add the following line to your ~/.bash_aliases
 
-::
-
     alias init_drc="source ~/dev/drc/software/config/drc_environment.sh;source /opt/ros/indigo/setup.bash;source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash;"
 
 The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the first compilation.
 
 The catkin workspace is located in source catkin_ws/drc_translators. The workspace is compiled separately by running
-
-::
 
     catkin_make -DCATKIN_BUILD_MODE=RelWithDebInfo
  
