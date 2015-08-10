@@ -10,19 +10,19 @@
 
 int main() {
   // read pcd file
-  std::string home_dir = getenv("HOME");
+  std::string home_dir = getenv("DRC_BASE");
 
-  std::string inFile = home_dir + "/drc-testing-data/terrain/tilted-steps.pcd";
+  std::string inFile = home_dir + "/../drc-testing-data/terrain/tilted-steps.pcd";
   Eigen::Vector3f origin(0.248091, 0.012443, 1.806473);
   Eigen::Vector3f lookDir(0.837001, 0.019831, -0.546842);
   Eigen::Vector3f centerPoint(1.27638733386993, -0.106330007314682, 0.348578572273254);
 
 
-  inFile = home_dir +  "/drc-testing-data/terrain/terrain_med.pcd";
+  inFile = home_dir +  "/../drc-testing-data/terrain/terrain_med.pcd";
   origin << -0.028862, -0.007466, 0.087855;
   lookDir << 0.999890, -0.005120, -0.013947;
 
-  inFile = home_dir + "/drc-testing-data/terrain/terrain_close_rect.pcd";
+  inFile = home_dir + "/../drc-testing-data/terrain/terrain_close_rect.pcd";
   origin << -0.028775, -0.005776, 0.087898;
   lookDir << 0.999956, -0.005003, 0.007958;
   
@@ -84,7 +84,7 @@ int main() {
   std::cout << "PLANE " << plane.transpose() << std::endl;
 
   {
-    std::string outFilePlane = home_dir + "/drc-testing-data/terrain/test-output-plane-at-click.txt";
+    std::string outFilePlane = home_dir + "/../drc-testing-data/terrain/test-output-plane-at-click.txt";
     std::ofstream ofs(outFilePlane);
     for (int i = 0; i < (int)inCloud->size(); ++i) {
       Eigen::Vector3f p = inCloud->points[i].getVector3fMap();
@@ -128,7 +128,7 @@ int main() {
     std::vector<float> bins(8);
     std::vector<float> radialDistances(8);
     std::vector<float> radialHeights(8);
-    std::string outFileEdges = home_dir + "/drc-testing-data/terrain/test-output-edges.txt";
+    std::string outFileEdges = home_dir + "/../drc-testing-data/terrain/test-output-edges.txt";
     std::ofstream ofs(outFileEdges);
     for (int i = 0; i < (int)tempCloud->size(); ++i) {
       const auto& p0 = tempCloud->points[i].getVector3fMap();
@@ -193,7 +193,7 @@ int main() {
 
     {
 
-      std::string outFileTxt = home_dir + "/drc-testing-data/terrain/test-output-heightmap.txt";
+      std::string outFileTxt = home_dir + "/../drc-testing-data/terrain/test-output-heightmap.txt";
       std::ofstream ofs(outFileTxt);
       for (int i = 0; i < h; ++i) {
         for (int j = 0; j < w; ++j) {
@@ -204,7 +204,7 @@ int main() {
       ofs.close();
     }
     
-    std::string outFile = home_dir + "/drc-testing-data/terrain/test-output-aligned.pcd";
+    std::string outFile = home_dir + "/../drc-testing-data/terrain/test-output-aligned.pcd";
 
     pcl::io::savePCDFileBinary(outFile, *tempCloud);
   }
