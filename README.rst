@@ -76,9 +76,9 @@ Add the *sandbox* remote. The *sandbox* is the location where branches can be sh
     git remote add sandbox git@github.com:drcbot/drc.git
     git fetch sandbox
 
-**Instructions for Edinburgh**
+**Instructions for Edinburgh users**
 
-For Edinburgh users the typical approach is to checkout:
+For Edinburgh users the typical approach is to instead check out:
 
 ::
 
