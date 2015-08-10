@@ -109,7 +109,7 @@ classdef MultipleTreeProblem
       tic
       if length(obj.xGoal) == 3 || length(obj.xGoal) == 7
         disp('Searching for a feasible final configuration...')
-        qGoal = obj.findGoalPose(obj.xStart, obj.xGoal(1:3));
+        [qGoal, finalPoseCost] = obj.findGoalPose(obj.xStart, obj.xGoal);
         if isempty(qGoal)
           info = info.setStatus(Info.FAIL_NO_FINAL_POSE);
           disp('Failed to find a feasible final configuration')
@@ -119,6 +119,8 @@ classdef MultipleTreeProblem
           obj.xGoal = obj.robot.forwardKin(kinsol, obj.endEffectorId, obj.endEffectorPoint, 2);
           obj.xGoal = [obj.xGoal; qGoal];
           disp('Final configuration found')
+          info.finalPoseTime = toc;
+          info.finalPoseCost = finalPoseCost;
         end
       elseif length(obj.xGoal) == 7 + obj.robot.num_positions
         disp('Final configuration input found')
@@ -129,7 +131,6 @@ classdef MultipleTreeProblem
       else
         error('Bad final configuration input')
       end
-      info.finalPoseTime = toc;
       
       obj.startPoints(:,2) = obj.xGoal;
       
@@ -145,6 +146,7 @@ classdef MultipleTreeProblem
           obj = obj.deleteTree(treeIdx);
         end
       end
+      info.nTrees = obj.nTrees;
       for treeIdx = 1:obj.nTrees
           obj.trees(treeIdx).costType = options.costType;
           obj.trees(treeIdx) = obj.trees(treeIdx).init(obj.startPoints(:, treeIdx));
@@ -174,6 +176,13 @@ classdef MultipleTreeProblem
               lastCost = obj.trees(1).C(obj.trees(1).traj(1));
               lastUpdate = obj.trees(1).n;
               info.reachingTime = toc(reachingTimer);
+              info.IKReachingTime = IKTimes;
+              info.collisionReachingTime = collisionTimes;
+              info.costReaching = obj.trees(1).C(obj.trees(1).traj(1));
+              info.nPoints = obj.trees(1).n;
+              info.reachingNpoints = length(obj.trees(1).traj);
+              IKTimes = [];
+              collisionTimes = [];
               improvingTimer = tic;
             end
           end
@@ -192,6 +201,12 @@ classdef MultipleTreeProblem
           %10 points
           if options.firstFeasibleTraj || lastUpdate > 0 && obj.trees(1).n - lastUpdate > 10
             info.improvingTime = toc(improvingTimer);
+            info.IKImprovingTime = IKTimes;
+            info.collisionImprovingTime = collisionTimes;
+            info.costImproving = obj.trees(1).C(obj.trees(1).traj(1));            
+            info.improvingNpoints = length(obj.trees(1).traj);
+            IKTimes = [];
+            collisionTimes = [];
             shortcut = tic;
             break
           end
@@ -227,11 +242,19 @@ classdef MultipleTreeProblem
         obj.trees(1) = obj.trees(treeIdx);
         obj.trees(1).setLCMGL(obj.trees(1).lcmgl_name, obj.trees(1).line_color);
         obj.trees(1) = obj.trees(1).shortcut();
-        info.shortcutTime = toc(shortcut);
+        info.shortcutTime = toc(shortcut);        
+        info.IKShortcutTime = IKTimes;
+        info.collisionShortcutTime = collisionTimes;
+        info.shortcutNpoints = length(obj.trees(1).traj);
+        IKTimes = [];
+        collisionTimes = [];
         rebuildTimer = tic;
         qPath = obj.trees(1).rebuildTraj(obj.xStart, obj.xGoal);
         info.rebuildTime = toc(rebuildTimer);
+        info.IKRebuildTime = IKTimes;
+        info.rebuildNpoints = size(qPath, 2);
         cost = obj.trees(1).C(obj.trees(1).traj(1));
+        info.costShortcut = cost;
         if options.visualize
           fprintf('Final Cost = %.4f\n', cost)
 %           v = obj.robot.constructVisualizer();
@@ -303,7 +326,8 @@ classdef MultipleTreeProblem
       end
     end
     
-    function qOpt = findGoalPose(obj, xStart, xGoal)
+    function [qOpt, cost] = findGoalPose(obj, xStart, xGoal)
+      global IKTimes
       
       tree = obj.trees(1);
       cSpaceTree = tree.trees{tree.cspace_idx};
@@ -329,10 +353,12 @@ classdef MultipleTreeProblem
        
       obj = obj.pruneCapabilityMap(0, 0, 0.6, 0.9, 7.5);
       D = obj.capabilityMap.reachabilityIndex;
+      disp(size(D, 1))
       sphCenters = obj.capabilityMap.sphCenters;
       nSph = obj.capabilityMap.nSph;
       iter = 0;
       qOpt = [];
+      cost = [];
       c = 1/obj.minDistance;
       deltaQmax = 0.05;
 %       v = obj.robot.constructVisualizer();
@@ -359,6 +385,7 @@ classdef MultipleTreeProblem
             [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
             if any(phi < obj.minDistance)
               phi = phi - obj.minDistance;
+              IKTime = tic;
               while (eps > 1e-3 || any(phi < 0)) && nIter < 5
                 qNdot = zeros(nArmJoints, 1);
                 for joint = 1:nArmJoints
@@ -394,7 +421,8 @@ classdef MultipleTreeProblem
                 eps = norm(deltaX);
                 nIter = nIter + 1;
                 phi = phi - obj.minDistance;
-              end
+              end              
+              IKTimes(1, end+1) = toc(IKTime);
             else
               phi = phi - obj.minDistance;
               eps = 1e-3;
@@ -403,18 +431,20 @@ classdef MultipleTreeProblem
               cost = (obj.qNom - q)'*cSpaceTree.ikoptions.Q*(obj.qNom - q);
               validConfs(:,sph) = [cost; q];
               succ(sph, :) = [1, nIter];
+              IKTimes(2, end) = 1;
               if cost < 20
                 break
               end
             else              
               succ(sph, :) = [0, nIter];
+              IKTimes(2, end) = 0;
             end
           end
         end
       end
       if ~isempty(validConfs)
         validConfs = validConfs(:, validConfs(1,:) > 0);
-        [~, qOptIdx] =  min(validConfs(1,:));
+        [cost, qOptIdx] =  min(validConfs(1,:));
         qOpt = validConfs(2:end, qOptIdx);
 %         v.draw(0, qOpt);
       end

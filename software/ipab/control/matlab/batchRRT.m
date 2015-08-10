@@ -18,14 +18,15 @@ function batchRRT(n, varargin)
 %                   (default: false)
   
   options = struct('path', pwd, 'scenes', 1:Scenes.getnScenes(),...
-              'visualize', false, 'savesimvars', false);
+              'visualize', false, 'savesimvars', false, 'planning_mode', 'multiRRT',...
+              'model', 'val2', 'graspingHand', 'right', 'ntrees', 4);
   optNames = fieldnames(options);
   nArgs = length(varargin);
   if round(nArgs/2)~=nArgs/2
     error('Needs propertyName/propertyValue pairs')
   end
   for pair = reshape(varargin,2,[])
-    inpName = lower(pair{1});
+    inpName = pair{1};
     if any(strcmp(inpName,optNames))
       options.(inpName) = pair{2};
     else
@@ -41,10 +42,7 @@ function batchRRT(n, varargin)
   for scene = options.scenes
     if ~isfield(options,'goal_bias'), options.goal_bias = 0.5; end;
     if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
-    if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
-    if ~isfield(options,'model'), options.model = 'val'; end;
     if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
-    if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
     if ~isfield(options,'costType'), options.costType = 'length'; end;
     if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
 

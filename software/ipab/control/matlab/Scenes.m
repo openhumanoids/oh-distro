@@ -10,23 +10,25 @@ classdef Scenes
     end
     
     function nScenes = getnScenes()
-      nScenes = length(Scenes.getSceneNames());
+      nScenes = 9;
     end
     
     function robot = generateRobot(options)
       switch options.model
-        case 'v3'
-          if options.convex_hull
-            urdf = fullfile(getDrakePath(),'..','models','atlas_v3','model_chull.urdf');
-          else
-            urdf = fullfile(getDrakePath(),'..','models','atlas_v3','model_full.urdf');
-          end
-        case 'v4'
-          if options.convex_hull
-            urdf = fullfile(getDrakePath(),'..','models','atlas_v4','model_chull.urdf');
-          else
-            urdf = fullfile(getDrakePath(),'..','models','atlas_v4','model_full.urdf');
-          end
+%         case 'v3'
+%           if options.convex_hull
+%             urdf = fullfile(getDrakePath(),'..','models','atlas_v3','model_chull.urdf');
+%           else
+%             urdf = fullfile(getDrakePath(),'..','models','atlas_v3','model_full.urdf');
+%           end
+%         case 'v4'
+%           if options.convex_hull
+%             urdf = fullfile(getDrakePath(),'..','models','atlas_v4','model_chull.urdf');
+%           else
+%             urdf = fullfile(getDrakePath(),'..','models','atlas_v4','model_full.urdf');
+%           end
+        case {'v3', 'v4'}
+          error('Version 3 and 4 of the Atlas Robot are no longer supported. Use version 5 instead.')
         case 'v5'
           if options.convex_hull
             urdf = fullfile(getDrakePath(),'..','models','atlas_v5','model_chull.urdf');
@@ -78,14 +80,14 @@ classdef Scenes
           collision_object = RigidBodyCapsule(0.05,1,[0;0;0],[0,pi/2,0]);
           collision_object.c = [0.5;0.4;0.3];
         case 1
-          table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+          table = RigidBodyBox([.6 1 .025], [.7 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);          
         case 2
-          table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+          table = RigidBodyBox([.6 1 .025], [.7 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
           obstacle = RigidBodyBox([.3 .3 .4], [.55 .35 1.1125], [0 0 0]);
@@ -101,7 +103,7 @@ classdef Scenes
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);
         case 3
-          table = RigidBodyBox([1 1 .025], [.9 0 .9], [0 0 0]);
+          table = RigidBodyBox([.6 1 .025], [.7 0 .9], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
@@ -139,7 +141,7 @@ classdef Scenes
           targetObject = RigidBodyBox([.05 .05 .3], Scenes.getTargetObjPos(options), [0 0 0]);
           targetObject = targetObject.setColor([1 0 0]);
           robot = addGeometryToBody(robot, world_link, targetObject);
-        case 6
+        case {6, 7, 8, 9}
           table = RigidBodyBox([.5 1 .05], [.65 0 .825], [0 0 0]);
           robot = addGeometryToBody(robot, world_link, table);
           
@@ -156,7 +158,7 @@ classdef Scenes
           goals{3} = RigidBodyBox([.07 .07 .25], [.7 .1 .975], [0 0 0]);
           goals{4} = RigidBodyBox([.08 .08 .24], [.5 .3 .97], [0 0 0]);
           
-          goals{options.goalObject} = goals{options.goalObject}.setColor([1 0 0]);
+          goals{options.scene-5} = goals{options.scene-5}.setColor([1 0 0]);
           
           if ~options.grasping
             robot = addGeometryToBody(robot, world_link, goals{1});
@@ -221,16 +223,13 @@ classdef Scenes
         case 5
           targetObjectPos = [0.65 0 1.1];
         case 6
-          switch options.goalObject
-            case 1
-              targetObjectPos = [.5 -.2 .96];
-            case 2
-              targetObjectPos = [.7 -.1 .96];
-            case 3
-              targetObjectPos = [.7 .1 .975];
-            case 4
-              targetObjectPos = [.5 .3 .97];
-          end
+          targetObjectPos = [.5 -.2 .96];
+        case 7
+          targetObjectPos = [.7 -.1 .96];
+        case 8
+          targetObjectPos = [.7 .1 .975];
+        case 9
+          targetObjectPos = [.5 .3 .97];
       end
     end
     
@@ -289,27 +288,17 @@ classdef Scenes
     end
     
     function frame = getPointInLinkFrame(options)
-      if strcmp(options.graspingHand, 'left')
-        switch options.model
-          case 'v3'
-            frame = [0; 0.4; 0];
-          case {'v4', 'v5'}
-            frame = [0; -0.3; 0];
-          case {'val1', 'val2'}
-            frame = [0.08; 0.0; -0.07];
-        end
-      else
-        switch options.model
-          case 'v3'
-            frame = [0; -0.4; 0];
-          case {'v4', 'v5'}
-            frame = [0; -0.3; 0];
-          case 'val1'
-            frame = [0.08; 0.0; 0.07];
-          case 'val2'
-            frame = [0.08; -0.07; 0];
-        end
-      end
+      frame.v3.left = [0; 0.4; 0];
+      frame.v4.left = [0; -0.3; 0];
+      frame.v5.left = [0; -0.3; 0];
+      frame.val1.left = [0.08; 0.0; -0.07];
+      frame.val2.left = [0.08; 0.07; 0];
+      frame.v3.right = [0; -0.4; 0];
+      frame.v4.right = [0; -0.3; 0];
+      frame.v5.right = [0; -0.3; 0];
+      frame.val1.right = [0.08; 0.0; -0.07];
+      frame.val2.right = [0.08; -0.07; 0];
+      frame = frame.(options.model).(options.graspingHand);
     end
     
     function quasiStaticConstraint = addQuasiStaticConstraint(options, robot)
@@ -393,15 +382,20 @@ classdef Scenes
     end
     
     function constraint = nonGraspingHandDistanceConstraint(options, robot, dist)
-      trunkNames = {'Trunk', 'Torso', 'utorso'};
-      model = strcmp(options.model,{'val1', 'val2', 'v4'});
-      if strcmp(options.graspingHand, 'left')
-        elbowNames = {'RightElbowExtensor', 'RightElbowPitchLink', 'r_larm'};
-      else
-        elbowNames = {'LeftElbowExtensor', 'LeftElbowPitchLink', 'r_larm'};
-      end
-        elbow = robot.findLinkId(elbowNames{model});
-        trunk = robot.findLinkId(trunkNames{model});
+      trunk.val1 = 'Trunk';
+      trunk.val2 = 'Torso';
+      trunk.v4 = 'utorso';
+      trunk.v5 = 'utorso';
+      elbow.left.val1 = 'RightElbowExtensor';
+      elbow.left.val2 = 'RightElbowPitchLink';
+      elbow.left.v4 = 'r_larm';
+      elbow.left.v5 = 'r_larm';
+      elbow.right.val1 = 'LeftElbowExtensor';
+      elbow.right.val2 = 'LeftElbowPitchLink';
+      elbow.right.v4 = 'r_larm';
+      elbow.right.v5 = 'r_larm';
+      elbow = robot.findLinkId(elbow.(options.graspingHand).(options.model));
+      trunk = robot.findLinkId(trunk.(options.model));
       constraint = Point2PointDistanceConstraint(robot, elbow, trunk, [0; 0; 0], [0; 0; 0], dist, Inf);
     end
     
@@ -418,44 +412,18 @@ classdef Scenes
     
     function constraints = addGoalConstraint(options, robot)
       hand = Scenes.getGraspingHand(options, robot);
-      goalFrame = [eye(3) Scenes.getTargetObjPos(options)'; 0 0 0 1];
-      if strcmp(options.graspingHand, 'right')
-        frameRotation = -1;
-      else
-        frameRotation = 1;
-      end
       point_in_link_frame = Scenes.getPointInLinkFrame(options);
-      lower_bounds = [0.0; 0.0; 0.0];
-      upper_bounds = [0.0; 0.0; 0.0];
-      switch options.model
-        case 'v3'
-          goalQuatConstraint = WorldQuatConstraint(robot, hand, axis2quat([1; 1; 1; frameRotation].*[0 0 1 -pi/2]'), 10*pi/180, [1.0, 1.0]);
-          %                     rot_mat = [axis2rotmat([0 0 1 -pi/2]) [0; 0; 0]; [0 0 0 1]];
-          %                     trans_mat = [eye(3) -point_in_link_frame; [0 0 0 1]];
-        case 'v4'
-          goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([0 pi/2 pi/2]'), 10*pi/180, [1.0, 1.0]);
-          %                     rot_mat = [rpy2rotmat([0 pi/2 pi/2]) [0; 0; 0]; [0 0 0 1]];
-          %                     trans_mat = [eye(3) -point_in_link_frame; [0 0 0 1]];
-        case 'v5'
-          goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([1; frameRotation; 1].*[0 -pi/2 pi/2]'), 10*pi/180, [1.0, 1.0]);
-          %                     rot_mat = [rpy2rotmat([0 pi/2 pi/2]) [0; 0; 0]; [0 0 0 1]];
-          %                     trans_mat = [eye(3) -point_in_link_frame; [0 0 0 1]];
-        case 'val1'
-          goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([-pi/2 0 0 ]'), 10*pi/180, [1.0, 1.0]);
-          goalEulerConstraint = WorldEulerConstraint(robot, hand, [-pi/2;0; -pi], [-pi/2; 0; pi]);
-        case 'val2'
-          goalQuatConstraint = WorldQuatConstraint(robot, hand, rpy2quat([-pi/2 0 0 ]'), 10*pi/180, [1.0, 1.0]);
-          goalEulerConstraint = WorldEulerConstraint(robot, hand, [0;0; -pi], [0; 0; pi]);
-      end
-%       goalPosConstraint = WorldPositionInFrameConstraint(robot, hand, point_in_link_frame, goalFrame,...
-%         lower_bounds, upper_bounds, [1.0, 1.0]);
+      goalFrame = [eye(3) Scenes.getTargetObjPos(options)'; 0 0 0 1];
+      goalEulerConstraint.left.v5 = WorldEulerConstraint(robot, hand, [-pi; pi/2;0 ], [pi; pi/2; 0]);
+      goalEulerConstraint.right.v5 = WorldEulerConstraint(robot, hand, [-pi; -pi/2;0 ], [pi; -pi/2; 0]);
+      goalEulerConstraint.left.val1 = WorldEulerConstraint(robot, hand, [-pi/2;0; -pi], [-pi/2; 0; pi]);
+      goalEulerConstraint.right.val1 = goalEulerConstraint.left.val1;
+      goalEulerConstraint.left.val2 = WorldEulerConstraint(robot, hand, [0;0; -pi], [0; 0; pi]);
+      goalEulerConstraint.right.val2 = goalEulerConstraint.left.val2;
       goalDistConstraint = Point2PointDistanceConstraint(robot, hand, robot.findLinkId('world'), point_in_link_frame, goalFrame(1:3, 4), -0.001, 0.001);
-%       constraints = {goalPosConstraint, goalQuatConstraint};
-      constraints = {goalDistConstraint, goalEulerConstraint};
-      
-      
-      %             drawFrame(ref_frame, 'Goal Frame')
-      %             drawFrame(ref_frame*rot_mat*trans_mat, 'Goal Offset Frame');
+      constraints = {goalDistConstraint, goalEulerConstraint.(options.graspingHand).(options.model)}; 
+%       drawFrame(ref_frame, 'Goal Frame')
+%       drawFrame(ref_frame*rot_mat*trans_mat, 'Goal Offset Frame');
     end
     
 

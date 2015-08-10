@@ -9,23 +9,21 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 2; end;
-  if ~isfield(options,'model'), options.model = 'val2'; end;
-  if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
+  if ~isfield(options,'scene'), options.scene = 9; end;
+  if ~isfield(options,'model'), options.model = 'v5'; end;
+  if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'costType'), options.costType = 'length'; end;
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'nTrees'), options.nTrees = 4; end;
   if ~isfield(options,'goalObject'), options.goalObject = 1; end;
-  if ~isfield(options,'grasping'), options.grasping = false; end;
   
   
   options.floating = true;
   options.terrain = MyRigidBodyFlatTerrain(); %Changed to a smaller terrain to avoid visualization problem when zooming
   options.joint_v_max = 15*pi/180;
   options.viewer = 'NullVisualizer';
-  options.replace_cylinders_with_capsules = false;
   
   if isempty(options.robot)
     r = Scenes.generateScene(options);
@@ -113,14 +111,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     %     drawLinkFrame(r, g_hand, q_end, 'Grasping Hand End');
     %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_end, 'Forearm End');
   end
-  if options.grasping
-    goalPose = [eye(3), Scenes.getTargetObjPos(options)'; 0 0 0 1];
-    kinsol = r.doKinematics(q_end);
-    handPose = r.forwardKin(kinsol, Scenes.getGraspingHand(options, r), [0;0;0], 2);
-    handT = [quat2rotmat(handPose(4:7)), handPose(1:3); 0 0 0 1];
-    T = [handT(1:3, 1:3)' * goalPose(1:3, 1:3), handT(1:3, 1:3)' * (goalPose(1:3, 4) - handT(1:3, 4)); 0 0 0 1];
-    r = Scenes.graspObject(T, options);
-  end
   
   %Create RRTs
   
@@ -185,17 +175,19 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     TB = TB.setLCMGL('TB',[0,0,1]);
   end
   
-  switch options.model
-    case 'val1'
-      qNominalC = Scenes.getFP('valkyrie_fp_rHand_up', r);
-      qNominalD = Scenes.getFP('valkyrie_fp_rHand_up_right', r);
-    case 'val2'
-      qNominalC = Scenes.getFP('valkyrie2_fp_rHand_up', r);
-      qNominalD = Scenes.getFP('valkyrie2_fp_rHand_up_right', r);
-    case 'v4'
-      qNominalC = Scenes.getFP('atlas_fp_rHand_up', r);
-      qNominalD = Scenes.getFP('atlas_fp_rHand_up_right', r);
-  end
+  qNomCFile.val1.right = 'valkyrie_fp_rHand_up';
+  qNomDFile.val1.right = 'valkyrie_fp_rHand_up_right';
+  qNomCFile.val2.right = 'valkyrie2_fp_rHand_up';
+  qNomCFile.val2.left = 'valkyrie2_fp_lHand_up';
+  qNomDFile.val2.right = 'valkyrie2_fp_rHand_up_right';
+  qNomDFile.val2.left = 'valkyrie2_fp_lHand_up_left';
+  qNomCFile.v5.right = 'atlasv5_fp_rHand_up';
+  qNomCFile.v5.left = 'atlasv5_fp_lHand_up';
+  qNomDFile.v5.right = 'atlasv5_fp_rHand_up_right';
+  qNomDFile.v5.left = 'atlasv5_fp_lHand_up_left';
+  
+  qNominalC = Scenes.getFP(qNomCFile.(options.model).(options.graspingHand), r);
+  qNominalD = Scenes.getFP(qNomDFile.(options.model).(options.graspingHand), r);
   
   kinsol = r.doKinematics(qNominalC);
   EEpose = r.forwardKin(kinsol, Scenes.getGraspingHand(options, r), Scenes.getPointInLinkFrame(options), 2);
@@ -235,22 +227,28 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       [TA, info, cost, q_path] = TA.rrtStar(x_start, x_goal, options);
     case 'multiRRT'
       cm = CapabilityMap([fileparts(which('exploringRRT')) '/CapabilityMap/capabilityMap.mat']);
+      x_end.val1 = Scenes.getTargetObjPos(options)';
+      x_end.val2 = x_end.val1;
+      x_end.v5 = x_goal;
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, Scenes.getTargetObjPos(options)',...
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
             [xStartC, xStartD], goalConstraints, startPoseConstraints, q_nom,...
             'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
-%           multiTree = MultipleTreeProblem(r, g_hand, x_start, Scenes.getTargetObjPos(options)',...
-%             [xStartC, xStartD], goalConstraints, startPoseConstraints, q_nom,...
-%             'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
-%             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
-%             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
         case 3
-          multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
+            [xStartC], goalConstraints, startPoseConstraints, q_nom,...
+            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
         case 2
-          multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
+            [], goalConstraints, startPoseConstraints, q_nom,...
+            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
       end
       [multiTree, info, cost, q_path] = multiTree.rrt(options);
       TA = multiTree.trees(1);
@@ -343,7 +341,49 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.info = info;
         statVars.cost = cost;
         statVars.options = rmfield(options, {'robot', 'terrain'});
-      case 'multiRRT'       
+      case 'multiRRT'
+        if size(x_end.(options.model), 2) > 7
+          statVars.finalPoseTime = info.finalPoseTime;
+          statVars.IKFinalPoseTime = sum(info.IKFinalPoseTime(1,:));
+          statVars.collisionFinalPoseTime = sum(info.collisionFinalPoseTime(1,:));
+          statVars.finalPoseCost = info.finalPoseCost;
+        else
+          statVars.finalPoseTime = 0;
+          statVars.IKFinalPoseTime = 0;
+          statVars.collisionFinalPoseTime = 0;
+          statVars.finalPoseCost = 0;
+        end
+        statVars.reachingTime = info.reachingTime;
+        statVars.improvingTime = info.improvingTime;
+        statVars.shortcutTime = info.shortcutTime;
+        statVars.rebuildTime = info.rebuildTime;
+        statVars.reachingNpoints = info.reachingNpoints;
+        statVars.improvingNpoints = info.improvingNpoints;
+        statVars.shortcutNpoints = info.shortcutNpoints;
+        statVars.rebuildNpoints = info.rebuildNpoints;
+        statVars.collisionImprovingTime = sum(info.collisionImprovingTime(1,:));
+        statVars.collisionReachingTime = sum(info.collisionReachingTime(1,:));
+        statVars.collisionShortcutTime = sum(info.collisionShortcutTime(1,:));
+        statVars.IKImprovingTime = sum(info.IKImprovingTime(1,:));
+        statVars.IKReachingTime = sum(info.IKReachingTime(1,:));
+        statVars.IKRebuildTime = sum(info.IKRebuildTime(1,:));
+        statVars.IKShortcutTime = sum(info.IKShortcutTime(1,:));
+        statVars.collisionTime = sum([statVars.collisionFinalPoseTime,...
+                                  statVars.collisionImprovingTime,...
+                                  statVars.collisionReachingTime,...
+                                  statVars.collisionShortcutTime]);
+        statVars.IKTime = sum([statVars.IKFinalPoseTime,...
+                          statVars.IKImprovingTime,...
+                          statVars.IKReachingTime,...
+                          statVars.IKRebuildTime,...
+                          statVars.IKShortcutTime]);
+        statVars.costReaching = info.costReaching;
+        statVars.costImproving = info.costImproving;
+        statVars.costShortcut = info.costShortcut;
+        statVars.nPoints = info.nPoints;
+        statVars.nTrees = info.nTrees;
+        statVars.rndSeed = rndSeed; 
+        statVars.options = rmfield(options, {'robot', 'terrain'});
         simVars.info = info;
         if options.visualize
           fprintf(['TIMING:\n',...
@@ -356,11 +396,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
                   info.finalPoseTime, info.reachingTime, info.improvingTime,...
                   info.shortcutTime, info.rebuildTime, rrt_time);
         end
-%         statVars.numberOfVertices = TA.n;
-        statVars.info = info;
-        statVars.cost = cost;
-        statVars.rndSeed = rndSeed; 
-        statVars.options = rmfield(options, {'robot', 'terrain'});
     end
     
     if options.visualize      
@@ -369,9 +404,34 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   else
     xtraj = [];
     v = [];
-    simVars.info = info;
-    statVars.info = info;
+    statVars.finalPoseTime = [];
+    statVars.reachingTime = [];
+    statVars.improvingTime = [];
+    statVars.shortcutTime = [];
+    statVars.rebuildTime = [];
+    statVars.reachingNpoints = [];
+    statVars.improvingNpoints = [];
+    statVars.shortcutNpoints = [];
+    statVars.rebuildNpoints = [];
+    statVars.collisionFinalPoseTime = [];
+    statVars.collisionImprovingTime = [];
+    statVars.collisionReachingTime = [];
+    statVars.collisionShortcutTime = [];
+    statVars.IKFinalPoseTime = [];
+    statVars.IKImprovingTime = [];
+    statVars.IKReachingTime = [];
+    statVars.IKRebuildTime = [];
+    statVars.IKShortcutTime = [];
+    statVars.collisionTime = [];
+    statVars.IKTime = [];
+    statVars.costReaching = [];
+    statVars.costImproving = [];
+    statVars.costShortcut = [];
+    statVars.finalPoseCost = [];
+    statVars.nPoints = [];
     statVars.rndSeed = rndSeed; 
+    statVars.options = rmfield(options, {'robot', 'terrain'});
+    simVars.info = info;
     fprintf('Failed to find a solution (%s)\n', info.getStatus())
   end
   
