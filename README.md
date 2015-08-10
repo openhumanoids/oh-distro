@@ -26,12 +26,13 @@ This distro does not include the Kuka LWR and Schunk SDH repositories that are o
 
 Missing repositories (June 2015):
 
-[submodule "catkin_ws/drc_translators/src/exotica_json"]
-        path = catkin_ws/drc_translators/src/exotica_json
-        url = git@bitbucket.org:IPAB-SLMC/exotica_json.git
-[submodule "catkin_ws/drc_translators/src/exotica"]
-        path = catkin_ws/drc_translators/src/exotica
-        url = git@bitbucket.org:IPAB-SLMC/exotica.git
+    submodule "catkin_ws/drc_translators/src/exotica_json"
+    path = catkin_ws/drc_translators/src/exotica_json
+    url = git@bitbucket.org:IPAB-SLMC/exotica_json.git
+
+    submodule "catkin_ws/drc_translators/src/exotica"
+    path = catkin_ws/drc_translators/src/exotica
+    url = git@bitbucket.org:IPAB-SLMC/exotica.git
 
 Required ROS packages:
 
