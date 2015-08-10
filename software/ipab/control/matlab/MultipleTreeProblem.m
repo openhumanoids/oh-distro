@@ -26,6 +26,7 @@ classdef MultipleTreeProblem
     function obj = MultipleTreeProblem(robot, endEffectorId,...
         xStart, xGoal, xStartAddTrees, goalConstraints, additionalConstraints, qNom, varargin)
       
+      warning('off','Drake:RigidBodyManipulator:ReplacedCylinder');
       opt = struct('mergingthreshold', 0.2, 'capabilitymap', [], 'graspinghand', 'right',...
         'mindistance', 0.005, 'activecollisionoptions', struct(), 'ikoptions', struct(),...
         'steerfactor', 0.1, 'orientationweight', 1, 'maxedgelength', 0.05,...
@@ -106,9 +107,9 @@ classdef MultipleTreeProblem
       
       %compute final pose
       tic
-      if length(obj.xGoal) == 3
+      if length(obj.xGoal) == 3 || length(obj.xGoal) == 7
         disp('Searching for a feasible final configuration...')
-        qGoal = obj.findGoalPose(obj.xStart, obj.xGoal);
+        qGoal = obj.findGoalPose(obj.xStart, obj.xGoal(1:3));
         if isempty(qGoal)
           info = info.setStatus(Info.FAIL_NO_FINAL_POSE);
           disp('Failed to find a feasible final configuration')
@@ -120,6 +121,10 @@ classdef MultipleTreeProblem
           disp('Final configuration found')
         end
       elseif length(obj.xGoal) == 7 + obj.robot.num_positions
+        disp('Final configuration input found')
+      elseif obj.robot.num_positions
+        kinsol = obj.robot.doKinematics(obj.xGoal);
+        obj.xGoal = [obj.robot.forwardKin(kinsol, obj.endEffectorId, obj.endEffectorPoint, 2); obj.xGoal];
         disp('Final configuration input found')
       else
         error('Bad final configuration input')

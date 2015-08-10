@@ -158,15 +158,27 @@ classdef Scenes
           
           goals{options.goalObject} = goals{options.goalObject}.setColor([1 0 0]);
           
-          robot = addGeometryToBody(robot, world_link, goals{1});
+          if ~options.grasping
+            robot = addGeometryToBody(robot, world_link, goals{1});
+          end
           robot = addGeometryToBody(robot, world_link, goals{2});
           robot = addGeometryToBody(robot, world_link, goals{3});
           robot = addGeometryToBody(robot, world_link, goals{4});
       end
     end
     
-    function robot = generateScene(options)      
+    function robot = generateScene(options)
+      robot = Scenes.generateRobot(options);
+      world = robot.findLinkId('world');
+      robot = Scenes.generateWorld(options, robot, world);
+      robot = robot.compile();
+    end
+    
+    function robot = graspObject(T, options)      
+      object = RigidBodyCylinder(.045, .19, T);
       robot = Scenes.generateRobot(options);  
+      hand = Scenes.getGraspingHand(options, robot);
+      robot = addGeometryToBody(robot, hand, object);
       world = robot.findLinkId('world');
       robot = Scenes.generateWorld(options, robot, world);
       robot = robot.compile();

@@ -9,7 +9,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 6; end;
+  if ~isfield(options,'scene'), options.scene = 2; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -18,12 +18,14 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'nTrees'), options.nTrees = 4; end;
   if ~isfield(options,'goalObject'), options.goalObject = 1; end;
+  if ~isfield(options,'grasping'), options.grasping = false; end;
   
   
   options.floating = true;
   options.terrain = MyRigidBodyFlatTerrain(); %Changed to a smaller terrain to avoid visualization problem when zooming
   options.joint_v_max = 15*pi/180;
   options.viewer = 'NullVisualizer';
+  options.replace_cylinders_with_capsules = false;
   
   if isempty(options.robot)
     r = Scenes.generateScene(options);
@@ -110,6 +112,14 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     s.publishTraj(PPTrajectory(q_end), 1)
     %     drawLinkFrame(r, g_hand, q_end, 'Grasping Hand End');
     %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_end, 'Forearm End');
+  end
+  if options.grasping
+    goalPose = [eye(3), Scenes.getTargetObjPos(options)'; 0 0 0 1];
+    kinsol = r.doKinematics(q_end);
+    handPose = r.forwardKin(kinsol, Scenes.getGraspingHand(options, r), [0;0;0], 2);
+    handT = [quat2rotmat(handPose(4:7)), handPose(1:3); 0 0 0 1];
+    T = [handT(1:3, 1:3)' * goalPose(1:3, 1:3), handT(1:3, 1:3)' * (goalPose(1:3, 4) - handT(1:3, 4)); 0 0 0 1];
+    r = Scenes.graspObject(T, options);
   end
   
   %Create RRTs
@@ -232,6 +242,11 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
             'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
+%           multiTree = MultipleTreeProblem(r, g_hand, x_start, Scenes.getTargetObjPos(options)',...
+%             [xStartC, xStartD], goalConstraints, startPoseConstraints, q_nom,...
+%             'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+%             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+%             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
         case 3
           multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
         case 2
