@@ -120,18 +120,18 @@ classdef MultipleTreeProblem
           obj.xGoal = obj.robot.forwardKin(kinsol, obj.endEffectorId, obj.endEffectorPoint, 2);
           obj.xGoal = [obj.xGoal; qGoal];
           disp('Final configuration found')
+          info.finalPoseTime = toc;
+          info.IKFinalPoseTime = IKTimes;
+          info.collisionFinalPoseTime = collisionTimes;
+          info.finalPoseCost = finalPoseCost;
+          IKTimes = [];
+          collisionTimes = [];
         end
       elseif length(obj.xGoal) == 7 + obj.robot.num_positions
         disp('Final configuration input found')
       else
         error('Bad final configuration input')
       end
-      info.finalPoseTime = toc;
-      info.IKFinalPoseTime = IKTimes;
-      info.collisionFinalPoseTime = collisionTimes;
-      info.finalPoseCost = finalPoseCost;
-      IKTimes = [];
-      collisionTimes = [];
       
       obj.startPoints(:,2) = obj.xGoal;
       
@@ -147,6 +147,7 @@ classdef MultipleTreeProblem
           obj = obj.deleteTree(treeIdx);
         end
       end
+      info.nTrees = obj.nTrees;
       for treeIdx = 1:obj.nTrees
           obj.trees(treeIdx).costType = options.costType;
           obj.trees(treeIdx) = obj.trees(treeIdx).init(obj.startPoints(:, treeIdx));

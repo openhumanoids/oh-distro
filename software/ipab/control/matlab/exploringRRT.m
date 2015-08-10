@@ -9,10 +9,10 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 1; end;
-  if ~isfield(options,'model'), options.model = 'val2'; end;
-  if ~isfield(options,'convex_hull'), options.convex_hull = false; end;
-  if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
+  if ~isfield(options,'scene'), options.scene = 9; end;
+  if ~isfield(options,'model'), options.model = 'v5'; end;
+  if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
+  if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'costType'), options.costType = 'length'; end;
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
   if ~isfield(options,'robot'), options.robot = []; end;
@@ -181,8 +181,10 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   qNomCFile.val2.left = 'valkyrie2_fp_lHand_up';
   qNomDFile.val2.right = 'valkyrie2_fp_rHand_up_right';
   qNomDFile.val2.left = 'valkyrie2_fp_lHand_up_left';
-  qNomCFile.v4.right = 'atlas_fp_rHand_up';
-  qNomDFile.v4.right = 'atlas_fp_rHand_up_right';
+  qNomCFile.v5.right = 'atlasv5_fp_rHand_up';
+  qNomCFile.v5.left = 'atlasv5_fp_lHand_up';
+  qNomDFile.v5.right = 'atlasv5_fp_rHand_up_right';
+  qNomDFile.v5.left = 'atlasv5_fp_lHand_up_left';
   
   qNominalC = Scenes.getFP(qNomCFile.(options.model).(options.graspingHand), r);
   qNominalD = Scenes.getFP(qNomDFile.(options.model).(options.graspingHand), r);
@@ -225,17 +227,28 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       [TA, info, cost, q_path] = TA.rrtStar(x_start, x_goal, options);
     case 'multiRRT'
       cm = CapabilityMap([fileparts(which('exploringRRT')) '/CapabilityMap/capabilityMap.mat']);
+      x_end.val1 = Scenes.getTargetObjPos(options)';
+      x_end.val2 = x_end.val1;
+      x_end.v5 = x_goal;
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, Scenes.getTargetObjPos(options)',...
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
             [xStartC, xStartD], goalConstraints, startPoseConstraints, q_nom,...
             'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
         case 3
-          multiTree = MultipleTreeProblem([TA, TB, TC], [x_start, x_goal, xStartC], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
+            [xStartC], goalConstraints, startPoseConstraints, q_nom,...
+            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
         case 2
-          multiTree = MultipleTreeProblem([TA, TB], [x_start, x_goal], goalConstraints, 'capabilityMap', cm, 'graspingHand', options.graspingHand);
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
+            [], goalConstraints, startPoseConstraints, q_nom,...
+            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
       end
       [multiTree, info, cost, q_path] = multiTree.rrt(options);
       TA = multiTree.trees(1);
@@ -329,7 +342,17 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.cost = cost;
         statVars.options = rmfield(options, {'robot', 'terrain'});
       case 'multiRRT'
-        statVars.finalPoseTime = info.finalPoseTime;
+        if size(x_end.(options.model), 2) > 7
+          statVars.finalPoseTime = info.finalPoseTime;
+          statVars.IKFinalPoseTime = sum(info.IKFinalPoseTime(1,:));
+          statVars.collisionFinalPoseTime = sum(info.collisionFinalPoseTime(1,:));
+          statVars.finalPoseCost = info.finalPoseCost;
+        else
+          statVars.finalPoseTime = 0;
+          statVars.IKFinalPoseTime = 0;
+          statVars.collisionFinalPoseTime = 0;
+          statVars.finalPoseCost = 0;
+        end
         statVars.reachingTime = info.reachingTime;
         statVars.improvingTime = info.improvingTime;
         statVars.shortcutTime = info.shortcutTime;
@@ -338,11 +361,9 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.improvingNpoints = info.improvingNpoints;
         statVars.shortcutNpoints = info.shortcutNpoints;
         statVars.rebuildNpoints = info.rebuildNpoints;
-        statVars.collisionFinalPoseTime = sum(info.collisionFinalPoseTime(1,:));
         statVars.collisionImprovingTime = sum(info.collisionImprovingTime(1,:));
         statVars.collisionReachingTime = sum(info.collisionReachingTime(1,:));
         statVars.collisionShortcutTime = sum(info.collisionShortcutTime(1,:));
-        statVars.IKFinalPoseTime = sum(info.IKFinalPoseTime(1,:));
         statVars.IKImprovingTime = sum(info.IKImprovingTime(1,:));
         statVars.IKReachingTime = sum(info.IKReachingTime(1,:));
         statVars.IKRebuildTime = sum(info.IKRebuildTime(1,:));
@@ -359,8 +380,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.costReaching = info.costReaching;
         statVars.costImproving = info.costImproving;
         statVars.costShortcut = info.costShortcut;
-        statVars.finalPoseCost = info.finalPoseCost;
         statVars.nPoints = info.nPoints;
+        statVars.nTrees = info.nTrees;
         statVars.rndSeed = rndSeed; 
         statVars.options = rmfield(options, {'robot', 'terrain'});
         simVars.info = info;

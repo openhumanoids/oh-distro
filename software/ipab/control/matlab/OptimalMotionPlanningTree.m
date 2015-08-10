@@ -232,7 +232,6 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
 %         drawTreePoints(idNearest, 'tree', obj, 'colour', [0 1 0], 'text', 'qNearest');
         qNew = obj.steer(idNearest, qRand, d);
 %         drawTreePoints(qNew, 'colour', [0 0 1], 'text', 'qNew');
-%         [valid, qNew] = obj.isValidEdge(qNew, obj.getVertex(idNearest));
         valid = obj.trees{obj.tspace_idx}.isCollisionFree(qNew(1:7));
         if valid
           constraints = obj.generateEndEffectorConstraints(qNew(1:7));

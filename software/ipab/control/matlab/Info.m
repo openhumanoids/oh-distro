@@ -37,6 +37,7 @@ classdef Info
     costImproving
     costShortcut
     nPoints
+    nTrees
     finalPoseCost
   end
   

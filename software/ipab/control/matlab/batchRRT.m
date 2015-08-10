@@ -19,7 +19,7 @@ function batchRRT(n, varargin)
   
   options = struct('path', pwd, 'scenes', 1:Scenes.getnScenes(),...
               'visualize', false, 'savesimvars', false, 'planning_mode', 'multiRRT',...
-              'model', 'val2', 'graspingHand', 'right');
+              'model', 'val2', 'graspingHand', 'right', 'ntrees', 4);
   optNames = fieldnames(options);
   nArgs = length(varargin);
   if round(nArgs/2)~=nArgs/2
