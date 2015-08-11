@@ -2540,6 +2540,7 @@
   <!-- avoid collisions between close links-->
   <collision_filter_group name='ignoreCloseLinks1'>
     <member link='RightShoulderYawLink'/>
+    <member link='LeftShoulderYawLink'/>
     <member link='Head'/>
     <member link='LeftHipRollLink'/>
     <member link='RightHipRollLink'/>
@@ -2547,6 +2548,7 @@
   </collision_filter_group>
   <collision_filter_group name='ignoreCloseLinks2'>
     <member link='RightForearmLink'/>
+    <member link='LeftForearmLink'/>
     <member link='Torso'/>
     <member link='Pelvis'/>
     <member link='LeftHipPitchLink'/>
