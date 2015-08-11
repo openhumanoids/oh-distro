@@ -392,8 +392,8 @@ classdef Scenes
       elbow.left.v5 = 'r_larm';
       elbow.right.val1 = 'LeftElbowExtensor';
       elbow.right.val2 = 'LeftElbowPitchLink';
-      elbow.right.v4 = 'r_larm';
-      elbow.right.v5 = 'r_larm';
+      elbow.right.v4 = 'l_larm';
+      elbow.right.v5 = 'l_larm';
       elbow = robot.findLinkId(elbow.(options.graspingHand).(options.model));
       trunk = robot.findLinkId(trunk.(options.model));
       constraint = Point2PointDistanceConstraint(robot, elbow, trunk, [0; 0; 0], [0; 0; 0], dist, Inf);
