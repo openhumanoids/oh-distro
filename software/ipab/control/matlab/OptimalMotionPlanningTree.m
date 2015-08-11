@@ -164,7 +164,7 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
       n = ceil(d/obj.max_edge_length);
       valid = true;
       
-      qNew = x1;
+      qNew = x1(obj.idx{obj.cspace_idx});
       qPath = NaN(cSpaceTree.num_vars, n+1);
       qPath(:,1) = x1(obj.idx{obj.cspace_idx});
       
