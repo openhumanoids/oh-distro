@@ -165,7 +165,7 @@ set(externals
   occ-map
   common_utils
   frsm
-  jpeg-utils
+  #jpeg-utils
   #isam_include
   #visualization
   #velodyne
