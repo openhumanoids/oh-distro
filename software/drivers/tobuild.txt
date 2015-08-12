@@ -4,6 +4,7 @@
 atlas
 multisense
 ipwebcam
+flycapture
 ptgrey
 robotiqhand
 irobothand

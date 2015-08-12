@@ -178,7 +178,7 @@ set(externals
   #camunits-wrapper
   #camunits-extra-wrapper
   apriltags
-  flycapture
+  #flycapture
   bullet
   spotless
   snopt
