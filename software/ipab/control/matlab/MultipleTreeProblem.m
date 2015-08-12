@@ -176,13 +176,9 @@ classdef MultipleTreeProblem
               lastCost = obj.trees(1).C(obj.trees(1).traj(1));
               lastUpdate = obj.trees(1).n;
               info.reachingTime = toc(reachingTimer);
-              info.IKReachingTime = IKTimes;
-              info.collisionReachingTime = collisionTimes;
               info.costReaching = obj.trees(1).C(obj.trees(1).traj(1));
               info.nPoints = obj.trees(1).n;
               info.reachingNpoints = length(obj.trees(1).traj);
-              IKTimes = [];
-              collisionTimes = [];
               improvingTimer = tic;
             end
           end
@@ -201,12 +197,8 @@ classdef MultipleTreeProblem
           %10 points
           if options.firstFeasibleTraj || lastUpdate > 0 && obj.trees(1).n - lastUpdate > 10
             info.improvingTime = toc(improvingTimer);
-            info.IKImprovingTime = IKTimes;
-            info.collisionImprovingTime = collisionTimes;
             info.costImproving = obj.trees(1).C(obj.trees(1).traj(1));            
             info.improvingNpoints = length(obj.trees(1).traj);
-            IKTimes = [];
-            collisionTimes = [];
             shortcut = tic;
             break
           end
@@ -243,15 +235,10 @@ classdef MultipleTreeProblem
         obj.trees(1).setLCMGL(obj.trees(1).lcmgl_name, obj.trees(1).line_color);
         obj.trees(1) = obj.trees(1).shortcut();
         info.shortcutTime = toc(shortcut);        
-        info.IKShortcutTime = IKTimes;
-        info.collisionShortcutTime = collisionTimes;
         info.shortcutNpoints = length(obj.trees(1).traj);
-        IKTimes = [];
-        collisionTimes = [];
         rebuildTimer = tic;
         qPath = obj.trees(1).rebuildTraj(obj.xStart, obj.xGoal);
         info.rebuildTime = toc(rebuildTimer);
-        info.IKRebuildTime = IKTimes;
         info.rebuildNpoints = size(qPath, 2);
         cost = obj.trees(1).C(obj.trees(1).traj(1));
         info.costShortcut = cost;
@@ -385,7 +372,6 @@ classdef MultipleTreeProblem
             [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.activeCollisionOptions);
             if any(phi < obj.minDistance)
               phi = phi - obj.minDistance;
-              IKTime = tic;
               while (eps > 1e-3 || any(phi < 0)) && nIter < 5
                 qNdot = zeros(nArmJoints, 1);
                 for joint = 1:nArmJoints
@@ -422,7 +408,6 @@ classdef MultipleTreeProblem
                 nIter = nIter + 1;
                 phi = phi - obj.minDistance;
               end              
-              IKTimes(1, end+1) = toc(IKTime);
             else
               phi = phi - obj.minDistance;
               eps = 1e-3;
@@ -431,13 +416,11 @@ classdef MultipleTreeProblem
               cost = (obj.qNom - q)'*cSpaceTree.ikoptions.Q*(obj.qNom - q);
               validConfs(:,sph) = [cost; q];
               succ(sph, :) = [1, nIter];
-              IKTimes(2, end) = 1;
               if cost < 20
                 break
               end
             else              
               succ(sph, :) = [0, nIter];
-              IKTimes(2, end) = 0;
             end
           end
         end
