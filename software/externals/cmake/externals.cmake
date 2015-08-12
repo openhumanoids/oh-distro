@@ -166,8 +166,8 @@ set(externals
   common_utils
   frsm
   jpeg-utils
-  isam_include
-  visualization
+  #isam_include
+  #visualization
   #velodyne
   kinect
   microstrain_comm
