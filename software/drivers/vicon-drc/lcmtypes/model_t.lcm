@@ -1,0 +1,9 @@
+package viconstructs;
+struct model_t
+{
+    string name;
+    int32_t nummarkers;
+    int32_t numsegments;
+    marker_t markers[nummarkers];
+    segment_t segments[numsegments];
+}
