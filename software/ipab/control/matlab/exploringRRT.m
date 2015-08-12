@@ -342,15 +342,11 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.cost = cost;
         statVars.options = rmfield(options, {'robot', 'terrain'});
       case 'multiRRT'
-        if size(x_end.(options.model), 2) > 7
+        if size(x_end.(options.model), 2) <= 7
           statVars.finalPoseTime = info.finalPoseTime;
-          statVars.IKFinalPoseTime = sum(info.IKFinalPoseTime(1,:));
-          statVars.collisionFinalPoseTime = sum(info.collisionFinalPoseTime(1,:));
           statVars.finalPoseCost = info.finalPoseCost;
         else
           statVars.finalPoseTime = 0;
-          statVars.IKFinalPoseTime = 0;
-          statVars.collisionFinalPoseTime = 0;
           statVars.finalPoseCost = 0;
         end
         statVars.reachingTime = info.reachingTime;
@@ -361,22 +357,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.improvingNpoints = info.improvingNpoints;
         statVars.shortcutNpoints = info.shortcutNpoints;
         statVars.rebuildNpoints = info.rebuildNpoints;
-        statVars.collisionImprovingTime = sum(info.collisionImprovingTime(1,:));
-        statVars.collisionReachingTime = sum(info.collisionReachingTime(1,:));
-        statVars.collisionShortcutTime = sum(info.collisionShortcutTime(1,:));
-        statVars.IKImprovingTime = sum(info.IKImprovingTime(1,:));
-        statVars.IKReachingTime = sum(info.IKReachingTime(1,:));
-        statVars.IKRebuildTime = sum(info.IKRebuildTime(1,:));
-        statVars.IKShortcutTime = sum(info.IKShortcutTime(1,:));
-        statVars.collisionTime = sum([statVars.collisionFinalPoseTime,...
-                                  statVars.collisionImprovingTime,...
-                                  statVars.collisionReachingTime,...
-                                  statVars.collisionShortcutTime]);
-        statVars.IKTime = sum([statVars.IKFinalPoseTime,...
-                          statVars.IKImprovingTime,...
-                          statVars.IKReachingTime,...
-                          statVars.IKRebuildTime,...
-                          statVars.IKShortcutTime]);
         statVars.costReaching = info.costReaching;
         statVars.costImproving = info.costImproving;
         statVars.costShortcut = info.costShortcut;

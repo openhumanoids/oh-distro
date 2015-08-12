@@ -160,9 +160,7 @@ classdef Scenes
           
           goals{options.scene-5} = goals{options.scene-5}.setColor([1 0 0]);
           
-          if ~options.grasping
-            robot = addGeometryToBody(robot, world_link, goals{1});
-          end
+          robot = addGeometryToBody(robot, world_link, goals{1});
           robot = addGeometryToBody(robot, world_link, goals{2});
           robot = addGeometryToBody(robot, world_link, goals{3});
           robot = addGeometryToBody(robot, world_link, goals{4});
