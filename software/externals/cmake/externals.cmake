@@ -174,7 +174,7 @@ set(externals
   fovis-git
   estimate-pose
   vicon
-  vicon-drc
+  #vicon-drc
   #camunits-wrapper
   #camunits-extra-wrapper
   apriltags
