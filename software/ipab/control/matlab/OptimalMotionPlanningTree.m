@@ -91,8 +91,8 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
       obj = obj.getTrajToGoal();
     end
     
-    function obj = rrtStarIteration(obj, status, xGoal, iter, biasSpacing)
-      qRand = obj.goalBias(status, xGoal, iter, biasSpacing);
+    function obj = rrtStarIteration(obj, status, iter, biasSpacing)
+      qRand = obj.goalBias(status, [], iter, biasSpacing);
 %       drawTreePoints(qRand, 'colour', [1 0 0], 'text', 'qRand');
       [qNew, idNearest, valid] = obj.newPoint(qRand, status, iter);
       if valid

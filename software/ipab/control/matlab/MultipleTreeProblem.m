@@ -219,7 +219,7 @@ classdef MultipleTreeProblem
 %         fprintf('Current Tree %d\n', treeIdx)
 %         drawTreePoints(obj.startPoints(:,treeIdx), 'text', 'StartVertex', 'pointsize', 0.02, 'colour', [0 1 0]);
         if obj.status == Status.GOAL_REACHED
-          obj.trees(treeIdx) = rrtStarIteration(obj.trees(treeIdx), obj.status, xGoals, obj.iterations(treeIdx), floor(20/obj.nTrees));
+          obj.trees(treeIdx) = rrtStarIteration(obj.trees(treeIdx), obj.status, obj.iterations(treeIdx), floor(20/obj.nTrees));
         else
           obj.trees(treeIdx) = rrtIteration(obj.trees(treeIdx), obj.status, xGoals, obj.iterations(treeIdx), floor(20/obj.nTrees));
         end
@@ -340,7 +340,6 @@ classdef MultipleTreeProblem
        
       obj = obj.pruneCapabilityMap(0, 0, 0.6, 0.9, 7.5);
       D = obj.capabilityMap.reachabilityIndex;
-      disp(size(D, 1))
       sphCenters = obj.capabilityMap.sphCenters;
       nSph = obj.capabilityMap.nSph;
       iter = 0;
