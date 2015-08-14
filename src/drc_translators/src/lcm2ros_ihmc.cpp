@@ -13,6 +13,7 @@
 #include "lcmtypes/ipab/com_height_packet_message_t.hpp"
 #include "lcmtypes/ipab/pause_command_message_t.hpp"
 #include "lcmtypes/ipab/hand_pose_packet_message_t.hpp"
+#include "lcmtypes/ipab/scs_api_command_t.hpp"
 
 #include <ihmc_msgs/FootstepDataListMessage.h>
 #include <ihmc_msgs/ComHeightPacketMessage.h>
@@ -24,6 +25,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <map>
 
@@ -67,6 +69,9 @@ class LCM2ROS{
     ros::Publisher robot_plan_pub_;
     void sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm, std::vector<string> input_joint_names);
 
+    void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::scs_api_command_t* msg);
+    ros::Publisher scs_api_pub_;
+
     pronto_vis* pc_vis_;
 };
 
@@ -89,6 +94,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
   lcm_->subscribe("COMMITTED_ROBOT_PLAN",&LCM2ROS::robotPlanHandler, this);
   robot_plan_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory2",10);
 
+  lcm_->subscribe("SCS_API_CONTROL",&LCM2ROS::scsAPIHandler, this);
+  scs_api_pub_ = nh_.advertise<std_msgs::String>("/ihmc_ros/" + robotName_ + "/api_command",10);
+
   // depreciated:
   //lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
   //hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
@@ -100,6 +108,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9995,"Output step positions",5,1) );
 
 }
+
 
 ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos, double orient_w, double orient_x, double orient_y, double orient_z){
   ihmc_msgs::FootstepDataMessage footStepList;
@@ -159,6 +168,13 @@ Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
   double y = cr*sp*cy + sr*cp*sy;
   double z = cr*cp*sy - sr*sp*cy;
   return Eigen::Quaterniond(w,x,y,z);
+}
+
+void LCM2ROS::scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::scs_api_command_t* msg)
+{
+  std_msgs::String rmsg;
+  rmsg.data = msg->command;
+  scs_api_pub_.publish(rmsg);
 }
 
 void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::walking_plan_request_t* msg) {
