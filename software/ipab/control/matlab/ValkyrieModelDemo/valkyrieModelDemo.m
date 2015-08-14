@@ -6,7 +6,7 @@ options.joint_v_max = 15*pi/180;
 
 r = RigidBodyManipulator(urdf, options);
 v = r.constructVisualizer();
-fp = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp.mat']);
+fp = load([getDrakePath(), '/../control/matlab/data/valkyrie/valkyrie_fp.mat']);
 x = fp.xstar(1:r.getNumPositions());
 v.draw(0,x)
 q_path = x;

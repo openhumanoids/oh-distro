@@ -31,8 +31,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     r = options.robot;
   end
   
-  addpath('/home/marco/drc/software/ddapp/src/matlab')
-  fixed_point_file = '/home/marco/drc/software/control/matlab/data/valkyrie_fp_june2015.mat';
+  addpath(fullfile(getDrakePath(), '..', 'ddapp/src/matlab') )
+  fixed_point_file = [getDrakePath(), '/../control/matlab/data/val_description/valkyrie_fp_june2015.mat'];
   left_foot_link = 'LeftFoot';
   right_foot_link = 'RightFoot';
   runRRTIKServer
@@ -175,16 +175,16 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     TB = TB.setLCMGL('TB',[0,0,1]);
   end
   
-  qNomCFile.val1.right = 'valkyrie_fp_rHand_up';
-  qNomDFile.val1.right = 'valkyrie_fp_rHand_up_right';
-  qNomCFile.val2.right = 'valkyrie2_fp_rHand_up';
-  qNomCFile.val2.left = 'valkyrie2_fp_lHand_up';
-  qNomDFile.val2.right = 'valkyrie2_fp_rHand_up_right';
-  qNomDFile.val2.left = 'valkyrie2_fp_lHand_up_left';
-  qNomCFile.v5.right = 'atlasv5_fp_rHand_up';
-  qNomCFile.v5.left = 'atlasv5_fp_lHand_up';
-  qNomDFile.v5.right = 'atlasv5_fp_rHand_up_right';
-  qNomDFile.v5.left = 'atlasv5_fp_lHand_up_left';
+  qNomCFile.val1.right = 'valkyrie/valkyrie_fp_rHand_up';
+  qNomDFile.val1.right = 'valkyrie/valkyrie_fp_rHand_up_right';
+  qNomCFile.val2.right = 'val_description/valkyrie2_fp_rHand_up';
+  qNomCFile.val2.left = 'val_description/valkyrie2_fp_lHand_up';
+  qNomDFile.val2.right = 'val_description/valkyrie2_fp_rHand_up_right';
+  qNomDFile.val2.left = 'val_description/valkyrie2_fp_lHand_up_left';
+  qNomCFile.v5.right = 'atlas_v5/atlasv5_fp_rHand_up';
+  qNomCFile.v5.left = 'atlas_v5/atlasv5_fp_lHand_up';
+  qNomDFile.v5.right = 'atlas_v5/atlasv5_fp_rHand_up_right';
+  qNomDFile.v5.left = 'atlas_v5/atlasv5_fp_lHand_up_left';
   
   qNominalC = Scenes.getFP(qNomCFile.(options.model).(options.graspingHand), r);
   qNominalD = Scenes.getFP(qNomDFile.(options.model).(options.graspingHand), r);
