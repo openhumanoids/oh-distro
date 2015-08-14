@@ -1,2 +1,0 @@
-drc_translators
--DCATKIN_DEVEL_PREFIX=/home/marco/drc/catkin_ws/drc_translators/devel -DCMAKE_INSTALL_PREFIX=/home/marco/drc/catkin_ws/drc_translators/install -G Unix Makefiles

@@ -1,8 +1,0 @@
-prefix=/home/marco/drc/catkin_ws/drc_translators/devel
-
-Name: drc_translators
-Description: Description of drc_translators
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/marco/drc/catkin_ws/drc_translators/devel/lib 
-Requires: 
