@@ -60,7 +60,7 @@
     "lwr_arm_5_joint",
     "lwr_arm_6_joint"
   ],
-  "fixedPointFile" : "../../control/matlab/data/kuka_lwr_fp.mat",
+  "fixedPointFile" : "../../control/matlab/data/kuka/kuka_lwr_fp.mat",
   "postureDatabaseFile" : "./stored_poses.json",
 
   "drivingThrottleJoint" : "lwr_arm_0_joint",

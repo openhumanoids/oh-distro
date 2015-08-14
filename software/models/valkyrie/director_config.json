@@ -165,7 +165,7 @@
     "RightAnkleExtensor",
     "RightAnkle"
   ],
-  "fixedPointFile" : "../../control/matlab/data/valkyrie_fp.mat",
+  "fixedPointFile" : "../../control/matlab/data/valkyrie/valkyrie_fp.mat",
   "leftFootMeshFiles" : ["meshes/reduced_polygon_meshes/lj6_Left_7.5degree.stl"],
   "rightFootMeshFiles" : ["meshes/reduced_polygon_meshes/lj6_Right_7.5degree.stl"],
   "postureDatabaseFile" : "./stored_poses.json",
