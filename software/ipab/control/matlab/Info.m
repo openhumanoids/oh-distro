@@ -16,9 +16,29 @@ classdef Info
     finalPoseTime
     reachingTime
     improvingTime
-    checkingTime
     shortcutTime
     rebuildTime
+    reachingNpoints
+    improvingNpoints
+    shortcutNpoints
+    rebuildNpoints
+    IKTime
+    IKFinalPoseTime
+    IKReachingTime
+    IKImprovingTime
+    IKShortcutTime
+    IKRebuildTime
+    collisionTime
+    collisionFinalPoseTime
+    collisionReachingTime
+    collisionImprovingTime
+    collisionShortcutTime
+    costReaching
+    costImproving
+    costShortcut
+    nPoints
+    nTrees
+    finalPoseCost
   end
   
   methods
@@ -38,8 +58,7 @@ classdef Info
     end
     
     function status = getStatus(obj)
-      constProps = obj.getConstProps();
-      status = constProps{obj.status};
+      status = obj.status;
     end
     
     function obj = setStatus(obj, status)

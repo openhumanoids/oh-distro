@@ -91,8 +91,8 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
       obj = obj.getTrajToGoal();
     end
     
-    function obj = rrtStarIteration(obj, status, xGoal, iter, biasSpacing)
-      qRand = obj.goalBias(status, xGoal, iter, biasSpacing);
+    function obj = rrtStarIteration(obj, status, iter, biasSpacing)
+      qRand = obj.goalBias(status, [], iter, biasSpacing);
 %       drawTreePoints(qRand, 'colour', [1 0 0], 'text', 'qRand');
       [qNew, idNearest, valid] = obj.newPoint(qRand, status, iter);
       if valid
@@ -164,7 +164,7 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
       n = ceil(d/obj.max_edge_length);
       valid = true;
       
-      qNew = x1;
+      qNew = x1(obj.idx{obj.cspace_idx});
       qPath = NaN(cSpaceTree.num_vars, n+1);
       qPath(:,1) = x1(obj.idx{obj.cspace_idx});
       
@@ -232,7 +232,6 @@ classdef OptimalMotionPlanningTree < TaskSpaceMotionPlanningTree
 %         drawTreePoints(idNearest, 'tree', obj, 'colour', [0 1 0], 'text', 'qNearest');
         qNew = obj.steer(idNearest, qRand, d);
 %         drawTreePoints(qNew, 'colour', [0 0 1], 'text', 'qNew');
-%         [valid, qNew] = obj.isValidEdge(qNew, obj.getVertex(idNearest));
         valid = obj.trees{obj.tspace_idx}.isCollisionFree(qNew(1:7));
         if valid
           constraints = obj.generateEndEffectorConstraints(qNew(1:7));
