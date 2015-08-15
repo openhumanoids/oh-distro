@@ -12,7 +12,7 @@ pods_use_pkg_config_packages(multisense_utils ${PCL_LIBRARIES} lcm image-utils m
 # set the library API version.  Increment this every time the public API changes.
 set_target_properties(multisense_utils PROPERTIES SOVERSION 1)
 pods_install_libraries(multisense_utils)
-pods_install_headers(multisense_utils.hpp DESTINATION multisense_utils)
+pods_install_headers(multisense_utils.hpp conversions_lcm.hpp DESTINATION multisense_utils)
 
 target_link_libraries(multisense_utils
     z)

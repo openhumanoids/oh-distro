@@ -5,7 +5,7 @@
 if [[ "$1" == "server" ]]; then
     command="bot-lcm-tunnel"
 else
-    command="bot-lcm-tunnel 10.5.3.11 -l $LCM_URL_DRC_RADIO"
+    command="bot-lcm-tunnel 192.168.0.112 -l $LCM_URL_DRC_RADIO"
 fi
 
 killall -qw bot-lcm-tunnel

@@ -7,7 +7,8 @@ cmake
 common_utils
 estimate-pose
 flycapture
-fovis-git
+fovis
+frsm
 gurobi
 isam_include
 jpeg-utils

@@ -44,9 +44,9 @@ set(common_utils_url https://svn.csail.mit.edu/common_utils)
 set(common_utils_revision 301)
 set(common_utils_depends Eigen_pod libbot-drc occ-map octomap-drc)
 
-set(scanmatch_url https://svn.csail.mit.edu/scanmatch/trunk)
-set(scanmatch_revision 49)
-set(scanmatch_depends opencv-drc)
+set(frsm_url ssh://git@github.com/mitdrc/frsm.git)
+set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
+set(frsm_depends libbot-drc)
 
 set(jpeg-utils_url https://svn.csail.mit.edu/drc/trunk/software/externals/jpeg-utils)
 set(jpeg-utils_revision 8298)
@@ -76,13 +76,13 @@ set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
 set(bullet_revision fd4a647)
 set(bullet_depends)
 
-set(fovis-git_url https://svn.csail.mit.edu/drc/trunk/software/externals/fovis-git)
-set(fovis-git_revision 8298)
-set(fovis-git_depends libbot-drc Eigen_pod )
+set(fovis_url ssh://git@github.com/fovis/fovis.git)
+set(fovis_revision ee2fe6593ed9e7e5ce2b2f6f1c64b627da119090)
+set(fovis_depends)
 
 set(estimate-pose_url https://svn.csail.mit.edu/rrg_pods/estimate-pose)
 set(estimate-pose_revision 827)
-set(estimate-pose_depends fovis-git)
+set(estimate-pose_depends fovis)
 
 set(vicon_url https://svn.csail.mit.edu/rrg_pods/drivers/vicon)
 set(vicon_revision 855)
@@ -164,21 +164,21 @@ set(externals
   multisense-lcm
   occ-map
   common_utils
-  scanmatch
-  jpeg-utils
-  isam_include
-  visualization
+  frsm
+  #jpeg-utils
+  #isam_include
+  #visualization
   #velodyne
   kinect
   microstrain_comm
-  fovis-git
+  fovis
   estimate-pose
   vicon
-  vicon-drc
+  #vicon-drc
   #camunits-wrapper
   #camunits-extra-wrapper
   apriltags
-  flycapture
+  #flycapture
   bullet
   spotless
   snopt
