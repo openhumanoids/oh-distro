@@ -81,14 +81,14 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="1 1 0.04"/>
+        <box size=".7 .75 0.04"/>
       </geometry>
       <material name="DarkGrey"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="1 1 0.04"/>
+        <box size=".8 .85 0.04"/>
       </geometry>
     </collision>
   </link>
