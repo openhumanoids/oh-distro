@@ -78,7 +78,7 @@ set(bullet_depends)
 
 set(fovis_url ssh://git@github.com/fovis/fovis.git)
 set(fovis_revision ee2fe6593ed9e7e5ce2b2f6f1c64b627da119090)
-set(fovis_depends)
+set(fovis_depends libbot-drc kinect)
 
 set(estimate-pose_url https://svn.csail.mit.edu/rrg_pods/estimate-pose)
 set(estimate-pose_revision 827)
