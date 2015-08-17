@@ -122,7 +122,7 @@ set(iris_revision 1f51e5089cd477227a300d4cc625375f2b26cd17)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
-set(mosek_revision fa997f27ffc309992909e396fece67086011258f)
+set(mosek_revision 8e93c8a)
 set(mosek_depends)
 
 set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
