@@ -528,7 +528,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % -- To channel "SCAN", publish populated lcm_laser_msg
       if (~isempty(laser_state))
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
-        multisense_state = multisense.state_t();
+        multisense_state = multisense.joint_state_t();
         multisense_state.joint_name = {'hokuyo_joint'};
         
         multisense_state.joint_position = [mod(laser_spindle_angle+pi, 2*pi)];
