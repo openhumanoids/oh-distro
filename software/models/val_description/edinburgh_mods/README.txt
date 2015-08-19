@@ -9,9 +9,9 @@ This branch inserts edinburgh_mods.xacro into the xacro.
 
 2. Compile the urdf:
 cd val_description/robots
-rosrun xacro xacro.py valkyrie_A.xacro -o ../urdf/valkyrie_A.urdf
+rosrun xacro xacro.py valkyrie_A_sim.xacro -o ../urdf/valkyrie_A_sim.urdf
 
-3. Current you need to insert the following inside the link tag or LeftFoot and RightFoot:
+3. Current you need to insert the following inside the link tag for LeftFoot and RightFoot:
 This is used for the quasi static balance constraint:
 
     <collision group="heel">

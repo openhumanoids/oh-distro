@@ -1,11 +1,11 @@
 {
   "urdfConfig": {
-    "default": "./model.urdf",
-    "robotState": "./model.urdf",
-    "ik":         "./model.urdf",
-    "chull":      "./model.urdf",
-    "playback":   "./model.urdf",
-    "teleop":     "./model.urdf"
+    "default": "./urdf/valkyrie_A_sim.urdf",
+    "robotState": "./urdf/valkyrie_A_sim.urdf",
+    "ik":         "./urdf/valkyrie_A_sim.urdf",
+    "chull":      "./urdf/valkyrie_A_sim.urdf",
+    "playback":   "./urdf/valkyrie_A_sim.urdf",
+    "teleop":     "./urdf/valkyrie_A_sim.urdf"
   },
 
   "teleopJointGroups" : [
