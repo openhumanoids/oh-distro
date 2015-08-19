@@ -70,6 +70,16 @@ cp valkyrie_A.urdf PATH_TO/drc/software/models/val_description/model.urdf
 gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
 
 
+
+***IHMC URDF/SDF***
+- There exists 4 files in val_description: valkyrie_A_[hw|sw].[urdf|sdf]
+- the urdf isn't read by SCS
+- These SDF is: valkyrie_A_sim.sdf
+- running the following produces an sdf that is identical to the one loaded by IHMC:
+  cd ~/workspace_alpha/ValkyrieHardwareDrivers/bin/models/val_description/urdf
+  gzsdf print valkyrie_A_sim.urdf > valkyrie_A_sim.sdf
+
+
 ***3D File Formats***
 STL - source from NASA which came to 400MB. NOT USED
 DAE - source from NASA (originally made by Marco)
