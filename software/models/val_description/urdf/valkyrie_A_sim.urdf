@@ -1971,7 +1971,7 @@
   </gazebo>
   <gazebo reference="RightLegSixAxis_Offset">
     <sensor name="RightLegSixAxis" type="force_torque">
-      <frame>child</frame>
+<!--      <frame>child</frame> -->
     </sensor>
   </gazebo>
   <link name="LeftHipYawLink">
@@ -2257,7 +2257,7 @@
   </gazebo>
   <gazebo reference="LeftLegSixAxis_Offset">
     <sensor name="LeftLegSixAxis" type="force_torque">
-      <frame>child</frame>
+<!--      <frame>child</frame> -->
     </sensor>
   </gazebo>
   <!-- Head Link Simple Collision Meshes -->
