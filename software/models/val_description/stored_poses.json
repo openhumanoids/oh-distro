@@ -1,0 +1,83 @@
+{
+  "General": [
+    {
+      "allow_mirror": true,
+      "description": "arm up pregrasp",
+      "joints": {
+        "LeftElbowPitch": -1.2,
+        "LeftForearmYaw": -1.35,
+        "LeftShoulderRoll": -1.45,
+        "LeftShoulderPitch": 0,
+        "LeftShoulderYaw": 0,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": 0.0
+      },
+      "name": "arm up pregrasp",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "handdown",
+      "joints": {
+        "LeftElbowPitch": -0.8,
+        "LeftForearmYaw": 0.0,
+        "LeftShoulderRoll": -0.2,
+        "LeftShoulderPitch": 0.3,
+        "LeftShoulderYaw": 0.0,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": 0.0
+      },
+      "name": "handdown",
+      "nominal_handedness": "left"
+    }
+  ],
+  "bihanded": [
+    {
+      "allow_mirror": true,
+      "description": "board pregrasp",
+      "joints": {
+        "LeftElbowPitch": -1.3696403503417969,
+        "LeftForearmYaw": -1.702666997909546,
+        "LeftShoulderRoll": -0.1745329201221466,
+        "LeftShoulderPitch": 0.20167237520217896,
+        "LeftShoulderYaw": 0.24836266040802002,
+        "LeftWristPitch": -0.22391527891159058,
+        "LeftWristRoll": -0.42069876194000244
+      },
+      "name": "board pregrasp",
+      "nominal_handedness": "left"
+    }
+  ],
+  "table clearing": [
+    {
+      "allow_mirror": true,
+      "description": "pre drop 1",
+      "joints": {
+        "LeftElbowPitch": -0.3035127520561218,
+        "LeftForearmYaw": -1.4325662851333618,
+        "LeftShoulderRoll": -2.602198600769043,
+        "LeftShoulderPitch": 1.6022123098373413,
+        "LeftShoulderYaw": -0.8513715863227844,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": -0.2019345909357071
+      },
+      "name": "pre drop 1",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pre drop 2",
+      "joints": {
+        "LeftElbowPitch": -0.7085164189338684,
+        "LeftForearmYaw": -0.8340928554534912,
+        "LeftShoulderRoll": -2.887298107147217,
+        "LeftShoulderPitch": 1.910088300704956,
+        "LeftShoulderYaw": -0.7131415605545044,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": -0.412421315908432
+      },
+      "name": "pre drop 2",
+      "nominal_handedness": "left"
+    }
+  ]
+}
