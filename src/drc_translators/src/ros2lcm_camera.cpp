@@ -39,10 +39,11 @@ private:
   void headLeftImageCallback(const sensor_msgs::ImageConstPtr& msg);
   void publishImage(const sensor_msgs::ImageConstPtr& msg,string channel );
 
+  bool flip_rgb;
 };
 
 App::App(ros::NodeHandle node_) :
-    node_(node_){
+    node_(node_),flip_rgb(false){
   ROS_INFO("Initializing Translator");
   if(!lcmPublish_.good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
@@ -51,7 +52,9 @@ App::App(ros::NodeHandle node_) :
   std::string cameraTopic;
   ros::NodeHandle nh_("~");
   nh_.getParam("camera_topic", cameraTopic);
+  nh_.getParam("flip_rgb", flip_rgb);
   std::cout << "Subscribing to " << cameraTopic << std::endl;
+  std::cout << "flip_rgb: " << (int)flip_rgb << std::endl;
   headLeftImageSub_ = node_.subscribe(cameraTopic, 1, &App::headLeftImageCallback,this);
 };
 
@@ -97,7 +100,9 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg,string channel ){
     params.push_back(cv::IMWRITE_JPEG_QUALITY);
     params.push_back( 90 );
 
-    cv::cvtColor(mat, mat, CV_BGR2RGB); // wolfgang put this in to flip colors of webcam - TODO: we should do this via a param flag
+    if (flip_rgb)
+      cv::cvtColor(mat, mat, CV_BGR2RGB);
+
     cv::imencode(".jpg", mat, lcm_img.data, params);
     lcm_img.size = lcm_img.data.size();
     lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
