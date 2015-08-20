@@ -9,9 +9,9 @@ This branch inserts edinburgh_mods.xacro into the xacro.
 
 2. Compile the urdf:
 cd val_description/robots
-rosrun xacro xacro.py valkyrie_A.xacro -o ../urdf/valkyrie_A.urdf
+rosrun xacro xacro.py valkyrie_A_sim.xacro -o ../urdf/valkyrie_A_sim.urdf
 
-3. Current you need to insert the following inside the link tag or LeftFoot and RightFoot:
+3. Current you need to insert the following inside the link tag for LeftFoot and RightFoot:
 This is used for the quasi static balance constraint:
 
     <collision group="heel">
@@ -68,6 +68,16 @@ cp valkyrie_A.urdf PATH_TO/drc/software/models/val_description/model.urdf
 
 5. If needed you can make an sdf file like this:
 gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
+
+
+
+***IHMC URDF/SDF***
+- There exists 4 files in val_description: valkyrie_A_[hw|sw].[urdf|sdf]
+- the urdf isn't read by SCS
+- These SDF is: valkyrie_A_sim.sdf
+- running the following produces an sdf that is identical to the one loaded by IHMC:
+  cd ~/workspace_alpha/ValkyrieHardwareDrivers/bin/models/val_description/urdf
+  gzsdf print valkyrie_A_sim.urdf > valkyrie_A_sim.sdf
 
 
 ***3D File Formats***
