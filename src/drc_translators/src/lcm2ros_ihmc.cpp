@@ -198,6 +198,7 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 
       if(robotName_.compare("valkyrie")==0){
         ROS_ERROR("LCM2ROS flipping valkyrie foot orientations");
+/*
         if (s.is_right_foot){
           Eigen::Isometry3d fix_transform;
           fix_transform.setIdentity();
@@ -215,6 +216,7 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
           fix_transform.rotate(euler_to_quat( 180*M_PI/180, 90*M_PI/180, 0 )) ;
           step = step*fix_transform;
         }
+*/
       }else{
         ROS_ERROR("LCM2ROS not flipping atlas foot orientations");
       }
@@ -402,8 +404,8 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     l_arm_strings = {"l_arm_shz","l_arm_shx","l_arm_ely","l_arm_elx","l_arm_wry","l_arm_wrx","l_arm_wry2"};
     r_arm_strings = {"r_arm_shz","r_arm_shx","r_arm_ely","r_arm_elx","r_arm_wry","r_arm_wrx","r_arm_wry2"};
   }else if (robotName_.compare("valkyrie")==0){
-    l_arm_strings = {"LeftShoulderExtensor","LeftShoulderAdductor","LeftShoulderSupinator","LeftElbowExtensor","LeftForearmSupinator","LeftWristExtensor","LeftWrist"};
-    r_arm_strings = {"RightShoulderExtensor","RightShoulderAdductor","RightShoulderSupinator","RightElbowExtensor","RightForearmSupinator","RightWristExtensor","RightWrist"};
+    l_arm_strings = {"LeftShoulderPitch","LeftShoulderRoll","LeftShoulderYaw","LeftElbowPitch","LeftForearmYaw","LeftWristRoll","LeftWristPitch"};
+    r_arm_strings = {"RightShoulderPitch","RightShoulderRoll","RightShoulderYaw","RightElbowPitch","RightForearmYaw","RightWristRoll","RightWristPitch"};
   }
 
 
