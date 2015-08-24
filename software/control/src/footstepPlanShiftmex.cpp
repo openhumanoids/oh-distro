@@ -68,19 +68,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map< Vector3d > plan_shift(mxGetPr(prhs[narg++]));
   
   if (t-pdata->t_prev >= pdata->sample_dt) {
-    pdata->r->doKinematics(q,false,qd);
+    pdata->r->doKinematics(q,qd,false);
     if (fc_left == 1) {
       Vector3d lfoot_pos;
-      Vector4d zero = Vector4d::Zero();
-      zero(3) = 1.0;
-      pdata->r->forwardKin(pdata->lfoot_body_index,zero,0,lfoot_pos);
+      lfoot_pos = pdata->r->forwardKin(Vector3d::Zero().eval(), pdata->lfoot_body_index, 0, 0, 0).value();
       plan_shift = lfoot_des - lfoot_pos;
     }
     else if (fc_right == 1) {
       Vector3d rfoot_pos;
-      Vector4d zero = Vector4d::Zero();
-      zero(3) = 1.0;
-      pdata->r->forwardKin(pdata->rfoot_body_index,zero,0,rfoot_pos);
+      rfoot_pos = pdata->r->forwardKin(Vector3d::Zero().eval(), pdata->rfoot_body_index, 0, 0, 0).value();
       plan_shift = rfoot_des - rfoot_pos;
     }
   }
