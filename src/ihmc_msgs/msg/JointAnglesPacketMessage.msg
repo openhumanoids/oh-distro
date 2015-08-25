@@ -37,4 +37,10 @@ int32[] right_arm_torque_limit
 # leftArmTorqueLimit l_arm_shz l_arm_shx l_arm_ely l_arm_elx l_arm_wry l_arm_wrx l_arm_wry2
 int32[] left_arm_torque_limit
 
+# keepLeftHandInTaskspacePosition specifies whether the position controller should try to maintain the left hand position in task space
+bool keep_left_hand_in_taskspace_position
+
+# keepRightHandInTaskspacePosition specifies whether the position controller should try to maintain the right hand position in task space
+bool keep_right_hand_in_taskspace_position
+
 
