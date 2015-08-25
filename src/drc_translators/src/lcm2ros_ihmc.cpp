@@ -19,6 +19,8 @@
 #include <ihmc_msgs/ComHeightPacketMessage.h>
 #include <ihmc_msgs/PauseCommandMessage.h>
 #include <ihmc_msgs/HandPosePacketMessage.h>
+#include <ihmc_msgs/ArmJointTrajectoryPacketMessage.h>
+#include <ihmc_msgs/WholeBodyTrajectoryPacketMessage.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -32,6 +34,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
+
 
 #define LEFT 0
 #define RIGHT 1
@@ -66,8 +69,16 @@ class LCM2ROS{
     ros::Publisher hand_pose_pub_;
 
     void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
-    ros::Publisher robot_plan_pub_;
-    void sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm, std::vector<string> input_joint_names);
+    ros::Publisher arm_joint_traj_pub_, arm_joint_traj2_pub_, whole_body_trajectory_pub_;
+
+    void sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
+                           std::vector<string> input_joint_names, bool is_right);
+    bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
+                          std::vector<string> input_joint_names, bool is_right,
+                          trajectory_msgs::JointTrajectory &m);
+    bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
+                          std::vector<string> input_joint_names, bool is_right,
+                          ihmc_msgs::ArmJointTrajectoryPacketMessage &m);
 
     void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::scs_api_command_t* msg);
     ros::Publisher scs_api_pub_;
@@ -92,7 +103,10 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
 
   // robot plan messages now used, untested
   lcm_->subscribe("COMMITTED_ROBOT_PLAN",&LCM2ROS::robotPlanHandler, this);
-  robot_plan_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory2",10);
+  arm_joint_traj_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory2",10);
+  arm_joint_traj2_pub_ = nh_.advertise<ihmc_msgs::ArmJointTrajectoryPacketMessage>("/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory",10);
+  whole_body_trajectory_pub_ = nh_.advertise<ihmc_msgs::WholeBodyTrajectoryPacketMessage>("/ihmc_ros/" + robotName_ + "/control/whole_body_trajectory",10);
+
 
   lcm_->subscribe("SCS_API_CONTROL",&LCM2ROS::scsAPIHandler, this);
   scs_api_pub_ = nh_.advertise<std_msgs::String>("/ihmc_ros/" + robotName_ + "/api_command",10);
@@ -343,7 +357,25 @@ void filterJointNamesToIHMC(std::vector<std::string> &joint_name  ){
 }
 
 
-void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm, std::vector<string> input_joint_names){
+void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg,
+                                std::vector<string> output_joint_names_arm,
+                                std::vector<string> input_joint_names, bool is_right){
+  //trajectory_msgs::JointTrajectory m;
+  //bool status = getSingleArmPlan(msg, output_joint_names_arm, input_joint_names, m);
+  //if (status)
+  //  arm_joint_traj_pub_.publish(m);
+
+  ihmc_msgs::ArmJointTrajectoryPacketMessage m;
+  bool status = getSingleArmPlan(msg, output_joint_names_arm, input_joint_names, is_right, m);
+  if (status)
+    arm_joint_traj2_pub_.publish(m);
+
+}
+
+bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg,
+                               std::vector<string> output_joint_names_arm,
+                               std::vector<string> input_joint_names, bool is_right,
+                               trajectory_msgs::JointTrajectory &m){
 
   // Find the indices of the arm joints which we want to extract
   std::vector<int> arm_indices;// = {3,10,11,12,13,14,15};
@@ -358,12 +390,11 @@ void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string
     }else{
       ROS_ERROR("%s not found in input_joint_names, not sending plan", name.c_str());
       std::cout << name << " not found in input_joint_names, not sending plan\n";
-      return;
+      return false;
     }
   }
 
   // Fish out the arm indices:
-  trajectory_msgs::JointTrajectory m;
   m.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   m.joint_names = output_joint_names_arm;
   for (int i=1; i < msg->num_states; i++){ // NB: skipping the first sample as it has time = 0
@@ -386,13 +417,71 @@ void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string
     }
     m.points.push_back(point);
   }
-
-  robot_plan_pub_.publish(m);
+  return true;
 }
+
+
+bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg,
+                               std::vector<string> output_joint_names_arm,
+                               std::vector<string> input_joint_names, bool is_right,
+                               ihmc_msgs::ArmJointTrajectoryPacketMessage &m){
+
+  // Find the indices of the arm joints which we want to extract
+  std::vector<int> arm_indices;// = {3,10,11,12,13,14,15};
+  for (size_t i =0; i < output_joint_names_arm.size(); i++){
+    std:string name = output_joint_names_arm[i];
+    vector<string>::iterator it;
+    it = find (input_joint_names.begin(), input_joint_names.end(), name );
+    int index = std::distance( input_joint_names.begin(), it );
+    if ( index < input_joint_names.size() ){
+      //std::cout << name << " found in input_joint_names at " << index << '\n';
+      arm_indices.push_back(index);
+    }else{
+      ROS_ERROR("%s not found in input_joint_names, not sending plan", name.c_str());
+      std::cout << name << " not found in input_joint_names, not sending plan\n";
+      return false;
+    }
+  }
+
+  // Fish out the arm indices:
+  if (is_right){
+    m.robot_side = 1;
+  }else{
+    m.robot_side = 0;
+  }
+
+  //m.joint_names = output_joint_names_arm;
+  for (int i=1; i < msg->num_states; i++){ // NB: skipping the first sample as it has time = 0
+    drc::robot_state_t state = msg->plan[i];
+    ihmc_msgs::JointTrajectoryPointMessage point;
+    int i1=(i>0)?(i-1):0;
+    int i2=i;
+    int i3=(i<msg->num_states-1)?(i+1):(msg->num_states-1);
+
+
+    for (int j=0; j <arm_indices.size() ; j++){
+      point.positions.push_back( state.joint_position[ arm_indices[j] ] );
+      double dt1=(msg->plan[i2].utime-msg->plan[i1].utime)*1e-6;
+      double dt2=(msg->plan[i3].utime-msg->plan[i2].utime)*1e-6;
+      double dq1=msg->plan[i2].joint_position[ arm_indices[j] ]-msg->plan[i1].joint_position[ arm_indices[j] ];
+      double dq2=msg->plan[i3].joint_position[ arm_indices[j] ]-msg->plan[i2].joint_position[ arm_indices[j] ];
+      point.velocities.push_back( (dt1*dt2!=0)?(dq1/dt1*0.5 + dq2/dt2*0.5):0.0 );
+      //point.accelerations.push_back( 0  );
+      //point.effort.push_back( state.joint_effort[ arm_indices[j] ] );
+      point.time = (double) state.utime*1E-6;
+    }
+    m.trajectory_points.push_back(point);
+  }
+  return true;
+}
+
 
 
 void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg) {
   ROS_ERROR("LCM2ROS got robot plan");
+
+
+
 
   std::vector<string> l_arm_strings;
   std::vector<string> r_arm_strings;
@@ -409,12 +498,50 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   }
 
 
-  sendSingleArmPlan(msg, l_arm_strings, input_joint_names);
+  ihmc_msgs::ArmJointTrajectoryPacketMessage left_arm_trajectory;
+  status_left = getSingleArmPlan(msg, l_arm_strings, input_joint_names,
+                                 false, left_arm_trajectory);
+  ihmc_msgs::ArmJointTrajectoryPacketMessage right_arm_trajectory;
+  status_right = getSingleArmPlan(msg, r_arm_strings, input_joint_names,
+                            true, right_arm_trajectory);
+  if(!status_left || !status_right){
+    ROS_ERROR("LCM2ROS: problem with arm plan, not sending");
+  }
+
+  ihmc_msgs::WholeBodyTrajectoryPacketMessage wbt_msg;
+  wbt_msg.left_arm_trajectory = left_arm_trajectory;
+  wbt_msg.right_arm_trajectory = right_arm_trajectory;
+  for (int i=1; i < msg->num_states; i++){ // NB: skipping the first sample as it has time = 0
+    drc::robot_state_t state = msg->plan[i];
+
+    geometry_msgs::Vector3 pelvis_world_position;
+    pelvis_world_position.x = state.pose.translation.x;
+    pelvis_world_position.y = state.pose.translation.y;
+    pelvis_world_position.z = state.pose.translation.z;
+    wbt_msg.pelvis_world_position.push_back(pelvis_world_position);
+
+    geometry_msgs::Quaternion pelvis_world_orientation;
+    pelvis_world_orientation.w = state.pose.rotation.w;
+    pelvis_world_orientation.x = state.pose.rotation.x;
+    pelvis_world_orientation.y = state.pose.rotation.y;
+    pelvis_world_orientation.z = state.pose.rotation.z;
+    wbt_msg.pelvis_world_orientation.push_back(pelvis_world_orientation);
+    wbt_msg.time_at_waypoint.push_back(state.utime*1E-6);
+  }
+  wbt_msg.num_waypoints = msg->num_states-1; // NB: skipping the first sample as it has time = 0
+  wbt_msg.num_joints_per_arm = l_arm_strings.size();
+
+  whole_body_trajectory_pub_.publish(wbt_msg);
+
+  ROS_ERROR("LCM2ROS sent Whole Body Trajectory");
+
+/*
+  sendSingleArmPlan(msg, l_arm_strings, input_joint_names, false);
   ROS_ERROR("LCM2ROS sent left arm, sleeping for 1 second");
   sleep(1);
   ROS_ERROR("LCM2ROS sent right arm");
-  sendSingleArmPlan(msg, r_arm_strings, input_joint_names);
-
+  sendSingleArmPlan(msg, r_arm_strings, input_joint_names, true);
+*/
 }
 
 int main(int argc,char** argv) {
