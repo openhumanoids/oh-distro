@@ -35,6 +35,7 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>image_transport</build_depend>
+  <build_depend>kdl_conversions</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
@@ -52,6 +53,7 @@
   <run_depend>ipab_lwr_msgs</run_depend>
   <build_depend>geometry_msgs</build_depend>
   <run_depend>geometry_msgs</run_depend>
+  <run_depend>kdl_conversions</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
