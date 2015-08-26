@@ -43,4 +43,6 @@ bool keep_left_hand_in_taskspace_position
 # keepRightHandInTaskspacePosition specifies whether the position controller should try to maintain the right hand position in task space
 bool keep_right_hand_in_taskspace_position
 
+int64 unique_id
+
 

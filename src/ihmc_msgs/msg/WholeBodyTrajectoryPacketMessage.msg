@@ -12,39 +12,41 @@
 float64[] time_at_waypoint
 
 # Sequence of desired positions of the pelvis in world coordinates. 
-# Provide null if no motion is desired
+# Provide an empty list if no motion is desired
 # Should be numWaypoints elements long
 geometry_msgs/Vector3[] pelvis_world_position
 
 # Sequence of desired velocities of the pelvis. 
-# Provide null if zero velocity is required
+# Provide an empty list if zero velocity is required
 # Should be numWaypoints elements long
 geometry_msgs/Vector3[] pelvis_linear_velocity
 
 # Sequence of desired angular velocities of the pelvis. 
-# Provide null if zero angular velocity is desired
+# Provide an empty list if zero angular velocity is desired
 # Should be numWaypoints elements long
 geometry_msgs/Vector3[] pelvis_angular_velocity
 
 # Sequence of desired quaternion (x,y,z,w) orientations of the pelvis in world coordinates. 
-# Provide null if no motion is desired
+# Provide an empty list if no motion is desired
 # Should be numWaypoints elements long
 geometry_msgs/Quaternion[] pelvis_world_orientation
 
 # Sequence of desired quaternion (x,y,z,w) orientations of the chest in world coordinates. 
-# Provide null if no motion is desired
+# Provide an empty list if no motion is desired
 # Should be numWaypoints elements long
 geometry_msgs/Quaternion[] chest_world_orientation
 
 # Sequence of desired angular velocities of the chest. 
-# Provide null if zero velocity is desired
+# Provide an empty list if zero velocity is desired
 # Should be numWaypoints elements long
 geometry_msgs/Vector3[] chest_angular_velocity
 
 # Arm trajectory for the right arm. Should have numWaypoints waypoints.
+# Time in trajectory_points should match the corresponding element of timeAtWaypoint
 ArmJointTrajectoryPacketMessage right_arm_trajectory
 
 # Arm trajectory for the left arm. Should have numWaypoints waypoints.
+# Time in trajectory_points should match the corresponding element of timeAtWaypoint
 ArmJointTrajectoryPacketMessage left_arm_trajectory
 
 # Number of waypoints in the trajectory. Should be at least 1
@@ -52,5 +54,7 @@ int32 num_waypoints
 
 # Number of joints in a single arm
 int32 num_joints_per_arm
+
+int64 unique_id
 
 
