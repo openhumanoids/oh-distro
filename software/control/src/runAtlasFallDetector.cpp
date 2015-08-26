@@ -17,7 +17,6 @@ int main(int argc, char** argv) {
 
 
   std::shared_ptr<RigidBodyManipulator> model(new RigidBodyManipulator(std::string(drc_path) + "/software/models/atlas_v5/model_minimal_contact.urdf"));
-  model->setUseNewKinsol(true);
   model->compile();
 
   std::unique_ptr<AtlasFallDetector> fall_detector(new AtlasFallDetector(model, sim_override));
