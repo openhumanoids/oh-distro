@@ -31,6 +31,7 @@
 
 #include <ihmc_msgs/BatchRawImuData.h>
 #include <ihmc_msgs/RawImuData.h>
+#include <ihmc_msgs/LastReceivedMessage.h>
 //#include <pronto_msgs/CachedRawIMUData.h>
 //#include <pronto_msgs/RawIMUData.h>
 //#include <pronto_msgs/FootSensor.h>
@@ -44,6 +45,7 @@
 #include "lcmtypes/pronto/atlas_behavior_t.hpp"
 #include "lcmtypes/pronto/multisense_state_t.hpp"
 #include "lcmtypes/pronto/plan_status_t.hpp"
+#include "lcmtypes/ipab/last_received_message_t.hpp"
 #include "lcmtypes/mav/ins_t.hpp"
 
 #include <tf/transform_listener.h>
@@ -85,6 +87,7 @@ private:
   ros::Subscriber leftFootSensorSub_;
   ros::Subscriber rightFootSensorSub_;
   ros::Subscriber behaviorSub_;
+  ros::Subscriber lastReceivedMessageSub_;
 
   void jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
   void headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
@@ -96,6 +99,7 @@ private:
   void leftFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg);
   void rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg);
   void behaviorCallback(const std_msgs::Int32ConstPtr& msg);
+  void lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg);
 
   void appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wrench left_sensor, geometry_msgs::Wrench right_sensor);
   void publishLidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
@@ -141,6 +145,7 @@ App::App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string i
   rightFootSensorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/right"), queue_size, &App::rightFootSensorCallback,this);
   // using previously used queue_size for scan:
   behaviorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/behavior"), 100, &App::behaviorCallback,this);
+  lastReceivedMessageSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/last_received_message"), 100, &App::lastReceivedMessageCallback,this);
 
   // Multisense Joint Angles:
   if (mode_ == MODE_STATE_ESTIMATION){
@@ -270,6 +275,15 @@ void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg){
 
 }
 
+void App::lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg){
+  ipab::last_received_message_t msg_out;
+  msg_out.type = msg->type;
+  msg_out.unique_id = msg->uniqueId;
+  msg_out.receive_timestamp = msg->receiveTimestamp/1000;
+  msg_out.time_since_last_received = msg->timeSinceLastReceived;
+  lcmPublish_.publish("IHMC_LAST_RECEIVED", &msg_out);
+
+}
 
 void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg){
 
@@ -550,6 +564,8 @@ void App::appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wren
   msg_out.r_hand_torque[1] =  0;
   msg_out.r_hand_torque[2] =  0;
 }
+
+
 
 
 int main(int argc, char **argv){

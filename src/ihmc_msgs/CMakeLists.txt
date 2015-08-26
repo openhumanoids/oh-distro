@@ -64,12 +64,14 @@ find_package(catkin REQUIRED COMPONENTS
    HighLevelStatePacketMessage.msg
    JointAnglesPacketMessage.msg
    JointTrajectoryPointMessage.msg
+   LastReceivedMessage.msg
    LegCompliancePacketMessage.msg
    MultiJointAnglePacketMessage.msg
    PauseCommandMessage.msg
    Point2dMessage.msg
    RawImuData.msg
    SingleJointAnglePacketMessage.msg
+   StopMotionPacketMessage.msg
    SupportPolygonMessage.msg
    WholeBodyTrajectoryPacketMessage.msg
  )

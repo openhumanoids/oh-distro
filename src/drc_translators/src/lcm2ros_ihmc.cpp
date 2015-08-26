@@ -499,16 +499,17 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 
 
   ihmc_msgs::ArmJointTrajectoryPacketMessage left_arm_trajectory;
-  status_left = getSingleArmPlan(msg, l_arm_strings, input_joint_names,
+  bool status_left = getSingleArmPlan(msg, l_arm_strings, input_joint_names,
                                  false, left_arm_trajectory);
   ihmc_msgs::ArmJointTrajectoryPacketMessage right_arm_trajectory;
-  status_right = getSingleArmPlan(msg, r_arm_strings, input_joint_names,
+  bool status_right = getSingleArmPlan(msg, r_arm_strings, input_joint_names,
                             true, right_arm_trajectory);
   if(!status_left || !status_right){
     ROS_ERROR("LCM2ROS: problem with arm plan, not sending");
   }
 
   ihmc_msgs::WholeBodyTrajectoryPacketMessage wbt_msg;
+  wbt_msg.unique_id = msg->utime;
   wbt_msg.left_arm_trajectory = left_arm_trajectory;
   wbt_msg.right_arm_trajectory = right_arm_trajectory;
   for (int i=1; i < msg->num_states; i++){ // NB: skipping the first sample as it has time = 0
