@@ -21,6 +21,7 @@
 #include <ihmc_msgs/HandPosePacketMessage.h>
 #include <ihmc_msgs/ArmJointTrajectoryPacketMessage.h>
 #include <ihmc_msgs/WholeBodyTrajectoryPacketMessage.h>
+#include <ihmc_msgs/StopMotionPacketMessage.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -63,7 +64,8 @@ class LCM2ROS{
 
     void pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::pause_command_message_t* msg);
     void stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
-    ros::Publisher pause_pub_;
+    void stopManipHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
+    ros::Publisher pause_pub_, stop_manip_pub_;
 
     void handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::hand_pose_packet_message_t* msg);
     ros::Publisher hand_pose_pub_;
@@ -100,6 +102,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
   lcm_->subscribe("VAL_COMMAND_PAUSE",&LCM2ROS::pauseHandler, this);
   lcm_->subscribe("STOP_WALKING",&LCM2ROS::stopHandler, this); // from drake-designer
   pause_pub_ =  nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/" + robotName_ + "/control/pause_footstep_exec",10);
+  lcm_->subscribe("COMMITTED_PLAN_PAUSE",&LCM2ROS::stopManipHandler, this); // from drake-designer to stop manipulation plans
+  stop_manip_pub_ =  nh_.advertise<ihmc_msgs::StopMotionPacketMessage>("/ihmc_ros/" + robotName_ + "/control/stop_motion",10);
 
   // robot plan messages now used, untested
   lcm_->subscribe("COMMITTED_ROBOT_PLAN",&LCM2ROS::robotPlanHandler, this);
@@ -294,6 +298,14 @@ void LCM2ROS::stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &cha
   ihmc_msgs::PauseCommandMessage mout;
   mout.pause = true;
   pause_pub_.publish(mout);
+}
+
+
+void LCM2ROS::stopManipHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg) {
+  ROS_ERROR("LCM2ROS got drake-designer - sending manipulate stop");
+  ihmc_msgs::StopMotionPacketMessage mout;
+  mout.unique_id = msg->utime;
+  stop_manip_pub_.publish(mout);
 }
 
 void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::hand_pose_packet_message_t* msg) {
