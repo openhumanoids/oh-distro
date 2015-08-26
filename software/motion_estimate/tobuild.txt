@@ -2,5 +2,5 @@
 # and lines starting with '#' are ignored
 state_sync
 vo_estimate
-signal_scope
+signal-scope
 vo_lidar_accum

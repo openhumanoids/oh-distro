@@ -76,54 +76,16 @@ Add the *sandbox* remote. The *sandbox* is the location where branches can be sh
     git remote add sandbox git@github.com:drcbot/drc.git
     git fetch sandbox
 
-**Additional Instructions for Edinburgh (May 2015)**
+**Instructions for Edinburgh users**
 
-**NB: this need to be checked**
-
-::
-
-    git clone git@github.com:mitdrc/drc.git
-    git remote add sandbox git@github.com:drcbot/drc.git
-    git fetch sandbox
-    git submodule update --init --recursive
+For Edinburgh users the typical approach is to instead check out:
 
 ::
 
-    git remote add ipab git@github.com:ipab-slmc/drc.git
-    git fetch ipab
-    cd software/drake
-    git remote add ipab git@github.com:ipab-slmc/drake.git
-    git fetch ipab
-    cd ~/drc
-    git submodule update --init --recursive
+    https://github.com/ipab-slmc/ipab-distro
 
-When creating branches, create it relative to ipab/master:
-
-::
-
-    git fetch ipab
-    git checkout ipab/master
-    git pull ipab master
-    git checkout ipab/master
-    git checkout -b your-branch-name
-
-
-
-When pushing, push to ipab on github:
-
-::
-
-    git push ipab HEAD
-
-When creating a pull request make sure that it is relative to ipab/drc/master and not
-mitdrc/drc/master
-
-The Edinburgh ROS workspace containing ROS message types and LCM<>ROS translators for the NASA Valkyrie (to IHMC SCS) and Kuka LWR arm has been moved to its own repository which can be added as a submodule:
-
-::
-
-    git submodule add git@github.com:ipab-slmc/drc-ros-workspace.git
-
+which includes the DRC repo as well as the LCM-to-ROS interface to NASA Valkyrie, IHMC's SCS, 
+Kuka LWR arm and the Exotica planner.
 
 
 Dependencies
@@ -269,48 +231,6 @@ Run make to build externals and then the main codebase:
     make
     cd ..
     make
-
-
-ROS Catkin workspace
---------------------
-
-Missing repositories (June 2015):
-
-[submodule "catkin_ws/drc_translators/src/exotica_json"]
-        path = catkin_ws/drc_translators/src/exotica_json
-        url = git@bitbucket.org:IPAB-SLMC/exotica_json.git
-[submodule "catkin_ws/drc_translators/src/exotica"]
-        path = catkin_ws/drc_translators/src/exotica
-        url = git@bitbucket.org:IPAB-SLMC/exotica.git
-
-Required ROS packages:
-
-::
-
-    ros-indigo-tf ros-indigo-image-transport ros-indigo-tf-conversions ros-indigo-image-geometry ros-indigo-cv-bridge ros-indigo-std-srvs
-
-Add the following to bashrc for IPAB's ROS Catkin workspace
-
-::
-
-    source /opt/ros/indigo/setup.bash
-    source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash
-
-Alternatively, if you wish to source the environemt in each terminal window manually, add the following line to your ~/.bash_aliases
-
-::
-
-    alias init_drc="source ~/dev/drc/software/config/drc_environment.sh;source /opt/ros/indigo/setup.bash;source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash;"
-
-The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the first compilation.
-
-The catkin workspace is located in source catkin_ws/drc_translators. The workspace is compiled separately by running
-
-::
-
-    catkin_make -DCATKIN_BUILD_MODE=RelWithDebInfo
- 
-Run this command in the worspace folder. The release mode will greatly improve performance, especially when using EXOTica. Any additional ROS packages can be either put in this folder or symlinks can be created.
 
 
 Instructions for GUROBI

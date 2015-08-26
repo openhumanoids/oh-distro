@@ -67,6 +67,11 @@ group "3.plan_and_control" {
        host = "localhost";
        stop_signal = 15;
     }
+
+    cmd "SCS" {
+        exec = "$DRC_BASE/software/ipab/config/runscs.bash";
+        host = "localhost";
+    }
 }
 
 group "4.maps" {

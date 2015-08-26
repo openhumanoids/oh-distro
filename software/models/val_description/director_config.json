@@ -1,11 +1,11 @@
 {
   "urdfConfig": {
-    "default": "./model.urdf",
-    "robotState": "./model.urdf",
-    "ik":         "./model.urdf",
-    "chull":      "./model.urdf",
-    "playback":   "./model.urdf",
-    "teleop":     "./model.urdf"
+    "default": "./urdf/valkyrie_A_sim.urdf",
+    "robotState": "./urdf/valkyrie_A_sim.urdf",
+    "ik":         "./urdf/valkyrie_A_sim_drake.urdf",
+    "chull":      "./urdf/valkyrie_A_sim_drake.urdf",
+    "playback":   "./urdf/valkyrie_A_sim.urdf",
+    "teleop":     "./urdf/valkyrie_A_sim.urdf"
   },
 
   "teleopJointGroups" : [
@@ -23,11 +23,11 @@
 
       { "name" : "Back",
         "joints" : [
-          "TorsoRoll",
+          "TorsoYaw",
           "TorsoPitch",
-          "TorsoYaw"
+          "TorsoRoll"
           ],
-        "labels" : ["roll (x)", "pitch (y)", "yaw (z)"]
+        "labels" : ["yaw (x)", "pitch (y)", "roll (z)"]
       },
 
       { "name" : "Left Arm",
@@ -40,7 +40,7 @@
           "LeftWristRoll",
           "LeftWristPitch"
           ],
-        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx", "lwy"]
+        "labels" : ["SPitch", "SRoll", "SYaw", "Elbow", "Forearm", "WRoll", "WPitch"]
       },
 
       { "name" : "Right Arm",
@@ -53,7 +53,7 @@
           "RightWristRoll",
           "RightWristPitch"
           ],
-        "labels" : ["shz", "shx", "ely", "elx", "uwy", "mwx", "lwy"]
+        "labels" : ["SPitch", "SRoll", "SYaw", "Elbow", "Forearm", "WRoll", "WPitch"]
       },
 
       { "name" : "Neck",
@@ -62,7 +62,7 @@
           "NeckYaw",
           "UpperNeckPitch"
           ],
-        "labels" : ["Low", "Mid", "Up"]
+        "labels" : ["Lower Pitch", "Yaw", "Upper Pitch"]
       },
 
       { "name" : "Left Leg",
@@ -74,7 +74,7 @@
           "LeftAnklePitch",
           "LeftAnkleRoll"
           ],
-        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
+        "labels" : ["Yaw", "Roll", "Pitch", "Kneww", "APit", "ARoll"]
       },
 
       { "name" : "Right Leg",
@@ -86,7 +86,7 @@
           "RightAnklePitch",
           "RightAnkleRoll"
           ],
-        "labels" : ["HRot", "HAdd", "HExt", "Knee", "AExt", "Ank"]
+        "labels" : ["Yaw", "Roll", "Pitch", "Knee", "APit", "ARoll"]
       }
 
     ],
@@ -165,14 +165,14 @@
     "RightAnklePitch",
     "RightAnkleRoll"
   ],
-  "fixedPointFile" : "../../control/matlab/data/val_description/valkyrie_fp_june2015.mat",
-  "leftFootMeshFiles" : ["meshes/foot_Left_7_5_degrees.stl"],
-  "rightFootMeshFiles" : ["meshes/foot_Right_7_5_degrees.stl"],
+  "fixedPointFile" : "../../control/matlab/data/valkyrie_fp_june2015.mat",
+  "leftFootMeshFiles" : ["meshes/legs/foot_Left_7_5_degrees.obj"],
+  "rightFootMeshFiles" : ["meshes/legs/foot_Right_7_5_degrees.obj"],
   "postureDatabaseFile" : "./stored_poses.json",
   "mirrorJointSignFlips" : ["WaistRotator"],
 
   "pelvisLink" : "Pelvis",
-  "headLink" : "Head",
+  "headLink" : "head",
   "leftFootLink" : "LeftFoot",
   "rightFootLink" : "RightFoot",
   "kneeJoints" : ["LeftKneePitch", "RightKneePitch"],

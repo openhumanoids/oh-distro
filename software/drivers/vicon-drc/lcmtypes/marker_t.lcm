@@ -1,0 +1,8 @@
+package viconstructs;
+struct marker_t
+{
+    string name;
+    // XYZ position of the marker:
+    double xyz[3];
+    double o;
+}

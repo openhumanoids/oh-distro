@@ -19,7 +19,7 @@ classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
             %urdf = strcat(getenv('DRC_PATH'),'/models/valkyrie/V1_sim_mit_drake.urdf');
             urdf = strcat(getenv('DRC_PATH'),'/models/valkyrie/V1_sim_shells_reduced_polygon_count_mit.urdf');
           case 2
-            urdf = strcat(getenv('DRC_PATH'),'/models/val_description/model.urdf');
+            urdf = strcat(getenv('DRC_PATH'),'/models/val_description/urdf/valkyrie_A_sim_drake.urdf');
         end
       else
         typecheck(urdf,'char');

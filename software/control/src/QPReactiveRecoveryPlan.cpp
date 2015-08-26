@@ -690,7 +690,7 @@ drake::lcmt_qp_controller_input QPReactiveRecoveryPlan::getQPControllerInput(dou
     this->t_start = t_global;
   }
 
-  this->robot->doKinematicsNew(q, v, true, false);
+  this->robot->doKinematics(q, v, true, false);
 
   Vector2d r_ic = this->getICP(v);
   Isometry3d icp = Isometry3d(Translation<double, 3>(Vector3d(r_ic(0), r_ic(1), 0)));
@@ -1047,7 +1047,7 @@ FootStateMap QPReactiveRecoveryPlan::getFootStates(const VectorXd &v, const std:
   for (std::vector<FootID>::iterator id = foot_ids.begin(); id != foot_ids.end(); ++id) {
     const int frame_id = this->foot_frame_ids[*id];
     Vector3d origin = Vector3d::Zero();
-    auto body_pose = this->robot->forwardKinNew(origin, frame_id, 0, 2, 1);
+    auto body_pose = this->robot->forwardKin(origin, frame_id, 0, 2, 1);
     foot_states[*id].pose = Isometry3d(Translation<double, 3>(body_pose.value().head<3>()));
     foot_states[*id].pose.rotate(quat2eigenQuaternion(body_pose.value().tail<4>()));
     foot_states[*id].velocity = body_pose.gradient().value() * v;
