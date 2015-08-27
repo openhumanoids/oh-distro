@@ -7,7 +7,7 @@ set(libbot-drc_revision 8334)
 set(libbot-drc_depends)
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
-set(Eigen_pod_revision 0f940b6)
+set(Eigen_pod_revision 0f940b6) # drake now uses: c6c4738
 set(Eigen_pod_depends)
 
 set(opencv-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/opencv-drc)
@@ -53,7 +53,7 @@ set(microstrain_comm_revision 853)
 set(microstrain_comm_depends common_utils)
 
 set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
-set(bullet_revision fd4a647)
+set(bullet_revision c7c87f3)
 set(bullet_depends)
 
 set(fovis_url ssh://git@github.com/fovis/fovis.git)
@@ -90,7 +90,7 @@ set(iris_revision 1f51e5089cd477227a300d4cc625375f2b26cd17)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
-set(mosek_revision 8e93c8a)
+set(mosek_revision bb7000e)
 set(mosek_depends)
 
 set(pypolyhedron_url ssh://git@github.com/rdeits/pypolyhedron.git)
@@ -227,3 +227,14 @@ ExternalProject_Add_Step(Eigen_pod make_pkgconfig_dir
 ExternalProject_Add_Step(libmultisense copy_include_dir
   COMMAND cp -r ${DRCExternals_SOURCE_DIR}/libmultisense/source/LibMultiSense/details ${CMAKE_INSTALL_PREFIX}/include/MultiSense/
   DEPENDEES install)
+
+# Install Drake CMake scripts repository
+set(cmake_GIT_TAG 9f9f538)
+ExternalProject_Add(drake-cmake
+  GIT_REPOSITORY https://github.com/RobotLocomotion/cmake.git
+  GIT_TAG ${cmake_GIT_TAG}
+  SOURCE_DIR ${DRCExternals_SOURCE_DIR}/../drake/drake/cmake
+	CONFIGURE_COMMAND ""
+  BUILD_COMMAND ""
+  INSTALL_COMMAND ""
+  )

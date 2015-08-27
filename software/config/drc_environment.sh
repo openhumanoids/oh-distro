@@ -87,13 +87,13 @@ setup_robot_computers()
   # field computer
   if [ "paladin-12" = $(hostname) ]
   then
-      export LCM_DEFAULT_URL=${LCM_URL_DRC_ROBOT}
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_DEFAULT}
   fi
 
   # operator computer
   if [ "paladin-06" = $(hostname) ]
   then
-      export LCM_DEFAULT_URL=${LCM_URL_DRC_OCU_MAIN}
+      export LCM_DEFAULT_URL=${LCM_URL_DRC_DEFAULT}
   fi
   if [ "paladin-24" = $(hostname) ]
   then

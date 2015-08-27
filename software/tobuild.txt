@@ -8,7 +8,7 @@ latency
 drivers
 utils
 perception
-drake
+drake/drake
 lidar-passthrough
 motion_estimate
 network

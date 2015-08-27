@@ -292,7 +292,8 @@ void Pass::DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_c
   
   // 2. Extract the indices of the points in collision:
   VectorXd q(robotStateToDrakePosition(rstate, dofMap_, drake_model_.num_positions));
-  drake_model_.doKinematics(q);
+  VectorXd v = VectorXd::Zero(0);
+  drake_model_.doKinematics(q, v);
   
   vector<size_t> filtered_point_indices = drake_model_.collidingPoints(points, collision_threshold_);
   

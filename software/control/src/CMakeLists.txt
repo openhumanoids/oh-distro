@@ -26,10 +26,6 @@ add_mex(mxDeserialize mxDeserialize.cpp)
 pods_find_pkg_config(mini-maps)
 pods_find_pkg_config(opencv)
 
-add_mex(linearIKmex linearIKmex.cpp)
-pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm drake-util)
-install(TARGETS linearIKmex DESTINATION matlab)
-
 add_mex(BotParamClient BotParamClient.cpp)
 pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
 
