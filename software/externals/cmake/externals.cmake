@@ -18,10 +18,6 @@ set(pcl_dep_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_dep)
 set(pcl_dep_revision 8337)
 set(pcl_dep_depends)
 
-set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
-set(pcl_drc_revision 8326)
-set(pcl_drc_depends Eigen_pod pcl_dep)
-
 set(pcl_url http://github.com/pointcloudlibrary/pcl.git)
 set(pcl_revision pcl-1.7.1)
 set(pcl_depends pcl_dep Eigen_pod)
@@ -48,22 +44,6 @@ set(frsm_url ssh://git@github.com/mitdrc/frsm.git)
 set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
 set(frsm_depends libbot-drc)
 
-set(jpeg-utils_url https://svn.csail.mit.edu/drc/trunk/software/externals/jpeg-utils)
-set(jpeg-utils_revision 8298)
-set(jpeg-utils_depends)
-
-set(isam_include_url https://svn.csail.mit.edu/drc/trunk/software/externals/isam_include)
-set(isam_include_revision 8298)
-set(isam_include_depends)
-
-set(visualization_url https://svn.csail.mit.edu/drc/trunk/software/externals/visualization)
-set(visualization_revision 8321)
-set(visualization_depends isam_include Eigen_pod libbot-drc)
-
-set(velodyne_url https://svn.csail.mit.edu/rrg_pods/drivers/velodyne)
-set(velodyne_revision 852)
-set(velodyne_depends common_utils)
-
 set(kinect_url https://svn.csail.mit.edu/rrg_pods/drivers/kinect)
 set(kinect_revision 964)
 set(kinect_depends libbot-drc)
@@ -87,18 +67,6 @@ set(estimate-pose_depends fovis)
 set(vicon_url https://svn.csail.mit.edu/rrg_pods/drivers/vicon)
 set(vicon_revision 855)
 set(vicon_depends libbot-drc)
-
-set(vicon-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/vicon-drc)
-set(vicon-drc_revision 8298)
-set(vicon-drc_depends)
-
-set(camunits-wrapper_url https://svn.csail.mit.edu/rrg_pods/camunits-pods/camunits-wrapper)
-set(camunits-wrapper_revision 887)
-set(camunits-wrapper_depends)
-
-set(camunits-extra-wrapper_url https://svn.csail.mit.edu/rrg_pods/camunits-pods/camunits-extra-wrapper)
-set(camunits-extra-wrapper_revision 887)
-set(camunits-extra-wrapper_depends camunits-wrapper)
 
 set(apriltags_url https://github.com/psiorx/apriltags-pod.git)
 set(apriltags_revision ed2972f01e00d9b5a4afa2612b018374d889641f)
@@ -124,10 +92,6 @@ set(iris_depends)
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
 set(mosek_revision bb7000e)
 set(mosek_depends)
-
-set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
-set(flycapture_revision 8298)
-set(flycapture_depends)
 
 set(pypolyhedron_url ssh://git@github.com/rdeits/pypolyhedron.git)
 set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
@@ -165,20 +129,12 @@ set(externals
   occ-map
   common_utils
   frsm
-  #jpeg-utils
-  #isam_include
-  #visualization
-  #velodyne
   kinect
   microstrain_comm
   fovis
   estimate-pose
   vicon
-  #vicon-drc
-  #camunits-wrapper
-  #camunits-extra-wrapper
   apriltags
-  #flycapture
   bullet
   spotless
   snopt
