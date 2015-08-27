@@ -1,3 +1,11 @@
+===================================
+Warning: Don't expect this to work!
+===================================
+
+We're releasing most of the source code from the MIT DRC project in the hopes that it will benefit the robotics community. But there are parts of this software, like the Boston Dynamics Atlas software interface, which we are not allowed to release publicly. As a result, this public repo is *incomplete*. Some of the submodules and external projects are *private*, and you won't be able to access them. Sorry!
+
+We're actively working on making this a project that can be used by people outside the group, but for now, you should consider it a collection of (potentially) interesting code, not a functional application. 
+
 =============
 OpenHumanoids
 =============
