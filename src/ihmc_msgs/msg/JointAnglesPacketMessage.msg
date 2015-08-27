@@ -43,6 +43,9 @@ bool keep_left_hand_in_taskspace_position
 # keepRightHandInTaskspacePosition specifies whether the position controller should try to maintain the right hand position in task space
 bool keep_right_hand_in_taskspace_position
 
+# A unique id for the current message. This can be a timestamp or sequence number.
+# Only the unique id in the top level message is used, the unique id in nested messages is ignored.
+# Use /output/last_received_message for feedback about when the last message was received.
 int64 unique_id
 
 

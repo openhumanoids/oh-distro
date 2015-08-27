@@ -278,9 +278,9 @@ void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg){
 void App::lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg){
   ipab::last_received_message_t msg_out;
   msg_out.type = msg->type;
-  msg_out.unique_id = msg->uniqueId;
-  msg_out.receive_timestamp = msg->receiveTimestamp/1000;
-  msg_out.time_since_last_received = msg->timeSinceLastReceived;
+  msg_out.unique_id = msg->unique_id;
+  msg_out.receive_timestamp = msg->receive_timestamp/1000;
+  msg_out.time_since_last_received = msg->time_since_last_received/1000;
   lcmPublish_.publish("IHMC_LAST_RECEIVED", &msg_out);
 
 }
