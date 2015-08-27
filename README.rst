@@ -6,6 +6,13 @@ We're releasing most of the source code from the MIT DRC project in the hope tha
 
 We're actively working on making this a project that can be used by people outside the group, but for now, you should consider it a collection of (potentially) interesting code, not a functional application. 
 
+The core algorithms and tools, however, live in their own projects which are much better supported:
+
+    * Drake (planning, control, simulation, optimization): <drake.mit.edu>
+    * Pronto (state estimation): <https://github.com/mitdrc/pronto>
+    * Director (user interface): <https://github.com/RobotLocomotion/director>
+    
+
 =============
 OpenHumanoids
 =============
