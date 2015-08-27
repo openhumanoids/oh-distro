@@ -30,7 +30,7 @@ class State:
 
 def on_manip_plan(channel, data):
     m = robot_plan_t.decode(data)
-    print "got plan msg at" , s.last_utime , "with" , m.num_states , "states
+    print "got plan msg at" , s.last_utime , "with" , m.num_states , "states"
     #print m.plan[m.num_states-1].utime
     s.last_committed_plan = m
     #s.send_plan_with_offset(s.last_utime)
