@@ -5,7 +5,7 @@ struct last_received_message_t
     string   type;
     int64_t  unique_id;
     int64_t  receive_timestamp;
-    double   time_since_last_received;
+    int64_t   time_since_last_received;
 }
 
 
