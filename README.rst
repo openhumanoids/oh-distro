@@ -8,9 +8,9 @@ We're actively working on making this a project that can be used by people outsi
 
 The core algorithms and tools, however, live in their own projects which are much better supported:
 
-    * Drake (planning, control, simulation, optimization): https://drake.mit.edu
-    * Pronto (state estimation): https://github.com/mitdrc/pronto
-    * Director (user interface): https://github.com/RobotLocomotion/director
+* Drake (planning, control, simulation, optimization): http://drake.mit.edu
+* Pronto (state estimation): https://github.com/mitdrc/pronto
+* Director (user interface): https://github.com/RobotLocomotion/director
 
 
 =============
