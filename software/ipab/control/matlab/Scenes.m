@@ -31,21 +31,21 @@ classdef Scenes
           error('Version 3 and 4 of the Atlas Robot are no longer supported. Use version 5 instead.')
         case 'v5'
           if options.convex_hull
-            urdf = fullfile(getDrakePath(),'..','models','atlas_v5','model_chull.urdf');
+            urdf = fullfile(getDrakePath(),'../../','models','atlas_v5','model_chull.urdf');
           else
-            urdf = fullfile(getDrakePath(),'..','models','atlas_v5','model_full.urdf');
+            urdf = fullfile(getDrakePath(),'../../','models','atlas_v5','model_full.urdf');
           end
         case 'val1'
           if options.convex_hull
-            urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
+            urdf = fullfile(getDrakePath(),'../../','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
           else
-            urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
+            urdf = fullfile(getDrakePath(),'../../','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
           end
         case 'val2'
           if options.convex_hull
-            urdf = fullfile(getDrakePath(),'..','models','val_description','model.urdf');
+            urdf = fullfile(getDrakePath(),'../../','models','val_description/urdf','valkyrie_A_sim_drake.urdf');
           else
-            urdf = fullfile(getDrakePath(),'..','models','val_description','model.urdf');
+            urdf = fullfile(getDrakePath(),'../../','models','val_description/urdf','model.urdf');
           end
         otherwise
           error('Unknown robot model "%s"\n', options.model);
@@ -190,15 +190,15 @@ classdef Scenes
         case 'v3'
           fp = load([getDrakePath(), '/examples/Atlas/data/atlas_fp.mat']);
         case 'v4'
-          fp = load([getDrakePath(), '/../control/matlab/data/atlas_v4/atlas_v4_fp.mat']);
+          fp = load([getDrakePath(), '/../../control/matlab/data/atlas_v4/atlas_v4_fp.mat']);
         case 'v5'
-          fp = load([getDrakePath(), '/../control/matlab/data/atlas_v5/atlas_v5_fp.mat']);
+          fp = load([getDrakePath(), '/../../control/matlab/data/atlas_v5/atlas_v5_fp.mat']);
         case 'val1'
-          fp = load([getDrakePath(), '/../control/matlab/data/valkyrie/valkyrie_fp.mat']);
+          fp = load([getDrakePath(), '/../../control/matlab/data/valkyrie/valkyrie_fp.mat']);
         case 'val2'
-          fp = load([getDrakePath(), '/../control/matlab/data/val_description/valkyrie_fp_june2015.mat']);
+          fp = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat']);
         otherwise
-          fp = load([getDrakePath(), sprintf('/../control/matlab/data/%s.mat', model)]);
+          fp = load([getDrakePath(), sprintf('/../../control/matlab/data/%s.mat', model)]);
           %                 case 'lwr'
           %                     fp = load([getDrakePath(),'/../control/matlab/data/kuka/kuka_lwr_fp.mat']);
       end
