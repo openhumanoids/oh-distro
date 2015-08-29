@@ -43,6 +43,7 @@ addpath([pods_get_base_path,'/matlab']);
 addpath(fullfile(pwd,'../..','drake/drake','examples','ZMP'));
 addpath(fullfile(pwd,'../..','drake/drake','examples','Atlas'));
 addpath(fullfile(pwd,'matlab'));
-addpath(fullfile(pwd,'matlab/test'));
+addpath(fullfile(pwd,'matlab','test'));
+
 
 end
