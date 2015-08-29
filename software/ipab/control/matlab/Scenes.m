@@ -206,7 +206,8 @@ classdef Scenes
           rFoot = robot.findLinkId('RightUpperFoot');
       end
     end
-    
+%NOTEST
+
     function frame = getPointInLinkFrame(options)
       if strcmp(options.graspingHand, 'left')
         switch options.model
