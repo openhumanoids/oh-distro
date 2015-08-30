@@ -1,4 +1,5 @@
 function drawFrame(xyz_quat, channel_name, varargin)
+%NOTEST
 %this must be preceeded by and succeeded by these two lines
 % first:
 %lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'channel-name');

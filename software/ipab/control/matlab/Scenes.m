@@ -283,7 +283,8 @@ classdef Scenes
           rFoot = robot.findLinkId('RightFoot');
       end
     end
-    
+%NOTEST
+
     function frame = getPointInLinkFrame(options)
       frame.v3.left = [0; 0.4; 0];
       frame.v4.left = [0; -0.3; 0];

@@ -1,21 +1,32 @@
-function [xtraj,info,v] = testTaskSpaceRRT(which_robot, scene, options, rng_seed)
+function [xtraj,info,v] = testTaskSpaceRRT(model, scene, options, rng_seed)
+% matlab -nosplash -nodesktop -r "addpath(fullfile(getenv('DRC_BASE'),'software/ipab/control/matlab/tests')); addpath_control; testTaskSpaceRRTMultiple(); "
 % multi-robot test script for combinations of humanoids
 %
-% which_robot: atlas v3,4,5 and val
+% model: v3,v4,v and val1
 % scene = 1 % 1. reach around an capsule   2. reach to object on a table through clutter
 %
 % supported combos:
-% 3,5 and 6 (val) with scene 1
-% 6 (val) with scene 2
+% v3,v5 and val1, val2 with scene 1
+% val1, val2 with scene 2
 
 % issues:
-% forearm and head need to be disabled (unnecessarily) for val
+% forearm and head need to be disabled (unnecessarily) for val1
 % r_arm and neck joints are lumped together
 % scene 2 for atlas robots dont work as r_arm intersects - need to fix it
 % ik is solved 3 times. I think its resolved for q_start twice
+%
+% DEBUG tip:
+% insert this snippet into collisionDetect.m (L84) to print the colliding links:
+%      valid = all(phi > 0.009);
+%      if (valid == 0)
+%        if min(phi>0)
+%          [a,b] = min(phi) ;  obj.body( idxA(b)).linkname , obj.body( idxB(b) ).linkname
+%          keyboard
+%        end
+%      end
 
 % TIMEOUT 600
-if nargin < 1; which_robot = 6; end
+if nargin < 1; model = 'val2'; end
 if nargin < 2; scene = 2; end
 if nargin < 3 || isempty(options), options = struct(); end
 if nargin < 4, rng; else rng(rng_seed); end
@@ -36,22 +47,29 @@ options.r_foot_link_name = 'r_foot';
 options.l_hand_link_name = 'l_hand';
 options.r_hand_link_name = 'r_hand';
 
-if (which_robot == 3)
+if strcmp(model,'v3')
   urdf = fullfile(getDrakePath(),'examples','Atlas','urdf','atlas_convex_hull.urdf');
   S = load([getDrakePath(), '/examples/Atlas/data/atlas_fp.mat']);
 %elseif (which_robot == 4) % version 4 is not supported 
 %  urdf = fullfile(getDrakePath(),'..','models','atlas_v4','model_convex_hull_fingers.urdf');
 %  S = load([getDrakePath(), '/../control/matlab/data/atlas_v4/atlas_v4_fp.mat']);
-elseif (which_robot == 5)
+elseif strcmp(model,'v5')
   urdf = fullfile(getDrakePath(),'..','models','atlas_v5','model_convex_hull_fingers.urdf');
   S = load([getDrakePath(), '/../control/matlab/data/atlas_v5/atlas_v5_fp.mat']);
-elseif (which_robot == 6)
-  urdf = fullfile(getDrakePath(),'..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
+elseif strcmp(model,'val1')
+  urdf = fullfile(getDrakePath(),'../..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
   S = load([getDrakePath(), '/../control/matlab/data/valkyrie/valkyrie_fp.mat']);
   options.l_foot_link_name = 'LeftUpperFoot';
   options.r_foot_link_name = 'RightUpperFoot';
   options.l_hand_link_name = 'LeftPalm';
   options.r_hand_link_name = 'RightPalm';  
+elseif strcmp(model,'val2')
+  urdf = fullfile(getDrakePath(),'../../models/val_description/urdf/valkyrie_A_sim_drake.urdf');
+  S = load([getDrakePath(), '/../../control/matlab/data/valkyrie_fp_june2015.mat']);
+  options.l_foot_link_name = 'LeftFoot';
+  options.r_foot_link_name = 'RightFoot';
+  options.l_hand_link_name = 'LeftPalm';
+  options.r_hand_link_name = 'RightPalm';
 end
 
 r = RigidBodyManipulator(urdf,options);
@@ -69,13 +87,13 @@ r_hand = r.findLinkId(options.r_hand_link_name);
 r = create_scene(r, scene, world);
 
 % reach the hand from:
-if (which_robot == 3) && (scene == 1)
+if strcmp(model,'v3') && (scene == 1)
   start_xyz_quat = [0.2;0.75;1.2; rpy2quat([90*pi/180, 1.5789, 0]) ];
   goal_xyz_quat = [0.5;0.3;1.2; rpy2quat([90*pi/180, 1.5789, 0]) ];
-elseif (which_robot == 5) && (scene == 1)
+elseif strcmp(model,'v5') && (scene == 1)
   start_xyz_quat = [0.2;0.75;1.2; rpy2quat([90*pi/180, -1.5789, 0]) ];
   goal_xyz_quat = [0.5;0.3;1.2; rpy2quat([90*pi/180, -1.5789, 0]) ];
-elseif (which_robot == 6)
+elseif strcmp(model,'val1')
   if (scene == 1)
     start_xyz_quat = [0.3;0.6;0.9; rpy2quat([-90*pi/180,0*pi/180,0*pi/180] ) ];
     goal_xyz_quat = [0.4;0.4;1.1; rpy2quat([-90*pi/180,0*pi/180,0*pi/180] ) ];
@@ -83,13 +101,21 @@ elseif (which_robot == 6)
     start_xyz_quat = [0.05;0.4;0.8; rpy2quat([-90*pi/180,60*pi/180,0*pi/180] ) ];
     goal_xyz_quat = [0.4;0.3;1.1; rpy2quat([-90*pi/180,0*pi/180,0*pi/180] ) ];
   end
+elseif strcmp(model,'val2')
+  if (scene == 1)
+    start_xyz_quat = [0.3;0.6;0.9; rpy2quat([0*pi/180,0*pi/180,-90*pi/180] ) ];
+    goal_xyz_quat = [0.4;0.4;1.1; rpy2quat([0*pi/180,0*pi/180,-90*pi/180] ) ];
+  elseif (scene == 2)
+    start_xyz_quat = [0.05;0.4;0.8; rpy2quat([-60*pi/180,0*pi/180,-90*pi/180] ) ];
+    goal_xyz_quat = [0.4;0.3;1.1; rpy2quat([0*pi/180,0*pi/180,-90*pi/180] ) ];
+  end
 else
   disp('combination not implemented')
   keyboard
 end
 
 %%% Configuration (scene independent) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if (which_robot < 6)
+if (strcmp(model,'v3') || strcmp(model,'v5'))
   ref_frame_l_foot = [0.99999962214379723, 3.8873668451910772e-05, 0.00086844752325226373, -0.024113362129690341; -4.319650228383918e-05, 0.99998760778828055, 0.0049781928381826216, 0.13142880655433892; -0.00086824324064880729, -0.0049782284710370005, 0.99998723161596681, 0.081845132612297311; 0.0, 0.0, 0.0, 1.0];
   ref_frame_r_foot = [0.99999972333813658, -3.8603987442147522e-05, 0.00074285488657430923, -0.024113358389590833; 4.2294235092508014e-05, 0.99998765711726534, -0.0049682818277853539, -0.13142881299268941; -0.00074265392211426647, 0.0049683118717304582, 0.99998738209154281, 0.081845129013906948; 0.0, 0.0, 0.0, 1.0];
 
@@ -100,16 +126,16 @@ if (which_robot < 6)
   joints_lower_limit_knees = 30*pi/180*[1;1];
   joints_upper_limit_knees = 120*pi/180*[1;1];
 
-  if (which_robot == 3)
+  if strcmp(model,'v3')
     hand_to_palm_offset = [0; 0.24449999999999988; 0.011200000000000071];
     joint_inds_r_arm = [joints.r_arm_usy; joints.r_arm_shx; joints.r_arm_ely; joints.r_arm_elx; joints.r_arm_uwy; joints.r_arm_mwx; joints.neck_ay];
-  elseif (which_robot ==5)
+  elseif strcmp(model,'v5')
     hand_to_palm_offset = [0; -0.24449999999999988; 0.011200000000000071];
     joint_inds_r_arm = [joints.r_arm_shz; joints.r_arm_shx; joints.r_arm_ely; joints.r_arm_elx; joints.r_arm_uwy; joints.r_arm_mwx; joints.r_arm_lwy; joints.neck_ay];
   end
   
   inactive_collision_bodies = [l_foot, r_foot];
-else
+elseif strcmp(model,'val1')
   ref_frame_l_foot = [1,0,0,-0.068; 0,1,0,0.139; 0,0,1,0.085; 0,0,0,1];  ref_frame_l_foot(1:3,1:3) = rpy2rotmat([0,97.4*pi/180,180*pi/180]);
   ref_frame_r_foot = [1,0,0,-0.068; 0,1,0,-0.139; 0,0,1,0.085; 0,0,0,1];   ref_frame_r_foot(1:3,1:3) = rpy2rotmat([0,82.6*pi/180,0*pi/180]);
 
@@ -122,23 +148,53 @@ else
   joints_upper_limit_knees = -0.6*[1;1];  
   
   hand_to_palm_offset = [0.06; 0.0; -0.02];
-  
+
   % internal parts removed as they created self collisions:
-  if (which_robot == 6)
-      LeftHipRotator = r.findLinkId('LeftHipRotator');
-      RightHipRotator = r.findLinkId('RightHipRotator');
-      LeftHipAdductor = r.findLinkId('LeftHipAdductor');
-      RightHipAdductor = r.findLinkId('RightHipAdductor');
-      LowerNeckExtensor = r.findLinkId('LowerNeckExtensor');
-      
-      % these shouldn't be culled from the link list but its easier too do than
-      % fixing meshes now:
-      RightForearm = r.findLinkId('RightForearm'); % main welding link
-      LeftForearm = r.findLinkId('LeftForearm'); % main welding link
-      Head = r.findLinkId('Head'); % main welding link
-  end
-  
+  LeftHipRotator = r.findLinkId('LeftHipRotator');
+  RightHipRotator = r.findLinkId('RightHipRotator');
+  LeftHipAdductor = r.findLinkId('LeftHipAdductor');
+  RightHipAdductor = r.findLinkId('RightHipAdductor');
+  LowerNeckExtensor = r.findLinkId('LowerNeckExtensor');
+
+  % these shouldn't be culled from the link list but its easier too do than
+  % fixing meshes now:
+  RightForearm = r.findLinkId('RightForearm'); % main welding link
+  LeftForearm = r.findLinkId('LeftForearm'); % main welding link
+  Head = r.findLinkId('Head'); % main welding link
+
   inactive_collision_bodies = [l_foot,r_foot, LeftHipAdductor, RightHipAdductor,  LeftHipRotator, RightHipRotator, LowerNeckExtensor, LeftForearm, RightForearm, Head];
+elseif strcmp(model,'val2')
+  %ref_frame_l_foot = [1,0,0,-0.068; 0,1,0,0.139; 0,0,1,0.085; 0,0,0,1];  ref_frame_l_foot(1:3,1:3) = rpy2rotmat([0,97.4*pi/180,180*pi/180]);
+  ref_frame_l_foot = [0.9921, 0, -0.1256, -0.0698; 0, 1, 0   0.1377; 0.1256, 0, 0.9921, 0.0862; 0, 0, 0, 1];
+  ref_frame_r_foot = [0.9921, 0, -0.1256, -0.0698; 0, 1, 0, -0.1377; 0.1256, 0, 0.9921, 0.0862; 0, 0, 0, 1];
+
+  joint_inds_back = [joints.TorsoYaw; joints.TorsoPitch; joints.TorsoRoll];
+  joint_inds_base = [joints.base_x; joints.base_y; joints.base_roll; joints.base_pitch; joints.base_yaw];
+  joint_inds_r_arm = [joints.RightShoulderPitch; joints.RightShoulderRoll; joints.RightShoulderYaw; joints.RightElbowPitch; joints.RightForearmYaw; joints.RightWristRoll; joints.RightWristPitch];
+  %; joints.LowerNeckPitch; joints.NeckYaw; joints.UpperNeckPitch];
+
+  joint_inds_knees = [joints.LeftKneePitch; joints.RightKneePitch];
+  joints_lower_limit_knees = 0.6*[1;1];
+  joints_upper_limit_knees = 1.9*[1;1];
+
+  hand_to_palm_offset = [0.0; 0.0; -0.02];% [0.06; 0.0; -0.02];
+
+  % internal parts removed as they created self collisions:
+  LeftHipYawLink = r.findLinkId('LeftHipYawLink');
+  LeftHipRollLink = r.findLinkId('LeftHipRollLink');
+  RightHipYawLink = r.findLinkId('RightHipYawLink');
+  RightHipRollLink = r.findLinkId('RightHipRollLink');
+  UpperNeckPitchLink = r.findLinkId('UpperNeckPitchLink');
+  TorsoPitchLink = r.findLinkId('TorsoPitchLink'); % main welding link
+  TorsoYawLink = r.findLinkId('TorsoYawLink'); % main welding link
+
+  % these shouldn't be culled from the link list but its easier too do than
+  % fixing meshes now:
+  RightForearmLink = r.findLinkId('RightForearmLink'); % main welding link
+  LeftForearmLink = r.findLinkId('LeftForearmLink'); % main welding link
+  head = r.findLinkId('head'); % main welding link
+
+  inactive_collision_bodies = [l_foot,r_foot, TorsoPitchLink, TorsoYawLink, LeftHipYawLink, LeftHipRollLink,  RightHipYawLink, RightHipRollLink, UpperNeckPitchLink, LeftForearmLink, RightForearmLink, head];
 end
 
 
@@ -271,7 +327,7 @@ active_constraints_end = [base_constraints, {position_constraint_7,quat_constrai
 
 
 if options.visualize
-  v.draw(0,q_end); % standing configuration with left arm out to side
+  v.draw(0,q_end); % standing configuration with left arm at goal
 end
 
 kinsol = r.doKinematics(q_end);
@@ -298,7 +354,7 @@ drawFrame(r_foot_fk, 'arms spread - r foot fk',0.1, [1,1,0]);
 
 
 if options.visualize
-  v.draw(0,q_start); % visualize robot with hand in pile
+  v.draw(0,q_start); % visualize robot by side
 end
 % add break point here
 
@@ -441,7 +497,6 @@ if (scene==1)
   collision_object.c = [0.5;0.4;0.3];
   r = addGeometryToBody(r, world, collision_object);
 elseif (scene==2)
-    
      table = RigidBodyBox([1 1.1 .025], [.8 0.2 .9], [0 0 0]);
      r = addGeometryToBody(r, world, table);
      

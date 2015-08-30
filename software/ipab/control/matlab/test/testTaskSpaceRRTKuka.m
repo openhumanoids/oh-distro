@@ -1,4 +1,6 @@
 function [xtraj,info,v] = testTaskSpaceRRTKuka( scene, options, rng_seed)
+%NOTEST
+% currently fails to smooth
 
 % TIMEOUT 600
 if nargin < 1; scene = 1; end

@@ -1,4 +1,5 @@
 function batchRRT(n, varargin)
+%NOTEST
 % batchRRT(n, varargin)
 % 
 % This function runs a set of n iteration of exploringRRT.m for a

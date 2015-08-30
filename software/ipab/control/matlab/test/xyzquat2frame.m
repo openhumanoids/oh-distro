@@ -1,4 +1,5 @@
 function ref_frame = xyzquat2frame(xyz_quat)
+%NOTEST
 % frame xyz quat to transform
 
 % convert quat to 3x3 rot matrix
