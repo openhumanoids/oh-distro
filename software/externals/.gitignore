@@ -14,8 +14,8 @@ isam_include
 jpeg-utils
 kinect
 lcm_pod
-libbot-drc
-microstrain_comm
+libbot
+microstrain
 mosek
 multisense-lcm
 libmultisense
@@ -23,14 +23,10 @@ occ-map
 octomap-drc
 opencv-drc
 pcl
-pcl_dep
-pcl_drc
+flann_pod
 pod-build
-scanmatch
 snopt
 spotless
-velodyne
-vicon-drc
 vicon
 visualization
 pod-build
