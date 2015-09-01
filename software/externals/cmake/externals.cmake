@@ -36,6 +36,10 @@ set(occ-map_url https://github.com/mitdrc/occ-map.git)
 set(occ-map_revision 34ab71fa693216d2c0508f0f2680b9a68994f473)
 set(occ-map_depends libbot opencv-pod)
 
+set(concise-args_url https://github.com/abachrach/concise-args.git)
+set(concise-args_revision 4aeee5afe6ab5296a2620081a4cf4529885d6dc9)
+set(concise-args_depends)
+
 set(common_utils_url https://github.com/mitdrc/common_utils.git)
 set(common_utils_revision edc762537aee1bc264392f6902dbcc97b0f563f7)
 set(common_utils_depends Eigen_pod libbot occ-map octomap-pod concise-args)
@@ -126,6 +130,7 @@ set(externals
   libmultisense
   multisense-lcm
   occ-map
+  concise-args
   common_utils
   frsm
   kinect
