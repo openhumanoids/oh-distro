@@ -2,25 +2,25 @@ set(lcm_pod_url https://github.com/RobotLocomotion/lcm-pod.git)
 set(lcm_pod_revision c43ae7d)
 set(lcm_pod_depends)
 
-set(libbot-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/libbot-drc)
-set(libbot-drc_revision 8334)
-set(libbot-drc_depends)
+set(libbot_url https://github.com/mitdrc/libbot.git)
+set(libbot_revision 1d5627d1c45b72331677556d7d255d49a2c6934c)
+set(libbot_depends)
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
 set(Eigen_pod_revision 0f940b6) # drake now uses: c6c4738
 set(Eigen_pod_depends)
 
-set(opencv-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/opencv-drc)
-set(opencv-drc_revision 8298)
-set(opencv-drc_depends Eigen_pod)
+set(opencv-pod_url https://github.com/mitdrc/opencv-pod)
+set(opencv-pod_revision 7f4c81676f887ee64da446f1ba61a3e5ed80f879)
+set(opencv-pod_depends Eigen_pod)
 
-set(pcl_dep_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_dep)
-set(pcl_dep_revision 8337)
-set(pcl_dep_depends)
+set(flann-pod_url https://github.com/mitdrc/flann-pod)
+set(flann-pod_revision 9619e03a1d1f8b4b27d370810b9b2ccfe00adf58)
+set(flann-pod_depends)
 
 set(pcl_url http://github.com/pointcloudlibrary/pcl.git)
 set(pcl_revision pcl-1.7.1)
-set(pcl_depends pcl_dep Eigen_pod)
+set(pcl_depends flann-pod Eigen_pod)
 set(pcl_external_args
   CMAKE_CACHE_ARGS
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
@@ -28,29 +28,29 @@ set(pcl_external_args
     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
   )
 
-set(octomap-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/octomap-drc)
-set(octomap-drc_revision 8327)
-set(octomap-drc_depends)
+set(octomap-pod_url https://github.com/mitdrc/octomap-pod.git)
+set(octomap-pod_revision 590b430dfe9f949118fdd618b620d82d84eb0162)
+set(octomap-pod_depends)
 
-set(occ-map_url https://svn.csail.mit.edu/rrg_pods/Isam_Slam/occ-map)
-set(occ-map_revision 958)
-set(occ-map_depends libbot-drc opencv-drc)
+set(occ-map_url https://github.com/mitdrc/occ-map.git)
+set(occ-map_revision 34ab71fa693216d2c0508f0f2680b9a68994f473)
+set(occ-map_depends libbot opencv-pod)
 
-set(common_utils_url https://svn.csail.mit.edu/common_utils)
-set(common_utils_revision 301)
-set(common_utils_depends Eigen_pod libbot-drc occ-map octomap-drc)
+set(common_utils_url https://github.com/mitdrc/common_utils.git)
+set(common_utils_revision edc762537aee1bc264392f6902dbcc97b0f563f7)
+set(common_utils_depends Eigen_pod libbot occ-map octomap-pod)
 
 set(frsm_url ssh://git@github.com/mitdrc/frsm.git)
 set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
-set(frsm_depends libbot-drc)
+set(frsm_depends libbot)
 
-set(kinect_url https://svn.csail.mit.edu/rrg_pods/drivers/kinect)
-set(kinect_revision 964)
-set(kinect_depends libbot-drc)
+set(kinect_url https://github.com/mitdrc/kinect.git)
+set(kinect_revision 1b7c944c08ba4e3a488298d1cdbf6f8485fb015e)
+set(kinect_depends libbot)
 
-set(microstrain_comm_url https://svn.csail.mit.edu/rrg_pods/drivers/microstrain_comm)
-set(microstrain_comm_revision 853)
-set(microstrain_comm_depends common_utils)
+set(microstrain_url https://github.com/mitdrc/microstrain.git)
+set(microstrain_revision ac3551eb4bdbaa6a081cfd1d74b605b34578ee7f)
+set(microstrain_depends common_utils)
 
 set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
 set(bullet_revision c7c87f3)
@@ -58,15 +58,15 @@ set(bullet_depends)
 
 set(fovis_url ssh://git@github.com/fovis/fovis.git)
 set(fovis_revision ee2fe6593ed9e7e5ce2b2f6f1c64b627da119090)
-set(fovis_depends libbot-drc kinect)
+set(fovis_depends libbot kinect)
 
-set(estimate-pose_url https://svn.csail.mit.edu/rrg_pods/estimate-pose)
-set(estimate-pose_revision 827)
+set(estimate-pose_url https://github.com/mitdrc/estimate-pose.git)
+set(estimate-pose_revision e24a46af00c46116b76f69ff0f20923e60daa519)
 set(estimate-pose_depends fovis)
 
-set(vicon_url https://svn.csail.mit.edu/rrg_pods/drivers/vicon)
-set(vicon_revision 855)
-set(vicon_depends libbot-drc)
+set(vicon_url https://github.com/mitdrc/vicon.git)
+set(vicon_revision 9d42432a278d9e07394d11ab5a5c23b07e307c2c)
+set(vicon_depends libbot)
 
 set(apriltags_url https://github.com/psiorx/apriltags-pod.git)
 set(apriltags_revision ed2972f01e00d9b5a4afa2612b018374d889641f)
@@ -103,7 +103,7 @@ set(kinematics-utils_depends Eigen_pod)
 
 set(libmultisense_url https://bitbucket.org/crl/libmultisense)
 set(libmultisense_hg_tag a57026c)
-set(libmultisense_depends opencv-drc)
+set(libmultisense_depends opencv-pod)
 set(libmultisense_external_args
   CMAKE_CACHE_ARGS
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
@@ -118,19 +118,18 @@ set(multisense-lcm_depends libmultisense)
 
 set(externals
   Eigen_pod
-  libbot-drc
-  opencv-drc
-  pcl_dep
-  #pcl_drc
+  libbot
+  opencv-pod
+  flann-pod
   pcl
-  octomap-drc
+  octomap-pod
   libmultisense
   multisense-lcm
   occ-map
   common_utils
   frsm
   kinect
-  microstrain_comm
+  microstrain
   fovis
   estimate-pose
   vicon
