@@ -20,8 +20,8 @@ mosek
 multisense-lcm
 libmultisense
 occ-map
-octomap-drc
-opencv-drc
+octomap-pod
+opencv-pod
 pcl
 flann_pod
 pod-build
