@@ -1,7 +1,0 @@
-package viconstructs;
-struct xyz_t
-{
-    double x;
-    double y;
-    double z;
-}
