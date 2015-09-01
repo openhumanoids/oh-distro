@@ -23,7 +23,7 @@ occ-map
 octomap-pod
 opencv-pod
 pcl
-flann_pod
+flann-pod
 pod-build
 snopt
 spotless

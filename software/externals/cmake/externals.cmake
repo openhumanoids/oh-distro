@@ -10,11 +10,11 @@ set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
 set(Eigen_pod_revision 0f940b6) # drake now uses: c6c4738
 set(Eigen_pod_depends)
 
-set(opencv-pod_url https://github.com/mitdrc/opencv-pod)
+set(opencv-pod_url https://github.com/mitdrc/opencv-pod.git)
 set(opencv-pod_revision 7f4c81676f887ee64da446f1ba61a3e5ed80f879)
 set(opencv-pod_depends Eigen_pod)
 
-set(flann-pod_url https://github.com/mitdrc/flann-pod)
+set(flann-pod_url https://github.com/mitdrc/flann-pod.git)
 set(flann-pod_revision 9619e03a1d1f8b4b27d370810b9b2ccfe00adf58)
 set(flann-pod_depends)
 
@@ -38,7 +38,7 @@ set(occ-map_depends libbot opencv-pod)
 
 set(common_utils_url https://github.com/mitdrc/common_utils.git)
 set(common_utils_revision edc762537aee1bc264392f6902dbcc97b0f563f7)
-set(common_utils_depends Eigen_pod libbot occ-map octomap-pod)
+set(common_utils_depends Eigen_pod libbot occ-map octomap-pod concise-args)
 
 set(frsm_url ssh://git@github.com/mitdrc/frsm.git)
 set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
@@ -49,7 +49,7 @@ set(kinect_revision 1b7c944c08ba4e3a488298d1cdbf6f8485fb015e)
 set(kinect_depends libbot)
 
 set(microstrain_url https://github.com/mitdrc/microstrain.git)
-set(microstrain_revision ac3551eb4bdbaa6a081cfd1d74b605b34578ee7f)
+set(microstrain_revision 93f4582491f0cfec1c658ed3fb84ae84a13bc6c2)
 set(microstrain_depends common_utils)
 
 set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
