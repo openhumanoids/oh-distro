@@ -3,7 +3,7 @@ set(lcm_pod_revision c43ae7d)
 set(lcm_pod_depends)
 
 set(libbot_url https://github.com/mitdrc/libbot.git)
-set(libbot_revision 1d5627d1c45b72331677556d7d255d49a2c6934c)
+set(libbot_revision a7815ee7ca4d86a6bae87ff14a21da5d080677be)
 set(libbot_depends)
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
