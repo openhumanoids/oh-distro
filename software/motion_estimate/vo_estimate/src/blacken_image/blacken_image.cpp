@@ -9,7 +9,6 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/bot_core.hpp"
-#include <lcmtypes/microstrain_comm.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <ConciseArgs>
 using namespace cv;

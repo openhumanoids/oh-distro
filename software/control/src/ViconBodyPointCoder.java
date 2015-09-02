@@ -4,7 +4,7 @@ import java.io.*;
 import java.lang.*;
 import java.util.Arrays;
 import lcm.lcm.*;
-import viconstructs.*;
+import vicon.*;
 
 public class ViconBodyPointCoder implements drake.util.LCMCoder 
 {
