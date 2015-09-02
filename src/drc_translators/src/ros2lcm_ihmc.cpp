@@ -32,6 +32,7 @@
 #include <ihmc_msgs/BatchRawImuData.h>
 #include <ihmc_msgs/RawImuData.h>
 #include <ihmc_msgs/LastReceivedMessage.h>
+#include <ihmc_msgs/FootstepStatusMessage.h>
 //#include <pronto_msgs/CachedRawIMUData.h>
 //#include <pronto_msgs/RawIMUData.h>
 //#include <pronto_msgs/FootSensor.h>
@@ -46,6 +47,7 @@
 #include "lcmtypes/pronto/multisense_state_t.hpp"
 #include "lcmtypes/pronto/plan_status_t.hpp"
 #include "lcmtypes/ipab/last_received_message_t.hpp"
+#include "lcmtypes/ipab/footstep_status_t.hpp"
 #include "lcmtypes/mav/ins_t.hpp"
 
 #include <tf/transform_listener.h>
@@ -88,6 +90,7 @@ private:
   ros::Subscriber rightFootSensorSub_;
   ros::Subscriber behaviorSub_;
   ros::Subscriber lastReceivedMessageSub_;
+  ros::Subscriber footstepStatusSub_;
 
   void jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
   void headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
@@ -100,6 +103,7 @@ private:
   void rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg);
   void behaviorCallback(const std_msgs::Int32ConstPtr& msg);
   void lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg);
+  void footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg);
 
   void appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wrench left_sensor, geometry_msgs::Wrench right_sensor);
   void publishLidar(const sensor_msgs::LaserScanConstPtr& msg,string channel );
@@ -146,6 +150,7 @@ App::App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string i
   // using previously used queue_size for scan:
   behaviorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/behavior"), 100, &App::behaviorCallback,this);
   lastReceivedMessageSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/last_received_message"), 100, &App::lastReceivedMessageCallback,this);
+  footstepStatusSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/footstep_status"), 100, &App::footstepStatusCallback,this);
 
   // Multisense Joint Angles:
   if (mode_ == MODE_STATE_ESTIMATION){
@@ -160,6 +165,28 @@ App::App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string i
 App::~App()  {
 }
 
+
+void App::footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg)
+{
+  ipab::footstep_status_t msg_out;
+  msg_out.STARTED = msg->STARTED;
+  msg_out.COMPLETED = msg->COMPLETED;
+  msg_out.LEFT = msg->LEFT;
+  msg_out.RIGHT = msg->RIGHT;
+  msg_out.status = msg->status;
+  msg_out.footstep_index = msg->footstep_index;
+  msg_out.robot_side = msg->robot_side;
+  msg_out.actual_foot_position_in_world[0] = msg->actual_foot_position_in_world.x;
+  msg_out.actual_foot_position_in_world[1] = msg->actual_foot_position_in_world.y;
+  msg_out.actual_foot_position_in_world[2] = msg->actual_foot_position_in_world.z;
+  msg_out.actual_foot_orientation_in_world[0] = msg->actual_foot_orientation_in_world.x;
+  msg_out.actual_foot_orientation_in_world[1] = msg->actual_foot_orientation_in_world.y;
+  msg_out.actual_foot_orientation_in_world[2] = msg->actual_foot_orientation_in_world.z;
+  msg_out.actual_foot_orientation_in_world[3] = msg->actual_foot_orientation_in_world.w;
+  msg_out.is_done_walking = msg->is_done_walking;
+  msg_out.unique_id = msg->unique_id;
+  lcmPublish_.publish("IHMC_FOOTSTEP_STATUS", &msg_out);
+}
 
 void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg){
   if ( msg->name.size() > 1){
