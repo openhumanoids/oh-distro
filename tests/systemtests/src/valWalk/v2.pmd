@@ -12,7 +12,7 @@ group "1.params_and_model_pub" {
     }
 
     cmd "model_LR_RR" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/val_description/model.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/val_description/urdf/valkyrie_A_sim.urdf";
         host = "localhost";
     }
 }
