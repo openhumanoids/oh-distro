@@ -145,10 +145,6 @@ set(externals
   )
 
 
-set(svn_credentials)
-if(DRC_SVN_PASSWORD)
-  set(svn_credentials SVN_USERNAME drc SVN_PASSWORD ${DRC_SVN_PASSWORD})
-endif()
 
 macro(add_external proj)
   if (DEFINED ${proj}_hg_tag)
@@ -164,7 +160,6 @@ macro(add_svn_external proj)
   ExternalProject_Add(${proj}
     SVN_REPOSITORY ${${proj}_url}
     SVN_REVISION -r ${${proj}_revision}
-    ${svn_credentials}
     DEPENDS ${${proj}_depends}
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
