@@ -1,4 +1,4 @@
-function [xtraj,info,v] = testTaskSpaceRRT(model, scene, options, rng_seed)
+function [xtraj,info,v] = testTaskSpaceRRTMultiple(model, scene, options, rng_seed)
 % matlab -nosplash -nodesktop -r "addpath(fullfile(getenv('DRC_BASE'),'software/ipab/control/matlab/tests')); addpath_control; testTaskSpaceRRTMultiple(); "
 % multi-robot test script for combinations of humanoids
 %
@@ -65,7 +65,7 @@ elseif strcmp(model,'val1')
   options.r_hand_link_name = 'RightPalm';  
 elseif strcmp(model,'val2')
   urdf = fullfile(getDrakePath(),'../../models/val_description/urdf/valkyrie_A_sim_drake.urdf');
-  S = load([getDrakePath(), '/../../control/matlab/data/valkyrie_fp_june2015.mat']);
+  S = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat']);
   options.l_foot_link_name = 'LeftFoot';
   options.r_foot_link_name = 'RightFoot';
   options.l_hand_link_name = 'LeftPalm';
