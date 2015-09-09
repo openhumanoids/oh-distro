@@ -9,7 +9,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 9; end;
+  if ~isfield(options,'scene'), options.scene = 1; end;
   if ~isfield(options,'model'), options.model = 'v5'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -188,7 +188,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
   qNominalC = Scenes.getFP(qNomCFile.(options.model).(options.graspingHand), r);
   qNominalD = Scenes.getFP(qNomDFile.(options.model).(options.graspingHand), r);
-  
+
   kinsol = r.doKinematics(qNominalC);
   EEpose = r.forwardKin(kinsol, Scenes.getGraspingHand(options, r), Scenes.getPointInLinkFrame(options), 2);
   constraints = [startPoseConstraints, Scenes.generateEEConstraints(r, options, EEpose)];
@@ -230,27 +230,54 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       x_end.val1 = Scenes.getTargetObjPos(options)';
       x_end.val2 = x_end.val1;
       x_end.v5 = x_goal;
+      
+      finalPose = FinalPoseProblem(r, g_hand, x_start, x_end.(options.model), ...
+        startPoseConstraints, goalConstraints, q_nom, ...
+        'capabilityMap', cm, 'graspinghand', options.graspingHand, ...
+        'activecollisionoptions', ...
+        struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
+        'ikoptions', ikoptions, ...
+        'endeffectorpoint', point_in_link_frame);
+      
+      optionsPlanner = struct();
+      if ~isfield(optionsPlanner,'costType'), optionsPlanner.costType = 'length'; end;
+      
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
-            [xStartC, xStartD], goalConstraints, startPoseConstraints, q_nom,...
-            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model), ...
+            [xStartC, xStartD], startPoseConstraints, q_nom,...
+            'activecollisionoptions', ...
             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
+          
         case 3
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
-            [xStartC], goalConstraints, startPoseConstraints, q_nom,...
-            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model), ...
+            [xStartC], startPoseConstraints, q_nom,...
+            'activecollisionoptions', ...
             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
         case 2
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model),...
-            [], goalConstraints, startPoseConstraints, q_nom,...
-            'capabilityMap', cm, 'graspingHand', options.graspingHand, 'activecollisionoptions',...
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model), ...
+            [], startPoseConstraints, q_nom,...
+            'activecollisionoptions', ...
             struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
       end
-      [multiTree, info, cost, q_path] = multiTree.rrt(options);
+
+      [xGoalFull, info] = finalPose.findFinalPose(optionsPlanner);
+      [multiTree, info, cost, q_path] = multiTree.rrtStar(optionsPlanner, xGoalFull);
+
+      if info == 1
+        path_length = size(q_path,2);
+        xtraj = PPTrajectory(pchip(linspace(0, 1, path_length), [q_path(8:end,:); zeros(r.getNumVelocities(), size(q_path,2))] ));
+      else
+        xtraj = [];
+        info = 13;
+      end
+      if ~isempty(xtraj), qtraj = xtraj(1:r.getNumPositions()); else, qtraj = []; end;
+      if ~isempty(qtraj), s.publishTraj(qtraj, info); end;
+
+
       TA = multiTree.trees(1);
   end
   rrt_time = toc(rrt_timer);  
@@ -343,44 +370,44 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         statVars.options = rmfield(options, {'robot', 'terrain'});
       case 'multiRRT'
         if size(x_end.(options.model), 2) <= 7
-          statVars.finalPoseTime = info.finalPoseTime;
-          statVars.finalPoseCost = info.finalPoseCost;
+%           statVars.finalPoseTime = info.finalPoseTime;
+%           statVars.finalPoseCost = info.finalPoseCost;
         else
           statVars.finalPoseTime = 0;
           statVars.finalPoseCost = 0;
         end
-        statVars.reachingTime = info.reachingTime;
-        statVars.improvingTime = info.improvingTime;
-        statVars.shortcutTime = info.shortcutTime;
-        statVars.rebuildTime = info.rebuildTime;
-        statVars.reachingNpoints = info.reachingNpoints;
-        statVars.improvingNpoints = info.improvingNpoints;
-        statVars.shortcutNpoints = info.shortcutNpoints;
-        statVars.rebuildNpoints = info.rebuildNpoints;
-        statVars.costReaching = info.costReaching;
-        statVars.costImproving = info.costImproving;
-        statVars.costShortcut = info.costShortcut;
-        statVars.nPoints = info.nPoints;
-        statVars.nTrees = info.nTrees;
+%         statVars.reachingTime = info.reachingTime;
+%         statVars.improvingTime = info.improvingTime;
+%         statVars.shortcutTime = info.shortcutTime;
+%         statVars.rebuildTime = info.rebuildTime;
+%         statVars.reachingNpoints = info.reachingNpoints;
+%         statVars.improvingNpoints = info.improvingNpoints;
+%         statVars.shortcutNpoints = info.shortcutNpoints;
+%         statVars.rebuildNpoints = info.rebuildNpoints;
+%         statVars.costReaching = info.costReaching;
+%         statVars.costImproving = info.costImproving;
+%         statVars.costShortcut = info.costShortcut;
+%         statVars.nPoints = info.nPoints;
+%         statVars.nTrees = info.nTrees;
         statVars.rndSeed = rndSeed; 
         statVars.options = rmfield(options, {'robot', 'terrain'});
         simVars.info = info;
-        if options.visualize
-          fprintf(['TIMING:\n',...
-                  '\tFinalPoseTime: %.2f\n',...
-                  '\tReaching Time: %.2f\n',...
-                  '\tImproving Time: %.2f\n',...
-                  '\tShortcut Time: %.2f\n',...
-                  '\trebuild Time: %.2f\n',...
-                  '\ttotal Time: %.2f\n'],...
-                  info.finalPoseTime, info.reachingTime, info.improvingTime,...
-                  info.shortcutTime, info.rebuildTime, rrt_time);
-        end
+%         if options.visualize
+%           fprintf(['TIMING:\n',...
+%                   '\tFinalPoseTime: %.2f\n',...
+%                   '\tReaching Time: %.2f\n',...
+%                   '\tImproving Time: %.2f\n',...
+%                   '\tShortcut Time: %.2f\n',...
+%                   '\trebuild Time: %.2f\n',...
+%                   '\ttotal Time: %.2f\n'],...
+%                   info.finalPoseTime, info.reachingTime, info.improvingTime,...
+%                   info.shortcutTime, info.rebuildTime, rrt_time);
+%         end
     end
     
-    if options.visualize      
-      s.publishTraj(q_traj, 1);
-    end
+    %if options.visualize      
+    %  s.publishTraj(q_traj, 1);
+    %end
   else
     xtraj = [];
     v = [];
@@ -412,7 +439,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     statVars.rndSeed = rndSeed; 
     statVars.options = rmfield(options, {'robot', 'terrain'});
     simVars.info = info;
-    fprintf('Failed to find a solution (%s)\n', info.getStatus())
+    fprintf('Failed to find a solution (%s)\n', info)
   end
   
 end
