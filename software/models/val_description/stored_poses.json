@@ -6,8 +6,8 @@
       "joints": {
         "LeftElbowPitch": -1.2,
         "LeftForearmYaw": -1.35,
-        "LeftShoulderRoll": -1.45,
         "LeftShoulderPitch": 0,
+        "LeftShoulderRoll": -1.45,
         "LeftShoulderYaw": 0,
         "LeftWristPitch": 0.0,
         "LeftWristRoll": 0.0
@@ -17,12 +17,59 @@
     },
     {
       "allow_mirror": true,
+      "description": "handsdown both",
+      "joints": {
+        "LeftElbowPitch": -0.7853981852531433,
+        "LeftForearmYaw": 1.5709999799728394,
+        "LeftShoulderPitch": 0.3001966178417206,
+        "LeftShoulderRoll": -1.25,
+        "LeftShoulderYaw": 0.0,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": 0.0,
+        "RightElbowPitch": 0.7853981852531433,
+        "RightForearmYaw": 1.5709999799728394,
+        "RightShoulderPitch": 0.3001966178417206,
+        "RightShoulderRoll": 1.25,
+        "RightShoulderYaw": 0.0,
+        "RightWristPitch": 0.0,
+        "RightWristRoll": 0.0
+      },
+      "name": "handsdown both",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "handsdown incl back",
+      "joints": {
+        "LeftElbowPitch": -0.7853981852531433,
+        "LeftForearmYaw": 1.5709999799728394,
+        "LeftShoulderPitch": 0.3001966178417206,
+        "LeftShoulderRoll": -1.25,
+        "LeftShoulderYaw": 0.0,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": 0.0,
+        "RightElbowPitch": 0.7853981852531433,
+        "RightForearmYaw": 1.5709999799728394,
+        "RightShoulderPitch": 0.3001966178417206,
+        "RightShoulderRoll": 1.25,
+        "RightShoulderYaw": 0.0,
+        "RightWristPitch": 0.0,
+        "RightWristRoll": 0.0,
+        "TorsoPitch": 0.0,
+        "TorsoRoll": 0.0,
+        "TorsoYaw": 0.0
+      },
+      "name": "handsdown incl back",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
       "description": "handdown",
       "joints": {
-        "LeftElbowPitch": -0.8,
-        "LeftForearmYaw": 0.0,
-        "LeftShoulderRoll": -0.2,
-        "LeftShoulderPitch": 0.3,
+        "LeftElbowPitch": -0.7853981852531433,
+        "LeftForearmYaw": 1.5709999799728394,
+        "LeftShoulderPitch": 0.3001966178417206,
+        "LeftShoulderRoll": -1.25,
         "LeftShoulderYaw": 0.0,
         "LeftWristPitch": 0.0,
         "LeftWristRoll": 0.0
@@ -38,8 +85,8 @@
       "joints": {
         "LeftElbowPitch": -1.3696403503417969,
         "LeftForearmYaw": -1.702666997909546,
-        "LeftShoulderRoll": -0.1745329201221466,
         "LeftShoulderPitch": 0.20167237520217896,
+        "LeftShoulderRoll": -0.1745329201221466,
         "LeftShoulderYaw": 0.24836266040802002,
         "LeftWristPitch": -0.22391527891159058,
         "LeftWristRoll": -0.42069876194000244
@@ -55,8 +102,8 @@
       "joints": {
         "LeftElbowPitch": -0.3035127520561218,
         "LeftForearmYaw": -1.4325662851333618,
-        "LeftShoulderRoll": -2.602198600769043,
         "LeftShoulderPitch": 1.6022123098373413,
+        "LeftShoulderRoll": -2.602198600769043,
         "LeftShoulderYaw": -0.8513715863227844,
         "LeftWristPitch": 0.0,
         "LeftWristRoll": -0.2019345909357071
@@ -70,8 +117,8 @@
       "joints": {
         "LeftElbowPitch": -0.7085164189338684,
         "LeftForearmYaw": -0.8340928554534912,
-        "LeftShoulderRoll": -2.887298107147217,
         "LeftShoulderPitch": 1.910088300704956,
+        "LeftShoulderRoll": -2.887298107147217,
         "LeftShoulderYaw": -0.7131415605545044,
         "LeftWristPitch": 0.0,
         "LeftWristRoll": -0.412421315908432
