@@ -19,6 +19,13 @@ export BUILD_PREFIX
 $(VERBOSE).SILENT:
 
 all: 
+	if [ -e build/externals.md5 ] && [ "`cat build/externals.md5`" = "`cat externals/cmake/externals.cmake externals/cmake/dd-externals.cmake | md5sum`" ]; then \
+		echo "Externals are up to date"; \
+	else \
+		echo "Externals are out of date!"; \
+		echo "Please compile externals first."; \
+		exit 1; \
+	fi;
 	@[ -d $(BUILD_PREFIX) ] || mkdir -p $(BUILD_PREFIX) || exit 1
 	@for subdir in $(SUBDIRS); do \
 		echo "\n-------------------------------------------"; \

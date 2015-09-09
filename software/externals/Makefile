@@ -23,6 +23,7 @@ endif
 
 all: pod-build/Makefile
 	$(MAKE) -C pod-build all
+	cat cmake/externals.cmake cmake/dd-externals.cmake | md5sum > ../build/externals.md5
 
 pod-build/Makefile:
 	$(MAKE) configure
@@ -41,6 +42,7 @@ configure:
 clean:
 	-if [ -e pod-build/install_manifest.txt ]; then rm -f `cat pod-build/install_manifest.txt`; fi
 	-if [ -d pod-build ]; then $(MAKE) -C pod-build clean; rm -rf pod-build; fi
+	-if [ -e ../build/externals.md5 ]; then rm -f ../build/externals.md5; fi
 
 # other (custom) targets are passed through to the cmake-generated Makefile 
 %::
