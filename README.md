@@ -38,7 +38,7 @@ The final step is build the IPAB ROS workspace. The following should be added to
 
     source ~/ipab-distro/drc/software/config/drc_environment.sh
     source /opt/ros/indigo/setup.bash
-    source $DRC_BASE/catkin_ws/drc_translators/devel/setup.bash
+    source $DRC_BASE/../../ipab-ros-workspace/devel/setup.bash
 
 The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the first compilation.
 
@@ -46,7 +46,7 @@ Install the required ROS packages:
 
     ros-indigo-tf ros-indigo-image-transport ros-indigo-tf-conversions ros-indigo-image-geometry ros-indigo-cv-bridge ros-indigo-std-srvs
 
-The catkin workspace is located in source catkin_ws/drc_translators. The workspace is compiled separately by running
+The catkin workspace is located in ipab-ros-workspace. The workspace is compiled separately by running
 
     catkin_make -DCATKIN_BUILD_MODE=RelWithDebInfo
  
