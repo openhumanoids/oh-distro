@@ -9,6 +9,7 @@
 #include "lcmtypes/drc/footstep_plan_t.hpp"
 #include "lcmtypes/drc/plan_control_t.hpp"
 #include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/neck_pitch_t.hpp"
 
 #include "lcmtypes/ipab/com_height_packet_message_t.hpp"
 #include "lcmtypes/ipab/pause_command_message_t.hpp"
@@ -22,6 +23,7 @@
 #include <ihmc_msgs/ArmJointTrajectoryPacketMessage.h>
 #include <ihmc_msgs/WholeBodyTrajectoryPacketMessage.h>
 #include <ihmc_msgs/StopMotionPacketMessage.h>
+#include <ihmc_msgs/HeadOrientationPacketMessage.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -34,8 +36,6 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
-
 
 #define LEFT 0
 #define RIGHT 1
@@ -82,18 +82,21 @@ class LCM2ROS{
                           std::vector<string> input_joint_names, bool is_right,
                           ihmc_msgs::ArmJointTrajectoryPacketMessage &m);
 
+    void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg);
+    ros::Publisher neck_orientation_pub_;
+
     void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::scs_api_command_t* msg);
     ros::Publisher scs_api_pub_;
 
-    pronto_vis* pc_vis_;
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_):
     lcm_(lcm_),nh_(nh_), robotName_(robotName_) {
   // If pronto is running never send plans like this:
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST",&LCM2ROS::footstepPlanHandler, this);
-    // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into BDI/IHMC frame:
-  lcm_->subscribe("BDI_ADJUSTED_FOOTSTEP_PLAN",&LCM2ROS::footstepPlanBDIModeHandler, this);
+  // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into BDI/IHMC frame:
+  // COMMITTED_FOOTSTEP_PLAN or BDI_ADJUSTED_FOOTSTEP_PLAN
+  lcm_->subscribe("COMMITTED_FOOTSTEP_PLAN",&LCM2ROS::footstepPlanBDIModeHandler, this);
   walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>("/ihmc_ros/" + robotName_ + "/control/footstep_list",10);
 
   lcm_->subscribe("VAL_COMMAND_COM_HEIGHT",&LCM2ROS::comHeightHandler, this);
@@ -115,15 +118,15 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
   lcm_->subscribe("SCS_API_CONTROL",&LCM2ROS::scsAPIHandler, this);
   scs_api_pub_ = nh_.advertise<std_msgs::String>("/ihmc_ros/" + robotName_ + "/api_command",10);
 
+  lcm_->subscribe("DESIRED_NECK_PITCH",&LCM2ROS::neckPitchHandler, this);
+  neck_orientation_pub_ =  nh_.advertise<ihmc_msgs::HeadOrientationPacketMessage>("/ihmc_ros/" + robotName_ + "/control/head_orientation",10);
+
   // depreciated:
   //lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
   //hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
 
 
   node_ = new ros::NodeHandle();
-
-  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(9995,"Output step positions",5,1) );
 
 }
 
@@ -197,54 +200,18 @@ void LCM2ROS::scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &c
 
 void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::walking_plan_request_t* msg) {
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
-  // sendBasicSteps();
-
-  // Note:
-  // TODO: remove pc_vis_
 
   std::vector< Eigen::Isometry3d > steps;
-  std::vector<Isometry3dTime> stepsT;
   for (int i=0; i < msg->footstep_plan.num_steps; i++){ // skip the first two standing steps
       drc::footstep_t s = msg->footstep_plan.footsteps[i];
-
       Eigen::Isometry3d step;
       step.setIdentity();
       step.translation().x() = s.pos.translation.x;
       step.translation().y() = s.pos.translation.y;
       step.translation().z() = s.pos.translation.z;
       step.rotate(Eigen::Quaterniond(s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z));
-
-      if(robotName_.compare("valkyrie")==0){
-        ROS_ERROR("LCM2ROS flipping valkyrie foot orientations");
-/*
-        if (s.is_right_foot){
-          Eigen::Isometry3d fix_transform;
-          fix_transform.setIdentity();
-          fix_transform.translation().x() = 0;
-          fix_transform.translation().y() = 0;
-          fix_transform.translation().z() = 0;
-          fix_transform.rotate(euler_to_quat( 0*M_PI/180, -90*M_PI/180, 0 )) ;
-          step = step*fix_transform;
-        }else{
-          Eigen::Isometry3d fix_transform;
-          fix_transform.setIdentity();
-          fix_transform.translation().x() = 0;
-          fix_transform.translation().y() = 0;
-          fix_transform.translation().z() = 0;
-          fix_transform.rotate(euler_to_quat( 180*M_PI/180, 90*M_PI/180, 0 )) ;
-          step = step*fix_transform;
-        }
-*/
-      }else{
-        ROS_ERROR("LCM2ROS not flipping atlas foot orientations");
-      }
-
-      Isometry3dTime stepT = Isometry3dTime(i, step);
-      stepsT.push_back(stepT);
       steps.push_back(step);
-
   }
-  pc_vis_->pose_collection_to_lcm_from_list(9995, stepsT);
 
   ihmc_msgs::FootstepDataListMessage mout;
   mout.transfer_time = 1.2;
@@ -263,13 +230,11 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 }
 
 void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::footstep_plan_t* msg) {
-  ROS_ERROR("LCM2ROS got BDI_ADJUSTED_FOOTSTEP_PLAN (pronto and bdi mode)");
-  // sendBasicSteps();
+  ROS_ERROR("LCM2ROS got BDI_ADJUSTED_FOOTSTEP_PLAN or COMMITTED_FOOTSTEP_PLAN (pronto and bdi mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
   mout.transfer_time = 1.2;
   mout.swing_time = 1.2;
-  // mout.trajectoryWaypointGenerationMethod = 0;
   for (int i=2; i < msg->num_steps; i++){ // skip the first two standing steps
     drc::footstep_t s = msg->footsteps[i];
     mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
@@ -318,6 +283,18 @@ void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string 
   hand_pose_pub_.publish(mout);
 }
 
+void LCM2ROS::neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg) {
+  ROS_ERROR("LCM2ROS got desired neck pitch");
+  ihmc_msgs::HeadOrientationPacketMessage mout;
+  Eigen::Quaterniond quat = euler_to_quat(0, msg->pitch, 0);
+  mout.trajectory_time = 1;
+  mout.orientation.w = quat.w();
+  mout.orientation.x = quat.x();
+  mout.orientation.y = quat.y();
+  mout.orientation.z = quat.z();
+  mout.unique_id = msg->utime;
+  neck_orientation_pub_.publish(mout);
+}
 
 void filterJointNamesToIHMC(std::vector<std::string> &joint_name  ){
   // Rename these joints to expected values:
@@ -492,10 +469,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg,
 void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg) {
   ROS_ERROR("LCM2ROS got robot plan");
 
-
-
-
-  std::vector<string> l_arm_strings;
+ std::vector<string> l_arm_strings;
   std::vector<string> r_arm_strings;
   std::vector<string> input_joint_names = msg->plan[0].joint_name;
 

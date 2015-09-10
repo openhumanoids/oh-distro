@@ -14,8 +14,8 @@ def talker():
         jn_r = ["r_arm_shz","r_arm_shx","r_arm_ely","r_arm_elx","r_arm_wry","r_arm_wrx","r_arm_wry2"]
     else:
         pub = rospy.Publisher('/ihmc_ros/valkyrie/control/arm_joint_trajectory2', JointTrajectory, queue_size=10)
-        jn = ["LeftShoulderExtensor","LeftShoulderAdductor","LeftShoulderSupinator","LeftElbowExtensor","LeftForearmSupinator","LeftWristExtensor","LeftWrist"]
-        jn_r = ["RightShoulderExtensor","RightShoulderAdductor","RightShoulderSupinator","RightElbowExtensor","RightForearmSupinator","RightWristExtensor","RightWrist"]
+        jn = ["LeftShoulderPitch","LeftShoulderRoll","LeftShoulderYaw","LeftElbowPitch","LeftForearmYaw","LeftWristRoll","LeftWristPitch"]
+        jn_r = ["RightShoulderPitch","RightShoulderRoll","RightShoulderYaw","RightElbowPitch","RightForearmYaw","RightWristRoll","RightWristPitch"]
 
 
     #this doesnt work:
