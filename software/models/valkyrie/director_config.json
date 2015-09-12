@@ -187,7 +187,7 @@
         "handType" : "left_valkyrie",
         "handLinkName" : "LeftPalm",
         "handUrdf" : "valkyrie_hand_left.urdf",
-        "handRootLink" : "left_palm",
+        "handRootLink" : "LeftPalm",
         "robotMountLink" : "l_hand_force_torque",
         "palmLink" : "l_hand_face"
       },
@@ -195,7 +195,7 @@
         "handType" : "right_valkyrie",
         "handLinkName" : "RightPalm",
         "handUrdf" : "valkyrie_hand_right.urdf",
-        "handRootLink" : "right_palm",
+        "handRootLink" : "RightPalm",
         "robotMountLink" : "r_hand_force_torque",
         "palmLink" : "r_hand_face"
       }

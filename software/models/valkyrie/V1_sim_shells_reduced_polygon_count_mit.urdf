@@ -947,6 +947,8 @@
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
     </link>
+
+
     <link name="RightPalm">
         <inertial>
             <mass value="0.712"/>
@@ -972,42 +974,6 @@
     <gazebo reference="RightPalm">
         <material>Gazebo/Gold</material>
     </gazebo>
-    <joint name="RightForearmSupinator" type="revolute">
-        <origin rpy="1.57079632679 0 3.14159265359" xyz="0.0254 0 0"/>
-        <axis xyz="0 0 1"/>
-        <parent link="RightElbowExtensor"/>
-        <child link="RightForearm"/>
-        <limit effort="26" lower="-2.35619448885" upper="2.35619448885" velocity="5"/>
-        <controller_gains Kd="0" Kp="20000"/>
-        <dynamics damping="1.0" friction="0.0"/>
-    </joint>
-    <gazebo reference="RightForearmSupinator">
-        <provideFeedback>1</provideFeedback>
-    </gazebo>
-    <joint name="RightWristExtensor" type="revolute">
-        <origin rpy="-1.57079632679 0 1.57079632679" xyz="0 0 -0.287"/>
-        <axis xyz="0 0 1"/>
-        <parent link="RightForearm"/>
-        <child link="RightWristYoke"/>
-        <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
-        <controller_gains Kd="400" Kp="20000"/>
-        <dynamics damping="1.0" friction="0.0"/>
-    </joint>
-    <gazebo reference="RightWristExtensor">
-        <provideFeedback>1</provideFeedback>
-    </gazebo>
-    <joint name="RightWrist" type="revolute">
-        <origin rpy="1.57079632679 0 1.57079632679" xyz="0 0 0"/>
-        <axis xyz="0 0 1"/>
-        <parent link="RightWristYoke"/>
-        <child link="RightPalm"/>
-        <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
-        <controller_gains Kd="400" Kp="20000"/>
-        <dynamics damping="1.0" friction="0.0"/>
-    </joint>
-    <gazebo reference="RightWrist">
-        <provideFeedback>1</provideFeedback>
-    </gazebo>
     <actuator name="trunk/raj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
     <actuator name="right_arm/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
     <actuator name="right_arm/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
@@ -1015,190 +981,6 @@
     <actuator name="right_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
     <actuator name="right_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
     <actuator name="right_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
-    <mode name="RightShoulderExtensorMode" type="mode_plugins/ModeInterface">
-        <translator name="RightShoulderExtensorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="RightShoulderExtensor"/>
-            <actuator data="mode" name="trunk/raj1"/>
-        </translator>
-        <translator name="RightShoulderExtensorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="RightShoulderExtensor"/>
-            <actuator data="modeCommand" name="trunk/raj1"/>
-        </translator>
-    </mode>
-    <mode name="RightShoulderAdductorMode" type="mode_plugins/ModeInterface">
-        <translator name="RightShoulderAdductorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="RightShoulderAdductor"/>
-            <actuator data="mode" name="right_arm/j2"/>
-        </translator>
-        <translator name="RightShoulderAdductorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="RightShoulderAdductor"/>
-            <actuator data="modeCommand" name="right_arm/j2"/>
-        </translator>
-    </mode>
-    <mode name="RightShoulderSupinatorMode" type="mode_plugins/ModeInterface">
-        <translator name="RightShoulderSupinatorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="RightShoulderSupinator"/>
-            <actuator data="mode" name="right_arm/j3"/>
-        </translator>
-        <translator name="RightShoulderSupinatorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="RightShoulderSupinator"/>
-            <actuator data="modeCommand" name="right_arm/j3"/>
-        </translator>
-    </mode>
-    <mode name="RightElbowExtensorMode" type="mode_plugins/ModeInterface">
-        <translator name="RightElbowExtensorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="RightElbowExtensor"/>
-            <actuator data="mode" name="right_arm/j4"/>
-        </translator>
-        <translator name="RightElbowExtensorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="RightElbowExtensor"/>
-            <actuator data="modeCommand" name="right_arm/j4"/>
-        </translator>
-    </mode>
-    <mode name="RightForearmSupinatorMode" type="mode_plugins/ModeInterface">
-        <translator name="RightForearmSupinatorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="RightForearmSupinator"/>
-            <actuator data="mode" name="right_arm/j5"/>
-        </translator>
-        <translator name="RightForearmSupinatorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="RightForearmSupinator"/>
-            <actuator data="modeCommand" name="right_arm/j5"/>
-        </translator>
-    </mode>
-    <mode name="RightWristExtensorMode" type="mode_plugins/ModeInterface">
-        <translator name="RightWristExtensorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="RightWristExtensor"/>
-            <actuator data="mode" name="right_arm/forearm_driver1/wrist_right"/>
-        </translator>
-        <translator name="RightWristExtensorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="RightWristExtensor"/>
-            <actuator data="modeCommand" name="right_arm/forearm_driver1/wrist_right"/>
-        </translator>
-    </mode>
-    <mode name="RightWristMode" type="mode_plugins/ModeInterface">
-        <translator name="RightWristModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="RightWrist"/>
-            <actuator data="mode" name="right_arm/forearm_driver1/wrist_left"/>
-        </translator>
-        <translator name="RightWristModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="RightWrist"/>
-            <actuator data="modeCommand" name="right_arm/forearm_driver1/wrist_left"/>
-        </translator>
-    </mode>
-    <link name="RightCamBoard_Frame">
-        <!-- Virtual Link -->
-        <inertial>
-            <mass value="0.1"/>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
-        </inertial>
-    </link>
-    <gazebo reference="RightCamBoard_Frame">
-        <sensor name="asus/ir" type="depth">
-            <camera>
-                <image>
-                    <width>160</width>
-                    <height>120</height>
-                    <format>L8</format>
-                </image>
-                <horizontal_fov>1.57079632679</horizontal_fov>
-                <clip>
-                    <near>0.01</near>
-                    <far>1</far>
-                </clip>
-            </camera>
-            <update_rate>30</update_rate>
-            <plugin filename="libAsusXtionPluginRos.so" name="RightCamBoard_Controller">
-                <updateRate>30</updateRate>
-                <cameraName>RightCamBoard</cameraName>
-                <imageTopicName>rgb/image_raw</imageTopicName>
-                <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
-                <depthImageTopicName>depth/image_raw</depthImageTopicName>
-                <depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
-                <pointCloudTopicName>depth/points</pointCloudTopicName>
-                <frameName>RightCamBoardIR_Frame</frameName>
-                <pointCloudCutoff>0.2</pointCloudCutoff>
-                <hack_baseline>0.2</hack_baseline>
-            </plugin>
-        </sensor>
-    </gazebo>
-    <joint name="RightCamBoard_Offset" type="fixed">
-        <origin rpy="3.14159265359 1.57079632679 3.14159265359" xyz="0.049237 0.006877 -0.250708"/>
-        <axis xyz="0 0 1"/>
-        <parent link="RightForearm"/>
-        <child link="RightCamBoard_Frame"/>
-    </joint>
-    <link name="RightCamBoardIR_Frame">
-        <!-- Virtual Link -->
-        <inertial>
-            <mass value="0.1"/>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
-        </inertial>
-    </link>
-    <joint name="RightCamBoardIR_Offset" type="fixed">
-        <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
-        <axis xyz="0 0 1"/>
-        <parent link="RightCamBoard_Frame"/>
-        <child link="RightCamBoardIR_Frame"/>
-    </joint>
-    <link name="LeftCamBoard_Frame">
-        <!-- Virtual Link -->
-        <inertial>
-            <mass value="0.1"/>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
-        </inertial>
-    </link>
-    <gazebo reference="LeftCamBoard_Frame">
-        <sensor name="asus/ir" type="depth">
-            <camera>
-                <image>
-                    <width>160</width>
-                    <height>120</height>
-                    <format>L8</format>
-                </image>
-                <horizontal_fov>1.57079632679</horizontal_fov>
-                <clip>
-                    <near>0.01</near>
-                    <far>1</far>
-                </clip>
-            </camera>
-            <update_rate>30</update_rate>
-            <plugin filename="libAsusXtionPluginRos.so" name="LeftCamBoard_Controller">
-                <updateRate>30</updateRate>
-                <cameraName>LeftCamBoard</cameraName>
-                <imageTopicName>rgb/image_raw</imageTopicName>
-                <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
-                <depthImageTopicName>depth/image_raw</depthImageTopicName>
-                <depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
-                <pointCloudTopicName>depth/points</pointCloudTopicName>
-                <frameName>LeftCamBoardIR_Frame</frameName>
-                <pointCloudCutoff>0.2</pointCloudCutoff>
-                <hack_baseline>0.2</hack_baseline>
-            </plugin>
-        </sensor>
-    </gazebo>
-    <joint name="LeftCamBoard_Offset" type="fixed">
-        <origin rpy="3.14159265359 -1.57079632679 0" xyz="0.045536 -0.0085 0.250708"/>
-        <axis xyz="0 0 1"/>
-        <parent link="LeftForearm"/>
-        <child link="LeftCamBoard_Frame"/>
-    </joint>
-    <link name="LeftCamBoardIR_Frame">
-        <!-- Virtual Link -->
-        <inertial>
-            <mass value="0.1"/>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
-        </inertial>
-    </link>
-    <joint name="LeftCamBoardIR_Offset" type="fixed">
-        <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
-        <axis xyz="0 0 1"/>
-        <parent link="LeftCamBoard_Frame"/>
-        <child link="LeftCamBoardIR_Frame"/>
-    </joint>
     <link name="RightThumbMetacarpal">
         <inertial>
             <mass value="0.017"/>
@@ -1664,6 +1446,234 @@
         <parent link="RightLittleMedialPhalanx"/>
         <child link="RightLittleDistalPhalanx"/>
     </joint>
+
+
+
+
+
+
+
+
+    <joint name="RightForearmSupinator" type="revolute">
+        <origin rpy="1.57079632679 0 3.14159265359" xyz="0.0254 0 0"/>
+        <axis xyz="0 0 1"/>
+        <parent link="RightElbowExtensor"/>
+        <child link="RightForearm"/>
+        <limit effort="26" lower="-2.35619448885" upper="2.35619448885" velocity="5"/>
+        <controller_gains Kd="0" Kp="20000"/>
+        <dynamics damping="1.0" friction="0.0"/>
+    </joint>
+    <gazebo reference="RightForearmSupinator">
+        <provideFeedback>1</provideFeedback>
+    </gazebo>
+    <joint name="RightWristExtensor" type="revolute">
+        <origin rpy="-1.57079632679 0 1.57079632679" xyz="0 0 -0.287"/>
+        <axis xyz="0 0 1"/>
+        <parent link="RightForearm"/>
+        <child link="RightWristYoke"/>
+        <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
+        <controller_gains Kd="400" Kp="20000"/>
+        <dynamics damping="1.0" friction="0.0"/>
+    </joint>
+    <gazebo reference="RightWristExtensor">
+        <provideFeedback>1</provideFeedback>
+    </gazebo>
+    <joint name="RightWrist" type="revolute">
+        <origin rpy="1.57079632679 0 1.57079632679" xyz="0 0 0"/>
+        <axis xyz="0 0 1"/>
+        <parent link="RightWristYoke"/>
+        <child link="RightPalm"/>
+        <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
+        <controller_gains Kd="400" Kp="20000"/>
+        <dynamics damping="1.0" friction="0.0"/>
+    </joint>
+    <gazebo reference="RightWrist">
+        <provideFeedback>1</provideFeedback>
+    </gazebo>
+    <mode name="RightShoulderExtensorMode" type="mode_plugins/ModeInterface">
+        <translator name="RightShoulderExtensorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="RightShoulderExtensor"/>
+            <actuator data="mode" name="trunk/raj1"/>
+        </translator>
+        <translator name="RightShoulderExtensorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="RightShoulderExtensor"/>
+            <actuator data="modeCommand" name="trunk/raj1"/>
+        </translator>
+    </mode>
+    <mode name="RightShoulderAdductorMode" type="mode_plugins/ModeInterface">
+        <translator name="RightShoulderAdductorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="RightShoulderAdductor"/>
+            <actuator data="mode" name="right_arm/j2"/>
+        </translator>
+        <translator name="RightShoulderAdductorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="RightShoulderAdductor"/>
+            <actuator data="modeCommand" name="right_arm/j2"/>
+        </translator>
+    </mode>
+    <mode name="RightShoulderSupinatorMode" type="mode_plugins/ModeInterface">
+        <translator name="RightShoulderSupinatorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="RightShoulderSupinator"/>
+            <actuator data="mode" name="right_arm/j3"/>
+        </translator>
+        <translator name="RightShoulderSupinatorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="RightShoulderSupinator"/>
+            <actuator data="modeCommand" name="right_arm/j3"/>
+        </translator>
+    </mode>
+    <mode name="RightElbowExtensorMode" type="mode_plugins/ModeInterface">
+        <translator name="RightElbowExtensorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="RightElbowExtensor"/>
+            <actuator data="mode" name="right_arm/j4"/>
+        </translator>
+        <translator name="RightElbowExtensorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="RightElbowExtensor"/>
+            <actuator data="modeCommand" name="right_arm/j4"/>
+        </translator>
+    </mode>
+    <mode name="RightForearmSupinatorMode" type="mode_plugins/ModeInterface">
+        <translator name="RightForearmSupinatorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="RightForearmSupinator"/>
+            <actuator data="mode" name="right_arm/j5"/>
+        </translator>
+        <translator name="RightForearmSupinatorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="RightForearmSupinator"/>
+            <actuator data="modeCommand" name="right_arm/j5"/>
+        </translator>
+    </mode>
+    <mode name="RightWristExtensorMode" type="mode_plugins/ModeInterface">
+        <translator name="RightWristExtensorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="RightWristExtensor"/>
+            <actuator data="mode" name="right_arm/forearm_driver1/wrist_right"/>
+        </translator>
+        <translator name="RightWristExtensorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="RightWristExtensor"/>
+            <actuator data="modeCommand" name="right_arm/forearm_driver1/wrist_right"/>
+        </translator>
+    </mode>
+    <mode name="RightWristMode" type="mode_plugins/ModeInterface">
+        <translator name="RightWristModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="RightWrist"/>
+            <actuator data="mode" name="right_arm/forearm_driver1/wrist_left"/>
+        </translator>
+        <translator name="RightWristModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="RightWrist"/>
+            <actuator data="modeCommand" name="right_arm/forearm_driver1/wrist_left"/>
+        </translator>
+    </mode>
+    <link name="RightCamBoard_Frame">
+        <!-- Virtual Link -->
+        <inertial>
+            <mass value="0.1"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
+        </inertial>
+    </link>
+    <gazebo reference="RightCamBoard_Frame">
+        <sensor name="asus/ir" type="depth">
+            <camera>
+                <image>
+                    <width>160</width>
+                    <height>120</height>
+                    <format>L8</format>
+                </image>
+                <horizontal_fov>1.57079632679</horizontal_fov>
+                <clip>
+                    <near>0.01</near>
+                    <far>1</far>
+                </clip>
+            </camera>
+            <update_rate>30</update_rate>
+            <plugin filename="libAsusXtionPluginRos.so" name="RightCamBoard_Controller">
+                <updateRate>30</updateRate>
+                <cameraName>RightCamBoard</cameraName>
+                <imageTopicName>rgb/image_raw</imageTopicName>
+                <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+                <depthImageTopicName>depth/image_raw</depthImageTopicName>
+                <depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
+                <pointCloudTopicName>depth/points</pointCloudTopicName>
+                <frameName>RightCamBoardIR_Frame</frameName>
+                <pointCloudCutoff>0.2</pointCloudCutoff>
+                <hack_baseline>0.2</hack_baseline>
+            </plugin>
+        </sensor>
+    </gazebo>
+    <joint name="RightCamBoard_Offset" type="fixed">
+        <origin rpy="3.14159265359 1.57079632679 3.14159265359" xyz="0.049237 0.006877 -0.250708"/>
+        <axis xyz="0 0 1"/>
+        <parent link="RightForearm"/>
+        <child link="RightCamBoard_Frame"/>
+    </joint>
+    <link name="RightCamBoardIR_Frame">
+        <!-- Virtual Link -->
+        <inertial>
+            <mass value="0.1"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
+        </inertial>
+    </link>
+    <joint name="RightCamBoardIR_Offset" type="fixed">
+        <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
+        <axis xyz="0 0 1"/>
+        <parent link="RightCamBoard_Frame"/>
+        <child link="RightCamBoardIR_Frame"/>
+    </joint>
+    <link name="LeftCamBoard_Frame">
+        <!-- Virtual Link -->
+        <inertial>
+            <mass value="0.1"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
+        </inertial>
+    </link>
+    <gazebo reference="LeftCamBoard_Frame">
+        <sensor name="asus/ir" type="depth">
+            <camera>
+                <image>
+                    <width>160</width>
+                    <height>120</height>
+                    <format>L8</format>
+                </image>
+                <horizontal_fov>1.57079632679</horizontal_fov>
+                <clip>
+                    <near>0.01</near>
+                    <far>1</far>
+                </clip>
+            </camera>
+            <update_rate>30</update_rate>
+            <plugin filename="libAsusXtionPluginRos.so" name="LeftCamBoard_Controller">
+                <updateRate>30</updateRate>
+                <cameraName>LeftCamBoard</cameraName>
+                <imageTopicName>rgb/image_raw</imageTopicName>
+                <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+                <depthImageTopicName>depth/image_raw</depthImageTopicName>
+                <depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
+                <pointCloudTopicName>depth/points</pointCloudTopicName>
+                <frameName>LeftCamBoardIR_Frame</frameName>
+                <pointCloudCutoff>0.2</pointCloudCutoff>
+                <hack_baseline>0.2</hack_baseline>
+            </plugin>
+        </sensor>
+    </gazebo>
+    <joint name="LeftCamBoard_Offset" type="fixed">
+        <origin rpy="3.14159265359 -1.57079632679 0" xyz="0.045536 -0.0085 0.250708"/>
+        <axis xyz="0 0 1"/>
+        <parent link="LeftForearm"/>
+        <child link="LeftCamBoard_Frame"/>
+    </joint>
+    <link name="LeftCamBoardIR_Frame">
+        <!-- Virtual Link -->
+        <inertial>
+            <mass value="0.1"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="8.33333333333e-05" ixy="0.0" ixz="0.0" iyy="8.33333333333e-05" iyz="0.0" izz="0.000125"/>
+        </inertial>
+    </link>
+    <joint name="LeftCamBoardIR_Offset" type="fixed">
+        <origin rpy="-1.4279169 0.057186 -1.603747" xyz="-0.05180 -0.0013 0.030237"/>
+        <axis xyz="0 0 1"/>
+        <parent link="LeftCamBoard_Frame"/>
+        <child link="LeftCamBoardIR_Frame"/>
+    </joint>
     <link name="LeftShoulderExtensor">
         <inertial>
             <mass value="2.65"/>
@@ -1857,6 +1867,8 @@
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
     </link>
+
+
     <link name="LeftPalm">
         <inertial>
             <mass value="0.712"/>
@@ -1882,152 +1894,6 @@
     <gazebo reference="LeftPalm">
         <material>Gazebo/Gold</material>
     </gazebo>
-
-
-  <!-- mfallon extra stuff left hand-->
-  <link name="l_hand_force_torque">
-    <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="l_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="LeftPalm"/>
-    <child link="l_hand_force_torque"/>
-  </joint>
-  <link name="left_palm">
-    <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="left_valkyrie_hand_joint" type="fixed">
-    <origin rpy="1.57079632679 1.57079632679 0" xyz="0.08 0 0"/>
-    <parent link="l_hand_force_torque"/>
-    <child link="left_palm"/>
-  </joint>
-  <link name="l_hand_face">
-    <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-  </link>
-  <joint name="l_hand_face_joint" type="fixed">
-    <origin rpy="3.14159265359 0 1.57079632679" xyz="0.08 0.0 -0.04"/>
-    <parent link="l_hand_force_torque"/>
-    <child link="l_hand_face"/>
-  </joint>
-  <!-- end mfallon extra stuff left hand-->
-
-
-
-
-  <!-- mfallon extra stuff right hand-->
-  <link name="r_hand_force_torque">
-    <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="r_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="RightPalm"/>
-    <child link="r_hand_force_torque"/>
-  </joint>
-  <link name="right_palm">
-    <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="right_valkyrie_hand_joint" type="fixed">
-    <origin rpy="0 -1.57079632679 -1.57079632679" xyz="0.08 0 0"/>
-    <parent link="r_hand_force_torque"/>
-    <child link="right_palm"/>
-  </joint>
-  <link name="r_hand_face">
-    <inertial>
-      <mass value="0.001"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-  </link>
-  <joint name="r_hand_face_joint" type="fixed">
-    <origin rpy="0 0 -1.57079632679" xyz="0.08 0 0.04"/>
-    <parent link="r_hand_force_torque"/>
-    <child link="r_hand_face"/>
-  </joint>
-  <!-- end mfallon extra stuff right hand-->
-
-
-
-
-    <joint name="LeftForearmSupinator" type="revolute">
-        <origin rpy="-1.57079632679 0 3.14159265359" xyz="0.0254 0 0"/>
-        <axis xyz="0 0 1"/>
-        <parent link="LeftElbowExtensor"/>
-        <child link="LeftForearm"/>
-        <limit effort="26" lower="-2.35619448885" upper="2.35619448885" velocity="5"/>
-        <controller_gains Kd="0" Kp="20000"/>
-        <dynamics damping="1.0" friction="0.0"/>
-    </joint>
-    <gazebo reference="LeftForearmSupinator">
-        <provideFeedback>1</provideFeedback>
-    </gazebo>
-    <joint name="LeftWristExtensor" type="revolute">
-        <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0.287"/>
-        <axis xyz="0 0 1"/>
-        <parent link="LeftForearm"/>
-        <child link="LeftWristYoke"/>
-        <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
-        <controller_gains Kd="400" Kp="20000"/>
-        <dynamics damping="1.0" friction="0.0"/>
-    </joint>
-    <gazebo reference="LeftWristExtensor">
-        <provideFeedback>1</provideFeedback>
-    </gazebo>
-    <joint name="LeftWrist" type="revolute">
-        <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0"/>
-        <axis xyz="0 0 1"/>
-        <parent link="LeftWristYoke"/>
-        <child link="LeftPalm"/>
-        <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
-        <controller_gains Kd="400" Kp="20000"/>
-        <dynamics damping="1.0" friction="0.0"/>
-    </joint>
-    <gazebo reference="LeftWrist">
-        <provideFeedback>1</provideFeedback>
-    </gazebo>
     <actuator name="trunk/laj1" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
     <actuator name="left_arm/j2" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
     <actuator name="left_arm/j3" type="turbodriver_api/TurbodriverAPI_DRCv4"/>
@@ -2035,76 +1901,6 @@
     <actuator name="left_arm/j5" type="turbodriver_api/TurbodriverAPI_DRCv3"/>
     <actuator name="left_arm/forearm_driver1/wrist_left" type="forearm_api/WristAPI_DRCv1"/>
     <actuator name="left_arm/forearm_driver1/wrist_right" type="forearm_api/WristAPI_DRCv1"/>
-    <mode name="LeftShoulderExtensorMode" type="mode_plugins/ModeInterface">
-        <translator name="LeftShoulderExtensorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="LeftShoulderExtensor"/>
-            <actuator data="mode" name="trunk/laj1"/>
-        </translator>
-        <translator name="LeftShoulderExtensorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="LeftShoulderExtensor"/>
-            <actuator data="modeCommand" name="trunk/laj1"/>
-        </translator>
-    </mode>
-    <mode name="LeftShoulderAdductorMode" type="mode_plugins/ModeInterface">
-        <translator name="LeftShoulderAdductorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="LeftShoulderAdductor"/>
-            <actuator data="mode" name="left_arm/j2"/>
-        </translator>
-        <translator name="LeftShoulderAdductorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="LeftShoulderAdductor"/>
-            <actuator data="modeCommand" name="left_arm/j2"/>
-        </translator>
-    </mode>
-    <mode name="LeftShoulderSupinatorMode" type="mode_plugins/ModeInterface">
-        <translator name="LeftShoulderSupinatorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="LeftShoulderSupinator"/>
-            <actuator data="mode" name="left_arm/j3"/>
-        </translator>
-        <translator name="LeftShoulderSupinatorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="LeftShoulderSupinator"/>
-            <actuator data="modeCommand" name="left_arm/j3"/>
-        </translator>
-    </mode>
-    <mode name="LeftElbowExtensorMode" type="mode_plugins/ModeInterface">
-        <translator name="LeftElbowExtensorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="LeftElbowExtensor"/>
-            <actuator data="mode" name="left_arm/j4"/>
-        </translator>
-        <translator name="LeftElbowExtensorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="LeftElbowExtensor"/>
-            <actuator data="modeCommand" name="left_arm/j4"/>
-        </translator>
-    </mode>
-    <mode name="LeftForearmSupinatorMode" type="mode_plugins/ModeInterface">
-        <translator name="LeftForearmSupinatorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="LeftForearmSupinator"/>
-            <actuator data="mode" name="left_arm/j5"/>
-        </translator>
-        <translator name="LeftForearmSupinatorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="LeftForearmSupinator"/>
-            <actuator data="modeCommand" name="left_arm/j5"/>
-        </translator>
-    </mode>
-    <mode name="LeftWristExtensorMode" type="mode_plugins/ModeInterface">
-        <translator name="LeftWristExtensorModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="LeftWristExtensor"/>
-            <actuator data="mode" name="left_arm/forearm_driver1/wrist_left"/>
-        </translator>
-        <translator name="LeftWristExtensorModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="LeftWristExtensor"/>
-            <actuator data="modeCommand" name="left_arm/forearm_driver1/wrist_left"/>
-        </translator>
-    </mode>
-    <mode name="LeftWristMode" type="mode_plugins/ModeInterface">
-        <translator name="LeftWristModeData" type="SimpleActuatorToJointMode">
-            <joint data="mode" name="LeftWrist"/>
-            <actuator data="mode" name="left_arm/forearm_driver1/wrist_right"/>
-        </translator>
-        <translator name="LeftWristModeCommand" type="SimpleJointToActuatorMode">
-            <joint data="modeCommand" name="LeftWrist"/>
-            <actuator data="modeCommand" name="left_arm/forearm_driver1/wrist_right"/>
-        </translator>
-    </mode>
     <link name="LeftThumbMetacarpal">
         <inertial>
             <mass value="0.017"/>
@@ -2570,6 +2366,226 @@
         <parent link="LeftLittleMedialPhalanx"/>
         <child link="LeftLittleDistalPhalanx"/>
     </joint>
+
+
+
+
+
+  <!-- mfallon extra stuff left hand-->
+  <link name="l_hand_force_torque">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="LeftPalm"/>
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="left_palm">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_valkyrie_hand_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.0 0 0"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="left_palm"/>
+  </joint>
+  <link name="l_hand_face">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+  <joint name="l_hand_face_joint" type="fixed">
+    <origin rpy="3.14159265359 0 1.57079632679" xyz="0.08 0.0 -0.04"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="l_hand_face"/>
+  </joint>
+  <!-- end mfallon extra stuff left hand-->
+
+
+
+
+  <!-- mfallon extra stuff right hand-->
+  <link name="r_hand_force_torque">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="RightPalm"/>
+    <child link="r_hand_force_torque"/>
+  </joint>
+  <link name="right_palm">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_valkyrie_hand_joint" type="fixed">
+    <origin rpy="0 -1.57079632679 -1.57079632679" xyz="0.08 0 0"/>
+    <parent link="r_hand_force_torque"/>
+    <child link="right_palm"/>
+  </joint>
+  <link name="r_hand_face">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+  <joint name="r_hand_face_joint" type="fixed">
+    <origin rpy="0 0 -1.57079632679" xyz="0.08 0 0.04"/>
+    <parent link="r_hand_force_torque"/>
+    <child link="r_hand_face"/>
+  </joint>
+  <!-- end mfallon extra stuff right hand-->
+
+
+
+
+    <joint name="LeftForearmSupinator" type="revolute">
+        <origin rpy="-1.57079632679 0 3.14159265359" xyz="0.0254 0 0"/>
+        <axis xyz="0 0 1"/>
+        <parent link="LeftElbowExtensor"/>
+        <child link="LeftForearm"/>
+        <limit effort="26" lower="-2.35619448885" upper="2.35619448885" velocity="5"/>
+        <controller_gains Kd="0" Kp="20000"/>
+        <dynamics damping="1.0" friction="0.0"/>
+    </joint>
+    <gazebo reference="LeftForearmSupinator">
+        <provideFeedback>1</provideFeedback>
+    </gazebo>
+    <joint name="LeftWristExtensor" type="revolute">
+        <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0.287"/>
+        <axis xyz="0 0 1"/>
+        <parent link="LeftForearm"/>
+        <child link="LeftWristYoke"/>
+        <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
+        <controller_gains Kd="400" Kp="20000"/>
+        <dynamics damping="1.0" friction="0.0"/>
+    </joint>
+    <gazebo reference="LeftWristExtensor">
+        <provideFeedback>1</provideFeedback>
+    </gazebo>
+    <joint name="LeftWrist" type="revolute">
+        <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0"/>
+        <axis xyz="0 0 1"/>
+        <parent link="LeftWristYoke"/>
+        <child link="LeftPalm"/>
+        <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
+        <controller_gains Kd="400" Kp="20000"/>
+        <dynamics damping="1.0" friction="0.0"/>
+    </joint>
+    <gazebo reference="LeftWrist">
+        <provideFeedback>1</provideFeedback>
+    </gazebo>
+    <mode name="LeftShoulderExtensorMode" type="mode_plugins/ModeInterface">
+        <translator name="LeftShoulderExtensorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="LeftShoulderExtensor"/>
+            <actuator data="mode" name="trunk/laj1"/>
+        </translator>
+        <translator name="LeftShoulderExtensorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="LeftShoulderExtensor"/>
+            <actuator data="modeCommand" name="trunk/laj1"/>
+        </translator>
+    </mode>
+    <mode name="LeftShoulderAdductorMode" type="mode_plugins/ModeInterface">
+        <translator name="LeftShoulderAdductorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="LeftShoulderAdductor"/>
+            <actuator data="mode" name="left_arm/j2"/>
+        </translator>
+        <translator name="LeftShoulderAdductorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="LeftShoulderAdductor"/>
+            <actuator data="modeCommand" name="left_arm/j2"/>
+        </translator>
+    </mode>
+    <mode name="LeftShoulderSupinatorMode" type="mode_plugins/ModeInterface">
+        <translator name="LeftShoulderSupinatorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="LeftShoulderSupinator"/>
+            <actuator data="mode" name="left_arm/j3"/>
+        </translator>
+        <translator name="LeftShoulderSupinatorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="LeftShoulderSupinator"/>
+            <actuator data="modeCommand" name="left_arm/j3"/>
+        </translator>
+    </mode>
+    <mode name="LeftElbowExtensorMode" type="mode_plugins/ModeInterface">
+        <translator name="LeftElbowExtensorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="LeftElbowExtensor"/>
+            <actuator data="mode" name="left_arm/j4"/>
+        </translator>
+        <translator name="LeftElbowExtensorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="LeftElbowExtensor"/>
+            <actuator data="modeCommand" name="left_arm/j4"/>
+        </translator>
+    </mode>
+    <mode name="LeftForearmSupinatorMode" type="mode_plugins/ModeInterface">
+        <translator name="LeftForearmSupinatorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="LeftForearmSupinator"/>
+            <actuator data="mode" name="left_arm/j5"/>
+        </translator>
+        <translator name="LeftForearmSupinatorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="LeftForearmSupinator"/>
+            <actuator data="modeCommand" name="left_arm/j5"/>
+        </translator>
+    </mode>
+    <mode name="LeftWristExtensorMode" type="mode_plugins/ModeInterface">
+        <translator name="LeftWristExtensorModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="LeftWristExtensor"/>
+            <actuator data="mode" name="left_arm/forearm_driver1/wrist_left"/>
+        </translator>
+        <translator name="LeftWristExtensorModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="LeftWristExtensor"/>
+            <actuator data="modeCommand" name="left_arm/forearm_driver1/wrist_left"/>
+        </translator>
+    </mode>
+    <mode name="LeftWristMode" type="mode_plugins/ModeInterface">
+        <translator name="LeftWristModeData" type="SimpleActuatorToJointMode">
+            <joint data="mode" name="LeftWrist"/>
+            <actuator data="mode" name="left_arm/forearm_driver1/wrist_right"/>
+        </translator>
+        <translator name="LeftWristModeCommand" type="SimpleJointToActuatorMode">
+            <joint data="modeCommand" name="LeftWrist"/>
+            <actuator data="modeCommand" name="left_arm/forearm_driver1/wrist_right"/>
+        </translator>
+    </mode>
+
     <link name="RightHipRotator">
         <inertial>
             <mass value="2.39"/>
