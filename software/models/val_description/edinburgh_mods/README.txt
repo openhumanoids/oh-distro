@@ -69,6 +69,13 @@ cp valkyrie_A.urdf PATH_TO/drc/software/models/val_description/model.urdf
 5. If needed you can make an sdf file like this:
 gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
 
+6. Generating hands.
+Background: the hands located in models/common_components/hand_factory
+are independent urdf models and are used when seeding hands in the ddapp ui. 
+they are generated from xacro in the same manner as for whole robot:
+rosrun xacro xacro.py valkyrie_hand_left.xacro -o ../urdf/valkyrie_hand_left.urdf
+rosrun xacro xacro.py valkyrie_hand_right.xacro -o ../urdf/valkyrie_hand_right.urdf
+... and then copied into the above locations
 
 
 ***IHMC URDF/SDF***
