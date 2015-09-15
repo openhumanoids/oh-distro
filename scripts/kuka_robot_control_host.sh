@@ -9,6 +9,8 @@
 # and bot-procman-deputy is in the home directory
 source /opt/ros/indigo/setup.bash
 source ~/catkin_ws/devel/setup.bash
+export ROS_IP=192.168.0.2
+export ROS_MASTER_URI=http://192.168.0.2:11311
 export LCM_DEFAULT_URL=udpm://239.255.76.67:1337?ttl=1
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/`whoami`/local/lib # this is needed as without sudo, LCM is installed locally
 export PATH=$PATH:/home/`whoami`/local/bin
