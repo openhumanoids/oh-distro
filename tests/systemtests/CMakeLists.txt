@@ -8,6 +8,7 @@ include(CTest)
 set(test_data_dir ${CMAKE_SOURCE_DIR}/../../drc-testing-data)  # using ~/ probably won't work, instead define it relative to the project dir
 add_test(NAME test_testLaunchSCS COMMAND ${CMAKE_SOURCE_DIR}/src/launchSCS/test.bash) 
 add_test(NAME test_testExoticaLWR COMMAND ${CMAKE_SOURCE_DIR}/src/exoticaLWR/test.bash) 
+add_test(NAME test_testValkyrieWalk COMMAND ${CMAKE_SOURCE_DIR}/src/generic_test.bash ValkyrieWalk ${CMAKE_SOURCE_DIR}/src/valWalk/v2.pmd 600) 
 
 # Example unit test that launches SCS and Drake Designer:
 
