@@ -63,6 +63,7 @@ private:
   double residualGain;
   ResidualArgs args;
   ResidualDetectorState residual_state;
+  drc::robot_state_t residual_state_msg;
 
 //    // information that updateResidualState will need
 //    std::shared_ptr<DrakeRobotState> robot_state;
@@ -215,48 +216,49 @@ void ResidualDetector::updateResidualState() {
   // compute H for current state (q,qd)
   this->drake_model.doKinematics(robot_state->q, robot_state->qd, true);
 
+  // could replace this GradVar declaration with auto?
   GradientVar<double, Eigen::Dynamic, Eigen::Dynamic> gradVar = drake_model.massMatrix<double>(1);
   const auto & H = gradVar.value();
 
   MatrixXd H_grad = gradVar.gradient().value(); // size nq^2 x nq
-//
-//  //compute the gravitational term in manipulator equations, hack by calling doKinematics with zero velocity
-//  VectorXd qd_zero = VectorXd::Zero(this->nq);
-//  this->drake_model.doKinematics(robot_state->q, qd_zero, true);
-//  // dummy of zero external forces
-//  std::map<int, std::unique_ptr< GradientVar<double, TWIST_SIZE, 1> > > f_ext; //hopefully TWIST_SIZE has been defined in a header i've imported
-//  VectorXd gravity = drake_model.inverseDynamics(f_ext).value();
-//
-//  // computes a vector whose i^th entry is g_i(q) - 1/2*qd^T*dH/dq_i*qd
-//  VectorXd alpha = VectorXd::Zero(this->nq);
-//  for (int i=0; i<this->nq; i++){
-//    int row_idx = i*this->nq;
-//    alpha(i) = gravity(i) - 1/2*robot_state->qd.transpose()*H_grad.block(row_idx,0,this->nq, this->nq)*robot_state->qd;
-//  }
-//
-//
-//  // this is the generalized momentum
-//  VectorXd p_momentum = H*robot_state->qd;
-//
-//  //Special case for the first time we enter the loop
-//  //if this is the first time we are entering the loop, then set p_0, and return. Residual stays at 0
-//  if (!this->residual_state.running){
-//    std::cout << "started residual detector updates" << std::endl;
-//    this->residual_state.running = true;
-//    this->residual_state.p_0 = p_momentum;
-//    return;
-//  }
-//
-//  // UPDATE STEP
-//  // First compute new state for residual, only new information this uses is dt, and p_momentum
-//  VectorXd integral_new = this->residual_state.integral + dt*this->residual_state.gamma;
-//  VectorXd r_new = this->residualGain*(p_momentum - this->residual_state.p_0 + integral_new);
-//
-//  // update the residual state
-//
-//  this->residual_state.r = r_new;
-//  this->residual_state.integral = integral_new;
-//  this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r; // this is the integrand;
+
+  //compute the gravitational term in manipulator equations, hack by calling doKinematics with zero velocity
+  VectorXd qd_zero = VectorXd::Zero(this->nq);
+  this->drake_model.doKinematics(robot_state->q, qd_zero, true);
+  // dummy of zero external forces
+  std::map<int, std::unique_ptr< GradientVar<double, TWIST_SIZE, 1> > > f_ext; //hopefully TWIST_SIZE has been defined in a header i've imported
+  VectorXd gravity = drake_model.inverseDynamics(f_ext).value();
+
+  // computes a vector whose i^th entry is g_i(q) - 1/2*qd^T*dH/dq_i*qd
+  VectorXd alpha = VectorXd::Zero(this->nq);
+  for (int i=0; i<this->nq; i++){
+    int row_idx = i*this->nq;
+    alpha(i) = gravity(i) - 1/2*robot_state->qd.transpose()*H_grad.block(row_idx,0,this->nq, this->nq)*robot_state->qd;
+  }
+
+
+  // this is the generalized momentum
+  VectorXd p_momentum = H*robot_state->qd;
+
+  //Special case for the first time we enter the loop
+  //if this is the first time we are entering the loop, then set p_0, and return. Residual stays at 0
+  if (!this->residual_state.running){
+    std::cout << "started residual detector updates" << std::endl;
+    this->residual_state.running = true;
+    this->residual_state.p_0 = p_momentum;
+    return;
+  }
+
+  // UPDATE STEP
+  // First compute new state for residual, only new information this uses is dt, and p_momentum
+  VectorXd integral_new = this->residual_state.integral + dt*this->residual_state.gamma;
+  VectorXd r_new = this->residualGain*(p_momentum - this->residual_state.p_0 + integral_new);
+
+  // update the residual state
+
+  this->residual_state.r = r_new;
+  this->residual_state.integral = integral_new;
+  this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r; // this is the integrand;
 
   this->residual_state.t_prev = t;
   if (this->verbose_){
@@ -269,20 +271,25 @@ void ResidualDetector::updateResidualState() {
 }
 
 void ResidualDetector::publishResidualState(std::string publishChannel, const ResidualDetectorState &residual_state){
-  drc::robot_state_t residual_state_msg;
+
 
   std::unique_lock<std::mutex> lck(pointerMutex);
-  residual_state_msg.utime = static_cast<int64_t> (this->args.robot_state->t * 1e6);
+  this->residual_state_msg.utime = static_cast<int64_t> (this->args.robot_state->t * 1e6);
   lck.unlock();
 
-  residual_state_msg.num_joints = (int16_t) this->nq;
-  residual_state_msg.joint_name = this->state_coordinate_names;
-  residual_state_msg.joint_position.resize(this->nq);
-  residual_state_msg.joint_velocity.resize(this->nq);
-  residual_state_msg.joint_effort.resize(this->nq);
+  this->residual_state_msg.num_joints = (int16_t) this->nq;
+  this->residual_state_msg.joint_name = this->state_coordinate_names;
+  this->residual_state_msg.joint_position.resize(this->nq);
+  this->residual_state_msg.joint_velocity.resize(this->nq);
+  this->residual_state_msg.joint_effort.resize(this->nq);
 
   for (int i=0; i < this->nq; i++){
-    residual_state_msg.joint_position[i] = (float) residual_state.r(i);
+    this->residual_state_msg.joint_position[i] = (float) residual_state.r(i);
+  }
+
+  if (this->verbose_){
+    std::cout << "base_z residual is " << residual_state.r(2) << std::endl;
+    std::cout << "base_z residual in message is " << this->residual_state_msg.joint_position[2] << std::endl;
   }
 
   this->lcm_->publish(publishChannel, &residual_state_msg);
