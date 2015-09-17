@@ -32,7 +32,7 @@ struct ResidualArgs{
   // information that updateResidualState will need
   std::shared_ptr<DrakeRobotStateWithTorque> robot_state;
   std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement;
-  Matrix<bool, Dynamic, 1> b_contact_force;
+  std::map<Side, bool> b_contact_force;
 };
 
 class ResidualDetector{
@@ -63,12 +63,9 @@ private:
   double residualGain;
   ResidualArgs args;
   ResidualDetectorState residual_state;
+  ResidualDetectorState residual_state_w_forces;
   drc::robot_state_t residual_state_msg;
 
-//    // information that updateResidualState will need
-//    std::shared_ptr<DrakeRobotState> robot_state;
-//    std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement;
-//    Matrix<bool, Dynamic, 1> b_contact_force;
 
   std::map<Side, int> foot_body_ids;
 
@@ -123,6 +120,9 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   this->foot_body_ids[Side::LEFT] = body_ids_cache.l_foot;
   this->foot_body_ids[Side::RIGHT] = body_ids_cache.r_foot;
 
+  this->args.b_contact_force[Side::LEFT] = false;
+  this->args.b_contact_force[Side::RIGHT] = false;
+
   foot_contact_driver.reset(new FootContactDriver(body_ids_cache));
 
   // initialize the residual_state
@@ -132,6 +132,14 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   residual_state.gamma = VectorXd::Zero(nq);
   residual_state.p_0 = VectorXd::Zero(nq);
   residual_state.running = false;
+
+  // initialize the residual_state
+  residual_state_w_forces.t_prev = 0;
+  residual_state_w_forces.r = VectorXd::Zero(nq);
+  residual_state_w_forces.integral = VectorXd::Zero(nq);
+  residual_state_w_forces.gamma = VectorXd::Zero(nq);
+  residual_state_w_forces.p_0 = VectorXd::Zero(nq);
+  residual_state_w_forces.running = false;
 
   this->residualGain = RESIDUAL_GAIN;
   this->publishChannel = PUBLISH_CHANNEL;
@@ -161,51 +169,41 @@ void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::s
   this->state_driver->decodeWithTorque(msg, state.get());
 
   // aquire a lock and write to the shared_ptr for robot_state_
-  std::unique_lock<std::mutex> lck(pointerMutex);
+  std::unique_lock<std::mutex> lck(this->pointerMutex);
 
   this->args.robot_state = state;
 
   const drc::force_torque_t& force_torque = msg->force_torque;
 
-  this->args.foot_force_torque_measurement[Side::LEFT].frame_idx = foot_body_ids[Side::LEFT];
+  this->args.foot_force_torque_measurement[Side::LEFT].frame_idx = this->foot_body_ids[Side::LEFT];
   this->args.foot_force_torque_measurement[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
 
-  this->args.foot_force_torque_measurement[Side::RIGHT].frame_idx = foot_body_ids[Side::RIGHT];
+  this->args.foot_force_torque_measurement[Side::RIGHT].frame_idx = this->foot_body_ids[Side::RIGHT];
   this->args.foot_force_torque_measurement[Side::RIGHT].wrench << force_torque.r_foot_torque_x, force_torque.r_foot_torque_y, 0.0, 0.0, 0.0, force_torque.r_foot_force_z;
 
 
   lck.unlock();
   this->newStateAvailable = true;
 
-//  double dt = state->t - t_prev;
-//  this->t_prev = state->t;
-//  double Hz = 1/dt;
-//  std::cout << "Receiving robot state " << Hz << std::endl;
 
 }
 
 void ResidualDetector::onFootContact(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
                                      const drc::foot_contact_estimate_t *msg) {
 
-//  if (this->verbose_)
-//    std::cout << "got a foot contact message" << std::endl;
-
-  Matrix<bool, Dynamic, 1> b_contact_force;
-  b_contact_force = Matrix<bool, Dynamic, 1>::Zero(drake_model.num_bodies);
-  this->foot_contact_driver->decode(msg, b_contact_force);
-
   std::unique_lock<std::mutex> lck(pointerMutex);
-  this->args.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(drake_model.num_bodies);
+  this->args.b_contact_force[Side::LEFT] = msg->left_contact > 0.5;
+  this->args.b_contact_force[Side::RIGHT] = msg->right_contact > 0.5;
   lck.unlock();
 }
 
 void ResidualDetector::updateResidualState() {
 
   // acquire a lock and copy data to local variables
-  std::unique_lock<std::mutex> lck(pointerMutex);
+  std::unique_lock<std::mutex> lck(this->pointerMutex);
   std::shared_ptr<DrakeRobotStateWithTorque> robot_state = this->args.robot_state;
-  std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement = this->args.foot_force_torque_measurement;
-  Matrix<bool, Dynamic, 1> b_contact_force = this->args.b_contact_force;
+  const std::map<Side, ForceTorqueMeasurement>& foot_force_torque_measurement = this->args.foot_force_torque_measurement;
+  const auto & b_contact_force = this->args.b_contact_force;
   this->newStateAvailable = false;
   lck.unlock();
 
@@ -217,17 +215,52 @@ void ResidualDetector::updateResidualState() {
   this->drake_model.doKinematics(robot_state->q, robot_state->qd, true);
 
   // could replace this GradVar declaration with auto?
-  GradientVar<double, Eigen::Dynamic, Eigen::Dynamic> gradVar = drake_model.massMatrix<double>(1);
+  GradientVar<double, Eigen::Dynamic, Eigen::Dynamic> gradVar = this->drake_model.massMatrix<double>(1);
   const auto & H = gradVar.value();
 
   MatrixXd H_grad = gradVar.gradient().value(); // size nq^2 x nq
+
+  //FOOT CONTACT FORCES: Compute torques due to foot contact forces
+  std::map<Side, VectorXd> foot_force_contact_torques;
+  MatrixXd footJacobian; // should be 3 x nv
+  Vector3d points(0,0,0); //point is at origin of foot frame
+
+  for (const auto& side_force: foot_force_torque_measurement){
+    const Side& side = side_force.first;
+    int body_id = this->foot_body_ids[side];
+
+    if (this->verbose_){
+      if (b_contact_force.at(side)){
+        std::cout << std::cout << side.toString() << " foot in contact" << std::endl;
+      }
+      else{
+        std::cout << std::cout << side.toString() << " foot NOT in contact" << std::endl;
+      }
+    }
+    //check if this body is actually in contact or not
+    if (!b_contact_force.at(side)){
+      foot_force_contact_torques[side] = VectorXd::Zero(this->nq);
+      continue;
+    }
+
+    footJacobian = this->drake_model.forwardKinJacobian(points, body_id, 0, 0, true, 0).value();
+    const Vector3d & force = side_force.second.wrench.block(3,0,3,1);
+    foot_force_contact_torques[side_force.first] = footJacobian.transpose()*force;
+
+    if (this->verbose_){
+      std::cout << side.toString() << " foot force is " << std::endl;
+      std::cout << force << std::endl;
+
+      std::cout << "z torque passed through Jacobian is " << foot_force_contact_torques[side](2) << std::endl;
+    }
+  }
 
   //compute the gravitational term in manipulator equations, hack by calling doKinematics with zero velocity
   VectorXd qd_zero = VectorXd::Zero(this->nq);
   this->drake_model.doKinematics(robot_state->q, qd_zero, true);
   // dummy of zero external forces
   std::map<int, std::unique_ptr< GradientVar<double, TWIST_SIZE, 1> > > f_ext; //hopefully TWIST_SIZE has been defined in a header i've imported
-  VectorXd gravity = drake_model.inverseDynamics(f_ext).value();
+  VectorXd gravity = this->drake_model.inverseDynamics(f_ext).value();
 
   // computes a vector whose i^th entry is g_i(q) - 1/2*qd^T*dH/dq_i*qd
   VectorXd alpha = VectorXd::Zero(this->nq);
@@ -246,19 +279,32 @@ void ResidualDetector::updateResidualState() {
     std::cout << "started residual detector updates" << std::endl;
     this->residual_state.running = true;
     this->residual_state.p_0 = p_momentum;
+
+    this->residual_state_w_forces.running = true;
+    this->residual_state_w_forces.p_0 = p_momentum;
     return;
   }
+
+
 
   // UPDATE STEP
   // First compute new state for residual, only new information this uses is dt, and p_momentum
   VectorXd integral_new = this->residual_state.integral + dt*this->residual_state.gamma;
   VectorXd r_new = this->residualGain*(p_momentum - this->residual_state.p_0 + integral_new);
 
-  // update the residual state
+  VectorXd integral_new_w_forces = this->residual_state_w_forces.integral + dt*this->residual_state_w_forces.gamma;
+  VectorXd r_new_w_forces = this->residualGain*(p_momentum - this->residual_state_w_forces.p_0 + integral_new_w_forces);
 
+  // update the residual state
   this->residual_state.r = r_new;
   this->residual_state.integral = integral_new;
   this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r; // this is the integrand;
+
+  // update the residual state with forces
+  this->residual_state_w_forces.r = r_new_w_forces;
+  this->residual_state_w_forces.integral = integral_new_w_forces;
+  this->residual_state_w_forces.gamma = alpha - robot_state->torque - this->residual_state_w_forces.r -
+      foot_force_contact_torques[Side::LEFT] - foot_force_contact_torques[Side::RIGHT]; // this is the integrand;
 
   this->residual_state.t_prev = t;
   if (this->verbose_){
@@ -268,6 +314,7 @@ void ResidualDetector::updateResidualState() {
 
   //publish over LCM
   this->publishResidualState(this->publishChannel, this->residual_state);
+  this->publishResidualState("RESIDUAL_OBSERVER_STATE_WITH_FORCES", this->residual_state_w_forces);
 }
 
 void ResidualDetector::publishResidualState(std::string publishChannel, const ResidualDetectorState &residual_state){
