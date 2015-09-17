@@ -62,6 +62,19 @@ endif()
 add_subdirectory(contact_monitor)
 add_subdirectory(fall_detector)
 add_subdirectory(joint_monitor)
+add_subdirectory(matlab/@QPReactiveRecoveryPlan)
+add_subdirectory(residual_detector)
+
+message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab")
+
+file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/addpath_control.m
+	   "function addpath_control()\n"
+     "  setenv('ROS_PACKAGE_PATH',[getenv('ROS_PACKAGE_PATH'),':${ROS_MODEL_PKG}:${MODELS}:${COMMON_COMPONENTS}']);\n"
+     "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
+	   "  add_ctrl_path();\n"
+	   "  cd(wd);\n"
+    )
+>>>>>>> fd3dc09... update to decode messages with torques
 
 if (matlab)
   message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab")

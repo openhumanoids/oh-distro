@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include "RobotStateDriver.hpp"
 #include "drake/util/drakeGeometryUtil.h"
+#include <memory>
 
 using namespace std;
 using namespace Eigen;
@@ -95,6 +96,32 @@ void RobotStateDriver::decode(const bot_core::robot_state_t *msg, DrakeRobotStat
     int index = it->second; 
     state->q(index) = rpy[2];
     state->qd(index) = rpydot[2];
+  }
+  return;
+}
+
+void RobotStateDriver::decodeWithTorque(const bot_core::robot_state_t *msg, DrakeRobotStateWithTorque *state){
+
+  // need to initialize the fields before it gets passed in
+  std::shared_ptr<DrakeRobotState> drake_state_ptr(new DrakeRobotState);
+  drake_state_ptr->q = VectorXd::Zero(state->q.size());
+  drake_state_ptr->qd = VectorXd::Zero(state->q.size());
+
+  this->decode(msg, drake_state_ptr.get()); // first use the standard decode method
+
+  // now copy the relevant data over to state, which is a FullDrakeRobotState pointer
+  state->t = drake_state_ptr->t;
+  state->q = drake_state_ptr->q;
+  state->qd = drake_state_ptr->qd;
+
+
+  // now its time to decode the torques
+  for (int i=0; i < msg->num_joints; i++) {
+    map<string,int>::iterator it = m_joint_map.find(msg->joint_name[i]);
+    if (it!=m_joint_map.end()) {
+      int index = it->second;
+      state->torque(index) = msg->joint_effort[i];
+    }
   }
   return;
 }

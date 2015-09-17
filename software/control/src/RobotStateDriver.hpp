@@ -1,6 +1,14 @@
 #include "drake/systems/controllers/controlUtil.h"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 
+using namespace Eigen;
+struct DrakeRobotStateWithTorque{
+    double t;
+    VectorXd q;
+    VectorXd qd;
+    VectorXd torque;
+};
+
 class RobotStateDriver {
   private:
     int m_num_joints;
@@ -11,4 +19,7 @@ class RobotStateDriver {
   public:
     RobotStateDriver(std::vector<std::string> state_coordinate_names);
     void decode(const bot_core::robot_state_t *msg, DrakeRobotState *state);
+    void decodeWithTorque(const bot_core::robot_state_t *msg, DrakeRobotStateWithTorque *state);
 };
+
+

@@ -1,6 +1,7 @@
 #include "drc/foot_contact_estimate_t.hpp"
 #include "drake/systems/controllers/QPCommon.h"
 
+
 class FootContactDriver {
   private:
     int r_foot_id;
