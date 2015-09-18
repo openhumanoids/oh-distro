@@ -42,6 +42,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % (quick hack to check out if this kind of numerical imu approx might start
     % to work here...)
     last_floating_state = SharedDataHandle(zeros(12, 1));
+    qp_controller_state_monitor;
     
   end
   
@@ -58,6 +59,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         options = struct();
       end
       
+
+           
       input_frame = getOutputFrame(r);
       output_frame = getOutputFrame(r);
       
@@ -89,6 +92,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.qp_controller_state_monitor = drake.util.MessageMonitor(drake.lcmt_qp_controller_state, 'timestamp');
+      obj.lc.subscribe('CONTROLLER_STATE', obj.qp_controller_state_monitor);
       
       if (isa(obj.getInputFrame, 'drcFrames.AtlasState'))
         atlascoordnames = obj.getInputFrame.getCoordinateNames;
@@ -289,6 +294,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       laser_state = [];
       left_ankle_ft_state = zeros(6, 1);
       right_ankle_ft_state = zeros(6, 1);
+
+      % will be empty if we didn't get a new message
+      qp_controller_state_msg = obj.qp_controller_state_monitor.getNextMessage(5);
+
       
       % Extract particular frame data
       num = obj.frame_nums.atlas_state;
@@ -444,6 +453,16 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.joint_position=zeros(1,state_msg.num_joints);
       state_msg.joint_velocity=zeros(1,state_msg.num_joints);
       state_msg.joint_effort=zeros(1,state_msg.num_joints);
+
+      if ~isempty(qp_controller_state_msg);
+        qp_controller_state_msg = drake.lcmt_qp_controller_state(qp_controller_state_msg);
+        r_control_num_positions = obj.r_control.getNumPositions();
+        joint_effort = qp_controller_state_msg.u; 
+        joint_effort = joint_effort(7:r_control_num_positions);
+        
+        % remove the floating base before putting it into robot_state_t msg
+        state_msg.joint_effort(1:length(joint_effort)) = joint_effort;
+      end
         
       atlas_pos = atlas_state(7:atlas_dofs);
       atlas_vel = atlas_state(atlas_dofs+7:end);
