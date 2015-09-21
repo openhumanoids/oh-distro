@@ -26,6 +26,10 @@ struct ResidualDetectorState{
   VectorXd p_0;
   bool running;
 
+  // for debugging purposes
+  VectorXd gravity;
+  VectorXd torque;
+
 };
 
 struct ResidualArgs{
@@ -88,6 +92,8 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   } while(botparam_ == NULL);
 
   std::shared_ptr<ModelClient> model = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(),0));
+  std::cout << "robot urdf is " << model->getURDFString() << std::endl;
+
   drake_model.addRobotFromURDFString(model->getURDFString());
   drake_model.compile();
 
@@ -140,6 +146,12 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   residual_state_w_forces.gamma = VectorXd::Zero(nq);
   residual_state_w_forces.p_0 = VectorXd::Zero(nq);
   residual_state_w_forces.running = false;
+
+  //DEBUGGING
+  residual_state.gravity = VectorXd::Zero(nq);
+  residual_state.torque = VectorXd::Zero(nq);
+  residual_state_w_forces.gravity = VectorXd::Zero(nq);
+  residual_state_w_forces.torque = VectorXd::Zero(nq);
 
   this->residualGain = RESIDUAL_GAIN;
   this->publishChannel = PUBLISH_CHANNEL;
@@ -200,10 +212,14 @@ void ResidualDetector::onFootContact(const lcm::ReceiveBuffer *rbuf, const std::
 void ResidualDetector::updateResidualState() {
 
   // acquire a lock and copy data to local variables
+  // need to really understand what data is being copied here, and what is a reference
   std::unique_lock<std::mutex> lck(this->pointerMutex);
+  // we create a new DrakeRobotState every time we get a state message so this should be ok
   std::shared_ptr<DrakeRobotStateWithTorque> robot_state = this->args.robot_state;
-  const std::map<Side, ForceTorqueMeasurement>& foot_force_torque_measurement = this->args.foot_force_torque_measurement;
-  const auto & b_contact_force = this->args.b_contact_force;
+
+  //not sure that these are doing the correct thing, we need deep copies. I think it's ok as currently is
+  const std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement = this->args.foot_force_torque_measurement;
+  const auto b_contact_force = this->args.b_contact_force;
   this->newStateAvailable = false;
   lck.unlock();
 
@@ -251,7 +267,7 @@ void ResidualDetector::updateResidualState() {
       std::cout << side.toString() << " foot force is " << std::endl;
       std::cout << force << std::endl;
 
-      std::cout << "z torque passed through Jacobian is " << foot_force_contact_torques[side](2) << std::endl;
+      std::cout << "z force passed through Jacobian is " << foot_force_contact_torques[side](2) << std::endl;
     }
   }
 
@@ -299,6 +315,8 @@ void ResidualDetector::updateResidualState() {
   this->residual_state.r = r_new;
   this->residual_state.integral = integral_new;
   this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r; // this is the integrand;
+  this->residual_state.gravity = gravity;
+  this->residual_state.torque = robot_state->torque;
 
   // update the residual state with forces
   this->residual_state_w_forces.r = r_new_w_forces;
@@ -332,6 +350,10 @@ void ResidualDetector::publishResidualState(std::string publishChannel, const Re
 
   for (int i=0; i < this->nq; i++){
     this->residual_state_msg.joint_position[i] = (float) residual_state.r(i);
+
+    //DEBUGGING
+    this->residual_state_msg.joint_velocity[i] = (float) residual_state.gravity(i);
+    this->residual_state_msg.joint_effort[i] = (float) residual_state.torque(i);
   }
 
   if (this->verbose_){
@@ -361,7 +383,7 @@ int main( int argc, char** argv){
     std::cerr << "Error: lcm is not good()" << std::endl;
   }
 
-  ResidualDetector residualDetector(lcm, true);
+  ResidualDetector residualDetector(lcm, false);
   std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
   std::cout << "started residual thread loop" << std::endl;
 
