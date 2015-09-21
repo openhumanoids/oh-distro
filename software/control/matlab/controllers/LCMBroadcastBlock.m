@@ -454,14 +454,18 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.joint_velocity=zeros(1,state_msg.num_joints);
       state_msg.joint_effort=zeros(1,state_msg.num_joints);
 
-      if ~isempty(qp_controller_state_msg);
+      % assumes that we are using floating base coordinates. Need to be careful since drake ordering of the 
+      % joints is different from the ordering in est_robot_state
+      if (~isempty(qp_controller_state_msg) && obj.publish_truth)
         qp_controller_state_msg = drake.lcmt_qp_controller_state(qp_controller_state_msg);
-        r_control_num_positions = obj.r_control.getNumPositions();
-        joint_effort = qp_controller_state_msg.u; 
-        joint_effort = joint_effort(7:r_control_num_positions);
-        
-        % remove the floating base before putting it into robot_state_t msg
-        state_msg.joint_effort(1:length(joint_effort)) = joint_effort;
+        for(i=1:length(state_msg.joint_name))
+          name = state_msg.joint_name(i);
+          drake_joint_idx = strmatch(name, qp_controller_state_msg.joint_name);
+          if ~isempty(drake_joint_idx)
+            state_msg.joint_effort(i) = qp_controller_state_msg.u(drake_joint_idx);
+          end
+        end
+
       end
         
       atlas_pos = atlas_state(7:atlas_dofs);
@@ -469,7 +473,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         atlas_pos = atlas_pos(obj.reordering);
         atlas_vel = atlas_vel(obj.reordering);
-        state_msg.joint_position =atlas_pos;
+        state_msg.joint_position = atlas_pos;
         state_msg.joint_velocity = atlas_vel;
       else
         state_msg.joint_position = [atlas_pos; right_hand_state(1:right_hand_dofs); left_hand_state(1:left_hand_dofs); laser_spindle_angle];
