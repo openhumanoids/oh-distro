@@ -1,4 +1,5 @@
 {
+  "modelName" : "atlas_v5",
   "urdfConfig": {
     "default": "./model_LR_RR.urdf",
     "robotState": "./model_LR_RR.urdf",

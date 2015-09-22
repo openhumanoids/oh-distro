@@ -1,4 +1,5 @@
 {
+  "modelName" : "valkyrie_v1",
   "urdfConfig": {
     "default": "./V1_sim_shells_reduced_polygon_count_mit.urdf",
     "robotState": "./V1_sim_shells_reduced_polygon_count_mit.urdf",

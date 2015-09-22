@@ -1,4 +1,5 @@
 {
+  "modelName" : "lwr",
   "urdfConfig": {
     "default": "./robots/lwr_hand.urdf",
     "robotState": "./robots/lwr_hand.urdf",
