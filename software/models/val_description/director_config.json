@@ -170,6 +170,7 @@
   "leftFootMeshFiles" : ["meshes/legs/foot_Left_7_5_degrees.obj"],
   "rightFootMeshFiles" : ["meshes/legs/foot_Right_7_5_degrees.obj"],
   "postureDatabaseFile" : "./stored_poses.json",
+  "capabilityMapFile": "../../control/matlab/data/val_description/capabilityMap.mat",
   "mirrorJointSignFlips" : ["WaistRotator"],
 
   "pelvisLink" : "Pelvis",
