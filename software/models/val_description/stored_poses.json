@@ -39,6 +39,24 @@
     },
     {
       "allow_mirror": true,
+      "description": "neckdown",
+      "joints": {
+        "LowerNeckPitch": 0.87
+      },
+      "name": "neckdown",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "neckup",
+      "joints": {
+        "LowerNeckPitch": 0.0
+      },
+      "name": "neckup",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
       "description": "handsdown incl back",
       "joints": {
         "LeftElbowPitch": -0.7853981852531433,
@@ -76,6 +94,28 @@
       },
       "name": "handdown",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "handsup both",
+      "joints": {
+        "LeftElbowPitch": -1.866603970527649,
+        "LeftForearmYaw": 1.5709999799728394,
+        "LeftShoulderPitch": 0.3001966178417206,
+        "LeftShoulderRoll": -1.25,
+        "LeftShoulderYaw": 0.0,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": 0.0,
+        "RightElbowPitch": 1.8092540502548218,
+        "RightForearmYaw": 1.5709999799728394,
+        "RightShoulderPitch": 0.3001966178417206,
+        "RightShoulderRoll": 1.25,
+        "RightShoulderYaw": 0.0,
+        "RightWristPitch": 0.0,
+        "RightWristRoll": 0.0
+      },
+      "name": "handsup both",
+      "nominal_handedness": "none"
     }
   ],
   "bihanded": [
