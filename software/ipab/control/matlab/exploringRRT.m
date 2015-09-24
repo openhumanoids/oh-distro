@@ -10,7 +10,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
   if ~isfield(options,'scene'), options.scene = 1; end;
-  if ~isfield(options,'model'), options.model = 'v5'; end;
+  if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'costType'), options.costType = 'length'; end;
@@ -231,7 +231,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       x_end.val2 = x_end.val1;
       x_end.v5 = x_goal;
       
-      finalPose = FinalPoseProblem(r, g_hand, x_start, x_end.(options.model), ...
+      finalPose = FinalPoseProblem(r, g_hand, x_start(8:end), x_end.(options.model), ...
         startPoseConstraints, goalConstraints, q_nom, ...
         'capabilityMap', cm, 'graspinghand', options.graspingHand, ...
         'activecollisionoptions', ...
