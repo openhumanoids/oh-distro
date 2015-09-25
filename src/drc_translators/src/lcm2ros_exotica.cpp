@@ -1,3 +1,5 @@
+// Copyright 2015 Vladimir Ivan
+
 /*
  - Designer will publish:
  http://docs.ros.org/indigo/api/trajectory_msgs/html/msg/JointTrajectory.html
@@ -20,8 +22,6 @@
 
 #include "lcmtypes/ipab/exotica_planner_request_t.hpp"
 
-using namespace std;
-
 class LCM2ROS
 {
 public:
@@ -41,11 +41,9 @@ private:
                              const ipab::exotica_planner_request_t* msg);
   void ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                         const ipab::exotica_planner_request_t* msg);
-
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_) :
-    lcm_(lcm_), nh_(nh_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_)
 {
   lcm_->subscribe("PLANNER_REQUEST", &LCM2ROS::plannerRequestHandler, this);
   planner_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/exotica/planner_request", 10);
@@ -96,10 +94,12 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   LCM2ROS handlerObject(lcm, nh);
-  cout << "\nlcm2ros translator ready\n";
-  ROS_ERROR("LCM2ROS Translator Ready");
+  ROS_INFO_STREAM("lcm2ros translator ready");
+  ROS_ERROR_STREAM("LCM2ROS Translator Ready");
 
   while (0 == lcm->handle())
-    ;
+  {
+  }
+
   return 0;
 }
