@@ -24,7 +24,8 @@
 
 using namespace std;
 
-class App{
+class App
+{
 public:
   App(ros::NodeHandle node_);
   ~App();
@@ -42,15 +43,16 @@ private:
 App::App(ros::NodeHandle node_) : node_(node_)
 {
   ROS_INFO_STREAM("Initializing KUKA LWR Joint State Translator");
-  if(!lcm_publish_.good())
+  if (!lcm_publish_.good())
   {
-      ROS_ERROR_STREAM("lcm is not good()");
+    ROS_ERROR_STREAM("lcm is not good()");
   }
-  joint_states_sub_ = node_.subscribe(string("/joint_states"), 100, &App::joint_states_cb,this);
-  plan_status_sub_ = node_.subscribe(string("/kuka/plan_status"), 100, &App::plan_status_cb,this);
+  joint_states_sub_ = node_.subscribe(string("/joint_states"), 100, &App::joint_states_cb, this);
+  plan_status_sub_ = node_.subscribe(string("/kuka/plan_status"), 100, &App::plan_status_cb, this);
 }
 
-App::~App()  {
+App::~App()
+{
 }
 
 
@@ -59,13 +61,13 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
   int n_joints = msg->position.size();
 
   drc::joint_state_t msg_out;
-  msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  
-  msg_out.joint_position.assign(n_joints , 0  );
-  msg_out.joint_velocity.assign(n_joints , 0  );
-  msg_out.joint_effort.assign(n_joints , 0  );
+  msg_out.utime = (int64_t) msg->header.stamp.toNSec() / 1000; // from nsec to usec
+
+  msg_out.joint_position.assign(n_joints , 0);
+  msg_out.joint_velocity.assign(n_joints , 0);
+  msg_out.joint_effort.assign(n_joints , 0);
   msg_out.num_joints = n_joints;
-  msg_out.joint_name= msg->name;
+  msg_out.joint_name = msg->name;
   for (int i = 0; i < n_joints; i++)
   {
     msg_out.joint_position[ i ] = msg->position[ i ];
@@ -88,7 +90,8 @@ void App::plan_status_cb(const ipab_msgs::PlanStatusConstPtr& msg)
   lcm_publish_.publish("PLAN_EXECUTION_STATUS", &msg_out);
 }
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
   new App(nh);

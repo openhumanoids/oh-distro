@@ -17,7 +17,8 @@ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
 
 using namespace std;
 
-class LCM2ROS {
+class LCM2ROS
+{
 public:
   LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_);
   ~LCM2ROS() {}
@@ -39,7 +40,8 @@ private:
   ros::Publisher hand_command_pub_;
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_), nh_(nh_) {
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_), nh_(nh_)
+{
   lcm_->subscribe("ROBOTIQ_LEFT_COMMAND", &LCM2ROS::handCommandHandler, this);
   hand_command_pub_ = nh_.advertise<ipab_msgs::RobotiqCommand>("/gripper/ddapp_command", 10);
 
@@ -54,31 +56,39 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   rosnode = new ros::NodeHandle();
 }
 
-void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const robotiqhand::command_t* msg) {
+void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const robotiqhand::command_t* msg)
+{
   ROS_ERROR("LCM2ROS_SDH got hand command");
 
   // TODO: implement engaging on receiving this flag as true and have an auto-timeout to disengage
 
   // Check whether to perform an emergency release
-  if (msg->emergency_release == 1) {
+  if (msg->emergency_release == 1)
+  {
     std_srvs::Trigger er_trigger;
-    if (rosserviceclient_Emergency_Release_.call(er_trigger)) {
+    if (rosserviceclient_Emergency_Release_.call(er_trigger))
+    {
       ROS_ERROR("Emergency release activated"); // TODO: use returned information whether successful
-    } else {
+    }
+    else
+    {
       ROS_ERROR("Emergency release NOT activated");
     }
     return;
   }
 
   // Check whether to disengage hand (activate = 0)
-  if (msg->activate == 0) {
+  if (msg->activate == 0)
+  {
     std_srvs::Trigger disengage_trigger;
     if (rosserviceclient_Disengage_.call(disengage_trigger))
       ROS_DEBUG("Disengaged hand");
     else
       ROS_ERROR("Error disengaging hand");
     return;
-  } else if (msg->activate == 0 && msg->do_move == 0) {
+  }
+  else if (msg->activate == 0 && msg->do_move == 0)
+  {
     std_srvs::Trigger engage_trigger;
     if (rosserviceclient_Engage_.call(engage_trigger))
       ROS_DEBUG("Engaged hand");
@@ -109,30 +119,41 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   hand_command_pub_.publish(m);
 
   // TODO: Implement direct call of driver services
-  if (msg->do_move) {
+  if (msg->do_move)
+  {
     // Command position, force, and velocity (TODO: only position implemented right now)
 
     // TODO: implement different modes
-    switch (msg->mode) {
-    // -1 - ignore (use previous mode)
-    //  0 - basic (normal)
-    //  1 - pinch
-    //  2 - wide
-    //  3 - scissor
+    switch (msg->mode)
+    {
+      // -1 - ignore (use previous mode)
+      //  0 - basic (normal)
+      //  1 - pinch
+      //  2 - wide
+      //  3 - scissor
     case 0: // Basic Position Mode
-      if (msg->position == 0) { // Open
+      if (msg->position == 0)   // Open
+      {
         std_srvs::Trigger tactile_open_trigger;
-        if (rosserviceclient_Tactile_Open_.call(tactile_open_trigger)) {
+        if (rosserviceclient_Tactile_Open_.call(tactile_open_trigger))
+        {
           ROS_INFO("Tactile opening commanded"); // TODO: use returned information whether successful
-        } else {
+        }
+        else
+        {
           ROS_ERROR("Tactile opening FAILED");
         }
         return;
-      } else if (msg->position == 254) { // Close
+      }
+      else if (msg->position == 254)     // Close
+      {
         std_srvs::Trigger tactile_close_trigger;
-        if (rosserviceclient_Tactile_Close_.call(tactile_close_trigger)) {
+        if (rosserviceclient_Tactile_Close_.call(tactile_close_trigger))
+        {
           ROS_INFO("Tactile closing commanded"); // TODO: use returned information whether successful
-        } else {
+        }
+        else
+        {
           ROS_ERROR("Tactile closing FAILED");
         }
         return;
@@ -168,10 +189,12 @@ void LCM2ROS::handCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   }*/
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
   ros::init(argc, argv, "lcm2ros_sdh", ros::init_options::NoSigintHandler);
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
-  if (!lcm->good()) {
+  if (!lcm->good())
+  {
     std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
   ros::NodeHandle nh;

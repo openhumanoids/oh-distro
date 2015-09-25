@@ -39,7 +39,8 @@
 using namespace std;
 
 
-struct Joints {
+struct Joints
+{
   std::vector<double> position;
   std::vector<double> velocity;
   std::vector<double> effort;
@@ -51,7 +52,8 @@ int mode;
 #define MODE_ALL 1
 
 
-class App{
+class App
+{
 public:
   App(ros::NodeHandle node_);
   ~App();
@@ -82,40 +84,46 @@ private:
 };
 
 App::App(ros::NodeHandle node_) :
-    node_(node_){
+  node_(node_)
+{
   ROS_INFO("Initializing Translator");
-  if(!lcmPublish_.good()){
-    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+  if (!lcmPublish_.good())
+  {
+    std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
 
   int queue_size = 100;
 
-  poseSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/robot_pose"), queue_size, &App::poseCallBack,this);
-  jointStatesSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/joint_states"), queue_size, &App::jointStatesCallback,this);
+  poseSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/robot_pose"), queue_size, &App::poseCallBack, this);
+  jointStatesSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/joint_states"), queue_size, &App::jointStatesCallback, this);
   //imuBatchSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/batch_raw_imu"), queue_size, &App::imuBatchCallback,this);
 
-  if (mode == MODE_ALL){
-    headJointStatesSub_ = node_.subscribe(string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,this);
-    leftFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/left"), queue_size, &App::leftFootSensorCallback,this);
-    rightFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/right"), queue_size, &App::rightFootSensorCallback,this);
+  if (mode == MODE_ALL)
+  {
+    headJointStatesSub_ = node_.subscribe(string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback, this);
+    leftFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/left"), queue_size, &App::leftFootSensorCallback, this);
+    rightFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/right"), queue_size, &App::rightFootSensorCallback, this);
     // using previously used queue_size for scan:
-    behaviorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/behavior"), 100, &App::behaviorCallback,this);
-    laserScanSub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::laserScanCallback,this);
+    behaviorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/behavior"), 100, &App::behaviorCallback, this);
+    laserScanSub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
   }
 };
 
-App::~App()  {
+App::~App()
+{
 }
 
 
-void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg){
-  int64_t utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  std::cerr << utime << "" <<std::endl;
+void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
+{
+  int64_t utime = (int64_t) msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  std::cerr << utime << "" << std::endl;
 }
 
-void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg){
-  int64_t utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  std::cerr << "\t\t\t" << utime << "" <<std::endl;
+void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
+{
+  int64_t utime = (int64_t) msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  std::cerr << "\t\t\t" << utime << "" << std::endl;
 }
 
 /*
@@ -126,37 +134,51 @@ void App::imuBatchCallback(const trooper_mlc_msgs::CachedRawIMUDataConstPtr& msg
 */
 
 
-void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg){
+void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
+{
 }
 
-void App::leftFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg){
+void App::leftFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg)
+{
 }
 
-void App::rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg){
+void App::rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg)
+{
 }
 
-void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg){
+void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
+{
 }
 
-void App::laserScanCallback(const sensor_msgs::LaserScanConstPtr& msg){
+void App::laserScanCallback(const sensor_msgs::LaserScanConstPtr& msg)
+{
 }
 
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
   mode = MODE_ALL;
 
   std::string mode_argument;
-  if (argc >= 2){
-     mode_argument = argv[1];
-  }else {
+  if (argc >= 2)
+  {
+    mode_argument = argv[1];
+  }
+  else
+  {
     ROS_ERROR("Need to have another argument in the launch file");
   }
 
-  if (mode_argument.compare("mode_main") == 0){
+  if (mode_argument.compare("mode_main") == 0)
+  {
     mode = MODE_MAIN;
-  }else if (mode_argument.compare("mode_all") == 0){
+  }
+  else if (mode_argument.compare("mode_all") == 0)
+  {
     mode = MODE_ALL;
-  }else {
+  }
+  else
+  {
     ROS_ERROR("mode_argument not understood");
     std::cout << mode_argument << " is not understood\n";
     exit(-1);

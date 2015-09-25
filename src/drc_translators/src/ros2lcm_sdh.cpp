@@ -19,7 +19,8 @@
 
 using namespace std;
 
-class App{
+class App
+{
 public:
   App(ros::NodeHandle node_);
   ~App();
@@ -34,36 +35,41 @@ private:
 };
 
 App::App(ros::NodeHandle node_) :
-    node_(node_){
+  node_(node_)
+{
   ROS_INFO("Initializing Schunk SDH Gripper Translator");
-  if(!lcm_publish_.good()){
-    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+  if (!lcm_publish_.good())
+  {
+    std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
 
-  joint_states_sub_ = node_.subscribe(string("/gripper/sdh_controller/joint_states"), 100, &App::joint_states_cb,this);
+  joint_states_sub_ = node_.subscribe(string("/gripper/sdh_controller/joint_states"), 100, &App::joint_states_cb, this);
 
 };
 
-App::~App()  {
+App::~App()
+{
 }
 
 
-void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
+void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
+{
   int n_joints = msg->position.size();
 
   if (n_joints == 1)
     return; // The driver sends two messages, one consisting of a single message that will kill the program if not caught - it's a mirrored version of the sdh_knuckle_joint named sdh_joint_21_state
 
   drc::joint_state_t msg_out;
-  msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  
-  msg_out.joint_position.assign(n_joints + 1, 0  );
-  msg_out.joint_velocity.assign(n_joints + 1, 0  );
-  msg_out.joint_effort.assign(n_joints + 1, 0  );
+  msg_out.utime = (int64_t) msg->header.stamp.toNSec() / 1000; // from nsec to usec
+
+  msg_out.joint_position.assign(n_joints + 1, 0);
+  msg_out.joint_velocity.assign(n_joints + 1, 0);
+  msg_out.joint_effort.assign(n_joints + 1, 0);
   msg_out.num_joints = n_joints + 1;
 
   msg_out.joint_name = {"sdh_knuckle_joint", "sdh_thumb_2_joint", "sdh_thumb_3_joint", "sdh_finger_12_joint", "sdh_finger_13_joint", "sdh_finger_22_joint", "sdh_finger_23_joint", "sdh_finger_21_joint"};
-  for (int i = 0; i < n_joints; i++)  {
+  for (int i = 0; i < n_joints; i++)
+  {
     msg_out.joint_name[ i ] = msg->name[ i ];
     msg_out.joint_position[ i ] = msg->position[ i ];
     msg_out.joint_velocity[ i ] = msg->velocity[ i ];
@@ -78,7 +84,8 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
 }
 
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
   ros::init(argc, argv, "ros2lcm_sdh");
   ros::NodeHandle nh;
   new App(nh);
