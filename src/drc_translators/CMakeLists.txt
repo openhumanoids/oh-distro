@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   std_srvs
   kdl_conversions
+  roslint
 )
 
 catkin_package(
@@ -100,3 +101,5 @@ pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-co
 # add_executable(lcm2ros_botframes src/lcm2ros_botframes.cpp)
 # target_link_libraries(lcm2ros_botframes ${catkin_LIBRARIES})
 # pods_use_pkg_config_packages(lcm2ros_botframes lcm bot2-core)
+
+roslint_cpp()
