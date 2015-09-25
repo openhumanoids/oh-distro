@@ -2045,7 +2045,6 @@
   </gazebo>
   <gazebo reference="leftLegSixAxis_Offset">
     <sensor name="leftLegSixAxis" type="force_torque">
-      <frame>child</frame>
     </sensor>
   </gazebo>
   <link name="rightCOP_Frame">
@@ -2083,7 +2082,6 @@
   </gazebo>
   <gazebo reference="rightLegSixAxis_Offset">
     <sensor name="rightLegSixAxis" type="force_torque">
-      <frame>child</frame>
     </sensor>
   </gazebo>
   <joint name="multisense_head_root_joint" type="fixed">

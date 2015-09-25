@@ -171,7 +171,7 @@
   "postureDatabaseFile" : "./stored_poses.json",
   "mirrorJointSignFlips" : ["waistRotator"],
 
-  "pelvisLink" : "Pelvis",
+  "pelvisLink" : "pelvis",
   "headLink" : "head",
   "leftFootLink" : "leftFoot",
   "rightFootLink" : "rightFoot",
