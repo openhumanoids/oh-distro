@@ -1,33 +1,39 @@
-// ros2lcm translator for images
-// mfallon
+// Copyright 2015 Maurice Fallon, Wolfgang Merkt
 
+// ros2lcm translator for images
+
+// ### Boost
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
+// ### ROS
 #include <ros/ros.h>
 #include <ros/console.h>
+#include <sensor_msgs/Image.h>
+#include <tf/transform_listener.h>
+
+// ### Standard includes
 #include <cstdlib>
 #include <sys/time.h>
 #include <time.h>
 #include <iostream>
 #include <map>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+// ### LCM
 #include <lcm/lcm-cpp.hpp>
-#include <Eigen/Dense>
-
-#include <sensor_msgs/Image.h>
-
 #include <lcmtypes/bot_core.hpp>
 
+// ### OpenCV
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <tf/transform_listener.h>
-
-using namespace std;
 
 class App
 {
 public:
-  App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_);
   ~App();
 
 private:
@@ -37,13 +43,13 @@ private:
   ros::Subscriber headLeftImageSub_;
 
   void headLeftImageCallback(const sensor_msgs::ImageConstPtr& msg);
-  void publishImage(const sensor_msgs::ImageConstPtr& msg, string channel);
+  void publishImage(const sensor_msgs::ImageConstPtr& msg, std::string channel);
 
   bool flip_rgb;
 };
 
 App::App(ros::NodeHandle node_) :
-    node_(node_), flip_rgb(false)
+    flip_rgb(false)
 {
   ROS_INFO("Initializing Translator");
   if (!lcmPublish_.good())
@@ -56,10 +62,9 @@ App::App(ros::NodeHandle node_) :
   nh_.getParam("camera_topic", cameraTopic);
   nh_.getParam("flip_rgb", flip_rgb);
   std::cout << "Subscribing to " << cameraTopic << std::endl;
-  std::cout << "flip_rgb: " << (int)flip_rgb << std::endl;
+  std::cout << "flip_rgb: " << static_cast<int>(flip_rgb) << std::endl;
   headLeftImageSub_ = node_.subscribe(cameraTopic, 1, &App::headLeftImageCallback, this);
 }
-;
 
 App::~App()
 {
@@ -76,9 +81,8 @@ void App::headLeftImageCallback(const sensor_msgs::ImageConstPtr& msg)
   publishImage(msg, "CAMERA_LEFT");
 }
 
-void App::publishImage(const sensor_msgs::ImageConstPtr& msg, string channel)
+void App::publishImage(const sensor_msgs::ImageConstPtr& msg, std::string channel)
 {
-
   int64_t current_utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
   int n_colors = 3;
   int isize = msg->data.size();
@@ -89,7 +93,7 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg, string channel)
   lcm_img.nmetadata = 0;
   lcm_img.row_stride = n_colors * msg->width;
 
-  // TODO: reallocate to speed?
+  // TODO(tbd): reallocate to speed?
   void* bytes = const_cast<void*>(static_cast<const void*>(msg->data.data()));
   cv::Mat mat(msg->height, msg->width, CV_8UC3, bytes, lcm_img.row_stride);
 
@@ -98,8 +102,8 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg, string channel)
   {
     lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
     lcm_img.size = isize;
-    cv::cvtColor(mat, mat, CV_RGB2BGR); // TODO: expose this as a param
-    //cv::cvtColor(mat, mat, CV_BGR2RGB);
+    cv::cvtColor(mat, mat, CV_RGB2BGR);  // TODO(tbd): expose this as a param
+    // cv::cvtColor(mat, mat, CV_BGR2RGB);
     lcm_img.data.resize(mat.step * mat.rows);
     std::copy(mat.data, mat.data + mat.step * mat.rows, lcm_img.data.begin());
   }
