@@ -29,16 +29,17 @@ public:
   ~App();
 
 private:
-  lcm::LCM lcm_publish_ ;
+  lcm::LCM lcm_publish_;
   ros::NodeHandle node_;
 
-  ros::Subscriber  traj_sub_;
-  ros::Subscriber  ik_sub_;
+  ros::Subscriber traj_sub_;
+  ros::Subscriber ik_sub_;
   void traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg);
   void ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg);
 };
 
-App::App(ros::NodeHandle node_) : node_(node_)
+App::App(ros::NodeHandle node_) :
+    node_(node_)
 {
   ROS_INFO_STREAM("Initializing LCM EXOTica Joint State Translator");
   if (!lcm_publish_.good())
@@ -55,11 +56,10 @@ App::~App()
 {
 }
 
-
 void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 {
   drc::robot_plan_w_keyframes_t msg_out;
-  msg_out.utime = (int64_t) msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
   msg_out.robot_name = msg->robot;
   int T = msg->points.size();
   msg_out.num_states = T;
@@ -75,16 +75,16 @@ void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
   {
     msg_out.plan[t].utime = msg->points[t].time_from_start.toNSec() / 1000;
     int n_joints = msg->joint_names.size();
-    msg_out.plan[t].joint_position.assign(n_joints , 0);
-    msg_out.plan[t].joint_velocity.assign(n_joints , 0);
-    msg_out.plan[t].joint_effort.assign(n_joints , 0);
+    msg_out.plan[t].joint_position.assign(n_joints, 0);
+    msg_out.plan[t].joint_velocity.assign(n_joints, 0);
+    msg_out.plan[t].joint_effort.assign(n_joints, 0);
 
     msg_out.plan[t].num_joints = n_joints;
     msg_out.plan[t].joint_name = msg->joint_names;
 
     for (int i = 0; i < n_joints; i++)
     {
-      msg_out.plan[t].joint_position[ i ] = msg->points[t].positions[ i ];
+      msg_out.plan[t].joint_position[i] = msg->points[t].positions[i];
       // Ignoring velocity and effort for now
     }
 
@@ -94,11 +94,12 @@ void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
       msg_out.plan[t].pose.translation.x = msg->points[t].positions[0];
       msg_out.plan[t].pose.translation.y = msg->points[t].positions[1];
       msg_out.plan[t].pose.translation.z = msg->points[t].positions[2];
-      KDL::Rotation base_rot = KDL::Rotation::RPY(msg->points[t].positions[3], msg->points[t].positions[4], msg->points[t].positions[5]);
-      base_rot.GetQuaternion(msg_out.plan[t].pose.rotation.x, msg_out.plan[t].pose.rotation.y, msg_out.plan[t].pose.rotation.z, msg_out.plan[t].pose.rotation.w);
+      KDL::Rotation base_rot = KDL::Rotation::RPY(msg->points[t].positions[3], msg->points[t].positions[4],
+                                                  msg->points[t].positions[5]);
+      base_rot.GetQuaternion(msg_out.plan[t].pose.rotation.x, msg_out.plan[t].pose.rotation.y,
+                             msg_out.plan[t].pose.rotation.z, msg_out.plan[t].pose.rotation.w);
     }
   }
-
 
   lcm_publish_.publish("CANDIDATE_MANIP_PLAN", &msg_out);
 }
@@ -106,7 +107,7 @@ void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 void App::ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 {
   drc::robot_plan_w_keyframes_t msg_out;
-  msg_out.utime = (int64_t) msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
   msg_out.robot_name = msg->robot;
   int T = msg->points.size();
   msg_out.num_states = T;
@@ -122,15 +123,15 @@ void App::ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
   {
     msg_out.plan[t].utime = msg->points[t].time_from_start.toNSec() / 1000;
     int n_joints = msg->joint_names.size();
-    msg_out.plan[t].joint_position.assign(n_joints , 0);
-    msg_out.plan[t].joint_velocity.assign(n_joints , 0);
-    msg_out.plan[t].joint_effort.assign(n_joints , 0);
+    msg_out.plan[t].joint_position.assign(n_joints, 0);
+    msg_out.plan[t].joint_velocity.assign(n_joints, 0);
+    msg_out.plan[t].joint_effort.assign(n_joints, 0);
     msg_out.plan[t].pose.rotation.w = 1.0;
     msg_out.plan[t].num_joints = n_joints;
     msg_out.plan[t].joint_name = msg->joint_names;
     for (int i = 0; i < n_joints; i++)
     {
-      msg_out.plan[t].joint_position[ i ] = msg->points[t].positions[ i ];
+      msg_out.plan[t].joint_position[i] = msg->points[t].positions[i];
       // Ignoring velocity and effort for now
     }
     if (msg->base_type == 10)
@@ -138,11 +139,12 @@ void App::ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
       msg_out.plan[t].pose.translation.x = msg->points[t].positions[0];
       msg_out.plan[t].pose.translation.y = msg->points[t].positions[1];
       msg_out.plan[t].pose.translation.z = msg->points[t].positions[2];
-      KDL::Rotation base_rot = KDL::Rotation::RPY(msg->points[t].positions[3], msg->points[t].positions[4], msg->points[t].positions[5]);
-      base_rot.GetQuaternion(msg_out.plan[t].pose.rotation.x, msg_out.plan[t].pose.rotation.y, msg_out.plan[t].pose.rotation.z, msg_out.plan[t].pose.rotation.w);
+      KDL::Rotation base_rot = KDL::Rotation::RPY(msg->points[t].positions[3], msg->points[t].positions[4],
+                                                  msg->points[t].positions[5]);
+      base_rot.GetQuaternion(msg_out.plan[t].pose.rotation.x, msg_out.plan[t].pose.rotation.y,
+                             msg_out.plan[t].pose.rotation.z, msg_out.plan[t].pose.rotation.w);
     }
   }
-
 
   lcm_publish_.publish("CANDIDATE_MANIP_IKPLAN", &msg_out);
 }

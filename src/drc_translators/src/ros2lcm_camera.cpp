@@ -18,7 +18,6 @@
 
 #include <lcmtypes/bot_core.hpp>
 
-
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <tf/transform_listener.h>
@@ -32,7 +31,7 @@ public:
   ~App();
 
 private:
-  lcm::LCM lcmPublish_ ;
+  lcm::LCM lcmPublish_;
   ros::NodeHandle node_;
 
   ros::Subscriber headLeftImageSub_;
@@ -44,7 +43,7 @@ private:
 };
 
 App::App(ros::NodeHandle node_) :
-  node_(node_), flip_rgb(false)
+    node_(node_), flip_rgb(false)
 {
   ROS_INFO("Initializing Translator");
   if (!lcmPublish_.good())
@@ -59,7 +58,8 @@ App::App(ros::NodeHandle node_) :
   std::cout << "Subscribing to " << cameraTopic << std::endl;
   std::cout << "flip_rgb: " << (int)flip_rgb << std::endl;
   headLeftImageSub_ = node_.subscribe(cameraTopic, 1, &App::headLeftImageCallback, this);
-};
+}
+;
 
 App::~App()
 {
@@ -79,8 +79,8 @@ void App::headLeftImageCallback(const sensor_msgs::ImageConstPtr& msg)
 void App::publishImage(const sensor_msgs::ImageConstPtr& msg, string channel)
 {
 
-  int64_t current_utime = (int64_t) floor(msg->header.stamp.toNSec() / 1000);
-  int  n_colors = 3;
+  int64_t current_utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
+  int n_colors = 3;
   int isize = msg->data.size();
   bot_core::image_t lcm_img;
   lcm_img.utime = current_utime;
@@ -101,8 +101,7 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg, string channel)
     cv::cvtColor(mat, mat, CV_RGB2BGR); // TODO: expose this as a param
     //cv::cvtColor(mat, mat, CV_BGR2RGB);
     lcm_img.data.resize(mat.step * mat.rows);
-    std::copy(mat.data, mat.data + mat.step * mat.rows,
-              lcm_img.data.begin());
+    std::copy(mat.data, mat.data + mat.step * mat.rows, lcm_img.data.begin());
   }
   else
   {
@@ -120,7 +119,6 @@ void App::publishImage(const sensor_msgs::ImageConstPtr& msg, string channel)
 
   lcmPublish_.publish(channel.c_str(), &lcm_img);
 }
-
 
 int main(int argc, char **argv)
 {

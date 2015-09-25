@@ -1,9 +1,9 @@
 /*
-- Designer will publish:
-http://docs.ros.org/indigo/api/trajectory_msgs/html/msg/JointTrajectory.html
-- Designer will receive: (with root link as 0,0,0)
-http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
-*/
+ - Designer will publish:
+ http://docs.ros.org/indigo/api/trajectory_msgs/html/msg/JointTrajectory.html
+ - Designer will receive: (with root link as 0,0,0)
+ http://docs.ros.org/indigo/api/sensor_msgs/html/msg/JointState.html
+ */
 #include <cstdlib>
 #include <string>
 #include <ros/ros.h>
@@ -26,7 +26,9 @@ class LCM2ROS
 {
 public:
   LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_);
-  ~LCM2ROS() {}
+  ~LCM2ROS()
+  {
+  }
 
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
@@ -35,13 +37,15 @@ private:
   ros::Publisher planner_request_pub_;
   ros::Publisher ik_request_pub_;
 
-  void plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::exotica_planner_request_t* msg);
-  void ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::exotica_planner_request_t* msg);
+  void plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                             const ipab::exotica_planner_request_t* msg);
+  void ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                        const ipab::exotica_planner_request_t* msg);
 
 };
 
-
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_), nh_(nh_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_) :
+    lcm_(lcm_), nh_(nh_)
 {
   lcm_->subscribe("PLANNER_REQUEST", &LCM2ROS::plannerRequestHandler, this);
   planner_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/exotica/planner_request", 10);
@@ -63,7 +67,8 @@ void translatePlannerRequest(const ipab::exotica_planner_request_t* msg, ipab_ms
   m.options = msg->options;
 }
 
-void LCM2ROS::plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::exotica_planner_request_t* msg)
+void LCM2ROS::plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                                    const ipab::exotica_planner_request_t* msg)
 {
   ROS_ERROR("LCM2ROS got PLANNER_REQUEST");
   ipab_msgs::PlannerRequest m;
@@ -71,7 +76,8 @@ void LCM2ROS::plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::s
   planner_request_pub_.publish(m);
 }
 
-void LCM2ROS::ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::exotica_planner_request_t* msg)
+void LCM2ROS::ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                               const ipab::exotica_planner_request_t* msg)
 {
   ROS_ERROR("LCM2ROS got IK_REQUEST");
   ipab_msgs::PlannerRequest m;
@@ -93,6 +99,7 @@ int main(int argc, char** argv)
   cout << "\nlcm2ros translator ready\n";
   ROS_ERROR("LCM2ROS Translator Ready");
 
-  while (0 == lcm->handle());
+  while (0 == lcm->handle())
+    ;
   return 0;
 }

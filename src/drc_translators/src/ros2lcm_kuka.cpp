@@ -31,16 +31,17 @@ public:
   ~App();
 
 private:
-  lcm::LCM lcm_publish_ ;
+  lcm::LCM lcm_publish_;
   ros::NodeHandle node_;
 
-  ros::Subscriber  joint_states_sub_, plan_status_sub_;
+  ros::Subscriber joint_states_sub_, plan_status_sub_;
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);
   void plan_status_cb(const ipab_msgs::PlanStatusConstPtr& msg);
 
 };
 
-App::App(ros::NodeHandle node_) : node_(node_)
+App::App(ros::NodeHandle node_) :
+    node_(node_)
 {
   ROS_INFO_STREAM("Initializing KUKA LWR Joint State Translator");
   if (!lcm_publish_.good())
@@ -55,24 +56,23 @@ App::~App()
 {
 }
 
-
 void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
 {
   int n_joints = msg->position.size();
 
   drc::joint_state_t msg_out;
-  msg_out.utime = (int64_t) msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
 
-  msg_out.joint_position.assign(n_joints , 0);
-  msg_out.joint_velocity.assign(n_joints , 0);
-  msg_out.joint_effort.assign(n_joints , 0);
+  msg_out.joint_position.assign(n_joints, 0);
+  msg_out.joint_velocity.assign(n_joints, 0);
+  msg_out.joint_effort.assign(n_joints, 0);
   msg_out.num_joints = n_joints;
   msg_out.joint_name = msg->name;
   for (int i = 0; i < n_joints; i++)
   {
-    msg_out.joint_position[ i ] = msg->position[ i ];
-    msg_out.joint_velocity[ i ] = msg->velocity[ i ];
-    msg_out.joint_effort[ i ] = msg->effort[i];
+    msg_out.joint_position[i] = msg->position[i];
+    msg_out.joint_velocity[i] = msg->velocity[i];
+    msg_out.joint_effort[i] = msg->effort[i];
   }
 
   lcm_publish_.publish("KUKA_STATE", &msg_out);

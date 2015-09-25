@@ -5,7 +5,6 @@
 // grey compression
 // disparity/depth conversion from device
 
-
 // rosparam set /compressed_listener/image_transport compressed; rosparam set /ros2lcm/stereo hand; rosrun translators  ros2lcm_stereo  __name:=ros2lcm_hand
 // rosparam set /ros2lcm_head/image_transport compressed; rosparam set /ros2lcm/stereo head;  rosrun translators ros2lcm_stereo  __name:=ros2lcm_head
 //  rosparam set /compressed_listener/image_transport compressed
@@ -49,7 +48,7 @@ public:
   ~App();
 
 private:
-  lcm::LCM lcm_publish_ ;
+  lcm::LCM lcm_publish_;
   ros::NodeHandle node_;
 
   // Combined Stereo Image:
@@ -57,7 +56,8 @@ private:
   bot_core::image_t image_a_lcm_;
   bot_core::image_t image_b_lcm_;
   void publishStereo(const sensor_msgs::ImageConstPtr& image_a_ros, const sensor_msgs::CameraInfoConstPtr& info_a_ros,
-                     const sensor_msgs::ImageConstPtr& image_ros_b, const sensor_msgs::CameraInfoConstPtr& info_b_ros, std::string camera_out);
+                     const sensor_msgs::ImageConstPtr& image_ros_b, const sensor_msgs::CameraInfoConstPtr& info_b_ros,
+                     std::string camera_out);
   image_transport::ImageTransport it_;
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -65,9 +65,8 @@ private:
                       const sensor_msgs::ImageConstPtr& image_ros_b, const sensor_msgs::CameraInfoConstPtr& info_cam_b);
   image_transport::SubscriberFilter image_a_ros_sub_, image_b_ros_sub_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> info_a_ros_sub_, info_b_ros_sub_;
-  message_filters::TimeSynchronizer < sensor_msgs::Image, sensor_msgs::CameraInfo,
-                  sensor_msgs::Image, sensor_msgs::CameraInfo > sync_;
-
+  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::Image,
+      sensor_msgs::CameraInfo> sync_;
 
   bool do_jpeg_compress_;
   int jpeg_quality_;
@@ -80,14 +79,14 @@ private:
 };
 
 App::App(ros::NodeHandle node_) :
-  node_(node_), it_(node_), sync_(10)
+    node_(node_), it_(node_), sync_(10)
 {
   if (!lcm_publish_.good())
   {
     std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
 
-  std::string image_a_string , info_a_string, image_b_string, info_b_string;
+  std::string image_a_string, info_a_string, image_b_string, info_b_string;
   std::string head_stereo_root = "";
 
   image_a_string = head_stereo_root + "/left/image_rect_color";
@@ -113,23 +112,25 @@ App::App(ros::NodeHandle node_) :
   // allocate space for zlib compressing depth data
 
   depth_compress_buf_size_ = 800 * 800 * sizeof(int8_t) * 10;
-  depth_compress_buf_ = (uint8_t*) malloc(depth_compress_buf_size_);
+  depth_compress_buf_ = (uint8_t*)malloc(depth_compress_buf_size_);
   do_jpeg_compress_ = true;
   jpeg_quality_ = 95; // 95 is opencv default
   do_zlib_compress_ = true;
 
-};
-
+}
+;
 
 App::~App()
 {
 }
 
-
 int stereo_counter = 0;
-void App::head_stereo_cb(const sensor_msgs::ImageConstPtr& image_a_ros,    const sensor_msgs::CameraInfoConstPtr& info_a_ros,    const sensor_msgs::ImageConstPtr& image_b_ros,    const sensor_msgs::CameraInfoConstPtr& info_b_ros)
+void App::head_stereo_cb(const sensor_msgs::ImageConstPtr& image_a_ros,
+                         const sensor_msgs::CameraInfoConstPtr& info_a_ros,
+                         const sensor_msgs::ImageConstPtr& image_b_ros,
+                         const sensor_msgs::CameraInfoConstPtr& info_b_ros)
 {
-  int64_t current_utime = (int64_t) floor(image_a_ros->header.stamp.toNSec() / 1000);
+  int64_t current_utime = (int64_t)floor(image_a_ros->header.stamp.toNSec() / 1000);
   publishStereo(image_a_ros, info_a_ros, image_b_ros, info_b_ros, "CAMERA");
 
   if (stereo_counter % 30 == 0)
@@ -138,7 +139,6 @@ void App::head_stereo_cb(const sensor_msgs::ImageConstPtr& image_a_ros,    const
   }
   stereo_counter++;
 }
-
 
 void App::publishStereo(const sensor_msgs::ImageConstPtr& image_a_ros,
                         const sensor_msgs::CameraInfoConstPtr& info_a_ros,
@@ -155,22 +155,21 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& image_a_ros,
   images_msg_out_.image_types[1] = 1;
 
   images_msg_out_.n_images = images_msg_out_.images.size();
-  images_msg_out_.utime = (int64_t) floor(image_a_ros->header.stamp.toNSec() / 1000);
+  images_msg_out_.utime = (int64_t)floor(image_a_ros->header.stamp.toNSec() / 1000);
   lcm_publish_.publish("CAMERA", &images_msg_out_);
   return;
 }
 
-
 void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstPtr& ros_image)
 {
 
-  int64_t current_utime = (int64_t) floor(ros_image->header.stamp.toNSec() / 1000);
+  int64_t current_utime = (int64_t)floor(ros_image->header.stamp.toNSec() / 1000);
   lcm_image.utime = current_utime;
   int isize = ros_image->width * ros_image->height;
   int n_colors;
 
-  if ((ros_image->encoding.compare("mono8") == 0) ||
-      ((ros_image->encoding.compare("rgb8") == 0) || (ros_image->encoding.compare("bgr8") == 0)))
+  if ((ros_image->encoding.compare("mono8") == 0)
+      || ((ros_image->encoding.compare("rgb8") == 0) || (ros_image->encoding.compare("bgr8") == 0)))
   {
 
     if (ros_image->encoding.compare("mono8") == 0)
@@ -252,13 +251,13 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
     n_colors = 2;  // 2 bytes per pixel
 
     /*
-    int uncompressed_size = isize;
-    // Insert proper compression here if needed:
-    unsigned long compressed_size = depth_compress_buf_size_;
-    compress2( depth_compress_buf_, &compressed_size, (const Bytef*) imageDataP, uncompressed_size,
-            Z_BEST_SPEED);
-    lcm_image.data.resize(compressed_size);
-    */
+     int uncompressed_size = isize;
+     // Insert proper compression here if needed:
+     unsigned long compressed_size = depth_compress_buf_size_;
+     compress2( depth_compress_buf_, &compressed_size, (const Bytef*) imageDataP, uncompressed_size,
+     Z_BEST_SPEED);
+     lcm_image.data.resize(compressed_size);
+     */
     unsigned long zlib_compressed_size = 1000; // fake compressed size
     lcm_image.data.resize(zlib_compressed_size);
     lcm_image.size = zlib_compressed_size;
@@ -272,7 +271,6 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
 
     n_colors = 2;  // 2 bytes per pixel
 
-
     lcm_image.data.resize(2 * isize);
     lcm_image.size = 2 * isize;
     //images_msg_out_.image_types[1] = 2;// bot_core::images_t::DISPARITY );
@@ -284,7 +282,6 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
   lcm_image.row_stride = n_colors * ros_image->width;
 }
 
-
 int main(int argc, char **argv)
 {
 
@@ -294,14 +291,14 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
   // Disabled, originally used for jpeg-in-jpeg out:
   /*
-  std::string  which_transport;
-  which_transport = "/ros2lcm_head";
-  std::string transport;
-  if (nh.getParam(string( which_transport + "/image_transport"), transport)) {
-    std::cout << "transport is " << transport << "\n";
-  }
-  ROS_ERROR("Stereo Camera Translator: [%s] [%s]", which_camera.c_str() , transport.c_str());
-  */
+   std::string  which_transport;
+   which_transport = "/ros2lcm_head";
+   std::string transport;
+   if (nh.getParam(string( which_transport + "/image_transport"), transport)) {
+   std::cout << "transport is " << transport << "\n";
+   }
+   ROS_ERROR("Stereo Camera Translator: [%s] [%s]", which_camera.c_str() , transport.c_str());
+   */
   ROS_ERROR("Stereo Camera Translator: [%s]", which_camera.c_str());
 
   new App(nh);
