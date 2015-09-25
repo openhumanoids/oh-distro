@@ -15,9 +15,9 @@
   <joint name="right_valkyrie_hand_joint" type="fixed">
     <origin rpy="0 1.57 1.57" xyz="0 0 0"/>
     <parent link="plane::xy::base"/>
-    <child link="RightPalm"/>
+    <child link="rightPalm"/>
   </joint>
-  <link name="RightPalm">
+  <link name="rightPalm">
     <inertial>
       <mass value="0.712"/>
       <origin rpy="0 0 0" xyz="0.002954 -0.052034 -0.000236"/>
@@ -25,19 +25,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/arms/palm_Right.obj"/>
+        <mesh filename="package://val_description/meshes/arms/palm_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/arms/palm_Right.obj"/>
+        <mesh filename="package://val_description/meshes/arms/palm_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightThumbRollLink">
+  <link name="rightThumbRollLink">
     <inertial>
       <mass value="0.017"/>
       <origin rpy="0 0 0" xyz="0 -0.0 0.01"/>
@@ -45,19 +45,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightThumbPitch1Link">
+  <link name="rightThumbPitch1Link">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.0 -0.005 0.02"/>
@@ -65,19 +65,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightThumbPitch2Link">
+  <link name="rightThumbPitch2Link">
     <inertial>
       <mass value="0.013"/>
       <origin rpy="0 0 0" xyz="0 -0.004 0.017"/>
@@ -85,19 +85,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightThumbPitch3Link">
+  <link name="rightThumbPitch3Link">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0 -0.004 0.01"/>
@@ -105,55 +105,55 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj4_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj4_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj4_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/thumbj4_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <joint name="RightThumbRoll" type="fixed">
+  <joint name="rightThumbRoll" type="fixed">
     <origin rpy="0.3491 0.0 0.0" xyz="0.0049 -0.0351 0.0228"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightPalm"/>
-    <child link="RightThumbRollLink"/>
+    <parent link="rightPalm"/>
+    <child link="rightThumbRollLink"/>
   </joint>
-  <gazebo reference="RightThumbRoll">
+  <gazebo reference="rightThumbRoll">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightThumbPitch1" type="fixed">
+  <joint name="rightThumbPitch1" type="fixed">
     <origin rpy="-0.3491 0.0 0.0" xyz="0.0 0.0 0.0229"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightThumbRollLink"/>
-    <child link="RightThumbPitch1Link"/>
+    <parent link="rightThumbRollLink"/>
+    <child link="rightThumbPitch1Link"/>
   </joint>
-  <gazebo reference="RightThumbPitch1">
+  <gazebo reference="rightThumbPitch1">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightThumbPitch2" type="fixed">
+  <joint name="rightThumbPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0066 0.0375"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightThumbPitch1Link"/>
-    <child link="RightThumbPitch2Link"/>
+    <parent link="rightThumbPitch1Link"/>
+    <child link="rightThumbPitch2Link"/>
   </joint>
-  <gazebo reference="RightThumbPitch2">
+  <gazebo reference="rightThumbPitch2">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightThumbPitch3" type="fixed">
+  <joint name="rightThumbPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0049 0.0275"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightThumbPitch2Link"/>
-    <child link="RightThumbPitch3Link"/>
+    <parent link="rightThumbPitch2Link"/>
+    <child link="rightThumbPitch3Link"/>
   </joint>
-  <gazebo reference="RightThumbPitch3">
+  <gazebo reference="rightThumbPitch3">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <link name="RightIndexFingerPitch1Link">
+  <link name="rightIndexFingerPitch1Link">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0 -0.02 0"/>
@@ -161,19 +161,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/indexj1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/indexj1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightIndexFingerPitch2Link">
+  <link name="rightIndexFingerPitch2Link">
     <inertial>
       <mass value="0.018"/>
       <origin rpy="0 0 0" xyz="0 -0.013 0"/>
@@ -181,19 +181,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/indexj2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/indexj2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightIndexFingerPitch3Link">
+  <link name="rightIndexFingerPitch3Link">
     <inertial>
       <mass value="0.01"/>
       <origin rpy="0 0 0" xyz="0 -0.01 0"/>
@@ -201,46 +201,46 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/indexj3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/indexj3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <joint name="RightIndexFingerPitch1" type="fixed">
+  <joint name="rightIndexFingerPitch1" type="fixed">
     <origin rpy="-0.1745 0.0 0.0" xyz="0.0022 -0.0976 0.0235"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightPalm"/>
-    <child link="RightIndexFingerPitch1Link"/>
+    <parent link="rightPalm"/>
+    <child link="rightIndexFingerPitch1Link"/>
   </joint>
-  <gazebo reference="RightIndexFingerPitch1">
+  <gazebo reference="rightIndexFingerPitch1">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightIndexFingerPitch2" type="fixed">
+  <joint name="rightIndexFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightIndexFingerPitch1Link"/>
-    <child link="RightIndexFingerPitch2Link"/>
+    <parent link="rightIndexFingerPitch1Link"/>
+    <child link="rightIndexFingerPitch2Link"/>
   </joint>
-  <gazebo reference="RightIndexFingerPitch2">
+  <gazebo reference="rightIndexFingerPitch2">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightIndexFingerPitch3" type="fixed">
+  <joint name="rightIndexFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightIndexFingerPitch2Link"/>
-    <child link="RightIndexFingerPitch3Link"/>
+    <parent link="rightIndexFingerPitch2Link"/>
+    <child link="rightIndexFingerPitch3Link"/>
   </joint>
-  <gazebo reference="RightIndexFingerPitch3">
+  <gazebo reference="rightIndexFingerPitch3">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <link name="RightMiddleFingerPitch1Link">
+  <link name="rightMiddleFingerPitch1Link">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0 -0.02 0"/>
@@ -248,19 +248,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/middlej1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/middlej1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightMiddleFingerPitch2Link">
+  <link name="rightMiddleFingerPitch2Link">
     <inertial>
       <mass value="0.011"/>
       <origin rpy="0 0 0" xyz="0 -0.013 0"/>
@@ -268,19 +268,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/middlej2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/middlej2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightMiddleFingerPitch3Link">
+  <link name="rightMiddleFingerPitch3Link">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0 -0.01 0"/>
@@ -288,46 +288,46 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/middlej3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/middlej3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <joint name="RightMiddleFingerPitch1" type="fixed">
+  <joint name="rightMiddleFingerPitch1" type="fixed">
     <origin rpy="0.1222 0.0 0.0" xyz="0.0022 -0.097 -0.0119"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightPalm"/>
-    <child link="RightMiddleFingerPitch1Link"/>
+    <parent link="rightPalm"/>
+    <child link="rightMiddleFingerPitch1Link"/>
   </joint>
-  <gazebo reference="RightMiddleFingerPitch1">
+  <gazebo reference="rightMiddleFingerPitch1">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightMiddleFingerPitch2" type="fixed">
+  <joint name="rightMiddleFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightMiddleFingerPitch1Link"/>
-    <child link="RightMiddleFingerPitch2Link"/>
+    <parent link="rightMiddleFingerPitch1Link"/>
+    <child link="rightMiddleFingerPitch2Link"/>
   </joint>
-  <gazebo reference="RightMiddleFingerPitch2">
+  <gazebo reference="rightMiddleFingerPitch2">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightMiddleFingerPitch3" type="fixed">
+  <joint name="rightMiddleFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0.0"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightMiddleFingerPitch2Link"/>
-    <child link="RightMiddleFingerPitch3Link"/>
+    <parent link="rightMiddleFingerPitch2Link"/>
+    <child link="rightMiddleFingerPitch3Link"/>
   </joint>
-  <gazebo reference="RightMiddleFingerPitch3">
+  <gazebo reference="rightMiddleFingerPitch3">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <link name="RightPinkyPitch1Link">
+  <link name="rightPinkyPitch1Link">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0 -0.02 0"/>
@@ -335,19 +335,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/pinkyj1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj1_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/pinkyj1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightPinkyPitch2Link">
+  <link name="rightPinkyPitch2Link">
     <inertial>
       <mass value="0.011"/>
       <origin rpy="0 0 0" xyz="0 -0.013 0"/>
@@ -355,19 +355,19 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/pinkyj2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj2_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/pinkyj2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="RightPinkyPitch3Link">
+  <link name="rightPinkyPitch3Link">
     <inertial>
       <mass value="0.006"/>
       <origin rpy="0 0 0" xyz="0 -0.01 0"/>
@@ -375,43 +375,43 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/pinkyj3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj3_Right.obj"/>
+        <mesh filename="package://val_description/meshes/fingers/pinkyj3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <joint name="RightPinkyPitch1" type="fixed">
+  <joint name="rightPinkyPitch1" type="fixed">
     <origin rpy="0.1222 0.0 0.0" xyz="0.0022 -0.0838 -0.041"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightPalm"/>
-    <child link="RightPinkyPitch1Link"/>
+    <parent link="rightPalm"/>
+    <child link="rightPinkyPitch1Link"/>
   </joint>
-  <gazebo reference="RightPinkyPitch1">
+  <gazebo reference="rightPinkyPitch1">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightPinkyPitch2" type="fixed">
+  <joint name="rightPinkyPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightPinkyPitch1Link"/>
-    <child link="RightPinkyPitch2Link"/>
+    <parent link="rightPinkyPitch1Link"/>
+    <child link="rightPinkyPitch2Link"/>
   </joint>
-  <gazebo reference="RightPinkyPitch2">
+  <gazebo reference="rightPinkyPitch2">
     <provideFeedback>1</provideFeedback>
   </gazebo>
-  <joint name="RightPinkyPitch3" type="fixed">
+  <joint name="rightPinkyPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0.0"/>
     <axis xyz="0 0 1"/>
-    <parent link="RightPinkyPitch2Link"/>
-    <child link="RightPinkyPitch3Link"/>
+    <parent link="rightPinkyPitch2Link"/>
+    <child link="rightPinkyPitch3Link"/>
   </joint>
-  <gazebo reference="RightPinkyPitch3">
+  <gazebo reference="rightPinkyPitch3">
     <provideFeedback>1</provideFeedback>
   </gazebo>
   </robot>

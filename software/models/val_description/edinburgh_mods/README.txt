@@ -8,7 +8,7 @@ mitdrc/val_description and branch called: mfallon-mods-needed-for-drake-system
 This branch inserts edinburgh_mods.xacro into the xacro.
 
 2. Compile the urdf:
-cd val_description/robots
+cd val_description/model/robots
 rosrun xacro xacro.py valkyrie_A_sim.xacro -o ../urdf/valkyrie_A_sim.urdf
 
 3. Current you need to insert the following inside the link tag for LeftFoot and RightFoot:
@@ -64,7 +64,7 @@ This is used for the quasi static balance constraint:
     </visual>
 
 4. move the urdf to this location
-cp valkyrie_A.urdf PATH_TO/drc/software/models/val_description/model.urdf
+cp valkyrie_A_sim.urdf PATH_TO/drc/software/models/val_description/urdf/valkyrie_A_sim.urdf
 
 5. If needed you can make an sdf file like this:
 gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
