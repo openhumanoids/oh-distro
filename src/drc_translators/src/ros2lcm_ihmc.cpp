@@ -1,5 +1,6 @@
+// Copyright 2015 Maurice Fallon, Vladimir Ivan
+
 // Selective ros2lcm translator
-// mfallon
 // two modes:
 // - passthrough: produces POSE_BODY and EST_ROBOT_STATE and CAMERA_LEFT
 // - state estimation: produces ATLAS_STATE and POSE_BDI
@@ -16,6 +17,8 @@
 #include <time.h>
 #include <iostream>
 #include <map>
+#include <vector>
+#include <string>
 #include <lcm/lcm-cpp.hpp>
 #include <Eigen/Dense>
 
@@ -33,9 +36,9 @@
 #include <ihmc_msgs/RawImuData.h>
 #include <ihmc_msgs/LastReceivedMessage.h>
 #include <ihmc_msgs/FootstepStatusMessage.h>
-//#include <pronto_msgs/CachedRawIMUData.h>
-//#include <pronto_msgs/RawIMUData.h>
-//#include <pronto_msgs/FootSensor.h>
+// #include <pronto_msgs/CachedRawIMUData.h>
+// #include <pronto_msgs/RawIMUData.h>
+// #include <pronto_msgs/FootSensor.h>
 
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/pronto/force_torque_t.hpp"
@@ -50,12 +53,8 @@
 #include "lcmtypes/ipab/footstep_status_t.hpp"
 #include "lcmtypes/mav/ins_t.hpp"
 
-#include <tf/transform_listener.h>
-
 #define MODE_PASSTHROUGH 0
 #define MODE_STATE_ESTIMATION 1
-
-using namespace std;
 
 struct Joints
 {
@@ -75,10 +74,8 @@ private:
   lcm::LCM lcmPublish_;
   ros::NodeHandle node_;
   int mode_;
-  string robotName_;
-  string imuSensor_;
-
-//  tf::TransformListener listener_;
+  std::string robotName_;
+  std::string imuSensor_;
 
   ros::Subscriber jointStatesSub_;
   ros::Subscriber headJointStatesSub_;
@@ -107,7 +104,7 @@ private:
 
   void appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wrench left_sensor,
                          geometry_msgs::Wrench right_sensor);
-  void publishLidar(const sensor_msgs::LaserScanConstPtr& msg, string channel);
+  void publishLidar(const sensor_msgs::LaserScanConstPtr& msg, std::string channel);
   void publishMultisenseState(int64_t utime, float position, float velocity);
 
   nav_msgs::Odometry lastPoseMsg_;
@@ -142,40 +139,38 @@ App::App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string i
   int queue_size = 100;
 
   // Robot joint angles
-  jointStatesSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/joint_states"), queue_size,
+  jointStatesSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/joint_states"), queue_size,
                                     &App::jointStatesCallback, this);
-  poseSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/robot_pose"), queue_size, &App::poseCallBack,
+  poseSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/robot_pose"), queue_size, &App::poseCallBack,
                              this);
 
-  imuBatchSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_ + "_batch"), queue_size,
+  imuBatchSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_ + "_batch"), queue_size,
                                  &App::imuBatchCallback, this);
-  imuSensorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_), queue_size,
+  imuSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_), queue_size,
                                   &App::imuSensorCallback, this);
 
-  leftFootSensorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/left"), queue_size,
+  leftFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/left"), queue_size,
                                        &App::leftFootSensorCallback, this);
-  rightFootSensorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/right"),
+  rightFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/right"),
                                         queue_size, &App::rightFootSensorCallback, this);
   // using previously used queue_size for scan:
-  behaviorSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/behavior"), 100, &App::behaviorCallback,
+  behaviorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/behavior"), 100, &App::behaviorCallback,
                                  this);
-  lastReceivedMessageSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/last_received_message"), 100,
+  lastReceivedMessageSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/last_received_message"), 100,
                                             &App::lastReceivedMessageCallback, this);
-  footstepStatusSub_ = node_.subscribe(string("/ihmc_ros/" + robotName_ + "/output/footstep_status"), 100,
+  footstepStatusSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/footstep_status"), 100,
                                        &App::footstepStatusCallback, this);
 
   // Multisense Joint Angles:
   if (mode_ == MODE_STATE_ESTIMATION)
   {
-    headJointStatesSub_ = node_.subscribe(string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
+    headJointStatesSub_ = node_.subscribe(std::string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
                                           this);
   }
-  laserScanSub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
+  laserScanSub_ = node_.subscribe(std::string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
 
   verbose_ = false;
-//  listener_;
 }
-;
 
 App::~App()
 {
@@ -218,7 +213,7 @@ void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
    std::string jname = "hokuyo_joint";
    int i = std::distance( msg->name.begin(), std::find( msg->name.begin(), msg->name.end(), jname ) );
    if( i == msg->name.size() ){
-   //std::cout << "not found: " << jname << "\n";
+   // std::cout << "not found: " << jname << "\n";
    }else{
    publishMultisenseState(utime, msg->position[i], msg->velocity[i]);
    }
@@ -255,7 +250,7 @@ void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
 
   // ROS_ERROR("%d | %d %d", lastPoseMsg_.header.seq, lastPoseMsg_.header.stamp.sec, lastPoseMsg_.header.stamp.nsec);
   bot_core::pose_t lcm_pose_msg;
-  lcm_pose_msg.utime = (int64_t)lastPoseMsg_.header.stamp.toNSec() / 1000; // from nsec to usec
+  lcm_pose_msg.utime = (int64_t)lastPoseMsg_.header.stamp.toNSec() / 1000;  // from nsec to usec
   lcm_pose_msg.pos[0] = lastPoseMsg_.pose.pose.position.x;
   lcm_pose_msg.pos[1] = lastPoseMsg_.pose.pose.position.y;
   lcm_pose_msg.pos[2] = lastPoseMsg_.pose.pose.position.z;
@@ -268,7 +263,6 @@ void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
   {
     lcmPublish_.publish("POSE_BODY", &lcm_pose_msg);
   }
-
 }
 
 void App::leftFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg)
@@ -297,23 +291,22 @@ void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
     pronto::atlas_behavior_t msg_out;
 
     msg_out.utime = lastJointStateUtime_;
-    int temp = (int)msg->data;
-    msg_out.behavior = (int)temp;
+    int temp = static_cast<int>(msg->data);
+    msg_out.behavior = static_cast<int>(temp);
     lcmPublish_.publish("ATLAS_BEHAVIOR", &msg_out);
   }
   else
   {
-
     pronto::plan_status_t msg_out;
     msg_out.utime = lastJointStateUtime_;
     if (msg->data == 3)  // stand
     {
-      msg_out.plan_type = 1; // stand
+      msg_out.plan_type = 1;  // stand
     }
     else if (msg->data == 4)   // walk for ihmc. NB: this is different to step from bdi
     {
-      msg_out.plan_type = 2; // walk
-      msg_out.execution_status = 0; // 'executing'
+      msg_out.plan_type = 2;  // walk
+      msg_out.execution_status = 0;  // 'executing'
     }
     else
     {
@@ -324,11 +317,9 @@ void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
 
     pronto::atlas_behavior_t msg_out_beh;
     msg_out_beh.utime = lastJointStateUtime_;
-    msg_out_beh.behavior = 7; // user
+    msg_out_beh.behavior = 7;  // user
     lcmPublish_.publish("ATLAS_BEHAVIOR", &msg_out);
-
   }
-
 }
 
 void App::lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg)
@@ -339,12 +330,10 @@ void App::lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstP
   msg_out.receive_timestamp = msg->receive_timestamp / 1000;
   msg_out.time_since_last_received = msg->time_since_last_received / 1000;
   lcmPublish_.publish("IHMC_LAST_RECEIVED", &msg_out);
-
 }
 
 void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
 {
-
   pronto::atlas_raw_imu_batch_t imu;
   imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
 
@@ -354,12 +343,11 @@ void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
   imu.num_packets = 15;
   for (size_t i = 0; i < 15; i++)
   {
-
-    //std::cout << i
-    //  << " | " <<  msg->data[i].imu_timestamp
-    //  << " | " <<  msg->data[i].packet_count
-    //  << " | " <<  msg->data[i].dax << " " << msg->data[i].day << " " << msg->data[i].daz
-    //  << " | " <<  msg->data[i].ddx << " " << msg->data[i].ddy << " " << msg->data[i].ddz << "\n";
+    // std::cout << i
+    //   << " | " <<  msg->data[i].imu_timestamp
+    //   << " | " <<  msg->data[i].packet_count
+    //   << " | " <<  msg->data[i].dax << " " << msg->data[i].day << " " << msg->data[i].daz
+    //   << " | " <<  msg->data[i].ddx << " " << msg->data[i].ddy << " " << msg->data[i].ddz << "\n";
 
     pronto::atlas_raw_imu_t raw;
     raw.utime = msg->data[i].imu_timestamp;
@@ -378,7 +366,6 @@ void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
 
 void App::imuSensorCallback(const sensor_msgs::ImuConstPtr& msg)
 {
-
   mav::ins_t imu;
   imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
   imu.device_time = imu.utime;
@@ -407,13 +394,13 @@ void App::laserScanCallback(const sensor_msgs::LaserScanConstPtr& msg)
   if (scan_counter % 80 == 0)
   {
     ROS_ERROR("LSCAN [%d]", scan_counter);
-    //std::cout << "SCAN " << scan_counter << "\n";
+    // std::cout << "SCAN " << scan_counter << "\n";
   }
   scan_counter++;
   publishLidar(msg, "SCAN");
 }
 
-void App::publishLidar(const sensor_msgs::LaserScanConstPtr& msg, string channel)
+void App::publishLidar(const sensor_msgs::LaserScanConstPtr& msg, std::string channel)
 {
   bot_core::planar_lidar_t scan_out;
   scan_out.ranges = msg->ranges;
@@ -434,12 +421,12 @@ void filterJointNames(std::vector<std::string> &joint_name)
   for (int i = 0; i < n_joints; i++)
   {
     // ihmc v3 to mit v3:
-    //if (joint_name[i] == "l_arm_shz"){
-    //  joint_name[i] = "l_arm_usy";
-    //}
-    //if (joint_name[i] == "r_arm_shz"){
-    //  joint_name[i] = "r_arm_usy";
-    //}
+    // if (joint_name[i] == "l_arm_shz"){
+    //   joint_name[i] = "l_arm_usy";
+    // }
+    // if (joint_name[i] == "r_arm_shz"){
+    //   joint_name[i] = "r_arm_usy";
+    // }
 
     if (joint_name[i] == "l_arm_wry")
     {
@@ -478,10 +465,10 @@ void filterJointNames(std::vector<std::string> &joint_name)
     }
     if (joint_name[i] == "hokuyo_joint")
     {
-      //double output = remainderf( joint_position[i] , M_PI);
-      //std::cout << (joint_position[i]) << " "  << output << "\n";
-      //joint_position[i] = output;
-      //joint_name[i] = "hokuyo_link";
+      // double output = remainderf( joint_position[i] , M_PI);
+      // std::cout << (joint_position[i]) << " "  << output << "\n";
+      // joint_position[i] = output;
+      // joint_name[i] = "hokuyo_link";
     }
   }
 }
@@ -514,14 +501,14 @@ Joints reorderJoints(Joints &joints)
 
     if (i == atlas_joint_names.size())
     {
-      //std::cout << "not found: " << jname << "\n";
+      // std::cout << "not found: " << jname << "\n";
     }
     else
     {
       joints_out.position[i] = joints.position[j];
       joints_out.velocity[i] = joints.velocity[j];
       joints_out.effort[i] = joints.effort[j];
-      //std::cout << "found: " << jname << "\n";
+      // std::cout << "found: " << jname << "\n";
     }
   }
 
@@ -530,7 +517,6 @@ Joints reorderJoints(Joints &joints)
 
 void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
-
   Joints joints;
   joints.position = msg->position;
   joints.velocity = msg->velocity;
@@ -545,19 +531,19 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     filterJointNames(joints.name);
     joints = reorderJoints(joints);
     pronto::atlas_state_t amsg;
-    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
     int n_joints = joints.position.size();
     amsg.joint_position.assign(n_joints, 0);
     amsg.joint_velocity.assign(n_joints, 0);
     amsg.joint_effort.assign(n_joints, 0);
     amsg.num_joints = n_joints;
-    //amsg.joint_name= msg->name;
+    // amsg.joint_name= msg->name;
     for (int i = 0; i < n_joints; i++)
     {
       amsg.joint_position[i] = joints.position[i];
-      amsg.joint_velocity[i] = 0; // (double) msg->velocity[ i ];
-      amsg.joint_effort[i] = 0; //msg->effort[i];
+      amsg.joint_velocity[i] = 0;  // (double) msg->velocity[ i ];
+      amsg.joint_effort[i] = 0;  // msg->effort[i];
     }
 
     /*
@@ -574,7 +560,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
      }
      */
 
-    //filter_joint_names( amsg.joint_name );
+    // filter_joint_names( amsg.joint_name );
     amsg.force_torque = force_torque;
     lcmPublish_.publish("ATLAS_STATE", &amsg);
   }
@@ -589,11 +575,11 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     if (robotName_.compare("valkyrie") == 0)
     {
       // temporary:
-      //joints.name = {"l_leg_hpz", "l_leg_hpx", "l_leg_hpy", "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", "r_leg_akx", "back_bkz", "back_bky", "back_bkx", "l_arm_shz", "l_arm_shx", "l_arm_ely", "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "l_arm_lwy", "neck_ay", "neck_by", "neck_cy", "r_arm_shz", "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx", "r_arm_lwy"};
+      // joints.name = {"l_leg_hpz", "l_leg_hpx", "l_leg_hpy", "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", "r_leg_akx", "back_bkz", "back_bky", "back_bkx", "l_arm_shz", "l_arm_shx", "l_arm_ely", "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "l_arm_lwy", "neck_ay", "neck_by", "neck_cy", "r_arm_shz", "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx", "r_arm_lwy"};
     }
 
     pronto::robot_state_t msg_out;
-    msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+    msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
     int n_joints = joints.position.size();
     msg_out.joint_position.assign(n_joints, 0);
     msg_out.joint_velocity.assign(n_joints, 0);
@@ -603,8 +589,8 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     for (int i = 0; i < n_joints; i++)
     {
       msg_out.joint_position[i] = joints.position[i];
-      msg_out.joint_velocity[i] = 0; // (double) msg->velocity[ i ];
-      msg_out.joint_effort[i] = 0; //msg->effort[i];
+      msg_out.joint_velocity[i] = 0;  // (double) msg->velocity[ i ];
+      msg_out.joint_effort[i] = 0;  // msg->effort[i];
     }
     msg_out.pose.translation.x = lastPoseMsg_.pose.pose.position.x;
     msg_out.pose.translation.y = lastPoseMsg_.pose.pose.position.y;
@@ -618,7 +604,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   }
 
   pronto::utime_t utime_msg;
-  int64_t joint_utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  int64_t joint_utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   utime_msg.utime = joint_utime;
   lcmPublish_.publish("ROBOT_UTIME", &utime_msg);
 
@@ -651,9 +637,9 @@ void App::appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wren
 
 int main(int argc, char **argv)
 {
-  std::string robotName; // = "valkyrie"; // "atlas"
+  std::string robotName;  // = "valkyrie";  // "atlas"
   std::string modeArgument;
-  std::string imuSensor = "pelvis_imu_sensor_at_pelvis_frame"; // pelvis_imu_sensor_at_imu_frame
+  std::string imuSensor = "pelvis_imu_sensor_at_pelvis_frame";  // pelvis_imu_sensor_at_imu_frame
 
   if (argc >= 4)
   {
@@ -667,7 +653,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  int mode; // MODE_PASSTHROUGH or MODE_STATE_ESTIMATION
+  int mode;  // MODE_PASSTHROUGH or MODE_STATE_ESTIMATION
   if (modeArgument.compare("passthrough") == 0)
   {
     mode = MODE_PASSTHROUGH;
