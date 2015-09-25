@@ -1,28 +1,31 @@
+// Copyright 2015 Wolfgang Merkt
 // Selective ros2lcm translator for Edinburgh Schunk SDH gripper/hand
+
+// ### Boost
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
+// ### ROS
 #include <ros/ros.h>
 #include <ros/console.h>
+#include <sensor_msgs/JointState.h>
+
+// ### Standard includes
 #include <cstdlib>
 #include <sys/time.h>
 #include <time.h>
 #include <iostream>
 #include <map>
+#include <string>
 
-#include <Eigen/Dense>
-
-#include <sensor_msgs/JointState.h>
-
+// ### LCM
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/joint_state_t.hpp"
-
-using namespace std;
 
 class App
 {
 public:
-  App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_);
   ~App();
 
 private:
@@ -31,11 +34,9 @@ private:
 
   ros::Subscriber joint_states_sub_;
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);
-
 };
 
-App::App(ros::NodeHandle node_) :
-    node_(node_)
+App::App(ros::NodeHandle node_)
 {
   ROS_INFO("Initializing Schunk SDH Gripper Translator");
   if (!lcm_publish_.good())
@@ -43,10 +44,9 @@ App::App(ros::NodeHandle node_) :
     std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
 
-  joint_states_sub_ = node_.subscribe(string("/gripper/sdh_controller/joint_states"), 100, &App::joint_states_cb, this);
-
+  joint_states_sub_ = node_.subscribe(std::string("/gripper/sdh_controller/joint_states"), 100, &App::joint_states_cb,
+                                      this);
 }
-;
 
 App::~App()
 {
@@ -56,11 +56,13 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
 {
   int n_joints = msg->position.size();
 
+  // The driver sends two messages, one consisting of a single message that will kill the
+  // program if not caught - it's a mirrored version of the sdh_knuckle_joint named sdh_joint_21_state
   if (n_joints == 1)
-    return; // The driver sends two messages, one consisting of a single message that will kill the program if not caught - it's a mirrored version of the sdh_knuckle_joint named sdh_joint_21_state
+    return;
 
   drc::joint_state_t msg_out;
-  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
   msg_out.joint_position.assign(n_joints + 1, 0);
   msg_out.joint_velocity.assign(n_joints + 1, 0);
@@ -68,7 +70,9 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
   msg_out.num_joints = n_joints + 1;
 
   msg_out.joint_name =
-  { "sdh_knuckle_joint", "sdh_thumb_2_joint", "sdh_thumb_3_joint", "sdh_finger_12_joint", "sdh_finger_13_joint", "sdh_finger_22_joint", "sdh_finger_23_joint", "sdh_finger_21_joint"};
+  { "sdh_knuckle_joint", "sdh_thumb_2_joint", "sdh_thumb_3_joint",
+    "sdh_finger_12_joint", "sdh_finger_13_joint", "sdh_finger_22_joint", "sdh_finger_23_joint",
+    "sdh_finger_21_joint"};
   for (int i = 0; i < n_joints; i++)
   {
     msg_out.joint_name[i] = msg->name[i];
@@ -89,8 +93,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "ros2lcm_sdh");
   ros::NodeHandle nh;
   new App(nh);
-  std::cout << "ros2lcm_sdh translator ready\n";
-  ROS_ERROR("ROS2LCM Schunk SDH Joint State Translator Ready");
+  ROS_INFO_STREAM("ros2lcm_sdh translator ready");
+  ROS_ERROR_STREAM("ROS2LCM Schunk SDH Joint State Translator Ready");
   ros::spin();
   return 0;
 }
