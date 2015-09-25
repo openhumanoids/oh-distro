@@ -1,6 +1,8 @@
+// Copyright 2015 Maurice Fallon
+
 // Synchronized Stereo Translator
 //
-// todo:
+// TODO(tbd):
 // rgb bgr conversion
 // grey compression
 // disparity/depth conversion from device
@@ -19,6 +21,8 @@
 #include <sys/time.h>
 #include <time.h>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -44,7 +48,7 @@ using namespace std;
 class App
 {
 public:
-  App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_);
   ~App();
 
 private:
@@ -75,7 +79,6 @@ private:
   uint8_t* depth_compress_buf_;
 
   void prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstPtr& ros_image);
-
 };
 
 App::App(ros::NodeHandle node_) :
@@ -114,11 +117,9 @@ App::App(ros::NodeHandle node_) :
   depth_compress_buf_size_ = 800 * 800 * sizeof(int8_t) * 10;
   depth_compress_buf_ = (uint8_t*)malloc(depth_compress_buf_size_);
   do_jpeg_compress_ = true;
-  jpeg_quality_ = 95; // 95 is opencv default
+  jpeg_quality_ = 95;  // 95 is opencv default
   do_zlib_compress_ = true;
-
 }
-;
 
 App::~App()
 {
@@ -145,7 +146,6 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& image_a_ros,
                         const sensor_msgs::ImageConstPtr& image_ros_b,
                         const sensor_msgs::CameraInfoConstPtr& info_b_ros, std::string camera_out)
 {
-
   prepImage(image_a_lcm_, image_a_ros);
   prepImage(image_b_lcm_, image_ros_b);
 
@@ -162,7 +162,6 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& image_a_ros,
 
 void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstPtr& ros_image)
 {
-
   int64_t current_utime = (int64_t)floor(ros_image->header.stamp.toNSec() / 1000);
   lcm_image.utime = current_utime;
   int isize = ros_image->width * ros_image->height;
@@ -171,7 +170,6 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
   if ((ros_image->encoding.compare("mono8") == 0)
       || ((ros_image->encoding.compare("rgb8") == 0) || (ros_image->encoding.compare("bgr8") == 0)))
   {
-
     if (ros_image->encoding.compare("mono8") == 0)
     {
       n_colors = 1;
@@ -240,7 +238,6 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
         exit(-1);
       }
     }
-
   }
   else if (1 == 2)
   {
@@ -258,7 +255,7 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
      Z_BEST_SPEED);
      lcm_image.data.resize(compressed_size);
      */
-    unsigned long zlib_compressed_size = 1000; // fake compressed size
+    unsigned long zlib_compressed_size = 1000;  // fake compressed size
     lcm_image.data.resize(zlib_compressed_size);
     lcm_image.size = zlib_compressed_size;
     // images_msg_out_.image_types[1] = 5;// bot_core::images_t::DISPARITY_ZIPPED );
@@ -284,7 +281,6 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
 
 int main(int argc, char **argv)
 {
-
   ros::init(argc, argv, "ros2lcm_stereo");
   std::string which_camera = "head";
 
