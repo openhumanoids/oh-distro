@@ -1,3 +1,5 @@
+// Copyright 2015 Vladimir Ivan, Maurice Fallon, Wolfgang Merkt
+
 /*
  - Designer will publish:
  http://docs.ros.org/indigo/api/trajectory_msgs/html/msg/JointTrajectory.html
@@ -6,6 +8,7 @@
  */
 #include <cstdlib>
 #include <string>
+#include <vector>
 #include <ros/ros.h>
 #include <lcm/lcm-cpp.hpp>
 
@@ -16,8 +19,6 @@
 #include <ipab_msgs/PlannerRequest.h>
 #include <std_srvs/Empty.h>
 #include <std_msgs/String.h>
-
-using namespace std;
 
 class LCM2ROS
 {
@@ -39,8 +40,7 @@ private:
                              const drc::plan_control_t* msg);
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_) :
-    lcm_(lcm_), nh_(nh_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_)
 {
   lcm_->subscribe("COMMITTED_ROBOT_PLAN", &LCM2ROS::robotPlanHandler, this);
   robot_plan_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>("/kuka/robot_plan", 10);
@@ -66,7 +66,6 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     point.velocities = std::vector<double>(state.joint_velocity.begin(), state.joint_velocity.end());
     point.accelerations.assign(state.joint_position.size(), 0.0);  // not provided, send zeros
     point.effort = std::vector<double>(state.joint_effort.begin(), state.joint_effort.end());
-    ;
     point.time_from_start = ros::Duration().fromSec(state.utime * 1E-6);
     m.points.push_back(point);
   }
@@ -79,7 +78,7 @@ void LCM2ROS::robotPlanPauseHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 {
   ROS_ERROR("LCM2ROS STOP button pressed");
 
-  std_srvs::Empty srv; // TODO: change to Trigger
+  std_srvs::Empty srv;  // TODO(wxm): change to Trigger
   if (robot_plan_pause_service_.call(srv))
   {
     ROS_ERROR("Successfully stopped trajectory execution");
@@ -101,10 +100,12 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   LCM2ROS handlerObject(lcm, nh);
-  cout << "\nlcm2ros translator ready\n";
-  ROS_ERROR("LCM2ROS Translator Ready");
+  ROS_INFO_STREAM("lcm2ros translator ready");
+  ROS_ERROR_STREAM("LCM2ROS Translator Ready");
 
   while (0 == lcm->handle())
-    ;
+  {
+  }
+
   return 0;
 }
