@@ -43,8 +43,6 @@
 #include <lcmtypes/bot_core.hpp>
 #include <opencv2/opencv.hpp>
 
-using namespace std;
-
 class App
 {
 public:
@@ -97,7 +95,7 @@ App::App(ros::NodeHandle node_) :
   // rim_string = head_stereo_root + "/right/image_rect_color";
   image_b_string = head_stereo_root + "/right/image_rect";
   info_b_string = image_b_string + "/camera_info";
-  cout << image_a_string << " is the image_a topic subscription [for stereo]\n";
+  std::cout << image_a_string << " is the image_a topic subscription [for stereo]\n";
   image_a_ros_sub_.subscribe(it_, ros::names::resolve(image_a_string), 30);
   info_a_ros_sub_.subscribe(node_, ros::names::resolve(info_a_string), 30);
   image_b_ros_sub_.subscribe(it_, ros::names::resolve(image_b_string), 30);
@@ -241,7 +239,7 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
   }
   else if (1 == 2)
   {
-    cout << ros_image->encoding << " | encoded not fully working - FIXME\n";
+    std::cout << ros_image->encoding << " | encoded not fully working - FIXME\n";
     exit(-1);
     return;
 
@@ -262,7 +260,7 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
   }
   else
   {
-    cout << ros_image->encoding << " | encoded not fully working - FIXME\n";
+    std::cout << ros_image->encoding << " | encoded not fully working - FIXME\n";
     exit(-1);
     return;
 
@@ -290,7 +288,7 @@ int main(int argc, char **argv)
    std::string  which_transport;
    which_transport = "/ros2lcm_head";
    std::string transport;
-   if (nh.getParam(string( which_transport + "/image_transport"), transport)) {
+   if (nh.getParam(std::string( which_transport + "/image_transport"), transport)) {
    std::cout << "transport is " << transport << "\n";
    }
    ROS_ERROR("Stereo Camera Translator: [%s] [%s]", which_camera.c_str() , transport.c_str());
