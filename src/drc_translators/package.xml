@@ -1,67 +1,38 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>drc_translators</name>
   <version>0.0.0</version>
-  <description>The drc_translators package</description>
+  <description>Package providing translators between the MIT DRC, IHMC SCS, and ROS-based systems.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
-  <!-- Example:  -->
-  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="drc@todo.todo">drc</maintainer>
+  <maintainer email="drc@todo.todo">TODO</maintainer>
 
-
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>TODO</license>
 
+  <url type="repository">https://github.com/ipab-slmc/ipab-ros-workspace</url>
+  <url type="bugtracker">https://github.com/ipab-slmc/ipab-ros-workspace/issues</url>
 
-  <!-- Url tags are optional, but mutiple are allowed, one per tag -->
-  <!-- Optional attribute type can be: website, bugtracker, or repository -->
-  <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/drc_translators</url> -->
-
-
-  <!-- Author tags are optional, mutiple are allowed, one per tag -->
-  <!-- Authors do not have to be maintianers, but could be -->
-  <!-- Example: -->
-  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+  <author email="maurice.fallon@ed.ac.uk">Maurice Fallon</author>
+  <author email="v.ivan@ed.ac.uk">Vladimir Ivan</author>
+  <author email="wolfgang.merkt@ed.ac.uk">Wolfgang Merkt</author>
+  <author email="yiming.yang@ed.ac.uk">Yiming Yang</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>trajectory_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>kdl_conversions</build_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>trajectory_msgs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>image_transport</run_depend>
+  <build_depend>roslint</build_depend>
 
-  <build_depend>ipab_msgs</build_depend>
-  <run_depend>ipab_msgs</run_depend>
-  <build_depend>ihmc_msgs</build_depend>
-  <run_depend>ihmc_msgs</run_depend>
-
-  <build_depend>ipab_lwr_msgs</build_depend>
-  <run_depend>ipab_lwr_msgs</run_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>kdl_conversions</run_depend>
-
+  <depend>geometry_msgs</depend>
+  <depend>ihmc_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>ipab_lwr_msgs</depend>
+  <depend>ipab_msgs</depend>
+  <depend>kdl_conversions</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>tf</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- You can specify that this package is a metapackage here: -->
-    <!-- <metapackage/> -->
-
-    <!-- Other tools can request additional information be placed here -->
-
-  </export>
+  <export />
 </package>
