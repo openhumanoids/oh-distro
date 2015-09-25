@@ -101,4 +101,5 @@ pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-co
 # target_link_libraries(lcm2ros_botframes ${catkin_LIBRARIES})
 # pods_use_pkg_config_packages(lcm2ros_botframes lcm bot2-core)
 
+#set(ROSLINT_CPP_OPTS "--linelength=180")
 roslint_cpp()
