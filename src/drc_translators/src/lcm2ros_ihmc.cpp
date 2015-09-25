@@ -1,3 +1,5 @@
+// Copyright 2015 Maurice Fallon, Vladimir Ivan
+
 #include <cstdlib>
 #include <string>
 #include <ros/ros.h>
@@ -33,14 +35,13 @@
 #include <std_msgs/String.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <map>
+#include <vector>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
 #define LEFT 0
 #define RIGHT 1
-
-using namespace std;
 
 class LCM2ROS
 {
@@ -54,7 +55,7 @@ private:
   boost::shared_ptr<lcm::LCM> lcm_;
   ros::NodeHandle nh_;
   ros::NodeHandle* node_;
-  string robotName_;
+  std::string robotName_;
 
   void footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                            const drc::walking_plan_request_t* msg);
@@ -82,12 +83,12 @@ private:
   void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
   ros::Publisher arm_joint_traj_pub_, arm_joint_traj2_pub_, whole_body_trajectory_pub_;
 
-  void sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
-                         std::vector<string> input_joint_names, bool is_right);
-  bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
-                        std::vector<string> input_joint_names, bool is_right, trajectory_msgs::JointTrajectory &m);
-  bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
-                        std::vector<string> input_joint_names, bool is_right,
+  void sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
+                         std::vector<std::string> input_joint_names, bool is_right);
+  bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
+                        std::vector<std::string> input_joint_names, bool is_right, trajectory_msgs::JointTrajectory &m);
+  bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
+                        std::vector<std::string> input_joint_names, bool is_right,
                         ihmc_msgs::ArmJointTrajectoryPacketMessage &m);
 
   void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg);
@@ -95,11 +96,9 @@ private:
 
   void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::scs_api_command_t* msg);
   ros::Publisher scs_api_pub_;
-
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_) :
-    lcm_(lcm_), nh_(nh_), robotName_(robotName_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_)
 {
   // If pronto is running never send plans like this:
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST", &LCM2ROS::footstepPlanHandler, this);
@@ -114,10 +113,10 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
                                                                      10);
 
   lcm_->subscribe("VAL_COMMAND_PAUSE", &LCM2ROS::pauseHandler, this);
-  lcm_->subscribe("STOP_WALKING", &LCM2ROS::stopHandler, this); // from drake-designer
+  lcm_->subscribe("STOP_WALKING", &LCM2ROS::stopHandler, this);  // from drake-designer
   pause_pub_ = nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/" + robotName_ + "/control/pause_footstep_exec",
                                                              10);
-  lcm_->subscribe("COMMITTED_PLAN_PAUSE", &LCM2ROS::stopManipHandler, this); // from drake-designer to stop manipulation plans
+  lcm_->subscribe("COMMITTED_PLAN_PAUSE", &LCM2ROS::stopManipHandler, this);  // from ddapp to stop manipulation plans
   stop_manip_pub_ = nh_.advertise<ihmc_msgs::StopMotionPacketMessage>(
       "/ihmc_ros/" + robotName_ + "/control/stop_motion", 10);
 
@@ -138,11 +137,10 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::s
       "/ihmc_ros/" + robotName_ + "/control/head_orientation", 10);
 
   // depreciated:
-  //lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
-  //hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
+  // lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
+  // hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
 
   node_ = new ros::NodeHandle();
-
 }
 
 ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, double x_pos, double y_pos,
@@ -164,10 +162,10 @@ ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_wit
 void LCM2ROS::sendBasicSteps()
 {
   ihmc_msgs::FootstepDataListMessage mout;
-  //mout.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+  // mout.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
   mout.transfer_time = 1.0;
   mout.swing_time = 1.0;
-  //mout.trajectoryWaypointGenerationMethod = 0;
+  // mout.trajectoryWaypointGenerationMethod = 0;
   mout.footstep_data_list.push_back(createFootStepList(LEFT, 0, 0.12, 0, 1, 0, 0, 0));
   mout.footstep_data_list.push_back(createFootStepList(RIGHT, 0, -0.12, 0, 1, 0, 0, 0));
   mout.footstep_data_list.push_back(createFootStepList(LEFT, 0.1, 0.12, 0, 1, 0, 0, 0));
@@ -183,7 +181,6 @@ void LCM2ROS::sendBasicSteps()
 
 Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw)
 {
-
   // This conversion function introduces a NaN in Eigen Rotations when:
   // roll == pi , pitch,yaw =0    ... or other combinations.
   // cos(pi) ~=0 but not exactly 0
@@ -228,7 +225,7 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
 
   std::vector<Eigen::Isometry3d> steps;
-  for (int i = 0; i < msg->footstep_plan.num_steps; i++) // skip the first two standing steps
+  for (int i = 0; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
     drc::footstep_t s = msg->footstep_plan.footsteps[i];
     Eigen::Isometry3d step;
@@ -244,10 +241,10 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   mout.transfer_time = 1.2;
   mout.swing_time = 1.2;
   // mout.trajectoryWaypointGenerationMethod = 0;
-  for (int i = 2; i < msg->footstep_plan.num_steps; i++) // skip the first two standing steps
+  for (int i = 2; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
     drc::footstep_t s = msg->footstep_plan.footsteps[i];
-    //mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
+    // mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
     //                                                    s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z) );
 
     Eigen::Quaterniond r(steps[i].rotation());
@@ -266,7 +263,7 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   ihmc_msgs::FootstepDataListMessage mout;
   mout.transfer_time = 1.2;
   mout.swing_time = 1.2;
-  for (int i = 2; i < msg->num_steps; i++) // skip the first two standing steps
+  for (int i = 2; i < msg->num_steps; i++)  // skip the first two standing steps
   {
     drc::footstep_t s = msg->footsteps[i];
     mout.footstep_data_list.push_back(
@@ -288,7 +285,7 @@ void LCM2ROS::comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 void LCM2ROS::pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                            const ipab::pause_command_message_t* msg)
 {
-  ROS_ERROR("LCM2ROS got pause %d", (int ) msg->pause);
+  ROS_ERROR("LCM2ROS got pause %d", static_cast<int>(msg->pause));
   ihmc_msgs::PauseCommandMessage mout;
   mout.pause = msg->pause;
   pause_pub_.publish(mout);
@@ -345,12 +342,12 @@ void filterJointNamesToIHMC(std::vector<std::string> &joint_name)
   for (int i = 0; i < n_joints; i++)
   {
     // ihmc v3 to mit v3:
-    //if (joint_name[i] == "l_arm_shz"){
-    //  joint_name[i] = "l_arm_usy";
-    //}
-    //if (joint_name[i] == "r_arm_shz"){
-    //  joint_name[i] = "r_arm_usy";
-    //}
+    // if (joint_name[i] == "l_arm_shz"){
+    //   joint_name[i] = "l_arm_usy";
+    // }
+    // if (joint_name[i] == "r_arm_shz"){
+    //   joint_name[i] = "r_arm_usy";
+    // }
 
     if (joint_name[i] == "l_arm_uwy")
     {
@@ -389,45 +386,43 @@ void filterJointNamesToIHMC(std::vector<std::string> &joint_name)
     }
     if (joint_name[i] == "hokuyo_joint")
     {
-      //double output = remainderf( joint_position[i] , M_PI);
-      //std::cout << (joint_position[i]) << " "  << output << "\n";
-      //joint_position[i] = output;
-      //joint_name[i] = "hokuyo_link";
+      // double output = remainderf( joint_position[i] , M_PI);
+      // std::cout << (joint_position[i]) << " "  << output << "\n";
+      // joint_position[i] = output;
+      // joint_name[i] = "hokuyo_link";
     }
   }
 }
 
-void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
-                                std::vector<string> input_joint_names, bool is_right)
+void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
+                                std::vector<std::string> input_joint_names, bool is_right)
 {
-  //trajectory_msgs::JointTrajectory m;
-  //bool status = getSingleArmPlan(msg, output_joint_names_arm, input_joint_names, m);
-  //if (status)
-  //  arm_joint_traj_pub_.publish(m);
+  // trajectory_msgs::JointTrajectory m;
+  // bool status = getSingleArmPlan(msg, output_joint_names_arm, input_joint_names, m);
+  // if (status)
+  //   arm_joint_traj_pub_.publish(m);
 
   ihmc_msgs::ArmJointTrajectoryPacketMessage m;
   bool status = getSingleArmPlan(msg, output_joint_names_arm, input_joint_names, is_right, m);
   if (status)
     arm_joint_traj2_pub_.publish(m);
-
 }
 
-bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
-                               std::vector<string> input_joint_names, bool is_right,
+bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
+                               std::vector<std::string> input_joint_names, bool is_right,
                                trajectory_msgs::JointTrajectory &m)
 {
-
   // Find the indices of the arm joints which we want to extract
   std::vector<int> arm_indices;  // = {3,10,11,12,13,14,15};
   for (size_t i = 0; i < output_joint_names_arm.size(); i++)
   {
-    std: string name = output_joint_names_arm[i];
-    vector<string>::iterator it;
+    std::string name = output_joint_names_arm[i];
+    std::vector<std::string>::iterator it;
     it = find(input_joint_names.begin(), input_joint_names.end(), name);
     int index = std::distance(input_joint_names.begin(), it);
     if (index < input_joint_names.size())
     {
-      //std::cout << name << " found in input_joint_names at " << index << '\n';
+      // std::cout << name << " found in input_joint_names at " << index << '\n';
       arm_indices.push_back(index);
     }
     else
@@ -441,7 +436,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string>
   // Fish out the arm indices:
   m.header.stamp = ros::Time().fromSec(msg->utime * 1E-6);
   m.joint_names = output_joint_names_arm;
-  for (int i = 1; i < msg->num_states; i++) // NB: skipping the first sample as it has time = 0
+  for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     drc::robot_state_t state = msg->plan[i];
     trajectory_msgs::JointTrajectoryPoint point;
@@ -466,22 +461,21 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string>
   return true;
 }
 
-bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string> output_joint_names_arm,
-                               std::vector<string> input_joint_names, bool is_right,
+bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
+                               std::vector<std::string> input_joint_names, bool is_right,
                                ihmc_msgs::ArmJointTrajectoryPacketMessage &m)
 {
-
   // Find the indices of the arm joints which we want to extract
-  std::vector<int> arm_indices; // = {3,10,11,12,13,14,15};
+  std::vector<int> arm_indices;  // = {3,10,11,12,13,14,15};
   for (size_t i = 0; i < output_joint_names_arm.size(); i++)
   {
-    std: string name = output_joint_names_arm[i];
-    vector<string>::iterator it;
+    std::string name = output_joint_names_arm[i];
+    std::vector<std::string>::iterator it;
     it = find(input_joint_names.begin(), input_joint_names.end(), name);
     int index = std::distance(input_joint_names.begin(), it);
     if (index < input_joint_names.size())
     {
-      //std::cout << name << " found in input_joint_names at " << index << '\n';
+      // std::cout << name << " found in input_joint_names at " << index << '\n';
       arm_indices.push_back(index);
     }
     else
@@ -502,8 +496,8 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string>
     m.robot_side = 0;
   }
 
-  //m.joint_names = output_joint_names_arm;
-  for (int i = 1; i < msg->num_states; i++) // NB: skipping the first sample as it has time = 0
+  // m.joint_names = output_joint_names_arm;
+  for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     drc::robot_state_t state = msg->plan[i];
     ihmc_msgs::JointTrajectoryPointMessage point;
@@ -519,9 +513,9 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<string>
       double dq1 = msg->plan[i2].joint_position[arm_indices[j]] - msg->plan[i1].joint_position[arm_indices[j]];
       double dq2 = msg->plan[i3].joint_position[arm_indices[j]] - msg->plan[i2].joint_position[arm_indices[j]];
       point.velocities.push_back((dt1 * dt2 != 0) ? (dq1 / dt1 * 0.5 + dq2 / dt2 * 0.5) : 0.0);
-      //point.accelerations.push_back( 0  );
-      //point.effort.push_back( state.joint_effort[ arm_indices[j] ] );
-      point.time = (double)state.utime * 1E-6;
+      // point.accelerations.push_back( 0  );
+      // point.effort.push_back( state.joint_effort[ arm_indices[j] ] );
+      point.time = static_cast<double>(state.utime) * 1E-6;
     }
     m.trajectory_points.push_back(point);
   }
@@ -532,14 +526,14 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 {
   ROS_ERROR("LCM2ROS got robot plan");
 
-  std::vector < string > l_arm_strings;
-  std::vector < string > r_arm_strings;
-  std::vector < string > input_joint_names = msg->plan[0].joint_name;
+  std::vector<std::string> l_arm_strings;
+  std::vector<std::string> r_arm_strings;
+  std::vector<std::string> input_joint_names = msg->plan[0].joint_name;
 
   if (robotName_.compare("atlas") == 0)
   {
     // Remove MIT/IPAB joint names and use IHMC joint names:
-    filterJointNamesToIHMC (input_joint_names);
+    filterJointNamesToIHMC(input_joint_names);
     l_arm_strings =
     { "l_arm_shz", "l_arm_shx", "l_arm_ely", "l_arm_elx", "l_arm_wry", "l_arm_wrx", "l_arm_wry2"};
     r_arm_strings =
@@ -566,7 +560,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   wbt_msg.unique_id = msg->utime;
   wbt_msg.left_arm_trajectory = left_arm_trajectory;
   wbt_msg.right_arm_trajectory = right_arm_trajectory;
-  for (int i = 1; i < msg->num_states; i++) // NB: skipping the first sample as it has time = 0
+  for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     drc::robot_state_t state = msg->plan[i];
 
@@ -584,7 +578,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     wbt_msg.pelvis_world_orientation.push_back(pelvis_world_orientation);
     wbt_msg.time_at_waypoint.push_back(state.utime * 1E-6);
   }
-  wbt_msg.num_waypoints = msg->num_states - 1; // NB: skipping the first sample as it has time = 0
+  wbt_msg.num_waypoints = msg->num_states - 1;  // NB: skipping the first sample as it has time = 0
   wbt_msg.num_joints_per_arm = l_arm_strings.size();
 
   whole_body_trajectory_pub_.publish(wbt_msg);
@@ -602,7 +596,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 
 int main(int argc, char** argv)
 {
-  std::string robotName; // = "valkyrie"; // "atlas"
+  std::string robotName;  // = "valkyrie";  // "atlas"
 
   if (argc >= 2)
   {
@@ -624,9 +618,11 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   LCM2ROS handlerObject(lcm, nh, robotName);
-  ROS_ERROR("LCM2ROS Translator Ready [robotName: %s]", robotName.c_str());
+  ROS_ERROR("LCM2ROS IHMC Translator Ready [robotName: %s]", robotName.c_str());
 
   while (0 == lcm->handle())
-    ;
+  {
+  }
+
   return 0;
 }
