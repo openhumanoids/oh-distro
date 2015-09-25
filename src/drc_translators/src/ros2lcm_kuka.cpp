@@ -1,33 +1,38 @@
+// Copyright 2015 Maurice Fallon, Vladimir Ivan, Wolfgang Merkt
 // Selective ros2lcm translator for Edinburgh Kuka Arm
-// mfallon
+
+// ### Boost
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
+// ### ROS
 #include <ros/ros.h>
 #include <ros/console.h>
+#include <sensor_msgs/JointState.h>
+#include <trajectory_msgs/JointTrajectory.h>
+#include <ipab_msgs/PlanStatus.h>
+
+// ### Standard includes
 #include <cstdlib>
 #include <sys/time.h>
 #include <time.h>
 #include <iostream>
 #include <map>
+#include <string>
 
-#include <Eigen/Dense>
-
-#include <sensor_msgs/JointState.h>
-#include <trajectory_msgs/JointTrajectory.h>
-#include <ipab_msgs/PlanStatus.h>
-
+// ### LCM
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/joint_state_t.hpp"
 #include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 #include "lcmtypes/drc/plan_status_t.hpp"
 
-using namespace std;
+// ### Other
+#include <Eigen/Dense>
 
 class App
 {
 public:
-  App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_);
   ~App();
 
 private:
@@ -37,19 +42,17 @@ private:
   ros::Subscriber joint_states_sub_, plan_status_sub_;
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);
   void plan_status_cb(const ipab_msgs::PlanStatusConstPtr& msg);
-
 };
 
-App::App(ros::NodeHandle node_) :
-    node_(node_)
+App::App(ros::NodeHandle node_)
 {
   ROS_INFO_STREAM("Initializing KUKA LWR Joint State Translator");
   if (!lcm_publish_.good())
   {
     ROS_ERROR_STREAM("lcm is not good()");
   }
-  joint_states_sub_ = node_.subscribe(string("/joint_states"), 100, &App::joint_states_cb, this);
-  plan_status_sub_ = node_.subscribe(string("/kuka/plan_status"), 100, &App::plan_status_cb, this);
+  joint_states_sub_ = node_.subscribe(std::string("/joint_states"), 100, &App::joint_states_cb, this);
+  plan_status_sub_ = node_.subscribe(std::string("/kuka/plan_status"), 100, &App::plan_status_cb, this);
 }
 
 App::~App()
@@ -61,7 +64,7 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
   int n_joints = msg->position.size();
 
   drc::joint_state_t msg_out;
-  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
   msg_out.joint_position.assign(n_joints, 0);
   msg_out.joint_velocity.assign(n_joints, 0);
@@ -95,7 +98,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
   new App(nh);
-  ROS_INFO_STREAM("ros2lcm KUKA lwr translator ready");
+  ROS_INFO_STREAM("ros2lcm KUKA LWR Joint State translator ready");
   ROS_ERROR_STREAM("ROS2LCM KUKA LWR Joint State Translator Ready");
   ros::spin();
   return 0;
