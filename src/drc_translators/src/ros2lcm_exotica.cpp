@@ -1,31 +1,36 @@
-// Selective ros2lcm translator for Edinburgh Kuka Arm
-// mfallon
+// Copyright 2015 Vladimir Ivan, Yiming Yang
+
+// ### Boost
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
+// ### ROS
 #include <ros/ros.h>
 #include <ros/console.h>
+#include <sensor_msgs/JointState.h>
+#include <ipab_msgs/PlannerResponse.h>
+
+// ### Standard libraries
 #include <cstdlib>
 #include <sys/time.h>
 #include <time.h>
 #include <iostream>
 #include <map>
+#include <string>
 
-#include <Eigen/Dense>
-#include <kdl/frames.hpp>
-#include <sensor_msgs/JointState.h>
-#include <ipab_msgs/PlannerResponse.h>
-
+// ### LCM
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/joint_state_t.hpp"
 #include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 
-using namespace std;
+// ### Other
+#include <Eigen/Dense>
+#include <kdl/frames.hpp>
 
 class App
 {
 public:
-  App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_);
   ~App();
 
 private:
@@ -38,18 +43,16 @@ private:
   void ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg);
 };
 
-App::App(ros::NodeHandle node_) :
-    node_(node_)
+App::App(ros::NodeHandle node_)
 {
-  ROS_INFO_STREAM("Initializing LCM EXOTica Joint State Translator");
+  ROS_INFO_STREAM("Initializing LCM EXOTica Translator");
   if (!lcm_publish_.good())
   {
     ROS_ERROR_STREAM("lcm is not good()");
   }
 
-  traj_sub_ = node_.subscribe(string("/exotica/robot_plan"), 100, &App::traj_cb, this);
-  ik_sub_ = node_.subscribe(string("/exotica/robot_ik"), 100, &App::ik_cb, this);
-
+  traj_sub_ = node_.subscribe(std::string("/exotica/robot_plan"), 100, &App::traj_cb, this);
+  ik_sub_ = node_.subscribe(std::string("/exotica/robot_ik"), 100, &App::ik_cb, this);
 }
 
 App::~App()
@@ -59,7 +62,7 @@ App::~App()
 void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 {
   drc::robot_plan_w_keyframes_t msg_out;
-  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   msg_out.robot_name = msg->robot;
   int T = msg->points.size();
   msg_out.num_states = T;
@@ -89,7 +92,7 @@ void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
     }
 
     //  Actually, this applies to all base types
-    //if(msg->base_type == 10)
+    // if(msg->base_type == 10)
     {
       msg_out.plan[t].pose.translation.x = msg->points[t].positions[0];
       msg_out.plan[t].pose.translation.y = msg->points[t].positions[1];
@@ -107,7 +110,7 @@ void App::traj_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 void App::ik_cb(const ipab_msgs::PlannerResponseConstPtr& msg)
 {
   drc::robot_plan_w_keyframes_t msg_out;
-  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   msg_out.robot_name = msg->robot;
   int T = msg->points.size();
   msg_out.num_states = T;
