@@ -9,7 +9,6 @@ project(drc_translators)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  rospy
   std_msgs
   ipab_msgs
   ihmc_msgs
@@ -26,7 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES beginner_tutorials
-  CATKIN_DEPENDS roscpp rospy std_msgs ipab_msgs ihmc_msgs tf trajectory_msgs sensor_msgs image_transport geometry_msgs kdl_conversions
+  CATKIN_DEPENDS roscpp std_msgs ipab_msgs ihmc_msgs tf trajectory_msgs sensor_msgs image_transport geometry_msgs kdl_conversions
   DEPENDS system_lib
 )
 
