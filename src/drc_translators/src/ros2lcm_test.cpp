@@ -1,3 +1,5 @@
+// Copyright 2015 Maurice Fallon, tbd
+
 // test tool for message spacing in ROS
 
 #include <boost/thread.hpp>
@@ -10,6 +12,8 @@
 #include <time.h>
 #include <iostream>
 #include <map>
+#include <string>
+#include <vector>
 #include <lcm/lcm-cpp.hpp>
 #include <Eigen/Dense>
 
@@ -22,8 +26,8 @@
 #include <std_msgs/Int32.h>
 #include <sensor_msgs/LaserScan.h>
 
-//#include <trooper_mlc_msgs/CachedRawIMUData.h>
-//#include <trooper_mlc_msgs/RawIMUData.h>
+// #include <trooper_mlc_msgs/CachedRawIMUData.h>
+// #include <trooper_mlc_msgs/RawIMUData.h>
 
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/pronto/force_torque_t.hpp"
@@ -35,8 +39,6 @@
 #include "lcmtypes/pronto/multisense_state_t.hpp"
 
 #include <tf/transform_listener.h>
-
-using namespace std;
 
 struct Joints
 {
@@ -53,7 +55,7 @@ int mode;
 class App
 {
 public:
-  App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_);
   ~App();
 
 private:
@@ -92,25 +94,24 @@ App::App(ros::NodeHandle node_) :
 
   int queue_size = 100;
 
-  poseSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/robot_pose"), queue_size, &App::poseCallBack, this);
-  jointStatesSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/joint_states"), queue_size,
+  poseSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/robot_pose"), queue_size, &App::poseCallBack, this);
+  jointStatesSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/joint_states"), queue_size,
                                     &App::jointStatesCallback, this);
-  //imuBatchSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/batch_raw_imu"), queue_size, &App::imuBatchCallback,this);
+  // imuBatchSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/batch_raw_imu"), queue_size, &App::imuBatchCallback,this);
 
   if (mode == MODE_ALL)
   {
-    headJointStatesSub_ = node_.subscribe(string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
+    headJointStatesSub_ = node_.subscribe(std::string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
                                           this);
-    leftFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/left"), queue_size,
+    leftFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/foot_force_sensor/left"), queue_size,
                                          &App::leftFootSensorCallback, this);
-    rightFootSensorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/foot_force_sensor/right"), queue_size,
+    rightFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/foot_force_sensor/right"), queue_size,
                                           &App::rightFootSensorCallback, this);
     // using previously used queue_size for scan:
-    behaviorSub_ = node_.subscribe(string("/ihmc_ros/atlas/output/behavior"), 100, &App::behaviorCallback, this);
-    laserScanSub_ = node_.subscribe(string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
+    behaviorSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/behavior"), 100, &App::behaviorCallback, this);
+    laserScanSub_ = node_.subscribe(std::string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
   }
 }
-;
 
 App::~App()
 {
@@ -118,13 +119,13 @@ App::~App()
 
 void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
 {
-  int64_t utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  int64_t utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   std::cerr << utime << "" << std::endl;
 }
 
 void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
-  int64_t utime = (int64_t)msg->header.stamp.toNSec() / 1000; // from nsec to usec
+  int64_t utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   std::cerr << "\t\t\t" << utime << "" << std::endl;
 }
 
