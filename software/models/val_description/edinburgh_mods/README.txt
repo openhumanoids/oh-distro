@@ -15,49 +15,49 @@ rosrun xacro xacro.py valkyrie_A_sim.xacro -o ../urdf/valkyrie_A_sim.urdf
 This is used for the quasi static balance constraint:
 
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>

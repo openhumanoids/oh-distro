@@ -15,7 +15,6 @@
         <mesh filename="package://val_description/model/meshes/pelvis/pelvis.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -35,7 +34,6 @@
         <mesh filename="package://val_description/model/meshes/torso/torsoyaw.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -55,7 +53,6 @@
         <mesh filename="package://val_description/model/meshes/torso/torsopitch.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -75,7 +72,6 @@
         <mesh filename="package://val_description/model/meshes/torso/torso.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -134,7 +130,6 @@
         <mesh filename="package://val_description/model/meshes/head/neckj1.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -154,7 +149,6 @@
         <mesh filename="package://val_description/model/meshes/head/neckj2.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -174,7 +168,6 @@
         <mesh filename="package://val_description/model/meshes/head/head_multisense_no_visor.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -233,7 +226,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj1_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -253,7 +245,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj2_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -273,7 +264,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj3_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -293,7 +283,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj4_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -365,7 +354,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj5_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -385,7 +373,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj6_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -405,7 +392,6 @@
         <mesh filename="package://val_description/model/meshes/arms/palm_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -464,7 +450,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj1_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -484,7 +469,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj2_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -504,7 +488,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj3_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -524,7 +507,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj4_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -580,7 +562,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/indexj1_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -600,7 +581,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/indexj2_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -620,7 +600,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/indexj3_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -667,7 +646,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/middlej1_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -687,7 +665,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/middlej2_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -707,7 +684,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/middlej3_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -754,7 +730,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/pinkyj1_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -774,7 +749,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/pinkyj2_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -794,7 +768,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/pinkyj3_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -841,7 +814,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj1_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -861,7 +833,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj2_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -881,7 +852,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj3_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -901,7 +871,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj4_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -973,7 +942,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj5_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -993,7 +961,6 @@
         <mesh filename="package://val_description/model/meshes/arms/aj6_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1013,7 +980,6 @@
         <mesh filename="package://val_description/model/meshes/arms/palm_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1072,7 +1038,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj1_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1092,7 +1057,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj2_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1112,7 +1076,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj3_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1132,7 +1095,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/thumbj4_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1188,7 +1150,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/indexj1_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1208,7 +1169,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/indexj2_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1228,7 +1188,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/indexj3_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1275,7 +1234,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/middlej1_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1295,7 +1253,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/middlej2_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1315,7 +1272,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/middlej3_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1362,7 +1318,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/pinkyj1_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1382,7 +1337,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/pinkyj2_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1402,7 +1356,6 @@
         <mesh filename="package://val_description/model/meshes/fingers/pinkyj3_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1449,7 +1402,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj1_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1469,7 +1421,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj2_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1489,7 +1440,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj3_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1509,7 +1459,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj4_right.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1529,7 +1478,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj5.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1549,7 +1497,6 @@
         <mesh filename="package://val_description/model/meshes/legs/foot.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1558,49 +1505,49 @@
       <origin rpy="0.0 0.0 0.0" xyz="0.066 0.0 -0.056"/>
     </collision>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
@@ -1695,7 +1642,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj1_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
@@ -1715,7 +1661,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj2_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1735,7 +1680,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj3_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1755,7 +1699,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj4_left.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1775,7 +1718,6 @@
         <mesh filename="package://val_description/model/meshes/legs/lj5.dae"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1795,7 +1737,6 @@
         <mesh filename="package://val_description/model/meshes/legs/foot.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
-      <material name="White"/>
     </visual>
     <collision>
       <geometry>
@@ -1804,49 +1745,49 @@
       <origin rpy="0.0 0.0 0.0" xyz="0.066 0.0 -0.056"/>
     </collision>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>

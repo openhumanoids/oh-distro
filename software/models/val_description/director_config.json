@@ -166,8 +166,8 @@
     "rightAnkleRoll"
   ],
   "fixedPointFile" : "../../control/matlab/data/valkyrie_fp_june2015.mat",
-  "leftFootMeshFiles" : ["meshes/legs/foot.obj"],
-  "rightFootMeshFiles" : ["meshes/legs/foot.obj"],
+  "leftFootMeshFiles" : ["model/meshes/legs/foot.obj"],
+  "rightFootMeshFiles" : ["model/meshes/legs/foot.obj"],
   "postureDatabaseFile" : "./stored_poses.json",
   "mirrorJointSignFlips" : ["waistRotator"],
 
