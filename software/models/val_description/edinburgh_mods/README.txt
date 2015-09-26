@@ -75,7 +75,7 @@ are independent urdf models and are used when seeding hands in the ddapp ui.
 they are generated from xacro in the same manner as for whole robot:
 rosrun xacro xacro.py valkyrie_hand_left.xacro -o ../urdf/valkyrie_hand_left.urdf
 rosrun xacro xacro.py valkyrie_hand_right.xacro -o ../urdf/valkyrie_hand_right.urdf
-... and then copied into the above locations
+Then rename the files from .dae to .obj and then copy into the above locations
 
 
 ***IHMC URDF/SDF***

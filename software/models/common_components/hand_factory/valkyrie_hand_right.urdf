@@ -4,7 +4,6 @@
 <!-- |    EDITING THIS FILE BY HAND IS NOT RECOMMENDED                                 | -->
 <!-- =================================================================================== -->
 <robot name="valkyrie_hand_right" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <!-- Properties -->
   <link name="plane::xy::base">
     <inertial>
       <mass value="0.1"/>
@@ -41,7 +40,7 @@
     <inertial>
       <mass value="0.017"/>
       <origin rpy="0 0 0" xyz="0 -0.0 0.01"/>
-      <inertia ixx="-0.00238685" ixy="0.0" ixz="-0.0" iyy="-0.002386065" iyz="-0.0" izz="1.285e-06"/>
+      <inertia ixx="2.7778767e-06" ixy="5.6718533e-09" ixz="-9.5523207e-08" iyy="3.5462642e-06" iyz="3.663718e-08" izz="1.3553297e-06"/>
     </inertial>
     <visual>
       <geometry>
@@ -124,7 +123,7 @@
     <child link="rightThumbRollLink"/>
   </joint>
   <gazebo reference="rightThumbRoll">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightThumbPitch1" type="fixed">
     <origin rpy="-0.3491 0.0 0.0" xyz="0.0 0.0 0.0229"/>
@@ -133,7 +132,7 @@
     <child link="rightThumbPitch1Link"/>
   </joint>
   <gazebo reference="rightThumbPitch1">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightThumbPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0066 0.0375"/>
@@ -142,7 +141,7 @@
     <child link="rightThumbPitch2Link"/>
   </joint>
   <gazebo reference="rightThumbPitch2">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightThumbPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0049 0.0275"/>
@@ -151,7 +150,7 @@
     <child link="rightThumbPitch3Link"/>
   </joint>
   <gazebo reference="rightThumbPitch3">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <link name="rightIndexFingerPitch1Link">
     <inertial>
@@ -220,7 +219,7 @@
     <child link="rightIndexFingerPitch1Link"/>
   </joint>
   <gazebo reference="rightIndexFingerPitch1">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightIndexFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
@@ -229,7 +228,7 @@
     <child link="rightIndexFingerPitch2Link"/>
   </joint>
   <gazebo reference="rightIndexFingerPitch2">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightIndexFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0"/>
@@ -238,7 +237,7 @@
     <child link="rightIndexFingerPitch3Link"/>
   </joint>
   <gazebo reference="rightIndexFingerPitch3">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <link name="rightMiddleFingerPitch1Link">
     <inertial>
@@ -307,7 +306,7 @@
     <child link="rightMiddleFingerPitch1Link"/>
   </joint>
   <gazebo reference="rightMiddleFingerPitch1">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightMiddleFingerPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
@@ -316,7 +315,7 @@
     <child link="rightMiddleFingerPitch2Link"/>
   </joint>
   <gazebo reference="rightMiddleFingerPitch2">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightMiddleFingerPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0.0"/>
@@ -325,7 +324,7 @@
     <child link="rightMiddleFingerPitch3Link"/>
   </joint>
   <gazebo reference="rightMiddleFingerPitch3">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <link name="rightPinkyPitch1Link">
     <inertial>
@@ -394,7 +393,7 @@
     <child link="rightPinkyPitch1Link"/>
   </joint>
   <gazebo reference="rightPinkyPitch1">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightPinkyPitch2" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0381 0.0"/>
@@ -403,7 +402,7 @@
     <child link="rightPinkyPitch2Link"/>
   </joint>
   <gazebo reference="rightPinkyPitch2">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <joint name="rightPinkyPitch3" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.0229 0.0"/>
@@ -412,6 +411,6 @@
     <child link="rightPinkyPitch3Link"/>
   </joint>
   <gazebo reference="rightPinkyPitch3">
-    <provideFeedback>1</provideFeedback>
+    <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
-  </robot>
+</robot>
