@@ -77,6 +77,14 @@ rosrun xacro xacro.py valkyrie_hand_left.xacro -o ../urdf/valkyrie_hand_left.urd
 rosrun xacro xacro.py valkyrie_hand_right.xacro -o ../urdf/valkyrie_hand_right.urdf
 Then rename the files from .dae to .obj and then copy into the above locations
 
+===Current Issues===
+ISSUE: leftFootSixAxis needs to be renamed leftLegSixAxis due to drake parse conflict
+ISSUE: this is not parsed properly - '<frame>child</frame>' confused drake
+  <gazebo reference="rightFootSixAxis_Offset">
+    <sensor name="rightFootSixAxis" type="force_torque">
+      <frame>child</frame>
+    </sensor>
+  </gazebo>
 
 ***IHMC URDF/SDF***
 - There exists 4 files in val_description: valkyrie_A_[hw|sw].[urdf|sdf]
@@ -103,6 +111,7 @@ Development process:
 3. drake designer
 4. remove STL
 5. changing the normal smoothing file in ddapp
+
 
 
 - Maurice, june 2015
