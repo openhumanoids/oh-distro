@@ -1,16 +1,16 @@
 {
   "urdfConfig": {
-    "default": "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
-    "robotState": "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
-    "ik":         "../../drake/examples/IRB140/urdf/irb_140_convhull.urdf",
-    "chull":      "../../drake/examples/IRB140/urdf/irb_140_convhull.urdf",
-    "playback":   "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
-    "teleop":     "../../drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf"
+    "default": "../../drake/drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
+    "robotState": "../../drake/drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
+    "ik":         "../../drake/drake/examples/IRB140/urdf/irb_140_convhull.urdf",
+    "chull":      "../../drake/drake/examples/IRB140/urdf/irb_140_convhull.urdf",
+    "playback":   "../../drake/drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf",
+    "teleop":     "../../drake/drake/examples/IRB140/urdf/irb_140_robotiq_ati.urdf"
   },
 
   "teleopJointGroups" : [
 
-      { "name" : "Arm",
+      { "name" : "Left Arm",
         "joints" : [
           "joint1",
           "joint2",
@@ -24,11 +24,6 @@
 
     ],
 
-  "endEffectorConfig" : {
-    "endEffectorLinkNames" : ["link_6"],
-    "graspOffsetFrame" : [[0.15, 0.0, 0.0], [0.0, 0.0, 0.0]],
-    "fixedJoints" : ["base_.*"]
-  },
 
   "drakeJointNames": [
     "base_x",
@@ -54,7 +49,10 @@
   ],
   "fixedPointFile" : "../../control/matlab/data/abb_irb140_fp.mat",
   "postureDatabaseFile" : "stored_poses.json",
-  "mirrorJointSignFlips" : [],
+
+  "drivingThrottleJoint" : "joint1",
+  "drivingSteeringJoint" : "joint2",
+  "headLink":"link_6",
 
   "handCombinations": [
       { "side" : "left",
@@ -65,5 +63,6 @@
         "robotMountLink" : "palm",
         "palmLink" : "palm"
       }
-  ]
+  ],
+  "userConfig" :["fixedBaseArm"]
 }
