@@ -5,6 +5,8 @@
 . ~/ipab-distro/drc/software/config/drc_environment.sh
 . ~/ipab-distro/ipab-ros-workspace/devel/setup.bash
 
+# two step make - if fails, then do both
+
 # DRC
 ## externals
 cd drc/software/externals
