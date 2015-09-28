@@ -179,20 +179,16 @@ App::~App()
 void App::footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg)
 {
   ipab::footstep_status_t msg_out;
-  msg_out.STARTED = msg->STARTED;
-  msg_out.COMPLETED = msg->COMPLETED;
-  msg_out.LEFT = msg->LEFT;
-  msg_out.RIGHT = msg->RIGHT;
   msg_out.status = msg->status;
   msg_out.footstep_index = msg->footstep_index;
   msg_out.robot_side = msg->robot_side;
   msg_out.actual_foot_position_in_world[0] = msg->actual_foot_position_in_world.x;
   msg_out.actual_foot_position_in_world[1] = msg->actual_foot_position_in_world.y;
   msg_out.actual_foot_position_in_world[2] = msg->actual_foot_position_in_world.z;
-  msg_out.actual_foot_orientation_in_world[0] = msg->actual_foot_orientation_in_world.x;
-  msg_out.actual_foot_orientation_in_world[1] = msg->actual_foot_orientation_in_world.y;
-  msg_out.actual_foot_orientation_in_world[2] = msg->actual_foot_orientation_in_world.z;
-  msg_out.actual_foot_orientation_in_world[3] = msg->actual_foot_orientation_in_world.w;
+  msg_out.actual_foot_orientation_in_world[0] = msg->actual_foot_orientation_in_world.w;
+  msg_out.actual_foot_orientation_in_world[1] = msg->actual_foot_orientation_in_world.x;
+  msg_out.actual_foot_orientation_in_world[2] = msg->actual_foot_orientation_in_world.y;
+  msg_out.actual_foot_orientation_in_world[3] = msg->actual_foot_orientation_in_world.z;
   msg_out.is_done_walking = msg->is_done_walking;
   msg_out.unique_id = msg->unique_id;
   lcmPublish_.publish("IHMC_FOOTSTEP_STATUS", &msg_out);

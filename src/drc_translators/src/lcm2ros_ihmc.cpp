@@ -98,13 +98,14 @@ private:
   ros::Publisher scs_api_pub_;
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_):
+    lcm_(lcm_),nh_(nh_), robotName_(robotName_)
 {
   // If pronto is running never send plans like this:
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST", &LCM2ROS::footstepPlanHandler, this);
   // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into BDI/IHMC frame:
   // COMMITTED_FOOTSTEP_PLAN or BDI_ADJUSTED_FOOTSTEP_PLAN
-  lcm_->subscribe("COMMITTED_FOOTSTEP_PLAN", &LCM2ROS::footstepPlanBDIModeHandler, this);
+  lcm_->subscribe("BDI_ADJUSTED_FOOTSTEP_PLAN", &LCM2ROS::footstepPlanBDIModeHandler, this);
   walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>(
       "/ihmc_ros/" + robotName_ + "/control/footstep_list", 10);
 
@@ -524,7 +525,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
 
 void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg)
 {
-  ROS_ERROR("LCM2ROS got robot plan");
+  ROS_ERROR("LCM2ROS got robot plan with %d states", msg->num_states);
 
   std::vector<std::string> l_arm_strings;
   std::vector<std::string> r_arm_strings;
