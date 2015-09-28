@@ -10,7 +10,7 @@
 
   "teleopJointGroups" : [
 
-      { "name" : "Arm",
+      { "name" : "Left Arm",
         "joints" : [
           "joint1",
           "joint2",
@@ -54,7 +54,11 @@
   ],
   "fixedPointFile" : "../../control/matlab/data/abb_irb140_fp.mat",
   "postureDatabaseFile" : "stored_poses.json",
-  "mirrorJointSignFlips" : [],
+
+  "drivingThrottleJoint" : "joint1",
+  "drivingSteeringJoint" : "joint2",
+  "leftFootLink" : "link_1",
+  "rightFootLink" : "link_2",
   "headLink":"link_6",
 
   "handCombinations": [
@@ -66,5 +70,6 @@
         "robotMountLink" : "palm",
         "palmLink" : "palm"
       }
-  ]
+  ],
+  "userConfig" :[]
 }
