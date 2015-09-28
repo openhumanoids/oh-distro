@@ -60,17 +60,10 @@ class IHMCStepTranslator(object):
 
     def handle_footstep_plan(self, channel, msg):
         if isinstance(msg, str):
-            try:
-                msg = drc.deprecated_footstep_plan_t.decode(msg)
-            except ValueError:
-                msg = drc.footstep_plan_t.decode(msg)
-        if isinstance(msg, drc.deprecated_footstep_plan_t):
-            footsteps, opts = decode_deprecated_footstep_plan(msg)
-        elif isinstance(msg, drc.footstep_plan_t):
-            footsteps, opts = decode_footstep_plan(msg)
-            self.last_params = msg.params
-        else:
-            raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
+            msg = drc.footstep_plan_t.decode(msg)
+
+        footsteps, opts = decode_footstep_plan(msg)
+        self.last_params = msg.params
 
         if len(footsteps) <= 2:
             # the first two footsteps are always just the positions of the robot's feet, so a plan of two or fewer footsteps is a no-op

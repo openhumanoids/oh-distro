@@ -8,68 +8,83 @@ mitdrc/val_description and branch called: mfallon-mods-needed-for-drake-system
 This branch inserts edinburgh_mods.xacro into the xacro.
 
 2. Compile the urdf:
-cd val_description/robots
+cd val_description/model/robots
 rosrun xacro xacro.py valkyrie_A_sim.xacro -o ../urdf/valkyrie_A_sim.urdf
 
 3. Current you need to insert the following inside the link tag for LeftFoot and RightFoot:
 This is used for the quasi static balance constraint:
 
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.075 -0.0624435 -0.073"/>
+      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.0"/>
       </geometry>
     </collision>
     <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.19 -0.0624435 -0.11"/>
+      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
 
 4. move the urdf to this location
-cp valkyrie_A.urdf PATH_TO/drc/software/models/val_description/model.urdf
+cp valkyrie_A_sim.urdf PATH_TO/drc/software/models/val_description/urdf/valkyrie_A_sim.urdf
 
 5. If needed you can make an sdf file like this:
 gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
 
+6. Generating hands.
+Background: the hands located in models/common_components/hand_factory
+are independent urdf models and are used when seeding hands in the ddapp ui. 
+they are generated from xacro in the same manner as for whole robot:
+rosrun xacro xacro.py valkyrie_hand_left.xacro -o ../urdf/valkyrie_hand_left.urdf
+rosrun xacro xacro.py valkyrie_hand_right.xacro -o ../urdf/valkyrie_hand_right.urdf
+Then rename the files from .dae to .obj and then copy into the above locations
 
+===Current Issues===
+ISSUE: leftFootSixAxis needs to be renamed leftLegSixAxis due to drake parse conflict
+ISSUE: this is not parsed properly - '<frame>child</frame>' confused drake
+  <gazebo reference="rightFootSixAxis_Offset">
+    <sensor name="rightFootSixAxis" type="force_torque">
+      <frame>child</frame>
+    </sensor>
+  </gazebo>
 
 ***IHMC URDF/SDF***
 - There exists 4 files in val_description: valkyrie_A_[hw|sw].[urdf|sdf]
@@ -96,6 +111,7 @@ Development process:
 3. drake designer
 4. remove STL
 5. changing the normal smoothing file in ddapp
+
 
 
 - Maurice, june 2015
