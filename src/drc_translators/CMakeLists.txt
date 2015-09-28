@@ -9,7 +9,6 @@ project(drc_translators)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  rospy
   std_msgs
   ipab_msgs
   ihmc_msgs
@@ -20,12 +19,13 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   std_srvs
   kdl_conversions
+  roslint
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES beginner_tutorials
-  CATKIN_DEPENDS roscpp rospy std_msgs ipab_msgs ihmc_msgs tf trajectory_msgs sensor_msgs image_transport geometry_msgs kdl_conversions
+  CATKIN_DEPENDS roscpp std_msgs ipab_msgs ihmc_msgs tf trajectory_msgs sensor_msgs image_transport geometry_msgs kdl_conversions
   DEPENDS system_lib
 )
 
@@ -100,3 +100,6 @@ pods_use_pkg_config_packages(ros2lcm_kinect lcm lcmtypes_pronto-lcmtypes bot2-co
 # add_executable(lcm2ros_botframes src/lcm2ros_botframes.cpp)
 # target_link_libraries(lcm2ros_botframes ${catkin_LIBRARIES})
 # pods_use_pkg_config_packages(lcm2ros_botframes lcm bot2-core)
+
+#set(ROSLINT_CPP_OPTS "--linelength=180")
+roslint_cpp()
