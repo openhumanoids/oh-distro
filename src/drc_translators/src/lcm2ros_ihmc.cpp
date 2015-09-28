@@ -542,9 +542,11 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   else if (robotName_.compare("valkyrie") == 0)
   {
     l_arm_strings =
-    { "LeftShoulderPitch", "LeftShoulderRoll", "LeftShoulderYaw", "LeftElbowPitch", "LeftForearmYaw", "LeftWristRoll", "LeftWristPitch"};
+    {"leftShoulderPitch","leftShoulderRoll","leftShoulderYaw","leftElbowPitch","leftForearmYaw",
+    "leftWristRoll","leftWristPitch"};
     r_arm_strings =
-    { "RightShoulderPitch", "RightShoulderRoll", "RightShoulderYaw", "RightElbowPitch", "RightForearmYaw", "RightWristRoll", "RightWristPitch"};
+    {"rightShoulderPitch","rightShoulderRoll","rightShoulderYaw","rightElbowPitch","rightForearmYaw",
+    "rightWristRoll","rightWristPitch"};
   }
 
   ihmc_msgs::ArmJointTrajectoryPacketMessage left_arm_trajectory;
