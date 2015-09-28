@@ -24,11 +24,6 @@
 
     ],
 
-  "endEffectorConfig" : {
-    "endEffectorLinkNames" : ["link_6"],
-    "graspOffsetFrame" : [[0.15, 0.0, 0.0], [0.0, 0.0, 0.0]],
-    "fixedJoints" : ["base_.*"]
-  },
 
   "drakeJointNames": [
     "base_x",
@@ -57,8 +52,6 @@
 
   "drivingThrottleJoint" : "joint1",
   "drivingSteeringJoint" : "joint2",
-  "leftFootLink" : "link_1",
-  "rightFootLink" : "link_2",
   "headLink":"link_6",
 
   "handCombinations": [
@@ -71,5 +64,5 @@
         "palmLink" : "palm"
       }
   ],
-  "userConfig" :[]
+  "userConfig" :["fixedBaseArm"]
 }
