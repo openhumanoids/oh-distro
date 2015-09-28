@@ -2,17 +2,18 @@ package ipab;
 
 struct footstep_status_t
 {
-    byte    STARTED;
-    byte    COMPLETED;
-    byte    LEFT;
-    byte    RIGHT;
-    byte    status;
+    int8_t    status;
     int32_t footstep_index;
-    byte    robot_side;
+    int8_t    robot_side;
     float   actual_foot_position_in_world[3];
     float   actual_foot_orientation_in_world[4];
-    boolean is_done_walking;
+    int8_t is_done_walking;
     int64_t unique_id;
+
+    const int8_t STARTED=0;
+    const int8_t COMPLETED=1;
+    const int8_t LEFT=0;
+    const int8_t RIGHT=1;
 }
 
 
