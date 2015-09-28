@@ -52,7 +52,7 @@ group "2.sensors" {
 
 group "3.actuators" {
     cmd "arm_schunk_sdh" {
-        exec = "roslaunch schunk_sdh schunk_sdh.launch";
+        exec = "roslaunch schunk_sdh_launch schunk_sdh.launch";
         host = "localhost";
     }
 
