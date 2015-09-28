@@ -2,7 +2,7 @@
   <world name='terrain'>
 
     <model name='Box01'>
-      <pose>0.50 0.0 0.075 0 0 0</pose>
+      <pose>0.50 0.0 0.075 0 220 0</pose>
       <link name='Box01'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
@@ -23,7 +23,7 @@
             <ambient>0 0 1 .8</ambient>
           </material>
         </visual>
-      </link>
+      </link>0
       <static>1</static>
     </model>
 
@@ -34,14 +34,14 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </visual>
@@ -50,7 +50,7 @@
     </model>
 
     <model name='Box03'>
-      <pose>1.50 0.0 0.075 0 0 0</pose>
+      <pose>1.50 0.0 0.075 0 60 0</pose>
       <link name='Box03'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
@@ -76,20 +76,20 @@
     </model>
 
     <model name='Box04'>
-      <pose>2.00 0.0 0.15 0 0 0</pose>
+      <pose>2.00 0.0 0.075 110 0 0</pose>
       <link name='Box04'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.15</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.15</size>
             </box>
           </geometry>
         </visual>
@@ -98,20 +98,20 @@
     </model>
 
     <model name='Box05'>
-      <pose>2.50 0.0 0.225 0 0 0</pose>
+      <pose>2.50 0.0 0.15 220 0 0</pose>
       <link name='Box05'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.45</size>
+              <size>0.4 0.4 0.30</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.30</size>
             </box>
           </geometry>
         </visual>
@@ -120,20 +120,20 @@
     </model>
 
     <model name='Box06'>
-      <pose>3.00 0.0 0.15 0 0 0</pose>
+      <pose>3.00 0.0 0.15 0 60 0</pose>
       <link name='Box06'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </visual>
@@ -142,7 +142,7 @@
     </model>
 
     <model name='Box07'>
-      <pose>3.50 0.0 0.075 0 0 0</pose>
+      <pose>3.50 0.0 0.075 0 -220 0</pose>
       <link name='Box07'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
@@ -164,42 +164,46 @@
     </model>
 
     <model name='Box08'>
-      <pose>4.00 0.0 0.15 0 0 0</pose>
+      <pose>4.00 0.0 0.075 0 220 0</pose>
       <link name='Box08'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.15</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.15</size>
             </box>
           </geometry>
+          <material>
+            <diffuse>0 0 1 .8</diffuse>
+            <ambient>0 0 1 .8</ambient>
+          </material>
         </visual>
       </link>
       <static>1</static>
     </model>
 
     <model name='Box09'>
-      <pose>4.50 0.0 0.225 0 0 0</pose>
+      <pose>4.50 0.0 0.15 0 0 0</pose>
       <link name='Box09'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.45</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </visual>
@@ -208,29 +212,33 @@
     </model>
 
     <model name='Box10'>
-      <pose>5.00 0.0 0.15 0 0 0</pose>
+      <pose>5.00 0.0 0.075 0 60 0</pose>
       <link name='Box10'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.15</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.15</size>
             </box>
           </geometry>
+          <material>
+            <diffuse>0 1 1 .8</diffuse>
+            <ambient>0 1 1 .8</ambient>
+          </material>
         </visual>
       </link>
       <static>1</static>
     </model>
 
     <model name='Box11'>
-      <pose>5.50 0.0 0.075 0 0 0</pose>
+      <pose>5.50 0.0 0.075 110 0 0</pose>
       <link name='Box11'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
@@ -252,20 +260,20 @@
     </model>
 
     <model name='Box12'>
-      <pose>6.00 0.0 0.15 0 0 0</pose>
+      <pose>6.00 0.0 0.15 220 0 0</pose>
       <link name='Box12'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.30</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.30</size>
             </box>
           </geometry>
         </visual>
@@ -274,20 +282,20 @@
     </model>
 
     <model name='Box13'>
-      <pose>6.50 0.0 0.225 0 0 0</pose>
+      <pose>6.50 0.0 0.15 0 60 0</pose>
       <link name='Box13'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.45</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 0.3</size>
+              <size>0.4 0.4 0.20</size>
             </box>
           </geometry>
         </visual>
@@ -296,118 +304,8 @@
     </model>
 
     <model name='Box14'>
-      <pose>7.00 0.0 0.15 0 0 0</pose>
+      <pose>7.00 0.0 0.075 0 -220 0</pose>
       <link name='Box14'>
-        <pose>0 0 0 0 0 0</pose>
-        <collision name='collision'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.3</size>
-            </box>
-          </geometry>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.3</size>
-            </box>
-          </geometry>
-        </visual>
-      </link>
-      <static>1</static>
-    </model>
-
-    <model name='Box15'>
-      <pose>7.50 0.0 0.075 0 0 0</pose>
-      <link name='Box15'>
-        <pose>0 0 0 0 0 0</pose>
-        <collision name='collision'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.15</size>
-            </box>
-          </geometry>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.15</size>
-            </box>
-          </geometry>
-        </visual>
-      </link>
-      <static>1</static>
-    </model>
-
-    <model name='Box16'>
-      <pose>8.00 0.0 0.15 0 0 0</pose>
-      <link name='Box16'>
-        <pose>0 0 0 0 0 0</pose>
-        <collision name='collision'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.3</size>
-            </box>
-          </geometry>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.3</size>
-            </box>
-          </geometry>
-        </visual>
-      </link>
-      <static>1</static>
-    </model>
-
-    <model name='Box17'>
-      <pose>8.50 0.0 0.225 0 0 0</pose>
-      <link name='Box17'>
-        <pose>0 0 0 0 0 0</pose>
-        <collision name='collision'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.45</size>
-            </box>
-          </geometry>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.3</size>
-            </box>
-          </geometry>
-        </visual>
-      </link>
-      <static>1</static>
-    </model>
-
-    <model name='Box18'>
-      <pose>9.00 0.0 0.15 0 0 0</pose>
-      <link name='Box18'>
-        <pose>0 0 0 0 0 0</pose>
-        <collision name='collision'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.3</size>
-            </box>
-          </geometry>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.4 0.4 0.3</size>
-            </box>
-          </geometry>
-        </visual>
-      </link>
-      <static>1</static>
-    </model>
-
-    <model name='Box19'>
-      <pose>9.50 0.0 0.075 0 0 0</pose>
-      <link name='Box19'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
           <geometry>

@@ -40,10 +40,6 @@ group "2.state_with_pronto" {
         exec = "drc-joints2frames";
         host = "localhost";
     }
-    cmd "drc-ihmc-step-translator" {
-        exec = "drc-ihmc-step-translator";
-        host = "localhost";
-    }
     cmd "se-fusion" {
         exec = "se-fusion";
         host = "localhost";
@@ -52,6 +48,10 @@ group "2.state_with_pronto" {
 
 
 group "3.plan_and_control" {
+    cmd "drc-ihmc-step-translator" {
+        exec = "drc-ihmc-step-translator";
+        host = "localhost";
+    }
     cmd "contact_monitor" {
         exec = "drc-contact-monitor";
         host = "localhost";
