@@ -14,6 +14,19 @@ This repository brings together modules for motion planning, control, interfaces
     * [IPAB-SLMC/exotica](https://bitbucket.org/IPAB-SLMC/exotica) (Bitbucket)
     * [IPAB-SLMC/exotica_json](https://bitbucket.org/IPAB-SLMC/exotica_json) (Bitbucket)
 
+## Basics (Git)
+All our source code is stored in Git repositories. Please ensure that you have git installed on your system:
+```
+sudo apt-get install git gitk git-gui
+```
+
+## Getting Access
+You may need permission to access the git repositories hosted on GitHub and Bitbucket. To do so, [create a GitHub account](https://github.com/join) as well as a [Bitbucket account](https://bitbucket.org/account/signup/) if you don't already have one.
+
+Next, add your public SSH key to your GitHub and Bitbucket accounts so that you can easily push and pull over SSH. Read the [generating ssh keys](https://help.github.com/articles/generating-ssh-keys) article for instructions to generate and link an ssh key to your account.
+
+Finally, send your GitHub and Bitbucket username to Maurice, Vlad, or another team member so you can be granted access.
+
 ## To get started
 
 ### Using the provided scripts for automatic setup
