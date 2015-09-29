@@ -27,7 +27,7 @@ Next, add your public SSH key to your GitHub ([on this page](https://github.com/
 
 Finally, send your GitHub and Bitbucket username to Maurice, Vlad, or another team member so you can be granted access.
 
-## To get started
+## Getting Started
 
 ### Install ROS Indigo
 ```
@@ -38,16 +38,17 @@ sudo apt-get install ros-indigo-desktop-full
 ```
 If you are short on space, you may want to try to install ``ros-indigo-desktop`` instead.
 
-### Using the provided scripts for automatic setup
+### Install Matlab, MOSEK, and Gurobi
+To install the required dependencies on a fresh installation of Ubuntu 14.04 LTS, please follow the [DRC instructions to install Matlab](https://github.com/mitdrc/drc#install-matlab), [MOSEK](https://github.com/mitdrc/drc#instructions-for-mosek), and [Gurobi](https://github.com/mitdrc/drc#instructions-for-gurobi).
 
-To install the required dependencies on a fresh installation of Ubuntu 14.04 LTS, please follow the DRC instructions to install Matlab and Gurobi.
+### Using the provided scripts for automatic setup
 
 To automatically check out this repository, you can run:
 ```
 curl https://raw.githubusercontent.com/ipab-slmc/ipab-distro/cb88b145b1421b5c90871c73373f36474a6eed0d/bootstrap.sh?token=ABll_D_yixrpwrlpxI9UtFxfT7amBIt5ks5WE6JOwA%3D%3D | bash
 ```
 
-This will download and run the ``bootstrap.sh`` script which clones this repository and sets up the sandbox remotes for subrepositories, as well as some ``.bashrc`` shortcuts.
+This will download and run the ``bootstrap.sh`` script which clones this repository and sets up the sandbox remotes for subrepositories, Matlab startup paths, as well as some ``.bashrc`` shortcuts.
 
 Following this, other dependencies (apt-get based installs as well as LCM) can be easily installed by running the provided script:
 ```
