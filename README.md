@@ -61,6 +61,19 @@ After this, the whole system can be built by running:
 ./build.sh
 ```
 
+### Helpful Aliases
+For your ``.bashrc`` file:
+```
+source /opt/ros/indigo/setup.bash
+```
+
+and helpful aliases (can also be in ``.bashrc`` or in bash_aliases):
+```
+alias catkin_make_reldeb='catkin_make -DCMAKE_BUILD_TYPE=RelWithDebInfo'
+alias catkin_make_rel='catkin_make -DCMAKE_BUILD_TYPE=Release'
+alias init_drc='source ~/ipab-distro/drc/software/config/drc_environment.sh'
+```
+
 ### Manual setup
 
 Check out the required code:
