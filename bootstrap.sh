@@ -19,4 +19,6 @@ git fetch sandbox
 echo "alias init_drc='source ~/ipab-distro/drc/software/config/drc_environment.sh'" >> ~/.bashrc
 # source ~/ipab-distro/ipab-ros-workspace/devel/setup.bash
 
+mkdir -p ~/Documents/MATLAB
+touch ~/Documents/MATLAB/startup.m
 echo "run([getenv('DRC_BASE'), '/software/build/config/drc_control_setup.m'])" >> ~/Documents/MATLAB/startup.m # TODO check whether already there
