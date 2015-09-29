@@ -36,6 +36,7 @@ sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0xB01FA116
 sudo apt-get update
 sudo apt-get install ros-indigo-desktop-full
 ```
+If you are short on space, you may want to try to install ``ros-indigo-desktop`` instead.
 
 ### Using the provided scripts for automatic setup
 
