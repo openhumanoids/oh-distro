@@ -23,7 +23,7 @@ sudo apt-get install git gitk git-gui
 ## Getting Access
 You may need permission to access the git repositories hosted on GitHub and Bitbucket. To do so, [create a GitHub account](https://github.com/join) as well as a [Bitbucket account](https://bitbucket.org/account/signup/) if you don't already have one.
 
-Next, add your public SSH key to your GitHub and Bitbucket accounts so that you can easily push and pull over SSH. Read the [generating ssh keys](https://help.github.com/articles/generating-ssh-keys) article for instructions to generate and link an ssh key to your account.
+Next, add your public SSH key to your GitHub ([on this page](https://github.com/settings/ssh/)) and Bitbucket accounts (Click on your profile picture in the top right corner, then Manage Account, then SSH keys) so that you can easily push and pull over SSH. Read the [generating ssh keys](https://help.github.com/articles/generating-ssh-keys) article for instructions to generate and link an SSH key to your account.
 
 Finally, send your GitHub and Bitbucket username to Maurice, Vlad, or another team member so you can be granted access.
 
