@@ -43,7 +43,7 @@ private:
   ros::Publisher hand_command_pub_;
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_) : lcm_(lcm_), nh_(nh_)
 {
   lcm_->subscribe("ROBOTIQ_LEFT_COMMAND", &LCM2ROS::handCommandHandler, this);
   hand_command_pub_ = nh_.advertise<ipab_msgs::RobotiqCommand>("/gripper/ddapp_command", 10);
