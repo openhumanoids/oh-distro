@@ -16,6 +16,30 @@ This repository brings together modules for motion planning, control, interfaces
 
 ## To get started
 
+### Using the provided scripts for automatic setup
+
+To install the required dependencies on a fresh installation of Ubuntu 14.04 LTS, please follow the DRC instructions to install Matlab and Gurobi. Please also install ROS Indigo (``sudo apt-get install ros-indigo-desktop-full``).
+
+To automatically check out this repository, you can run:
+```
+curl https://raw.githubusercontent.com/ipab-slmc/ipab-distro/cb88b145b1421b5c90871c73373f36474a6eed0d/bootstrap.sh?token=ABll_D_yixrpwrlpxI9UtFxfT7amBIt5ks5WE6JOwA%3D%3D | bash
+```
+
+This will download and run the ``bootstrap.sh`` script which clones this repository and sets up the sandbox remotes for subrepositories, as well as some ``.bashrc`` shortcuts.
+
+Following this, other dependencies (apt-get based installs as well as LCM) can be easily installed by running the provided script:
+```
+cd ~/ipab-distro
+./install_dependencies.sh
+```
+
+After this, the whole system can be built by running:
+```
+./build.sh
+```
+
+### Manual setup
+
 Check out the required code:
 
 ```
