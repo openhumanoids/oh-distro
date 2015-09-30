@@ -98,7 +98,7 @@ The final step is build the IPAB ROS workspace. The following should be added to
 
     source ~/ipab-distro/drc/software/config/drc_environment.sh
     source /opt/ros/indigo/setup.bash
-    source $DRC_BASE/../../ipab-ros-workspace/devel/setup.bash
+    source $DRC_BASE/../ipab-ros-workspace/devel/setup.bash
 
 The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the first compilation.
 
