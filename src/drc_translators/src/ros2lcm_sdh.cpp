@@ -9,6 +9,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <sensor_msgs/JointState.h>
+#include <std_msgs/Bool.h>
 
 // ### Standard includes
 #include <cstdlib>
@@ -19,8 +20,10 @@
 #include <string>
 
 // ### LCM
+#include <bot_core/timestamp.h>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/joint_state_t.hpp"
+#include "lcmtypes/drc/boolean_t.hpp"
 
 class App
 {
@@ -33,7 +36,9 @@ private:
   ros::NodeHandle node_;
 
   ros::Subscriber joint_states_sub_;
+  ros::Subscriber grasping_state_sub_;
   void joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);
+  void grasping_state_cb(const std_msgs::BoolConstPtr& msg);
 };
 
 App::App(ros::NodeHandle node_)
@@ -46,6 +51,8 @@ App::App(ros::NodeHandle node_)
 
   joint_states_sub_ = node_.subscribe(std::string("/gripper/sdh_controller/joint_states"), 100, &App::joint_states_cb,
                                       this);
+  grasping_state_sub_ = node_.subscribe(std::string("/gripper/sdh_controller/grasping_state"), 1,
+                                      &App::grasping_state_cb, this);
 }
 
 App::~App()
@@ -86,6 +93,15 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
   msg_out.joint_effort[n_joints] = msg->effort[0];
 
   lcm_publish_.publish("SCHUNK_STATE", &msg_out);
+}
+
+void App::grasping_state_cb(const std_msgs::BoolConstPtr& msg)
+{
+  drc::boolean_t msg_out;
+  msg_out.utime = (int64_t)bot_timestamp_now();  // from nsec to usec
+  msg_out.data = msg->data;
+
+  lcm_publish_.publish("GRASPING_STATE", &msg_out);
 }
 
 int main(int argc, char **argv)
