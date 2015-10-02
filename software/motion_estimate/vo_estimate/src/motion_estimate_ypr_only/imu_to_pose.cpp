@@ -6,7 +6,7 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/bot_core.hpp"
-#include <lcmtypes/microstrain_comm.hpp>
+#include <lcmtypes/microstrain.hpp>
 #include <ConciseArgs>
 
 #include <Eigen/Dense>

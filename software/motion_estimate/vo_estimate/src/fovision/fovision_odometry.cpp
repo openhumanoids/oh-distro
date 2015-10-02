@@ -9,7 +9,7 @@
 
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
-#include <lcmtypes/microstrain_comm.hpp>
+#include <lcmtypes/microstrain.hpp>
 #include "lcmtypes/drc/atlas_state_t.hpp"
 
 #include "drcvision/voconfig.hpp"

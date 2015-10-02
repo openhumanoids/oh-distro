@@ -4,31 +4,118 @@
       "allow_mirror": true,
       "description": "arm up pregrasp",
       "joints": {
-        "LeftElbowPitch": -1.2,
-        "LeftForearmYaw": -1.35,
-        "LeftShoulderRoll": -1.45,
-        "LeftShoulderPitch": 0,
-        "LeftShoulderYaw": 0,
-        "LeftWristPitch": 0.0,
-        "LeftWristRoll": 0.0
+        "leftElbowPitch": -1.2,
+        "leftForearmYaw": -1.35,
+        "leftShoulderPitch": 0,
+        "leftShoulderRoll": -1.45,
+        "leftShoulderYaw": 0,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0
       },
       "name": "arm up pregrasp",
       "nominal_handedness": "left"
     },
     {
       "allow_mirror": true,
+      "description": "handsdown both",
+      "joints": {
+        "leftElbowPitch": -0.7853981852531433,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": 0.0,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightElbowPitch": 0.7853981852531433,
+        "rightForearmYaw": 1.5709999799728394,
+        "rightShoulderPitch": 0.3001966178417206,
+        "rightShoulderRoll": 1.25,
+        "rightShoulderYaw": 0.0,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0
+      },
+      "name": "handsdown both",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "neckdown",
+      "joints": {
+        "LowerNeckPitch": 0.87
+      },
+      "name": "neckdown",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "neckup",
+      "joints": {
+        "LowerNeckPitch": 0.0
+      },
+      "name": "neckup",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "handsdown incl back",
+      "joints": {
+        "leftElbowPitch": -0.7853981852531433,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": 0.0,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightElbowPitch": 0.7853981852531433,
+        "rightForearmYaw": 1.5709999799728394,
+        "rightShoulderPitch": 0.3001966178417206,
+        "rightShoulderRoll": 1.25,
+        "rightShoulderYaw": 0.0,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0,
+        "torsoPitch": 0.0,
+        "torsoRoll": 0.0,
+        "torsoYaw": 0.0
+      },
+      "name": "handsdown incl back",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
       "description": "handdown",
       "joints": {
-        "LeftElbowPitch": -0.8,
-        "LeftForearmYaw": 0.0,
-        "LeftShoulderRoll": -0.2,
-        "LeftShoulderPitch": 0.3,
-        "LeftShoulderYaw": 0.0,
-        "LeftWristPitch": 0.0,
-        "LeftWristRoll": 0.0
+        "leftElbowPitch": -0.7853981852531433,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": 0.0,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0
       },
       "name": "handdown",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "handsup both",
+      "joints": {
+        "LeftElbowPitch": -1.866603970527649,
+        "LeftForearmYaw": 1.5709999799728394,
+        "LeftShoulderPitch": 0.3001966178417206,
+        "LeftShoulderRoll": -1.25,
+        "LeftShoulderYaw": 0.0,
+        "LeftWristPitch": 0.0,
+        "LeftWristRoll": 0.0,
+        "RightElbowPitch": 1.8092540502548218,
+        "RightForearmYaw": 1.5709999799728394,
+        "RightShoulderPitch": 0.3001966178417206,
+        "RightShoulderRoll": 1.25,
+        "RightShoulderYaw": 0.0,
+        "RightWristPitch": 0.0,
+        "RightWristRoll": 0.0
+      },
+      "name": "handsup both",
+      "nominal_handedness": "none"
     }
   ],
   "bihanded": [
@@ -36,13 +123,13 @@
       "allow_mirror": true,
       "description": "board pregrasp",
       "joints": {
-        "LeftElbowPitch": -1.3696403503417969,
-        "LeftForearmYaw": -1.702666997909546,
-        "LeftShoulderRoll": -0.1745329201221466,
-        "LeftShoulderPitch": 0.20167237520217896,
-        "LeftShoulderYaw": 0.24836266040802002,
-        "LeftWristPitch": -0.22391527891159058,
-        "LeftWristRoll": -0.42069876194000244
+        "leftElbowPitch": -1.3696403503417969,
+        "leftForearmYaw": -1.702666997909546,
+        "leftShoulderPitch": 0.20167237520217896,
+        "leftShoulderRoll": -0.1745329201221466,
+        "leftShoulderYaw": 0.24836266040802002,
+        "leftWristPitch": -0.22391527891159058,
+        "leftWristRoll": -0.42069876194000244
       },
       "name": "board pregrasp",
       "nominal_handedness": "left"
@@ -53,13 +140,13 @@
       "allow_mirror": true,
       "description": "pre drop 1",
       "joints": {
-        "LeftElbowPitch": -0.3035127520561218,
-        "LeftForearmYaw": -1.4325662851333618,
-        "LeftShoulderRoll": -2.602198600769043,
-        "LeftShoulderPitch": 1.6022123098373413,
-        "LeftShoulderYaw": -0.8513715863227844,
-        "LeftWristPitch": 0.0,
-        "LeftWristRoll": -0.2019345909357071
+        "leftElbowPitch": -0.3035127520561218,
+        "leftForearmYaw": -1.4325662851333618,
+        "leftShoulderPitch": 1.6022123098373413,
+        "leftShoulderRoll": -2.602198600769043,
+        "leftShoulderYaw": -0.8513715863227844,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": -0.2019345909357071
       },
       "name": "pre drop 1",
       "nominal_handedness": "left"
@@ -68,13 +155,13 @@
       "allow_mirror": true,
       "description": "pre drop 2",
       "joints": {
-        "LeftElbowPitch": -0.7085164189338684,
-        "LeftForearmYaw": -0.8340928554534912,
-        "LeftShoulderRoll": -2.887298107147217,
-        "LeftShoulderPitch": 1.910088300704956,
-        "LeftShoulderYaw": -0.7131415605545044,
-        "LeftWristPitch": 0.0,
-        "LeftWristRoll": -0.412421315908432
+        "leftElbowPitch": -0.7085164189338684,
+        "leftForearmYaw": -0.8340928554534912,
+        "leftShoulderPitch": 1.910088300704956,
+        "leftShoulderRoll": -2.887298107147217,
+        "leftShoulderYaw": -0.7131415605545044,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": -0.412421315908432
       },
       "name": "pre drop 2",
       "nominal_handedness": "left"

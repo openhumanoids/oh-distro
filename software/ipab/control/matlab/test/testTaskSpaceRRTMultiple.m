@@ -66,10 +66,10 @@ elseif strcmp(model,'val1')
 elseif strcmp(model,'val2')
   urdf = fullfile(getDrakePath(),'../../models/val_description/urdf/valkyrie_A_sim_drake.urdf');
   S = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat']);
-  options.l_foot_link_name = 'LeftFoot';
-  options.r_foot_link_name = 'RightFoot';
-  options.l_hand_link_name = 'LeftPalm';
-  options.r_hand_link_name = 'RightPalm';
+  options.l_foot_link_name = 'leftFoot';
+  options.r_foot_link_name = 'rightFoot';
+  options.l_hand_link_name = 'leftPalm';
+  options.r_hand_link_name = 'rightPalm';
 end
 
 r = RigidBodyManipulator(urdf,options);
@@ -168,33 +168,33 @@ elseif strcmp(model,'val2')
   ref_frame_l_foot = [0.9921, 0, -0.1256, -0.0698; 0, 1, 0   0.1377; 0.1256, 0, 0.9921, 0.0862; 0, 0, 0, 1];
   ref_frame_r_foot = [0.9921, 0, -0.1256, -0.0698; 0, 1, 0, -0.1377; 0.1256, 0, 0.9921, 0.0862; 0, 0, 0, 1];
 
-  joint_inds_back = [joints.TorsoYaw; joints.TorsoPitch; joints.TorsoRoll];
+  joint_inds_back = [joints.torsoYaw; joints.torsoPitch; joints.torsoRoll];
   joint_inds_base = [joints.base_x; joints.base_y; joints.base_roll; joints.base_pitch; joints.base_yaw];
-  joint_inds_r_arm = [joints.RightShoulderPitch; joints.RightShoulderRoll; joints.RightShoulderYaw; joints.RightElbowPitch; joints.RightForearmYaw; joints.RightWristRoll; joints.RightWristPitch];
+  joint_inds_r_arm = [joints.rightShoulderPitch; joints.rightShoulderRoll; joints.rightShoulderYaw; joints.rightElbowPitch; joints.rightForearmYaw; joints.rightWristRoll; joints.rightWristPitch];
   %; joints.LowerNeckPitch; joints.NeckYaw; joints.UpperNeckPitch];
 
-  joint_inds_knees = [joints.LeftKneePitch; joints.RightKneePitch];
+  joint_inds_knees = [joints.leftKneePitch; joints.rightKneePitch];
   joints_lower_limit_knees = 0.6*[1;1];
   joints_upper_limit_knees = 1.9*[1;1];
 
   hand_to_palm_offset = [0.0; 0.0; -0.02];% [0.06; 0.0; -0.02];
 
   % internal parts removed as they created self collisions:
-  LeftHipYawLink = r.findLinkId('LeftHipYawLink');
-  LeftHipRollLink = r.findLinkId('LeftHipRollLink');
-  RightHipYawLink = r.findLinkId('RightHipYawLink');
-  RightHipRollLink = r.findLinkId('RightHipRollLink');
-  UpperNeckPitchLink = r.findLinkId('UpperNeckPitchLink');
-  TorsoPitchLink = r.findLinkId('TorsoPitchLink'); % main welding link
-  TorsoYawLink = r.findLinkId('TorsoYawLink'); % main welding link
+  leftHipYawLink = r.findLinkId('leftHipYawLink');
+  leftHipRollLink = r.findLinkId('leftHipRollLink');
+  rightHipYawLink = r.findLinkId('rightHipYawLink');
+  rightHipRollLink = r.findLinkId('rightHipRollLink');
+  upperNeckPitchLink = r.findLinkId('upperNeckPitchLink');
+  torsoPitchLink = r.findLinkId('torsoPitchLink'); % main welding link
+  torsoYawLink = r.findLinkId('torsoYawLink'); % main welding link
 
   % these shouldn't be culled from the link list but its easier too do than
   % fixing meshes now:
-  RightForearmLink = r.findLinkId('RightForearmLink'); % main welding link
-  LeftForearmLink = r.findLinkId('LeftForearmLink'); % main welding link
+  rightForearmLink = r.findLinkId('rightForearmLink'); % main welding link
+  leftForearmLink = r.findLinkId('leftForearmLink'); % main welding link
   head = r.findLinkId('head'); % main welding link
 
-  inactive_collision_bodies = [l_foot,r_foot, TorsoPitchLink, TorsoYawLink, LeftHipYawLink, LeftHipRollLink,  RightHipYawLink, RightHipRollLink, UpperNeckPitchLink, LeftForearmLink, RightForearmLink, head];
+  inactive_collision_bodies = [l_foot,r_foot, torsoPitchLink, torsoYawLink, leftHipYawLink, leftHipRollLink,  rightHipYawLink, rightHipRollLink, upperNeckPitchLink, leftForearmLink, rightForearmLink, head];
 end
 
 

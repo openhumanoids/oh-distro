@@ -33,7 +33,7 @@ add_executable (se-simple-fusion fovision_odometry.cpp)
 target_link_libraries(se-simple-fusion boost_system)
 pods_use_pkg_config_packages(se-simple-fusion eigen3
   lcm bot2-core bot2-frames   bot2-frames_cpp
-  lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain_comm zlib
+  lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain zlib
   voconfig   vofeatures   voestimator   fovision
   pronto_vis  
   opencv image_io_utils
@@ -46,7 +46,7 @@ add_executable (se-simple-vo fovision_simple_odometry.cpp)
 target_link_libraries(se-simple-vo boost_system)
 pods_use_pkg_config_packages(se-simple-vo eigen3 
   lcm bot2-core bot2-frames   bot2-frames_cpp
-  lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain_comm zlib
+  lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain zlib
   voconfig   vofeatures   voestimator   fovision
   pronto_vis  
   opencv image_io_utils

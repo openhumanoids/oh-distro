@@ -127,10 +127,10 @@ set(java_src_files
   ViconBodyPointCoder.java
   )
 
-pods_find_pkg_config(lcmtypes_vicon-drc)
-if (lcmtypes_vicon-drc_FOUND)
+pods_find_pkg_config(lcmtypes_vicon)
+if (lcmtypes_vicon_FOUND)
    set( CMAKE_JAVA_INCLUDE_PATH
-   "${CMAKE_JAVA_INCLUDE_PATH}:${cmake_jar_dir}/lcmtypes_vicon-drc.jar"
+   "${CMAKE_JAVA_INCLUDE_PATH}:${cmake_jar_dir}/lcmtypes_vicon.jar"
    )
    set( java_src_files ${java_src_files} ViconBodyPointCoder.java)
 endif()
