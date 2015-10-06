@@ -5,3 +5,10 @@ pods_install_executables(testQPReactiveRecovery)
 add_executable(testAtlasFallDetector atlasFallDetectorTest.cpp)
 target_link_libraries(testAtlasFallDetector AtlasFallDetector)
 pods_install_executables(testAtlasFallDetector)
+
+
+
+add_executable(drc-testIKtraj testIKtraj.cpp)
+target_link_libraries(drc-testIKtraj boost_thread boost_system boost_filesystem boost_signals)
+pods_use_pkg_config_packages(drc-testIKtraj drake-rbm drake-ik lcm eigen3)
+pods_install_executables(drc-testIKtraj )
