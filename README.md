@@ -45,7 +45,7 @@ To install the required dependencies on a fresh installation of Ubuntu 14.04 LTS
 
 To automatically check out this repository, you can run:
 ```
-curl https://raw.githubusercontent.com/ipab-slmc/ipab-distro/cb88b145b1421b5c90871c73373f36474a6eed0d/bootstrap.sh?token=ABll_D_yixrpwrlpxI9UtFxfT7amBIt5ks5WE6JOwA%3D%3D | bash
+curl https://raw.githubusercontent.com/ipab-slmc/ipab-distro/master/bootstrap.sh?token=ABll_FTQ0OUydI7oXMqOdUBqU4kgzuwgks5WFULkwA%3D%3D | bash
 ```
 
 This will download and run the ``bootstrap.sh`` script which clones this repository and sets up the sandbox remotes for subrepositories, Matlab startup paths, as well as some ``.bashrc`` shortcuts.
