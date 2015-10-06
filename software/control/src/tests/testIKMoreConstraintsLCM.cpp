@@ -138,13 +138,22 @@ void App::getRobotState(drc::robot_state_t& robot_state_msg, int64_t utime_in, E
 
 
 
-int main()
+int main(int argc, char *argv[])
 {
+
+  std::string file_path = "fname";
+  if ((argc > 1)){
+    file_path = argv[1];
+  }else{
+    std::cout << "you need to provide the path to atlas_minimal_contact.urdf\n";
+    return 1;
+  }
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   App app(lcm);
 
-  RigidBodyManipulator rbm("examples/Atlas/urdf/atlas_minimal_contact.urdf");
+  RigidBodyManipulator rbm(file_path);
+  // RigidBodyManipulator rbm("examples/Atlas/urdf/atlas_minimal_contact.urdf");
   RigidBodyManipulator* model = &rbm;
 
 
