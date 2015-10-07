@@ -1,6 +1,8 @@
 #include "drake/drakeMexUtil.h"
 #include "drake/controlUtil.h"
 
+using namespace Eigen;
+
 struct FootstepShiftData {
   RigidBodyManipulator* r;
   double t_prev;
@@ -68,15 +70,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map< Vector3d > plan_shift(mxGetPr(prhs[narg++]));
   
   if (t-pdata->t_prev >= pdata->sample_dt) {
-    pdata->r->doKinematics(q,qd,false);
+    KinematicsCache<double> cache = pdata->r->doKinematics(q,qd,false);
     if (fc_left == 1) {
       Vector3d lfoot_pos;
-      lfoot_pos = pdata->r->forwardKin(Vector3d::Zero().eval(), pdata->lfoot_body_index, 0, 0, 0).value();
+
+      lfoot_pos = pdata->r->forwardKin(cache, Vector3d::Zero().eval(), pdata->lfoot_body_index, 0, 0, 0).value();
       plan_shift = lfoot_des - lfoot_pos;
     }
     else if (fc_right == 1) {
       Vector3d rfoot_pos;
-      rfoot_pos = pdata->r->forwardKin(Vector3d::Zero().eval(), pdata->rfoot_body_index, 0, 0, 0).value();
+      rfoot_pos = pdata->r->forwardKin(cache, Vector3d::Zero().eval(), pdata->rfoot_body_index, 0, 0, 0).value();
       plan_shift = rfoot_des - rfoot_pos;
     }
   }

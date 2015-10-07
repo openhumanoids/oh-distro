@@ -3,6 +3,7 @@
 #include "drake/drakeGeometryUtil.h"
 
 using namespace std;
+using namespace Eigen;
 
 RobotStateDriver::RobotStateDriver(vector<string> state_coordinate_names) {
   m_num_joints = 0;
