@@ -59,6 +59,7 @@ class IHMCStepTranslator(object):
         self.T_local_to_localbdi = msg
 
     def handle_footstep_plan(self, channel, msg):
+        #print 'I am inside the handle_footstep_plan funtion!'
         if isinstance(msg, str):
             msg = drc.footstep_plan_t.decode(msg)
 
@@ -90,30 +91,30 @@ class IHMCStepTranslator(object):
         if self.mode == Mode.plotting:
             self.draw(footsteps)
         else:
-            if not self.executing:
-                print "Starting new footstep plan"
-                self.bdi_step_queue_in = footsteps
-                self.send_params(1)
-                if not self.safe:
-                    m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
-                    print m
-                    ut.send_status(6,0,0,m)
-                    time.sleep(1)
-                    self.executing = True
-                    self.send_behavior()
-                else:
-                    m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
-                    print m
-                    ut.send_status(6,0,0,m)
-
+            #if not self.executing:
+            print "Starting new footstep plan"
+            self.bdi_step_queue_in = footsteps
+            self.send_params(1)
+            if not self.safe:
+                m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
+                print m
+                ut.send_status(6,0,0,m)
+                time.sleep(1)
+                self.executing = True
+                self.send_behavior()
             else:
-                print "Got updated footstep plan"
-                if self.bdi_step_queue_in[self.delivered_index-1].is_right_foot == footsteps[0].is_right_foot:
-                    print "Re-aligning new footsteps to current plan"
-                    self.bdi_step_queue_in = self.bdi_step_queue_in[:self.delivered_index-1] + footsteps
-                else:
-                    print "Can't align the updated plan to the current plan"
-                    return
+                m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
+                print m
+                ut.send_status(6,0,0,m)
+
+            #else:
+            #    print "Got updated footstep plan"
+            #    if self.bdi_step_queue_in[self.delivered_index-1].is_right_foot == footsteps[0].is_right_foot:
+            #        print "Re-aligning new footsteps to current plan"
+            #        self.bdi_step_queue_in = self.bdi_step_queue_in[:self.delivered_index-1] + footsteps
+            #    else:
+            #        print "Can't align the updated plan to the current plan"
+            #        return
 
 
     @property
