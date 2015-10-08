@@ -4,6 +4,7 @@
 #include "drake/ForceTorqueMeasurement.h"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/foot_force_torque_t.hpp"
+#include "lcmtypes/drc/residual_observer_state_t.hpp"
 #include "drake/Side.h"
 #include "drake/QPCommon.h"
 #include "RobotStateDriver.hpp"
@@ -30,6 +31,7 @@ struct ResidualDetectorState{
   // for debugging purposes
   VectorXd gravity;
   VectorXd torque;
+  VectorXd foot_contact_joint_torque;
 
 };
 
@@ -45,17 +47,20 @@ class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, bool useFootTorques = false);
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_);
   ~ResidualDetector(){
   }
   void residualThreadLoop();
+  void useFootForce();
+  void useFootForceTorque();
 
 private:
   std::shared_ptr<lcm::LCM> lcm_;
   std::shared_ptr<ModelClient> model_;
   bool running_;
   bool verbose_;
-  bool useFootTorques;
+  bool useFootForceFlag;
+  bool useFootFTFlag;
   bool newStateAvailable;
   bool foot_FT_6_axis_available;
   int nq;
@@ -71,8 +76,8 @@ private:
   double residualGain;
   ResidualArgs args;
   ResidualDetectorState residual_state;
-  ResidualDetectorState residual_state_w_forces;
-  drc::robot_state_t residual_state_msg;
+//  ResidualDetectorState residual_state_w_forces;
+  drc::residual_observer_state_t residual_state_msg;
 
 
   std::map<Side, int> foot_body_ids;
@@ -90,8 +95,8 @@ private:
 };
 
 
-ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, bool useFootTorques):
-    lcm_(lcm_), verbose_(verbose_), useFootTorques(useFootTorques), newStateAvailable(false){
+ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
+    lcm_(lcm_), verbose_(verbose_), newStateAvailable(false){
 
   do {
     botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -146,25 +151,15 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   residual_state.p_0 = VectorXd::Zero(nq);
   residual_state.running = false;
 
-  // initialize the residual_state
-  residual_state_w_forces.t_prev = 0;
-  residual_state_w_forces.r = VectorXd::Zero(nq);
-  residual_state_w_forces.integral = VectorXd::Zero(nq);
-  residual_state_w_forces.gamma = VectorXd::Zero(nq);
-  residual_state_w_forces.p_0 = VectorXd::Zero(nq);
-  residual_state_w_forces.running = false;
-
   //DEBUGGING
   residual_state.gravity = VectorXd::Zero(nq);
   residual_state.torque = VectorXd::Zero(nq);
-  residual_state_w_forces.gravity = VectorXd::Zero(nq);
-  residual_state_w_forces.torque = VectorXd::Zero(nq);
+  residual_state.foot_contact_joint_torque = VectorXd::Zero(nq);
+
 
   this->residualGain = RESIDUAL_GAIN;
   this->publishChannel = PUBLISH_CHANNEL;
-  if(useFootTorques){
-    this->publishChannel = this->publishChannel + "W_FOOT_TORQUE";
-  }
+
   this->residualGainVector = residualGain*VectorXd::Ones(this->nq);
 
   this->foot_FT_6_axis_available = false;
@@ -174,6 +169,18 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   t_prev = 0;
   return;
 
+}
+
+void ResidualDetector::useFootForce() {
+  this->publishChannel = this->publishChannel + "W_FOOT_FORCE";
+  this->useFootForceFlag = true;
+  this->useFootFTFlag = false;
+}
+
+void ResidualDetector::useFootForceTorque() {
+  this->publishChannel = this->publishChannel + "W_FOOT_FT";
+  this->useFootForceFlag = true;
+  this->useFootFTFlag = false;
 }
 
 void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
@@ -265,10 +272,14 @@ void ResidualDetector::updateResidualState() {
 
   MatrixXd H_grad = gradVar.gradient().value(); // size nq^2 x nq
 
-  //FOOT CONTACT FORCES: Compute torques due to foot contact forces
-  std::map<Side, VectorXd> foot_force_contact_torques;
+
+
+
   MatrixXd footJacobian; // should be 3 x nv
-  Vector3d points(0,0,0); //point is at origin of foot frame
+  Vector3d points(0,0,0); //point ifs at origin of foot frame
+
+  //Torques due to foot contact forces: Set to zero by default
+  std::map<Side, VectorXd> foot_ft_to_joint_torques;
 
   for (const auto& side_force: foot_force_torque_measurement){
     const Side& side = side_force.first;
@@ -286,19 +297,40 @@ void ResidualDetector::updateResidualState() {
     // if not set the contact torques coming from the feet to zero.
     // ignore this for
 //    if (!b_contact_force.at(side)){
-//      foot_force_contact_torques[side] = VectorXd::Zero(this->nq);
+//      foot_ft_to_joint_torques[side] = VectorXd::Zero(this->nq);
 //      continue;
 //    }
 
-    footJacobian = this->drake_model.forwardKinJacobian(points, body_id, 0, 0, true, 0).value();
-    const Vector3d & force = side_force.second.wrench.block(3,0,3,1); // extract the force measurement
-    foot_force_contact_torques[side_force.first] = footJacobian.transpose()*force;
+    // Compute the joint torques resulting from the foot contact
+    if (this->useFootFTFlag){
+      std::vector<int> v_indices;
+      footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
+      const Vector6d &wrench = side_force.second.wrench;
+      VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
+      VectorXd joint_torque = VectorXd::Zero(this->nq);
+
+      // convert them to a full sized joint_torque vector
+      for (int i = 0; i < v_indices.size(); i++){
+        joint_torque(v_indices[i]) = joint_torque_at_v_indices(i);
+      }
+
+      foot_ft_to_joint_torques[side_force.first] = joint_torque;
+    }
+    else if (this->useFootForceFlag) {
+      footJacobian = this->drake_model.forwardKinJacobian(points, body_id, 0, 0, true, 0).value();
+      const Vector3d &force = side_force.second.wrench.block(3, 0, 3, 1); // extract the force measurement
+      foot_ft_to_joint_torques[side_force.first] = footJacobian.transpose() * force;
+    }
+    else{
+      foot_ft_to_joint_torques[Side::LEFT] = VectorXd::Zero(this->nq);
+      foot_ft_to_joint_torques[Side::RIGHT] = VectorXd::Zero(this->nq);
+    }
 
     if (this->verbose_){
-      std::cout << side.toString() << " foot force is " << std::endl;
-      std::cout << force << std::endl;
+//      std::cout << side.toString() << " foot force is " << std::endl;
+//      std::cout << force << std::endl;
 
-      std::cout << "z force passed through Jacobian is " << foot_force_contact_torques[side](2) << std::endl;
+      std::cout << "z force passed through Jacobian is " << foot_ft_to_joint_torques[side](2) << std::endl;
     }
   }
 
@@ -326,9 +358,6 @@ void ResidualDetector::updateResidualState() {
     std::cout << "started residual detector updates" << std::endl;
     this->residual_state.running = true;
     this->residual_state.p_0 = p_momentum;
-
-    this->residual_state_w_forces.running = true;
-    this->residual_state_w_forces.p_0 = p_momentum;
     return;
   }
 
@@ -339,26 +368,18 @@ void ResidualDetector::updateResidualState() {
   VectorXd integral_new = this->residual_state.integral + dt*this->residual_state.gamma;
   VectorXd r_new = this->residualGain*(p_momentum - this->residual_state.p_0 + integral_new);
 
-  VectorXd integral_new_w_forces = this->residual_state_w_forces.integral + dt*this->residual_state_w_forces.gamma;
-  VectorXd r_new_w_forces = this->residualGain*(p_momentum - this->residual_state_w_forces.p_0 + integral_new_w_forces);
 
   // update the residual state
   this->residual_state.r = r_new;
   this->residual_state.integral = integral_new;
-  this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r; // this is the integrand;
+  this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r -
+                               foot_ft_to_joint_torques[Side::LEFT] - foot_ft_to_joint_torques[Side::RIGHT]; // this is the integrand;
+
+  //DEBUGGING
   this->residual_state.gravity = gravity;
   this->residual_state.torque = robot_state->torque;
+  this->residual_state.foot_contact_joint_torque = foot_ft_to_joint_torques[Side::LEFT] + foot_ft_to_joint_torques[Side::RIGHT];
 
-  // update the residual state with forces
-  this->residual_state_w_forces.r = r_new_w_forces;
-  this->residual_state_w_forces.integral = integral_new_w_forces;
-  this->residual_state_w_forces.gamma = alpha - robot_state->torque - this->residual_state_w_forces.r -
-      foot_force_contact_torques[Side::LEFT] - foot_force_contact_torques[Side::RIGHT]; // this is the integrand;
-
-  // TESTING ONLY
-  this->residual_state_w_forces.torque = foot_force_contact_torques[Side::LEFT] + foot_force_contact_torques[Side::RIGHT];
-
-  std::cout << "z force from foot contact is " << foot_force_contact_torques[Side::LEFT](2) + foot_force_contact_torques[Side::RIGHT](2) << std::endl;
 
   this->residual_state.t_prev = t;
   if (this->verbose_){
@@ -368,7 +389,6 @@ void ResidualDetector::updateResidualState() {
 
   //publish over LCM
   this->publishResidualState(this->publishChannel, this->residual_state);
-  this->publishResidualState("RESIDUAL_OBSERVER_STATE_WITH_FORCES", this->residual_state_w_forces);
 }
 
 void ResidualDetector::publishResidualState(std::string publishChannel, const ResidualDetectorState &residual_state){
@@ -380,21 +400,23 @@ void ResidualDetector::publishResidualState(std::string publishChannel, const Re
 
   this->residual_state_msg.num_joints = (int16_t) this->nq;
   this->residual_state_msg.joint_name = this->state_coordinate_names;
-  this->residual_state_msg.joint_position.resize(this->nq);
-  this->residual_state_msg.joint_velocity.resize(this->nq);
-  this->residual_state_msg.joint_effort.resize(this->nq);
+  this->residual_state_msg.residual.resize(this->nq);
+  this->residual_state_msg.gravity.resize(this->nq);
+  this->residual_state_msg.internal_torque.resize(this->nq);
+  this->residual_state_msg.foot_contact_torque.resize(this->nq);
 
   for (int i=0; i < this->nq; i++){
-    this->residual_state_msg.joint_position[i] = (float) residual_state.r(i);
+    this->residual_state_msg.residual[i] = (float) residual_state.r(i);
 
     //DEBUGGING
-    this->residual_state_msg.joint_velocity[i] = (float) residual_state.gravity(i);
-    this->residual_state_msg.joint_effort[i] = (float) residual_state.torque(i);
+    this->residual_state_msg.gravity[i] = (float) residual_state.gravity(i);
+    this->residual_state_msg.internal_torque[i] = (float) residual_state.torque(i);
+    this->residual_state.foot_contact_joint_torque[i] = (float) residual_state.foot_contact_joint_torque(i);
   }
 
   if (this->verbose_){
     std::cout << "base_z residual is " << residual_state.r(2) << std::endl;
-    std::cout << "base_z residual in message is " << this->residual_state_msg.joint_position[2] << std::endl;
+    std::cout << "base_z residual in message is " << this->residual_state_msg.residual[2] << std::endl;
   }
 
   this->lcm_->publish(publishChannel, &residual_state_msg);
@@ -416,18 +438,29 @@ int main( int argc, char* argv[]){
   bool useFootTorques = false;
   bool isVerbose = false;
 
-  for (int i=1; i < argc; i++){
-    if (std::string(argv[i]) == "--useFootTorques"){
-      useFootTorques = true;
-    }
-  }
+
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr << "Error: lcm is not good()" << std::endl;
   }
 
-  ResidualDetector residualDetector(lcm, isVerbose, useFootTorques);
+  ResidualDetector residualDetector(lcm, isVerbose);
+
+  for (int i=1; i < argc; i++){
+    if (std::string(argv[i]) == "--useFootForceTorque"){
+      useFootTorques = true;
+      std::cout << "using foot force & torque" << std::endl;
+      residualDetector.useFootForceTorque();
+    }
+    else if(std::string(argv[i]) == "--useFootForce"){
+      std::cout << "using foot force only, no torques" << std::endl;
+     residualDetector.useFootForce();
+    }
+    else{
+      std::cout << "unsupported option, ignoring" << std::endl;
+    }
+  }
   std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
   std::cout << "started residual thread loop" << std::endl;
 
