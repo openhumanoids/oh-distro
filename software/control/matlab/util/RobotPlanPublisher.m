@@ -48,7 +48,7 @@ classdef RobotPlanPublisher
                 snopt_info = 0;
             end
             if nargin < 7
-              is_quasistatic = false;
+              is_quasistatic = true;
             end
             msg = obj.encodeRobotPlanWithSupports(X,T,supports,support_times,snopt_info,is_quasistatic);
             obj.lc.publish(obj.channel,msg);
@@ -127,8 +127,9 @@ classdef RobotPlanPublisher
                 snopt_info_vector = snopt_info*ones(1,size(X,2));
             end
             if nargin < 7
-              is_quasistatic = false;
+              is_quasistatic = true;
             end
+            
             %t = get_timestamp_now();
             t = now()*24*60*60;
             msg = drc.robot_plan_with_supports_t();
@@ -149,8 +150,20 @@ classdef RobotPlanPublisher
                     support_bodies(k).num_contact_pts = size(supports(j).contact_pts{k},2);
                     support_bodies(k).contact_pts = supports(j).contact_pts{k};
                     support_bodies(k).body_id = supports(j).bodies(k);
-                    support_bodies(k).support_surface = supports(j).support_surface{k};
-                    support_bodies(k).use_support_surface = supports(j).use_support_surface(k);
+                    
+                    if isfield(supports(j), 'support_surface')
+                      support_bodies(k).support_surface = supports(j).support_surface{k};
+                    else
+                      support_bodies(k).support_surface = [0;0;0;0];
+                    end
+                    
+                    if isfield(supports(j), 'use_support_surface')
+                      support_bodies(k).use_support_surface = supports(j).use_support_surface(k);
+                    else
+                      support_bodies(k).use_support_surface = false; 
+                    end
+                    
+                    
                 end
                support_element_array(j).utime = t;
                support_element_array(j).num_bodies = numel(supports(j).contact_pts);
@@ -159,6 +172,8 @@ classdef RobotPlanPublisher
             support_sequence.supports = support_element_array;
             msg.support_sequence = support_sequence;
             msg.is_quasistatic = is_quasistatic;
+            disp 'is quasistatic is'
+            is_quasistatic
         end
 
     end % end methods
