@@ -77,7 +77,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     std::cout << "Robot has no right hand\n"; 
   }
   
-  atlas_joints_.name = joint_utils_.atlas_joint_names; 
+  core_robot_joints_.name = joint_utils_.atlas_joint_names; 
   
   if(find(joint_names.begin(), joint_names.end(), "pre_spindle_cal_x_joint" ) != joint_names.end()){
     std::cout << "Robot fitted with dummy head joints\n";
@@ -87,22 +87,25 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     head_joints_.name = joint_utils_.simple_head_joint_names;
   }
   
-  assignJointsStruct( atlas_joints_ );
+  assignJointsStruct( core_robot_joints_ );
   assignJointsStruct( head_joints_ );
   assignJointsStruct( left_hand_joints_ );
   assignJointsStruct( right_hand_joints_ );
   
   std::cout << "No. of Joints: "
-      << atlas_joints_.position.size() << " atlas, "
+      << core_robot_joints_.position.size() << " atlas, "
       << head_joints_.position.size() << " head, "
       << left_hand_joints_.position.size() << " left, "
       << right_hand_joints_.position.size() << " right\n";
 
 
   /// 2. Subscribe to required signals
-  lcm::Subscription* sub0 = lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);
+  //lcm::Subscription* sub0 = lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this); // depricated
+  lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE",&state_sync::coreRobotHandler,this);
+  lcm::Subscription* sub1 = lcm_->subscribe("FORCE_TORQUE",&state_sync::forceTorqueHandler,this);
+  force_torque_init_ = false;
   ///////////////////////////////////////////////////////////////
-  lcm::Subscription* sub1 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);
+  lcm::Subscription* sub2 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);
   lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
   lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
   lcm::Subscription* sub6 = lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
@@ -111,7 +114,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   bool use_short_queue = true;
   if (use_short_queue){
     sub0->setQueueCapacity(1);
-    sub1->setQueueCapacity(1); 
+    sub1->setQueueCapacity(1);
+    sub2->setQueueCapacity(1); 
     sub4->setQueueCapacity(1); 
     sub5->setQueueCapacity(1); 
     sub6->setQueueCapacity(1); 
@@ -436,41 +440,52 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
 }
 
 
-void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
-  checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
-  
+void state_sync::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::force_torque_t* msg){
+  force_torque_ = *msg;
+  force_torque_init_ = true; 
+}
+
+
+//void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
+void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
+  if (!force_torque_init_){
+    std::cout << "FORCE_TORQUE not received yet, not publishing EST_ROBOT_STATE =========================\n";
+    return;    
+  }  
+
+  checkJointLengths( core_robot_joints_.position.size(),  msg->joint_position.size(), channel);
 
   std::vector <float> mod_positions;
-  //mod_positions.assign(28,0.0);
   mod_positions = msg->joint_position;
+  core_robot_joints_.position = mod_positions;
 
-  atlas_joints_.position = mod_positions;
-  atlas_joints_.velocity = msg->joint_velocity;
-  atlas_joints_.effort = msg->joint_effort;
+  core_robot_joints_.name = msg->joint_name;  // added recently
+  core_robot_joints_.velocity = msg->joint_velocity;
+  core_robot_joints_.effort = msg->joint_effort;
   
   
   // Overwrite the actuator joint positions and velocities with the after-transmission 
   // sensor values for the ARMS ONLY (first exposed in v2.7.0 of BDI's API)
   // NB: this assumes that they are provided at the same rate as ATLAS_STATE
   if (cl_cfg_->use_encoder_joint_sensors ){
-    if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
-      if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
-        for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { 
+    if (core_robot_joints_.position.size() == core_robot_joints_out_.position.size()   ){
+      if (core_robot_joints_.velocity.size() == core_robot_joints_out_.velocity.size()   ){
+        for (int i=0; i < core_robot_joints_out_.position.size() ; i++ ) { 
 
           if (use_encoder_[i]) {
-            atlas_joints_.position[i] = atlas_joints_out_.position[i];
-            if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
-              atlas_joints_.position[i] -= 2*M_PI;
-            atlas_joints_.position[i] += encoder_joint_offsets_[i];
+            core_robot_joints_.position[i] = core_robot_joints_out_.position[i];
+            if (core_robot_joints_.position[i] > max_encoder_wrap_angle_[i])
+              core_robot_joints_.position[i] -= 2*M_PI;
+            core_robot_joints_.position[i] += encoder_joint_offsets_[i];
 
             // check for wonky encoder initialization :(
-            while (atlas_joints_.position[i] - mod_positions[i] > 0.5)
-              atlas_joints_.position[i] -= 2*M_PI/3;
-            while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
-              atlas_joints_.position[i] += 2*M_PI/3;
+            while (core_robot_joints_.position[i] - mod_positions[i] > 0.5)
+              core_robot_joints_.position[i] -= 2*M_PI/3;
+            while (core_robot_joints_.position[i] - mod_positions[i] < -0.5)
+              core_robot_joints_.position[i] += 2*M_PI/3;
 
             /*
-            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.11 && (msg->utime - utime_prev_ > 5000000)) {
+            if (abs(core_robot_joints_.position[i] - mod_positions[i]) > 0.11 && (msg->utime - utime_prev_ > 5000000)) {
               utime_prev_ = msg->utime;
 
               // display system status message in viewer
@@ -489,7 +504,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             }
 
             */
-            atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
+            core_robot_joints_.velocity[i] = core_robot_joints_out_.velocity[i];
           }
         }
       }
@@ -498,27 +513,28 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
 
   // apply cfg offsets to special joints
   for (auto idx : extra_offsettable_joint_indices_) {
-    atlas_joints_.position[idx] += encoder_joint_offsets_[idx];
-    if (atlas_joints_.position[idx] > max_encoder_wrap_angle_[idx]) {
-      atlas_joints_.position[idx] -= 2*M_PI;
+    core_robot_joints_.position[idx] += encoder_joint_offsets_[idx];
+    if (core_robot_joints_.position[idx] > max_encoder_wrap_angle_[idx]) {
+      core_robot_joints_.position[idx] -= 2*M_PI;
     }
   }
   
-  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
-    filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
+  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  core_robot_joints_ filtering here
+    filterJoints(msg->utime, core_robot_joints_.position, core_robot_joints_.velocity);
   }
 
   if (cl_cfg_->use_torque_adjustment){
-    torque_adjustment_->processSample(atlas_joints_.position, atlas_joints_.effort );
+    torque_adjustment_->processSample(core_robot_joints_.position, core_robot_joints_.effort );
   }
 
-  publishRobotState(msg->utime, msg->force_torque);
+  // TODO: check forque_
+  publishRobotState(msg->utime, force_torque_);
 }
 
 void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
   //std::cout << "got atlasExtraHandler\n";
-  atlas_joints_out_.position = msg->joint_position_out;
-  atlas_joints_out_.velocity = msg->joint_velocity_out;
+  core_robot_joints_out_.position = msg->joint_position_out;
+  core_robot_joints_out_.velocity = msg->joint_velocity_out;
 }
 
 
@@ -683,7 +699,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   robot_state_msg.twist.angular_velocity.z = 0;
 
   // Joint States:
-  appendJoints(robot_state_msg, atlas_joints_);  
+  appendJoints(robot_state_msg, core_robot_joints_);  
   appendJoints(robot_state_msg, head_joints_);
   
   appendJoints(robot_state_msg, left_hand_joints_);
