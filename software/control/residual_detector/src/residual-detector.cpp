@@ -3,6 +3,7 @@
 #include "FootContactDriver.hpp"
 #include "drake/ForceTorqueMeasurement.h"
 #include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/foot_force_torque_t.hpp"
 #include "drake/Side.h"
 #include "drake/QPCommon.h"
 #include "RobotStateDriver.hpp"
@@ -36,6 +37,7 @@ struct ResidualArgs{
   // information that updateResidualState will need
   std::shared_ptr<DrakeRobotStateWithTorque> robot_state;
   std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement;
+  std::map<Side, ForceTorqueMeasurement> foot_ft_meas_6_axis;
   std::map<Side, bool> b_contact_force;
 };
 
@@ -43,7 +45,7 @@ class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_);
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, bool useFootTorques = false);
   ~ResidualDetector(){
   }
   void residualThreadLoop();
@@ -53,7 +55,9 @@ private:
   std::shared_ptr<ModelClient> model_;
   bool running_;
   bool verbose_;
+  bool useFootTorques;
   bool newStateAvailable;
+  bool foot_FT_6_axis_available;
   int nq;
   int nv;
   double t_prev;
@@ -76,16 +80,18 @@ private:
   std::shared_ptr<RobotStateDriver> state_driver;
   std::shared_ptr<FootContactDriver> foot_contact_driver;
 
+  // forward declarations
   void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg);
+  void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
   void updateResidualState();
   void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
 
 };
 
 
-ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
-    lcm_(lcm_), verbose_(verbose_), newStateAvailable(false){
+ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, bool useFootTorques):
+    lcm_(lcm_), verbose_(verbose_), useFootTorques(useFootTorques), newStateAvailable(false){
 
   do {
     botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -99,6 +105,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 
   lcm_->subscribe("EST_ROBOT_STATE", &ResidualDetector::onRobotState, this);
   lcm_->subscribe("FOOT_CONTACT_ESTIMATE", &ResidualDetector::onFootContact, this);
+  lcm_->subscribe("FOOT_FORCE_TORQUE", &ResidualDetector::onFootForceTorque, this);
 
 
   //need to initialize the state_driver
@@ -155,7 +162,12 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 
   this->residualGain = RESIDUAL_GAIN;
   this->publishChannel = PUBLISH_CHANNEL;
+  if(useFootTorques){
+    this->publishChannel = this->publishChannel + "W_FOOT_TORQUE";
+  }
   this->residualGainVector = residualGain*VectorXd::Ones(this->nq);
+
+  this->foot_FT_6_axis_available = false;
 
 
   //TEST
@@ -180,7 +192,7 @@ void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::s
 
   this->state_driver->decodeWithTorque(msg, state.get());
 
-  // aquire a lock and write to the shared_ptr for robot_state_
+  // acquire a lock and write to the shared_ptr for robot_state_
   std::unique_lock<std::mutex> lck(this->pointerMutex);
 
   this->args.robot_state = state;
@@ -209,6 +221,16 @@ void ResidualDetector::onFootContact(const lcm::ReceiveBuffer *rbuf, const std::
   lck.unlock();
 }
 
+void ResidualDetector::onFootForceTorque(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
+                                         const drc::foot_force_torque_t *msg) {
+
+  std::unique_lock<std::mutex> lck(pointerMutex);
+  this->foot_FT_6_axis_available = true;
+  this->args.foot_ft_meas_6_axis[Side::LEFT].wrench << msg->l_foot_torque[0], msg->l_foot_torque[1], msg->l_foot_torque[2], msg->l_foot_force[0], msg->l_foot_force[1], msg->l_foot_force[2];
+  this->args.foot_ft_meas_6_axis[Side::RIGHT].wrench << msg->r_foot_torque[0], msg->r_foot_torque[1], msg->r_foot_torque[2], msg->r_foot_force[0], msg->r_foot_force[1], msg->r_foot_force[2];
+  lck.unlock();
+}
+
 void ResidualDetector::updateResidualState() {
 
   // acquire a lock and copy data to local variables
@@ -217,15 +239,22 @@ void ResidualDetector::updateResidualState() {
   // we create a new DrakeRobotState every time we get a state message so this should be ok
   std::shared_ptr<DrakeRobotStateWithTorque> robot_state = this->args.robot_state;
 
-  //not sure that these are doing the correct thing, we need deep copies. I think it's ok as currently is
-  const std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement = this->args.foot_force_torque_measurement;
+  std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement;
+  // if we have a 6-axis FT measurement then use it
+  if (this->foot_FT_6_axis_available){
+    foot_force_torque_measurement  = this->args.foot_force_torque_measurement;
+  }
+  else{
+    foot_force_torque_measurement = this->args.foot_ft_meas_6_axis;
+  }
+  //NOTE: not sure that these are doing the correct thing, we need deep copies, not pointers
   const auto b_contact_force = this->args.b_contact_force;
   this->newStateAvailable = false;
   lck.unlock();
 
+
   double t = robot_state->t;
   double dt = t - this->residual_state.t_prev;
-
 
   // compute H for current state (q,qd)
   this->drake_model.doKinematics(robot_state->q, robot_state->qd, true);
@@ -253,14 +282,16 @@ void ResidualDetector::updateResidualState() {
         std::cout << std::cout << side.toString() << " foot NOT in contact" << std::endl;
       }
     }
-    //check if this body is actually in contact or not
-    if (!b_contact_force.at(side)){
-      foot_force_contact_torques[side] = VectorXd::Zero(this->nq);
-      continue;
-    }
+    // check if this body is actually in contact or not
+    // if not set the contact torques coming from the feet to zero.
+    // ignore this for
+//    if (!b_contact_force.at(side)){
+//      foot_force_contact_torques[side] = VectorXd::Zero(this->nq);
+//      continue;
+//    }
 
     footJacobian = this->drake_model.forwardKinJacobian(points, body_id, 0, 0, true, 0).value();
-    const Vector3d & force = side_force.second.wrench.block(3,0,3,1);
+    const Vector3d & force = side_force.second.wrench.block(3,0,3,1); // extract the force measurement
     foot_force_contact_torques[side_force.first] = footJacobian.transpose()*force;
 
     if (this->verbose_){
@@ -324,6 +355,11 @@ void ResidualDetector::updateResidualState() {
   this->residual_state_w_forces.gamma = alpha - robot_state->torque - this->residual_state_w_forces.r -
       foot_force_contact_torques[Side::LEFT] - foot_force_contact_torques[Side::RIGHT]; // this is the integrand;
 
+  // TESTING ONLY
+  this->residual_state_w_forces.torque = foot_force_contact_torques[Side::LEFT] + foot_force_contact_torques[Side::RIGHT];
+
+  std::cout << "z force from foot contact is " << foot_force_contact_torques[Side::LEFT](2) + foot_force_contact_torques[Side::RIGHT](2) << std::endl;
+
   this->residual_state.t_prev = t;
   if (this->verbose_){
     double Hz = 1/dt;
@@ -375,15 +411,23 @@ void ResidualDetector::residualThreadLoop() {
   }
 }
 
-int main( int argc, char** argv){
-  std::cout << "Hello World \n";
+int main( int argc, char* argv[]){
+
+  bool useFootTorques = false;
+  bool isVerbose = false;
+
+  for (int i=1; i < argc; i++){
+    if (std::string(argv[i]) == "--useFootTorques"){
+      useFootTorques = true;
+    }
+  }
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr << "Error: lcm is not good()" << std::endl;
   }
 
-  ResidualDetector residualDetector(lcm, false);
+  ResidualDetector residualDetector(lcm, isVerbose, useFootTorques);
   std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
   std::cout << "started residual thread loop" << std::endl;
 
