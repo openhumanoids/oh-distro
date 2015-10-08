@@ -1,0 +1,13 @@
+package drc;
+
+// Only for use in simulation
+// Allows us to publish full 6 axis FT from each foot
+// force and torque in x,y,z ordering
+struct foot_force_torque_t
+{
+   float l_foot_force[3];
+   float l_foot_torque[3];
+
+   float r_foot_force[3];
+   float r_foot_torque[3];
+}
