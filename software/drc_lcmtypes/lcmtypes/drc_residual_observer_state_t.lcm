@@ -1,0 +1,16 @@
+package drc;
+
+// Full Combined Robot State
+// The velocity measurements are in inertial or local frame
+
+struct residual_observer_state_t
+{
+  int64_t utime;
+
+  int16_t num_joints;
+  string joint_name[num_joints];
+  float residual [num_joints];
+  float gravity [num_joints];
+  float internal_torque[num_joints];
+  float foot_contact_torque[num_joints];
+}
