@@ -12,7 +12,7 @@ if nargin < 7, box_height = 1.10; end
 % (when this is more fleshed out this will become
 % an argument)
 use_mass_est = false;
-foot_force_sensors = false;
+foot_force_sensors = true;
 
 % And if you want external wrench input on pelvis
 use_external_force = 'mtorso';
@@ -128,7 +128,8 @@ elseif(strcmp(world_name, 'runningboard'))
   r_complete = r_complete.addRobotFromURDF([getenv('DRC_BASE'),'/software/control/matlab/test/springboard.urdf'], [0.0 ; 0.0; 0.1] + initial_offset_xyzrpy(1:3), [0 ; 0 ; pi] + initial_offset_xyzrpy(4:6));
   extra_height = 0.19;
 elseif(strcmp(world_name,'box'))
-  box = RigidBodyBox([1;2;box_height;] + initial_offset_xyzrpy(1:3));
+  initial_offset_xyzrpy(1) = 0.7; % so we don't run into the box
+  box = RigidBodyBox([1;2;box_height;]);
   r_complete = r_complete.addCollisionGeometryToBody(1,box);
   r_complete = r_complete.addVisualGeometryToBody(1,box);
   handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/prone']);
@@ -155,25 +156,27 @@ x0 = zeros(r_pure.getNumStates, 1);
 x0(1:length(xstar)) = xstar;
 r_pure = r_pure.setInitialState(x0);
 
-% load the correct initial state in the box world
-if strcmp(world_name,'box')
-  valuecheck(initial_offset_xyzrpy, zeros(6,1));
-  % load the correct fixed point file
-  handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup']);
-  if atlas_version == 4
-    chair_data = load('chair_standup_data.mat');
-  else
-    chair_data = load('chair_data_v5.mat');
-  end
-    
-  qstar = chair_data.q_sol(:,3);
-  xstar = [qstar;0*qstar];
-  xstar(3) = xstar(3) + 0.08;
-  xstar(1) = xstar(1) + 0.03;
-  x0 = zeros(r_pure.getNumStates, 1);
-  x0(1:length(xstar)) = xstar;
-  r_pure = r_pure.setInitialState(x0);
-end
+
+
+% % load the correct initial state in the box world
+% if strcmp(world_name,'box')
+%   valuecheck(initial_offset_xyzrpy, zeros(6,1));
+%   % load the correct fixed point file
+%   handle = addpathTemporary([getenv('DRC_BASE'),'/software/control/matlab/planners/chair_standup']);
+%   if atlas_version == 4
+%     chair_data = load('chair_standup_data.mat');
+%   else
+%     chair_data = load('chair_data_v5.mat');
+%   end
+%     
+%   qstar = chair_data.q_sol(:,3);
+%   xstar = [qstar;0*qstar];
+%   xstar(3) = xstar(3) + 0.02;
+%   xstar(1) = xstar(1) + 0.03;
+%   x0 = zeros(r_pure.getNumStates, 1);
+%   x0(1:length(xstar)) = xstar;
+%   r_pure = r_pure.setInitialState(x0);
+% end
 
 % and complete state to a feasible sol
 % so lcp has an easier time
