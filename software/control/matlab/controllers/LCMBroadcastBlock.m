@@ -365,7 +365,20 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (obj.frame_nums.left_foot_ft_state)
         left_ankle_ft_state = varargin{obj.frame_nums.left_foot_ft_state};
         right_ankle_ft_state = varargin{obj.frame_nums.right_foot_ft_state};
+
+        % if we are really getting 6-axis FT data from the sim, then publish it using the
+        % drc_foot_force_torque message
+        foot_force_torque_msg = drc.foot_force_torque_t();
+        foot_force_torque_msg.l_foot_force = left_ankle_ft_state(1:3);
+        foot_force_torque_msg.l_foot_torque = left_ankle_ft_state(4:6);
+
+        foot_force_torque_msg.r_foot_force = right_ankle_ft_state(1:3);
+        foot_force_torque_msg.r_foot_torque = right_ankle_ft_state(4:6);
+        obj.lc.publish('FOOT_FORCE_TORQUE', foot_force_torque_msg);
+
+
       else
+        % this is really just a hack, not accurate at all?
         % Get binary foot contact, call it force:
         x = atlas_state;
         fc = obj.r_control.getFootContacts(x(1:obj.nq_control));
