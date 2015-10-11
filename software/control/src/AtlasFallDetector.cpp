@@ -158,7 +158,6 @@ double AtlasFallDetector::getSupportFootHeight() {
   for (std::map<FootID, int>::iterator foot = this->foot_body_ids.begin(); foot != foot_body_ids.end(); ++foot) {
     Matrix3Xd contact_pts;
     this->model->getTerrainContactPoints(*this->model->bodies[foot->second], contact_pts);
-
     Matrix3Xd contact_pts_in_world = this->model->forwardKin(*kinematics_cache, contact_pts, foot->second, 0, 0, 0).value();
     sole_zs[foot->first] = contact_pts_in_world.row(2).mean();
   }
@@ -179,9 +178,7 @@ Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon (bool shrink_noncontact_fo
   for (std::map<FootID, int>::iterator foot = this->foot_body_ids.begin(); foot != foot_body_ids.end(); ++foot) {
     Matrix3Xd contact_pts;
     this->model->getTerrainContactPoints(*this->model->bodies[foot->second], contact_pts);
-
-    KinematicsCache<double> cache = this->model->doKinematics( robot_state.q, robot_state.qd);
-    Matrix3Xd contact_pts_in_world = this->model->forwardKin(cache, contact_pts, foot->second, 0, 0, 0).value();
+    Matrix3Xd contact_pts_in_world = this->model->forwardKin(*kinematics_cache, contact_pts, foot->second, 0, 0, 0).value();
     if (shrink_noncontact_foot) {
       if (!this->foot_contact.at(foot->first)) {
         // If foot is out of contact, only use its center to define the support polygon
