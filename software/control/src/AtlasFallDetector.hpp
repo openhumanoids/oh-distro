@@ -94,6 +94,7 @@ public:
 private:
   std::shared_ptr<RigidBodyManipulator> model;
   std::shared_ptr<RobotStateDriver> state_driver;
+  std::shared_ptr<KinematicsCache<double>> kinematics_cache;
   std::unique_ptr<Debounce> icp_is_ok_debounce;
   std::unique_ptr<Debounce> icp_is_capturable_debounce;
   std::map<FootID, int> foot_body_ids;
