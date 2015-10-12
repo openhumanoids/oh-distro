@@ -8,6 +8,7 @@
 #include "drake/Side.h"
 #include "drake/QPCommon.h"
 #include "RobotStateDriver.hpp"
+#include "ContactFilter.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include <model-client/model-client.hpp>
 #include <bot_param/param_client.h>
@@ -54,10 +55,10 @@ public:
   void useFootForce(bool useGeometricJacobian = false);
   void useFootForceTorque();
   void kinematicChain(std::string linkName, int body_id =-1);
+  void testContactFilterRotationMethod(bool useRandom=false);
 
 private:
   std::shared_ptr<lcm::LCM> lcm_;
-  std::shared_ptr<ModelClient> model_;
   bool running_;
   bool verbose_;
   bool useFootForceFlag;
@@ -86,6 +87,8 @@ private:
   std::shared_ptr<RobotStateDriver> state_driver;
   std::shared_ptr<FootContactDriver> foot_contact_driver;
 
+  ContactFilter contactFilter;
+
   // forward declarations
   void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg);
@@ -107,11 +110,13 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   std::shared_ptr<ModelClient> model = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(),0));
   std::cout << "robot urdf is " << model->getURDFString() << std::endl;
 
-  drake_model.addRobotFromURDFString(model->getURDFString());
   // if you want to use quaternions. Normally it defaults to ROLLPITCHYAW, need to override by passing optional args
   // see RigidBodyManipulatorURDF.cpp file for the syntax
   // drake_model.addRobotFromURDFString(model->getURDFString(), ".", DrakeJoint::QUATERNION)
+  drake_model.addRobotFromURDFString(model->getURDFString());
   drake_model.compile();
+
+  this->contactFilter.addRobotFromURDFString(model->getURDFString());
 
   lcm_->subscribe("EST_ROBOT_STATE", &ResidualDetector::onRobotState, this);
   lcm_->subscribe("FOOT_CONTACT_ESTIMATE", &ResidualDetector::onFootContact, this);
@@ -493,8 +498,34 @@ void ResidualDetector::kinematicChain(std::string linkName, int body_id){
 
 }
 
-int main( int argc, char* argv[]){
+void ResidualDetector::testContactFilterRotationMethod(bool useRandom) {
 
+
+  Vector3d a(1, 0, 0);
+  Vector3d b(-1, 0, 0);
+//  if (useRandom){
+//    a = Vector3d::Random();
+//    b = Vector3d::Random();
+//    a.normalize();
+//    b.normalize();
+//  }
+
+  auto R = rotateVectorToAlign(a,b);
+
+  std::cout << "a is:\n" << a << std::endl;
+  std::cout << "b is:\n" << b << std::endl;
+  std::cout << "R is:\n" << R << std::endl;
+  auto c = R*a;
+  std::cout << "R*a is:\n" << c << std::endl;
+  Vector3d d = c - b;
+  double diffNorm = d.norm();
+  std::cout << "norm of c-b is:\n" << diffNorm << std::endl;
+}
+
+
+
+int main( int argc, char* argv[]){
+  bool runTest = false;
   bool isVerbose = false;
   bool runDetectorLoop = true;
   std::string linkName;
@@ -525,6 +556,10 @@ int main( int argc, char* argv[]){
       else if (std::string(argv[i]) == "--kinematicChain"){
         std::cout << "computing kinematicChain";
       }
+      else if (std::string(argv[i])== "--runTest"){
+        runDetectorLoop = false;
+        runTest = true;
+      }
       else {
         std::cout << "unsupported option, ignoring" << std::endl;
       }
@@ -542,6 +577,9 @@ int main( int argc, char* argv[]){
     // in the main thread run the lcm handler
     std::cout << "Starting lcm handler loop" << std::endl;
     while(0 == lcm->handle());
+  }
+  else if(runTest){
+    residualDetector.testContactFilterRotationMethod(true);
   }
   else{
     residualDetector.kinematicChain(linkName);
