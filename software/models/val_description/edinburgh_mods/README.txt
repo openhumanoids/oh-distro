@@ -62,6 +62,54 @@ This is used for the quasi static balance constraint:
         <sphere radius="0.01"/>
       </geometry>
     </visual>
+    <collision group="midfoot_rear">
+      <origin rpy="0 0 0" xyz="0.0192 0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="midfoot_rear">
+      <origin rpy="0 0 0" xyz="0.0192 0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="midfoot_rear">
+      <origin rpy="0 0 0" xyz="0.0192 -0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="midfoot_rear">
+      <origin rpy="0 0 0" xyz="0.0192 -0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="midfoot_front">
+      <origin rpy="0 0 0" xyz="0.106 0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="midfoot_front">
+      <origin rpy="0 0 0" xyz="0.106 0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision group="midfoot_front">
+      <origin rpy="0 0 0" xyz="0.106 -0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+    </collision>
+    <visual group="midfoot_front">
+      <origin rpy="0 0 0" xyz="0.106 -0.0624435 -0.07645"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
 
 4. move the urdf to this location
 cp valkyrie_A_sim.urdf PATH_TO/drc/software/models/val_description/urdf/valkyrie_A_sim.urdf
