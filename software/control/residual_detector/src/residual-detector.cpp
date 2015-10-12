@@ -53,6 +53,7 @@ public:
   void residualThreadLoop();
   void useFootForce(bool useGeometricJacobian = false);
   void useFootForceTorque();
+  void kinematicChain(std::string linkName, int body_id =-1);
 
 private:
   std::shared_ptr<lcm::LCM> lcm_;
@@ -260,12 +261,12 @@ void ResidualDetector::updateResidualState() {
   std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement;
   // if we have a 6-axis FT measurement then use it
   if (this->foot_FT_6_axis_available){
-    foot_force_torque_measurement  = this->args.foot_force_torque_measurement;
-  }
-  else{
     foot_force_torque_measurement = this->args.foot_ft_meas_6_axis;
   }
-  //NOTE: not sure that these are doing the correct thing, we need deep copies, not pointers
+  else{
+    foot_force_torque_measurement  = this->args.foot_force_torque_measurement;
+  }
+  //NOTE: the above are deep copies, since none of the things being copied are/contain pointers (as far as I know).
   const auto b_contact_force = this->args.b_contact_force;
   this->newStateAvailable = false;
   lck.unlock();
@@ -410,13 +411,15 @@ void ResidualDetector::updateResidualState() {
   this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r -
                                foot_ft_to_joint_torques[Side::LEFT] - foot_ft_to_joint_torques[Side::RIGHT]; // this is the integrand;
 
+  this->residual_state.t_prev = t;
+
   //DEBUGGING
   this->residual_state.gravity = alpha;
   this->residual_state.torque = robot_state->torque;
   this->residual_state.foot_contact_joint_torque = foot_ft_to_joint_torques[Side::LEFT] + foot_ft_to_joint_torques[Side::RIGHT];
 
 
-  this->residual_state.t_prev = t;
+
   if (this->verbose_){
     double Hz = 1/dt;
     std::cout << "residual update running at " << Hz << std::endl;
@@ -430,7 +433,7 @@ void ResidualDetector::publishResidualState(std::string publishChannel, const Re
 
 
   std::unique_lock<std::mutex> lck(pointerMutex);
-  this->residual_state_msg.utime = static_cast<int64_t> (this->args.robot_state->t * 1e6);
+  this->residual_state_msg.utime = static_cast<int64_t> (this->residual_state.t_prev * 1e6);
   lck.unlock();
 
   this->residual_state_msg.num_joints = (int16_t) this->nq;
@@ -468,9 +471,33 @@ void ResidualDetector::residualThreadLoop() {
   }
 }
 
+void ResidualDetector::kinematicChain(std::string linkName, int body_id){
+
+  // the default of body_id, then overwrite with linkName
+  if (body_id==-1){
+    body_id = this->drake_model.findLinkId(linkName);
+  }
+  VectorXd q = VectorXd::Zero(this->nq);
+  VectorXd v = VectorXd::Zero(this->nv);
+
+  // compute H for current state (q,qd)
+  this->drake_model.doKinematics(q, v, true);
+  std::vector<int> v_indices;
+  auto footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
+
+  //now we want to print out what the v_indices correspond to
+  std::cout << this->drake_model.getBodyOrFrameName(body_id) << " kinematic chain" << std::endl;
+  for (auto &i: v_indices){
+    std::cout << this->drake_model.getVelocityName(i) << std::endl;
+  }
+
+}
+
 int main( int argc, char* argv[]){
 
   bool isVerbose = false;
+  bool runDetectorLoop = true;
+  std::string linkName;
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
@@ -479,29 +506,48 @@ int main( int argc, char* argv[]){
 
   ResidualDetector residualDetector(lcm, isVerbose);
 
+
+
   for (int i=1; i < argc; i++){
-    if (std::string(argv[i]) == "--useFootForceTorque"){
-      std::cout << "using foot force & torque" << std::endl;
-      residualDetector.useFootForceTorque();
+    if (i==1) {
+      if (std::string(argv[i]) == "--useFootForceTorque") {
+        std::cout << "using foot force & torque" << std::endl;
+        residualDetector.useFootForceTorque();
+      }
+      else if (std::string(argv[i]) == "--useFootForce") {
+        std::cout << "using foot force only, no torques" << std::endl;
+        residualDetector.useFootForce();
+      }
+      else if (std::string(argv[i]) == "--useFootForceGeometricJacobian") {
+        std::cout << "using foot force only, no torques, using geometric jacobian" << std::endl;
+        residualDetector.useFootForce(true);
+      }
+      else if (std::string(argv[i]) == "--kinematicChain"){
+        std::cout << "computing kinematicChain";
+      }
+      else {
+        std::cout << "unsupported option, ignoring" << std::endl;
+      }
     }
-    else if(std::string(argv[i]) == "--useFootForce"){
-      std::cout << "using foot force only, no torques" << std::endl;
-     residualDetector.useFootForce();
-    }
-    else if(std::string(argv[i]) == "--useFootForceGeometricJacobian"){
-      std::cout << "using foot force only, no torques, using geometric jacobian" << std::endl;
-      residualDetector.useFootForce(true);
-    }
-    else{
-      std::cout << "unsupported option, ignoring" << std::endl;
+    if (i==2){
+      linkName = argv[2];
+      runDetectorLoop = false;
     }
   }
-  std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
-  std::cout << "started residual thread loop" << std::endl;
 
-  // in the main thread run the lcm handler
-  std::cout << "Starting lcm handler loop" << std::endl;
-  while(0 == lcm->handle());
+  if (runDetectorLoop){
+    std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
+    std::cout << "started residual thread loop" << std::endl;
+
+    // in the main thread run the lcm handler
+    std::cout << "Starting lcm handler loop" << std::endl;
+    while(0 == lcm->handle());
+  }
+  else{
+    residualDetector.kinematicChain(linkName);
+  }
+
+
   return 0;
 }
 
