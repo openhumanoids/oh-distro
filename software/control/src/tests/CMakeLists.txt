@@ -5,3 +5,10 @@ pods_install_executables(testQPReactiveRecovery)
 add_executable(testAtlasFallDetector atlasFallDetectorTest.cpp)
 target_link_libraries(testAtlasFallDetector AtlasFallDetector)
 pods_install_executables(testAtlasFallDetector)
+
+
+# test for ik constraints which also publishes the result to LCM:
+add_executable(drc-testIKMoreConstraintsLCM testIKMoreConstraintsLCM.cpp)
+target_link_libraries(drc-testIKMoreConstraintsLCM boost_thread boost_system boost_filesystem boost_signals)
+pods_use_pkg_config_packages(drc-testIKMoreConstraintsLCM drake-rbm drake-ik lcm eigen3)
+pods_install_executables(drc-testIKMoreConstraintsLCM )
