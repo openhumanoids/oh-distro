@@ -653,7 +653,7 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
       this->foot_frame_ids[RIGHT] = -i - 2;
       Isometry3d Tframe;
       int body_id = this->robot->parseBodyOrFrameID( this->foot_frame_ids[RIGHT], &Tframe);
-      if (!Tframe.matrix().isApprox(this->robot->frames[i]->transform_to_body) || body_id != this->robot->frames[i]->frame_index) {
+      if (!Tframe.matrix().isApprox(this->robot->frames[i]->transform_to_body)) {
         throw std::runtime_error("somehow I got the frame ID/index logic wrong");
       }
       this->foot_body_ids[RIGHT] = body_id;
@@ -662,7 +662,7 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
       this->foot_frame_ids[LEFT] = -i - 2;
       Isometry3d Tframe;
       int body_id = this->robot->parseBodyOrFrameID(this->foot_frame_ids[LEFT], &Tframe);
-      if (!Tframe.matrix().isApprox(this->robot->frames[i]->transform_to_body) || body_id != this->robot->frames[i]->frame_index) {
+      if (!Tframe.matrix().isApprox(this->robot->frames[i]->transform_to_body)) {
         throw std::runtime_error("somehow I got the frame ID/index logic wrong");
       }
       this->foot_body_ids[LEFT] = body_id;
