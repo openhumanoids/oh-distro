@@ -177,8 +177,8 @@
   "headLink" : "head",
   "leftFootLink" : "leftFoot",
   "rightFootLink" : "rightFoot",
-  "elbowLinks" : ["LeftElbowPitchLink", "RightElbowPitchLink"],
-  "kneeJoints" : ["LeftKneePitch", "RightKneePitch"],
+  "elbowLinks" : ["leftElbowPitchLink", "rightElbowPitchLink"],
+  "kneeJoints" : ["leftKneePitch", "rightKneePitch"],
   "kneeJointLimits" : [0.6,1.9],
   "baseZJointLimits" : [0.955, 1.14],
 
