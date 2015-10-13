@@ -56,7 +56,7 @@ pods_install_libraries(ExponentialForm)
 pods_install_headers(ExponentialForm.hpp DESTINATION control)
 
 add_library(QPReactiveRecoveryPlan SHARED QPReactiveRecoveryPlan.cpp)
-target_link_libraries(QPReactiveRecoveryPlan iris_ldp drakePolynomial ExponentialForm drakeGeometryUtil drakeTrajectories drakeSplineGeneration drakeRBM drakeGradientUtil lcm drakeLCMUtil)
+target_link_libraries(QPReactiveRecoveryPlan iris_ldp drakePolynomial ExponentialForm drakeGeometryUtil drakeTrajectories drakeSplineGeneration drakeRBM lcm drakeLCMUtil)
 pods_use_pkg_config_packages(QPReactiveRecoveryPlan drake-convex-hull)
 pods_install_libraries(QPReactiveRecoveryPlan)
 pods_install_headers(QPReactiveRecoveryPlan.hpp DESTINATION control)

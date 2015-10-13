@@ -1,7 +1,6 @@
 #include "AtlasFallDetector.hpp"
 #include "drake/convexHull.h"
 #include "lcmtypes/drc/recovery_trigger_t.hpp"
-#include "drake/drakeFloatingPointUtil.h"
 
 using namespace Eigen;
 
