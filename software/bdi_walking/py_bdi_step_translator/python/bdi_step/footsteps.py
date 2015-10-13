@@ -7,7 +7,6 @@ import py_drake_utils as ut
 from bdi_step.utils import Behavior
 from py_drake_utils import quat2rpy
 
-
 MAX_LIFT_HEIGHT = 0.40;
 
 
@@ -29,6 +28,7 @@ class FootGoal:
                  bdi_max_foot_vel=0.0,
                  bdi_sway_end_dist=0.02,
                  bdi_step_end_dist=0.02,
+                 support_contact_groups=drc.footstep_params_t.SUPPORT_GROUPS_HEEL_TOE,
                  terrain_pts=np.zeros((2,1))):
         self.pos = pos
         self.step_speed = step_speed
@@ -46,6 +46,7 @@ class FootGoal:
         self.bdi_max_foot_vel = bdi_max_foot_vel
         self.bdi_sway_end_dist = bdi_sway_end_dist
         self.bdi_step_end_dist = bdi_step_end_dist
+        self.support_contact_groups = support_contact_groups
         self.terrain_pts = terrain_pts
 
     def __str__(self):
@@ -125,7 +126,17 @@ class FootGoal:
         if msg.num_terrain_pts > 0:
             msg.terrain_path_dist = self.terrain_pts[0,:]
             msg.terrain_height = self.terrain_pts[1,:]
-        msg.params = drc.footstep_params_t() # TODO: this should probably be filled in
+        msg.params = drc.footstep_params_t(); # TODO: this should probably be filled in
+        msg.params.bdi_step_duration=self.bdi_step_duration
+        msg.params.bdi_sway_duration=self.bdi_sway_duration
+        msg.params.bdi_lift_height=self.bdi_lift_height
+        msg.params.bdi_toe_off=self.bdi_toe_off
+        msg.params.bdi_knee_nominal=self.bdi_knee_nominal
+        msg.params.bdi_max_body_accel=self.bdi_max_body_accel
+        msg.params.bdi_max_foot_vel=self.bdi_max_foot_vel
+        msg.params.bdi_sway_end_dist=self.bdi_sway_end_dist
+        msg.params.bdi_step_end_dist=self.bdi_step_end_dist
+        msg.params.support_contact_groups=self.support_contact_groups
         return msg
 
     # @staticmethod
@@ -168,6 +179,7 @@ class FootGoal:
                         bdi_max_foot_vel=goal_msg.bdi_max_foot_vel,
                         bdi_sway_end_dist=goal_msg.bdi_sway_end_dist,
                         bdi_step_end_dist=goal_msg.bdi_step_end_dist,
+                        support_contact_groups=goal_msg.support_contact_groups,
                         terrain_pts=pl.vstack([goal_msg.terrain_path_dist, goal_msg.terrain_height]))
         if any(pl.isnan(goal.pos[[0,1,5]])):
             raise ValueError("I don't know how to handle NaN in x, y, or yaw")
@@ -205,6 +217,7 @@ class FootGoal:
                         bdi_max_foot_vel=goal_msg.params.bdi_max_foot_vel,
                         bdi_sway_end_dist=goal_msg.params.bdi_sway_end_dist,
                         bdi_step_end_dist=goal_msg.params.bdi_step_end_dist,
+                        support_contact_groups=goal_msg.params.support_contact_groups,
                         terrain_pts=pl.vstack([goal_msg.terrain_path_dist, goal_msg.terrain_height]))
         if any(pl.isnan(goal.pos[[0,1,5]])):
             raise ValueError("I don't know how to handle NaN in x, y, or yaw")
@@ -229,6 +242,7 @@ class FootGoal:
                         bdi_max_foot_vel = self.bdi_max_foot_vel,
                         bdi_sway_end_dist = self.bdi_sway_end_dist,
                         bdi_step_end_dist = self.bdi_step_end_dist,
+                        support_contact_groups=self.support_contact_groups,
                         terrain_pts = np.copy(self.terrain_pts))
 
 def decode_deprecated_footstep_plan(plan_msg):
