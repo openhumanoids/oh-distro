@@ -67,25 +67,87 @@ double ContactFilter::computeLikelihood(const VectorXd &residual, const VectorXd
   MatrixXd H = linkJacobian.transpose()*forceMoment*rotatedFrictionCone;
 
   // now construct matrices needed to pass model to gurobi, write objective in the form x^T Q x + f x
-  // Q = H^T W H, f=r^T W H
+  // Q = H^T W H, f= - r^T W H
   MatrixXd Q = H.transpose()*this->W*H;
-  VectorXd f = residual*this->W*H;
+  VectorXd f = -2*residual.transpose()*this->W*H;
 
   //clear the objective value of the current model
   GRBLinExpr linExpr = 0.0;
   this->grbModel.setObjective(linExpr);
-  GRBVar* varsArray = this->grbModel.getVars(); // this is an array
-  //make std::vector out of it
+  GRBVar* varsArray = this->grbModel.getVars();
+  // convert to std
   std::vector<GRBVar*> vars;
-
-  for (GRBVar* v = varsArray; ++v; v != nullptr){
-    vars.push_back(v);
+  int num_vars = this->grbModel.get(GRB_IntAttr_NumVars);
+  int i = 0;
+  for (GRBVar* var = varsArray; i<num_vars; var++, i++){
+    vars.push_back(var);
   }
-  gurobiAddObjective(this->grbModel, Q, f, vars);
-
+  gurobiAddObjective(this->grbModel, Q, f, this->grbVars);
   delete [] varsArray;
 
+
+  this->grbModel.optimize();
+
+  bool verbose=true;
+  if (verbose){
+    for (auto &var: this->grbVars){
+      std::cout << var.get(GRB_StringAttr_VarName) << " = " << var.get(GRB_DoubleAttr_X) << std::endl;
+    }
+
+    GRBQuadExpr objective = this->grbModel.getObjective();
+    int n = objective.size();
+    std::cout << "number of terms in quadratic objective = " << objective.size() << std::endl;
+    for( int j = 0; j<n; j++){
+      std::string name1 = objective.getVar1(j).get(GRB_StringAttr_VarName);
+      std::string name2 = objective.getVar2(j).get(GRB_StringAttr_VarName);
+      std::cout << "coefficient on " + name1 + " " + name2 + " = " << objective.getCoeff(j) << std::endl;
+    }
+  }
+
   return 0;
+}
+
+void ContactFilter::testQP(){
+  VectorXd y = VectorXd::Zero(4);
+  y << 1,0,0,0;
+  MatrixXd H = MatrixXd::Identity(4,4);
+  H(0,0) = 0;
+  H(0,1) = 1;
+  H(1,1) = 0;
+  MatrixXd Q = H.transpose()*H;
+  VectorXd f = -2*y.transpose()*H;
+  std::cout << "f is " << f << std::endl;
+  std::cout << "size of f is " << f.size() << std::endl;
+
+  GRBLinExpr linExpr = 0.0;
+  this->grbModel.setObjective(linExpr);
+  gurobiAddObjective(this->grbModel, Q, f, this->grbVars);
+  this->grbModel.optimize();
+  this->printGurobiModel();
+}
+
+void ContactFilter::printGurobiModel(){
+
+  for (auto &var: this->grbVars){
+    std::cout << var.get(GRB_StringAttr_VarName) << " = " << var.get(GRB_DoubleAttr_X) << std::endl;
+  }
+
+  GRBQuadExpr objective = this->grbModel.getObjective();
+  GRBLinExpr linObjective = objective.getLinExpr();
+  int n = objective.size();
+  std::cout << "number of terms in quadratic objective = " << objective.size() << std::endl;
+  for( int j = 0; j<n; j++) {
+    std::string name1 = objective.getVar1(j).get(GRB_StringAttr_VarName);
+    std::string name2 = objective.getVar2(j).get(GRB_StringAttr_VarName);
+    std::cout << "coefficient on " + name1 + " " + name2 + " = " << objective.getCoeff(j) << std::endl;
+  }
+
+  n = linObjective.size();
+  std::cout << "number of linear terms in objective is " << n << std::endl;
+  for(int j = 0; j<n; j++){
+    std::string name = linObjective.getVar(j).get(GRB_StringAttr_VarName);
+    std::cout << "coefficient on linear term " + name + " = " << linObjective.getCoeff(j) << std::endl;
+  }
 }
 
 
@@ -99,7 +161,7 @@ void ContactFilter::initializeGurobiModel() {
 
   for (int i=0; i < 4; i++){
     var_name = "alpha_" + std::to_string(i);
-    this->grbVars.push_back(this->grbModel.addVar(0.0, NULL, 0.0, GRB_CONTINUOUS, var_name));
+    this->grbVars.push_back(this->grbModel.addVar(0.0, GRB_INFINITY, 0.0, GRB_CONTINUOUS, var_name));
   }
 
   this->grbModel.update();

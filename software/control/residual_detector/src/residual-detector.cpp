@@ -56,6 +56,7 @@ public:
   void useFootForceTorque();
   void kinematicChain(std::string linkName, int body_id =-1);
   void testContactFilterRotationMethod(bool useRandom=false);
+  void testQP();
 
 private:
   std::shared_ptr<lcm::LCM> lcm_;
@@ -522,10 +523,22 @@ void ResidualDetector::testContactFilterRotationMethod(bool useRandom) {
   std::cout << "norm of c-b is:\n" << diffNorm << std::endl;
 }
 
+void ResidualDetector::testQP(){
+  VectorXd residual = VectorXd::Zero(this->nv);
+  VectorXd q = residual;
+  VectorXd v = residual;
+  Vector3d contactPosition(0,0,0);
+  Vector3d contactNormal(0,0,1);
+  int body_id = 1;
+//  this->contactFilter.computeLikelihood(residual, q, v, contactPosition, contactNormal, body_id);
+  this->contactFilter.testQP();
+}
+
 
 
 int main( int argc, char* argv[]){
   bool runTest = false;
+  bool runQPTest = false;
   bool isVerbose = false;
   bool runDetectorLoop = true;
   std::string linkName;
@@ -560,6 +573,10 @@ int main( int argc, char* argv[]){
         runDetectorLoop = false;
         runTest = true;
       }
+      else if (std::string(argv[i]) == "--runQPTest"){
+        runQPTest = true;
+        runDetectorLoop = false;
+      }
       else {
         std::cout << "unsupported option, ignoring" << std::endl;
       }
@@ -580,6 +597,9 @@ int main( int argc, char* argv[]){
   }
   else if(runTest){
     residualDetector.testContactFilterRotationMethod(true);
+  }
+  else if(runQPTest){
+    residualDetector.testQP();
   }
   else{
     residualDetector.kinematicChain(linkName);

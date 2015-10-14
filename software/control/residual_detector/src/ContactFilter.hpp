@@ -30,6 +30,9 @@ public:
 
   // contact position and contact normal are both in body frame
   double computeLikelihood(const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v, Eigen::Vector3d contactPosition, Eigen::Vector3d contactNormal, int body_id, bool publish=false);
+
+  void testQP();
+  void printGurobiModel();
 };
 
 Eigen::Matrix<double, 3, 3> rotateVectorToAlign(Eigen::Vector3d a, Eigen::Vector3d b);
