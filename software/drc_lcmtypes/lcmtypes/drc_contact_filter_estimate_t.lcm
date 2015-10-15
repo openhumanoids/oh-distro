@@ -1,0 +1,19 @@
+package drc;
+
+// Output of a 
+
+struct contact_filter_estimate_t
+{
+  int64_t utime;
+
+  int16_t num_velocities;
+  int16_t body_id;
+  string body_name;
+  string velocity_names[num_velocities];
+  float contact_normal[3];
+  float contact_position[3];
+  float contact_force[3];
+  float implied_residual[num_velocities];
+  float likelihood; //this is only up to scaling, doesn't include normalizing constant
+
+}
