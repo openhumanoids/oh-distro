@@ -1,5 +1,6 @@
 #include <mutex>
 #include <thread>
+#include <chrono>
 #include "FootContactDriver.hpp"
 #include "drake/ForceTorqueMeasurement.h"
 #include "lcmtypes/drc/robot_state_t.hpp"
@@ -17,9 +18,12 @@
 #include <memory>
 #include <vector>
 
+
 #define RESIDUAL_GAIN 10.0;
 #define PUBLISH_CHANNEL "RESIDUAL_OBSERVER_STATE"
 using namespace Eigen;
+
+std::vector<ContactFilterPoint> constructContactFilterPoints();
 
 struct ResidualDetectorState{
   double t_prev;
@@ -57,6 +61,7 @@ public:
   void kinematicChain(std::string linkName, int body_id =-1);
   void testContactFilterRotationMethod(bool useRandom=false);
   void testQP();
+  void contactFilterThreadLoop();
 
 private:
   std::shared_ptr<lcm::LCM> lcm_;
@@ -66,6 +71,7 @@ private:
   bool useFootFTFlag;
   bool newStateAvailable;
   bool foot_FT_6_axis_available;
+  bool useGeometricJacobianFlag;
   int nq;
   int nv;
   double t_prev;
@@ -96,8 +102,7 @@ private:
   void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
   void updateResidualState();
   void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
-
-  bool useGeometricJacobianFlag;
+  void computeContactFilter(Vector3d contactPosition, Vector3d contactNormal, int body_id, bool publish);
 };
 
 
@@ -323,7 +328,7 @@ void ResidualDetector::updateResidualState() {
 
     // Compute the joint torques resulting from the foot contact
     if (this->useFootFTFlag){
-      std::cout << "using Foot FT" << std::endl;
+//      std::cout << "using Foot FT" << std::endl;
       std::vector<int> v_indices;
       footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
       const Vector6d &wrench = side_force.second.wrench;
@@ -466,6 +471,19 @@ void ResidualDetector::publishResidualState(std::string publishChannel, const Re
   this->lcm_->publish(publishChannel, &residual_state_msg);
 }
 
+void ResidualDetector::computeContactFilter(Vector3d contactPosition, Vector3d contactNormal, int body_id,
+                                            bool publish){
+  // copy the required data to local variables
+  std::unique_lock<std::mutex> lck(pointerMutex);
+  VectorXd residual = this->residual_state.r;
+  double t = this->args.robot_state->t;
+  VectorXd q = this->args.robot_state->q;
+  VectorXd v = this->args.robot_state->qd;
+  lck.unlock();
+
+  this->contactFilter.computeLikelihood(t, residual, q, v, contactPosition, contactNormal, body_id, publish);
+}
+
 void ResidualDetector::residualThreadLoop() {
   bool done = false;
 
@@ -474,6 +492,23 @@ void ResidualDetector::residualThreadLoop() {
       std::this_thread::yield();
     }
     this->updateResidualState();
+  }
+}
+
+void ResidualDetector::contactFilterThreadLoop() {
+  std::cout << "entered contact filter loop" << std::endl;
+  Vector3d contactPosition(0,0,0);
+  Vector3d contactNormal(0,0,1);
+  int body_id = 1;
+  bool publish = true;
+  bool done = false;
+  while(!this->residual_state.running){
+    std::this_thread::yield();
+  }
+  while (!done){
+    std::cout << "computing contact filter step" << std::endl;
+    this->computeContactFilter(contactPosition, contactNormal, body_id, publish);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
 
@@ -529,9 +564,39 @@ void ResidualDetector::testQP(){
   VectorXd v = residual;
   Vector3d contactPosition(0,0,0);
   Vector3d contactNormal(0,0,1);
-  int body_id = 1;
 //  this->contactFilter.computeLikelihood(residual, q, v, contactPosition, contactNormal, body_id);
   this->contactFilter.testQP();
+}
+
+
+std::vector<ContactFilterPoint> constructContactFilterPoints(){
+  std::vector<ContactFilterPoint> vec;
+  ContactFilterPoint cfp;
+  cfp.body_id = 1;
+  cfp.name = "ORIGIN";
+  cfp.contactNormal = Vector3d(0,0,1);
+  cfp.contactPoint = Vector3d(0,0,0);
+  vec.push_back(cfp);
+
+  cfp.body_id = 1;
+  cfp.name = "L_PELVIS";
+  cfp.contactNormal = Vector3d(0,0,1);
+  cfp.contactPoint = Vector3d(-0.092,0.0616,-0.144);
+  vec.push_back(cfp);
+
+  cfp.body_id = 1;
+  cfp.name = "R_PELVIS";
+  cfp.contactNormal = Vector3d(0,0,1);
+  cfp.contactPoint = Vector3d(-0.092,-0.0616,-0.144);
+  vec.push_back(cfp);
+
+  cfp.body_id = 1;
+  cfp.name = "M_PELVIS";
+  cfp.contactNormal = Vector3d(0,0,1);
+  cfp.contactPoint = Vector3d(-0.092,0.0,-0.144);
+  vec.push_back(cfp);
+
+  return vec;
 }
 
 
@@ -541,6 +606,7 @@ int main( int argc, char* argv[]){
   bool runQPTest = false;
   bool isVerbose = false;
   bool runDetectorLoop = true;
+  bool runContactFilterLoop = false;
   std::string linkName;
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
@@ -549,7 +615,6 @@ int main( int argc, char* argv[]){
   }
 
   ResidualDetector residualDetector(lcm, isVerbose);
-
 
 
   for (int i=1; i < argc; i++){
@@ -581,10 +646,27 @@ int main( int argc, char* argv[]){
         std::cout << "unsupported option, ignoring" << std::endl;
       }
     }
-    if (i==2){
-      linkName = argv[2];
-      runDetectorLoop = false;
+
+    if (std::string(argv[i]) == "--runContactFilter") {
+      std::cout << "running Contact Filter Loop" << std::endl;
+      runContactFilterLoop = true;
     }
+
+  }
+
+  if (runContactFilterLoop){
+    std::cout << "attemping to start contact filter thread loop" << std::endl;
+    std::thread contactFilterThread(&ResidualDetector::contactFilterThreadLoop, &residualDetector);
+    std::cout << "started contact filter thread loop, detaching thread" << std::endl;
+    contactFilterThread.detach();
+  }
+
+  if(runTest){
+    residualDetector.testContactFilterRotationMethod(true);
+  }
+
+  if(runQPTest){
+    residualDetector.testQP();
   }
 
   if (runDetectorLoop){
@@ -593,18 +675,8 @@ int main( int argc, char* argv[]){
 
     // in the main thread run the lcm handler
     std::cout << "Starting lcm handler loop" << std::endl;
-    while(0 == lcm->handle());
+    while(0 == lcm->handle()); // infinite loop, won't ever progress past this
   }
-  else if(runTest){
-    residualDetector.testContactFilterRotationMethod(true);
-  }
-  else if(runQPTest){
-    residualDetector.testQP();
-  }
-  else{
-    residualDetector.kinematicChain(linkName);
-  }
-
 
   return 0;
 }
