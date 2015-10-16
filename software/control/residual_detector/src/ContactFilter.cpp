@@ -56,14 +56,23 @@ void ContactFilter::initializeFrictionCone() {
 
 }
 
-double ContactFilter::computeLikelihood(double t, const VectorXd &residual, const VectorXd &q, const VectorXd &v,
-                                        Vector3d contactPosition, Vector3d contactNormal, int body_id,
-                                        bool publish) {
+double ContactFilter::computeLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v,
+                                        const ContactFilterPoint& contactFilterPoint, bool publish){
   bool verbose = false;
+  // suppress gurobi output to terminal if we are not in verbose mode
+  if (!verbose){
+    this->grbModel.getEnv().set(GRB_IntParam_OutputFlag, 0);
+  }
+
   this->drake_model.doKinematics(q, v, false, false);
 //  Vector3d points << 0,0,0;
 //  MatrixXd R_world_to_body = this->drake_model.forwardKin(points, )
   std::vector<int> v_indices;
+
+  //unpack the contactFilterPoint struct
+  const Vector3d & contactNormal = contactFilterPoint.contactNormal;
+  const Vector3d & contactPoint = contactFilterPoint.contactPoint;
+  const int & body_id = contactFilterPoint.body_id;
 
 
   MatrixXd linkJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, false, &v_indices).value();
@@ -81,8 +90,8 @@ double ContactFilter::computeLikelihood(double t, const VectorXd &residual, cons
   z_vector << 0,0,1;
   Matrix<double,3,3> rotationMatrix = rotateVectorToAlign(z_vector, contactNormal);
   Matrix<double, 3,4> rotatedFrictionCone = rotationMatrix*this->FrictionCone;
-  Matrix<double, 6, 3> forceToWrench = computeForceToWrenchTransform(contactPosition);
-  // still need to do force moment transformation from contactPosition to link frame
+  Matrix<double, 6, 3> forceToWrench = computeForceToWrenchTransform(contactPoint);
+  // still need to do force moment transformation from contactPoint to link frame
 
 
   // want to write objective in the form (r - H alpha)^T W (r - H alpha)
@@ -128,36 +137,38 @@ double ContactFilter::computeLikelihood(double t, const VectorXd &residual, cons
   VectorXd alphaArgMin = gurobiArgMinAsVectorXd(this->grbModel);
   VectorXd forceInBodyFrame = rotatedFrictionCone*alphaArgMin;
   VectorXd estResidual = linkJacobianFull.transpose()*forceToWrench*forceInBodyFrame;
-  double exponentVal = -1/2.0*(residual - estResidual).transpose()*W*(residual - estResidual);
+  double exponentVal = -1/2.0*(residual - estResidual).transpose()*this->W*(residual - estResidual);
   double likelihood = exp(exponentVal); //up to a constant
 
   if (publish){
-    this->publishPointEstimate(t, body_id, contactPosition, contactNormal, forceInBodyFrame, estResidual, likelihood);
+    this->publishPointEstimate(t, contactFilterPoint, forceInBodyFrame, estResidual, exponentVal);
   }
 
   if (verbose){
     this->printGurobiModel();
     std::cout << "estimated force in body frame is " << std::endl;
     std::cout << forceInBodyFrame << std::endl;
+    std::cout << "likelihood is " << likelihood << std::endl;
+    std::cout << "exponentVal = " << exponentVal << std::endl;
   }
 
 
   return 0;
 }
 
-void ContactFilter::publishPointEstimate(double t, int body_id, const Vector3d & contactPosition, const Vector3d &contactNormal,
+void ContactFilter::publishPointEstimate(double t, const ContactFilterPoint& contactFilterPoint,
                             const Vector3d &forceInBodyFrame, const VectorXd &estResidual, const double& likelihood){
 
   drc::contact_filter_estimate_t msg;
   msg.utime = static_cast<int64_t> (t*1e6);
-  msg.body_id = (int16_t) body_id;
-  msg.body_name = this->drake_model.getBodyOrFrameName(body_id);
+  msg.body_id = (int16_t) contactFilterPoint.body_id;
+  msg.body_name = this->drake_model.getBodyOrFrameName(contactFilterPoint.body_id);
   msg.velocity_names = this->velocity_names;
   msg.likelihood = (float) likelihood;
 
   for(int i=0; i < 3; i++){
-    msg.contact_position[i] = (float) contactPosition(i);
-    msg.contact_normal[i] = (float) contactNormal(i);
+    msg.contact_position[i] = (float) contactFilterPoint.contactPoint(i);
+    msg.contact_normal[i] = (float) contactFilterPoint.contactNormal(i);
     msg.contact_force[i] = (float) forceInBodyFrame(i);
   }
 
@@ -167,7 +178,11 @@ void ContactFilter::publishPointEstimate(double t, int body_id, const Vector3d &
     msg.implied_residual[j] = (float) estResidual(j);
   }
 
-  this->lcm.publish(this->publishChannel, &msg);
+  std::string channel = this->publishChannel;
+  if (contactFilterPoint.name.length() > 0){
+    channel = channel + "_" + contactFilterPoint.name;
+  }
+  this->lcm.publish(channel, &msg);
 }
 
 void ContactFilter::testQP(){

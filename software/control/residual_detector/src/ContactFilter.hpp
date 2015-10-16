@@ -31,9 +31,9 @@ private:
   Matrix<double,3,4> FrictionCone;
   void initializeGurobiModel();
   void initializeFrictionCone();
-  void publishPointEstimate(double t, int body_id, const Eigen::Vector3d & contactPosition, const Eigen::Vector3d &contactNormal,
-               const Eigen::Vector3d &forceInBodyFrame, const Eigen::VectorXd &estResidual, const double& likelihood);
-
+  void publishPointEstimate(double t, const ContactFilterPoint& contactFilterPoint,
+                            const Vector3d &forceInBodyFrame, const VectorXd &estResidual,
+                            const double& likelihood);
 public:
 
 //  ContactFilter(std::string URDFString);
@@ -43,7 +43,8 @@ public:
   void addRobotFromURDFString(std::string URDFString);
 
   // contact position and contact normal are both in body frame
-  double computeLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v, Eigen::Vector3d contactPosition, Eigen::Vector3d contactNormal, int body_id, bool publish=false);
+  double computeLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v,
+                           const ContactFilterPoint& contactFilterPoint, bool publish=false);
 
   void testQP();
   void printGurobiModel();

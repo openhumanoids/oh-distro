@@ -102,7 +102,7 @@ private:
   void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
   void updateResidualState();
   void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
-  void computeContactFilter(Vector3d contactPosition, Vector3d contactNormal, int body_id, bool publish);
+  void computeContactFilter(const ContactFilterPoint& contactFilterPoint, bool publish);
 };
 
 
@@ -471,8 +471,7 @@ void ResidualDetector::publishResidualState(std::string publishChannel, const Re
   this->lcm_->publish(publishChannel, &residual_state_msg);
 }
 
-void ResidualDetector::computeContactFilter(Vector3d contactPosition, Vector3d contactNormal, int body_id,
-                                            bool publish){
+void ResidualDetector::computeContactFilter(const ContactFilterPoint& contactFilterPoint, bool publish){
   // copy the required data to local variables
   std::unique_lock<std::mutex> lck(pointerMutex);
   VectorXd residual = this->residual_state.r;
@@ -481,7 +480,7 @@ void ResidualDetector::computeContactFilter(Vector3d contactPosition, Vector3d c
   VectorXd v = this->args.robot_state->qd;
   lck.unlock();
 
-  this->contactFilter.computeLikelihood(t, residual, q, v, contactPosition, contactNormal, body_id, publish);
+  this->contactFilter.computeLikelihood(t, residual, q, v, contactFilterPoint, publish);
 }
 
 void ResidualDetector::residualThreadLoop() {
@@ -497,8 +496,11 @@ void ResidualDetector::residualThreadLoop() {
 
 void ResidualDetector::contactFilterThreadLoop() {
   std::cout << "entered contact filter loop" << std::endl;
-  Vector3d contactPosition(0,0,0);
-  Vector3d contactNormal(0,0,1);
+//  Vector3d contactPosition(0,0,0);
+//  Vector3d contactNormal(0,0,1);
+  std::vector<ContactFilterPoint> cfpVec = constructContactFilterPoints();
+  int cfpVecSize = cfpVec.size();
+//  cfpVecSize = 1;// Debugging
   int body_id = 1;
   bool publish = true;
   bool done = false;
@@ -506,9 +508,10 @@ void ResidualDetector::contactFilterThreadLoop() {
     std::this_thread::yield();
   }
   while (!done){
-    std::cout << "computing contact filter step" << std::endl;
-    this->computeContactFilter(contactPosition, contactNormal, body_id, publish);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    for (int i=0; i < cfpVecSize; i++){
+      this->computeContactFilter(cfpVec[i], publish);
+    }
+//    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
 
