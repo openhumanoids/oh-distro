@@ -116,8 +116,8 @@ private:
   bool verbose_;
 };
 
-App::App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string imuSensor_) :
-    node_(node_), mode_(mode_), robotName_(robotName_), imuSensor_(imuSensor_)
+App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::string imuSensor_in) :
+    node_(node_in), mode_(mode_in), robotName_(robotName_in), imuSensor_(imuSensor_in)
 {
   ROS_INFO("Initializing Translator");
   if (!lcmPublish_.good())
@@ -525,7 +525,6 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 
   if (mode_ == MODE_STATE_ESTIMATION)
   {
-
     if (robotName_.compare("atlas") == 0)
     {
       // Filter out unexpected Atlas joint names
@@ -537,19 +536,18 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 
     for (int i = 0; i < joints.position.size(); i++)
     {
-      if ( joints.name[i] != "hokuyo_joint") // dont publish hokuyo joint 
+      if ( joints.name[i] != "hokuyo_joint")  // dont publish hokuyo joint
       {
-        amsg.joint_name.push_back( joints.name[i] );
-        amsg.joint_position.push_back( joints.position[i] );
-        amsg.joint_velocity.push_back( 0 );  // (double) msg->velocity[ i ];
-        amsg.joint_effort.push_back( 0 ); // msg->effort[i];
+        amsg.joint_name.push_back(joints.name[i]);
+        amsg.joint_position.push_back(joints.position[i]);
+        amsg.joint_velocity.push_back(0);  // (double) msg->velocity[ i ];
+        amsg.joint_effort.push_back(0);  // msg->effort[i];
       }
     }
     amsg.num_joints = amsg.joint_name.size();
 
     lcmPublish_.publish("CORE_ROBOT_STATE", &amsg);
     lcmPublish_.publish("FORCE_TORQUE", &force_torque);
-
   }
   else if (mode_ == MODE_PASSTHROUGH)
   {
