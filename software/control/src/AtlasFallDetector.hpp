@@ -94,6 +94,7 @@ public:
 private:
   std::shared_ptr<RigidBodyManipulator> model;
   std::shared_ptr<RobotStateDriver> state_driver;
+  std::shared_ptr<KinematicsCache<double>> kinematics_cache;
   std::unique_ptr<Debounce> icp_is_ok_debounce;
   std::unique_ptr<Debounce> icp_is_capturable_debounce;
   std::map<FootID, int> foot_body_ids;
@@ -115,11 +116,11 @@ private:
   double bracing_min_trigger_time = 0.4;
   bool bracing_latch = false;
 
-  Vector2d getICP();
+  Eigen::Vector2d getICP();
   double getSupportFootHeight();
-  Matrix3Xd getVirtualSupportPolygon (bool shrink_noncontact_foot=true);
-  bool isICPCaptured(Vector2d icp);
-  bool isICPCapturable(Vector2d icp);
+  Eigen::Matrix3Xd getVirtualSupportPolygon (bool shrink_noncontact_foot=true);
+  bool isICPCaptured(Eigen::Vector2d icp);
+  bool isICPCapturable(Eigen::Vector2d icp);
 
   void findFootIDS();
   void resetState();

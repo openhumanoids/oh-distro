@@ -5,7 +5,7 @@ using namespace std;
 AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names, vector<string> &state_coordinate_names) {
   getRobotJointIndexMap(input_joint_names, &input_index_map);
 
-  state_to_drake_input_map = VectorXi::Zero(state_coordinate_names.size());
+  state_to_drake_input_map = Eigen::VectorXi::Zero(state_coordinate_names.size());
   for (int i=0; i < state_coordinate_names.size(); i++) {
     state_to_drake_input_map[i] = -1;
     for (int j=0; j < input_joint_names->drake.size(); j++) {

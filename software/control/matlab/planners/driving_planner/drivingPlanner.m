@@ -77,9 +77,9 @@ classdef drivingPlanner
       obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
       % maybe want to change this to publish plans with supports?
       if isa(r,'Atlas')
-        obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getManipulator.getPositionFrame.coordinates);
+        obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getManipulator.getPositionFrame.getCoordinateNames);
       else
-        obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getPositionFrame.coordinates);
+        obj.plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, obj.r.getPositionFrame.getCoordinateNames);
       end
 
       %Support for running from matlab, not through director

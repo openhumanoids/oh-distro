@@ -1,6 +1,8 @@
 #include <math.h>
 #include "control/QPReactiveRecoveryPlan.hpp"
 
+using namespace Eigen;
+
 int testClosestPointInConvexHull1() {
   // Try a simple rectangle in 2D
   MatrixXd V(2,4);

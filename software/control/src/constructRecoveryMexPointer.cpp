@@ -4,6 +4,8 @@
 #include "drake/QPCommon.h"
 #include "drake/controlMexUtil.h"
 
+using namespace Eigen;
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if (nrhs == 1) {
     // by convenction, calling with one argument should free the pointer

@@ -4,7 +4,7 @@ typecheck(force_controlled_joint_names, 'cell');
 
 force_controlled_joints = [];
 for i=1:length(force_controlled_joint_names)
-  force_controlled_joints = union(force_controlled_joints,find(~cellfun(@isempty,strfind(r.getInputFrame.coordinates,force_controlled_joint_names{i}))));
+  force_controlled_joints = union(force_controlled_joints,find(~cellfun(@isempty,strfind(r.getInputFrame.getCoordinateNames,force_controlled_joint_names{i}))));
 end
 act_ind = (1:r.getNumInputs)';
 position_controlled_joints = setdiff(act_ind,force_controlled_joints);
