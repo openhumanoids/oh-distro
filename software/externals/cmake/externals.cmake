@@ -3,11 +3,11 @@ set(lcm_pod_revision c43ae7d)
 set(lcm_pod_depends)
 
 set(libbot_url https://github.com/mitdrc/libbot.git)
-set(libbot_revision a7815ee7ca4d86a6bae87ff14a21da5d080677be)
+set(libbot_revision eb61f9bed5df654ffb0ce47ce44ca3d379a6e6e8)
 set(libbot_depends)
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
-set(Eigen_pod_revision 0f940b6) # drake now uses: c6c4738
+set(Eigen_pod_revision 3ec6bbfcb41a9ea74921720d62f86863fdf96217)
 set(Eigen_pod_depends)
 
 set(opencv-pod_url https://github.com/mitdrc/opencv-pod.git)
@@ -53,7 +53,7 @@ set(microstrain_revision 93f4582491f0cfec1c658ed3fb84ae84a13bc6c2)
 set(microstrain_depends common_utils)
 
 set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
-set(bullet_revision c7c87f3)
+set(bullet_revision 4319ffd7e9251066d93064f5a8dab12e33dbe5e2)
 set(bullet_depends)
 
 set(fovis_url ssh://git@github.com/fovis/fovis.git)
@@ -73,11 +73,11 @@ set(apriltags_revision ed2972f01e00d9b5a4afa2612b018374d889641f)
 set(apriltags_depends)
 
 set(spotless_url ssh://git@github.com/RobotLocomotion/spotless-pod.git)
-set(spotless_revision 464be854a1296d4726cb37d86f24d39742293ab6)
+set(spotless_revision 91e1e3970e62b8dd8d74bbc4446504b11990f598)
 set(spotless_depends)
 
 set(snopt_url ssh://git@github.com/RobotLocomotion/snopt.git)
-set(snopt_revision 4ab2fd0e4d57ef906bf2a655093824056e2831ba)
+set(snopt_revision 95d908275156f2665ef3941f08cb89c767480a6e)
 set(snopt_depends)
 
 set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
@@ -86,7 +86,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/guro
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 1f51e5089cd477227a300d4cc625375f2b26cd17)
+set(iris_revision a17bdb4a20a8195363b629c47fd1b6251b44c95e)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
@@ -223,7 +223,7 @@ ExternalProject_Add_Step(libmultisense copy_include_dir
   DEPENDEES install)
 
 # Install Drake CMake scripts repository
-set(cmake_GIT_TAG 9f9f538)
+set(cmake_GIT_TAG 2c4ee11aa719ad548df7eaf3c7047a98c6e3e01c)
 ExternalProject_Add(drake-cmake
   GIT_REPOSITORY https://github.com/RobotLocomotion/cmake.git
   GIT_TAG ${cmake_GIT_TAG}

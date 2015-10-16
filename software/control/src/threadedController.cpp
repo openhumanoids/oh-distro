@@ -16,6 +16,8 @@
 #include "drake/ForceTorqueMeasurement.h"
 #include "drake/Side.h"
 
+using namespace Eigen;
+
 namespace {
 
 struct ThreadedControllerOptions {
@@ -241,7 +243,7 @@ public:
 
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg)
   {
-    Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->r->num_bodies);
+    Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->r->bodies.size());
 
     foot_contact_driver->decode(msg, b_contact_force);
 
@@ -408,9 +410,9 @@ void controllerLoop(NewQPControllerData *pdata, std::shared_ptr<ThreadedControll
   foot_contact_driver.reset(new FootContactDriver(pdata->rpc.body_ids));
 
   solveArgs.pdata = pdata;
-  solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->r->num_bodies);
+  solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->r->bodies.size());
 
-  // std::cout << "pdata num bodies: " << pdata->r->num_bodies << std::endl;
+  // std::cout << "pdata num bodies: " << pdata->r->bodies.size() << std::endl;
 
   lcmHandler.Start();
   controlReceiver.InitSubscriptions();

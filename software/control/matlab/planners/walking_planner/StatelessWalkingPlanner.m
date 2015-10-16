@@ -72,7 +72,8 @@ classdef StatelessWalkingPlanner
 
       if compute_xtraj
         [xtraj, ~, ts] = planWalkingStateTraj(r, walking_plan_data.settings, xstar);
-        joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
+        coordinate_names = r.getStateFrame.getCoordinateNames;
+        joint_names = coordinate_names(1:getNumPositions(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
         walking_plan = WalkingPlan(ts, xtraj, joint_names);
 

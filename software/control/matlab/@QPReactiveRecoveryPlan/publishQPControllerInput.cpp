@@ -2,6 +2,8 @@
 #include "control/QPReactiveRecoveryPlan.hpp"
 #include "drake/drakeMexUtil.h"
 
+using namespace Eigen;
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if (nrhs == 1) {
     // zero-input argument form allows us to make sure the mex file is loaded, without actually doing anything
@@ -26,10 +28,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   ++narg;
 
   
-  sizecheck(prhs[narg], plan->robot->num_bodies, 1);
+  sizecheck(prhs[narg], plan->robot->bodies.size(), 1);
   Map<VectorXd> contact_force_detected_double(mxGetPrSafe(prhs[narg]), mxGetNumberOfElements(prhs[narg]));
   std::vector<bool> contact_force_detected;
-  contact_force_detected.resize(plan->robot->num_bodies);
+  contact_force_detected.resize(plan->robot->bodies.size());
   for (int i=0; i < contact_force_detected_double.size(); ++i) {
     contact_force_detected[i] = contact_force_detected_double[i] > 0.5;
   }

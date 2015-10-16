@@ -98,8 +98,10 @@ class state_sync{
     
     long utime_prev_;
     
+    //void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
+    void coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
+    void forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::force_torque_t* msg);
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
-    void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
     void rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
@@ -110,10 +112,10 @@ class state_sync{
     void enableEncoders(bool enable);
     
     Joints head_joints_;
-    Joints atlas_joints_;
+    Joints core_robot_joints_;
     Joints left_hand_joints_;
     Joints right_hand_joints_;
-    Joints atlas_joints_out_;
+    Joints core_robot_joints_out_;
 
     PoseT pose_BDI_;
     PoseT pose_MIT_;
@@ -143,6 +145,11 @@ class state_sync{
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);
     
     bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose);
+
+
+    drc::force_torque_t force_torque_; // More recent force torque messurement
+    bool force_torque_init_; // Have we received a force torque message?
+
 };    
 
 #endif

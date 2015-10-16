@@ -30,35 +30,35 @@ struct BangBangIntercept {
   double u;
 };
 
-typedef Matrix<double, 7, 1> XYZQuat;
+typedef Eigen::Matrix<double, 7, 1> XYZQuat;
 
 struct FootState {
-  Isometry3d pose;
+  Eigen::Isometry3d pose;
   XYZQuat velocity;
   bool contact;
   double terrain_height;
-  Vector3d terrain_normal;
+  Eigen::Vector3d terrain_normal;
 };
 
 struct InterceptPlan {
   double tf;
   double tswitch;
-  Isometry3d pose_next;
-  Isometry3d icp_next;
-  Isometry3d cop;
+  Eigen::Isometry3d pose_next;
+  Eigen::Isometry3d icp_next;
+  Eigen::Isometry3d cop;
   FootID swing_foot;
   FootID stance_foot;
-  Isometry3d stance_pose;
+  Eigen::Isometry3d stance_pose;
   double error;
 };
 
 
 typedef std::map<FootID, FootState> FootStateMap;
-typedef std::map<FootID, Matrix<double, 3, 4>> VertMap;
+typedef std::map<FootID, Eigen::Matrix<double, 3, 4>> VertMap;
 
 struct BipedDescription {
-  std::map<FootID, Matrix<double, 3, 4>> reachable_vertices;
-  std::map<FootID, Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
+  std::map<FootID, Eigen::Matrix<double, 3, 4>> reachable_vertices;
+  std::map<FootID, Eigen::Matrix<double, 3, QP_REACTIVE_RECOVERY_VERTICES_PER_FOOT>> foot_vertices;
   double u_max; // foot acceleration bounds used for computing ICP intercepts
   double omega; // characteristic frequency of the linear inverted pendulum system. Defined as sqrt(g / height)
 };
@@ -92,23 +92,23 @@ class QPReactiveRecoveryPlan {
     BipedDescription biped;
     std::map<FootID, int> foot_frame_ids;
     std::map<FootID, int> foot_body_ids;
-    VectorXd q_des;
-    MatrixXd S;
+    Eigen::VectorXd q_des;
+    Eigen::MatrixXd S;
     RobotPropertyCache robot_property_cache;
 
     void findFootSoleFrames();
-    FootStateMap getFootStates(const VectorXd &v, const std::vector<bool>& contact_force_detected);
-    void getCaptureInput(double t_global, const FootStateMap &foot_states, const Isometry3d &icp, drake::lcmt_qp_controller_input &qp_input);
+    FootStateMap getFootStates(KinematicsCache<double> cache, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);
+    void getCaptureInput(double t_global, const FootStateMap &foot_states, const Eigen::Isometry3d &icp, drake::lcmt_qp_controller_input &qp_input);
     void getInterceptInput(double t_global, const FootStateMap &foot_states, drake::lcmt_qp_controller_input &qp_input);
     std::shared_ptr<lcm::LCM> LCMHandle;
     void initLCM();
-    void publishForVisualization(double t_global, const Isometry3d &icp);
+    void publishForVisualization(KinematicsCache<double> cache, double t_global, const Eigen::Isometry3d &icp);
     void setupQPInputDefaults(double t_global, drake::lcmt_qp_controller_input &qp_input);
     void encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, drake::lcmt_support_data &support_data);
     void encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion);
     std::unique_ptr<PiecewisePolynomial<double>> straightToGoalTrajectory(double t_global, const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
     std::unique_ptr<PiecewisePolynomial<double>> upOverAndDownTrajectory(double t_global, const InterceptPlan &intercept_plan, const FootStateMap &foot_states);
-    Matrix3Xd heelToeContacts(int body_id);
+    Eigen::Matrix3Xd heelToeContacts(int body_id);
 
   public:
     RigidBodyManipulator* robot;
@@ -126,9 +126,9 @@ class QPReactiveRecoveryPlan {
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc);
     QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc, BipedDescription biped);
 
-    static VectorXd closestPointInConvexHull(const Ref<const VectorXd> &x, const Ref<const MatrixXd> &V);
+    static Eigen::VectorXd closestPointInConvexHull(const Eigen::Ref<const Eigen::VectorXd> &x, const Eigen::Ref<const Eigen::MatrixXd> &V);
 
-    static Isometry3d closestPoseInConvexHull(const Isometry3d &pose, const Ref<const MatrixXd> &V);
+    static Eigen::Isometry3d closestPoseInConvexHull(const Eigen::Isometry3d &pose, const Eigen::Ref<const Eigen::MatrixXd> &V);
 
     static std::vector<double> expIntercept(const ExponentialForm &expform, double l0, double ld0, double u, int degree);
 
@@ -138,40 +138,40 @@ class QPReactiveRecoveryPlan {
     // bang-bang policy intercepts from initial state [x0, xd0] to final state [xf, 0] at max acceleration u_max
     static std::vector<BangBangIntercept> bangBangIntercept(double x0, double xd0, double xf, double u_max);
 
-    static Isometry3d getTWorldToLocal(const Isometry3d &icp, const Isometry3d &cop);
+    static Eigen::Isometry3d getTWorldToLocal(const Eigen::Isometry3d &icp, const Eigen::Isometry3d &cop);
 
-    static double getMinTimeToXprimeAxis(const FootState foot_state, const BipedDescription &biped, Isometry3d &T_world_to_local);
+    static double getMinTimeToXprimeAxis(const FootState foot_state, const BipedDescription &biped, Eigen::Isometry3d &T_world_to_local);
 
     static ExponentialForm icpTrajectory(double x_ic, double x_cop, double omega);
 
-    static std::unique_ptr<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double tf, const Ref<const MatrixXd> &xs, const Ref<const VectorXd> xd0, const Ref<const VectorXd> xdf);
+    static std::unique_ptr<PiecewisePolynomial<double>> freeKnotTimesSpline(double t0, double tf, const Eigen::Ref<const Eigen::MatrixXd> &xs, const Eigen::Ref<const Eigen::VectorXd> xd0, const Eigen::Ref<const Eigen::VectorXd> xdf);
 
     std::unique_ptr<PiecewisePolynomial<double>> swingTrajectory(double t_global, const InterceptPlan &intercept_plan, const std::map<FootID, FootState> &foot_states);
 
     void resetInitialization();
 
-    double icpError(const Ref<const Vector2d> &r_ic, const FootStateMap &foot_states, const VertMap &foot_vertices);
+    double icpError(const Eigen::Ref<const Eigen::Vector2d> &r_ic, const FootStateMap &foot_states, const VertMap &foot_vertices);
 
-    bool isICPCaptured(const Ref<const Vector2d> &r_ic, const FootStateMap &foot_states, const VertMap &foot_vertices);
+    bool isICPCaptured(const Eigen::Ref<const Eigen::Vector2d> &r_ic, const FootStateMap &foot_states, const VertMap &foot_vertices);
 
-    std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const Isometry3d &icp, const Isometry3d &cop);
+    std::vector<InterceptPlan> getInterceptsWithCoP(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const Eigen::Isometry3d &icp, const Eigen::Isometry3d &cop);
 
-    std::vector<InterceptPlan> getInterceptPlansForFoot(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const Isometry3d &icp);
+    std::vector<InterceptPlan> getInterceptPlansForFoot(const FootID &swing_foot, const std::map<FootID, FootState> &foot_states, const Eigen::Isometry3d &icp);
 
-    std::vector<InterceptPlan> getInterceptPlans(const std::map<FootID, FootState> &foot_states, const Isometry3d &icp);
+    std::vector<InterceptPlan> getInterceptPlans(const std::map<FootID, FootState> &foot_states, const Eigen::Isometry3d &icp);
 
-    drake::lcmt_qp_controller_input getQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const std::vector<bool>& contact_force_detected);
-    void publishQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const std::vector<bool>& contact_force_detected);
+    drake::lcmt_qp_controller_input getQPControllerInput(double t_global, const Eigen::VectorXd &q, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);
+    void publishQPControllerInput(double t_global, const Eigen::VectorXd &q, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);
 
-    Vector2d getICP(const VectorXd &v);
+    Eigen::Vector2d getICP(KinematicsCache<double> cache, const Eigen::VectorXd &v);
 
-    void setS(const MatrixXd &S) {
+    void setS(const Eigen::MatrixXd &S) {
       this->S = S;
     }
 
     void setRobot(RigidBodyManipulator *robot);
 
-    void setQDes(const Ref<const VectorXd> &q_des) {
+    void setQDes(const Eigen::Ref<const Eigen::VectorXd> &q_des) {
       this->q_des = q_des;
     }
 };
