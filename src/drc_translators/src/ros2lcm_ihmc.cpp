@@ -43,7 +43,8 @@
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/pronto/force_torque_t.hpp"
 #include "lcmtypes/pronto/robot_state_t.hpp"
-#include "lcmtypes/pronto/atlas_state_t.hpp"
+// #include "lcmtypes/pronto/atlas_state_t.hpp" depreciated
+#include "lcmtypes/pronto/joint_state_t.hpp"
 #include "lcmtypes/pronto/utime_t.hpp"
 #include "lcmtypes/pronto/atlas_raw_imu_batch_t.hpp"
 #include "lcmtypes/pronto/atlas_behavior_t.hpp"
@@ -67,7 +68,7 @@ struct Joints
 class App
 {
 public:
-  App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::string imuSensor_in);
+  App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string imuSensor_);
   ~App();
 
 private:
@@ -115,8 +116,8 @@ private:
   bool verbose_;
 };
 
-App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::string imuSensor_in) :
-    node_(node_in), mode_(mode_in), robotName_(robotName_in), imuSensor_(imuSensor_in)
+App::App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string imuSensor_) :
+    node_(node_), mode_(mode_), robotName_(robotName_), imuSensor_(imuSensor_)
 {
   ROS_INFO("Initializing Translator");
   if (!lcmPublish_.good())
@@ -524,41 +525,31 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 
   if (mode_ == MODE_STATE_ESTIMATION)
   {
-    filterJointNames(joints.name);
-    joints = reorderJoints(joints);
-    pronto::atlas_state_t amsg;
+
+    if (robotName_.compare("atlas") == 0)
+    {
+      // Filter out unexpected Atlas joint names
+      filterJointNames(joints.name);
+      // joints = reorderJoints(joints);
+    }
+    pronto::joint_state_t amsg;
     amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
-    int n_joints = joints.position.size();
-    amsg.joint_position.assign(n_joints, 0);
-    amsg.joint_velocity.assign(n_joints, 0);
-    amsg.joint_effort.assign(n_joints, 0);
-    amsg.num_joints = n_joints;
-    // amsg.joint_name= msg->name;
-    for (int i = 0; i < n_joints; i++)
+    for (int i = 0; i < joints.position.size(); i++)
     {
-      amsg.joint_position[i] = joints.position[i];
-      amsg.joint_velocity[i] = 0;  // (double) msg->velocity[ i ];
-      amsg.joint_effort[i] = 0;  // msg->effort[i];
+      if ( joints.name[i] != "hokuyo_joint") // dont publish hokuyo joint 
+      {
+        amsg.joint_name.push_back( joints.name[i] );
+        amsg.joint_position.push_back( joints.position[i] );
+        amsg.joint_velocity.push_back( 0 );  // (double) msg->velocity[ i ];
+        amsg.joint_effort.push_back( 0 ); // msg->effort[i];
+      }
     }
+    amsg.num_joints = amsg.joint_name.size();
 
-    /*
-     int n_joints = msg->position.size();
-     amsg.joint_position.assign(n_joints , 0  );
-     amsg.joint_velocity.assign(n_joints , 0  );
-     amsg.joint_effort.assign(n_joints , 0  );
-     amsg.num_joints = n_joints;
-     //amsg.joint_name= msg->name;
-     for (int i = 0; i < n_joints; i++)  {
-     amsg.joint_position[ i ] = msg->position[ i ];
-     amsg.joint_velocity[ i ] =0;// (double) msg->velocity[ i ];
-     amsg.joint_effort[ i ] = 0;//msg->effort[i];
-     }
-     */
+    lcmPublish_.publish("CORE_ROBOT_STATE", &amsg);
+    lcmPublish_.publish("FORCE_TORQUE", &force_torque);
 
-    // filter_joint_names( amsg.joint_name );
-    amsg.force_torque = force_torque;
-    lcmPublish_.publish("ATLAS_STATE", &amsg);
   }
   else if (mode_ == MODE_PASSTHROUGH)
   {
@@ -570,12 +561,6 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 
     if (robotName_.compare("valkyrie") == 0)
     {
-      // temporary:
-      // joints.name = {"l_leg_hpz", "l_leg_hpx", "l_leg_hpy", "l_leg_kny", "l_leg_aky", "l_leg_akx",
-      // "r_leg_hpz", "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", "r_leg_akx", "back_bkz", "back_bky",
-      // "back_bkx", "l_arm_shz", "l_arm_shx", "l_arm_ely", "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "l_arm_lwy",
-      // "neck_ay", "neck_by", "neck_cy", "r_arm_shz", "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy",
-      // "r_arm_mwx", "r_arm_lwy"};
     }
 
     pronto::robot_state_t msg_out;
