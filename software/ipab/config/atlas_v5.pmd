@@ -57,11 +57,17 @@ group "3.plan_and_control" {
         host = "localhost";
     }
 
+    cmd "plan_eval_proxi" {
+        exec = "ipab-plan-eval-proxi";
+        host = "localhost";
+    }
+
     cmd "planner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner([],5); p.run();\"";
        host = "localhost";
        stop_signal = 15;
     }
+
 }
 
 group "4.maps" {
@@ -95,7 +101,7 @@ cmd "pose-util" {
 }
 
 
-script "start_without_pronto" {
+script "start_ui" {
     start cmd "ros_bridge_without_pronto";
     start group "1.params_and_model_pub";
     wait ms 1000;
@@ -105,7 +111,7 @@ script "start_without_pronto" {
     start cmd "drake-designer";
 }
 
-script "start_with_pronto" {
+script "start_ui_with_pronto" {
     start cmd "ros_bridge_with_pronto";
     start group "1.params_and_model_pub";
     wait ms 1000;
