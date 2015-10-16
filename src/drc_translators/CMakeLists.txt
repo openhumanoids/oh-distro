@@ -106,5 +106,5 @@ add_executable(lcm2ros_sdh src/lcm2ros_sdh.cpp)
 target_link_libraries(lcm2ros_sdh ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(lcm2ros_sdh lcm lcmtypes_pronto-lcmtypes bot2-core std_srvs)
 
-#set(ROSLINT_CPP_OPTS "--linelength=180")
+set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-runtime/references") # filter out linelength warnings
 roslint_cpp()
