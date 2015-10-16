@@ -219,7 +219,7 @@ while(~done)
 
   % LCM broadcast out
   broadcast_opts = options;
-  broadcast_opts.publish_truth = 0;
+  broadcast_opts.publish_truth = 1;
   broadcast_opts.publish_imu = 1;
   lcmBroadcastBlock = LCMBroadcastBlock(r_complete,r_pure, broadcast_opts);
   for i=1:r_complete.getOutputFrame.getNumFrames
