@@ -108,21 +108,21 @@ private:
   ros::Publisher scs_api_pub_;
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_, std::string robotName_):
-    lcm_(lcm_),nh_(nh_), robotName_(robotName_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, std::string robotName_in):
+    lcm_(lcm_in), nh_(nh_in), robotName_(robotName_in)
 {
-
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   KDL::Tree tree;
-  if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
+  if (!kdl_parser::treeFromString(model_->getURDFString(), tree))
+  {
     std::cerr << "ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
     exit(-1);
   }
   fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
 
-  if (robotName_.compare("atlas") == 0) // Atlas has utorso
+  if (robotName_.compare("atlas") == 0)  // Atlas has utorso
     chestLinkName_ = "utorso";
-  else // valkyrie has torso
+  else  // valkyrie has torso
     chestLinkName_ = "torso";
   std::cout << "Using "<< robotName_ << " so expecting chest link called " << chestLinkName_ << "\n";
 
@@ -549,20 +549,20 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
   return true;
 }
 
-Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
+Eigen::Isometry3d KDLToEigen(KDL::Frame tf)
+{
   Eigen::Isometry3d tf_out;
   tf_out.setIdentity();
   tf_out.translation()  << tf.p[0], tf.p[1], tf.p[2];
   Eigen::Quaterniond q;
-  tf.M.GetQuaternion( q.x() , q.y(), q.z(), q.w());
-  tf_out.rotate(q);    
+  tf.M.GetQuaternion(q.x(), q.y(), q.z(), q.w());
+  tf_out.rotate(q);
   return tf_out;
 }
 
 
 bool LCM2ROS::getChestTrajectoryPlan(const drc::robot_plan_t* msg, std::vector<geometry_msgs::Quaternion> &m)
 {
-
   for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     // 0. Extract World Pose of body:
@@ -570,28 +570,28 @@ bool LCM2ROS::getChestTrajectoryPlan(const drc::robot_plan_t* msg, std::vector<g
     Eigen::Isometry3d world_to_body;
     world_to_body.setIdentity();
     world_to_body.translation()  << this_state.pose.translation.x, this_state.pose.translation.y, this_state.pose.translation.z;
-    world_to_body.rotate( Eigen::Quaterniond(this_state.pose.rotation.w, this_state.pose.rotation.x, 
-                                                 this_state.pose.rotation.y, this_state.pose.rotation.z) );    
-      
+    world_to_body.rotate(Eigen::Quaterniond(this_state.pose.rotation.w, this_state.pose.rotation.x,
+                                                 this_state.pose.rotation.y, this_state.pose.rotation.z));
+
     // 1. Solve for Forward Kinematics:
     std::map<std::string, double> jointpos_in;
     std::map<std::string, KDL::Frame > cartpos_out;
-    for (uint i=0; i< (uint) this_state.num_joints; i++) //cast to uint to suppress compiler warning
+    for (uint i=0; i< (uint) this_state.num_joints; i++)  // cast to uint to suppress compiler warning
       jointpos_in.insert(make_pair(this_state.joint_name[i], this_state.joint_position[i]));
-    
+
     // Calculate forward position kinematics
     bool kinematics_status;
-    bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
-    kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
-    if(kinematics_status<0)
+    bool flatten_tree = true;  // determines absolute transforms to robot origin, otherwise relative transforms between joints.
+    kinematics_status = fksolver_->JntToCart(jointpos_in, cartpos_out, flatten_tree);
+    if (kinematics_status < 0)
     {
-      std::cerr << "Error: could not calculate forward kinematics!" <<std::endl;
+      std::cerr << "Error: could not calculate forward kinematics!" << std::endl;
       return false;
     }
 
     // 2. Find the world orientation of the chest:
-    Eigen::Isometry3d world_to_torso = world_to_body * KDLToEigen(cartpos_out.find( chestLinkName_ )->second);
-    Eigen::Quaterniond wTt_quat = Eigen::Quaterniond( world_to_torso.rotation() );
+    Eigen::Isometry3d world_to_torso = world_to_body * KDLToEigen(cartpos_out.find(chestLinkName_)->second);
+    Eigen::Quaterniond wTt_quat = Eigen::Quaterniond(world_to_torso.rotation());
     geometry_msgs::Quaternion this_chest;
     this_chest.w = wTt_quat.w();
     this_chest.x = wTt_quat.x();
@@ -642,11 +642,11 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   else if (robotName_.compare("valkyrie") == 0)
   {
     l_arm_strings =
-    {"leftShoulderPitch","leftShoulderRoll","leftShoulderYaw","leftElbowPitch","leftForearmYaw",
-    "leftWristRoll","leftWristPitch"};
+    {"leftShoulderPitch", "leftShoulderRoll", "leftShoulderYaw", "leftElbowPitch", "leftForearmYaw",
+    "leftWristRoll", "leftWristPitch"};
     r_arm_strings =
-    {"rightShoulderPitch","rightShoulderRoll","rightShoulderYaw","rightElbowPitch","rightForearmYaw",
-    "rightWristRoll","rightWristPitch"};
+    {"rightShoulderPitch", "rightShoulderRoll", "rightShoulderYaw", "rightElbowPitch", "rightForearmYaw",
+    "rightWristRoll", "rightWristPitch"};
   }
   ihmc_msgs::ArmJointTrajectoryPacketMessage left_arm_trajectory;
   bool status_left = getSingleArmPlan(msg, l_arm_strings, input_joint_names, false, left_arm_trajectory);
@@ -655,7 +655,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   if (!status_left || !status_right)
   {
     ROS_ERROR("LCM2ROS: problem with arm plan, not sending");
-  }  
+  }
   wbt_msg.left_arm_trajectory = left_arm_trajectory;
   wbt_msg.right_arm_trajectory = right_arm_trajectory;
   wbt_msg.num_joints_per_arm = l_arm_strings.size();
