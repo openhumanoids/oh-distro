@@ -25,7 +25,7 @@
 class LCM2ROS
 {
 public:
-  LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_);
+  LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in);
   ~LCM2ROS()
   {
   }
@@ -43,7 +43,7 @@ private:
                         const ipab::exotica_planner_request_t* msg);
 };
 
-LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_) : lcm_(lcm_), nh_(nh_)
+LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in) : lcm_(lcm_in), nh_(nh_in)
 {
   lcm_->subscribe("PLANNER_REQUEST", &LCM2ROS::plannerRequestHandler, this);
   planner_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/exotica/planner_request", 10);
