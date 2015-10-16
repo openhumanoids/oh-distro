@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
 
   int r_hand, l_foot, r_foot;
-  for(int i = 0;i<model->num_bodies;i++)
+  for(int i = 0;i<model->bodies.size();i++)
   {
     if(model->bodies[i]->linkname.compare(string("r_hand")) ==0 )
     {
@@ -354,9 +354,8 @@ qstar <<  -0.0260, 0,  0.8440, 0, 0, 0, 0, 0, 0,  0.2700, 0,  0.0550, -0.5700,  
 
 
   /////////////////////////////////////////
-  VectorXd v = VectorXd::Zero(0);
-  model->doKinematics(q_sol, v);
-  Vector3d com = model->centerOfMass<double>(0).value();
+  KinematicsCache<double> cache = model->doKinematics(q_sol, 0);
+  Vector3d com = model->centerOfMass(cache, 0).value();
   printf("%5.2f\n%5.2f\n%5.2f\n",com(0),com(1),com(2));
   drc::robot_state_t robot_state_msg;
   app.getRobotState(robot_state_msg, 0*1E6, q_sol , jointNames);
