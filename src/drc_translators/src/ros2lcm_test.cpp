@@ -55,7 +55,7 @@ int mode;
 class App
 {
 public:
-  explicit App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_in);
   ~App();
 
 private:
@@ -83,8 +83,8 @@ private:
   void behaviorCallback(const std_msgs::Int32ConstPtr& msg);
 };
 
-App::App(ros::NodeHandle node_) :
-    node_(node_)
+App::App(ros::NodeHandle node_in) :
+    node_(node_in)
 {
   ROS_INFO("Initializing Translator");
   if (!lcmPublish_.good())
@@ -97,14 +97,15 @@ App::App(ros::NodeHandle node_) :
   poseSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/robot_pose"), queue_size, &App::poseCallBack, this);
   jointStatesSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/joint_states"), queue_size,
                                     &App::jointStatesCallback, this);
-  // imuBatchSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/batch_raw_imu"), queue_size, &App::imuBatchCallback,this);
+  // imuBatchSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/batch_raw_imu"),
+  // queue_size, &App::imuBatchCallback,this);
 
   if (mode == MODE_ALL)
   {
-    headJointStatesSub_ = node_.subscribe(std::string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
-                                          this);
+    headJointStatesSub_ = node_.subscribe(std::string("/multisense/joint_states"), queue_size,
+                                          &App::headJointStatesCallback, this);
     leftFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/foot_force_sensor/left"), queue_size,
-                                         &App::leftFootSensorCallback, this);
+                                          &App::leftFootSensorCallback, this);
     rightFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/atlas/output/foot_force_sensor/right"), queue_size,
                                           &App::rightFootSensorCallback, this);
     // using previously used queue_size for scan:

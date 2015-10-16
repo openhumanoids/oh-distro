@@ -7,10 +7,14 @@
 // grey compression
 // disparity/depth conversion from device
 
-// rosparam set /compressed_listener/image_transport compressed; rosparam set /ros2lcm/stereo hand; rosrun translators  ros2lcm_stereo  __name:=ros2lcm_hand
-// rosparam set /ros2lcm_head/image_transport compressed; rosparam set /ros2lcm/stereo head;  rosrun translators ros2lcm_stereo  __name:=ros2lcm_head
-//  rosparam set /compressed_listener/image_transport compressed
-//  rosrun translators  my_subscriber __name:=compressed_listener
+// rosparam set /compressed_listener/image_transport compressed;
+// rosparam set /ros2lcm/stereo hand; rosrun translators  ros2lcm_stereo  __name:=ros2lcm_hand
+//
+// rosparam set /ros2lcm_head/image_transport compressed;
+// rosparam set /ros2lcm/stereo head;  rosrun translators ros2lcm_stereo  __name:=ros2lcm_head
+//
+// rosparam set /compressed_listener/image_transport compressed
+// rosrun translators  my_subscriber __name:=compressed_listener
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -46,7 +50,7 @@
 class App
 {
 public:
-  explicit App(ros::NodeHandle node_);
+  explicit App(ros::NodeHandle node_in);
   ~App();
 
 private:
@@ -79,8 +83,8 @@ private:
   void prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstPtr& ros_image);
 };
 
-App::App(ros::NodeHandle node_) :
-    node_(node_), it_(node_), sync_(10)
+App::App(ros::NodeHandle node_in) :
+    node_(node_in), it_(node_in), sync_(10)
 {
   if (!lcm_publish_.good())
   {
@@ -268,7 +272,7 @@ void App::prepImage(bot_core::image_t& lcm_image, const sensor_msgs::ImageConstP
 
     lcm_image.data.resize(2 * isize);
     lcm_image.size = 2 * isize;
-    //images_msg_out_.image_types[1] = 2;// bot_core::images_t::DISPARITY );
+    // images_msg_out_.image_types[1] = 2;// bot_core::images_t::DISPARITY );
   }
 
   lcm_image.width = ros_image->width;
