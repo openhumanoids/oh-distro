@@ -97,6 +97,255 @@
       <static>1</static>
     </model>
 
+    <model name='Box05'>
+      <pose>1.50 0.0 0.375 0 0 0</pose>
+      <link name='Box05'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.75</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.75</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box06'>
+      <pose>1.75 0.0 0.45 0 0 0</pose>
+      <link name='Box06'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.90</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.90</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box07'>
+      <pose>2.00 0.0 0.525 0 0 0</pose>
+      <link name='Box07'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 1.05</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 1.05</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box08'>
+      <pose>2.325 0.0 0.60 0 0 0</pose>
+      <link name='Box08'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.40 0.8 1.20</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.40 0.8 1.20</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box09'>
+      <pose>2.65 0.0 0.525 0 0 0</pose>
+      <link name='Box09'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 1.05</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 1.05</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box10'>
+      <pose>2.90 0.0 0.45 0 0 0</pose>
+      <link name='Box10'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.90</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.90</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box11'>
+      <pose>3.15 0.0 0.375 0 0 0</pose>
+      <link name='Box11'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.75</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.75</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box12'>
+      <pose>3.40 0.0 0.30 0 0 0</pose>
+      <link name='Box12'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.60</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.60</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box13'>
+      <pose>3.65 0.0 0.225 0 0 0</pose>
+      <link name='Box13'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.45</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.45</size>
+            </box>
+          </geometry>
+          <material>
+            <diffuse>0 1 1 .8</diffuse>
+            <ambient>0 1 1 .8</ambient>
+          </material>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box14'>
+      <pose>3.90 0.0 0.15 0 0 0</pose>
+      <link name='Box14'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.30</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.30</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
+
+    <model name='Box15'>
+      <pose>4.15 0.0 0.075 0 0 0</pose>
+      <link name='Box15'>
+        <pose>0 0 0 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.15</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.25 0.8 0.15</size>
+            </box>
+          </geometry>
+          <material>
+            <diffuse>0 0 1 .8</diffuse>
+            <ambient>0 0 1 .8</ambient>
+          </material>
+        </visual>
+      </link>
+      <static>1</static>
+    </model>
 
   </world>
 </sdf>
