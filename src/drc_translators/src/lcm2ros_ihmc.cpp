@@ -43,6 +43,8 @@
 #define LEFT 0
 #define RIGHT 1
 
+typedef unsigned char BYTE;
+
 class LCM2ROS
 {
 public:
@@ -63,6 +65,8 @@ private:
                                   const drc::footstep_plan_t* msg);
   ros::Publisher walking_plan_pub_;
   ihmc_msgs::FootstepDataMessage createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos,
+                                                    double orient_w, double orient_x, double orient_y, double orient_z);
+  ihmc_msgs::FootstepDataMessage createFootStepList(int foot_to_start_with, BYTE support_contact_groups, double x_pos, double y_pos, double z_pos,
                                                     double orient_w, double orient_x, double orient_y, double orient_z);
   void sendBasicSteps();
 
@@ -157,6 +161,65 @@ ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_wit
   footStepList.orientation.x = orient_x;
   footStepList.orientation.y = orient_y;
   footStepList.orientation.z = orient_z;
+  return footStepList;
+}
+
+ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, BYTE support_contact_groups, double x_pos, double y_pos,
+                                                           double z_pos, double orient_w, double orient_x,
+                                                           double orient_y, double orient_z)
+{
+  ihmc_msgs::FootstepDataMessage footStepList;
+  footStepList.robot_side = foot_to_start_with;
+  footStepList.location.x = x_pos;
+  footStepList.location.y = y_pos;
+  footStepList.location.z = z_pos;
+  footStepList.orientation.w = orient_w;
+  footStepList.orientation.x = orient_x;
+  footStepList.orientation.y = orient_y;
+  footStepList.orientation.z = orient_z;
+
+  // Used values from footstepsdriver.py for Valkyrie version 2
+  // foot_lenght = 0.2604, foot_width = 0.124887
+  if (robotName_.compare("valkyrie") == 0)
+  {
+    double foot_lenght = 0.2604;
+    double foot_width = 0.124887;
+    // if (support_contact_groups == 0) we do not set the contact points because
+    // a value of null will default to use the entire foot
+    if (support_contact_groups == 1)
+    {
+      ihmc_msgs::Point2dMessage point;
+      point.x = 0.5 * foot_lenght;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = 0.5 * foot_lenght;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.166666667 * foot_lenght;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.166666667 * foot_lenght;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+    }
+    else if (support_contact_groups == 2)
+    {
+      ihmc_msgs::Point2dMessage point;
+      point.x = 0.166666667 * foot_lenght;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = 0.166666667 * foot_lenght;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.5 * foot_lenght;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.5 * foot_lenght;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+    }
+  }
+
   return footStepList;
 }
 
@@ -268,7 +331,7 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   {
     drc::footstep_t s = msg->footsteps[i];
     mout.footstep_data_list.push_back(
-        createFootStepList(s.is_right_foot, s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
+        createFootStepList(s.is_right_foot, s.params.support_contact_groups, s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
                            s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z));
   }
   walking_plan_pub_.publish(mout);
