@@ -179,11 +179,12 @@ ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_wit
   footStepList.orientation.z = orient_z;
 
   // Used values from footstepsdriver.py for Valkyrie version 2
-  // foot_lenght = 0.2604, foot_width = 0.124887
+  // foot_lenght = 0.21, foot_width = 0.11 (dimension of the sole))
   if (robotName_.compare("valkyrie") == 0)
   {
-    double foot_lenght = 0.2604;
-    double foot_width = 0.124887;
+    double footsizeReduction = 0.04;
+    double foot_lenght = 0.25 - footsizeReduction;
+    double foot_width = 0.15 - footsizeReduction;
     // if (support_contact_groups == 0) we do not set the contact points because
     // a value of null will default to use the entire foot
     if (support_contact_groups == 1)
