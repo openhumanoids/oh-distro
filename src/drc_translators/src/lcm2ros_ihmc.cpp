@@ -49,6 +49,8 @@
 #define LEFT 0
 #define RIGHT 1
 
+typedef unsigned char BYTE;
+
 class LCM2ROS
 {
 public:
@@ -71,9 +73,8 @@ private:
   void footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                   const drc::footstep_plan_t* msg);
   ros::Publisher walking_plan_pub_;
-  ihmc_msgs::FootstepDataMessage createFootStepList(int foot_to_start_with, double x_pos, double y_pos, double z_pos,
+  ihmc_msgs::FootstepDataMessage createFootStepList(int foot_to_start_with, BYTE support_contact_groups, double x_pos, double y_pos, double z_pos,
                                                     double orient_w, double orient_x, double orient_y, double orient_z);
-  void sendBasicSteps();
 
   void comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                         const ipab::com_height_packet_message_t* msg);
@@ -170,7 +171,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   node_ = new ros::NodeHandle();
 }
 
-ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, double x_pos, double y_pos,
+ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, BYTE support_contact_groups, double x_pos, double y_pos,
                                                            double z_pos, double orient_w, double orient_x,
                                                            double orient_y, double orient_z)
 {
@@ -183,27 +184,52 @@ ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_wit
   footStepList.orientation.x = orient_x;
   footStepList.orientation.y = orient_y;
   footStepList.orientation.z = orient_z;
-  return footStepList;
-}
 
-void LCM2ROS::sendBasicSteps()
-{
-  ihmc_msgs::FootstepDataListMessage mout;
-  // mout.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
-  mout.transfer_time = 1.0;
-  mout.swing_time = 1.0;
-  // mout.trajectoryWaypointGenerationMethod = 0;
-  mout.footstep_data_list.push_back(createFootStepList(LEFT, 0, 0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(RIGHT, 0, -0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(LEFT, 0.1, 0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(RIGHT, 0.1, -0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(LEFT, 0.2, 0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(RIGHT, 0.2, -0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(LEFT, 0.1, 0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(RIGHT, 0.1, -0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(LEFT, 0, 0.12, 0, 1, 0, 0, 0));
-  mout.footstep_data_list.push_back(createFootStepList(RIGHT, 0, -0.12, 0, 1, 0, 0, 0));
-  walking_plan_pub_.publish(mout);
+  // Used values from footstepsdriver.py for Valkyrie version 2
+  // foot_length = 0.21, foot_width = 0.11 (dimension of the sole))
+  if (robotName_.compare("valkyrie") == 0)
+  {
+    double footsizeReduction = 0.04;
+    double foot_length = 0.25 - footsizeReduction;
+    double foot_width = 0.15 - footsizeReduction;
+    // if (support_contact_groups == 0) we do not set the contact points because
+    // a value of null will default to use the entire foot
+    if (support_contact_groups == 1)
+    {
+      ihmc_msgs::Point2dMessage point;
+      point.x = 0.5 * foot_length;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = 0.5 * foot_length;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.166666667 * foot_length;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.166666667 * foot_length;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+    }
+    else if (support_contact_groups == 2)
+    {
+      ihmc_msgs::Point2dMessage point;
+      point.x = 0.166666667 * foot_length;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = 0.166666667 * foot_length;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.5 * foot_length;
+      point.y = -0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+      point.x = -0.5 * foot_length;
+      point.y = 0.5 * foot_width;
+      footStepList.predicted_contact_points.push_back(point);
+    }
+  }
+  // else if atlas, always use the entire foot
+
+  return footStepList;
 }
 
 Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw)
@@ -267,17 +293,13 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   ihmc_msgs::FootstepDataListMessage mout;
   mout.transfer_time = 1.2;
   mout.swing_time = 1.2;
-  // mout.trajectoryWaypointGenerationMethod = 0;
   for (int i = 2; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
     drc::footstep_t s = msg->footstep_plan.footsteps[i];
-    // mout.footstep_data_list.push_back( createFootStepList(s.is_right_foot , s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
-    //                                                    s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z) );
-
     Eigen::Quaterniond r(steps[i].rotation());
     Eigen::Vector3d t(steps[i].translation());
     mout.footstep_data_list.push_back(
-        createFootStepList(s.is_right_foot, t[0], t[1], t[2], r.w(), r.x(), r.y(), r.z()));
+        createFootStepList(s.is_right_foot, s.params.support_contact_groups, t[0], t[1], t[2], r.w(), r.x(), r.y(), r.z()));
   }
   walking_plan_pub_.publish(mout);
 }
@@ -294,7 +316,7 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   {
     drc::footstep_t s = msg->footsteps[i];
     mout.footstep_data_list.push_back(
-        createFootStepList(s.is_right_foot, s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
+        createFootStepList(s.is_right_foot, s.params.support_contact_groups, s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
                            s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z));
   }
   walking_plan_pub_.publish(mout);
@@ -440,7 +462,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
                                trajectory_msgs::JointTrajectory &m)
 {
   // Find the indices of the arm joints which we want to extract
-  std::vector<int> arm_indices;  // = {3,10,11,12,13,14,15};
+  std::vector<int> arm_indices;
   for (size_t i = 0; i < output_joint_names_arm.size(); i++)
   {
     std::string name = output_joint_names_arm[i];
@@ -493,7 +515,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
                                ihmc_msgs::ArmJointTrajectoryPacketMessage &m)
 {
   // Find the indices of the arm joints which we want to extract
-  std::vector<int> arm_indices;  // = {3,10,11,12,13,14,15};
+  std::vector<int> arm_indices;
   for (size_t i = 0; i < output_joint_names_arm.size(); i++)
   {
     std::string name = output_joint_names_arm[i];
