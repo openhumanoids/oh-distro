@@ -4,14 +4,14 @@ group "0.ros_bridge" {
         host = "localhost";
     }
     cmd "ros_bridge_with_pronto" {
-        exec = "roslaunch drc_translators ihmc_bridge.launch mode:=state_estimation";
+        exec = "roslaunch drc_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_leftPelvisIMU";
         host = "localhost";
     }
 }
 
 group "1.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/simul_robot_ihmc.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/simul_robot_ihmc_val.cfg";
         host = "localhost";
     }
 
@@ -91,7 +91,7 @@ group "4.maps" {
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc.cfg -val2";
+    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc_val.cfg -val2";
     host = "localhost";
 }
 

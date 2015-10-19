@@ -170,7 +170,8 @@ classdef DRCPlanner
     function plan = configuration_traj(obj, msg)
       msg = drc.robot_plan_t(msg);
       nq = getNumPositions(obj.biped);
-      joint_names = obj.biped.getStateFrame.coordinates(1:nq);
+      coordinate_names = obj.biped.getStateFrame.getCoordinateNames;
+      joint_names = coordinate_names(1:nq);
       [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
 
@@ -183,7 +184,8 @@ classdef DRCPlanner
     function plan = configuration_traj_with_supports(obj,msg)
       msg = drc.robot_plan_with_supports_t(msg);
       nq = getNumPositions(obj.biped);
-      joint_names = obj.biped.getStateFrame.coordinates(1:nq);
+      coordinate_names = obj.biped.getStateFrame.getCoordinateNames;
+      joint_names = coordinate_names(1:nq);
       [X,T,options] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
       options.bodies_to_control_when_in_contact = [obj.biped.findLinkId('pelvis'), obj.biped.foot_body_id.right, obj.biped.foot_body_id.left];
       nq = obj.biped.getNumPositions();

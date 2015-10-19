@@ -46,8 +46,8 @@ go(const LabeledCloud::Ptr& iCloud, NormalCloud& oNormals) {
 
   // plane fitter
   PlaneFitter planeFitter;
-  planeFitter.setMaxIterations(100);
-  planeFitter.setMaxDistance(0.01);
+  planeFitter.setMaxIterations(mMaxIterations);
+  planeFitter.setMaxDistance(mMaxEstimationError);
   planeFitter.setRefineUsingInliers(true);
   std::vector<Eigen::Vector3f> pts;
   pts.reserve(1000);

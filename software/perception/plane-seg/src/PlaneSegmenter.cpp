@@ -11,6 +11,7 @@ PlaneSegmenter::
 PlaneSegmenter() {
   setMaxError(0.02);
   setMaxAngle(30);
+  setSearchRadius(0.03);
   setMinPoints(500);
 }
 
@@ -32,6 +33,12 @@ setMaxAngle(const float iAngle) {
 }
 
 void PlaneSegmenter::
+setSearchRadius(const float iRadius) {
+  mSearchRadius = iRadius;
+}
+
+
+void PlaneSegmenter::
 setMinPoints(const int iMin) {
   mMinPoints = iMin;
 }
@@ -48,7 +55,7 @@ go() {
   std::vector<std::vector<int>> neighbors(n);
   std::vector<float> distances;
   for (int i = 0; i < n; ++i) { 
-    tree->radiusSearch(i, 0.03, neighbors[i], distances);
+    tree->radiusSearch(i, mSearchRadius, neighbors[i], distances);
     auto& neigh = neighbors[i];
     std::vector<std::pair<int,float>> pairs(neigh.size());
     for (int j = 0; j < (int)neigh.size(); ++j) {

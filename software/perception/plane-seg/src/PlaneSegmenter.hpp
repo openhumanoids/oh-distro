@@ -24,6 +24,7 @@ public:
 
   void setMaxError(const float iError);
   void setMaxAngle(const float iAngle);
+  void setSearchRadius(const float iRadius);
   void setMinPoints(const int iMin);
 
   Result go();
@@ -33,6 +34,7 @@ protected:
   NormalCloud::Ptr mNormals;
   float mMaxError;
   float mMaxAngle;
+  float mSearchRadius;
   int mMinPoints;
 };
 

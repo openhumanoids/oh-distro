@@ -12,7 +12,7 @@ classdef AtlasInput < LCMCoordinateFrame & Singleton
       obj.nu=num_u;
       
       if isempty(obj.lcmcoder)  % otherwise I had a singleton
-        input_names = r.getInputFrame().coordinates;
+        input_names = r.getInputFrame().getCoordinateNames;
         input_names = regexprep(input_names,'_motor',''); % remove motor suffix
         input_frame = getInputFrame(r);
         input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
