@@ -6,7 +6,7 @@
 #include "drake/lcmUtil.h"
 #include "lcmtypes/drc/reactive_recovery_debug_t.hpp"
 extern "C" {
-  #include "iris_ldp/solver.h"
+  #include "iris/solver.h"
 }
 
 #define CVXGEN_MAX_ROWS 3
