@@ -273,7 +273,7 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     Eigen::Quaterniond r(steps[i].rotation());
     Eigen::Vector3d t(steps[i].translation());
     mout.footstep_data_list.push_back(
-        createFootStepList(s.is_right_foot, 0, t[0], t[1], t[2], r.w(), r.x(), r.y(), r.z()));
+        createFootStepList(s.is_right_foot, s.params.support_contact_groups, t[0], t[1], t[2], r.w(), r.x(), r.y(), r.z()));
   }
   walking_plan_pub_.publish(mout);
 }
