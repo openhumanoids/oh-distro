@@ -25,6 +25,7 @@
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/WrenchStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
@@ -42,6 +43,8 @@
 
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/pronto/force_torque_t.hpp"
+#include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
+#include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 #include "lcmtypes/pronto/robot_state_t.hpp"
 // #include "lcmtypes/pronto/atlas_state_t.hpp" depreciated
 #include "lcmtypes/pronto/joint_state_t.hpp"
@@ -86,6 +89,8 @@ private:
   ros::Subscriber imuSensorSub_;
   ros::Subscriber leftFootSensorSub_;
   ros::Subscriber rightFootSensorSub_;
+  ros::Subscriber leftHandSensorSub_;
+  ros::Subscriber rightHandSensorSub_;
   ros::Subscriber behaviorSub_;
   ros::Subscriber lastReceivedMessageSub_;
   ros::Subscriber footstepStatusSub_;
@@ -97,20 +102,27 @@ private:
   void imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg);
   void imuSensorCallback(const sensor_msgs::ImuConstPtr& msg);
 
-  void leftFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg);
-  void rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg);
+  void leftFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+  void rightFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+  void leftHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+  void rightHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
   void behaviorCallback(const std_msgs::Int32ConstPtr& msg);
   void lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg);
   void footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg);
 
-  void appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wrench left_sensor,
-                         geometry_msgs::Wrench right_sensor);
+  void appendSensors(pronto::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+                         geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
+  void appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+                         geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
+
   void publishLidar(const sensor_msgs::LaserScanConstPtr& msg, std::string channel);
   void publishMultisenseState(int64_t utime, float position, float velocity);
 
   nav_msgs::Odometry lastPoseMsg_;
-  geometry_msgs::Wrench lastLeftFootSensorMsg_;
-  geometry_msgs::Wrench lastRightFootSensorMsg_;
+  geometry_msgs::WrenchStamped lastLeftFootSensorMsg_;
+  geometry_msgs::WrenchStamped lastRightFootSensorMsg_;
+  geometry_msgs::WrenchStamped lastLeftHandSensorMsg_;
+  geometry_msgs::WrenchStamped lastRightHandSensorMsg_;
 
   int64_t lastJointStateUtime_;
   bool verbose_;
@@ -154,6 +166,10 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
                                        &App::leftFootSensorCallback, this);
   rightFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/right"),
                                         queue_size, &App::rightFootSensorCallback, this);
+  leftHandSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/wrist_force_sensor/left"), queue_size,
+                                       &App::leftHandSensorCallback, this);
+  rightHandSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/wrist_force_sensor/right"),
+                                        queue_size, &App::rightHandSensorCallback, this);
   // using previously used queue_size for scan:
   behaviorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/behavior"), 100, &App::behaviorCallback,
                                  this);
@@ -262,14 +278,24 @@ void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
   }
 }
 
-void App::leftFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg)
+void App::leftFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg)
 {
   lastLeftFootSensorMsg_ = *msg;
 }
 
-void App::rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg)
+void App::rightFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg)
 {
   lastRightFootSensorMsg_ = *msg;
+}
+
+void App::leftHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg)
+{
+  lastLeftHandSensorMsg_ = *msg;
+}
+
+void App::rightHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg)
+{
+  lastRightHandSensorMsg_ = *msg;
 }
 
 void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
@@ -520,11 +546,14 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   joints.effort = msg->effort;
   joints.name = msg->name;
 
+  drc::six_axis_force_torque_array_t six_axis_force_torque_array;
   pronto::force_torque_t force_torque;
-  appendFootSensors(force_torque, lastLeftFootSensorMsg_, lastRightFootSensorMsg_);
+  appendSensors(force_torque, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
+  appendSensors(six_axis_force_torque_array, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
 
   if (mode_ == MODE_STATE_ESTIMATION)
   {
+
     if (robotName_.compare("atlas") == 0)
     {
       // Filter out unexpected Atlas joint names
@@ -547,7 +576,8 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     amsg.num_joints = amsg.joint_name.size();
 
     lcmPublish_.publish("CORE_ROBOT_STATE", &amsg);
-    lcmPublish_.publish("FORCE_TORQUE", &force_torque);
+    lcmPublish_.publish("FORCE_TORQUE", &six_axis_force_torque_array);
+
   }
   else if (mode_ == MODE_PASSTHROUGH)
   {
@@ -594,29 +624,92 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   lastJointStateUtime_ = joint_utime;
 }
 
-void App::appendFootSensors(pronto::force_torque_t& msg_out, geometry_msgs::Wrench left_sensor,
-                            geometry_msgs::Wrench right_sensor)
+void App::appendSensors(pronto::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+                            geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor)
 {
-  msg_out.l_foot_force_z = left_sensor.force.z;
-  msg_out.l_foot_torque_x = left_sensor.torque.x;
-  msg_out.l_foot_torque_y = left_sensor.torque.y;
-  msg_out.r_foot_force_z = right_sensor.force.z;
-  msg_out.r_foot_torque_x = right_sensor.torque.x;
-  msg_out.r_foot_torque_y = right_sensor.torque.y;
+  msg_out.l_foot_force_z = l_foot_sensor.wrench.force.z;
+  msg_out.l_foot_torque_x = l_foot_sensor.wrench.torque.x;
+  msg_out.l_foot_torque_y = l_foot_sensor.wrench.torque.y;
+  msg_out.r_foot_force_z = r_foot_sensor.wrench.force.z;
+  msg_out.r_foot_torque_x = r_foot_sensor.wrench.torque.x;
+  msg_out.r_foot_torque_y = r_foot_sensor.wrench.torque.y;
 
-  msg_out.l_hand_force[0] = 0;
-  msg_out.l_hand_force[1] = 0;
-  msg_out.l_hand_force[2] = 0;
-  msg_out.l_hand_torque[0] = 0;
-  msg_out.l_hand_torque[1] = 0;
-  msg_out.l_hand_torque[2] = 0;
-  msg_out.r_hand_force[0] = 0;
-  msg_out.r_hand_force[1] = 0;
-  msg_out.r_hand_force[2] = 0;
-  msg_out.r_hand_torque[0] = 0;
-  msg_out.r_hand_torque[1] = 0;
-  msg_out.r_hand_torque[2] = 0;
+  msg_out.l_hand_force[0] = l_hand_sensor.wrench.force.x;
+  msg_out.l_hand_force[1] = l_hand_sensor.wrench.force.y;
+  msg_out.l_hand_force[2] = l_hand_sensor.wrench.force.z;
+  msg_out.l_hand_torque[0] = l_hand_sensor.wrench.torque.x;
+  msg_out.l_hand_torque[1] = l_hand_sensor.wrench.torque.y;
+  msg_out.l_hand_torque[2] = l_hand_sensor.wrench.torque.z;
+  msg_out.r_hand_force[0] = r_hand_sensor.wrench.force.x;
+  msg_out.r_hand_force[1] = r_hand_sensor.wrench.force.y;
+  msg_out.r_hand_force[2] = r_hand_sensor.wrench.force.z;
+  msg_out.r_hand_torque[0] = r_hand_sensor.wrench.torque.x;
+  msg_out.r_hand_torque[1] = r_hand_sensor.wrench.torque.y;
+  msg_out.r_hand_torque[2] = r_hand_sensor.wrench.torque.z;
 }
+
+void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+                            geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor)
+{
+  int num_sensors = 4;
+
+  msg_out.utime = (int64_t)l_foot_sensor.header.stamp.toNSec() / 1000; 
+  msg_out.num_sensors = num_sensors;
+
+  std::vector<std::string> names;
+  names.push_back("l_foot");
+  names.push_back("r_foot");
+  names.push_back("l_hand");
+  names.push_back("r_hand");
+
+  msg_out.names = names;
+
+  std::vector<drc::six_axis_force_torque_t> sensors;
+  drc::six_axis_force_torque_t l_foot;
+  drc::six_axis_force_torque_t r_foot;
+  drc::six_axis_force_torque_t l_hand; 
+  drc::six_axis_force_torque_t r_hand;
+  
+  l_foot.utime = (int64_t)l_foot_sensor.header.stamp.toNSec() / 1000;
+  l_foot.force[0] = l_foot_sensor.wrench.force.x;
+  l_foot.force[1] = l_foot_sensor.wrench.force.y;
+  l_foot.force[2] = l_foot_sensor.wrench.force.z;
+  l_foot.moment[0] = l_foot_sensor.wrench.torque.x;
+  l_foot.moment[1] = l_foot_sensor.wrench.torque.y;
+  l_foot.moment[2] = l_foot_sensor.wrench.torque.z;
+
+  r_foot.utime = (int64_t)r_foot_sensor.header.stamp.toNSec() / 1000;
+  r_foot.force[0] = r_foot_sensor.wrench.force.x;
+  r_foot.force[1] = r_foot_sensor.wrench.force.y;
+  r_foot.force[2] = r_foot_sensor.wrench.force.z;
+  r_foot.moment[0] = r_foot_sensor.wrench.torque.x;
+  r_foot.moment[1] = r_foot_sensor.wrench.torque.y;
+  r_foot.moment[2] = r_foot_sensor.wrench.torque.z;
+
+  l_hand.utime = (int64_t)l_hand_sensor.header.stamp.toNSec() / 1000;
+  l_hand.force[0] = l_hand_sensor.wrench.force.x;
+  l_hand.force[1] = l_hand_sensor.wrench.force.y;
+  l_hand.force[2] = l_hand_sensor.wrench.force.z;
+  l_hand.moment[0] = l_hand_sensor.wrench.torque.x;
+  l_hand.moment[1] = l_hand_sensor.wrench.torque.y;
+  l_hand.moment[2] = l_hand_sensor.wrench.torque.z;
+
+  r_hand.utime = (int64_t)r_hand_sensor.header.stamp.toNSec() / 1000;
+  r_hand.force[0] = r_hand_sensor.wrench.force.x;
+  r_hand.force[1] = r_hand_sensor.wrench.force.y;
+  r_hand.force[2] = r_hand_sensor.wrench.force.z;
+  r_hand.moment[0] = r_hand_sensor.wrench.torque.x;
+  r_hand.moment[1] = r_hand_sensor.wrench.torque.y;
+  r_hand.moment[2] = r_hand_sensor.wrench.torque.z;
+ 
+  sensors.push_back(l_foot);
+  sensors.push_back(r_foot);
+  sensors.push_back(l_hand);
+  sensors.push_back(r_hand);
+
+  msg_out.sensors = sensors;
+}
+
 
 int main(int argc, char **argv)
 {
