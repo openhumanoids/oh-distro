@@ -361,7 +361,7 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   head_joints_.effort = msg->joint_effort;
   
   if (cl_cfg_->standalone_head){
-    drc::force_torque_t force_torque_msg;
+    drc::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }
   
@@ -377,7 +377,7 @@ void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   left_hand_joints_.effort = msg->joint_effort;
   
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
-    drc::force_torque_t force_torque_msg;
+    drc::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }  
 }
@@ -392,7 +392,7 @@ void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   right_hand_joints_.effort = msg->joint_effort;
   
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
-    drc::force_torque_t force_torque_msg;
+    drc::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }    
 }
@@ -440,7 +440,7 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
 }
 
 
-void state_sync::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::force_torque_t* msg){
+void state_sync::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::six_axis_force_torque_array_t* msg){
   force_torque_ = *msg;
   force_torque_init_ = true; 
 }
@@ -677,7 +677,7 @@ bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
 }
 
 
-void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t& force_torque_msg){
+void state_sync::publishRobotState(int64_t utime_in,  const  drc::six_axis_force_torque_array_t& force_torque_msg){
   
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
@@ -709,7 +709,29 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
   
   // Limb Sensor states
-  robot_state_msg.force_torque = force_torque_msg;
+  drc::force_torque_t force_torque_convert;
+  force_torque_convert.l_foot_force_z = force_torque_msg.sensors[0].force[2];
+  force_torque_convert.l_foot_torque_x = force_torque_msg.sensors[0].moment[0];
+  force_torque_convert.l_foot_torque_y = force_torque_msg.sensors[0].moment[1];
+
+  force_torque_convert.r_foot_force_z = force_torque_msg.sensors[1].force[2];
+  force_torque_convert.r_foot_torque_x = force_torque_msg.sensors[1].moment[0];
+  force_torque_convert.r_foot_torque_y = force_torque_msg.sensors[1].moment[1];
+
+  force_torque_convert.l_hand_force[0] = force_torque_msg.sensors[2].force[0];
+  force_torque_convert.l_hand_force[1] = force_torque_msg.sensors[2].force[1];
+  force_torque_convert.l_hand_force[2] = force_torque_msg.sensors[2].force[2];
+  force_torque_convert.l_hand_torque[0] = force_torque_msg.sensors[2].moment[0];
+  force_torque_convert.l_hand_torque[1] = force_torque_msg.sensors[2].moment[1];
+  force_torque_convert.l_hand_torque[2] = force_torque_msg.sensors[2].moment[2];
+  force_torque_convert.r_hand_force[0] = force_torque_msg.sensors[3].force[0];
+  force_torque_convert.r_hand_force[1] = force_torque_msg.sensors[3].force[1];
+  force_torque_convert.r_hand_force[2] = force_torque_msg.sensors[3].force[2];
+  force_torque_convert.r_hand_torque[0] = force_torque_msg.sensors[3].moment[0];
+  force_torque_convert.r_hand_torque[1] = force_torque_msg.sensors[3].moment[1];
+  force_torque_convert.r_hand_torque[2] = force_torque_msg.sensors[3].moment[2];
+
+  robot_state_msg.force_torque = force_torque_convert;
   
   // std::cout << "sending " << robot_state_msg.num_joints << " joints\n";
 

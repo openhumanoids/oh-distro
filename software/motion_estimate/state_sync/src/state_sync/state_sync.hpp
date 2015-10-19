@@ -16,6 +16,7 @@
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/system_status_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
+#include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
@@ -100,7 +101,7 @@ class state_sync{
     
     //void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     void coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
-    void forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::force_torque_t* msg);
+    void forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::six_axis_force_torque_array_t* msg);
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
     void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
     void rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
@@ -141,13 +142,13 @@ class state_sync{
     std::vector<int> encoder_joint_indices_;
     std::vector<int> extra_offsettable_joint_indices_;
 
-    void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
+    void publishRobotState(int64_t utime_in, const  drc::six_axis_force_torque_array_t& msg);
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);
     
     bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose);
 
 
-    drc::force_torque_t force_torque_; // More recent force torque messurement
+    drc::six_axis_force_torque_array_t force_torque_; // More recent force torque messurement
     bool force_torque_init_; // Have we received a force torque message?
 
 };    
