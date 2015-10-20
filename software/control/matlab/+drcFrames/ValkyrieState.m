@@ -5,13 +5,16 @@ classdef ValkyrieState < LCMCoordinateFrame & Singleton
 
       obj = obj@LCMCoordinateFrame('drcFrames.ValkyrieState',r.getNumStates(),'x');
       obj = obj@Singleton();
-      joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
+
+      joint_names = {r.getStateFrame.getCoordinateNames{1:getNumPositions(r)}}';
       if isempty(obj.lcmcoder)  % otherwise I had a singleton
 
         coder = drc.control.RobotStateCoder(joint_names);
 
         obj.setLCMCoder(JLCMCoder(coder));
-        obj.setCoordinateNames(r.getStateFrame.coordinates);
+%        obj.setCoordinateNames(r.getStateFrame.getCoordinateNames);
+        obj.setCoordinateNames({r.getStateFrame.getCoordinateNames{1:(r.getNumPositions() + r.getNumVelocities())}}');
+        
         obj.setDefaultChannel('EST_ROBOT_STATE');
       end
     end
