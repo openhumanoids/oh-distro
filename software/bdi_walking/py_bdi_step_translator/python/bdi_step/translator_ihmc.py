@@ -59,7 +59,6 @@ class IHMCStepTranslator(object):
         self.T_local_to_localbdi = msg
 
     def handle_footstep_plan(self, channel, msg):
-        #print 'I am inside the handle_footstep_plan funtion!'
         if isinstance(msg, str):
             msg = drc.footstep_plan_t.decode(msg)
 
