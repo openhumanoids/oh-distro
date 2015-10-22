@@ -1,6 +1,6 @@
 [submodule "software/drake"]
 	path = software/drake
-	url = git@github.com:RobotLocomotion/drake.git
+	url = git@github.com:mitdrc/drake.git
 
 [submodule "software/pronto"]
 	path = software/pronto

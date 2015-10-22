@@ -2,17 +2,43 @@ classdef Info
   
   properties (Constant)
     SUCCESS = 1
-    FAIL_KINEMATIC_CONSTRAINT = 2
-    FAIL_COLLISION = 3
-    FAIL_TOO_MANY_ITERATIONS = 4
-    FAIL_OTHER = 5
-    NEW_POINT_ADDED = 6
+    FAIL_KINEMATIC_CONSTRAINT = 11
+    FAIL_COLLISION = 12
+    FAIL_TOO_MANY_ITERATIONS = 13
+    FAIL_OTHER = 14
+    FAIL_NO_FINAL_POSE = 15
   end
   
   properties
     status
     failingConfiguration
     infeasibleConstraints
+    finalPoseTime
+    reachingTime
+    improvingTime
+    shortcutTime
+    rebuildTime
+    reachingNpoints
+    improvingNpoints
+    shortcutNpoints
+    rebuildNpoints
+    IKTime
+    IKFinalPoseTime
+    IKReachingTime
+    IKImprovingTime
+    IKShortcutTime
+    IKRebuildTime
+    collisionTime
+    collisionFinalPoseTime
+    collisionReachingTime
+    collisionImprovingTime
+    collisionShortcutTime
+    costReaching
+    costImproving
+    costShortcut
+    nPoints
+    nTrees
+    finalPoseCost
   end
   
   methods
@@ -32,8 +58,11 @@ classdef Info
     end
     
     function status = getStatus(obj)
-      constProps = obj.getConstProps();
-      status = constProps{obj.status};
+      status = obj.status;
+    end
+    
+    function obj = setStatus(obj, status)
+      obj.status = status;
     end
     
     function res = eq(obj, val)

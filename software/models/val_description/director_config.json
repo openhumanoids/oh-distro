@@ -1,4 +1,5 @@
 {
+  "modelName" : "valkyrie_v2",
   "urdfConfig": {
     "default": "./urdf/valkyrie_A_sim.urdf",
     "robotState": "./urdf/valkyrie_A_sim.urdf",
@@ -165,16 +166,18 @@
     "rightAnklePitch",
     "rightAnkleRoll"
   ],
-  "fixedPointFile" : "../../control/matlab/data/valkyrie_fp_june2015.mat",
+  "fixedPointFile" : "../../control/matlab/data/val_description/valkyrie_fp_june2015.mat",
   "leftFootMeshFiles" : ["model/meshes/legs/foot.obj"],
   "rightFootMeshFiles" : ["model/meshes/legs/foot.obj"],
   "postureDatabaseFile" : "./stored_poses.json",
-  "mirrorJointSignFlips" : ["waistRotator"],
+  "capabilityMapFile": "../../control/matlab/data/val_description/capabilityMap.mat",
+  "mirrorJointSignFlips" : ["WaistRotator"],
 
   "pelvisLink" : "pelvis",
   "headLink" : "head",
   "leftFootLink" : "leftFoot",
   "rightFootLink" : "rightFoot",
+  "elbowLinks" : ["leftElbowPitchLink", "rightElbowPitchLink"],
   "kneeJoints" : ["leftKneePitch", "rightKneePitch"],
   "kneeJointLimits" : [0.6,1.9],
   "baseZJointLimits" : [0.955, 1.14],

@@ -24,14 +24,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/arms/palm_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/arms/palm_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/arms/palm_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/arms/palm_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -44,14 +44,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -64,14 +64,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -84,14 +84,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -104,14 +104,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj4_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj4_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/thumbj4_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/thumbj4_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -160,14 +160,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/indexj1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/indexj1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -180,14 +180,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/indexj2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/indexj2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -200,14 +200,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/indexj3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/indexj3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/indexj3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -247,14 +247,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/middlej1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/middlej1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -267,14 +267,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/middlej2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/middlej2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -287,14 +287,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/middlej3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/middlej3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/middlej3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -334,14 +334,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/pinkyj1_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj1_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/pinkyj1_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -354,14 +354,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/pinkyj2_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj2_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/pinkyj2_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -374,14 +374,14 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/pinkyj3_right.obj"/>
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <material name="Gold"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://val_description/meshes/fingers/pinkyj3_right.obj"/>
+        <mesh filename="package://val_description/model/meshes/fingers/pinkyj3_right.obj"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>

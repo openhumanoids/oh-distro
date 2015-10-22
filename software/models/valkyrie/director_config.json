@@ -1,4 +1,5 @@
 {
+  "modelName" : "valkyrie_v1",
   "urdfConfig": {
     "default": "./V1_sim_shells_reduced_polygon_count_mit.urdf",
     "robotState": "./V1_sim_shells_reduced_polygon_count_mit.urdf",
@@ -165,10 +166,11 @@
     "RightAnkleExtensor",
     "RightAnkle"
   ],
-  "fixedPointFile" : "../../control/matlab/data/valkyrie_fp.mat",
+  "fixedPointFile" : "../../control/matlab/data/valkyrie/valkyrie_fp.mat",
   "leftFootMeshFiles" : ["meshes/reduced_polygon_meshes/lj6_Left_7.5degree.stl"],
   "rightFootMeshFiles" : ["meshes/reduced_polygon_meshes/lj6_Right_7.5degree.stl"],
   "postureDatabaseFile" : "./stored_poses.json",
+  "capabilityMapFile": "../../control/matlab/data/valkyrie/capabilityMap.mat",
   "mirrorJointSignFlips" : ["WaistRotator"],
 
   "pelvisLink" : "Pelvis",

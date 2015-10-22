@@ -52,20 +52,20 @@ if strcmp(model,'v3')
   S = load([getDrakePath(), '/examples/Atlas/data/atlas_fp.mat']);
 %elseif (which_robot == 4) % version 4 is not supported 
 %  urdf = fullfile(getDrakePath(),'..','models','atlas_v4','model_convex_hull_fingers.urdf');
-%  S = load([getDrakePath(), '/../control/matlab/data/atlas_v4_fp.mat']);   
+%  S = load([getDrakePath(), '/../control/matlab/data/atlas_v4/atlas_v4_fp.mat']);
 elseif strcmp(model,'v5')
   urdf = fullfile(getDrakePath(),'..','models','atlas_v5','model_convex_hull_fingers.urdf');
-  S = load([getDrakePath(), '/../control/matlab/data/atlas_v5_fp.mat']);   
+  S = load([getDrakePath(), '/../control/matlab/data/atlas_v5/atlas_v5_fp.mat']);
 elseif strcmp(model,'val1')
   urdf = fullfile(getDrakePath(),'../..','models','valkyrie','V1_sim_shells_reduced_polygon_count_mit.urdf');
-  S = load([getDrakePath(), '/../../control/matlab/data/valkyrie_fp.mat']);
+  S = load([getDrakePath(), '/../control/matlab/data/valkyrie/valkyrie_fp.mat']);
   options.l_foot_link_name = 'LeftUpperFoot';
   options.r_foot_link_name = 'RightUpperFoot';
   options.l_hand_link_name = 'LeftPalm';
   options.r_hand_link_name = 'RightPalm';  
 elseif strcmp(model,'val2')
   urdf = fullfile(getDrakePath(),'../../models/val_description/urdf/valkyrie_A_sim_drake.urdf');
-  S = load([getDrakePath(), '/../../control/matlab/data/valkyrie_fp_june2015.mat']);
+  S = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat']);
   options.l_foot_link_name = 'leftFoot';
   options.r_foot_link_name = 'rightFoot';
   options.l_hand_link_name = 'leftPalm';

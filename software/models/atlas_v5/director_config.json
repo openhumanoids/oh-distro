@@ -1,4 +1,5 @@
 {
+  "modelName" : "atlas_v5",
   "urdfConfig": {
     "default": "./model_LR_RR.urdf",
     "robotState": "./model_LR_RR.urdf",
@@ -159,7 +160,7 @@
     "r_arm_mwx",
     "r_arm_lwy"
   ],
-  "fixedPointFile" : "../../control/matlab/data/atlas_v5_fp.mat",
+  "fixedPointFile" : "../../control/matlab/data/atlas_v5/atlas_v5_fp.mat",
   "leftFootMeshFiles" : ["meshes/l_talus.obj", "meshes/l_foot.obj"],
   "rightFootMeshFiles" : ["meshes/r_talus.obj", "meshes/r_foot.obj"],
   "postureDatabaseFile" : "./stored_poses.json",
