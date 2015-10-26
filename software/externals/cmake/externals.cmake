@@ -76,7 +76,7 @@ set(spotless_url ssh://git@github.com/RobotLocomotion/spotless-pod.git)
 set(spotless_revision 91e1e3970e62b8dd8d74bbc4446504b11990f598)
 set(spotless_depends)
 
-set(snopt_url ssh://git@github.com/RobotLocomotion/snopt.git)
+set(snopt_url ssh://git@github.com/openhumanoids/snopt.git)
 set(snopt_revision 95d908275156f2665ef3941f08cb89c767480a6e)
 set(snopt_depends)
 
