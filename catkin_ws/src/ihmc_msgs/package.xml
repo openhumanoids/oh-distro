@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <name>ihmc_msgs</name>
+  <version>0.3.2</version>
+  <description>The ihmc_msgs package defines the IHMC ROS API</description>
+
+  <maintainer email="bshrewsbury@ihmc.us">The People's Glorious Point of Contact</maintainer>
+
+  <license>Apache 2.0</license>
+
+  <url type="website">http://bitbucket.org/ihmcrobotics/ihmc_ros</url>
+
+  <author email="bshrewsbury@ihmc.us">The People's Glorious Author</author>
+
+  <build_depend>message_generation</build_depend>
+  <run_depend>message_runtime</run_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+</package>
