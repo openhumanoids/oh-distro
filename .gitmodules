@@ -1,13 +1,21 @@
 [submodule "software/drake"]
 	path = software/drake
-	url = git@github.com:mitdrc/drake.git
-
+	url = git@github.com:openhumanoids/drake.git
 [submodule "software/pronto"]
 	path = software/pronto
-	url = git@github.com:mitdrc/pronto.git
+	url = git@github.com:openhumanoids/pronto.git
 [submodule "software/ddapp"]
 	path = software/ddapp
 	url = git@github.com:RobotLocomotion/director.git
 [submodule "software/motion_estimate/signal-scope"]
 	path = software/motion_estimate/signal-scope
-	url = git@github.com:mitdrc/signal-scope.git
+	url = git@github.com:openhumanoids/signal-scope.git
+[submodule "catkin_ws/src/exotica"]
+	path = catkin_ws/src/exotica
+	url = git@github.com:openhumanoids/exotica.git
+[submodule "catkin_ws/src/exotica_json"]
+	path = catkin_ws/src/exotica_json
+	url = git@github.com:openhumanoids/exotica_json.git
+[submodule "catkin_ws/src/ipab_lwr_msgs"]
+	path = catkin_ws/src/ipab_lwr_msgs
+	url = git@github.com:ipab-slmc/ipab_lwr_msgs.git
