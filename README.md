@@ -4,15 +4,14 @@ This repository brings together modules for motion planning, control, interfaces
 ## Repository structure
 
 * [ipab-slmc/ipab-distro](https://github.com/ipab-slmc/ipab-distro)
-  * [mitdrc/drc](https://github.com/mitdrc/drc)
+  * [openhumanoids/main-distro](https://github.com/openhumanoids/main-distro)
     * [RobotLocomotion/director](https://github.com/RobotLocomotion/director)
-    * [mitdrc/drake](https://github.com/mitdrc/drake)
+    * [openhumanoids/drake](https://github.com/openhumanoids/drake)
       * [RobotLocomotion/cmake ](https://github.com/RobotLocomotion/cmake)
-    * [mitdrc/pronto](https://github.com/mitdrc/pronto)
-  * [ipab-slmc/ipab-ros-workspace](https://github.com/ipab-slmc/ipab-ros-workspace)
+    * [openhumanoids/pronto](https://github.com/openhumanoids/pronto)
     * [ipab-slmc/ipab_lwr_msgs](https://github.com/ipab-slmc/ipab_lwr_msgs)
-    * [IPAB-SLMC/exotica](https://bitbucket.org/IPAB-SLMC/exotica) (Bitbucket)
-    * [IPAB-SLMC/exotica_json](https://bitbucket.org/IPAB-SLMC/exotica_json) (Bitbucket)
+    * [openhumanoids/exotica](https://github.com/openhumanoids/exotica)
+    * [openhumanoids/exotica_json](https://github.com/openhumanoids/exotica_json)
 
 ## Basics (Git)
 All our source code is stored in Git repositories. Please ensure that you have git installed on your system:
@@ -86,19 +85,19 @@ git submodule update --init --recursive
 cd drc
 ```
 
-The next step is to build the DRC repository. Follow the instructions starting at 'Add the sandbox remote' here:
+The next step is to build the OpenHumanoids repository. Follow the instructions starting at 'Add the sandbox remote' here:
 
-* https://github.com/mitdrc/drc
+* https://github.com/openhumanoids/main-distro
 
 
 
 ### ROS workspace
 
-The final step is build the IPAB ROS workspace. The following should be added to your bashrc:
+The final step is build the ROS workspace. The following should be added to your bashrc:
 
     source ~/ipab-distro/drc/software/config/drc_environment.sh
     source /opt/ros/indigo/setup.bash
-    source $DRC_BASE/../ipab-ros-workspace/devel/setup.bash
+    source $DRC_BASE/catkin_ws/devel/setup.bash
 
 The devel/setup.bash file will be created after you compile the catkin workspace. You may want to source this file after the first compilation.
 
