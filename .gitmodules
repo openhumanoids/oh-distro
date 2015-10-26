@@ -1,6 +1,3 @@
-[submodule "ipab-ros-workspace"]
-	path = ipab-ros-workspace
-	url = git@github.com:ipab-slmc/ipab-ros-workspace.git
 [submodule "drc"]
 	path = drc
 	url = git@github.com:mitdrc/drc.git
