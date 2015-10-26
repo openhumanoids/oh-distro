@@ -3,7 +3,7 @@
 
 # Source environment
 . ~/ipab-distro/drc/software/config/drc_environment.sh
-. ~/ipab-distro/ipab-ros-workspace/devel/setup.bash
+. ~/ipab-distro/drc/catkin_ws/devel/setup.bash
 
 # two step make - if fails, then do both
 
@@ -21,5 +21,5 @@ cd ..
 make -j6 $1
 
 # ipab-ros-workspace
-cd ../../ipab-ros-workspace
+cd ../catkin_ws
 catkin_make -DCMAKE_BUILD_TYPE=RelWithDebInfo -j6 $1
