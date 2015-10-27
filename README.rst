@@ -1,13 +1,13 @@
-=======
-MIT DRC
-=======
+================================
+OpenHumanoids (formerly MIT DRC)
+================================
 
 .. contents:: Table of Contents
 
 Introduction
 ============
 
-This README describes how to download and build the MIT DRC source code
+This README describes how to download and build the OpenHumanoids source code
 and how to satisfy 3rd party dependencies.
 
 
@@ -60,9 +60,9 @@ Download the repository with the ``git clone`` command:
 
 ::
 
-    git clone git@github.com:mitdrc/drc.git
+    git clone git@github.com:openhumanoids/main-distro.git
 
-Initialize the Drake submodule:
+Initialize the submodules (Drake, director, pronto):
 
 ::
 
@@ -73,7 +73,7 @@ Add the *sandbox* remote. The *sandbox* is the location where branches can be sh
 
 ::
 
-    git remote add sandbox git@github.com:drcbot/drc.git
+    git remote add sandbox git@github.com:drcbot/main-distro.git
     git fetch sandbox
 
 **Instructions for Edinburgh users**
@@ -84,8 +84,7 @@ For Edinburgh users the typical approach is to instead check out:
 
     https://github.com/ipab-slmc/ipab-distro
 
-which includes the DRC repo as well as the LCM-to-ROS interface to NASA Valkyrie, IHMC's SCS, 
-Kuka LWR arm and the Exotica planner.
+which includes the DRC repo as well as the LCM-to-ROS interface to NASA Valkyrie, IHMC's SCS, Kuka LWR arm and the Exotica planner.
 
 
 Dependencies
@@ -274,38 +273,21 @@ This rysnc command can easily transfer logs to Virgo:
 
     rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /home/drc/logs/<logname>  <username>@virgo.csail.mit.edu:/var/www/projects/drc-logs
 
-DEPRECIATED INSTRUCTIONS
-========================
+ROS
+===
 
-Neither ROS or Gazebo are currently required. These instructions are likely to be broken
-as a result. If ROS is to be supported we will use ROS Indigo.
-
-Gazebo
-------
-
-Gazebo (http://gazebosim.org/wiki/2.2/install#Install_Required_Dependencies)
-
-In addition to above packages, run:
+ROS is not required per se. If you would like to use this distribution in conjunction with SCS for the Valkyrie or to use EXOTica for planning and optimisation, please install ROS Indigo including MoveIt:
 
 ::
 
-    sudo apt-get install libboost-all-dev libcegui-mk2-dev libopenal-dev  libswscale-dev libavformat-dev libavcodec-dev libogre-dev libgts-dev libltdl3-dev playerc++ libplayerwkb3.0-dev
-
-DRCSIM requires ROS dependencies listed here: http://gazebosim.org/wiki/DRC/Install#Ubuntu_and_ROS_Groovy
-
-After you have installed ros packages you should run these commands:::
-
-    sudo rosdep init
-    rosdep update
+    sudo apt-get install ros-indigo-desktop-full ros-indigo-moveit-full
 
 
-Subversion Setup
-----------------
-Building the DRC Externals requires you to check out copies of several libraries from SVN repositories. You'll need to make sure you've set up your access to those repositories beforehand, or the SVN checkout will fail with a rather obscure error. The easiest way make sure your SVN access is properly set up is to do the following:
 
-::
+DEPRECATED INSTRUCTIONS
+=======================
 
-    svn info https://svn.csail.mit.edu/drc
-    svn info https://svn.csail.mit.edu/rrg_pods
+Deprecated instructions regarding the use of Subversion or Gazebo can be found here_.
 
-Enter your username and password for those repos (which may be different from your CSAIL username/password--ask us if you need access). SVN will remember those credentials for you, although on some systems it will do so by storing them in a plaintext file. Verify that SVN remembers your password by running the commands again and noting that it does not ask you for a username or password. 
+:: _here: README_DEPRECATED.rst
+
