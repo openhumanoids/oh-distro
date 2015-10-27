@@ -289,5 +289,5 @@ DEPRECATED INSTRUCTIONS
 
 Deprecated instructions regarding the use of Subversion or Gazebo can be found here_.
 
-:: _here: README_DEPRECATED.rst
+.. _here: README_DEPRECATED.rst
 
