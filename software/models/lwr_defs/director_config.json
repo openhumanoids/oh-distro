@@ -64,11 +64,6 @@
   "fixedPointFile" : "../../control/matlab/data/kuka/kuka_lwr_fp.mat",
   "postureDatabaseFile" : "./stored_poses.json",
 
-  "drivingThrottleJoint" : "lwr_arm_0_joint",
-  "drivingSteeringJoint" : "lwr_arm_1_joint",
-  "leftFootLink" : "lwr_arm_2_link",
-  "rightFootLink" : "lwr_arm_3_link",
-  "headLink" : "lwr_arm_1_link",
 
   "handCombinations": [
       { "side" : "left",

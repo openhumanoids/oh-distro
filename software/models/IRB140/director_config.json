@@ -20,6 +20,18 @@
           "joint6"
           ],
         "labels" : ["1", "2", "3", "4", "5", "6"]
+      },
+
+      { "name" : "Base",
+        "joints" : [
+          "base_x",
+          "base_y",
+          "base_z",
+          "base_roll",
+          "base_pitch",
+          "base_yaw"
+          ],
+        "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
       }
 
     ],
@@ -47,12 +59,10 @@
     "joint5",
     "joint6"
   ],
-  "fixedPointFile" : "../../control/matlab/data/abb_irb140_fp.mat",
+
+  "fixedPointFile" : "../../control/matlab/data/abb/abb_irb140_fp.mat",
   "postureDatabaseFile" : "stored_poses.json",
 
-  "drivingThrottleJoint" : "joint1",
-  "drivingSteeringJoint" : "joint2",
-  "headLink":"link_6",
 
   "handCombinations": [
       { "side" : "left",
