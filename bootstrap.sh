@@ -8,16 +8,15 @@ cd ipab-distro
 git submodule update --init --recursive
 cd drc
 
-git remote add sandbox git@github.com:drcbot/drc.git
+git remote add sandbox git@github.com:drcbot/main-distro.git
 git fetch sandbox
 
 cd software/ddapp
-git remote add sandbox git@github.com:mitdrc/director.git
+git remote add sandbox git@github.com:openhumanoids/director.git
 git fetch sandbox
 
 # Sets up shortcuts
-echo "alias init_drc='source ~/ipab-distro/drc/software/config/drc_environment.sh'" >> ~/.bashrc
-# source ~/ipab-distro/ipab-ros-workspace/devel/setup.bash
+echo "alias init_drc='source ~/ipab-distro/drc/software/config/drc_environment.sh ; source ~/ipab-distro/drc/catkin_ws/devel/setup.bash'" >> ~/.bashrc
 
 mkdir -p ~/Documents/MATLAB
 touch ~/Documents/MATLAB/startup.m
