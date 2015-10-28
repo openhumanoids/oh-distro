@@ -47,7 +47,8 @@
     "joint5",
     "joint6"
   ],
-  "fixedPointFile" : "../../control/matlab/data/abb_irb140_fp.mat",
+
+  "fixedPointFile" : "../../control/matlab/data/abb/abb_irb140_fp.mat",
   "postureDatabaseFile" : "stored_poses.json",
 
 
