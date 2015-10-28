@@ -2,7 +2,7 @@ set(lcm_pod_url https://github.com/RobotLocomotion/lcm-pod.git)
 set(lcm_pod_revision c43ae7d)
 set(lcm_pod_depends)
 
-set(libbot_url https://github.com/mitdrc/libbot.git)
+set(libbot_url https://github.com/openhumanoids/libbot.git)
 set(libbot_revision eb61f9bed5df654ffb0ce47ce44ca3d379a6e6e8)
 set(libbot_depends)
 
@@ -10,11 +10,11 @@ set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
 set(Eigen_pod_revision 3ec6bbfcb41a9ea74921720d62f86863fdf96217)
 set(Eigen_pod_depends)
 
-set(opencv-pod_url https://github.com/mitdrc/opencv-pod.git)
+set(opencv-pod_url https://github.com/openhumanoids/opencv-pod.git)
 set(opencv-pod_revision 7f4c81676f887ee64da446f1ba61a3e5ed80f879)
 set(opencv-pod_depends Eigen_pod)
 
-set(flann-pod_url https://github.com/mitdrc/flann-pod.git)
+set(flann-pod_url https://github.com/openhumanoids/flann-pod.git)
 set(flann-pod_revision 9619e03a1d1f8b4b27d370810b9b2ccfe00adf58)
 set(flann-pod_depends)
 
@@ -28,27 +28,27 @@ set(pcl_external_args
     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
   )
 
-set(octomap-pod_url https://github.com/mitdrc/octomap-pod.git)
+set(octomap-pod_url https://github.com/openhumanoids/octomap-pod.git)
 set(octomap-pod_revision 590b430dfe9f949118fdd618b620d82d84eb0162)
 set(octomap-pod_depends)
 
-set(occ-map_url https://github.com/mitdrc/occ-map.git)
+set(occ-map_url https://github.com/openhumanoids/occ-map.git)
 set(occ-map_revision 34ab71fa693216d2c0508f0f2680b9a68994f473)
 set(occ-map_depends libbot opencv-pod)
 
-set(common_utils_url https://github.com/mitdrc/common_utils.git)
+set(common_utils_url https://github.com/openhumanoids/common_utils.git)
 set(common_utils_revision 7fc252e3b1baf8ec6a19ee812ae114e8ee460dbd)
 set(common_utils_depends Eigen_pod libbot occ-map octomap-pod)
 
-set(frsm_url ssh://git@github.com/mitdrc/frsm.git)
+set(frsm_url ssh://git@github.com/openhumanoids/frsm.git)
 set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
 set(frsm_depends libbot)
 
-set(kinect_url https://github.com/mitdrc/kinect.git)
+set(kinect_url https://github.com/openhumanoids/kinect.git)
 set(kinect_revision 1b7c944c08ba4e3a488298d1cdbf6f8485fb015e)
 set(kinect_depends libbot)
 
-set(microstrain_url https://github.com/mitdrc/microstrain.git)
+set(microstrain_url https://github.com/openhumanoids/microstrain.git)
 set(microstrain_revision 93f4582491f0cfec1c658ed3fb84ae84a13bc6c2)
 set(microstrain_depends common_utils)
 
@@ -60,11 +60,11 @@ set(fovis_url ssh://git@github.com/fovis/fovis.git)
 set(fovis_revision ee2fe6593ed9e7e5ce2b2f6f1c64b627da119090)
 set(fovis_depends libbot kinect)
 
-set(estimate-pose_url https://github.com/mitdrc/estimate-pose.git)
+set(estimate-pose_url https://github.com/openhumanoids/estimate-pose.git)
 set(estimate-pose_revision e24a46af00c46116b76f69ff0f20923e60daa519)
 set(estimate-pose_depends fovis)
 
-set(vicon_url https://github.com/mitdrc/vicon.git)
+set(vicon_url https://github.com/openhumanoids/vicon.git)
 set(vicon_revision 867d2f1192ad37b2c37ad3d7611e40ef27ff349d)
 set(vicon_depends libbot)
 
@@ -85,7 +85,7 @@ set(gurobi_revision b95a186b4d988db00ada55bd8efb08c651a83fe7)
 set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/gurobi5.6.2_linux64.tar.gz)
 set(gurobi_depends)
 
-set(iris_url ssh://git@github.com/mitdrc/iris-distro.git)
+set(iris_url ssh://git@github.com/openhumanoids/iris-distro.git)
 set(iris_revision 1499f62a582682d66a6ee14e04cf68dbbf625fdb)
 set(iris_depends)
 
@@ -97,7 +97,7 @@ set(pypolyhedron_url ssh://git@github.com/rdeits/pypolyhedron.git)
 set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
 set(pypolyhedron_depends)
 
-set(kinematics-utils_url ssh://git@github.com/mitdrc/kinematics-utils.git)
+set(kinematics-utils_url ssh://git@github.com/ipab-slmc/kinematics-utils.git)
 set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
 set(kinematics-utils_depends Eigen_pod)
 
@@ -111,7 +111,7 @@ set(libmultisense_external_args
     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
   )
 
-set(multisense-lcm_url http://github.com/mitdrc/multisense-lcm.git)
+set(multisense-lcm_url http://github.com/openhumanoids/multisense-lcm.git)
 set(multisense-lcm_revision b05368f47219642fdebe06f93fe8193f740ed34f)
 set(multisense-lcm_depends libmultisense)
 

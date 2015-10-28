@@ -8,3 +8,4 @@ flycapture
 ptgrey
 robotiqhand
 irobothand
+openni

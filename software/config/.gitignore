@@ -2,3 +2,4 @@
 /gurobi_setup.sh
 /pods_setup_all.sh
 encoder_offsets.cfg
+iris_setup.sh
