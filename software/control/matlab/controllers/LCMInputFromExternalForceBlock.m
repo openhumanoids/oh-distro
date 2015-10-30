@@ -4,15 +4,26 @@ classdef LCMInputFromExternalForceBlock < MIMODrakeSystem
     lc;
     lcmonitor_external_force;
     force_magnitude=0;
+    manip;
+    force_torque = {}; % stores the force torque gotten from LCM Handlers, one for each ForceElement
+    % each element of the cell should be a 6x1 array
   end
   
   methods
     function obj = LCMInputFromExternalForceBlock(r_complete, force_element)
 
-      % Generate AtlasInput as out (we'll do translation manually)
-      output_frame = r_complete.getInputFrame.frame{2};
-      
-      % We'll need atlas state as input
+      obj.manip = r_complete.getManipulator();
+      obj.num_force_elements = length(obj.manip.force);
+      obj.force_elements = obj.manip.force;
+
+      output_frame = MultiCoordinateFrame.constructFrame(manip.force);
+      frames = {};
+      for i=1:obj.num_force_elements
+        frames{i} = obj.force_elements{i}.constructFrame();
+        obj.force_torque{i} = zeros(6,1);
+      end
+
+      output_frame = MultiCoordinateFrame.constructFrame(frames);
       input_frame = CoordinateFrame('empty', 0);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
@@ -20,17 +31,15 @@ classdef LCMInputFromExternalForceBlock < MIMODrakeSystem
       obj = setOutputFrame(obj,output_frame);
       obj.force_magnitude=0;
       
-      
-      % obj.lc = lcm.lcm.LCM.getSingleton();
-      % obj.lcmonitor_external_force = drake.util.MessageMonitor(drc.atlas_command_t,'utime');
-      % obj.lc.subscribe('EXTERNAL_FORCE',obj.lcmonitor_neck);
+
+      % need to setup the LCM handlers . . . 
 
       
     end
     
     
     function varargout=mimoOutput(obj,t,x,varargin)
-      varargout = {obj.force_magnitude};      
+      varargout = {obj.force_torque};      
     end
 
   end
