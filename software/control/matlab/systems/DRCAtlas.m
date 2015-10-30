@@ -8,7 +8,8 @@ classdef DRCAtlas < Atlas
       end
       options = applyDefaults(options,...
                               struct('atlas_version', 5,...
-                                     'use_new_kinsol', true));
+                                     'use_new_kinsol', true, ...
+                                     'external_thrust', false));
 
       if ~any(options.atlas_version == [3,4,5])
         error('Atlas:badVersion','Invalid Atlas version. Valid values are 3, 4, and 5')
@@ -165,7 +166,7 @@ classdef DRCAtlas < Atlas
       obj = obj.setStateFrame(state_frame);
       
       % Same bit of complexity for input frame to get hand inputs
-      if (obj.hand_right > 0 || obj.hand_left > 0 || obj.external_force > 0)
+      if (obj.hand_right > 0 || obj.hand_left > 0 || obj.external_force > 0 || obj.has_force_element)
         input_frame = getInputFrame(obj);
         input_frame  = replaceFrameNum(input_frame,1,drcFrames.AtlasInput(obj));
       else
@@ -237,6 +238,13 @@ classdef DRCAtlas < Atlas
       z_above_feet = pelvis(3) - foot_z;
       zmin = q(3) - (z_above_feet-obj.pelvis_min_height);
       zmax = q(3) + (obj.pelvis_max_height-z_above_feet);
+    end
+
+    function obj = addForceElement(obj, force_element)
+      manip = obj.manip.addForceElement(force_element);
+      obj.has_force_element = true;
+      obj = obj.setManipulator(manip);
+      obj = obj.compile();
     end
 
   end

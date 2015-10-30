@@ -15,7 +15,8 @@ use_mass_est = false;
 foot_force_sensors = true;
 
 % And if you want external wrench input on pelvis
-use_external_force = 'mtorso';
+use_external_force = '';
+use_force_element = true;
 initial_offset_xyzrpy = [0;0;0;0;0;0];
 
 % silence some warnings
@@ -62,6 +63,9 @@ terrainSDF = fullfile(sdfDir,'drc_practice_task_2.world');
 options.hand_right = getHandString(right_hand);
 options.hand_left = getHandString(left_hand);
 options.external_force = use_external_force;
+
+
+
 
 if (strcmp(world_name,'steps'))
   boxes = [1.0, 0.0, 1.2, 1, 0.15;
@@ -144,6 +148,15 @@ elseif(strcmp(world_name,'polaris_step'))
 end
 r_complete = compile(r_complete);
 
+if (use_force_element)
+  frame_id = r_complete.findLinkId('pelvis');
+  name = 'pelvis_force';
+  axis = [0,0,1];
+  pelvis_force = RigidBodyThrust(frame_id, axis);
+  pelvis_force.name = name;
+  r_complete = r_complete.addForceElement(pelvis_force);
+end
+
 % set initial state to fixed point
 S = load(r_pure.fixed_point_file);
 xstar = S.xstar;
@@ -218,6 +231,15 @@ while(~done)
   if (use_external_force)
     lcmFTBlock = LCMInputFromForceTorqueBlock(r_complete, r_pure, use_external_force);
     sys = mimoFeedback(lcmFTBlock, sys, [], [], [], outs);
+  end
+
+  if (use_force_element)
+    clear sys1_to_sys2_connection;
+    sys1_to_sys2_connection(1).from_output = 1;
+    sys1_to_sys2_connection(1).to_input = 1;
+    lcmExternalForceBlock = LCMInputFromExternalForceBlock(r_complete, pelvis_force);
+    lcmExternalForceBlock.force_magnitude = 200;
+    sys = mimoCascade(lcmExternalForceBlock, sys, sys1_to_sys2_connection, [], outs);
   end
 
   % LCM broadcast out
