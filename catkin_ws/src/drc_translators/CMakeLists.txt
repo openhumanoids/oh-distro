@@ -99,11 +99,12 @@ pods_use_pkg_config_packages(lcm2ros_exotica lcm lcmtypes_pronto-lcmtypes bot2-c
 ######################################################
 add_executable(ros2lcm_sdh src/ros2lcm_sdh.cpp)
 target_link_libraries(ros2lcm_sdh ${catkin_LIBRARIES})
-add_dependencies(ros2lcm_sdh ipab_msgs_generate_messages_cpp ihmc_msgs_generate_messages_cpp)
+add_dependencies(ros2lcm_sdh ipab_msgs_generate_messages_cpp)
 pods_use_pkg_config_packages(ros2lcm_sdh lcm lcmtypes_pronto-lcmtypes bot2-core eigen3)
 
 add_executable(lcm2ros_sdh src/lcm2ros_sdh.cpp)
 target_link_libraries(lcm2ros_sdh ${catkin_LIBRARIES})
+add_dependencies(lcm2ros_sdh ipab_msgs_generate_messages_cpp)
 pods_use_pkg_config_packages(lcm2ros_sdh lcm lcmtypes_pronto-lcmtypes bot2-core std_srvs)
 
 set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-runtime/references") # filter out linelength warnings
