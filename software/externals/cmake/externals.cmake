@@ -86,9 +86,17 @@ set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/guro
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/openhumanoids/iris-distro.git)
-set(iris_revision 1499f62a582682d66a6ee14e04cf68dbbf625fdb)
-set(iris_depends)
+set(iris_revision b278a85ba4b3b3da3af41feb39c13e4150d12d98)
+set(iris_depends Eigen_pod)
+set(iris_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+    -DIRIS_WITH_EIGEN:BOOL=OFF
+  )
 
+# not installed anymore because iris-distro installs mosek
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
 set(mosek_revision bb7000e)
 set(mosek_depends)
@@ -139,7 +147,6 @@ set(externals
   snopt
   gurobi
   iris
-  mosek
   pypolyhedron
   kinematics-utils
   )
