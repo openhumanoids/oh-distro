@@ -156,10 +156,16 @@ if (use_force_element)
   pelvis_force = RigidBodyCartesianForceTorque(name, frame_id);
   force_elements{end+1} = pelvis_force;
   
-  frame_id = r_complete.findLinkId('l_hand');
-  name = 'l_hand_force_torque';
-  l_hand_force = RigidBodyCartesianForceTorque(name, frame_id);
-  force_elements{end+1} = l_hand_force;
+%   frame_id = r_complete.findLinkId('l_hand');
+%   name = 'l_hand_force_torque';
+%   l_hand_force = RigidBodyCartesianForceTorque(name, frame_id);
+%   force_elements{end+1} = l_hand_force;
+%   r_complete = r_complete.addForceElement(force_elements);
+  
+  frame_id = r_complete.findLinkId('l_ufarm');
+  name = 'l_ufarm_force_torque';
+  l_ufarm_force = RigidBodyCartesianForceTorque(name, frame_id);
+  force_elements{end+1} = l_ufarm_force;
   r_complete = r_complete.addForceElement(force_elements);
 end
 
@@ -240,9 +246,12 @@ while(~done)
   end
 
   if (use_force_element)
+    num_force_elements = length(r_complete.getManipulator().force);
     clear sys1_to_sys2_connection;
-    sys1_to_sys2_connection(1).from_output = 1;
-    sys1_to_sys2_connection(1).to_input = 1;
+    for i=1:num_force_elements
+      sys1_to_sys2_connection(i).from_output = i;
+      sys1_to_sys2_connection(i).to_input = i;
+    end
     lcmExternalForceBlock = LCMInputFromExternalForceBlock(r_complete);
     lcmExternalForceBlock.force_magnitude = 200;
     % this is a hack, but I know what I'm doing
