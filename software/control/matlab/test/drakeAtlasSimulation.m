@@ -1,6 +1,6 @@
 function drakeAtlasSimulation(atlas_version, visualize, add_hokuyo, right_hand, left_hand, world_name,box_height)
 %NOTEST
-if nargin < 1, atlas_version = 4; end
+if nargin < 1, atlas_version = 5; end
 if nargin < 2, visualize = false; end
 if nargin < 3, add_hokuyo = true; end
 if nargin < 4, right_hand = 0; end
@@ -149,12 +149,18 @@ end
 r_complete = compile(r_complete);
 
 if (use_force_element)
+  force_elements = {};
   frame_id = r_complete.findLinkId('pelvis');
-  name = 'pelvis_force';
+  name = 'pelvis_force_torque';
   axis = [0,0,1];
-  pelvis_force = RigidBodyThrust(frame_id, axis);
-  pelvis_force.name = name;
-  r_complete = r_complete.addForceElement(pelvis_force);
+  pelvis_force = RigidBodyCartesianForceTorque(name, frame_id);
+  force_elements{end+1} = pelvis_force;
+  
+  frame_id = r_complete.findLinkId('l_hand');
+  name = 'l_hand_force_torque';
+  l_hand_force = RigidBodyCartesianForceTorque(name, frame_id);
+  force_elements{end+1} = l_hand_force;
+  r_complete = r_complete.addForceElement(force_elements);
 end
 
 % set initial state to fixed point
@@ -237,8 +243,10 @@ while(~done)
     clear sys1_to_sys2_connection;
     sys1_to_sys2_connection(1).from_output = 1;
     sys1_to_sys2_connection(1).to_input = 1;
-    lcmExternalForceBlock = LCMInputFromExternalForceBlock(r_complete, pelvis_force);
+    lcmExternalForceBlock = LCMInputFromExternalForceBlock(r_complete);
     lcmExternalForceBlock.force_magnitude = 200;
+    % this is a hack, but I know what I'm doing
+    lcmExternalForceBlock = lcmExternalForceBlock.setOutputFrame(sys.getInputFrame);
     sys = mimoCascade(lcmExternalForceBlock, sys, sys1_to_sys2_connection, [], outs);
   end
 
