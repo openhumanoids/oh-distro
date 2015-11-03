@@ -86,6 +86,15 @@ classdef LCMInputFromExternalForceBlock < MIMODrakeSystem
           varargout{i} = obj.force_torque{i};
         else
           varargout{i} = zeros(6,1);
+
+          % FOR TESTING
+          % if (i==1)
+          %   varargout{i}(6) = 100;
+          % end
+
+          % if (i==2)
+          %   varargout{i}(4) = -20;
+          % end
         end
       end
 
