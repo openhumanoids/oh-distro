@@ -150,22 +150,24 @@ r_complete = compile(r_complete);
 
 if (use_force_element)
   force_elements = {};
-  frame_id = r_complete.findLinkId('pelvis');
-  name = 'pelvis_force_torque';
-  axis = [0,0,1];
-  pelvis_force = RigidBodyCartesianForceTorque(name, frame_id);
-  force_elements{end+1} = pelvis_force;
+  linksWithForceElements = {};
+  for i=2:r_complete.getNumBodies()
+    name = r_complete.getLinkName(i);
+    if (~isempty(strfind(name,'+')))
+      idx = strfind(name,'+');
+      name = name(1:idx-1);
+    end
+    linksWithForceElements{end+1} = name;
+  end
+
+  for i=1:length(linksWithForceElements)
+    linkName = linksWithForceElements{i};
+    frame_id = r_complete.findLinkId(linkName);
+    name = strcat(linkName,'_force_torque');
+    forceTorqueElement = RigidBodyCartesianForceTorque(linkName, frame_id);
+    force_elements{end+1} = forceTorqueElement;
+  end
   
-%   frame_id = r_complete.findLinkId('l_hand');
-%   name = 'l_hand_force_torque';
-%   l_hand_force = RigidBodyCartesianForceTorque(name, frame_id);
-%   force_elements{end+1} = l_hand_force;
-%   r_complete = r_complete.addForceElement(force_elements);
-  
-  frame_id = r_complete.findLinkId('l_ufarm');
-  name = 'l_ufarm_force_torque';
-  l_ufarm_force = RigidBodyCartesianForceTorque(name, frame_id);
-  force_elements{end+1} = l_ufarm_force;
   r_complete = r_complete.addForceElement(force_elements);
 end
 
@@ -253,7 +255,6 @@ while(~done)
       sys1_to_sys2_connection(i).to_input = i;
     end
     lcmExternalForceBlock = LCMInputFromExternalForceBlock(r_complete);
-    lcmExternalForceBlock.force_magnitude = 200;
     % this is a hack, but I know what I'm doing
     lcmExternalForceBlock = lcmExternalForceBlock.setOutputFrame(sys.getInputFrame);
     sys = mimoCascade(lcmExternalForceBlock, sys, sys1_to_sys2_connection, [], outs);
