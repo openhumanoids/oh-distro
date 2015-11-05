@@ -2,18 +2,17 @@ classdef LCMInputFromExternalForceBlock < MIMODrakeSystem
   
   properties
     lc;
-    lcm_monitor = {};
-    lcmonitor_external_force;
-    force_magnitude=0;
+    lcm_monitor;
     num_force_elements = 0;
     force_elements = {};
     manip;
     body_id = [];
-    stopwatch = {};
+    shared_data_handle;
     body_name = {};
     last_msg_time;
-    force_torque = {}; % stores the force torque gotten from LCM Handlers, one for each ForceElement
-    % each element of the cell should be a 6x1 array
+    % shared_data_handle data is a struct with fields 'force_torque' and 'stopwatch'
+    % 'force_torque' stores the FT data for each body,
+    % 'stopwatch' stores the last time we geto a message with a force for that body
     timeout = 1;
 
   end
@@ -38,65 +37,84 @@ classdef LCMInputFromExternalForceBlock < MIMODrakeSystem
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
-      obj.force_magnitude=0;
 
       obj.num_force_elements = num_force_elements;
       obj.force_elements = force_elements;
+      data = struct();
+      data.force_torque = {};
+      data.stopwatch = {};
+      obj.shared_data_handle = SharedDataHandle(data);
 
       for i=1:obj.num_force_elements
         obj.body_id(i) = obj.force_elements{i}.body_id;
         obj.body_name{i} = r_complete.getLinkName(obj.body_id(i));
-        obj.force_torque{i} = zeros(6,1); % initialize
-        obj.stopwatch{i} = tic;
+        force_torque = obj.shared_data_handle.getField('force_torque');
+        force_torque{i} = zeros(6,1); % initialize
+        obj.shared_data_handle.setField('force_torque', force_torque)
+
+        stopwatch = obj.shared_data_handle.getField('stopwatch');
+        stopwatch{i} = tic;
+        obj.shared_data_handle.setField('stopwatch', stopwatch);
       end
 
       
 
       % need to setup the LCM handlers . . . 
       obj.lc = lcm.lcm.LCM.getSingleton();
-      for i=1:obj.num_force_elements
-        obj.lcm_monitor{i} = drake.util.MessageMonitor(drake.lcmt_external_force_torque, 'timestamp');
-        channel_name = strcat('EXTERNAL_FORCE_TORQUE_', int2str(obj.body_id(i)));
-        obj.lc.subscribe(channel_name, obj.lcm_monitor{i});
-      end
-      
-
+      obj.lcm_monitor = drake.util.MessageMonitor(drake.lcmt_external_force_torque, 'timestamp');
+      obj.lc.subscribe('EXTERNAL_FORCE_TORQUE', obj.lcm_monitor)
     end
     
     
     function varargout=mimoOutput(obj,t,x,varargin)
       varargout = {};
-      for i=1:obj.num_force_elements
 
-        if (obj.lcm_monitor{i}.hasNewMessage())
-          obj.stopwatch{i} = tic;
-          data = obj.lcm_monitor{i}.getMessage();
-          if (~isempty(data))
-            if strcmp(data.body_name, obj.body_name{i})
-              error('body name for this force element does not match the one in the message')
+      % only update the stored values if we have gotten a new message
+      if (obj.lcm_monitor.hasNewMessage())
+        data = obj.lcm_monitor.getMessage();
+        if (~isempty(data))
+          data = drake.lcmt_external_force_torque(data); % decode the message
+          msg_num_forces = data.num_external_forces;
+
+          for i=1:msg_num_forces
+            msg_body_name = data.body_names(i);
+            idx = find(strcmp(obj.body_name, msg_body_name));
+
+            % if the body in the message isn't a force element for our robot, then just continue
+            % to the next body specified in the message
+            if isempty(idx)
+              continue;
             end
+            force_torque = obj.shared_data_handle.getField('force_torque');
+            force_torque{idx} = [data.tx(i); data.ty(i); data.tz(i); data.fx(i); data.fy(i); ...
+             data.fz(i)];
+
+            obj.shared_data_handle.setField('force_torque', force_torque);
+
+            stopwatch = obj.shared_data_handle.getField('stopwatch');
+            stopwatch{idx} = tic;
+            obj.shared_data_handle.setField('stopwatch', stopwatch);
+            % strcat('resetting clock for idx ', num2str(idx))
           end
-          data = drake.lcmt_external_force_torque(data);
-          obj.force_torque{i} = [data.tx; data.ty; data.tz; data.fx; data.fy; data.fz];
-        end
 
-        % if we received our last new message within timeout, then publish that through to the sim
-        % otherwise set the force-torque to zero
-        if (toc(obj.stopwatch{i}) < obj.timeout)
-          varargout{i} = obj.force_torque{i};
-        else
-          varargout{i} = zeros(6,1);
-
-          % FOR TESTING
-          % if (i==1)
-          %   varargout{i}(6) = 100;
-          % end
-
-          % if (i==2)
-          %   varargout{i}(4) = -20;
-          % end
         end
       end
+
+      % if we have received a msg for that body within the last obj.timeout seconds, then push that
+      % force through to the simulation. Otherwise set that force to zero
+      stopwatch = obj.shared_data_handle.getField('stopwatch');
+      force_torque = obj.shared_data_handle.getField('force_torque');
+
+      for j=1:obj.num_force_elements
+        if (toc(stopwatch{j}) < obj.timeout)
+          varargout{j} = force_torque{j};
+        else
+          force_torque{j} = zeros(6,1);
+          varargout{j} = zeros(6,1);
+        end
+      end
+
+      obj.shared_data_handle.setField('force_torque', force_torque);
 
     end
 
