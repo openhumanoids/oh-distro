@@ -9,6 +9,10 @@ joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw']
 joints = ['base_z','base_roll', 'base_pitch', 'base_yaw']
 joints = ['base_x','base_z','base_roll', 'base_pitch', 'l_leg_kny']
 joints = ['base_z','base_roll', 'base_pitch']
+joints = ['base_z', 'base_pitch', 'l_arm_shz', 'l_arm_shx']
+
+
+joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw', 'back_bkz', 'back_bky', 'back_bkx','l_arm_shz', 'l_arm_shx']
 
 # joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw', 'r_leg_aky', 'r_leg_kny', 'r_leg_hpy', 'r_leg_hpx', 'l_leg_kny', 'l_arm_shz']
 names = msg.joint_name
@@ -21,6 +25,11 @@ for jointName in joints:
 
 channel_extensions = ['ORIGIN','M_PELVIS', 'R_PELVIS', 'L_PELVIS']
 channel_extensions = ['M_PELVIS', 'R_PELVIS']
+
+
+sparsePlot = True
+if sparsePlot:
+    channel_extensions = []
 
 
 
