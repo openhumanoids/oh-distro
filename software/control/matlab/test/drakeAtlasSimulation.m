@@ -163,7 +163,6 @@ if (use_force_element)
   for i=1:length(linksWithForceElements)
     linkName = linksWithForceElements{i};
     frame_id = r_complete.findLinkId(linkName);
-    name = strcat(linkName,'_force_torque');
     forceTorqueElement = RigidBodyCartesianForceTorque(linkName, frame_id);
     force_elements{end+1} = forceTorqueElement;
   end
