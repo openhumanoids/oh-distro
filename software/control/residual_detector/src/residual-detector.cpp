@@ -619,6 +619,11 @@ int main( int argc, char* argv[]){
 
   ResidualDetector residualDetector(lcm, isVerbose);
 
+  if (argc==1){
+    std::cout << "using foot force and torque" << std::endl;
+    residualDetector.useFootForceTorque();
+  }
+
 
   for (int i=1; i < argc; i++){
     if (i==1) {
@@ -646,7 +651,9 @@ int main( int argc, char* argv[]){
         runDetectorLoop = false;
       }
       else {
-        std::cout << "unsupported option, ignoring" << std::endl;
+        std::cout << "didn't receive an option" << std::endl;
+        std::cout << "using foot force & torque" << std::endl;
+        residualDetector.useFootForceTorque();
       }
     }
 
