@@ -47,7 +47,13 @@ classdef LCMInputFromExternalForceBlock < MIMODrakeSystem
 
       for i=1:obj.num_force_elements
         obj.body_id(i) = obj.force_elements{i}.body_id;
-        obj.body_name{i} = r_complete.getLinkName(obj.body_id(i));
+        obj.body_name{i} = obj.force_elements{i}.linkName;
+
+        if obj.body_id(i) ~= r_complete.findLinkId(obj.body_name{i})
+          errorString = strcat('linkname and body_id dont match for link ', linkName);
+          error(errorString)
+        end
+
         force_torque = obj.shared_data_handle.getField('force_torque');
         force_torque{i} = zeros(6,1); % initialize
         obj.shared_data_handle.setField('force_torque', force_torque)
