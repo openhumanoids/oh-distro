@@ -24,11 +24,11 @@ classdef FinalPoseProblem
   methods
     
     function obj = FinalPoseProblem(robot, end_effector_id,...
-         x_start, x_goal, additional_constraints, q_nom, varargin)
+         x_start, x_goal, additional_constraints, q_nom, capabilty_map, ikoptions, varargin)
       
-      opt = struct('capabilitymap', [], 'graspinghand', 'right', ...
+      opt = struct('graspinghand', 'right', ...
                    'mindistance', 0.005, ...
-                   'activecollisionoptions', struct(), 'ikoptions', struct(), ...
+                   'activecollisionoptions', struct(), ...
                    'endeffectorpoint', [0; 0; 0]);
       optNames = fieldnames(opt);
       nArgs = length(varargin);
@@ -50,9 +50,9 @@ classdef FinalPoseProblem
       obj.x_goal = x_goal;
       obj.additional_constraints = additional_constraints;
       obj.q_nom = q_nom;
+      obj.capability_map = capabilty_map;
       obj.end_effector_point = opt.endeffectorpoint;
       obj.min_distance = opt.mindistance;
-      obj.capability_map = opt.capabilitymap;
       obj.grasping_hand = opt.graspinghand;
       obj.active_collision_options = opt.activecollisionoptions;
       obj.goal_constraints = obj.generateGoalConstraints();
@@ -60,7 +60,7 @@ classdef FinalPoseProblem
       obj.joint_space_tree = JointSpaceMotionPlanningTree(obj.robot);
       obj.joint_space_tree.min_distance = 0.9*obj.min_distance; % minoring TaskSpaceMotionPlanningTree 0.9 magic number
       obj.joint_space_tree.active_collision_options = obj.active_collision_options;
-      obj.joint_space_tree.ikoptions = opt.ikoptions;
+      obj.joint_space_tree.ikoptions = ikoptions;
       obj.joint_space_tree = obj.joint_space_tree.addKinematicConstraint(additional_constraints{:});
 
     end    
