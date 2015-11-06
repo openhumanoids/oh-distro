@@ -1,11 +1,16 @@
-================================
-OpenHumanoids (formerly MIT DRC)
-================================
+=============
+OpenHumanoids
+=============
 
 .. contents:: Table of Contents
 
 Introduction
 ============
+
+OpenHumanoids is the software platform developed by the MIT DRC team and
+used to compete in successive phases of the DARPA Robotics Challenge
+with the Boston Dynamics Atlas robot. It also full supports the NASA Valkyrie
+and several fixed base arms.
 
 This README describes how to download and build the OpenHumanoids source code
 and how to satisfy 3rd party dependencies.
@@ -221,6 +226,13 @@ Run make to build externals and then the main codebase:
     make
     cd ..
     make
+
+**Nov 2015: One More Step Is currently Required**
+
+::
+
+    cd <path-to>/main-distro/software/build/lib/python2.7/dist-packages
+    ln -s lcmtypes/drake drake
 
 
 Instructions for GUROBI
