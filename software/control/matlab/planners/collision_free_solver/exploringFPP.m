@@ -1,4 +1,4 @@
-function info = exploringFPP(options, rng_seed)
+function [info, debug_vars] = exploringFPP(options, rng_seed)
   
   if nargin < 1 || isempty(options), options = struct(); end
   
@@ -6,7 +6,7 @@ function info = exploringFPP(options, rng_seed)
   warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 1; end;
+  if ~isfield(options,'scene'), options.scene = 2; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
@@ -93,9 +93,11 @@ function info = exploringFPP(options, rng_seed)
   finalPose = FinalPoseProblem(r, g_hand, q_start, x_end.(options.model).(options.graspingHand), ...
     startPoseConstraints, q_nom, cm, ikoptions, ...
     'graspinghand', options.graspingHand, ...
-    'endeffectorpoint', point_in_link_frame);
+    'endeffectorpoint', point_in_link_frame, ...
+    'debug', true, ...
+    'visualizer', v);
 
-  [xGoalFull, info] = finalPose.findFinalPose();
+  [xGoalFull, info, debug_vars] = finalPose.findFinalPose();
   if options.visualize
     v.draw(0, xGoalFull(8:end))
   end

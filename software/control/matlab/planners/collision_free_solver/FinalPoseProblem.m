@@ -14,6 +14,8 @@ classdef FinalPoseProblem
     grasping_hand
     active_collision_options
     joint_space_tree
+    debug
+    visualizer
   end
   
   properties (Constant)
@@ -29,7 +31,9 @@ classdef FinalPoseProblem
       opt = struct('graspinghand', 'right', ...
                    'mindistance', 0.005, ...
                    'activecollisionoptions', struct(), ...
-                   'endeffectorpoint', [0; 0; 0]);
+                   'endeffectorpoint', [0; 0; 0]', ...
+                   'debug', false, ...
+                   'visualizer', []);
       optNames = fieldnames(opt);
       nArgs = length(varargin);
       if round(nArgs/2)~=nArgs/2
@@ -56,6 +60,8 @@ classdef FinalPoseProblem
       obj.grasping_hand = opt.graspinghand;
       obj.active_collision_options = opt.activecollisionoptions;
       obj.goal_constraints = obj.generateGoalConstraints();
+      obj.debug = opt.debug;
+      obj.visualizer = opt.visualizer;
       
       obj.joint_space_tree = JointSpaceMotionPlanningTree(obj.robot);
       obj.joint_space_tree.min_distance = 0.9*obj.min_distance; % minoring TaskSpaceMotionPlanningTree 0.9 magic number
@@ -63,17 +69,22 @@ classdef FinalPoseProblem
       obj.joint_space_tree.ikoptions = ikoptions;
       obj.joint_space_tree = obj.joint_space_tree.addKinematicConstraint(additional_constraints{:});
 
-    end    
+    end
 
-    function [x_goal, info] = findFinalPose(obj)
+    function [x_goal, info, debug_vars] = findFinalPose(obj)
       
       info = obj.SUCCESS;
+      if obj.debug
+        debug_vars = obj.initDebugVars();
+      else
+        debug_vars = struct();
+      end
       
       %compute final pose
       tic
       if length(obj.x_goal) == 7
         disp('Searching for a feasible final configuration...')
-        qGoal = obj.searchFinalPose(obj.x_start);
+        [qGoal, debug_vars] = obj.searchFinalPose(obj.x_start, debug_vars);
         if isempty(qGoal)
           info = obj.FAIL_NO_FINAL_POSE;
           x_goal = obj.x_goal;
@@ -93,12 +104,16 @@ classdef FinalPoseProblem
         disp('Final configuration input found B')
       else
         error('Bad final configuration input')
-      end    
-    
+      end
+      
       x_goal = obj.x_goal;
+      debug_vars.info = info;
     end
     
-    function [qOpt, cost] = searchFinalPose(obj, x_start)
+    function [qOpt, debug_vars] = searchFinalPose(obj, x_start, debug_vars)
+      
+      filename = [getenv('DRC_BASE'), '/software/models/val_description/model/meshes/torso/torso.stl'];
+      torso = RigidBodyMesh(filename);
       
       kinSol = obj.robot.doKinematics(x_start);
       options.rotation_type = 2;
@@ -156,19 +171,33 @@ classdef FinalPoseProblem
         shConstraint = WorldPositionConstraint(obj.robot, base, point, obj.x_goal(1:3), obj.x_goal(1:3));
         constraints = [{shConstraint}, obj.goal_constraints];
         [q, valid] = obj.joint_space_tree.solveIK(obj.q_nom, obj.q_nom, constraints);
+        obj.visualizer.draw(0, q)
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
         targetPos = palmPose;
         deltaX = zeros(6,1);
         if valid
+          if obj.debug
+            debug_vars.n_body_collision_iter = debug_vars.n_body_collision_iter + 1;
+          end
           phiBody = obj.robot.collisionDetect(q, false, struct('body_idx', collisionLinksBody));
           if all(phiBody > obj.min_distance)
+            if obj.debug
+              debug_vars.n_arm_collision_iter = debug_vars.n_arm_collision_iter + 1;
+            end
             eps  = Inf;
             nIter = 0;
             [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.active_collision_options);
+            nullspace = false;
             if any(phi < obj.min_distance)
+              if obj.debug
+                debug_vars.n_nullspace_iter = debug_vars.n_nullspace_iter + 1;
+              end
               phi = phi - obj.min_distance;
-              while (eps > 1e-3 || any(phi < 0)) && nIter < 5
+              while (eps > 1e-3 || any(phi < 0)) && nIter < 50
+                if obj.debug
+                  nullspace = true;
+                end
                 qNdot = zeros(nArmJoints, 1);
                 for joint = 1:nArmJoints
                   dgamma_dq = zeros(size(phi));
@@ -205,19 +234,32 @@ classdef FinalPoseProblem
                 eps = norm(deltaX);
                 nIter = nIter + 1;
                 phi = phi - obj.min_distance;
-              end              
+              end
+              if obj.debug
+                debug_vars.nullspace_iter.success(debug_vars.n_nullspace_iter) = eps <= 1e-3 && all(phi >= 0);
+                debug_vars.nullspace_iter.nIter(debug_vars.n_nullspace_iter) = nIter;
+              end
             else
+              if obj.debug
+                debug_vars.n_accepted_after_armcollision = debug_vars.n_accepted_after_armcollision + 1;
+              end
               phi = phi - obj.min_distance;
               eps = 1e-3;
             end
             if eps <= 1e-3 && all(phi >= 0)
+              if obj.debug && nullspace
+                debug_vars.n_accepted_after_nullspace = debug_vars.n_accepted_after_nullspace + 1;
+              end
               cost = (obj.q_nom - q)'*obj.joint_space_tree.ikoptions.Q*(obj.q_nom - q);
               validConfs(:,sph) = [cost; q];
               succ(sph, :) = [1, nIter];
               if cost < 20
+                if obj.debug
+                  debug_vars.cost_below_threshold = true;
+                end
                 break
               end
-            else              
+            else
               succ(sph, :) = [0, nIter];
             end
           end
@@ -228,6 +270,10 @@ classdef FinalPoseProblem
         [cost, qOptIdx] =  min(validConfs(1,:));
         qOpt = validConfs(2:end, qOptIdx);
       end
+      
+      debug_vars.n_capability_map_samples = iter;
+      debug_vars.cost = cost;
+      
     end
     
     function constraints = generateGoalConstraints(obj)
@@ -262,6 +308,25 @@ classdef FinalPoseProblem
       obj.capability_map.map = obj.capability_map.map(indices, :);
       obj.capability_map.sphCenters = obj.capability_map.sphCenters(:, indices);
     end    
+    
+  end
+  
+  methods (Static)    
+    
+    function debug_vars = initDebugVars()
+      debug_vars = struct(...
+        'n_capability_map_samples', [], ...
+        'cost', [], ...
+        'info', [], ...
+        'cost_below_threshold', [], ...
+        'n_body_collision_iter', 0, ...
+        'n_arm_collision_iter', 0, ...
+        'n_nullspace_iter', 0, ...
+        'n_accepted_after_armcollision', 0, ...
+        'n_accepted_after_nullspace', 0, ...
+        'nullspace_iter', struct('success', [], 'nIter', []) ...
+        );
+    end
     
   end
   
