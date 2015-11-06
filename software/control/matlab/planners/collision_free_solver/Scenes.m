@@ -230,6 +230,22 @@ classdef Scenes
       end
     end
     
+    function ee_pose = getDesiredEePose(options)
+      ee_pose.val2(1).right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
+      ee_pose.val2(1).left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
+      ee_pose.val2(2) = ee_pose.val2(1);
+      ee_pose.val2(3) = ee_pose.val2(1);
+      ee_pose.val2(4).right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 3*pi/4])];
+      ee_pose.val2(4).left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -3*pi/4])];
+      ee_pose.val2(5) = ee_pose.val2(1);
+      ee_pose.val2(6) = ee_pose.val2(1);
+      ee_pose.val2(7).right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/4])];
+      ee_pose.val2(7).left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
+      ee_pose.val2(8) = ee_pose.val2(1);
+      ee_pose.val2(9) = ee_pose.val2(1);
+      ee_pose = ee_pose.(options.model)(options.scene).(options.graspingHand);
+    end
+    
     function hand = getGraspingHand(options, robot)
       if strcmp(options.graspingHand, 'left')
         if any(strcmp(options.model, {'val1', 'val2'}))
@@ -336,6 +352,29 @@ classdef Scenes
         rightConstraints = {rightFootPosConstraint, rightFootQuatConstraint};
       end
       constraints = [leftConstraints, rightConstraints];
+    end
+    
+    function constraints = slidingFeetConstraints(options, robot, state)
+      if nargin < 3
+        state = Scenes.getFP(options.model, robot);
+      end
+      leftConstraints = {};
+      rightConstraints = {};
+      kinsol = robot.doKinematics(state);
+      l_foot = Scenes.getLeftFoot(options, robot);
+      r_foot = Scenes.getRightFoot(options, robot);
+      l_footPose = robot.forwardKin(kinsol,l_foot, [0; 0; 0], 2);
+      %                 drawLinkFrame(robot, l_foot, state, 'Left Foot Frame');
+      leftFootPosConstraint = WorldPositionConstraint(robot, l_foot, [0; 0; 0], [-inf; -inf; l_footPose(3)], [inf; inf; l_footPose(3)]);
+      leftFootQuatConstraint = WorldQuatConstraint(robot, l_foot, l_footPose(4:7), 0.0, [0.0, 1.0]);
+      leftConstraints = {leftFootPosConstraint, leftFootQuatConstraint};
+      r_footPose = robot.forwardKin(kinsol,r_foot, [0; 0; 0], 2);
+      %                 drawLinkFrame(robot, r_foot, state, 'Right Foot Frame');
+      rightFootPosConstraint = WorldPositionConstraint(robot, r_foot, [0; 0; 0], [-inf; -inf; r_footPose(3)], [inf; inf; r_footPose(3)]);
+      rightFootQuatConstraint = WorldQuatConstraint(robot, r_foot, r_footPose(4:7), 0.0, [0.0, 1.0]);
+      rightConstraints = {rightFootPosConstraint, rightFootQuatConstraint};
+      relativeConstraint = RelativePositionConstraint(robot, [0;0;0], l_footPose(1:3) - r_footPose(1:3), l_footPose(1:3) - r_footPose(1:3), l_foot, r_foot);
+      constraints = [leftConstraints, rightConstraints, {relativeConstraint}];
     end
     
     function constraint = graspingForearmAlignConstraint(options, robot)

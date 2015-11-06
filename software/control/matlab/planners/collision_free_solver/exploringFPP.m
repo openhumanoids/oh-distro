@@ -6,10 +6,10 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 2; end;
+  if ~isfield(options,'scene'), options.scene = 7; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
-  if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
+  if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   
   
@@ -73,7 +73,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   ikoptions = ikoptions.setMajorOptimalityTolerance(1e-3);
   
   %Set start pose constraints and compute starting configuration
-  startPoseConstraints = [Scenes.fixedFeetConstraints(options, r),...
+  startPoseConstraints = [Scenes.slidingFeetConstraints(options, r),...
                           {Scenes.addQuasiStaticConstraint(options, r),...
                           Scenes.nonGraspingHandDistanceConstraint(options, r, 0.4)}];
   [q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
@@ -86,11 +86,9 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   end
   
   cm = CapabilityMap([getenv('DRC_BASE') '/software/control/matlab/data/val_description/capabilityMap.mat']);
-  x_end.val1.right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
-  x_end.val1.left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
-  x_end.val2 = x_end.val1;
+  x_end = Scenes.getDesiredEePose(options);
 
-  finalPose = FinalPoseProblem(r, g_hand, q_start, x_end.(options.model).(options.graspingHand), ...
+  finalPose = FinalPoseProblem(r, g_hand, q_start, x_end, ...
     startPoseConstraints, q_nom, cm, ikoptions, ...
     'graspinghand', options.graspingHand, ...
     'endeffectorpoint', point_in_link_frame, ...

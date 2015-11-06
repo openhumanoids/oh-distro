@@ -113,7 +113,10 @@ classdef FinalPoseProblem
     function [qOpt, debug_vars] = searchFinalPose(obj, x_start, debug_vars)
       
       filename = [getenv('DRC_BASE'), '/software/models/val_description/model/meshes/torso/torso.stl'];
-      torso = RigidBodyMesh(filename);
+      torso = RigidBodyManipulator();
+      torso = torso.addGeometryToBody(1, RigidBodyMesh(filename));
+      torso = torso.compile();
+%       tv = torso.constructVisualizer();
       
       kinSol = obj.robot.doKinematics(x_start);
       options.rotation_type = 2;
@@ -169,9 +172,10 @@ classdef FinalPoseProblem
         iter = iter + 1;
         point = (sphCenters(:,sph).*mapMirror.(obj.grasping_hand)) + tr2root;
         shConstraint = WorldPositionConstraint(obj.robot, base, point, obj.x_goal(1:3), obj.x_goal(1:3));
-        constraints = [{shConstraint}, obj.goal_constraints];
+        shOrient = WorldEulerConstraint(obj.robot, base, [0;-pi/30; -pi/2], [0; pi/30; pi/2]);
+        constraints = [{shConstraint}, {shOrient}, obj.goal_constraints];
         [q, valid] = obj.joint_space_tree.solveIK(obj.q_nom, obj.q_nom, constraints);
-        obj.visualizer.draw(0, q)
+%         obj.visualizer.draw(0, q)
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
         targetPos = palmPose;
@@ -194,7 +198,7 @@ classdef FinalPoseProblem
                 debug_vars.n_nullspace_iter = debug_vars.n_nullspace_iter + 1;
               end
               phi = phi - obj.min_distance;
-              while (eps > 1e-3 || any(phi < 0)) && nIter < 50
+              while (eps > 1e-3 || any(phi < 0)) && nIter < 1
                 if obj.debug
                   nullspace = true;
                 end
