@@ -9,7 +9,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 3; end;
+  if ~isfield(options,'scene'), options.scene = 1; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
@@ -21,7 +21,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
   
   options.floating = true;
-  options.terrain = MyRigidBodyFlatTerrain(); %Changed to a smaller terrain to avoid visualization problem when zooming
+  options.terrain = RigidBodyFlatTerrain(); %Changed to a smaller terrain to avoid visualization problem when zooming
   options.joint_v_max = 15*pi/180;
   options.viewer = 'NullVisualizer';
   
@@ -226,7 +226,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     case 'rrt*'
       [TA, info, cost, q_path] = TA.rrtStar(x_start, x_goal, options);
     case 'multiRRT'
-      cm = CapabilityMap([fileparts(which('exploringRRT')) '/CapabilityMap/capabilityMap.mat']);
+      cm = CapabilityMap([getenv('DRC_BASE') '/software/control/matlab/data/val_description/capabilityMap.mat']);
       x_end.val1.right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
       x_end.val1.left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
       x_end.val2 = x_end.val1;
