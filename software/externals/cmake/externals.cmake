@@ -123,6 +123,25 @@ set(multisense-lcm_url http://github.com/openhumanoids/multisense-lcm.git)
 set(multisense-lcm_revision b05368f47219642fdebe06f93fe8193f740ed34f)
 set(multisense-lcm_depends libmultisense)
 
+set(libnabo_url https://github.com/ethz-asl/libnabo.git)
+set(libnabo_revision 7d6b111de63a5118e11f551e336606233018ee8d)
+set(libnabo_depends Eigen_pod)
+set(libnabo_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+  )
+
+set(libpointmatcher_url https://github.com/ethz-asl/libpointmatcher.git)
+set(libpointmatcher_revision 6c6acbb17199f9a51467dff86875bbc11add5bf2)
+set(libpointmatcher_depends Eigen_pod libnabo)
+set(libpointmatcher_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+  )
 
 set(externals
   Eigen_pod
@@ -149,6 +168,8 @@ set(externals
   iris
   pypolyhedron
   kinematics-utils
+  libnabo
+  libpointmatcher
   )
 
 
