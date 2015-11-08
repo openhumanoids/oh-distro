@@ -4,6 +4,7 @@
 jpeg-utils
 pronto
 drc_lcmtypes
+ihmc
 latency
 drivers
 utils
@@ -20,4 +21,3 @@ ddapp/distro/pods/drc
 #viewer-trials
 
 ipab
-ihmc_lcmtypes
