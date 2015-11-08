@@ -12,7 +12,7 @@
 #include <Eigen/Dense>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/pronto/robot_state_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/joint_state_t.hpp"
 
 using namespace std;
@@ -83,7 +83,7 @@ void App::sdhStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& cha
 
 void App::broadcastRobotState() {
   // Set up message
-  pronto::robot_state_t msg_out;
+  drc::robot_state_t msg_out;
   msg_out.utime =  bot_timestamp_now();
   msg_out.pose.translation.x = 0;  msg_out.pose.translation.y = 0;  msg_out.pose.translation.z = 0;
   msg_out.pose.rotation.w = 1;  msg_out.pose.rotation.x = 0;  msg_out.pose.rotation.y = 0;  msg_out.pose.rotation.z = 0;

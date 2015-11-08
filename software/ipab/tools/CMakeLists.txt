@@ -4,8 +4,6 @@ cmake_minimum_required(VERSION 2.6.0)
 set(POD_NAME tools)
 include(cmake/pods.cmake)
 
-add_subdirectory(src/state_sync_kuka)
-
 pods_install_python_script(ipab-send-com-height python/send_com_height.py)
 pods_install_python_script(ipab-send-pause python/send_pause.py)
 pods_install_python_script(ipab-send-arm-test python/send_arm_test.py)
