@@ -53,8 +53,9 @@
 #include "lcmtypes/pronto/atlas_behavior_t.hpp"
 #include "lcmtypes/pronto/multisense_state_t.hpp"
 #include "lcmtypes/pronto/plan_status_t.hpp"
-#include "lcmtypes/ipab/last_received_message_t.hpp"
-#include "lcmtypes/ipab/footstep_status_t.hpp"
+
+#include "lcmtypes/ihmc/last_received_message_t.hpp"
+#include "lcmtypes/ihmc/footstep_status_t.hpp"
 #include "lcmtypes/mav/ins_t.hpp"
 
 #define MODE_PASSTHROUGH 0
@@ -195,7 +196,7 @@ App::~App()
 
 void App::footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg)
 {
-  ipab::footstep_status_t msg_out;
+  ihmc::footstep_status_t msg_out;
   msg_out.status = msg->status;
   msg_out.footstep_index = msg->footstep_index;
   msg_out.robot_side = msg->robot_side;
@@ -347,7 +348,7 @@ void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
 
 void App::lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg)
 {
-  ipab::last_received_message_t msg_out;
+  ihmc::last_received_message_t msg_out;
   msg_out.type = msg->type;
   msg_out.unique_id = msg->unique_id;
   msg_out.receive_timestamp = msg->receive_timestamp / 1000;

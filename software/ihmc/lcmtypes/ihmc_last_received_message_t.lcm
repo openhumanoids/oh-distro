@@ -1,6 +1,6 @@
 package ihmc;
 
-struct received_message_t
+struct last_received_message_t
 {
     string   type;
     int64_t  unique_id;
