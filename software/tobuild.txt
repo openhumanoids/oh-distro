@@ -20,3 +20,4 @@ ddapp/distro/pods/drc
 #viewer-trials
 
 ipab
+ihmc_lcmtypes

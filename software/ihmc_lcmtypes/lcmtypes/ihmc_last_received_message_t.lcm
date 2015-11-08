@@ -1,4 +1,4 @@
-package drc;
+package ihmc;
 
 struct received_message_t
 {

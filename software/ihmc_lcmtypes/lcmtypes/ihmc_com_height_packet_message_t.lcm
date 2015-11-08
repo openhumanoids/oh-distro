@@ -1,4 +1,4 @@
-package drc;
+package ihmc;
 
 struct com_height_packet_message_t
 {

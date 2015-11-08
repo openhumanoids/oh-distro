@@ -1,4 +1,6 @@
-package drc;
+package ihmc;
+
+// LCM implementation of IHMC ROS message
 
 struct footstep_status_t
 {

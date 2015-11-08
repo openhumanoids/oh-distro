@@ -1,4 +1,4 @@
-package drc;
+package ihmc;
 
 struct hand_pose_packet_message_t
 {
