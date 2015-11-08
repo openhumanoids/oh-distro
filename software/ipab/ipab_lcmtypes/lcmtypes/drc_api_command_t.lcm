@@ -1,4 +1,4 @@
-package ipab;
+package drc
 
 // Message to control SCS test program execution
 // Supported commands:

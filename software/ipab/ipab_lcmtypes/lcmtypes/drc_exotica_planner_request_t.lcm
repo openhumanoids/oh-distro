@@ -1,4 +1,4 @@
-package ipab;
+package drc;
 
 // Message to contain planning problem
 // encoded using json

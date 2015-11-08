@@ -1,6 +1,6 @@
-package ipab;
+package drc;
 
-struct last_received_message_t
+struct received_message_t
 {
     string   type;
     int64_t  unique_id;
