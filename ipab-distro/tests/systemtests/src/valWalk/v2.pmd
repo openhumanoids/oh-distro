@@ -1,0 +1,77 @@
+group "0.ros_bridge" {
+    cmd "ros_bridge_without_pronto" {
+        exec = "roslaunch drc_translators ihmc_bridge.launch";
+        host = "localhost";
+    }
+}
+
+group "1.params_and_model_pub" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/simul_robot_ihmc.cfg";
+        host = "localhost";
+    }
+
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/val_description/urdf/valkyrie_A_sim.urdf";
+        host = "localhost";
+    }
+}
+
+group "2.state_without_pronto" {
+    cmd "joints2frames_without" {
+        exec = "drc-joints2frames -m";
+        host = "localhost";
+    }
+}
+
+group "3.plan_and_control" {
+    cmd "contact_monitor" {
+        exec = "drc-contact-monitor";
+        host = "localhost";
+    }
+
+    cmd "plan_eval_proxi" {
+        exec = "ipab-plan-eval-proxi";
+        host = "localhost";
+    }
+
+    cmd "planner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner.withValkyrie(2); p.run();\"";
+       host = "localhost";
+       stop_signal = 15;
+    }
+}
+
+group "4.maps" {
+
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "localhost";
+    }
+
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "localhost";
+    }
+
+    cmd "lidar-passthrough" {
+        exec = "drc-lidar-passthrough -s  -d 0.01";
+        host = "localhost";
+    }
+}
+
+cmd "drake-designer" {
+    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc.cfg -val2 --startup $DRC_BASE/../tests/systemtests/src/valWalk/test.py";
+    host = "localhost";
+}
+
+script "start" {
+    start cmd "ros_bridge_without_pronto";
+    start group "1.params_and_model_pub";
+    wait ms 1000;
+    start group "2.state_without_pronto";
+    start group "3.plan_and_control";
+    start group "4.maps";
+    start cmd "drake-designer" wait "stopped";
+}
+
