@@ -1,6 +1,6 @@
 group "00.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/atlas/robot.cfg";
         host = "atlas2";
     }
 
@@ -241,7 +241,7 @@ cmd "atlas control panel" {
 }
 
 cmd "viewer" {
-    exec = "drc-viewer -c drc_robot.cfg";
+    exec = "drc-viewer -c atlas/robot.cfg";
     host = "base";
 }
 
