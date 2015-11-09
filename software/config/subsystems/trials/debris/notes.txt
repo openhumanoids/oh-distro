@@ -1,1 +1,0 @@
-flat 2x4 can be picked beyond the cinder wall at 66cm even when standing quite far away. turn up the wrist though
