@@ -11,6 +11,7 @@ classdef FinalPoseProblem
     end_effector_point
     min_distance
     capability_map
+    ikoptions
     grasping_hand
     active_collision_options
     joint_space_tree
@@ -55,6 +56,7 @@ classdef FinalPoseProblem
       obj.additional_constraints = additional_constraints;
       obj.q_nom = q_nom;
       obj.capability_map = capabilty_map;
+      obj.ikoptions = ikoptions;
       obj.end_effector_point = opt.endeffectorpoint;
       obj.min_distance = opt.mindistance;
       obj.grasping_hand = opt.graspinghand;
@@ -62,12 +64,6 @@ classdef FinalPoseProblem
       obj.goal_constraints = obj.generateGoalConstraints();
       obj.debug = opt.debug;
       obj.visualizer = opt.visualizer;
-      
-      obj.joint_space_tree = JointSpaceMotionPlanningTree(obj.robot);
-      obj.joint_space_tree.min_distance = 0.9*obj.min_distance; % minoring TaskSpaceMotionPlanningTree 0.9 magic number
-      obj.joint_space_tree.active_collision_options = obj.active_collision_options;
-      obj.joint_space_tree.ikoptions = ikoptions;
-      obj.joint_space_tree = obj.joint_space_tree.addKinematicConstraint(additional_constraints{:});
 
     end
 
@@ -179,8 +175,9 @@ classdef FinalPoseProblem
         point = (sphCenters(:,sph).*mapMirror.(obj.grasping_hand)) + tr2root;
         shConstraint = WorldPositionConstraint(obj.robot, base, point, obj.x_goal(1:3), obj.x_goal(1:3));
         shOrient = WorldEulerConstraint(obj.robot, base, [0;-pi/30; -pi/2], [0; pi/30; pi/2]);
-        constraints = [{shConstraint}, {shOrient}, obj.goal_constraints];
-        [q, valid] = obj.joint_space_tree.solveIK(obj.q_nom, obj.q_nom, constraints);
+        constraints = [{shConstraint, shOrient}, obj.goal_constraints];
+        [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
+        valid = (info < 10);
 %         obj.visualizer.draw(0, q)
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
@@ -260,7 +257,7 @@ classdef FinalPoseProblem
               if obj.debug && nullspace
                 debug_vars.n_accepted_after_nullspace = debug_vars.n_accepted_after_nullspace + 1;
               end
-              cost = (obj.q_nom - q)'*obj.joint_space_tree.ikoptions.Q*(obj.q_nom - q);
+              cost = (obj.q_nom - q)'*obj.ikoptions.Q*(obj.q_nom - q);
               validConfs(:,sph) = [cost; q];
               succ(sph, :) = [1, nIter];
               if cost < 20
