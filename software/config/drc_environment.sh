@@ -163,4 +163,4 @@ setup_robot_computers
 
 # aliases
 alias cddrc='cd $DRC_BASE/software'
-alias rundrc='bot-procman-sheriff -l $DRC_BASE/software/config/drc_robot.pmd'
+alias rundrc='bot-procman-sheriff -l $DRC_BASE/software/config/atlas/robot.pmd'

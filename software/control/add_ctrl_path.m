@@ -18,12 +18,11 @@ end
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_drc_lcmtypes.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_bot2-core.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_bot2-param.jar']);
-javaaddpath([pods_get_base_path,'/share/java/lcmtypes_vicon-drc.jar']);
 javaaddpath([pods_get_base_path,'/share/java/drc_control.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_visualization.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_multisense.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_robotiqhand.jar']);
-javaaddpath([pods_get_base_path,'/share/java/lcmtypes_microstrain_comm.jar']);
+javaaddpath([pods_get_base_path,'/share/java/lcmtypes_microstrain.jar']);
 % javaaddpath([pods_get_base_path,'/share/java/lcmtypes_scanmatch.jar']);
 javaaddpath([pods_get_base_path,'/share/java/bot2-lcmgl.jar']);
 

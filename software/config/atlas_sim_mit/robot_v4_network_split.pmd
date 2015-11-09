@@ -143,12 +143,12 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "drake-designer -c atlas_sim_mit/robot.cfg -v4";
+    exec = "drake-designer -c robot.cfg -v4";
     host = "base";
 }
 
 cmd "robot-side-director" {
-    exec = "drake-designer -c atlas_sim_mit/robot.cfg -v4";
+    exec = "drake-designer -c robot.cfg -v4";
     host = "atlas0";
 }
 

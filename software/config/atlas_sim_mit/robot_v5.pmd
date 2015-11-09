@@ -99,7 +99,7 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "drake-designer -c atlas_sim_mit/robot.cfg -v5";
+    exec = "drake-designer -c robot.cfg -v5";
     host = "base";
 }
 
