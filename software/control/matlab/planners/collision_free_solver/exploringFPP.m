@@ -6,7 +6,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 7; end;
+  if ~isfield(options,'scene'), options.scene = 4; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -24,16 +24,6 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   end
   
   v = r.constructVisualizer();
-  
-%   needed for IKServer
-%   addpath(fullfile(getDrakePath(), '../../', 'ddapp/src/matlab'))
-%   fixed_point_file = [getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat'];
-%   left_foot_link = 'LeftFoot';
-%   right_foot_link = 'RightFoot';
-%   runIKServer
-% 
-%   joint_names = {r.getPositionFrame.getCoordinateNames{1:getNumPositions(r)}}';
-%   pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
   
   if nargin > 1
     rng(rng_seed);
