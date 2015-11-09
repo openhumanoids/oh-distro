@@ -1,6 +1,6 @@
 group "0.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/simul_robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/atlas_sim/robot.cfg";
         host = "base";
     }
     cmd "model_LR_RR" {
@@ -82,12 +82,7 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "drake-designer -c simul_robot.cfg -v4";
-    host = "base";
-}
-
-cmd "viewer" {
-    exec = "drc-viewer -c simul_robot.cfg";
+    exec = "drake-designer -c atlas_sim/robot.cfg -v4";
     host = "base";
 }
 

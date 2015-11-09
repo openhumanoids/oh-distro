@@ -102,7 +102,7 @@ cmd "pose-util" {
 
 
 cmd "scs" {
-    exec = "$DRC_BASE/software/config/runscs.bash";
+    exec = "$DRC_BASE/software/config/val_sim_scs/runscs.bash";
     host = "localhost";
 }
 
