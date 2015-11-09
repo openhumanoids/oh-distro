@@ -11,7 +11,7 @@ group "0.ros_bridge" {
 
 group "1.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/simul_robot_ihmc_atlas.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/atlas_sim_scs/robot.cfg";
         host = "localhost";
     }
 
@@ -91,7 +91,7 @@ group "4.maps" {
 
 
 cmd "drake-designer" {
-    exec = "drake-designer -c $DRC_BASE/software/config/simul_robot_ihmc_atlas.cfg -v5";
+    exec = "drake-designer -c $DRC_BASE/software/config/atlas_sim_scs/robot.cfg -v5";
     host = "localhost";
 }
 
