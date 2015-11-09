@@ -26,29 +26,29 @@ group "0.deputies" {
 
 group "1.network" {
     cmd "base_network_shaper-link2" {
-        exec = "drc-network-shaper -r base -c atlas_sim/robot.cfg -l -p /tmp -i link2";
+        exec = "drc-network-shaper -r base -c atlas_sim_mit/robot.cfg -l -p /tmp -i link2";
         host = "localhost";
     }
 
     cmd "robot_network_shaper-link2" {
-        exec = "drc-network-shaper -r robot -c atlas_sim/robot.cfg -l -p /tmp  -i link2";
+        exec = "drc-network-shaper -r robot -c atlas_sim_mit/robot.cfg -l -p /tmp  -i link2";
         host = "localhost";
     }
 
     cmd "base_network_shaper-link3" {
-        exec = "drc-network-shaper -r base -c atlas_sim/robot.cfg -l -p /tmp  -i link3";
+        exec = "drc-network-shaper -r base -c atlas_sim_mit/robot.cfg -l -p /tmp  -i link3";
         host = "localhost";
     }
 
     cmd "robot_network_shaper-link3" {
-        exec = "drc-network-shaper -r robot -c atlas_sim/robot.cfg -l -p /tmp  -i link3";
+        exec = "drc-network-shaper -r robot -c atlas_sim_mit/robot.cfg -l -p /tmp  -i link3";
         host = "localhost";
     }
 }
 
 group "2.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/atlas_sim/robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/atlas_sim_mit/robot.cfg";
         host = "atlas0";
     }
     cmd "model_LR_RR" {
@@ -143,12 +143,12 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "drake-designer -c atlas_sim/robot.cfg -v4";
+    exec = "drake-designer -c atlas_sim_mit/robot.cfg -v4";
     host = "base";
 }
 
 cmd "robot-side-director" {
-    exec = "drake-designer -c atlas_sim/robot.cfg -v4";
+    exec = "drake-designer -c atlas_sim_mit/robot.cfg -v4";
     host = "atlas0";
 }
 
