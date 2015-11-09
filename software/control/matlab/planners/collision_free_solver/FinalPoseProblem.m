@@ -201,47 +201,47 @@ classdef FinalPoseProblem
                 debug_vars.n_nullspace_iter = debug_vars.n_nullspace_iter + 1;
               end
               phi = phi - obj.min_distance;
-              while (eps > 1e-3 || any(phi < 0)) && nIter < 1
-                if obj.debug
-                  nullspace = true;
-                end
-                qNdot = zeros(nArmJoints, 1);
-                for joint = 1:nArmJoints
-                  dgamma_dq = zeros(size(phi));
-                  for coll = 1:size(phi,1)
-                    if phi(coll) < 0
-                      [~,JA] = obj.robot.forwardKin(kinSol, idxA(coll), [0;0;0], options);
-                      [~,JB] = obj.robot.forwardKin(kinSol, idxB(coll), [0;0;0], options);
-                      JA = JA(:,armJoints);
-                      JB = JB(:,armJoints);
-                      dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
-                      dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
-                    else
-                      dgamma_dq(coll) = 0;
-                    end
-                  end
-                  qNdot(joint) = sum(dgamma_dq);
-                end
-                [~,J] = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
-                J = J(:,armJoints);
-                Jpsi = J'*inv(J*J');
-                deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
-                if any(abs(deltaQ) > deltaQmax)
-                  alpha = deltaQmax/abs(deltaQ);
-                elseif all(deltaQ < 1e-3)
-                  break
-                else
-                  alpha = 1;
-                end
-                q(armJoints) = q(armJoints) + alpha*deltaQ;
-                [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.active_collision_options);
-                kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
-                palmPose = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
-                deltaX = targetPos - palmPose;
-                eps = norm(deltaX);
-                nIter = nIter + 1;
-                phi = phi - obj.min_distance;
-              end
+%               while (eps > 1e-3 || any(phi < 0)) && nIter < 1
+%                 if obj.debug
+%                   nullspace = true;
+%                 end
+%                 qNdot = zeros(nArmJoints, 1);
+%                 for joint = 1:nArmJoints
+%                   dgamma_dq = zeros(size(phi));
+%                   for coll = 1:size(phi,1)
+%                     if phi(coll) < 0
+%                       [~,JA] = obj.robot.forwardKin(kinSol, idxA(coll), [0;0;0], options);
+%                       [~,JB] = obj.robot.forwardKin(kinSol, idxB(coll), [0;0;0], options);
+%                       JA = JA(:,armJoints);
+%                       JB = JB(:,armJoints);
+%                       dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
+%                       dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
+%                     else
+%                       dgamma_dq(coll) = 0;
+%                     end
+%                   end
+%                   qNdot(joint) = sum(dgamma_dq);
+%                 end
+%                 [~,J] = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
+%                 J = J(:,armJoints);
+%                 Jpsi = J'*inv(J*J');
+%                 deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
+%                 if any(abs(deltaQ) > deltaQmax)
+%                   alpha = deltaQmax/abs(deltaQ);
+%                 elseif all(deltaQ < 1e-3)
+%                   break
+%                 else
+%                   alpha = 1;
+%                 end
+%                 q(armJoints) = q(armJoints) + alpha*deltaQ;
+%                 [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.active_collision_options);
+%                 kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
+%                 palmPose = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
+%                 deltaX = targetPos - palmPose;
+%                 eps = norm(deltaX);
+%                 nIter = nIter + 1;
+%                 phi = phi - obj.min_distance;
+%               end
               if obj.debug
                 debug_vars.nullspace_iter.success(debug_vars.n_nullspace_iter) = eps <= 1e-3 && all(phi >= 0);
                 debug_vars.nullspace_iter.nIter(debug_vars.n_nullspace_iter) = nIter;
