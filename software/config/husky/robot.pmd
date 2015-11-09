@@ -1,6 +1,6 @@
 group "0.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/husky.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/husky/robot.cfg";
         host = "localhost";
     }
 
@@ -30,7 +30,7 @@ group "2.vis" {
 
 
     cmd "designer" {
-        exec = "drake-designer -c $DRC_BASE/software/config/husky.cfg";
+        exec = "drake-designer -c $DRC_BASE/software/config/husky/robot.cfg";
         host = "localhost";
     }
 }
