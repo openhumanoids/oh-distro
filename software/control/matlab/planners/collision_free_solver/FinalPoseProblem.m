@@ -84,6 +84,9 @@ classdef FinalPoseProblem
       tic
       if length(obj.x_goal) == 7
         disp('Searching for a feasible final configuration...')
+        if obj.debug
+          timer = tic();
+        end
         [qGoal, debug_vars] = obj.searchFinalPose(obj.x_start, debug_vars);
         if isempty(qGoal)
           info = obj.FAIL_NO_FINAL_POSE;
@@ -107,7 +110,10 @@ classdef FinalPoseProblem
       end
       
       x_goal = obj.x_goal;
-      debug_vars.info = info;
+      if obj.debug
+        debug_vars.info = info;
+        debug_vars.computation_time = toc(timer);
+      end
     end
     
     function [qOpt, debug_vars] = searchFinalPose(obj, x_start, debug_vars)
@@ -328,7 +334,8 @@ classdef FinalPoseProblem
         'n_nullspace_iter', 0, ...
         'n_accepted_after_armcollision', 0, ...
         'n_accepted_after_nullspace', 0, ...
-        'nullspace_iter', struct('success', [], 'nIter', []) ...
+        'nullspace_iter', struct('success', [], 'nIter', []), ...
+        'computation_time', []...
         );
     end
     
