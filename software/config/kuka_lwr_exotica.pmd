@@ -27,7 +27,7 @@ group "1.state" {
     }
 
     cmd "kuka_robot_state_publisher" {
-	exec = "ipab-state-sync-kuka";
+	exec = "drc-state-sync-kuka";
 	host = "localhost";
     }
 }

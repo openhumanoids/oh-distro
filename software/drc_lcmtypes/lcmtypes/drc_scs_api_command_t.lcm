@@ -1,0 +1,12 @@
+package drc;
+
+// Message to control SCS test program execution
+// Supported commands:
+// "simulate" - Starts simulation
+// "stop" - Shuts down SCS
+// "loadSDF filename" - Loads environment from an SDF file
+
+struct scs_api_command_t
+{
+   string command;       // Planner options (specified in the GUI)
+}

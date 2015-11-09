@@ -1,0 +1,31 @@
+package ihmc;
+
+struct hand_pose_packet_message_t
+{
+  int64_t  utime;
+
+  int8_t robot_side;
+  int8_t data_type;
+  int8_t reference_frame;
+  boolean to_home_position;
+
+  double position[3];
+  float orientation[4]; // NB: ordered wxyz
+
+  float trajectory_time;
+
+  int32_t n_angles;
+  double joint_angles[n_angles];
+
+  // robot_side:
+  const int8_t LEFT      = 0;
+  const int8_t RIGHT     = 1;
+  // data_type:
+  const int8_t HAND_POSE    = 0;
+  const int8_t JOINT_ANGLES = 1;
+  // reference_frame:
+  const int8_t CHEST     = 0;
+  const int8_t WORLD     = 1;
+}
+
+

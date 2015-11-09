@@ -1,9 +1,0 @@
-# list of subdirectories to build, one one each line.  Empty lines
-# and lines starting with '#' are ignored
-
-core_utils
-affordance_utils
-stickyhand_utils
-stickyfoot_utils
-
-
