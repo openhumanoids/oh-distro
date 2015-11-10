@@ -17,6 +17,7 @@ classdef FinalPoseProblem
     joint_space_tree
     debug
     visualizer
+    pelvis_height_limits
   end
   
   properties (Constant)
@@ -34,6 +35,7 @@ classdef FinalPoseProblem
                    'activecollisionoptions', struct(), ...
                    'endeffectorpoint', [0; 0; 0]', ...
                    'debug', false, ...
+                   'pelvis_height_limits', [0.8; 1.2], ...
                    'visualizer', []);
       optNames = fieldnames(opt);
       nArgs = length(varargin);
@@ -63,6 +65,7 @@ classdef FinalPoseProblem
       obj.active_collision_options = opt.activecollisionoptions;
       obj.goal_constraints = obj.generateGoalConstraints();
       obj.debug = opt.debug;
+      obj.pelvis_height_limits = opt.pelvis_height_limits;
       obj.visualizer = opt.visualizer;
 
     end
@@ -169,16 +172,27 @@ classdef FinalPoseProblem
       deltaQmax = 0.05;
       validConfs =  double.empty(np+1, 0);
       succ = zeros(nSph, 2);
+      pelvis = obj.robot.findLinkId('pelvis');
+      pelvisPos = obj.robot.forwardKin(kinSol, pelvis, [0;0;0]);
+      lb = [-inf; -inf; max([obj.x_goal(3)-0.2, obj.pelvis_height_limits(1)])];
+      ub = [-inf; -inf; min([obj.x_goal(3)+0.2, obj.pelvis_height_limits(2)])];
+      pelvisPosConst = WorldPositionConstraint(obj.robot, pelvis, [0;0;0], lb, ub);
       
       for sph = randperm(nSph)
         iter = iter + 1;
         point = (sphCenters(:,sph).*mapMirror.(obj.grasping_hand)) + tr2root;
-        shConstraint = WorldPositionConstraint(obj.robot, base, point, obj.x_goal(1:3), obj.x_goal(1:3));
-        shOrient = WorldEulerConstraint(obj.robot, base, [0;-pi/30; -pi/2], [0; pi/30; pi/2]);
-        constraints = [{shConstraint, shOrient}, obj.goal_constraints];
+        dist = norm(sphCenters(1:3,sph));
+        axis = sphCenters(:,sph)/norm(sphCenters(:,sph));
+%         drawTreePoints([[0;0;0] sphCenters(1:3,sph)], 'lines', true, 'text', 'cm_point')
+%         drawTreePoints([obj.x_goal(1:3) - sphCenters(1:3,sph), obj.x_goal(1:3)], 'lines', true)
+        shDistance = Point2PointDistanceConstraint(obj.robot, root, obj.robot.findLinkId('world'), [0;0;0], obj.x_goal(1:3), dist, dist);
+        shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), tr2root, 0);
+%         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - sphCenters(1:3,sph), obj.x_goal(1:3) - sphCenters(1:3,sph));
+        shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
+        constraints = [{shDistance, shGaze, shOrient, pelvisPosConst}, obj.goal_constraints, obj.additional_constraints];
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
-%         obj.visualizer.draw(0, q)
+        obj.visualizer.draw(0, q)
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
         targetPos = palmPose;
