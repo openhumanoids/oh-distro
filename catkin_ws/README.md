@@ -1,16 +1,16 @@
-# ipab-ros-workspace
-ROS workspace with common packages used for humanoids research, primarily to provide interoperability between DRC, SCS, and EXOTica as well as the robots we are using.
+# ROS Workspace
+ROS workspace with common packages used for humanoids research, primarily to provide interoperability between the OpenHumanoids main-distro (formerly MIT DRC), IHMC's SCS, and the University of Edinburgh's EXOTica as well as the robots we are using.
 
 # Style Guide
 
 ## Formatting
-For C++, we are using either ROS or a slightly modified BSD/Allman formatting.
+For C++, we are using a slightly modified BSD/Allman formatting as also used by ROS.
 
 To apply automatic formatting, __astyle__ is required: ``sudo apt-get install astyle``. All C++ source and header files can then be formatted by navigating to the directory containing the source and running:
 
 ```find -regextype egrep -regex '.*\.[ch](pp)?$' -exec astyle '{}' --style=allman --indent=spaces=2 --pad-oper --unpad-paren --pad-header --convert-tabs \;```
 
-A guide on autoformatting using the Eclipse IDE can be found [here](http://wiki.ros.org/IDEs#Auto_Formatting)
+A guide on autoformatting using the Eclipse IDE can be found [here](http://wiki.ros.org/IDEs#Auto_Formatting).
 
 ## Linting
 We are using [roslint](http://wiki.ros.org/roslint) for static code analysis and to lint our C++ codebase. An example is implemented for the ``drc_translators`` package.
