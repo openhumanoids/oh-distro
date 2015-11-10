@@ -2,8 +2,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
   if nargin < 1 || isempty(options), options = struct(); end
   
-  warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-  warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
   if ~isfield(options,'goal_bias'), options.goal_bias = 0.5; end;
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;

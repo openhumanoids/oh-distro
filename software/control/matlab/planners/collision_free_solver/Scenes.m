@@ -14,6 +14,10 @@ classdef Scenes
     end
     
     function robot = generateRobot(options)
+      warning('off','Drake:RigidBodyManipulator:ReplacedCylinder');
+      warning('off','Drake:CollisionFilterGroup:DiscardingCollisionFilteringInfo');
+      warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
+      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
       switch options.model
 %         case 'v3'
 %           if options.convex_hull

@@ -2,11 +2,11 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   
   if nargin < 1 || isempty(options), options = struct(); end
   
-  warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
-  warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
+  warning('off','Drake:CollisionFilterGroup:DiscardingCollisionFilteringInfo');
+  warning('off','Drake:RigidBodyManipulator:WeldedLinkInd');
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 4; end;
+  if ~isfield(options,'scene'), options.scene = 1; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -15,7 +15,6 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   
   options.floating = true;
   options.terrain = RigidBodyFlatTerrain();
-  options.joint_v_max = 15*pi/180;
   
   if isempty(options.robot)
     r = Scenes.generateScene(options);
@@ -86,7 +85,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     'visualizer', v);
 
   [xGoalFull, info, debug_vars] = finalPose.findFinalPose();
-  if options.visualize
+  if options.visualize && info == 1
     v.draw(0, xGoalFull(8:end))
   end
 end
