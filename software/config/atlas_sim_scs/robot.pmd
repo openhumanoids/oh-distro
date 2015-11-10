@@ -1,0 +1,123 @@
+group "0.ros_bridge" {
+    cmd "ros_bridge_without_pronto" {
+        exec = "roslaunch drc_translators ihmc_bridge.launch robotName:=atlas";
+        host = "localhost";
+    }
+    cmd "ros_bridge_with_pronto" {
+        exec = "roslaunch drc_translators ihmc_bridge.launch robotName:=atlas mode:=state_estimation imuSensor:=pelvis_imu_sensor_at_imu_frame";
+        host = "localhost";
+    }
+}
+
+group "1.params_and_model_pub" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/atlas_sim_scs/robot.cfg";
+        host = "localhost";
+    }
+
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/atlas_v5/model_LR_RR.urdf";
+        host = "localhost";
+    }
+
+
+}
+
+group "2.state_without_pronto" {
+    cmd "joints2frames_without" {
+        exec = "drc-joints2frames -m";
+        host = "localhost";
+    }
+}
+
+
+group "2.state_with_pronto" {
+    cmd "state-sync" {
+        exec = "drc-state-sync -a 5";
+        host = "localhost";
+    }
+    cmd "joints2frames_with" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+    cmd "se-fusion" {
+        exec = "se-fusion";
+        host = "localhost";
+    }
+}
+
+
+group "3.plan_and_control" {
+    cmd "drc-ihmc-step-translator" {
+        exec = "drc-ihmc-step-translator";
+        host = "localhost";
+    }
+    cmd "contact_monitor" {
+        exec = "drc-contact-monitor";
+        host = "localhost";
+    }
+
+    cmd "plan_eval_proxi" {
+        exec = "ipab-plan-eval-proxi";
+        host = "localhost";
+    }
+
+    cmd "planner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner([],5); p.run();\"";
+       host = "localhost";
+       stop_signal = 15;
+    }
+
+}
+
+group "4.maps" {
+
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "localhost";
+    }
+
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "localhost";
+    }
+
+    cmd "lidar-passthrough" {
+        exec = "bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} drc-lidar-passthrough -c 0.06 -s'";
+        host = "localhost";
+    }
+
+}
+
+
+cmd "drake-designer" {
+    exec = "drake-designer -c $DRC_BASE/software/config/atlas_sim_scs/robot.cfg -v5";
+    host = "localhost";
+}
+
+cmd "pose-util" {
+    exec = "drc-robot-pose-util";
+    host = "localhost";
+}
+
+
+script "start_ui" {
+    start cmd "ros_bridge_without_pronto";
+    start group "1.params_and_model_pub";
+    wait ms 1000;
+    start group "2.state_without_pronto";
+    start group "3.plan_and_control";
+    start group "4.maps";
+    start cmd "drake-designer";
+}
+
+script "start_ui_with_pronto" {
+    start cmd "ros_bridge_with_pronto";
+    start group "1.params_and_model_pub";
+    wait ms 1000;
+    start group "2.state_with_pronto";
+    start group "3.plan_and_control";
+    start group "4.maps";
+    start cmd "drake-designer";
+}
+
