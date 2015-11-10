@@ -18,11 +18,11 @@
 #include "lcmtypes/drc/plan_control_t.hpp"
 #include "lcmtypes/drc/robot_plan_t.hpp"
 #include "lcmtypes/drc/neck_pitch_t.hpp"
+#include "lcmtypes/drc/scs_api_command_t.hpp"
 
-#include "lcmtypes/ipab/com_height_packet_message_t.hpp"
-#include "lcmtypes/ipab/pause_command_message_t.hpp"
-#include "lcmtypes/ipab/hand_pose_packet_message_t.hpp"
-#include "lcmtypes/ipab/scs_api_command_t.hpp"
+#include "lcmtypes/ihmc/com_height_packet_message_t.hpp"
+#include "lcmtypes/ihmc/pause_command_message_t.hpp"
+#include "lcmtypes/ihmc/hand_pose_packet_message_t.hpp"
 
 #include <ihmc_msgs/FootstepDataListMessage.h>
 #include <ihmc_msgs/ComHeightPacketMessage.h>
@@ -77,17 +77,17 @@ private:
                                                     double orient_w, double orient_x, double orient_y, double orient_z);
 
   void comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                        const ipab::com_height_packet_message_t* msg);
+                        const ihmc::com_height_packet_message_t* msg);
   ros::Publisher com_height_pub_;
 
   void pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                    const ipab::pause_command_message_t* msg);
+                    const ihmc::pause_command_message_t* msg);
   void stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
   void stopManipHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg);
   ros::Publisher pause_pub_, stop_manip_pub_;
 
   void handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                       const ipab::hand_pose_packet_message_t* msg);
+                       const ihmc::hand_pose_packet_message_t* msg);
   ros::Publisher hand_pose_pub_;
 
   void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
@@ -105,7 +105,7 @@ private:
   void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg);
   ros::Publisher neck_orientation_pub_;
 
-  void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const ipab::scs_api_command_t* msg);
+  void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::scs_api_command_t* msg);
   ros::Publisher scs_api_pub_;
 };
 
@@ -265,7 +265,7 @@ Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw)
 }
 
 void LCM2ROS::scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                            const ipab::scs_api_command_t* msg)
+                            const drc::scs_api_command_t* msg)
 {
   std_msgs::String rmsg;
   rmsg.data = msg->command;
@@ -323,7 +323,7 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
 }
 
 void LCM2ROS::comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                               const ipab::com_height_packet_message_t* msg)
+                               const ihmc::com_height_packet_message_t* msg)
 {
   ROS_ERROR("LCM2ROS got com height");
   ihmc_msgs::ComHeightPacketMessage mout;
@@ -332,7 +332,7 @@ void LCM2ROS::comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 }
 
 void LCM2ROS::pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                           const ipab::pause_command_message_t* msg)
+                           const ihmc::pause_command_message_t* msg)
 {
   ROS_ERROR("LCM2ROS got pause %d", static_cast<int>(msg->pause));
   ihmc_msgs::PauseCommandMessage mout;
@@ -358,7 +358,7 @@ void LCM2ROS::stopManipHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 }
 
 void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                              const ipab::hand_pose_packet_message_t* msg)
+                              const ihmc::hand_pose_packet_message_t* msg)
 {
   ROS_ERROR("LCM2ROS got handPose packet");
   ihmc_msgs::HandPosePacketMessage mout;

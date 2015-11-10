@@ -4,6 +4,7 @@
 jpeg-utils
 pronto
 drc_lcmtypes
+ihmc
 latency
 drivers
 utils
@@ -16,7 +17,3 @@ tools
 control
 bdi_walking
 ddapp/distro/pods/drc
-
-#viewer-trials
-
-ipab

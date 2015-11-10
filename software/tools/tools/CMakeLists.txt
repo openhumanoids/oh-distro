@@ -33,3 +33,13 @@ pods_install_python_script(sim-publish-recovery-trigger-off scripts/publish_reco
 pods_install_python_script(sim-publish-recovery-trigger-on scripts/publish_recovery_trigger_on.py)
 pods_install_python_script(sim-publish-threedof-force scripts/publish_threedof_force.py)
 pods_install_python_script(drc-rolling-log-splicer python/rolling_logs.py)
+
+# Misc Tools added from ipab/tools
+pods_install_python_script(drc-send-com-height python/send_com_height.py)
+pods_install_python_script(drc-send-pause python/send_pause.py)
+pods_install_python_script(drc-send-arm-test python/send_arm_test.py)
+pods_install_python_script(drc-send-pose-body python/send_a_pose_msg.py)
+pods_install_python_script(drc-plan-passthrough python/plan_passthrough.py)
+pods_install_python_script(drc-move-arms-to-set-point python/move_arms_to_set_point.py)
+pods_install_python_script(drc-plan-eval-proxi python/plan_eval_proxi.py)
+pods_install_python_script(drc-plan-to-scope python/plan_to_scope.py)
