@@ -40,7 +40,7 @@ include_directories(
 ######################################################
 add_executable(ros2lcm_ihmc src/ros2lcm_ihmc.cpp)
 target_link_libraries(ros2lcm_ihmc ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes bot2-core eigen3)
+pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes lcmtypes_ihmc bot2-core eigen3)
 add_dependencies(ros2lcm_ihmc ipab_msgs_generate_messages_cpp ihmc_msgs_generate_messages_cpp)
 
 set(KDL_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics model-client)

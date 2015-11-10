@@ -1,0 +1,9 @@
+package ihmc;
+
+struct com_height_packet_message_t
+{
+    int64_t  utime;
+    float    min_com_height;
+    float    max_com_height;
+    float    height_offset;
+}
