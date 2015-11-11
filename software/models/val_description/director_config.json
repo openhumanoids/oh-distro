@@ -8,6 +8,7 @@
     "playback":   "./urdf/valkyrie_A_sim.urdf",
     "teleop":     "./urdf/valkyrie_A_sim.urdf"
   },
+  "colorMode": "Texture",
 
   "teleopJointGroups" : [
       { "name" : "Base",

@@ -143,6 +143,10 @@ set(libpointmatcher_external_args
     -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
   )
 
+set(hokuyo_url ssh://git@github.com/openhumanoids/hokuyo.git)
+set(hokuyo_revision 6fc1b804d80838ae314d162929bb0a25a231ca35)
+set(hokuyo_depends libbot)
+
 set(externals
   Eigen_pod
   libbot
@@ -170,6 +174,7 @@ set(externals
   kinematics-utils
   libnabo
   libpointmatcher
+  hokuyo
   )
 
 
