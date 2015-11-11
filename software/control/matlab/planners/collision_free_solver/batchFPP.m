@@ -21,7 +21,7 @@ function output = batchFPP(n, scenes, options)
   output.details.n_iterations = n;
   output.details.scenes = scenes;
   output.details.grasping_hands = grasping_hands;
-  output.details.time = sprintf('%d-%d-%d %d:%d:%.0f', clock);
+  output.details.time = datestr(now);
   
   for model_idx = 1:numel(models)
     for scene = scenes
