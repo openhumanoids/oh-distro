@@ -1,1 +1,0 @@
-sudo avrdude -p atxmega32a4 -P usb -c avrispmkII -e -U boot:w:xboot-boot.hex -U fuse1:w:0x77:m -U fuse2:w:0xBF:m -U fuse4:w:0xF7:m -U fuse5:w:0xE1:m -U lock:w:0xBF:m

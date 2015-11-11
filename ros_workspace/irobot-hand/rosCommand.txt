@@ -1,2 +1,0 @@
-rostopic pub -1 /right_hand/control handle_msgs/HandleControl'{type: [5, 0, 0, 0, 0],value: [256, 0, 0, 0, 0],valid: [True, False, False, False, False]}'
-
