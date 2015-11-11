@@ -3,7 +3,7 @@ classdef FinalPoseProblem
   properties
     robot
     end_effector_id
-    x_start
+    q_start
     x_goal
     additional_constraints
     goal_constraints
@@ -16,8 +16,11 @@ classdef FinalPoseProblem
     active_collision_options
     joint_space_tree
     debug
+    back_constraint
+    base_constraint
+    back_joints
+    base_link
     visualizer
-    pelvis_height_limits
   end
   
   properties (Constant)
@@ -28,15 +31,19 @@ classdef FinalPoseProblem
   methods
     
     function obj = FinalPoseProblem(robot, end_effector_id,...
-         x_start, x_goal, additional_constraints, q_nom, capabilty_map, ikoptions, varargin)
+         q_start, x_goal, additional_constraints, q_nom, capabilty_map, ikoptions, varargin)
       
-      opt = struct('graspinghand', 'right', ...
-                   'mindistance', 0.005, ...
-                   'activecollisionoptions', struct(), ...
-                   'endeffectorpoint', [0; 0; 0]', ...
-                   'debug', false, ...
-                   'pelvis_height_limits', [0.8; 1.2], ...
-                   'visualizer', []);
+      opt.graspinghand =  'right';
+      opt.mindistance = 0.005;
+      opt.activecollisionoptions = struct();
+      opt.endeffectorpoint = [0; 0; 0]';
+      opt.debug = false;
+      opt.back_constraint = 'fixed';
+      opt.base_constraint = 'fixed';
+      opt.back_joints = {'torsoYaw', 'torsoPitch', 'torsoRoll'};
+      opt.base_link = 'pelvis';
+      opt.visualizer = [];
+      
       optNames = fieldnames(opt);
       nArgs = length(varargin);
       if round(nArgs/2)~=nArgs/2
@@ -53,7 +60,7 @@ classdef FinalPoseProblem
       
       obj.robot = robot;
       obj.end_effector_id = end_effector_id;
-      obj.x_start = x_start;
+      obj.q_start = q_start;
       obj.x_goal = x_goal;
       obj.additional_constraints = additional_constraints;
       obj.q_nom = q_nom;
@@ -65,7 +72,10 @@ classdef FinalPoseProblem
       obj.active_collision_options = opt.activecollisionoptions;
       obj.goal_constraints = obj.generateGoalConstraints();
       obj.debug = opt.debug;
-      obj.pelvis_height_limits = opt.pelvis_height_limits;
+      obj.back_constraint = opt.back_constraint;
+      obj.base_constraint = opt.base_constraint;
+      obj.back_joints = opt.back_joints;
+      obj.base_link = opt.base_link;
       obj.visualizer = opt.visualizer;
 
     end
@@ -86,7 +96,7 @@ classdef FinalPoseProblem
         if obj.debug
           timer = tic();
         end
-        [qGoal, debug_vars] = obj.searchFinalPose(obj.x_start, debug_vars);
+        [qGoal, debug_vars] = obj.searchFinalPose(debug_vars);
         if isempty(qGoal)
           info = obj.FAIL_NO_FINAL_POSE;
           x_goal = obj.x_goal;
@@ -115,7 +125,7 @@ classdef FinalPoseProblem
       end
     end
     
-    function [qOpt, debug_vars] = searchFinalPose(obj, x_start, debug_vars)
+    function [qOpt, debug_vars] = searchFinalPose(obj, debug_vars)
       
       filename = [getenv('DRC_BASE'), '/software/models/val_description/model/meshes/torso/torso.stl'];
       torso = RigidBodyManipulator();
@@ -123,7 +133,7 @@ classdef FinalPoseProblem
       torso = torso.compile();
 %       tv = torso.constructVisualizer();
       
-      kinSol = obj.robot.doKinematics(x_start);
+      kinSol = obj.robot.doKinematics(obj.q_start);
       options.rotation_type = 2;
       options.compute_gradients = true;
       options.rotation_type = 1;
@@ -174,9 +184,9 @@ classdef FinalPoseProblem
       succ = zeros(nSph, 2);
       pelvis = obj.robot.findLinkId('pelvis');
       pelvisPos = obj.robot.forwardKin(kinSol, pelvis, [0;0;0]);
-      lb = [-inf; -inf; max([obj.x_goal(3)-0.2, obj.pelvis_height_limits(1)])];
-      ub = [-inf; -inf; min([obj.x_goal(3)+0.2, obj.pelvis_height_limits(2)])];
-      pelvisPosConst = WorldPositionConstraint(obj.robot, pelvis, [0;0;0], lb, ub);
+      
+      back_const = obj.generateBackConstraints();
+      base_const = obj.generateBaseConstraints();
       
       for sph = randperm(nSph)
         iter = iter + 1;
@@ -189,10 +199,10 @@ classdef FinalPoseProblem
         shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), tr2root, 0);
 %         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - sphCenters(1:3,sph), obj.x_goal(1:3) - sphCenters(1:3,sph));
         shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
-        constraints = [{shDistance, shGaze, shOrient, pelvisPosConst}, obj.goal_constraints, obj.additional_constraints];
+        constraints = [{back_const, base_const, shDistance, shGaze, shOrient}, obj.goal_constraints, obj.additional_constraints];
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
-        obj.visualizer.draw(0, q)
+%         obj.visualizer.draw(0, q)
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
         targetPos = palmPose;
@@ -306,6 +316,41 @@ classdef FinalPoseProblem
 %       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end
     
+    function constraint = generateBackConstraints(obj)
+      joint_idx = [];
+      for j = 1:numel(obj.back_joints)
+        joint_idx = [joint_idx; obj.robot.findPositionIndices(obj.back_joints{j})];
+      end
+      lb.free = obj.q_start(joint_idx) + deg2rad([-15; -5; -inf]);
+      lb.limited = obj.q_start(joint_idx) + deg2rad([-5; -5; -inf]);
+      lb.fixed = obj.q_start(joint_idx) + deg2rad([0; 0; 0]);
+      ub.free = obj.q_start(joint_idx) + deg2rad([15; 25; inf]);
+      ub.limited = obj.q_start(joint_idx) + deg2rad([5; 5; inf]);
+      ub.fixed = obj.q_start(joint_idx) + deg2rad([0; 0; 0]);
+      
+      constraint = PostureConstraint(obj.robot);
+      constraint = constraint.setJointLimits(joint_idx, lb.(obj.back_constraint), ub.(obj.back_constraint));
+    end
+    
+    function constraint = generateBaseConstraints(obj)
+      joint_idx = obj.robot.body(obj.robot.findLinkId(obj.base_link)).position_num;
+      lb.free = obj.q_start(joint_idx) + [-inf; -inf; -inf; -pi; -pi; -pi];
+      lb.limited = obj.q_start(joint_idx) + [[-inf; -inf; -inf]; deg2rad([-5; -5; -inf])];
+      lb.fixed = obj.q_start(joint_idx) + [0; 0; 0; 0; 0; 0];
+      lb.xyz = obj.q_start(joint_idx) + [-inf; -inf; -inf; 0; 0; 0];
+      lb.z = obj.q_start(joint_idx) + [0; 0; -inf; 0; 0; 0];
+      ub.free = obj.q_start(joint_idx) + [inf; inf; inf; pi; pi; pi];
+      ub.limited = obj.q_start(joint_idx) + [[inf; inf; inf]; deg2rad([5; 15; inf])];
+      ub.fixed = obj.q_start(joint_idx) + [0; 0; 0; 0; 0; 0];
+      ub.xyz = obj.q_start(joint_idx) + [inf; inf; inf; 0; 0; 0];
+      ub.z = obj.q_start(joint_idx) + [0; 0; inf; 0; 0; 0];
+      
+      constraint = PostureConstraint(obj.robot);
+      constraint = constraint.setJointLimits(joint_idx, lb.(obj.base_constraint), ub.(obj.base_constraint));
+%       pos_constraint = WorldPositionConstraint(obj.robot, obj.robot.findLinkId(obj.base_link), [0; 0; 0], obj.q_start(1:3), obj.q_start(1:3));
+%       quat_constraint = WorldQuatConstraint(obj.robot, obj.robot.findLinkId(obj.base_link), rpy2quat(obj.q_start(4:6)), 0);
+%       constraints = {pos_constraint, quat_constraint};
+    end
     
     function obj = pruneCapabilityMap(obj, sagittalAngle,...
         transverseAngle, sagittalWeight, transverseWeight, reachabilityWeight)
@@ -328,7 +373,7 @@ classdef FinalPoseProblem
       obj.capability_map.reachabilityIndex = obj.capability_map.reachabilityIndex(indices);
       obj.capability_map.map = obj.capability_map.map(indices, :);
       obj.capability_map.sphCenters = obj.capability_map.sphCenters(:, indices);
-    end    
+    end
     
   end
   
