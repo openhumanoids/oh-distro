@@ -28,11 +28,10 @@ javaaddpath([pods_get_base_path,'/share/java/bot2-lcmgl.jar']);
 
 % tell drake about ROS
 setenv('DRC_PATH',[pods_get_base_path,'/..']);
-%setenv('ROS_ROOT',getenv('ROS_ROOT'));
-%setenv('ROS_PACKAGE_PATH',[pods_get_base_path,'/../../ros_workspace',pathsep,getenv('ROS_PACKAGE_PATH')]);
-[~,ROS_MODEL_PKG] = system(['grep ROS_MODEL_PKG pod-build/CMakeCache.txt | cut -d "=" -f2']);
-ROS_MODEL_PKG = strtrim(ROS_MODEL_PKG);
-setenv('ROS_PACKAGE_PATH',[ROS_MODEL_PKG,pathsep,getenv('ROS_PACKAGE_PATH')]);
+% Removed Nov 2015 - previous referred to mit_drcsim_scripts
+%[~,ROS_MODEL_PKG] = system(['grep ROS_MODEL_PKG pod-build/CMakeCache.txt | cut -d "=" -f2']);
+%ROS_MODEL_PKG = strtrim(ROS_MODEL_PKG);
+%setenv('ROS_PACKAGE_PATH',[ROS_MODEL_PKG,pathsep,getenv('ROS_PACKAGE_PATH')]);
 
 setenv('LD_LIBRARY_PATH',[getenv('LD_LIBRARY_PATH'),pathsep,'/opt/ros/fuerte/lib']);
 
