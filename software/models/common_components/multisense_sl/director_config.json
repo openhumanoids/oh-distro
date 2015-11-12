@@ -25,7 +25,7 @@
   "robotStateJointNames": [
    "hokuyo_joint"
   ],
-  "fixedPointFile" : "../../../control/matlab/data/atlas_v5/atlas_v5_fp.mat",
+  "fixedPointFile" : "../../../control/matlab/data/multisense_sl/multisense_sl_fp.mat",
 
   "handCombinations": [
   ],
