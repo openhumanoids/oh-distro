@@ -7,7 +7,7 @@ set(libbot_revision eb61f9bed5df654ffb0ce47ce44ca3d379a6e6e8)
 set(libbot_depends)
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
-set(Eigen_pod_revision 3ec6bbfcb41a9ea74921720d62f86863fdf96217)
+set(Eigen_pod_revision 9061e9d5481fe0fdf55d5de322dfb1ed9d380a1c) # use newer Eigen - 3ec6bbfcb41a9ea74921720d62f86863fdf96217
 set(Eigen_pod_depends)
 
 set(opencv_url https://github.com/Itseez/opencv.git)
