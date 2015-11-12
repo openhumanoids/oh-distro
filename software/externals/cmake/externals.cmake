@@ -181,7 +181,7 @@ set(externals
   microstrain
   fovis
   estimate-pose
-  #vicon # deactivated unless used with vicon camera setup
+  vicon
   apriltags
   bullet
   spotless
