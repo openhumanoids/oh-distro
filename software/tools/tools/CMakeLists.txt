@@ -43,3 +43,5 @@ pods_install_python_script(drc-plan-passthrough python/plan_passthrough.py)
 pods_install_python_script(drc-move-arms-to-set-point python/move_arms_to_set_point.py)
 pods_install_python_script(drc-plan-eval-proxi python/plan_eval_proxi.py)
 pods_install_python_script(drc-plan-to-scope python/plan_to_scope.py)
+
+pods_install_python_script(drc-send-robot-state python/send_robot_state.py)

@@ -3,7 +3,10 @@ group "0.params_and_model_pub" {
         exec = "bot-param-server $DRC_BASE/software/config/husky/robot.cfg";
         host = "localhost";
     }
-
+    cmd "model" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/common_components/multisense_sl/multisense_sl.urdf";
+        host = "localhost";
+    }
 }
 
 group "1.sensing" {
@@ -20,7 +23,7 @@ group "1.sensing" {
 
 group "2.vis" {
     cmd "drc-viewer" {
-        exec = "pronto-viewer -c husky.cfg";
+        exec = "pronto-viewer -c husky/robot.cfg";
         host = "localhost";
     }
     cmd "glview" {
@@ -30,9 +33,12 @@ group "2.vis" {
 
 
     cmd "designer" {
-        exec = "drake-designer -c $DRC_BASE/software/config/husky/robot.cfg";
+        exec = "drake-designer -c $DRC_BASE/software/config/husky/robot.cfg --director_config $DRC_BASE/software/models/common_components/multisense_sl/director_config.json";
         host = "localhost";
     }
 }
 
-
+cmd "drc-send-robot-state" {
+    exec = "drc-send-robot-state multisense";
+    host = "localhost";
+}
