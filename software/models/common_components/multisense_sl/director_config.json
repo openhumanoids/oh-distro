@@ -30,5 +30,6 @@
   "handCombinations": [
   ],
 
-  "userConfig" : ["fixedBaseArm","useFootstepsDisable","usePlanningDisable","useFootContactVisDisable","useCOPMonitorDisable"]
+  "userConfig" : ["fixedBaseArm"],
+  "disableComponents" : ["useFootsteps","usePlanning","useFootContactVis","useCOPMonitor"]
 }
