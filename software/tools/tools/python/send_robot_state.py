@@ -11,6 +11,11 @@ import lcm
 from drc.robot_state_t import robot_state_t
 from bot_core.pose_t import pose_t
 import time
+import numpy as np
+import math
+
+from ddapp.utime import getUtime
+import multisense as lcmmultisense
 
 print "drc-send-robot-state [v5|val1|val2|multisense"
 
@@ -19,7 +24,31 @@ if len(sys.argv) > 1:
 else:
   robot_name = 'val2'
 
+if len(sys.argv) > 2:
+  mode = sys.argv[2]
+else:
+  mode = 'static'
+
 print robot_name
+
+
+def euler_to_quat(rpy):
+  roll =  rpy[0]
+  pitch = rpy[1]
+  yaw =   rpy[2]
+
+  sy = math.sin(yaw*0.5);
+  cy = math.cos(yaw*0.5);
+  sp = math.sin(pitch*0.5);
+  cp = math.cos(pitch*0.5);
+  sr = math.sin(roll*0.5);
+  cr = math.cos(roll*0.5);
+  w = cr*cp*cy + sr*sp*sy;
+  x = sr*cp*cy - cr*sp*sy;
+  y = cr*sp*cy + sr*cp*sy;
+  z = cr*cp*sy - sr*sp*cy;
+  return np.array([w,x,y,z])
+
 
 if robot_name == "v5":
   print "Atlas Version 5"
@@ -61,21 +90,51 @@ msg.joint_effort = [0]*msg.num_joints;
 msg2 = pose_t()
 msg2.utime = msg.utime
 
-for i in range(0,1000):
-  i
-  j=i/1000.0
-  msg.pose.translation.x = j
-  msg.pose.translation.y = j*2
-  msg.joint_position[0] = j
-  msg.pose.rotation.w = 1
-  msg.pose.rotation.x = 0
-  msg.pose.rotation.y = 0
-  msg.pose.rotation.z = 0
-  lc.publish("EST_ROBOT_STATE", msg.encode())
 
+if mode == "static":
+  print "Send a single pose..."
+  msg.pose.translation.x = 0
+  msg.pose.translation.y = 0
+  msg.pose.translation.z = 1.2
+  msg.joint_position[0] = 0
+  orientation = euler_to_quat([0, 0.0*np.pi/180.0,0])
+  msg.pose.rotation.w = orientation[0]
+  msg.pose.rotation.x = orientation[1]
+  msg.pose.rotation.y = orientation[2]
+  msg.pose.rotation.z = orientation[3]
+  lc.publish("EST_ROBOT_STATE", msg.encode())
 
   msg2.pos = [msg.pose.translation.x, msg.pose.translation.y, msg.pose.translation.z]
   msg2.orientation = [msg.pose.rotation.w, msg.pose.rotation.x, msg.pose.rotation.y, msg.pose.rotation.z]
   lc.publish("POSE_BODY", msg2.encode())
 
-  time.sleep(0.01)
+  msg3 = lcmmultisense.command_t()
+  msg3.utime = getUtime()
+  msg3.fps = 15
+  msg3.gain = -1
+  msg3.exposure_us = 10000
+  msg3.agc = -1
+  msg3.rpm = 5
+  msg3.leds_flash = False
+  msg3.leds_duty_cycle = 0
+  lc.publish("MULTISENSE_COMMAND", msg3.encode())
+  print "Publishing Multisense command to spin at 5rpm"
+
+else:
+  for i in range(0,1000):
+    i
+    j=i/1000.0
+    msg.pose.translation.x = j
+    msg.pose.translation.y = j*2
+    msg.joint_position[0] = j
+    msg.pose.rotation.w = 1
+    msg.pose.rotation.x = 0
+    msg.pose.rotation.y = 0
+    msg.pose.rotation.z = 0
+    lc.publish("EST_ROBOT_STATE", msg.encode())
+
+    msg2.pos = [msg.pose.translation.x, msg.pose.translation.y, msg.pose.translation.z]
+    msg2.orientation = [msg.pose.rotation.w, msg.pose.rotation.x, msg.pose.rotation.y, msg.pose.rotation.z]
+    lc.publish("POSE_BODY", msg2.encode())
+
+    time.sleep(0.01)

@@ -14,12 +14,16 @@ group "1.sensing" {
         exec = "multisense-lcm-driver -o 0 -n hokuyo_joint";
         host = "localhost";
     }
-    cmd "ipab-send-pose-body" {
-        exec = "ipab-send-pose-body";
+    cmd "hokuyo" {
+        exec = "hokuyo -d /dev/ttyACM0";
         host = "localhost";
     }
-}
+    cmd "microstrain" {
+        exec = "microstrain -d /dev/ttyACM1 -r";
+        host = "localhost";
+    }
 
+}
 
 group "2.vis" {
     cmd "drc-viewer" {
@@ -31,14 +35,18 @@ group "2.vis" {
         host = "localhost";
     }
 
-
     cmd "designer" {
         exec = "drake-designer -c $DRC_BASE/software/config/husky/robot.cfg --director_config $DRC_BASE/software/models/common_components/multisense_sl/director_config.json";
         host = "localhost";
     }
 }
 
-cmd "drc-send-robot-state" {
-    exec = "drc-send-robot-state multisense";
+cmd "3.drc-send-robot-state" {
+    exec = "drc-send-robot-state multisense static";
+    host = "localhost";
+}
+
+cmd "4.drc-send-pose-body" {
+    exec = "drc-send-pose-body";
     host = "localhost";
 }
