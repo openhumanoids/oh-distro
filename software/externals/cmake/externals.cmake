@@ -163,7 +163,7 @@ set(externals
   microstrain
   fovis
   estimate-pose
-  vicon
+  #vicon # deactivated since removed in removed in d50971b64e901e48839a987ef6710bfabb0a67ed
   apriltags
   bullet
   spotless
