@@ -1,6 +1,0 @@
-<launch>
-  <param name="/ros2lcm_camera/image_transport" value="compressed" />
-  <node name="ros2lcm_camera" pkg="translators" type="ros2lcm_camera"  /> 
-</launch>
-  
-

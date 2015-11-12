@@ -1,9 +1,0 @@
-<launch>
-	<node type="dynparam" pkg="dynamic_reconfigure" args="set /multisense_sl/camera/left/image_color/compressed '{'jpeg_quality': 90}'" name="$(anon dynparam)"/>
-
-<!-- Command Line Versions:
-rosrun dynamic_reconfigure dynparam set /multisense_sl/camera/left/image_color/compressed "{'jpeg_quality':10}"
-rosrun dynamic_reconfigure dynparam get /multisense_sl/camera/left/image_color/compressed
--->
-
-</launch>

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# First argument should be a fully-qualified path to a .world file
-# (e.g., `rospack find drc_robot_utils`/worlds/drc_robot.world)
-# the '-u' pauses the robot at launch
-gazebo -s libgazebo_ros_api_plugin.so $1
-
