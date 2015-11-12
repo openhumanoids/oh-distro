@@ -21,13 +21,24 @@ set(opencv_external_args
     -DWITH_CUDA:BOOL=OFF
   )
 
-set(flann-pod_url https://github.com/openhumanoids/flann-pod.git)
-set(flann-pod_revision 9619e03a1d1f8b4b27d370810b9b2ccfe00adf58)
-set(flann-pod_depends)
+set(flann_url https://github.com/mariusmuja/flann.git)
+set(flann_revision 4969acc) # master from march 2015
+set(flann_depends)
+set(flann_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+    -DBUILD_MATLAB_BINDINGS:BOOL=OFF
+    -DBUILD_PYTHON_BINDINGS:BOOL=OFF
+    -DBUILD_C_BINDINGS:BOOL=OFF
+    -DBUILD_TESTS:BOOL=OFF
+    -DBUILD_EXAMPLES:BOOL=OFF
+  )
 
 set(pcl_url http://github.com/pointcloudlibrary/pcl.git)
 set(pcl_revision pcl-1.7.1)
-set(pcl_depends flann-pod Eigen_pod)
+set(pcl_depends flann Eigen_pod)
 set(pcl_external_args
   CMAKE_CACHE_ARGS
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
@@ -158,7 +169,7 @@ set(externals
   Eigen_pod
   libbot
   opencv
-  flann-pod
+  flann
   pcl
   octomap-pod
   libmultisense
