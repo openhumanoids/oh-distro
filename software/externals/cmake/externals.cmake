@@ -10,9 +10,16 @@ set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
 set(Eigen_pod_revision 3ec6bbfcb41a9ea74921720d62f86863fdf96217)
 set(Eigen_pod_depends)
 
-set(opencv-pod_url https://github.com/openhumanoids/opencv-pod.git)
-set(opencv-pod_revision 7f4c81676f887ee64da446f1ba61a3e5ed80f879)
-set(opencv-pod_depends Eigen_pod)
+set(opencv_url https://github.com/Itseez/opencv.git)
+set(opencv_revision 2.4.12.3)
+set(opencv_depends Eigen_pod)
+set(opencv_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+    -DWITH_CUDA:BOOL=OFF
+  )
 
 set(flann-pod_url https://github.com/openhumanoids/flann-pod.git)
 set(flann-pod_revision 9619e03a1d1f8b4b27d370810b9b2ccfe00adf58)
@@ -34,7 +41,7 @@ set(octomap-pod_depends)
 
 set(occ-map_url https://github.com/openhumanoids/occ-map.git)
 set(occ-map_revision 34ab71fa693216d2c0508f0f2680b9a68994f473)
-set(occ-map_depends libbot opencv-pod)
+set(occ-map_depends libbot opencv)
 
 set(common_utils_url https://github.com/openhumanoids/common_utils.git)
 set(common_utils_revision 7fc252e3b1baf8ec6a19ee812ae114e8ee460dbd)
@@ -111,7 +118,7 @@ set(kinematics-utils_depends Eigen_pod)
 
 set(libmultisense_url https://bitbucket.org/crl/libmultisense)
 set(libmultisense_hg_tag a57026c)
-set(libmultisense_depends opencv-pod)
+set(libmultisense_depends opencv)
 set(libmultisense_external_args
   CMAKE_CACHE_ARGS
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
@@ -150,7 +157,7 @@ set(hokuyo_depends libbot)
 set(externals
   Eigen_pod
   libbot
-  opencv-pod
+  opencv
   flann-pod
   pcl
   octomap-pod
