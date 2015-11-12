@@ -8,14 +8,15 @@ function output = batchFPP(n, scenes, options)
     models = {options.models};
   else
     models = options.models;
-  end;
+  end
+  
   if ~isfield(options,'grasping_hands')
     grasping_hands = {'right'};
   elseif ischar(options.grasping_hands)
     grasping_hands = {options.grasping_hands};
   else
     grasping_hands = options.grasping_hands;
-  end;
+  end
   
   output.details.models = models;
   output.details.n_iterations = n;

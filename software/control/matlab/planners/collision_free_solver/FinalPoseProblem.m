@@ -14,12 +14,7 @@ classdef FinalPoseProblem
     ikoptions
     grasping_hand
     active_collision_options
-    joint_space_tree
     debug
-    back_constraint
-    base_constraint
-    back_joints
-    base_link
     visualizer
   end
   
@@ -38,10 +33,6 @@ classdef FinalPoseProblem
       opt.activecollisionoptions = struct();
       opt.endeffectorpoint = [0; 0; 0]';
       opt.debug = false;
-      opt.back_constraint = 'fixed';
-      opt.base_constraint = 'fixed';
-      opt.back_joints = {'torsoYaw', 'torsoPitch', 'torsoRoll'};
-      opt.base_link = 'pelvis';
       opt.visualizer = [];
       
       optNames = fieldnames(opt);
@@ -72,10 +63,6 @@ classdef FinalPoseProblem
       obj.active_collision_options = opt.activecollisionoptions;
       obj.goal_constraints = obj.generateGoalConstraints();
       obj.debug = opt.debug;
-      obj.back_constraint = opt.back_constraint;
-      obj.base_constraint = opt.base_constraint;
-      obj.back_joints = opt.back_joints;
-      obj.base_link = opt.base_link;
       obj.visualizer = opt.visualizer;
 
     end
@@ -185,9 +172,6 @@ classdef FinalPoseProblem
       pelvis = obj.robot.findLinkId('pelvis');
       pelvisPos = obj.robot.forwardKin(kinSol, pelvis, [0;0;0]);
       
-      back_const = obj.generateBackConstraints();
-      base_const = obj.generateBaseConstraints();
-      
       for sph = randperm(nSph)
         iter = iter + 1;
         point = (sphCenters(:,sph).*mapMirror.(obj.grasping_hand)) + tr2root;
@@ -199,10 +183,10 @@ classdef FinalPoseProblem
         shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), tr2root, 0);
 %         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - sphCenters(1:3,sph), obj.x_goal(1:3) - sphCenters(1:3,sph));
         shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
-        constraints = [{back_const, base_const, shDistance, shGaze, shOrient}, obj.goal_constraints, obj.additional_constraints];
+        constraints = [{shDistance, shGaze, shOrient}, obj.goal_constraints, obj.additional_constraints];
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
-%         obj.visualizer.draw(0, q)
+        obj.visualizer.draw(0, q)
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
         targetPos = palmPose;
@@ -225,47 +209,49 @@ classdef FinalPoseProblem
                 debug_vars.n_nullspace_iter = debug_vars.n_nullspace_iter + 1;
               end
               phi = phi - obj.min_distance;
-%               while (eps > 1e-3 || any(phi < 0)) && nIter < 1
-%                 if obj.debug
-%                   nullspace = true;
-%                 end
-%                 qNdot = zeros(nArmJoints, 1);
-%                 for joint = 1:nArmJoints
-%                   dgamma_dq = zeros(size(phi));
-%                   for coll = 1:size(phi,1)
-%                     if phi(coll) < 0
-%                       [~,JA] = obj.robot.forwardKin(kinSol, idxA(coll), [0;0;0], options);
-%                       [~,JB] = obj.robot.forwardKin(kinSol, idxB(coll), [0;0;0], options);
-%                       JA = JA(:,armJoints);
-%                       JB = JB(:,armJoints);
-%                       dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
-%                       dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
-%                     else
-%                       dgamma_dq(coll) = 0;
-%                     end
-%                   end
-%                   qNdot(joint) = sum(dgamma_dq);
-%                 end
-%                 [~,J] = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
-%                 J = J(:,armJoints);
-%                 Jpsi = J'*inv(J*J');
-%                 deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
-%                 if any(abs(deltaQ) > deltaQmax)
-%                   alpha = deltaQmax/abs(deltaQ);
-%                 elseif all(deltaQ < 1e-3)
-%                   break
-%                 else
-%                   alpha = 1;
-%                 end
-%                 q(armJoints) = q(armJoints) + alpha*deltaQ;
-%                 [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.active_collision_options);
-%                 kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
-%                 palmPose = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
-%                 deltaX = targetPos - palmPose;
-%                 eps = norm(deltaX);
-%                 nIter = nIter + 1;
-%                 phi = phi - obj.min_distance;
-%               end
+%{
+              while (eps > 1e-3 || any(phi < 0)) && nIter < 1
+                if obj.debug
+                  nullspace = true;
+                end
+                qNdot = zeros(nArmJoints, 1);
+                for joint = 1:nArmJoints
+                  dgamma_dq = zeros(size(phi));
+                  for coll = 1:size(phi,1)
+                    if phi(coll) < 0
+                      [~,JA] = obj.robot.forwardKin(kinSol, idxA(coll), [0;0;0], options);
+                      [~,JB] = obj.robot.forwardKin(kinSol, idxB(coll), [0;0;0], options);
+                      JA = JA(:,armJoints);
+                      JB = JB(:,armJoints);
+                      dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
+                      dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
+                    else
+                      dgamma_dq(coll) = 0;
+                    end
+                  end
+                  qNdot(joint) = sum(dgamma_dq);
+                end
+                [~,J] = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
+                J = J(:,armJoints);
+                Jpsi = J'*inv(J*J');
+                deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
+                if any(abs(deltaQ) > deltaQmax)
+                  alpha = deltaQmax/abs(deltaQ);
+                elseif all(deltaQ < 1e-3)
+                  break
+                else
+                  alpha = 1;
+                end
+                q(armJoints) = q(armJoints) + alpha*deltaQ;
+                [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.active_collision_options);
+                kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
+                palmPose = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
+                deltaX = targetPos - palmPose;
+                eps = norm(deltaX);
+                nIter = nIter + 1;
+                phi = phi - obj.min_distance;
+              end
+              %}
               if obj.debug
                 debug_vars.nullspace_iter.success(debug_vars.n_nullspace_iter) = eps <= 1e-3 && all(phi >= 0);
                 debug_vars.nullspace_iter.nIter(debug_vars.n_nullspace_iter) = nIter;
@@ -314,42 +300,6 @@ classdef FinalPoseProblem
       goalQuatConstraint = WorldQuatConstraint(obj.robot, end_effector, obj.x_goal(4:7), 1/180*pi);
       constraints = {goalDistConstraint, goalQuatConstraint};
 %       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    end
-    
-    function constraint = generateBackConstraints(obj)
-      joint_idx = [];
-      for j = 1:numel(obj.back_joints)
-        joint_idx = [joint_idx; obj.robot.findPositionIndices(obj.back_joints{j})];
-      end
-      lb.free = obj.q_start(joint_idx) + deg2rad([-15; -5; -inf]);
-      lb.limited = obj.q_start(joint_idx) + deg2rad([-5; -5; -inf]);
-      lb.fixed = obj.q_start(joint_idx) + deg2rad([0; 0; 0]);
-      ub.free = obj.q_start(joint_idx) + deg2rad([15; 25; inf]);
-      ub.limited = obj.q_start(joint_idx) + deg2rad([5; 5; inf]);
-      ub.fixed = obj.q_start(joint_idx) + deg2rad([0; 0; 0]);
-      
-      constraint = PostureConstraint(obj.robot);
-      constraint = constraint.setJointLimits(joint_idx, lb.(obj.back_constraint), ub.(obj.back_constraint));
-    end
-    
-    function constraint = generateBaseConstraints(obj)
-      joint_idx = obj.robot.body(obj.robot.findLinkId(obj.base_link)).position_num;
-      lb.free = obj.q_start(joint_idx) + [-inf; -inf; -inf; -pi; -pi; -pi];
-      lb.limited = obj.q_start(joint_idx) + [[-inf; -inf; -inf]; deg2rad([-5; -5; -inf])];
-      lb.fixed = obj.q_start(joint_idx) + [0; 0; 0; 0; 0; 0];
-      lb.xyz = obj.q_start(joint_idx) + [-inf; -inf; -inf; 0; 0; 0];
-      lb.z = obj.q_start(joint_idx) + [0; 0; -inf; 0; 0; 0];
-      ub.free = obj.q_start(joint_idx) + [inf; inf; inf; pi; pi; pi];
-      ub.limited = obj.q_start(joint_idx) + [[inf; inf; inf]; deg2rad([5; 15; inf])];
-      ub.fixed = obj.q_start(joint_idx) + [0; 0; 0; 0; 0; 0];
-      ub.xyz = obj.q_start(joint_idx) + [inf; inf; inf; 0; 0; 0];
-      ub.z = obj.q_start(joint_idx) + [0; 0; inf; 0; 0; 0];
-      
-      constraint = PostureConstraint(obj.robot);
-      constraint = constraint.setJointLimits(joint_idx, lb.(obj.base_constraint), ub.(obj.base_constraint));
-%       pos_constraint = WorldPositionConstraint(obj.robot, obj.robot.findLinkId(obj.base_link), [0; 0; 0], obj.q_start(1:3), obj.q_start(1:3));
-%       quat_constraint = WorldQuatConstraint(obj.robot, obj.robot.findLinkId(obj.base_link), rpy2quat(obj.q_start(4:6)), 0);
-%       constraints = {pos_constraint, quat_constraint};
     end
     
     function obj = pruneCapabilityMap(obj, sagittalAngle,...
