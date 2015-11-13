@@ -11,7 +11,6 @@ utils
 perception
 lidar-passthrough
 motion_estimate
-network
 tools
 control
 bdi_walking
