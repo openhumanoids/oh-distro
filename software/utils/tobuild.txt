@@ -2,3 +2,4 @@
 # and lines starting with '#' are ignored
 
 drc_utils
+simple_lcm_bridge
