@@ -1,6 +1,6 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
-#externals
+drake/drake
 jpeg-utils
 pronto
 drc_lcmtypes
@@ -9,10 +9,8 @@ latency
 drivers
 utils
 perception
-drake/drake
 lidar-passthrough
 motion_estimate
-network
 tools
 control
 bdi_walking
