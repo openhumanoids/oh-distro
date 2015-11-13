@@ -17,7 +17,7 @@ import math
 from ddapp.utime import getUtime
 import multisense as lcmmultisense
 
-print "drc-send-robot-state [v5|val1|val2|multisense"
+print "drc-send-robot-state [v5|val1|val2|multisense]"
 
 if len(sys.argv) > 1:
   robot_name = sys.argv[1]
@@ -28,6 +28,11 @@ if len(sys.argv) > 2:
   mode = sys.argv[2]
 else:
   mode = 'static'
+
+if len(sys.argv) > 3:
+  rotation_flag = sys.argv[3]
+else:
+  rotation_flag = 'no-rotate'  
 
 print robot_name
 
@@ -107,18 +112,20 @@ if mode == "static":
   msg2.pos = [msg.pose.translation.x, msg.pose.translation.y, msg.pose.translation.z]
   msg2.orientation = [msg.pose.rotation.w, msg.pose.rotation.x, msg.pose.rotation.y, msg.pose.rotation.z]
   lc.publish("POSE_BODY", msg2.encode())
-
-  msg3 = lcmmultisense.command_t()
-  msg3.utime = getUtime()
-  msg3.fps = 15
-  msg3.gain = -1
-  msg3.exposure_us = 10000
-  msg3.agc = -1
-  msg3.rpm = 5
-  msg3.leds_flash = False
-  msg3.leds_duty_cycle = 0
-  lc.publish("MULTISENSE_COMMAND", msg3.encode())
-  print "Publishing Multisense command to spin at 5rpm"
+  
+  if rotation_flag == 'rotate':
+    time.sleep(5)
+    msg3 = lcmmultisense.command_t()
+    msg3.utime = getUtime()
+    msg3.fps = 15
+    msg3.gain = -1
+    msg3.exposure_us = 10000
+    msg3.agc = -1
+    msg3.rpm = 5
+    msg3.leds_flash = False
+    msg3.leds_duty_cycle = 0
+    lc.publish("MULTISENSE_COMMAND", msg3.encode())
+    print "Publishing Multisense command to spin at 5rpm"
 
 else:
   for i in range(0,1000):

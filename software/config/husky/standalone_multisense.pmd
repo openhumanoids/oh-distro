@@ -15,7 +15,7 @@ group "1.sensing" {
         host = "localhost";
     }
     cmd "hokuyo" {
-        exec = "hokuyo -d /dev/ttyACM0";
+        exec = "hokuyo -d /dev/ttyACM0 -c FIXED_SCAN -I";
         host = "localhost";
     }
     cmd "microstrain" {
@@ -46,7 +46,12 @@ cmd "3.drc-send-robot-state" {
     host = "localhost";
 }
 
-cmd "4.drc-send-pose-body" {
+cmd "4.drc-send-rotate-and-record" {
+    exec = "drc-send-rotate-and-record";
+    host = "localhost";
+}
+
+cmd "5.drc-send-pose-body" {
     exec = "drc-send-pose-body";
     host = "localhost";
 }
