@@ -11,9 +11,9 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'robot'), options.robot = []; end;
-  if ~isfield(options,'back_constraint'), options.back_constraint = 'limited'; end
-  if ~isfield(options,'base_constraint'), options.base_constraint = 'xyz'; end
-  if ~isfield(options,'feet_constraint'), options.feet_constraint = 'sliding'; end
+  if ~isfield(options,'back_constraint'), options.back_constraint = 'free'; end
+  if ~isfield(options,'base_constraint'), options.base_constraint = 'free'; end
+  if ~isfield(options,'feet_constraint'), options.feet_constraint = 'fixed'; end
   
   options.floating = true;
   options.terrain = RigidBodyFlatTerrain();

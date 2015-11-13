@@ -13,7 +13,7 @@ classdef Scenes
       nScenes = 9;
     end
     
-    function robot = generateRobot(options)
+    function [robot, urdf] = generateRobot(options)
       warning('off','Drake:RigidBodyManipulator:ReplacedCylinder');
       warning('off','Drake:CollisionFilterGroup:DiscardingCollisionFilteringInfo');
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
@@ -171,8 +171,8 @@ classdef Scenes
       end
     end
     
-    function robot = generateScene(options)
-      robot = Scenes.generateRobot(options);
+    function [robot, urdf] = generateScene(options)
+      [robot, urdf] = Scenes.generateRobot(options);
       world = robot.findLinkId('world');
       robot = Scenes.generateWorld(options, robot, world);
       robot = robot.compile();
