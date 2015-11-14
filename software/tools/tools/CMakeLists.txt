@@ -7,8 +7,6 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-add_subdirectory(src/contact-passthrough)
-
 # require python
 find_package(PythonInterp REQUIRED)
 
