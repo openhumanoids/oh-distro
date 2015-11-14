@@ -43,5 +43,5 @@ pods_install_python_script(drc-plan-eval-proxi python/plan_eval_proxi.py)
 pods_install_python_script(drc-plan-to-scope python/plan_to_scope.py)
 
 # not using python interp:
-file(COPY scripts/drc-robot-pose-util DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+file(COPY python/drc-robot-pose-util DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 file(COPY scripts/drc-atlas-rsync DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
