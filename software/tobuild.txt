@@ -9,7 +9,6 @@ latency
 drivers
 utils
 perception
-lidar-passthrough
 motion_estimate
 control
 bdi_walking
