@@ -1,0 +1,5 @@
+this model (valkyrie) is only retained for testing and posterity, don't use it.
+(e.g. some IHMC logs for Valkyrie were made with this model)
+
+it corresponds to val1 launch mode of the designer.
+
