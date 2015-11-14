@@ -18,3 +18,6 @@ jpl-tags
 plane-seg
 car-tags
 registeration
+
+# check of lidar self observations (uses drake)
+lidar-passthrough
