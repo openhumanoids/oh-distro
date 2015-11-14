@@ -1,19 +1,14 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 image_io_utils
-# sudeep:
 opencv-utils
 # library to create depth masks:
 rgbd_simulation
-#affordance
 maps
-# to check for self-collisions
-#lidar-plancheck
 # module to apply object masks:
 #image-passthrough
 # particle-filter based tracking
 particle_filter
-pfgrasp
 jpl-tags
 plane-seg
 car-tags
