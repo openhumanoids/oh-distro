@@ -311,6 +311,20 @@ classdef Scenes
       names.val2 = {'torsoYaw', 'torsoPitch', 'torsoRoll'};
       joint_idx = cellfun(@robot.findPositionIndices, names.(options.model)');
     end
+    
+    function forearm = getForearm(options, robot, side)
+      forearm.v3.left = 'l_farm';
+      forearm.v4.left = 'l_ufarm';
+      forearm.v5.left = 'l_ufarm';
+      forearm.val1.left = 'LeftForearm';
+      forearm.val2.left = 'leftForearmLink';
+      forearm.v3.right = 'r_farm';
+      forearm.v4.right = 'r_ufarm';
+      forearm.v5.right = 'r_ufarm';
+      forearm.val1.right = 'RightForearm';
+      forearm.val2.right = 'rightForearmLink';
+      forearm = robot.findLinkId(forearm.(options.model).(side));
+    end
 %NOTEST
 
     function frame = getPointInLinkFrame(options)
@@ -362,31 +376,20 @@ classdef Scenes
     
     function constraint = graspingForearmAlignConstraint(options, robot)
       grHand = options.graspingHand;
+      forearm = Scenes.getForearm(options, robot, grHand);
       switch options.model
-        case 'v3'
-          name.right = 'r_farm';
-          name.left = 'l_farm';
-        case 'v4'
-          name.right = 'r_ufarm';
-          name.left = 'l_ufarm';
         case 'v5'
           rotation.right = [0; 0; 0];
           rotation.left = [0; pi; 0];
-          name.right = 'r_ufarm';
-          name.left = 'l_ufarm';
         case 'val1'
           rotation.right = [0; -pi/2; -pi/2];
           rotation.left = [0; pi/2; -pi/2];
-          name.right = 'RightForearm';
-          name.left = 'LeftForearm';
         case 'val2'
           rotation.right = [0; -pi/2; -pi/2];
           rotation.left = [0; pi/2; -pi/2];
-          name.right = 'RightForearmLink';
-          name.left = 'LeftForearmLink';
       end
       hand = Scenes.getGraspingHand(options, robot);
-      constraint = RelativeQuatConstraint(robot, hand, name.(grHand), rpy2quat(rotation.(grHand)), 0);
+      constraint = RelativeQuatConstraint(robot, hand, forearm, rpy2quat(rotation.(grHand)), 0);
     end
     
     function constraint = nonGraspingHandPositionConstraint(options, robot)
