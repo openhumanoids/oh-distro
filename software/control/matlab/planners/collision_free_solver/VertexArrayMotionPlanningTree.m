@@ -34,7 +34,7 @@ classdef VertexArrayMotionPlanningTree < MotionPlanningTree & MotionPlanningProb
       sizecheck(q_init, 'colvec');
       obj.V = NaN(obj.num_vars, obj.N);
       obj.parent = NaN(1, obj.N);
-      obj.children = {};
+      obj.children = cell(1, obj.N);
       obj.centroid = q_init;
       [obj,id_last] = obj.addVertex(q_init, 1);
     end
