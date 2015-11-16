@@ -17,6 +17,8 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 
 #define RESIDUAL_GAIN 10.0;
@@ -24,6 +26,7 @@
 using namespace Eigen;
 
 std::vector<ContactFilterPoint> constructContactFilterPoints();
+std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename);
 
 struct ResidualDetectorState{
   double t_prev;
@@ -61,7 +64,7 @@ public:
   void kinematicChain(std::string linkName, int body_id =-1);
   void testContactFilterRotationMethod(bool useRandom=false);
   void testQP();
-  void contactFilterThreadLoop();
+  void contactFilterThreadLoop(std::string filename);
 
 private:
   std::shared_ptr<lcm::LCM> lcm_;
@@ -70,6 +73,7 @@ private:
   bool useFootForceFlag;
   bool useFootFTFlag;
   bool newStateAvailable;
+  bool newResidualStateAvailable;
   bool foot_FT_6_axis_available;
   bool useGeometricJacobianFlag;
   int nq;
@@ -102,12 +106,13 @@ private:
   void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
   void updateResidualState();
   void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
-  void computeContactFilter(const ContactFilterPoint& contactFilterPoint, bool publish);
+  void computeContactFilter(bool publishMostLikely, bool publishAll=false);
 };
 
 
 ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
-    lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), useFootForceFlag(false), useFootFTFlag(false), useGeometricJacobianFlag(false){
+    lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
+    useFootForceFlag(false), useFootFTFlag(false), useGeometricJacobianFlag(false){
 
   do {
     botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -421,8 +426,8 @@ void ResidualDetector::updateResidualState() {
   this->residual_state.integral = integral_new;
   this->residual_state.gamma = alpha - robot_state->torque - this->residual_state.r -
                                foot_ft_to_joint_torques[Side::LEFT] - foot_ft_to_joint_torques[Side::RIGHT]; // this is the integrand;
-
   this->residual_state.t_prev = t;
+  this->newResidualStateAvailable = true;
 
   //DEBUGGING
   this->residual_state.gravity = alpha;
@@ -471,7 +476,7 @@ void ResidualDetector::publishResidualState(std::string publishChannel, const Re
   this->lcm_->publish(publishChannel, &residual_state_msg);
 }
 
-void ResidualDetector::computeContactFilter(const ContactFilterPoint& contactFilterPoint, bool publish){
+void ResidualDetector::computeContactFilter(bool publishMostLikely, bool publishAll){
   // copy the required data to local variables
   std::unique_lock<std::mutex> lck(pointerMutex);
   VectorXd residual = this->residual_state.r;
@@ -480,7 +485,7 @@ void ResidualDetector::computeContactFilter(const ContactFilterPoint& contactFil
   VectorXd v = this->args.robot_state->qd;
   lck.unlock();
 
-  this->contactFilter.computeLikelihood(t, residual, q, v, contactFilterPoint, publish);
+  this->contactFilter.computeLikelihoodFull(t, residual, q, v, publishMostLikely, publishAll);
 }
 
 void ResidualDetector::residualThreadLoop() {
@@ -494,27 +499,34 @@ void ResidualDetector::residualThreadLoop() {
   }
 }
 
-void ResidualDetector::contactFilterThreadLoop() {
+void ResidualDetector::contactFilterThreadLoop(std::string filename) {
   std::cout << "entered contact filter loop" << std::endl;
 //  Vector3d contactPosition(0,0,0);
 //  Vector3d contactNormal(0,0,1);
-  std::vector<ContactFilterPoint> cfpVec = constructContactFilterPoints();
-  int cfpVecSize = cfpVec.size();
-//  cfpVecSize = 1;// Debugging
-  int body_id = 1;
-  bool publish = true;
+//  std::string filename = "testCFP.csv";
+  std::vector<ContactFilterPoint> cfpVec = constructContactFilterPointsFromFile(filename);
+  std::cout << "constructed cfpVec" << std::endl;
+  this->contactFilter.addContactPoints(cfpVec);
+
+  std::cout << "added all contact points to the ContactFilter object" << std::endl;
+  bool publishMostLikely = true;
+  bool publishAll = true;
   bool done = false;
-  while(!this->residual_state.running){
-    std::this_thread::yield();
-  }
+
   while (!done){
-    for (int i=0; i < cfpVecSize; i++){
-      this->computeContactFilter(cfpVec[i], publish);
+
+    // only run as fast as the residual state is getting updated,
+    // otherwise we are essentially double counting the measurements
+    while(!this->residual_state.running || !this->newResidualStateAvailable){
+      std::this_thread::yield();
     }
-//    std::this_thread::sleep_for(std::chrono::seconds(1));
+    this->computeContactFilter(publishMostLikely, publishAll);
+    this->newResidualStateAvailable = false;
   }
 }
 
+
+// TESTING
 void ResidualDetector::kinematicChain(std::string linkName, int body_id){
 
   // the default of body_id, then overwrite with linkName
@@ -537,6 +549,8 @@ void ResidualDetector::kinematicChain(std::string linkName, int body_id){
 
 }
 
+
+// TESTING
 void ResidualDetector::testContactFilterRotationMethod(bool useRandom) {
 
 
@@ -571,35 +585,131 @@ void ResidualDetector::testQP(){
   this->contactFilter.testQP();
 }
 
-
+// SHOULD DO THIS PROGRAMATICALLY LATER
 std::vector<ContactFilterPoint> constructContactFilterPoints(){
   std::vector<ContactFilterPoint> vec;
   ContactFilterPoint cfp;
+
   cfp.body_id = 1;
+  cfp.body_name = "pelvis";
   cfp.name = "ORIGIN";
   cfp.contactNormal = Vector3d(0,0,1);
   cfp.contactPoint = Vector3d(0,0,0);
   vec.push_back(cfp);
 
   cfp.body_id = 1;
+  cfp.body_name = "pelvis";
   cfp.name = "L_PELVIS";
   cfp.contactNormal = Vector3d(0,0,1);
   cfp.contactPoint = Vector3d(-0.092,0.0616,-0.144);
   vec.push_back(cfp);
 
   cfp.body_id = 1;
+  cfp.body_name = "pelvis";
   cfp.name = "R_PELVIS";
   cfp.contactNormal = Vector3d(0,0,1);
   cfp.contactPoint = Vector3d(-0.092,-0.0616,-0.144);
   vec.push_back(cfp);
 
   cfp.body_id = 1;
+  cfp.body_name = "pelvis";
   cfp.name = "M_PELVIS";
   cfp.contactNormal = Vector3d(0,0,1);
   cfp.contactPoint = Vector3d(-0.092,0.0,-0.144);
   vec.push_back(cfp);
 
+
+  cfp.body_id = 1;
+  cfp.body_name = "pelvis";
+  cfp.name = "B_PELVIS";
+  cfp.contactNormal = Vector3d(1,0,0);
+  cfp.contactPoint = Vector3d(-0.15477851,  0.00025932, -0.00269301);
+  vec.push_back(cfp);
+
   return vec;
+}
+
+
+std::vector<std::vector<std::string>> parseCSVFile(std::string filename){
+  using namespace std;
+  ifstream file (filename);
+  std::vector<std::vector<std::string>> result;
+  if (!file.is_open()){
+    std::cout << "couldn't find the specified file, is it on the path?" << std::endl;
+    return result;
+  }
+
+  while (!file.eof()){
+
+//    std::cout << "attempting to read a new line" << std::endl;
+    //go through every line
+    string line;
+    string tmp_string;
+    vector<string> tmp;
+    size_t pos = string::npos;
+    getline(file, line);
+
+
+
+    while( (pos=line.find_first_of(",")) != string::npos){
+//      std::cout << "the line I just read in is " << std::endl;
+//      std::cout << line << std::endl;
+
+//      std::cout << "found a comma at position " << pos << endl;
+      // extract the component without the ","
+      tmp.push_back(line.substr(0,pos));
+      tmp_string = line.substr(0,pos);
+
+//      std::cout << "the string I found is =  " << tmp_string << std::endl;
+
+      //erase the val including the ","
+      line.erase(0,pos+1);
+//      std::cout << "after erasing the line is" << std::endl;
+//      std::cout << line << std::endl;
+//      std::cout << "made it through the loop" << std::endl;
+    }
+    if (tmp.size() > 0){
+      result.push_back(tmp);
+    }
+
+
+  }
+
+
+  return result;
+}
+
+
+std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename){
+  std::vector<std::vector<std::string>> fileString = parseCSVFile(filename);
+
+  // print out the file that you just read in
+  for (auto & line: fileString){
+    for (auto & word: line){
+      std::cout << word << ",";
+    }
+    std::cout << std::endl;
+  }
+
+  std::vector<ContactFilterPoint> cfpVec;
+  for (auto & line: fileString){
+    std::cout << "attemping to make cfp object" << std::endl;
+    std::cout << "line has size " << line.size() << std::endl;
+    ContactFilterPoint cfp;
+    cfp.body_name = line[0];
+    Vector3d contactPoint(atof(line[1].c_str()), atof(line[2].c_str()), atof(line[3].c_str()));
+    Vector3d contactNormal(atof(line[4].c_str()), atof(line[5].c_str()), atof(line[6].c_str()));
+    cfp.contactPoint = contactPoint;
+    cfp.contactNormal = contactNormal;
+
+    if (line.size() == 8) {
+      cfp.name = line[7];
+    }
+    cfpVec.push_back(cfp);
+  }
+
+  return cfpVec;
+
 }
 
 
@@ -609,8 +719,23 @@ int main( int argc, char* argv[]){
   bool runQPTest = false;
   bool isVerbose = false;
   bool runDetectorLoop = true;
-  bool runContactFilterLoop = false;
+  bool runContactFilterLoop = true;
+  bool runCSVTest = false;
+  std::string filename = "testCFP.csv";
   std::string linkName;
+
+
+  for (int i=1; i < argc; i++){
+    if (std::string(argv[i]) == "--testCSVRead"){
+      std::cout << "running CSV test" << std::endl;
+      std::string filename = "test.csv";
+      constructContactFilterPointsFromFile(filename);
+      return 0;
+    }
+
+  }
+
+
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
@@ -662,11 +787,21 @@ int main( int argc, char* argv[]){
       runContactFilterLoop = true;
     }
 
+    if (std::string(argv[i]) == "--testCSVRead"){
+      runContactFilterLoop = false;
+      runDetectorLoop = false;
+      runCSVTest = true;
+    }
+
+    if (std::string(argv[i]) == "--useDirectorCSV"){
+      filename = "testDirector.csv";
+    }
+
   }
 
   if (runContactFilterLoop){
     std::cout << "attemping to start contact filter thread loop" << std::endl;
-    std::thread contactFilterThread(&ResidualDetector::contactFilterThreadLoop, &residualDetector);
+    std::thread contactFilterThread(&ResidualDetector::contactFilterThreadLoop, &residualDetector, filename);
     std::cout << "started contact filter thread loop, detaching thread" << std::endl;
     contactFilterThread.detach();
   }
@@ -686,6 +821,11 @@ int main( int argc, char* argv[]){
     // in the main thread run the lcm handler
     std::cout << "Starting lcm handler loop" << std::endl;
     while(0 == lcm->handle()); // infinite loop, won't ever progress past this
+  }
+
+  if (runCSVTest){
+    std::string filename = "test.csv";
+    constructContactFilterPointsFromFile(filename);
   }
 
   return 0;
