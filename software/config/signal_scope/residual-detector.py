@@ -6,13 +6,13 @@ joints = ['base_x', 'base_y', 'base_z', 'r_leg_kny', 'l_leg_kny', 'l_leg_hpy', '
 joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw', 'r_leg_aky', 'r_leg_kny', 'r_leg_hpy', 'r_leg_hpx', 'l_leg_kny', 'l_arm_shz']
 
 joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw']
-joints = ['base_z','base_roll', 'base_pitch', 'base_yaw']
-joints = ['base_x','base_z','base_roll', 'base_pitch', 'l_leg_kny']
-joints = ['base_z','base_roll', 'base_pitch']
-joints = ['base_z', 'base_pitch', 'l_arm_shz', 'l_arm_shx']
+# joints = ['base_z','base_roll', 'base_pitch', 'base_yaw']
+# joints = ['base_x','base_z','base_roll', 'base_pitch', 'l_leg_kny']
+# joints = ['base_z','base_roll', 'base_pitch']
+# joints = ['base_z', 'base_pitch', 'l_arm_shz', 'l_arm_shx']
 
 
-joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw', 'back_bkz', 'back_bky', 'back_bkx','l_arm_shz', 'l_arm_shx']
+# joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw', 'back_bkz', 'back_bky', 'back_bkx','l_arm_shz', 'l_arm_shx']
 
 # joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw', 'r_leg_aky', 'r_leg_kny', 'r_leg_hpy', 'r_leg_hpx', 'l_leg_kny', 'l_arm_shz']
 names = msg.joint_name
@@ -23,11 +23,11 @@ for jointName in joints:
     joints_w_dot.append(jointName + "dot")
 
 
-channel_extensions = ['ORIGIN','M_PELVIS', 'R_PELVIS', 'L_PELVIS']
-channel_extensions = ['M_PELVIS', 'R_PELVIS']
+channel_extensions = ['B_PELVIS','M_PELVIS', 'R_PELVIS', 'L_PELVIS']
+# channel_extensions = ['M_PELVIS', 'R_PELVIS']
 
 
-sparsePlot = True
+sparsePlot = False
 if sparsePlot:
     channel_extensions = []
 
@@ -45,7 +45,13 @@ for ext in channel_extensions:
 addPlot(timeWindow=30, yLimits=[-50,50])
 for ext in channel_extensions:
     channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
-    addSignal(channel, msg.utime, msg.likelihood)
+    addSignal(channel, msg.utime, msg.logLikelihood)
+
+
+addPlot(timeWindow=30, yLimits=[-10,100])
+for ext in channel_extensions:
+    channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
+    addSignal(channel, msg.utime, msg.contact_force_magnitude)
 
 # gravity vs. torque, should be equal, something is funky if they are not
 # addPlot(timeWindow=30, yLimits=[-50, 50])
