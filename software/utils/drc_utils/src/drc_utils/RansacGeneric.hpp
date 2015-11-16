@@ -50,7 +50,7 @@ public:
     const double epsilon = 1e-10;
 
     // best results are currently invalid
-    double bestScore = -1;
+    int bestScore = 0;
     bool success = false;
 
     // start number of iterations as infinite, then reduce as we go
@@ -111,7 +111,7 @@ public:
       }
 
       // if this is the best score, update solution and convergence criteria
-      double score = inliers.size();
+      int score = inliers.size();
       if (score > bestScore) {
         bestScore = score;
         result.mInliers = inliers;
