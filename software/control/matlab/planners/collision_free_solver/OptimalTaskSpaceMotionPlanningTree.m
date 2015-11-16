@@ -52,24 +52,66 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
       if all(obj.getVertex(obj.traj(1)) == x_goal)
         obj.traj = fliplr(obj.traj);
       end
-      qPath = [];
+      qPath = obj.getVertex(obj.traj(1));
       for i = 2:length(obj.traj)
-        qPath =  [qPath obj.getVertex(obj.traj(i-1))]; %#ok<AGROW>
-        cSpaceTree = obj.trees{obj.cspace_idx};
-        qNew = cSpaceTree.getVertex(obj.traj(i-1));
-        points = obj.getVertex([obj.traj(i), obj.traj(i-1)]);
-        d = obj.trees{obj.tspace_idx}.distanceMetric(points(1:7, 1), points(1:7, 2));
-        n = ceil(d/obj.max_edge_length);
-        edgePath = NaN(obj.num_vars, n-1);
-        for j = 1:n-1
-          pt = obj.interpolate(points(:,2), points(:,1), j/n);
-          constraints = obj.generateEndEffectorConstraints(pt(1:7));
-          qNew = cSpaceTree.solveIK(pt(8:end), qNew, constraints);
-          edgePath(:,j) = [pt(1:7); qNew];
+        verts = [obj.getVertex(obj.traj(i-1)), obj.getVertex(obj.traj(i))];
+        edges = [1;2];
+        children = [2;0];
+        while ~isempty(edges)
+          for e = size(edges, 2):-1:1
+            d = obj.distanceMetric(verts(:, edges(1,e)), verts(:, edges(2,e)));
+            inf_norm = obj.trees{obj.cspace_idx}.distanceInfinityNorm(verts(:, edges(1,e)), verts(:, edges(2,e)));
+            if d < obj.max_edge_length && inf_norm < 0.1
+              edges(:,e) = [];
+            else
+              break
+            end
+          end
+          if ~isempty(edges)
+            v = obj.interpolate(verts(:, edges(1,e)), verts(:, edges(2,e)), .5);
+            verts = [verts, v];
+            children(size(verts,2)) =  edges(2,e);
+            children(edges(1,e)) = size(verts,2);
+%             drawTreePoints(verts, 'lines', true, 'text', sprintf('edge(%d-%d)', i, i+1), 'colour', [1 0 0])
+            edges = [edges, [edges(1,e);size(verts,2)], [size(verts,2);edges(2,e)]];
+            edges(:,e) = [];
+          end
         end
-        qPath = [qPath edgePath];
+        next_vert = children(1);
+        while next_vert ~= 0
+          qPath = [qPath, verts(:,next_vert)];
+%           drawTreePoints(verts(:,next_vert), 'colour', [0 0 1])
+          next_vert = children(next_vert);
+        end
       end
-      qPath = [qPath x_goal];
+      for i = 1:size(qPath, 2)
+        if ~obj.isValid(qPath(:,i))
+          constraints = obj.generateEndEffectorConstraints(qPath(1:7,i));
+          [qPath(:,i), info] = obj.trees{obj.cspace_idx}.solveIK(qPath(:,i), qPath(:,i), constraints);
+          if info > 10
+            error('Failed to rebuild trajectory')
+          end
+        end
+      end
+      
+  
+  
+%         qPath =  [qPath obj.getVertex(obj.traj(i-1))]; %#ok<AGROW>
+%         cSpaceTree = obj.trees{obj.cspace_idx};
+%         qNew = cSpaceTree.getVertex(obj.traj(i-1));
+%         points = obj.getVertex([obj.traj(i), obj.traj(i-1)]);
+%         d = obj.trees{obj.tspace_idx}.distanceMetric(points(1:7, 1), points(1:7, 2));
+%         inf_norm = ceil(d/obj.max_edge_length);
+%         edgePath = NaN(obj.num_vars, inf_norm-1);
+%         for j = 1:inf_norm-1
+%           pt = obj.interpolate(points(:,2), points(:,1), j/inf_norm);
+%           constraints = obj.generateEndEffectorConstraints(pt(1:7));
+%           qNew = cSpaceTree.solveIK(pt(8:end), qNew, constraints);
+%           edgePath(:,j) = [pt(1:7); qNew];
+%         end
+%         qPath = [qPath edgePath];
+%       end
+%       qPath = [qPath x_goal];
     end
     
     function obj = addPointToTraj(obj, point, p1, p2)      
