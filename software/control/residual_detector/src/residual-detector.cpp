@@ -681,7 +681,10 @@ std::vector<std::vector<std::string>> parseCSVFile(std::string filename){
 
 
 std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename){
-  std::vector<std::vector<std::string>> fileString = parseCSVFile(filename);
+
+  std::string drcBase = std::string(std::getenv("DRC_BASE"));
+  std::string filenameWithPath = drcBase + "/software/control/residual_detector/src/particle_grids/" + filename;
+  std::vector<std::vector<std::string>> fileString = parseCSVFile(filenameWithPath);
 
   // print out the file that you just read in
   for (auto & line: fileString){
@@ -795,6 +798,10 @@ int main( int argc, char* argv[]){
 
     if (std::string(argv[i]) == "--useDirectorCSV"){
       filename = "testDirector.csv";
+    }
+
+    if (std::string(argv[i]).find(".csv") != std::string::npos){
+      filename = std::string(argv[i]);
     }
 
   }
