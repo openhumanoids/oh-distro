@@ -9,8 +9,11 @@ struct contact_filter_estimate_t
   int16_t num_velocities;
   int16_t body_id;
   string body_name;
+  string name;
   float likelihood; //this is only up to scaling, doesn't include normalizing constant
+  float logLikelihood;
   string velocity_names[num_velocities];
+  float contact_force_magnitude;
   float contact_normal[3];
   float contact_position[3];
   float contact_force[3];
