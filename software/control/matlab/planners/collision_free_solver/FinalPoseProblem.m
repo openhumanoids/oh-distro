@@ -15,7 +15,6 @@ classdef FinalPoseProblem
     grasping_hand
     active_collision_options
     debug
-    visualizer
   end
   
   properties (Constant)
@@ -33,7 +32,6 @@ classdef FinalPoseProblem
       opt.activecollisionoptions = struct();
       opt.endeffectorpoint = [0; 0; 0]';
       opt.debug = false;
-      opt.visualizer = [];
       
       optNames = fieldnames(opt);
       nArgs = length(varargin);
@@ -63,7 +61,6 @@ classdef FinalPoseProblem
       obj.active_collision_options = opt.activecollisionoptions;
       obj.goal_constraints = obj.generateGoalConstraints();
       obj.debug = opt.debug;
-      obj.visualizer = opt.visualizer;
 
     end
 
@@ -186,7 +183,6 @@ classdef FinalPoseProblem
         constraints = [{shDistance, shGaze, shOrient}, obj.goal_constraints, obj.additional_constraints];
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
-        obj.visualizer.draw(0, q)
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
         targetPos = palmPose;

@@ -24,7 +24,15 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     r = options.robot;
   end
   
-  v = r.constructVisualizer();
+  if options.visualize
+    pose_publisher = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE', true, r.getPositionFrame.getCoordinateNames);
+    visWorld = RigidBodyManipulator();
+    for b = 1:numel(r.body(1).visual_geometry)
+      visWorld = addGeometryToBody(visWorld, 1, r.body(1).visual_geometry{b});
+    end
+    visWorld = visWorld.compile();
+    visWorld.constructVisualizer();
+  end
   
   if nargin > 1
     rng(rng_seed);
@@ -42,7 +50,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if options.visualize
-    v.draw(0, q_nom)
+    pose_publisher.publish([q_nom; zeros(size(q_nom))], get_timestamp_now())
   end
   
   %Set IK options
@@ -72,7 +80,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   [q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
   
   if options.visualize
-    v.draw(0, q_start)
+    pose_publisher.publish([q_start; zeros(size(q_start))], get_timestamp_now())
     %     drawLinkFrame(r, g_hand, q_start, 'Grasping Hand Start');
     %     drawLinkFrame(r, Scenes.getNonGraspingHand(options, r), q_start, 'Non Grasping Hand Start');
     %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_start, 'Forearm Start');
@@ -90,6 +98,6 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
 
   [xGoalFull, info, debug_vars] = finalPose.findFinalPose();
   if options.visualize && info == 1
-    v.draw(0, xGoalFull(8:end))
+    pose_publisher.publish([q_end; zeros(size(q_end))], get_timestamp_now())
   end
 end
