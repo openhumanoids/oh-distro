@@ -2,14 +2,25 @@
 // Created by manuelli on 10/12/15.
 //
 #include "drake/controlUtil.h"
+#include <Eigen/Geometry>
 #include <gurobi_c++.h>
 #include <lcm/lcm-cpp.hpp>
 
 struct ContactFilterPoint{
   int body_id;
+  std::string body_name;
   std::string name;
   Eigen::Vector3d contactPoint;
   Eigen::Vector3d contactNormal;
+};
+
+struct MeasurementUpdate{
+  double t;
+  double likelihood;
+  double exponentVal;
+  Eigen::VectorXd forceInBodyFrame;
+  Eigen::VectorXd estResidual;
+  const ContactFilterPoint &contactFilterPoint;
 };
 
 class ContactFilter{
@@ -19,6 +30,8 @@ private:
   int nv;
   int nq;
   double mu;
+  std::vector<ContactFilterPoint> contactPoints;
+  std::vector<MeasurementUpdate> measurementUpdateVec;
   std::string publishChannel;
   lcm::LCM lcm;
   std::vector<std::string> velocity_names;
@@ -31,9 +44,9 @@ private:
   Matrix<double,3,4> FrictionCone;
   void initializeGurobiModel();
   void initializeFrictionCone();
-  void publishPointEstimate(double t, const ContactFilterPoint& contactFilterPoint,
-                            const Vector3d &forceInBodyFrame, const VectorXd &estResidual,
-                            const double& likelihood);
+  void publishPointEstimate(const MeasurementUpdate & measurementUpdate, bool publishOnUniqueChannel=true);
+
+
 public:
 
 //  ContactFilter(std::string URDFString);
@@ -41,10 +54,16 @@ public:
   virtual ~ContactFilter(void);
 
   void addRobotFromURDFString(std::string URDFString);
+  void addContactPoints(std::vector<ContactFilterPoint> contactPointsToAdd);
 
   // contact position and contact normal are both in body frame
-  double computeLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v,
+  MeasurementUpdate computeLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v,
                            const ContactFilterPoint& contactFilterPoint, bool publish=false);
+
+  void computeLikelihoodFull(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q,
+                             const Eigen::VectorXd &v, bool publishMostLikely=false, bool publishAll=false);
+
+  void publishMostLikelyEstimate();
 
   void testQP();
   void printGurobiModel();

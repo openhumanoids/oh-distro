@@ -7,7 +7,7 @@
 #include <math.h>
 #include "gurobiUtil.hpp"
 #include "lcmtypes/drc/contact_filter_estimate_t.hpp"
-
+#include <tuple>
 #define MU 0.6
 #define PUBLISH_CHANNEL "CONTACT_FILTER_POINT_ESTIMATE"
 
@@ -56,7 +56,16 @@ void ContactFilter::initializeFrictionCone() {
 
 }
 
-double ContactFilter::computeLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v,
+void ContactFilter::addContactPoints(std::vector<ContactFilterPoint> contactPointsToAdd) {
+  for ( auto cfp: contactPointsToAdd){
+    // make sure the body_id is correct for the model we are using
+    // always go by body_names, this is the safest
+    cfp.body_id = this->drake_model.findLinkId(cfp.body_name);
+    this->contactPoints.push_back(cfp);
+  }
+}
+
+MeasurementUpdate ContactFilter::computeLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q, const Eigen::VectorXd &v,
                                         const ContactFilterPoint& contactFilterPoint, bool publish){
   bool verbose = false;
   // suppress gurobi output to terminal if we are not in verbose mode
@@ -139,9 +148,10 @@ double ContactFilter::computeLikelihood(double t, const Eigen::VectorXd &residua
   VectorXd estResidual = linkJacobianFull.transpose()*forceToWrench*forceInBodyFrame;
   double exponentVal = -1/2.0*(residual - estResidual).transpose()*this->W*(residual - estResidual);
   double likelihood = exp(exponentVal); //up to a constant
+  MeasurementUpdate measurementUpdate = {t, likelihood, exponentVal, forceInBodyFrame, estResidual, contactFilterPoint};
 
   if (publish){
-    this->publishPointEstimate(t, contactFilterPoint, forceInBodyFrame, estResidual, exponentVal);
+    this->publishPointEstimate(measurementUpdate);
   }
 
   if (verbose){
@@ -152,38 +162,83 @@ double ContactFilter::computeLikelihood(double t, const Eigen::VectorXd &residua
     std::cout << "exponentVal = " << exponentVal << std::endl;
   }
 
+  return measurementUpdate;
 
-  return 0;
 }
 
-void ContactFilter::publishPointEstimate(double t, const ContactFilterPoint& contactFilterPoint,
-                            const Vector3d &forceInBodyFrame, const VectorXd &estResidual, const double& likelihood){
+void ContactFilter::publishPointEstimate(const MeasurementUpdate &measurementUpdate, bool publishOnUniqueChannel){
 
   drc::contact_filter_estimate_t msg;
-  msg.utime = static_cast<int64_t> (t*1e6);
-  msg.body_id = (int16_t) contactFilterPoint.body_id;
-  msg.body_name = this->drake_model.getBodyOrFrameName(contactFilterPoint.body_id);
+  msg.utime = static_cast<int64_t> (measurementUpdate.t*1e6);
+  msg.body_id = (int16_t) measurementUpdate.contactFilterPoint.body_id;
+  msg.body_name = this->drake_model.getBodyOrFrameName(measurementUpdate.contactFilterPoint.body_id);
+  msg.name = measurementUpdate.contactFilterPoint.name;
   msg.velocity_names = this->velocity_names;
-  msg.likelihood = (float) likelihood;
+  msg.likelihood = (float) measurementUpdate.likelihood;
+  msg.logLikelihood = (float) measurementUpdate.exponentVal;
+  msg.contact_force_magnitude = (float) measurementUpdate.forceInBodyFrame.norm();
 
   for(int i=0; i < 3; i++){
-    msg.contact_position[i] = (float) contactFilterPoint.contactPoint(i);
-    msg.contact_normal[i] = (float) contactFilterPoint.contactNormal(i);
-    msg.contact_force[i] = (float) forceInBodyFrame(i);
+    msg.contact_position[i] = (float) measurementUpdate.contactFilterPoint.contactPoint(i);
+    msg.contact_normal[i] = (float) measurementUpdate.contactFilterPoint.contactNormal(i);
+    msg.contact_force[i] = (float) measurementUpdate.forceInBodyFrame(i);
   }
 
   msg.num_velocities = (int16_t) this->nv;
   msg.implied_residual.resize(this->nv);
   for(int j=0; j<this->nv; j++){
-    msg.implied_residual[j] = (float) estResidual(j);
+    msg.implied_residual[j] = (float) measurementUpdate.estResidual(j);
   }
 
   std::string channel = this->publishChannel;
-  if (contactFilterPoint.name.length() > 0){
-    channel = channel + "_" + contactFilterPoint.name;
+
+  if (publishOnUniqueChannel){
+    if (measurementUpdate.contactFilterPoint.name.length() > 0){
+      channel = channel + "_" + measurementUpdate.contactFilterPoint.name;
+    }
+    else{
+      channel = channel + "_NO_NAME";
+    }
   }
+
   this->lcm.publish(channel, &msg);
 }
+
+
+// loop through the contact points in this->contactPoints, run the measurement update, store the pertinent
+// information in this->measurementUpdateVec
+void ContactFilter::computeLikelihoodFull(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q,
+                                         const Eigen::VectorXd &v, bool publishMostLikely, bool publishAll){
+  this->measurementUpdateVec.clear();
+  for (int i=0; i<this->contactPoints.size(); i++){
+    this->measurementUpdateVec.push_back(this->computeLikelihood(t, residual, q, v, this->contactPoints[i], publishAll));
+  }
+
+  if (publishMostLikely){
+      this->publishMostLikelyEstimate();
+    }
+
+}
+
+// loop through this->measurementUpdateVec, record the most likely estimate and publish it
+void ContactFilter::publishMostLikelyEstimate() {
+
+  // if there is nothing in measurementUpdateVec just return, there was nothing to do
+  if (this->measurementUpdateVec.size() == 0){
+    return;
+  }
+
+  MeasurementUpdate* mostLikelyMeasurementUpdate = & this->measurementUpdateVec[0];
+  for(auto & measurementUpdate: this->measurementUpdateVec){
+    if (measurementUpdate.exponentVal > mostLikelyMeasurementUpdate->exponentVal){
+      mostLikelyMeasurementUpdate = &measurementUpdate;
+    }
+  }
+
+  this->publishPointEstimate(*mostLikelyMeasurementUpdate, false);
+}
+
+
 
 void ContactFilter::testQP(){
   VectorXd y = VectorXd::Zero(4);
