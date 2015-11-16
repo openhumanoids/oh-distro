@@ -107,7 +107,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertPlanarScanToClou
   scan_body->points.resize (projected_laser_scan_->npoints);
   int n_valid =0;
   for (int i = 0; i < projected_laser_scan_->npoints; i++) {
-    if (( projected_laser_scan_->rawScan->ranges[i] < 30.0) && ( projected_laser_scan_->rawScan->ranges[i] > 1.85)){
+    if (( projected_laser_scan_->rawScan->ranges[i] < ca_cfg_.max_range) && ( projected_laser_scan_->rawScan->ranges[i] > ca_cfg_.min_range)){
       scan_body->points[n_valid].x = projected_laser_scan_->points[i].x;
       scan_body->points[n_valid].y = projected_laser_scan_->points[i].y;
       scan_body->points[n_valid].z = projected_laser_scan_->points[i].z;
