@@ -3,7 +3,9 @@
 #include <sstream>      // std::stringstream
 
 #include "cloud_accumulate.hpp"
-
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/io/vtk_io.h>
 #include <ConciseArgs>
 
 struct AppConfig
@@ -66,6 +68,13 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
       pcd_fname << "/tmp/multisense_" << "00" << ".pcd";
       std::cout << pcd_fname.str() << " written\n";
       writer.write (pcd_fname.str() , *cloud, false);  
+
+      std::stringstream vtk_fname;
+      vtk_fname << "/tmp/multisense_" << "00" << ".vtk";
+      std::cout << vtk_fname.str() << " written\n";
+      pcl::PCLPointCloud2::Ptr cloud_output (new pcl::PCLPointCloud2);
+      pcl::toPCLPointCloud2 (*cloud, *cloud_output);
+      pcl::io::saveVTKFile (vtk_fname.str(), *cloud_output) ;
 
       accu_->publishCloud(cloud);
 

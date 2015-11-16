@@ -14,7 +14,7 @@ pods_install_executables(drc-icp-simple)
 
 add_executable(drc-lidar-accumulate lidar_accumulate.cpp cloud_accumulate.cpp)
 pods_use_pkg_config_packages(drc-lidar-accumulate bot2-frames laser-util
-    path-util ${REQUIRED_PACKAGES}
+    path-util ${REQUIRED_PACKAGES} pcl_io-1.7
     pronto_vis   eigen3)
 target_link_libraries (drc-lidar-accumulate lcm pronto_math 
                         boost_system boost_thread)
