@@ -70,7 +70,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         cost(r.getBody(r.getBody(i).parent).position_num) + cost(r.getBody(i).position_num);
     end
   end
-  cost(1:6) = max(cost(7:end))/2;
   cost = cost/min(cost);
   Q = diag(cost);
   ikoptions = IKoptions(r);
