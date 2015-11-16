@@ -33,7 +33,7 @@ class CloudAccumulate{
     
     int getCounter(){ return counter_; }
     bool getFinished(){ return finished_; }
-    pronto::PointCloud* getCloud(){ return combined_cloud_; }
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud(){ return combined_cloud_; }
     
     void clearCloud(){ 
       combined_cloud_->points.clear(); 
@@ -42,9 +42,8 @@ class CloudAccumulate{
       std::cout << "Empty previous map\n";
     }
     
-    void publishCloud(pronto::PointCloud* &cloud);
+    void publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     void processLidar(const  bot_core::planar_lidar_t* msg);
-    void processVelodyne(const  pronto::pointcloud2_t* msg);
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
@@ -60,14 +59,15 @@ class CloudAccumulate{
     int counter_; 
     int verbose_;
     
-    pronto::PointCloud* combined_cloud_;
+    // pronto::PointCloud* combined_cloud_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr combined_cloud_;
     
     bool finished_;
     
     Laser_projector * laser_projector_;
     laser_projected_scan * projected_laser_scan_;  
     
-    pronto::PointCloud* convertPlanarScanToCloud(std::shared_ptr<bot_core::planar_lidar_t> this_msg);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr convertPlanarScanToCloud(std::shared_ptr<bot_core::planar_lidar_t> this_msg);
     
 };
 

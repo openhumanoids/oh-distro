@@ -47,9 +47,6 @@ class App{
     void planarLidarHandler(const lcm::ReceiveBuffer* rbuf, 
                       const std::string& channel, const  bot_core::planar_lidar_t* msg);   
     
-    void velodyneHandler(const lcm::ReceiveBuffer* rbuf, 
-                      const std::string& channel, const  pronto::pointcloud2_t* msg);   
-
     void sendSystemStatus(std::string message);
 
 private:
@@ -108,62 +105,39 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
     if ( accu_->getFinished()  ){//finished_accumating?
       do_convert_cloud_ = true;
       do_accum_ = false;
-    }
-  }
-}
 
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+      cloud = accu_->getCloud();
+      cloud->width = cloud->points.size();
+      cloud->height = 1;
 
-void App::velodyneHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  pronto::pointcloud2_t* msg){
-  if ( do_accum_ ){
-    
-     if ( accu_->getCounter() % 200 == 0){
       std::stringstream message;
-      message << accu_->getCounter() <<  " of " << ca_cfg_.batch_size << " scans collected";
-      sendSystemStatus( message.str() ); 
-      std::cout << message.str() << "\n";
-    }
-    
-    accu_->processVelodyne(msg);
-    
-    if ( accu_->getFinished()  ){//finished_accumating?
-      do_convert_cloud_ = true;
-      do_accum_ = false;
+      message << "Processing cloud with " << cloud->points.size()
+              << " points" ;
+      std::cout << message.str() << "\n";      
+
+      pcl::PCDWriter writer;
+      std::stringstream pcd_fname;
+      pcd_fname << "/tmp/multisense_" << "00" << ".pcd";
+      std::cout << pcd_fname.str() << " written\n";
+      writer.write (pcd_fname.str() , *cloud, false);  
+
+
     }
   }
 }
+
 
 
 ////////// Threads //////////////////////
 void processThread(App& app) { 
   std::cout << "Started processThread\n";
-  pronto::PointCloud* cloud (new pronto::PointCloud ());
-  pronto::PointCloud* sub_cloud (new pronto::PointCloud ());
   
   while (1==1) {
     usleep(1e6); // sleep for 1sec, check for new msgs and process
   
     if ( app.do_convert_cloud_ ) {
-      cloud = app.accu_->getCloud();
-      // LCM collections can only handle about 200k points:
-      sub_cloud->points.clear();
-      for (size_t i=0 ; i < cloud->points.size() ; i=i+20){
-        sub_cloud->points.push_back( cloud->points[i] );
-        if (sub_cloud->points.size() > 100000){ // reasonable upper limit in size
-          break;
-        }
-      }
-      
-      std::stringstream message;
-      message << "Processing cloud with " << cloud->points.size()
-              << " points" ;
-      app.sendSystemStatus( message.str() ); 
-      std::cout << message.str() << "\n";      
-      
-      std::stringstream message2;
-      message2 << "Finished processing. Click \"Use New Map\" to enable";
-      app.sendSystemStatus( message2.str() ); 
-      std::cout << message2.str() << "\n";      
-      
+
       
       app.do_republish_ = true;
       app.do_convert_cloud_ =false;
@@ -219,13 +193,9 @@ int main(int argc, char ** argv) {
   
   boost::thread_group thread_group;
   
-  if (ca_cfg.lidar_channel != "VELODYNE"){
-    std::cout << "Subscribing to planar lidar on " << ca_cfg.lidar_channel << "\n";
-    lcm->subscribe( ca_cfg.lidar_channel, &App::planarLidarHandler, app);
-  }else{
-    std::cout << "Subscribing to velodyne lidar on " << ca_cfg.lidar_channel << "\n";
-    lcm->subscribe( ca_cfg.lidar_channel, &App::velodyneHandler, app);
-  }
+  std::cout << "Subscribing to planar lidar on " << ca_cfg.lidar_channel << "\n";
+  lcm->subscribe( ca_cfg.lidar_channel, &App::planarLidarHandler, app);
+
 
   lcm->subscribe( "STATE_EST_START_NEW_MAP", &App::startMapHandler, app);
 
