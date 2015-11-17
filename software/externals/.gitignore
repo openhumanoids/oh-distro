@@ -21,9 +21,9 @@ multisense-lcm
 libmultisense
 occ-map
 octomap-pod
-opencv-pod
+opencv
 pcl
-flann-pod
+flann
 pod-build
 snopt
 spotless

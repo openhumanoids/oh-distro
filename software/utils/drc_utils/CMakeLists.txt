@@ -8,7 +8,7 @@ add_subdirectory(src/drc_utils)
 add_subdirectory(src/bot_frames_cpp)
 #add_subdirectory(src/gtkmm-renderer)
 add_subdirectory(src/joint_utils)
-
+add_subdirectory(src/simple_lcm_bridge)
 
 
 # require python
