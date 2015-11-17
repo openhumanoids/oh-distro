@@ -9,9 +9,7 @@ latency
 drivers
 utils
 perception
-lidar-passthrough
 motion_estimate
-tools
 control
 bdi_walking
 ddapp/distro/pods/drc
