@@ -232,6 +232,22 @@ Run make to build externals and then the main codebase:
     cd <path-to>/main-distro/software/build/lib/python2.7/dist-packages
     ln -s lcmtypes/drake drake
 
+** Compiling drake
+
+Whenever making drake build it from software/drake/drake. NEVER do make in software/drake!!!
+But if you did it these are the steps for a clean build of drake:
+
+::
+
+    cd <path-to>/main-distro/software
+    rm drake
+    cd externals
+    rm pod-build/src/drake-cmake-* pod-build/tmp/drake-cmake-* -Rf
+    git submodule update --init --recursive
+    cd externals
+    make -j 1
+    cd software/drake/drake
+    make -j
 
 Instructions for GUROBI
 -----------------------
