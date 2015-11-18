@@ -12,4 +12,4 @@ perception
 motion_estimate
 control
 bdi_walking
-ddapp/distro/pods/drc
+director/distro/pods/drc
