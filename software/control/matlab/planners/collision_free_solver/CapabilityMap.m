@@ -102,9 +102,8 @@ classdef CapabilityMap
       end
     end
     
-    function drawActiveSpheres(obj, direction, min_sph, max_sph)
+    function drawActiveSpheres(obj)
       lcmClient = LCMGLClient('CapabilityMap');
-%       obj = obj.reduceActiveSet(direction, min_sph, max_sph, true, 0, 0, 2, 1.5);
       for sph = 1:obj.n_spheres
         if obj.active_spheres(sph)
           lcmClient.sphere(obj.sph_centers(:,sph), obj.sph_diameter/2, 20, 20);
