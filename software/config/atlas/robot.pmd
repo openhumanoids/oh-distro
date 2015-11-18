@@ -172,22 +172,22 @@ group "09.BDI_walking" {
 
 group "10.Driving" {
     cmd "Streaming Robot Side" {
-        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robot";
+        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/director/src/python/tests/testAtlasCommand.py --robot";
         host = "atlas2";
     }
 
     cmd "Streaming Robot Side with Driving Gains" {
-        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --robotDrivingGains";
+        exec = "DISPLAY=:0 ddConsoleApp $DRC_BASE/software/director/src/python/tests/testAtlasCommand.py --robotDrivingGains";
         host = "atlas2";
     }
 
     cmd "Streaming Base Side" {
-        exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/tests/testAtlasCommand.py --base";
+        exec = "ddConsoleApp $DRC_BASE/software/director/src/python/tests/testAtlasCommand.py --base";
         host = "base";
     }
 
     cmd "Throttle Driver" {
-        exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/ddapp/triggerfinger.py THROTTLE_COMMAND ";
+        exec = "ddConsoleApp $DRC_BASE/software/director/src/python/director/triggerfinger.py THROTTLE_COMMAND ";
         host = "base";
     }
 
@@ -205,7 +205,7 @@ group "10.Driving" {
 
 group "11.Video" {
     cmd "Camera Viewer" {
-        exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/scripts/cameraViewer.py";
+        exec = "ddConsoleApp $DRC_BASE/software/director/src/python/scripts/cameraViewer.py";
         host = "base";
     }
 
@@ -236,7 +236,7 @@ cmd "pose-util" {
 }
 
 cmd "atlas control panel" {
-    exec = "ddConsoleApp $DRC_BASE/software/ddapp/src/python/scripts/atlasControlPanel.py";
+    exec = "ddConsoleApp $DRC_BASE/software/director/src/python/scripts/atlasControlPanel.py";
     host = "base";
 }
 
