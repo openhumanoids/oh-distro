@@ -2,10 +2,11 @@
 import os,sys
 import time
 
-home_dir =os.getenv("HOME")
-#print home_dir
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
+home_dir =os.getenv("DRC_BASE")
+
+sys.path.append(home_dir + "/software/build/lib/python2.7/site-packages")
+sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
+
 
 import lcm
 from drc.robot_state_t import robot_state_t
