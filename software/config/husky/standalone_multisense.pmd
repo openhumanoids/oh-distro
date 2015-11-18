@@ -29,8 +29,8 @@ group "2.vis" {
     }
 
 
-    cmd "designer" {
-        exec = "drake-designer -c $DRC_BASE/software/config/husky/robot.cfg";
+    cmd "director" {
+        exec = "director -c $DRC_BASE/software/config/husky/robot.cfg";
         host = "localhost";
     }
 }

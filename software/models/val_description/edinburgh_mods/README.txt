@@ -1,6 +1,6 @@
-***Generating a Drake (designer) compatiable URDF***
+***Generating a Drake (and Director) compatiable URDF***
 
-To add the required frames and contact points to the NASA urdf so that Drake and ddapp can read it:
+To add the required frames and contact points to the NASA urdf so that Drake and director can read it:
 
 1. Use this fork of the official repo:
 mitdrc/val_description and branch called: mfallon-mods-needed-for-drake-system
@@ -119,7 +119,7 @@ gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
 
 6. Generating hands.
 Background: the hands located in models/common_components/hand_factory
-are independent urdf models and are used when seeding hands in the ddapp ui. 
+are independent urdf models and are used when seeding hands in the director ui. 
 they are generated from xacro in the same manner as for whole robot:
 rosrun xacro xacro.py valkyrie_hand_left.xacro -o ../urdf/valkyrie_hand_left.urdf
 rosrun xacro xacro.py valkyrie_hand_right.xacro -o ../urdf/valkyrie_hand_right.urdf
@@ -146,8 +146,8 @@ ISSUE: this is not parsed properly - '<frame>child</frame>' confused drake
 ***3D File Formats***
 STL - source from NASA which came to 400MB. NOT USED
 DAE - source from NASA (originally made by Marco)
-VTP - used by Drake designer
-OBJ - required by drake designer to read the vtp files.
+VTP - used by Director
+OBJ - required by Director to read the vtp files.
 
 Development process:
 1 BLEND files combining STL and new meshes created in Blender
@@ -156,9 +156,9 @@ Development process:
 
 1. file extensions to be changed to obj?
 2. drake by itself
-3. drake designer
+3. Director
 4. remove STL
-5. changing the normal smoothing file in ddapp
+5. changing the normal smoothing file in director
 
 
 

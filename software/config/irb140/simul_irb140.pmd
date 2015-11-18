@@ -1,5 +1,5 @@
 cmd "director" {
-    exec = "drake-designer --director_config $DRC_BASE/software/models/IRB140/director_config.json";
+    exec = "director --director_config $DRC_BASE/software/models/IRB140/director_config.json";
     host = "base";
 }
 

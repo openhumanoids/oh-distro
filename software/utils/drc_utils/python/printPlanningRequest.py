@@ -10,7 +10,7 @@ sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 from drc.planner_request_t import planner_request_t
 
-import ddapp.thirdparty.numpyjsoncoder as nje
+import director.thirdparty.numpyjsoncoder as nje
 import json
 
 def ConstraintDecoder(dct):

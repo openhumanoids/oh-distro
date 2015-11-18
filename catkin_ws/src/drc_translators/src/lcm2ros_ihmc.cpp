@@ -141,10 +141,10 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
                                                                      10);
 
   lcm_->subscribe("VAL_COMMAND_PAUSE", &LCM2ROS::pauseHandler, this);
-  lcm_->subscribe("STOP_WALKING", &LCM2ROS::stopHandler, this);  // from drake-designer
+  lcm_->subscribe("STOP_WALKING", &LCM2ROS::stopHandler, this);  // from Director
   pause_pub_ = nh_.advertise<ihmc_msgs::PauseCommandMessage>("/ihmc_ros/" + robotName_ + "/control/pause_footstep_exec",
                                                              10);
-  lcm_->subscribe("COMMITTED_PLAN_PAUSE", &LCM2ROS::stopManipHandler, this);  // from ddapp to stop manipulation plans
+  lcm_->subscribe("COMMITTED_PLAN_PAUSE", &LCM2ROS::stopManipHandler, this);  // from Director to stop manipulation plans
   stop_manip_pub_ = nh_.advertise<ihmc_msgs::StopMotionPacketMessage>(
       "/ihmc_ros/" + robotName_ + "/control/stop_motion", 10);
 
@@ -342,7 +342,7 @@ void LCM2ROS::pauseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &ch
 
 void LCM2ROS::stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::plan_control_t* msg)
 {
-  ROS_ERROR("LCM2ROS got drake-designer - sending pause=true");
+  ROS_ERROR("LCM2ROS got STOP_WALKING - sending pause=true");
   ihmc_msgs::PauseCommandMessage mout;
   mout.pause = true;
   pause_pub_.publish(mout);
@@ -351,7 +351,7 @@ void LCM2ROS::stopHandler(const lcm::ReceiveBuffer* rbuf, const std::string &cha
 void LCM2ROS::stopManipHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                const drc::plan_control_t* msg)
 {
-  ROS_ERROR("LCM2ROS got drake-designer - sending manipulate stop");
+  ROS_ERROR("LCM2ROS got COMMITTED_PLAN_PAUSE - sending manipulate stop");
   ihmc_msgs::StopMotionPacketMessage mout;
   mout.unique_id = msg->utime;
   stop_manip_pub_.publish(mout);

@@ -14,7 +14,7 @@ sleep 1
 $DRC_BASE/software/ipab/config/runscs.bash &
 # Get the bash pid.
 pidscs=$!
-ddapp=0
+director=0
 sleep 1
 pid="$(ps --ppid $pidscs | grep java | awk '{print $1;}')"
 
@@ -27,7 +27,7 @@ while [ $T -gt 0 ]; do
 	        kill $pidcore > /dev/null 2>&1
 		exit 1
 	fi
-        if [[ $ddapp -eq 1 ]]; then
+        if [[ $director -eq 1 ]]; then
 		# When sheriff stops, check the status value
 		if ! kill -0 $pidsh > /dev/null 2>&1; then
 			if [[ "$(cat $SYSTEMTEST_RESULT_FILE)" -eq 0 ]]; then
@@ -47,12 +47,12 @@ while [ $T -gt 0 ]; do
 	else
 		if [ "$(rostopic info /ihmc_ros/valkyrie/api_command | grep Subscribers)" == "Subscribers: " ] ; then
 			# SCS is running now, send commands.
-			echo "SCS is ready, starting Drake Designer"
+			echo "SCS is ready, starting Director"
 			pid="$(ps --ppid $pidscs | grep java | awk '{print $1;}')"
 			bot-procman-sheriff -l -n $PROCMAN_SCRIPT start &
 			# Get the sheriff's pid.
 			pidsh=$!
-			ddapp=1
+			director=1
 		else
 			echo "Waiting for SCS to start ..."
 		fi

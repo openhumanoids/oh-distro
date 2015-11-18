@@ -73,7 +73,7 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "drake-designer -c robot.cfg -v3";
+    exec = "director -c robot.cfg -v3";
     host = "base";
 }
 

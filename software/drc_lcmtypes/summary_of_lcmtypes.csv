@@ -87,10 +87,10 @@ drc_data_request_t,maps message,data request tool
 ,,
 ,,
 DRAKE DESIGNER (TYPICALLY DEPENDENT ON ALL THE ABOVE),,
-drc_affordance_collection_t,ddapp message,used in finals as a bucket for strings
-drc_affordance_t,ddapp message,see collection. n_affs was zero
-drc_subimage_request_t,ddapp message,"not used anymore, could be removed"
-drc_subimage_response_t,ddapp message,"not used anymore, could be removed"
+drc_affordance_collection_t,director message,used in finals as a bucket for strings
+drc_affordance_t,director message,see collection. n_affs was zero
+drc_subimage_request_t,director message,"not used anymore, could be removed"
+drc_subimage_response_t,director message,"not used anymore, could be removed"
 ,,
 ,,
 MAIN ATLAS LCMTYPES – SIGNALS AND COMMANDS,,

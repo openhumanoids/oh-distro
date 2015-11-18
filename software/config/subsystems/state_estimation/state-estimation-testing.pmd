@@ -34,7 +34,7 @@ cmd "viewer" {
 }
 
 
-cmd "designer" {
-    exec = "drake-designer -v4 -c $DRC_BASE/software/config/drc_robot.cfg";
+cmd "director" {
+    exec = "director -v4 -c $DRC_BASE/software/config/drc_robot.cfg";
     host = "localhost";
 }
