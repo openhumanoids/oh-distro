@@ -135,8 +135,9 @@ setCenterPoint(const Eigen::Vector3f& iPoint) {
 }
 
 void PlaneFitter::
-setMaxIterations(const int iIterations) {
+setMaxIterations(const int iIterations, const float iSkipFactor) {
   mMaxIterations = iIterations;
+  mSkippedIterationFactor = iSkipFactor;
 }
 
 void PlaneFitter::
@@ -167,6 +168,7 @@ solve(const std::vector<Eigen::Vector3f>& iPoints) const {
   ransac.setMaximumError(mMaxDistance);
   ransac.setRefineUsingInliers(mRefineUsingInliers);
   ransac.setMaximumIterations(mMaxIterations);
+  ransac.setSkippedIterationFactor(mSkippedIterationFactor);
 
   T problem(iPoints);
   problem.mCenterPoint = mCenterPoint;
