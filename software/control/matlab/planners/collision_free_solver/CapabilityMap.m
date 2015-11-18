@@ -79,11 +79,13 @@ classdef CapabilityMap
       
     end
 
-    function obj = reduceActiveSet(obj, direction, min_sph, max_sph, reset_active, sagittal_angle,...
+    function obj = reduceActiveSet(obj, direction, min_sph, max_sph, reset_active, collision_bodies, EE_pose, sagittal_angle,...
         transverse_angle, sagittal_weight, transverse_weight)
       
-      if nargin > 5
-        obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, reset_active);
+      obj = obj.deactivateCollidingSpheres(collision_bodies, EE_pose, reset_active);
+      
+      if nargin > 7
+        obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, false);
       end
       
       assert(min_sph < obj.n_active_spheres)
@@ -111,6 +113,30 @@ classdef CapabilityMap
       end
       disp(obj.n_active_spheres)
       lcmClient.switchBuffers();
+    end
+    
+    function drawActiveMapCentredOnEE(obj, EE_pose)
+      lcmClient = LCMGLClient('CapabilityMap');
+      for sph = 1:obj.n_spheres
+        if obj.active_spheres(sph)
+          lcmClient.sphere(EE_pose(1:3)-obj.sph_centers(:,sph), obj.sph_diameter/2, 20, 20);
+        end
+      end
+      disp(obj.n_active_spheres)
+      lcmClient.switchBuffers();
+    end
+    
+    function obj = deactivateCollidingSpheres(obj, collision_bodies, EE_pose, reset_active)
+      RB_map = obj.createRigidBodyManipulator(collision_bodies, EE_pose);
+    end
+    
+    function RB_map = createRigidBodyManipulator(obj, collision_bodies, EE_pose)
+      RB_map = RigidBodyManipulator();
+      for s = 1:obj.n_spheres
+        RB_map = RB_map.addGeometryToBody(1, RigidBodySphere(obj.sph_diameter/2, EE_pose(1:3)-obj.sph_centers(:,s), [0; 0; 0]));
+      end
+      RB_map = RB_map.compile();
+      RB_map.constructVisualizer();
     end
     
     function obj = prune(obj, sagittal_angle,...
