@@ -1,4 +1,4 @@
-***Generating a Drake (designer) compatiable URDF***
+***Generating a Drake (and Director) compatiable URDF***
 
 To add the required frames and contact points to the NASA urdf so that Drake and director can read it:
 
@@ -146,8 +146,8 @@ ISSUE: this is not parsed properly - '<frame>child</frame>' confused drake
 ***3D File Formats***
 STL - source from NASA which came to 400MB. NOT USED
 DAE - source from NASA (originally made by Marco)
-VTP - used by Drake designer
-OBJ - required by drake designer to read the vtp files.
+VTP - used by Director
+OBJ - required by Director to read the vtp files.
 
 Development process:
 1 BLEND files combining STL and new meshes created in Blender
@@ -156,7 +156,7 @@ Development process:
 
 1. file extensions to be changed to obj?
 2. drake by itself
-3. drake designer
+3. Director
 4. remove STL
 5. changing the normal smoothing file in director
 
