@@ -74,8 +74,8 @@ group "4.exotica" {
     }
 }
 
-cmd "drake-designer" {
-    exec = "drake-designer -lwr -exo -c $DRC_BASE/software/config/kuka_lwr.cfg";
+cmd "director" {
+    exec = "director -lwr -exo -c $DRC_BASE/software/config/kuka_lwr.cfg";
     host = "localhost";
 }
 
@@ -89,5 +89,5 @@ script "start" {
     start group "0.params_and_model_pub";
     start cmd "exotica_json AICO";
     wait ms 1000;
-    start cmd "drake-designer";
+    start cmd "director";
 }
