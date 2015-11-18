@@ -25,4 +25,4 @@ pods_install_python_script(spoof-driving-posture scripts/spoof_driving_posture.p
 include(CTest)
 set(test_data_dir ${CMAKE_SOURCE_DIR}/../../../../drc-testing-data)  # using ~/ probably won't work, instead define it relative to the project dir
 add_test(NAME test_testSimpleVo
-               COMMAND se-simple-vo -L ${test_data_dir}/state_est/run1_field_camera_snippet.lcmlog -P drc_robot.cfg -p)
+               COMMAND se-simple-vo -L ${test_data_dir}/state_est/run1_field_camera_snippet.lcmlog -P atlas/robot.cfg -p)

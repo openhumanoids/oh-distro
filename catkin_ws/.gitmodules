@@ -1,9 +1,9 @@
 [submodule "src/exotica"]
 	path = src/exotica
-	url = git@github.com:mitdrc/exotica.git
+	url = git@github.com:openhumanoids/exotica.git
 [submodule "src/exotica_json"]
 	path = src/exotica_json
-	url = git@github.com:mitdrc/exotica_json.git
+	url = git@github.com:openhumanoids/exotica_json.git
 [submodule "src/ipab_lwr_msgs"]
 	path = src/ipab_lwr_msgs
 	url = git@github.com:ipab-slmc/ipab_lwr_msgs.git

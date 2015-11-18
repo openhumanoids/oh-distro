@@ -1,6 +1,0 @@
-<launch>
-  <node name="lcm2ros" pkg="translators" type="lcm2ros" /> 
-  <node name="ros2lcm" pkg="translators" type="ros2lcm" args="vrc_cheats_enabled" /> 
-
-  <include file="$(find translators)/launch/perception.launch"/>
-</launch>

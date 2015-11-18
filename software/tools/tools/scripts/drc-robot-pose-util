@@ -1,4 +1,0 @@
-#!/bin/bash
-
-python $DRC_BASE/software/tools/tools/scripts/RobotPoseGUI.py "$@"
-

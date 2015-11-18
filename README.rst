@@ -103,11 +103,9 @@ installing packages on Ubuntu. Install with the following commands:
 
 ::
 
-    sudo add-apt-repository ppa:goby-dev/ppa
-    sudo add-apt-repository ppa:tes/drc
     sudo apt-get update
 
-    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libgoby2-dev libgoby2 libdccl3-dev libdccl3 libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-yaml python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev subversion libxmu-dev libusb-1.0-0-dev python-pymodbus graphviz curl libwww-perl libterm-readkey-perl libx264-dev libopenni-dev swig
+    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-yaml python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev subversion libxmu-dev libusb-1.0-0-dev python-pymodbus graphviz curl libwww-perl libterm-readkey-perl libx264-dev libopenni-dev swig
 
 
 
@@ -234,6 +232,22 @@ Run make to build externals and then the main codebase:
     cd <path-to>/main-distro/software/build/lib/python2.7/dist-packages
     ln -s lcmtypes/drake drake
 
+** Compiling drake
+
+Whenever making drake build it from software/drake/drake. NEVER do make in software/drake!!!
+But if you did it these are the steps for a clean build of drake:
+
+::
+
+    cd <path-to>/main-distro/software
+    rm drake
+    cd externals
+    rm pod-build/src/drake-cmake-* pod-build/tmp/drake-cmake-* -Rf
+    git submodule update --init --recursive
+    cd externals
+    make -j 1
+    cd software/drake/drake
+    make -j
 
 Instructions for GUROBI
 -----------------------

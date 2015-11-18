@@ -304,10 +304,10 @@ void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
   // IHMC publish: 3 when standing or manipulating, 4 when walking (as atlas_behavior_t)
   // BDI publishs: 3 stand, 4 walk, 5 step, 6 manip (as atlas_behavior_t)
   // MIT publish: 1 stand, 2 walk, 8 mani  (as plan_status_t)
-  // We (i.e. ddapp) need either:
+  // We (i.e. the Direct) need either:
   // - drc.atlas_behavior_t which comes from BDI typically) - and matches with IHMC output
   // - drc.plan_status_t which comes from MIT controller typically) - typically atlas_behavior_t is 'user' than
-  // ddapp requires plan_status_t messages for autonomy. (pronto uses controller_status_t to contact ground points)
+  // Director requires plan_status_t messages for autonomy. (pronto uses controller_status_t to contact ground points)
   bool behaviorMode = 0;
 
   if (behaviorMode == 0)

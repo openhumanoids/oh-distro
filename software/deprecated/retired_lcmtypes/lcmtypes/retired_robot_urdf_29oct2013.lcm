@@ -1,9 +1,0 @@
-package retired;
-
-struct robot_urdf_29oct2013_t
-{
-  int64_t  utime;
-  string   robot_name;
-  string   urdf_xml_string;
-}
-
