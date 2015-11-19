@@ -8,6 +8,12 @@
 #include <pcl/io/vtk_io.h>
 #include <ConciseArgs>
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
+const char *homedir;
+
 struct AppConfig
 {
 };
@@ -65,12 +71,12 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 
       pcl::PCDWriter writer;
       std::stringstream pcd_fname;
-      pcd_fname << "/tmp/multisense_" << "00" << ".pcd";
+      pcd_fname << homedir << "/logs/multisenselog__2015-11-16/tmp/multisense_" << "00" << ".pcd";
       std::cout << pcd_fname.str() << " written\n";
       writer.write (pcd_fname.str() , *cloud, false);  
 
       std::stringstream vtk_fname;
-      vtk_fname << "/tmp/multisense_" << "00" << ".vtk";
+      vtk_fname << homedir << "/logs/multisenselog__2015-11-16/tmp/multisense_" << "00" << ".vtk";
       std::cout << vtk_fname.str() << " written\n";
       pcl::PCLPointCloud2::Ptr cloud_output (new pcl::PCLPointCloud2);
       pcl::toPCLPointCloud2 (*cloud, *cloud_output);
@@ -84,6 +90,10 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 
 
 int main(int argc, char ** argv) {
+  if ((homedir = getenv("HOME")) == NULL) {
+    homedir = getpwuid(getuid())->pw_dir;
+  }
+
   CloudAccumulateConfig ca_cfg;
   ca_cfg.lidar_channel ="SCAN";
   ca_cfg.batch_size = 240; // about 1 sweep
