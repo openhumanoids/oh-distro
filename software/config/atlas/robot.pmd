@@ -146,7 +146,7 @@ group "07.SA_cameras" {
     }
 
     cmd "sa-right" {
-        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502227 -r 180 --equalize 400";
+        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502227 -r 90 --equalize 400";
         host = "atlas1";
     }
 }
