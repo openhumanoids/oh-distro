@@ -47,6 +47,8 @@ classdef CapabilityMap
       obj.base_link = vars.options.base_link;
       obj.active_spheres = true(obj.n_spheres, 1);
       obj.n_active_spheres = obj.n_spheres;
+      
+      obj = obj.resetActiveSpheres();
     end
     
     function points = findPointsFromDirection(obj, direction, threshold)
@@ -79,10 +81,10 @@ classdef CapabilityMap
       
     end
 
-    function obj = reduceActiveSet(obj, direction, min_sph, max_sph, reset_active, collision_bodies, EE_pose, sagittal_angle,...
+    function obj = reduceActiveSet(obj, direction, min_sph, max_sph, reset_active, rbm, EE_pose, sagittal_angle,...
         transverse_angle, sagittal_weight, transverse_weight)
       
-      obj = obj.deactivateCollidingSpheres(collision_bodies, EE_pose, reset_active);
+      obj = obj.deactivateCollidingSpheres(rbm, EE_pose, reset_active);
       
       if nargin > 7
         obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, false);
@@ -119,24 +121,24 @@ classdef CapabilityMap
       lcmClient = LCMGLClient('CapabilityMap');
       for sph = 1:obj.n_spheres
         if obj.active_spheres(sph)
-          lcmClient.sphere(EE_pose(1:3)-obj.sph_centers(:,sph), obj.sph_diameter/2, 20, 20);
+          lcmClient.sphere(EE_pose(1:3)-obj.sph_centers(:,sph), obj.sph_diameter/10, 20, 20);
         end
       end
       disp(obj.n_active_spheres)
       lcmClient.switchBuffers();
     end
     
-    function obj = deactivateCollidingSpheres(obj, collision_bodies, EE_pose, reset_active)
-      RB_map = obj.createRigidBodyManipulator(collision_bodies, EE_pose);
-    end
-    
-    function RB_map = createRigidBodyManipulator(obj, collision_bodies, EE_pose)
-      RB_map = RigidBodyManipulator();
-      for s = 1:obj.n_spheres
-        RB_map = RB_map.addGeometryToBody(1, RigidBodySphere(obj.sph_diameter/2, EE_pose(1:3)-obj.sph_centers(:,s), [0; 0; 0]));
+    function obj = deactivateCollidingSpheres(obj, rbm, EE_pose, reset_active)
+      
+      if reset_active
+        obj = obj.resetActiveSpheres();
       end
-      RB_map = RB_map.compile();
-      RB_map.constructVisualizer();
+      
+      points = bsxfun(@minus, EE_pose(1:3), obj.getActiveSphereCentres());
+      sph_idx = find(obj.active_spheres);
+      kinsol = rbm.doKinematics(zeros(rbm.num_positions, 1));
+      colliding_points = rbm.collidingPoints(kinsol, points, obj.sph_diameter/2);
+      obj.active_spheres(sph_idx(colliding_points)) = false;
     end
     
     function obj = prune(obj, sagittal_angle,...
@@ -163,8 +165,14 @@ classdef CapabilityMap
       end
     end
     
-    function obj = resetActiveSpheres(obj)
+    function obj = resetActiveSpheres(obj, include_zero_reachability)
+      if nargin < 2
+        include_zero_reachability = false;
+      end
       obj.active_spheres = true(obj.n_spheres, 1);
+      if ~include_zero_reachability
+        obj.active_spheres(obj.reachability_index == 0) = false;
+      end
     end
     
     function centres = getActiveSphereCentres(obj)
