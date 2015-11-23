@@ -8,7 +8,7 @@
     "playback":   "./model_LR_RR.urdf",
     "teleop":     "./model_LR_RR.urdf"
   },
-  "colorMode": "Texture",
+  "colorMode": "Textures",
 
   "teleopJointGroups" : [
       { "name" : "Base",
