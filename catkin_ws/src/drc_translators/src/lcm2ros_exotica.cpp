@@ -16,11 +16,14 @@
 #include "lcmtypes/drc/affordance_collection_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/exotica_planner_request_t.hpp"
+#include "lcmtypes/drc/map_octree_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
+#include <octomap_msgs/OctomapWithPose.h>
+#include <octomap_msgs/Octomap.h>
 #include <std_srvs/Empty.h>
 #include <std_msgs/String.h>
-
+#include <Eigen/Dense>
 
 class LCM2ROS
 {
@@ -36,11 +39,14 @@ private:
 
   ros::Publisher planner_request_pub_;
   ros::Publisher ik_request_pub_;
+  ros::Publisher octomap_pub_;
 
   void plannerRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                              const drc::exotica_planner_request_t* msg);
   void ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                         const drc::exotica_planner_request_t* msg);
+  void octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                        const drc::map_octree_t* msg);
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in) : lcm_(lcm_in), nh_(nh_in)
@@ -50,6 +56,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in) : 
 
   lcm_->subscribe("IK_REQUEST", &LCM2ROS::ikRequestHandler, this);
   ik_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/exotica/ik_request", 10);
+
+  lcm_->subscribe("MAP_OCTREE", &LCM2ROS::octreeHandler, this);
+  octomap_pub_ = nh_.advertise<octomap_msgs::OctomapWithPose>("/octomap_binary_with_pose", 10);
 }
 
 void translatePlannerRequest(const drc::exotica_planner_request_t* msg, ipab_msgs::PlannerRequest& m)
@@ -81,6 +90,48 @@ void LCM2ROS::ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   ipab_msgs::PlannerRequest m;
   translatePlannerRequest(msg, m);
   ik_request_pub_.publish(m);
+}
+
+void LCM2ROS::octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                               const drc::map_octree_t* msg)
+{
+  //ROS_ERROR("LCM2ROS got MAP_OCTREE");
+
+  geometry_msgs::Pose p;
+  //Eigen::Affine3f msgTransform;
+  Eigen::Projective3f msgTransform;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      msgTransform(i,j) = msg->transform[i][j];
+    }
+  }
+  Eigen::Vector3f msgTrans(msgTransform.translation());
+  Eigen::Quaternionf msgQuat(msgTransform.rotation());
+  p.position.x = msgTrans.x();
+  p.position.y = msgTrans.y();
+  p.position.z = msgTrans.z();
+  p.orientation.w = msgQuat.w();
+  p.orientation.x = msgQuat.x();
+  p.orientation.y = msgQuat.y();
+  p.orientation.z = msgQuat.z();
+
+  octomap_msgs::Octomap m;
+  m.header.stamp = ros::Time().fromSec(msg->utime * 1E-6);
+
+  // hard coded because the incoming message has no resolution
+  // A better solution might be to also check the view_id if there are
+  // multiple octrees being published
+  m.resolution = 0.01;
+  m.binary = true;
+  m.id = "workspace_octomap";
+  m.data.resize( msg->num_bytes );
+  memcpy(&m.data[0], msg->data.data(), msg->num_bytes );
+
+  octomap_msgs::OctomapWithPose o;
+  o.origin = p;
+  o.octomap = m;
+  o.header = m.header;
+  octomap_pub_.publish(o);
 }
 
 int main(int argc, char** argv)
