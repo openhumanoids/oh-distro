@@ -8,7 +8,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 
-#include <lcmtypes/drc/world_box_t.hpp>
+//#include <lcmtypes/drc/world_box_t.hpp>
 
 #include <gtkmm-renderer/RendererBase.hpp>
 #include <maps/ViewClient.hpp>
@@ -56,9 +56,9 @@ struct MapsRenderer : public gtkmm::RendererBase, ViewClient::Listener {
                const BotParam* iParam, const BotFrames* iFrames);
   ~MapsRenderer();
 
-  void onBoxPointCloudRequest(const lcm::ReceiveBuffer* iBuf,
-                              const std::string& iChannel,
-                              const drc::world_box_t* iMessage);
+  //void onBoxPointCloudRequest(const lcm::ReceiveBuffer* iBuf,
+  //                            const std::string& iChannel,
+  //                            const drc::world_box_t* iMessage);
   void onAdjustBoxToggleChanged();
 
   void setupWidgets();
@@ -69,8 +69,8 @@ struct MapsRenderer : public gtkmm::RendererBase, ViewClient::Listener {
   void notifyCatalog(const bool iChanged);
 
   void onCreateBoxButton();
-  void onSendBoxRequestButton();
-  void sendBoxRequest();
+  //void onSendBoxRequestButton();
+  //void sendBoxRequest();
   void onClearViewsButton();
 
   double pickQuery(const double iRayStart[3], const double iRayDir[3]);

@@ -96,12 +96,13 @@ setupWidgets() {
 
     mRequestTimeWindow = 0;
     labels = { "Laser", "Stereo Head", "Stereo L.Hand", "Stereo R.Hand" };
-    ids = { drc::map_request_bbox_t::LASER,
-            drc::map_request_bbox_t::STEREO_HEAD,
-            drc::map_request_bbox_t::STEREO_LHAND,
-            drc::map_request_bbox_t::STEREO_RHAND };
-    mRequestBoxDataSource = drc::map_request_bbox_t::LASER;
-    addCombo("Data Source", mRequestBoxDataSource, labels, ids, requestBox);
+    //ids = { drc::map_request_bbox_t::LASER,
+    //        drc::map_request_bbox_t::STEREO_HEAD,
+    //        drc::map_request_bbox_t::STEREO_LHAND,
+    //        drc::map_request_bbox_t::STEREO_RHAND };
+    //mRequestBoxDataSource = drc::map_request_bbox_t::LASER;
+    //addCombo("Data Source", mRequestBoxDataSource, labels, ids, requestBox);
+    /*
     addSpin("Time Window (s)", mRequestTimeWindow, 0, 30, 1, requestBox);
     mRequestRawScan = false;
     addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
@@ -110,6 +111,7 @@ setupWidgets() {
       (sigc::mem_fun(*this, &MapsRenderer::onSendBoxRequestButton));
     requestBox->pack_start(*button, false, false);
     mRequestBoxInit = false;
+    */
   }
 
   notebook->show_all();
@@ -172,6 +174,7 @@ onCreateBoxButton() {
   requestDraw();
 }
 
+/*
 void MapsRenderer::
 onSendBoxRequestButton() {
   if (!mShowRequestBox) {
@@ -180,7 +183,9 @@ onSendBoxRequestButton() {
   }
   sendBoxRequest();
 }
+*/
 
+/*
 void MapsRenderer::sendBoxRequest() {
   drc::map_request_bbox_t msg;
   Eigen::Vector3f position, scale;
@@ -200,6 +205,7 @@ void MapsRenderer::sendBoxRequest() {
   getLcm()->publish("MAP_REQUEST_BBOX", &msg);
   mAdjustRequestBoxToggle->set_active(false);
 }
+*/
 
 void MapsRenderer::onClearViewsButton() {
   mViewClient.clearAll();
