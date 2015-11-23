@@ -169,9 +169,10 @@ struct Worker {
     msg.map_id = 1; // 1 means use SCAN_FREE | 2 or 3 means use SCAN
     msg.view_id = drc::data_request_t::OCTREE_WORKSPACE;
     msg.resolution = 0.01;
-    msg.time_min = 0;
-    msg.time_max = 180;
-    msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
+    // Mode recently changed to time history
+    //msg.time_min = 0;
+    //msg.time_max = 180;
+    //msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
     msg.clip_planes[0][3] = 0.25;
     msg.clip_planes[1][3] = 2;
     msg.clip_planes[2][3] = 1;
