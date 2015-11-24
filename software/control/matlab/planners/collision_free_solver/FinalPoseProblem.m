@@ -106,6 +106,7 @@ classdef FinalPoseProblem
       if obj.debug
         debug_vars.info = info;
         debug_vars.computation_time = toc(timer);
+        fprintf('Computation Time: %.2f s', debug_vars.computation_time)
       end
     end
     
@@ -156,8 +157,8 @@ classdef FinalPoseProblem
       
       ee_rotmat = quat2rotmat(obj.x_goal(4:7));
       ee_direction = ee_rotmat(:,2);
-      obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 800, 1000, true, obj.robot, obj.x_goal, 0, 0, 2, 1.5);
-      obj.capability_map.drawActiveMapCentredOnEE(obj.x_goal)
+      obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, obj.robot, obj.x_goal, 0, 0, 2, 1.5);
+%       obj.capability_map.drawActiveMapCentredOnEE(obj.x_goal)
       sphCenters = obj.capability_map.getActiveSphereCentres();
       nSph = obj.capability_map.n_active_spheres;
       iter = 0;

@@ -96,6 +96,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     'debug', true);
 
   [xGoalFull, info, debug_vars] = finalPose.findFinalPose();
+  q_end = xGoalFull(8:end);
   if options.visualize && info == 1
     pose_publisher.publish([q_end; zeros(size(q_end))], get_timestamp_now())
   end

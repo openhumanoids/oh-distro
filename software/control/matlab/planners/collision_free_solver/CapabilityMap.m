@@ -84,7 +84,7 @@ classdef CapabilityMap
       end
       idx = [];
       points = obj.findPointsFromDirection(direction, threshold);
-      for s = active_idx
+      for s = active_idx'
         if any(obj.map(s, points))
           idx(end+1) = s;
         end
@@ -92,7 +92,7 @@ classdef CapabilityMap
       
     end
 
-    function obj = reduceActiveSet(obj, direction, min_sph, max_sph, reset_active, rbm, EE_pose, sagittal_angle,...
+    function obj = reduceActiveSet(obj, direction, des_sph_num, reset_active, rbm, EE_pose, sagittal_angle,...
         transverse_angle, sagittal_weight, transverse_weight)
       
       obj = obj.deactivateCollidingSpheres(rbm, EE_pose, reset_active);
@@ -101,21 +101,28 @@ classdef CapabilityMap
 %         obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, false);
 %       end
       
-      if obj.n_active_spheres > max_sph
-        active_sph = obj.active_spheres;
-        max_threshold = 180;
+      if obj.n_active_spheres > des_sph_num
+        max_threshold = pi;
         min_threshold = 0;
-        obj = activateSpheresFromDirection(obj, direction, threshold, false);
-        while obj.n_active_spheres > max_sph
-          obj.active_spheres = active_sph;
-          threshold = threshold - pi/50;
-          obj = activateSpheresFromDirection(obj, direction, threshold, false);
-          obj.drawActiveMapCentredOnEE(EE_pose)
+        threshold_range = pi/50;
+        while max_threshold - min_threshold > threshold_range
+          mid_threshold = (max_threshold + min_threshold)/2;
+          idx_mid = obj.findSpheresFromDirection(direction, mid_threshold, true);
+          if length(idx_mid) > des_sph_num
+            max_threshold = mid_threshold;
+          else
+            min_threshold = mid_threshold;
+          end
         end
+        idx_min = obj.findSpheresFromDirection(direction, min_threshold, true);
+        idx_max = obj.findSpheresFromDirection(direction, max_threshold, true);
+        idx = min(abs([numel(idx_min), numel(idx_max)] - des_sph_num));
+        obj = obj.activateSpheres(idx);
+%         obj.drawActiveMapCentredOnEE(EE_pose)
       end
       
       reachability_weight = 0;
-      while obj.n_active_spheres > max_sph
+      while obj.n_active_spheres > des_sph_num
         reachability_weight = reachability_weight + 0.5;
         obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, reachability_weight, false);
       end
@@ -128,7 +135,6 @@ classdef CapabilityMap
           lcmClient.sphere(obj.sph_centers(:,sph), obj.sph_diameter/2, 20, 20);
         end
       end
-      disp(obj.n_active_spheres)
       lcmClient.switchBuffers();
     end
     
@@ -139,7 +145,6 @@ classdef CapabilityMap
           lcmClient.sphere(EE_pose(1:3)-obj.sph_centers(:,sph), obj.sph_diameter/10, 20, 20);
         end
       end
-      disp(obj.n_active_spheres)
       lcmClient.switchBuffers();
     end
     
