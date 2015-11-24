@@ -51,6 +51,16 @@ classdef CapabilityMap
       obj = obj.resetActiveSpheres();
     end
     
+    function obj = activateSpheres(obj, idx)
+      obj.active_spheres(idx) = true;
+      obj.n_active_spheres = nnz(obj.active_spheres);
+    end
+    
+    function obj = deactivateSpheres(obj, idx)
+      obj.active_spheres(idx) = false;
+      obj.n_active_spheres = nnz(obj.active_spheres);
+    end
+    
     function points = findPointsFromDirection(obj, direction, threshold)
       [~, frames] = obj.distributePointsOnSphere(obj.n_points_per_sphere);
       points = false(obj.n_points_per_sphere, 1);
@@ -65,17 +75,18 @@ classdef CapabilityMap
       end
     end
     
-    function obj = activateSpheresFromDirection(obj, direction, threshold, reset_active)
+    function idx = findSpheresFromDirection(obj, direction, threshold, in_active_set)
       
-      if reset_active
-        obj = obj.resetActiveSpheres();
-      end      
-      
+      if in_active_set
+        active_idx = find(obj.active_spheres);
+      else
+        active_idx = 1:obj.n_spheres;
+      end
+      idx = [];
       points = obj.findPointsFromDirection(direction, threshold);
-      for s = 1:obj.n_spheres
-        if obj.active_spheres(s) && all(~obj.map(s, points))
-          obj.active_spheres(s) = false;
-          obj.n_active_spheres = nnz(obj.active_spheres);
+      for s = active_idx
+        if any(obj.map(s, points))
+          idx(end+1) = s;
         end
       end  
       
@@ -86,19 +97,23 @@ classdef CapabilityMap
       
       obj = obj.deactivateCollidingSpheres(rbm, EE_pose, reset_active);
       
-      if nargin > 7
-        obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, false);
+%       if nargin > 7
+%         obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, false);
+%       end
+      
+      if obj.n_active_spheres > max_sph
+        active_sph = obj.active_spheres;
+        max_threshold = 180;
+        min_threshold = 0;
+        obj = activateSpheresFromDirection(obj, direction, threshold, false);
+        while obj.n_active_spheres > max_sph
+          obj.active_spheres = active_sph;
+          threshold = threshold - pi/50;
+          obj = activateSpheresFromDirection(obj, direction, threshold, false);
+          obj.drawActiveMapCentredOnEE(EE_pose)
+        end
       end
       
-      assert(min_sph < obj.n_active_spheres)
-      active_sph = obj.active_spheres;
-      threshold = 0;
-      obj = activateSpheresFromDirection(obj, direction, threshold, false);
-      while obj.n_active_spheres < min_sph
-        obj.active_spheres = active_sph;
-        threshold = threshold + pi/50;
-        obj = activateSpheresFromDirection(obj, direction, threshold, false);
-      end
       reachability_weight = 0;
       while obj.n_active_spheres > max_sph
         reachability_weight = reachability_weight + 0.5;
@@ -138,7 +153,7 @@ classdef CapabilityMap
       sph_idx = find(obj.active_spheres);
       kinsol = rbm.doKinematics(zeros(rbm.num_positions, 1));
       colliding_points = rbm.collidingPoints(kinsol, points, obj.sph_diameter/2);
-      obj.active_spheres(sph_idx(colliding_points)) = false;
+      obj = obj.deactivateSpheres(sph_idx(colliding_points));
     end
     
     function obj = prune(obj, sagittal_angle,...
@@ -158,8 +173,7 @@ classdef CapabilityMap
           transverse_cost = transverse_weight * abs(ta - transverse_angle);
           reachability_cost = reachability_weight * (Dmax - obj.reachability_index(sph));
           if sqrt(sagittal_cost^2 + transverse_cost^2) + reachability_cost >= 2
-            obj.active_spheres(sph) = false;
-            obj.n_active_spheres = nnz(obj.active_spheres);
+            obj = obj.deactivateSpheres(sph);
           end
         end
       end
@@ -169,9 +183,9 @@ classdef CapabilityMap
       if nargin < 2
         include_zero_reachability = false;
       end
-      obj.active_spheres = true(obj.n_spheres, 1);
+      obj = obj.activateSpheres(1:obj.n_spheres);
       if ~include_zero_reachability
-        obj.active_spheres(obj.reachability_index == 0) = false;
+        obj = obj.deactivateSpheres(obj.reachability_index == 0);
       end
     end
     
