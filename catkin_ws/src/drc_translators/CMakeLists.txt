@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   ipab_msgs
   ihmc_msgs
   geometry_msgs
+  octomap_msgs
   tf
   trajectory_msgs
   sensor_msgs
