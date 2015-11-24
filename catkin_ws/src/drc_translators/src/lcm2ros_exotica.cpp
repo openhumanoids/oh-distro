@@ -94,6 +94,7 @@ void LCM2ROS::octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &c
                                const drc::map_octree_t* msg)
 {
   octomap_msgs::Octomap m;
+  m.header.frame_id = "/world_frame";
   m.header.stamp = ros::Time().fromSec(msg->utime * 1E-6);
 
   // hard coded because the incoming message has no resolution
