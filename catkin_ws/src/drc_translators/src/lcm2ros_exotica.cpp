@@ -19,11 +19,9 @@
 #include "lcmtypes/drc/map_octree_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
-#include <octomap_msgs/OctomapWithPose.h>
 #include <octomap_msgs/Octomap.h>
 #include <std_srvs/Empty.h>
 #include <std_msgs/String.h>
-#include <Eigen/Dense>
 
 class LCM2ROS
 {
@@ -58,7 +56,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in) : 
   ik_request_pub_ = nh_.advertise<ipab_msgs::PlannerRequest>("/exotica/ik_request", 10);
 
   lcm_->subscribe("MAP_OCTREE", &LCM2ROS::octreeHandler, this);
-  octomap_pub_ = nh_.advertise<octomap_msgs::OctomapWithPose>("/octomap_binary_with_pose", 10);
+  octomap_pub_ = nh_.advertise<octomap_msgs::Octomap>("/octomap_binary", 1);
 }
 
 void translatePlannerRequest(const drc::exotica_planner_request_t* msg, ipab_msgs::PlannerRequest& m)
@@ -95,24 +93,6 @@ void LCM2ROS::ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 void LCM2ROS::octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                const drc::map_octree_t* msg)
 {
-  geometry_msgs::Pose p;
-  Eigen::Projective3f msgTransform;
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      msgTransform(i, j) = msg->transform[i][j];
-    }
-  }
-
-  Eigen::Vector3f msgTrans(msgTransform.translation());
-  Eigen::Quaternionf msgQuat(msgTransform.rotation());
-  p.position.x = msgTrans.x();
-  p.position.y = msgTrans.y();
-  p.position.z = msgTrans.z();
-  p.orientation.w = msgQuat.w();
-  p.orientation.x = msgQuat.x();
-  p.orientation.y = msgQuat.y();
-  p.orientation.z = msgQuat.z();
-
   octomap_msgs::Octomap m;
   m.header.stamp = ros::Time().fromSec(msg->utime * 1E-6);
 
@@ -125,11 +105,7 @@ void LCM2ROS::octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &c
   m.data.resize(msg->num_bytes);
   memcpy(&m.data[0], msg->data.data(), msg->num_bytes);
 
-  octomap_msgs::OctomapWithPose o;
-  o.origin = p;
-  o.octomap = m;
-  o.header = m.header;
-  octomap_pub_.publish(o);
+  octomap_pub_.publish(m);
 }
 
 int main(int argc, char** argv)
