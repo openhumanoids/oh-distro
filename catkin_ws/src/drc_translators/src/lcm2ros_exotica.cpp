@@ -107,6 +107,7 @@ void LCM2ROS::octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &c
   memcpy(&m.data[0], msg->data.data(), msg->num_bytes);
 
   octomap_pub_.publish(m);
+  ROS_ERROR("Publishing OCTOMAP");
 }
 
 int main(int argc, char** argv)
