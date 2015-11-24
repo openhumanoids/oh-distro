@@ -1,42 +1,10 @@
 // cddrc
-// drc-icp-testing externals/libpointmatcher/examples/data/car_cloud400.csv externals/libpointmatcher/examples/data/car_cloud401.csv
-
-/*
-
-Copyright (c) 2010--2012,
-François Pomerleau and Stephane Magnenat, ASL, ETHZ, Switzerland
-You can contact the authors at <f dot pomerleau at gmail dot com> and
-<stephane at magnenat dot net>
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL ETH-ASL BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
+// drc-icp-testing
 
 #include "pointmatcher/PointMatcher.h"
 #include <cassert>
 #include <iostream>
+#include <fstream>
 #include "boost/filesystem.hpp"
 
 #include <lcm/lcm-cpp.hpp>
@@ -53,21 +21,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pcl/point_types.h>
 #include <pcl/io/vtk_io.h>
 
+#include "icp_utils.h"
+
 using namespace std;
 
 const char *homedir;
+
+typedef PointMatcher<float> PM;
+typedef PM::DataPoints DP;
+
 boost::shared_ptr<lcm::LCM> lcm_;
 pronto_vis* pc_vis_;
 
-void convertTo2DDataPoints(PointMatcher<float>::DataPoints &loaded_cloud);
-void fromDataPointsToPCL(PointMatcher<float>::DataPoints &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out);
+string configFile2D_, configFile3D_;
+string init2DTranslation_, init3DTranslation_;
+string init2DRotation_, init3DRotation_;
+
+void getICPTransform(DP &cloud_in, DP &cloud_ref);
+void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out);
 void publishCloud(int cloud_id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_topub);
+void applyRigidTransform(DP &pointCloud);
+
+int validateArgs(const int argc, const char *argv[]);
+PM::TransformationParameters parseTranslation(string& translation,
+                        const int cloudDimension);
+PM::TransformationParameters parseRotation(string& rotation,
+                       const int cloudDimension);
+void usage(const char *argv[]);
 
 /**
-  * Code example for ICP taking 2 points clouds (2D or 3D) relatively close 
-  * and computing the transformation between them.
+  * Code for ICP reading : 1) two 3D point clouds relatively close 
+  * and computing the transformation between them. 2) two 2D point clouds 
+  * relatively close and computing the transformation between them.
   */
-int main(int argc, char *argv[])
+
+int main(int argc, const char *argv[])
 {
   if ((homedir = getenv("HOME")) == NULL) {
     homedir = getpwuid(getuid())->pw_dir;
@@ -79,6 +67,18 @@ int main(int argc, char *argv[])
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
+  // Init Default
+  init2DTranslation_.append("0,-1.5");
+  init2DRotation_.append("1,0;0,1");
+  init3DTranslation_.append("0,-1.5,0");
+  init3DRotation_.append("1,0,0;0,1,0;0,0,1");
+
+  const int ret = validateArgs(argc, argv);
+
+  if (ret == -1)
+    return ret;
+
+  /////////////////////////////////////////////////////// Set up pronto visualizer
   bool reset = 0;  
   pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
@@ -90,118 +90,258 @@ int main(int argc, char *argv[])
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60004, "Scan_Ref - Null", 1, reset, 60000, 1, {0.0, 0.1, 0.0}) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60005, "Scan_In - Null", 1, reset, 60000, 1, {0.0, 0.0, 1.0}) );  
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60006, "Scan_Result - Null", 1, reset, 60000, 1, {1.0, 0.0, 0.0}) );
+  ////////////////////////////////////////////////////////////////////////////////
   
+  string cloud_name_A, cloud_name_B, scan_name_A, scan_name_B;
+  DP ref, data, ref2, data2;
 
-  typedef PointMatcher<float> PM;
-  typedef PM::DataPoints DP;
+  cloud_name_A.append(homedir);
+  //cloud_name_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_00.vtk");
+  cloud_name_A.append("/logs/multisenselog__2015-11-16/tmp/multisense_00.vtk");
+  //cloud_name_A.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud400.csv");
+  cloud_name_B.append(homedir);
+  //cloud_name_B.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_08.vtk");
+  cloud_name_B.append("/logs/multisenselog__2015-11-16/tmp/multisense_08.vtk");
+  //cloud_name_B.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud401.csv");
+
+  scan_name_A.append(homedir);
+  //scan_name_A.append("/logs/multisenselog__2015-11-16/planar_scans/scan_00.csv");
+  scan_name_A.append("/logs/multisenselog__2015-11-16/tmp/scan_00.csv");
+  //scan_name_A.append("/main-distro/software/externals/libpointmatcher/examples/data/2D_twoBoxes.csv");
+  scan_name_B.append(homedir);
+  //scan_name_B.append("/logs/multisenselog__2015-11-16/planar_scans/scan_08.csv");
+  scan_name_B.append("/logs/multisenselog__2015-11-16/tmp/scan_08.csv");
+  //scan_name_B.append("/main-distro/software/externals/libpointmatcher/examples/data/2D_oneBox.csv");
+
+  // Load point clouds from file
+  ref = DP::load(cloud_name_A);
+  data = DP::load(cloud_name_B);
+
+  ref2 = DP::load(scan_name_A);
+  data2 = DP::load(scan_name_B);
   
-  string vtk_fname_A, vtk_fname_B;
-
   //=================================
   // TRANSFORM 3D CLOUD
   //=================================
-  // Load point clouds
-  vtk_fname_A.append(homedir);
-  vtk_fname_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_00.vtk");
-  //vtk_fname_A.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud400.csv");
-  vtk_fname_B.append(homedir);
-  vtk_fname_B.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_08.vtk");
-  //vtk_fname_B.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud401.csv");
-  DP ref(DP::load(vtk_fname_A));
-  DP data(DP::load(vtk_fname_B));
 
-  // Transform input clouds to pcl::PointCloud<pcl::PointXYZRGB> and publish for visualization
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudA (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  fromDataPointsToPCL(ref, *cloudA);
-  publishCloud(60001, cloudA);
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudB (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  fromDataPointsToPCL(data, *cloudB);
-  publishCloud(60002, cloudB);
-
-  // Create the default ICP algorithm
-  PM::ICP icp;
-  
-  // See the implementation of setDefault() to create a custom ICP algorithm
-  icp.setDefault();
-
-  // Compute the transformation to express data in ref
-  PM::TransformationParameters T = icp(data, ref);
-
-  // Transform data to express it in ref
-  DP data_out(data);
-  icp.transformations.apply(data_out, T);
-  
-  // Transform output cloud to pcl::PointCloud<pcl::PointXYZRGB>
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_res (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  fromDataPointsToPCL(data_out, *cloud_res);
-  // Publish cloud to see the results
-  publishCloud(60003, cloud_res);
-
-  cout << "Final 3D transformation:" << endl << T << endl;
+  getICPTransform(data, ref);
 
   //=================================
-  // TRANSFORM CORRESPONDING 2D CLOUD
+  // TRANSFORM 2D CLOUD
   //=================================
 
-  vtk_fname_A.clear();
-  vtk_fname_A.append(homedir);
-  vtk_fname_A.append("/logs/multisenselog__2015-11-16/planar_scans/scan_00.vtk");
-  vtk_fname_B.clear();
-  vtk_fname_B.append(homedir);
-  vtk_fname_B.append("/logs/multisenselog__2015-11-16/planar_scans/scan_08.vtk");
-  DP ref2(DP::load(vtk_fname_A));
-  DP data2(DP::load(vtk_fname_B));
-
-  /*
-  Features is an Eigen matrix typically containing the coordinates of the points which form the cloud. 
-  Each column corresponds to a point in the cloud. 
-  The rows correspond to the dimensions of the points in homogeneous coordinates. 
-  For 2D point clouds, there will thus be 3 rows and for 4 rows for 3D point clouds.
-  */
-  convertTo2DDataPoints(ref2);
-  convertTo2DDataPoints(data2);
-
-  // Transform input clouds to pcl::PointCloud<pcl::PointXYZRGB> and publish for visualization
-  fromDataPointsToPCL(ref2, *cloudA);
-  publishCloud(60004, cloudA);
-  fromDataPointsToPCL(data2, *cloudB);
-  publishCloud(60005, cloudB);
-  
-  // See the implementation of setDefault() to create a custom ICP algorithm
-  icp.setDefault();
-
-  // Compute the transformation to express data in ref
-  T = icp(data2, ref2);
-
-  // Transform data to express it in ref
-  DP data_out2(data2);
-  icp.transformations.apply(data_out2, T);
-  
-  // Transform output cloud to pcl::PointCloud<pcl::PointXYZRGB>
-  fromDataPointsToPCL(data_out2, *cloud_res);
-  // Publish cloud to see the results
-  publishCloud(60006, cloud_res);
-
-  cout << "Final 2D transformation:" << endl << T << endl;
+  getICPTransform(data2, ref2);
   
   return 0;
 }
 
-void convertTo2DDataPoints(PointMatcher<float>::DataPoints &loaded_cloud)
+//========================================================
+// FUNCTIONS
+//========================================================
+
+// Make sure that the command arguments make sense
+int validateArgs(const int argc, const char *argv[])
 {
-  Eigen::MatrixXf ref2D(3,loaded_cloud.getNbPoints());
-  for (int i = 0; i < loaded_cloud.getNbPoints(); i++) {
-    ref2D(0, i) = (loaded_cloud.features.col(i))[0];
-    ref2D(1, i) = (loaded_cloud.features.col(i))[1];
-    ref2D(2, i) = 1;
-  }  
-  loaded_cloud.addFeature("x", ref2D.row(0));
-  loaded_cloud.addFeature("y", ref2D.row(1));
-  loaded_cloud.addFeature("z", ref2D.row(2));
-  loaded_cloud.removeFeature("pad");
+  if (argc == 1)
+  {
+    cerr << "Loading clouds... default options applied.\n";
+    return 1;
+  }
+ 
+  const int endOpt(argc);
+
+  for (int i = 1; i < endOpt; i += 2)
+  {
+    const string opt(argv[i]);
+    if (i + 1 > endOpt)
+    {
+      cerr << "Missing value for option " << opt << ", usage:"; usage(argv); exit(1);
+    }
+    if (opt == "--config2D") {
+      configFile2D_.append(homedir);
+      configFile2D_.append("/main-distro/software/perception/registeration/filters_config/");
+      configFile2D_.append(argv[i+1]);
+    }
+    else if (opt == "--config3D") {
+      configFile3D_.append(homedir);
+      configFile3D_.append("/main-distro/software/perception/registeration/filters_config/");
+      configFile3D_.append(argv[i+1]);
+    }
+    else if (opt == "--init2DTrans") {
+      init2DTranslation_.clear();
+      init2DTranslation_ = argv[i+1];
+    }
+    else if (opt == "--init2DRot") {
+      init2DRotation_.clear();
+      init2DRotation_ = argv[i+1];
+    }
+    else if (opt == "--init3DRot") {
+      init3DRotation_.clear();
+      init3DRotation_ = argv[i+1];
+    }
+    else if (opt == "--init3DTrans") {
+      init3DTranslation_.clear();
+      init3DTranslation_ = argv[i+1];
+    }
+    else if (opt == "-h")
+    {
+      cerr << "Usage:";
+      usage(argv);
+      return -1;
+    }
+    else
+    {
+      cerr << "Unknown option " << opt << ", usage:"; usage(argv); exit(1);
+    }
+  }
+  return 0;
 }
 
-void fromDataPointsToPCL(PointMatcher<float>::DataPoints &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out)
+
+// Dump command-line help
+void usage(const char *argv[])
+{
+  //TODO: add new options --isTransfoSaved, --initTranslation, --initRotation
+  cerr << endl << endl;
+  cerr << "* To run ICP:" << endl;
+  cerr << "  " << argv[0] << " [OPTIONS]" << endl;
+  cerr << endl;
+  cerr << "OPTIONS can be a combination of:" << endl;
+  cerr << "--config2D YAML_2DCLOUD_CONFIG_FILE  Load the config from a YAML file located in filters_config (default: default parameters)" << endl;
+  cerr << "--config3D YAML_3DCLOUD_CONFIG_FILE  Load the config from a YAML file located in filters_config (default: default parameters)" << endl;
+  cerr << "--init3DTrans [x,y,z]  Add an initial 3D translation before applying ICP (default: 0,0,0)" << endl;
+  cerr << "--init2DTrans [x,y]    Add an initial 2D translation before applying ICP (default: 0,0)" << endl;
+  cerr << "--init3DRot [r00,r01,r02,r10,r11,r12,r20,r21,r22]" << endl;
+  cerr << "                           Add an initial 3D rotation before applying ICP (default: 1,0,0,0,1,0,0,0,1)" << endl;
+  cerr << "--init2DRot [r00,r01,r10,r11]" << endl;
+  cerr << "                           Add an initial 2D rotation before applying ICP (default: 1,0,0,1)" << endl;
+  cerr << endl;
+}
+
+
+void getICPTransform(DP &cloud_in, DP &cloud_ref)
+{
+  // Transform input clouds to pcl::PointCloud<pcl::PointXYZRGB> and publish for visualization
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudA (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  fromDataPointsToPCL(cloud_ref, *cloudA);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudB (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  fromDataPointsToPCL(cloud_in, *cloudB);
+
+  // Create the default ICP algorithm
+  PM::ICP icp;
+
+  int cloudDimension = cloud_ref.getEuclideanDim();
+  
+  if (!(cloudDimension == 2 || cloudDimension == 3)) 
+  {
+    cerr << "Invalid input point clouds dimension." << endl;
+    exit(1);
+  }
+
+  if (cloudDimension == 2)
+  {
+    // ICP chain configuration: check if prefiltering required
+    if (configFile2D_.empty())
+    {
+      // See the implementation of setDefault() to create a custom ICP algorithm
+      icp.setDefault();
+    }
+    else
+    {
+      // load YAML config
+      ifstream ifs(configFile2D_.c_str());
+      if (!ifs.good())
+      {
+        cerr << "Cannot open config file " << configFile2D_ << endl; exit(1);
+      }
+      icp.loadFromYaml(ifs);
+      cerr << "Loaded pre-filtering chain from yaml..." << endl;
+    }
+  }
+  else
+  {
+    // ICP chain configuration: check if prefiltering required
+    if (configFile3D_.empty())
+    {
+      // See the implementation of setDefault() to create a custom ICP algorithm
+      icp.setDefault();
+    }
+    else
+    {
+      // load YAML config
+      ifstream ifs(configFile3D_.c_str());
+      if (!ifs.good())
+      {
+        cerr << "Cannot open config file " << configFile3D_ << endl; exit(1);
+      }
+      icp.loadFromYaml(ifs);
+      cerr << "Loaded pre-filtering chain from yaml..." << endl;
+    }
+  }
+
+  // Apply rigid transformation (just a "visually good" approximation of the transformation 
+  // between ref and input clouds) to escape local minima
+  PM::TransformationParameters translation, rotation;
+  if (cloudDimension == 2)
+  {
+    translation = parseTranslation(init2DTranslation_, cloudDimension);
+    rotation = parseRotation(init2DRotation_, cloudDimension);
+  }
+  else
+  {
+    translation = parseTranslation(init3DTranslation_, cloudDimension);
+    rotation = parseRotation(init3DRotation_, cloudDimension);
+  }
+  PM::TransformationParameters initTransfo = translation*rotation;
+
+  PM::Transformation* rigidTrans;
+  rigidTrans = PM::get().REG(Transformation).create("RigidTransformation");
+
+  if (!rigidTrans->checkParameters(initTransfo)) {
+    cerr << endl
+       << "Initial transformation is not rigid, identity will be used."
+       << endl;
+    initTransfo = PM::TransformationParameters::Identity(
+          cloudDimension+1,cloudDimension+1);
+  }
+
+  const DP initializedData = rigidTrans->compute(cloud_in, initTransfo);
+
+  // Compute the transformation to express data in ref
+  PM::TransformationParameters T = icp(initializedData, cloud_ref);
+  cout << "Match ratio: " << icp.errorMinimizer->getWeightedPointUsedRatio() << endl;
+
+  // Transform data to express it in ref
+  DP data_out(initializedData);
+  icp.transformations.apply(data_out, T);
+
+  // Transform output cloud to pcl::PointCloud<pcl::PointXYZRGB>
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_res (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  fromDataPointsToPCL(data_out, *cloud_res);
+
+  // Publish clouds to see the results
+  if (cloudDimension == 3)
+  {
+    publishCloud(60001, cloudA);
+    publishCloud(60002, cloudB);
+    publishCloud(60003, cloud_res);
+    cout << "Final 3D transformation:" << endl << T << endl;
+  }
+  else
+  {
+    publishCloud(60004, cloudA);
+    publishCloud(60005, cloudB);
+    publishCloud(60006, cloud_res); 
+    cout << "Final 2D transformation:" << endl << T << endl;
+  }
+
+  //======================== Errors............... ==========================
+  computeCloudsDistance (icp, cloud_ref, data_out);
+  //=========================================================================
+}
+
+
+void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out)
 {
   cloud_out.points.resize(cloud_in.getNbPoints());
   for (int i = 0; i < cloud_in.getNbPoints(); i++) {
@@ -214,6 +354,7 @@ void fromDataPointsToPCL(PointMatcher<float>::DataPoints &cloud_in, pcl::PointCl
   cloud_out.height = 1;
 }
 
+
 void publishCloud(int cloud_id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_toPub)
 {
   Isometry3dTime null_T = Isometry3dTime(1, Eigen::Isometry3d::Identity());
@@ -222,4 +363,77 @@ void publishCloud(int cloud_id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_to
 }
 
 
+PM::TransformationParameters parseTranslation(string& translation,
+                        const int cloudDimension) {
+  PM::TransformationParameters parsedTranslation;
+  parsedTranslation = PM::TransformationParameters::Identity(
+        cloudDimension+1,cloudDimension+1);
+
+  translation.erase(std::remove(translation.begin(), translation.end(), '['),
+            translation.end());
+  translation.erase(std::remove(translation.begin(), translation.end(), ']'),
+            translation.end());
+  std::replace( translation.begin(), translation.end(), ',', ' ');
+  std::replace( translation.begin(), translation.end(), ';', ' ');
+
+  float translationValues[3] = {0};
+  stringstream translationStringStream(translation);
+  for( int i = 0; i < cloudDimension; i++) {
+    if(!(translationStringStream >> translationValues[i])) {
+      cerr << "An error occured while trying to parse the initial "
+         << "translation." << endl
+         << "No initial translation will be used" << endl;
+      return parsedTranslation;
+    }
+  }
+  float extraOutput = 0;
+  if((translationStringStream >> extraOutput)) {
+    cerr << "Wrong initial translation size" << endl
+       << "No initial translation will be used" << endl;
+    return parsedTranslation;
+  }
+
+  for( int i = 0; i < cloudDimension; i++) {
+    parsedTranslation(i,cloudDimension) = translationValues[i];
+  }
+
+  return parsedTranslation;
+}
+
+PM::TransformationParameters parseRotation(string &rotation,
+                       const int cloudDimension){
+  PM::TransformationParameters parsedRotation;
+  parsedRotation = PM::TransformationParameters::Identity(
+        cloudDimension+1,cloudDimension+1);
+
+  rotation.erase(std::remove(rotation.begin(), rotation.end(), '['),
+           rotation.end());
+  rotation.erase(std::remove(rotation.begin(), rotation.end(), ']'),
+           rotation.end());
+  std::replace( rotation.begin(), rotation.end(), ',', ' ');
+  std::replace( rotation.begin(), rotation.end(), ';', ' ');
+
+  float rotationMatrix[9] = {0};
+  stringstream rotationStringStream(rotation);
+  for( int i = 0; i < cloudDimension*cloudDimension; i++) {
+    if(!(rotationStringStream >> rotationMatrix[i])) {
+      cerr << "An error occured while trying to parse the initial "
+         << "rotation." << endl
+         << "No initial rotation will be used" << endl;
+      return parsedRotation;
+    }
+  }
+  float extraOutput = 0;
+  if((rotationStringStream >> extraOutput)) {
+    cerr << "Wrong initial rotation size" << endl
+       << "No initial rotation will be used" << endl;
+    return parsedRotation;
+  }
+
+  for( int i = 0; i < cloudDimension*cloudDimension; i++) {
+    parsedRotation(i/cloudDimension,i%cloudDimension) = rotationMatrix[i];
+  }
+
+  return parsedRotation;
+}
 
