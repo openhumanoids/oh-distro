@@ -95,16 +95,14 @@ void LCM2ROS::ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 void LCM2ROS::octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                const drc::map_octree_t* msg)
 {
-  //ROS_ERROR("LCM2ROS got MAP_OCTREE");
-
   geometry_msgs::Pose p;
-  //Eigen::Affine3f msgTransform;
   Eigen::Projective3f msgTransform;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      msgTransform(i,j) = msg->transform[i][j];
+      msgTransform(i, j) = msg->transform[i][j];
     }
   }
+
   Eigen::Vector3f msgTrans(msgTransform.translation());
   Eigen::Quaternionf msgQuat(msgTransform.rotation());
   p.position.x = msgTrans.x();
@@ -121,11 +119,11 @@ void LCM2ROS::octreeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &c
   // hard coded because the incoming message has no resolution
   // A better solution might be to also check the view_id if there are
   // multiple octrees being published
+  m.id = "OcTree";
   m.resolution = 0.01;
   m.binary = true;
-  m.id = "workspace_octomap";
-  m.data.resize( msg->num_bytes );
-  memcpy(&m.data[0], msg->data.data(), msg->num_bytes );
+  m.data.resize(msg->num_bytes);
+  memcpy(&m.data[0], msg->data.data(), msg->num_bytes);
 
   octomap_msgs::OctomapWithPose o;
   o.origin = p;
