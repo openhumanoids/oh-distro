@@ -65,6 +65,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   end
   cost(1:6) = max(cost(7:end))/2;
   cost = cost/min(cost);
+  cost(13:26) = cost(13:26)/2;
   Q = diag(cost);
   ikoptions = IKoptions(r);
   ikoptions = ikoptions.setMajorIterationsLimit(100);
