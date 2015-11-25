@@ -13,9 +13,10 @@ function plotFPPResults(input, model, scene, hand, variable, group)
 %   @param variable - string or cell of strings with the desired variable(s)
 %   @param group - variable to use to group boxes in the plot
   
-  if isstruct(input)
-  elseif ischar(input)
+  if ischar(input)
     input = load(input);
+    fnames = fieldnames(input);
+    input = input.(fnames{1});
   else
     error('Unknown input type')
   end

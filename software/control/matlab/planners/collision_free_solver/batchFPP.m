@@ -33,6 +33,7 @@ function output = batchFPP(n, scenes, options)
       opt.scene = scene;
       opt.model = models{model_idx};
       opt.convex_hull = true;
+      opt.visualize = false;
 
       opt.robot = Scenes.generateScene(opt);
 
