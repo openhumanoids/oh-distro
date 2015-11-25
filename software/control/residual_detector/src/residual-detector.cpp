@@ -55,7 +55,7 @@ class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_);
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename="");
   ~ResidualDetector(){
   }
   void residualThreadLoop();
@@ -110,7 +110,7 @@ private:
 };
 
 
-ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
+ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename):
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
     useFootForceFlag(false), useFootFTFlag(false), useGeometricJacobianFlag(false){
 
@@ -118,16 +118,22 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
     botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   } while(botparam_ == NULL);
 
-  std::shared_ptr<ModelClient> model = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(),0));
-  std::cout << "robot urdf is " << model->getURDFString() << std::endl;
+  if (urdfFilename.empty()) {
+    std::shared_ptr<ModelClient> model = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(),0));
+    drake_model.addRobotFromURDFString(model->getURDFString());
+    this->contactFilter.addRobotFromURDFString(model->getURDFString());
+  }
+  else{
+    std::string drcBase = std::string(std::getenv("DRC_BASE"));
+    urdfFilename = drcBase + "/software/models/atlas_v5/model_minimal_contact.urdf";
+    drake_model.addRobotFromURDF(urdfFilename);
+    this->contactFilter.addRobotFromURDF(urdfFilename);
+  }
 
   // if you want to use quaternions. Normally it defaults to ROLLPITCHYAW, need to override by passing optional args
   // see RigidBodyManipulatorURDF.cpp file for the syntax
   // drake_model.addRobotFromURDFString(model->getURDFString(), ".", DrakeJoint::QUATERNION)
-  drake_model.addRobotFromURDFString(model->getURDFString());
   drake_model.compile();
-
-  this->contactFilter.addRobotFromURDFString(model->getURDFString());
 
   lcm_->subscribe("EST_ROBOT_STATE", &ResidualDetector::onRobotState, this);
   lcm_->subscribe("FOOT_CONTACT_ESTIMATE", &ResidualDetector::onFootContact, this);
@@ -724,6 +730,7 @@ int main( int argc, char* argv[]){
   bool runDetectorLoop = true;
   bool runContactFilterLoop = true;
   bool runCSVTest = false;
+  std::string urdfFilename = "";
   std::string filename = "testCFP.csv";
   std::string linkName;
 
