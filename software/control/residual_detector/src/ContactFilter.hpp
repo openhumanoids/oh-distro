@@ -30,6 +30,8 @@ private:
   int nv;
   int nq;
   double mu;
+  double detectionThreshold;
+  Eigen::VectorXd detectionThresholdVec;
   std::vector<ContactFilterPoint> contactPoints;
   std::vector<MeasurementUpdate> measurementUpdateVec;
   std::string publishChannel;
@@ -42,9 +44,17 @@ private:
   MatrixXd W;
   double determinantW;
   Matrix<double,3,4> FrictionCone;
+  std::map<std::shared_ptr<RigidBody>, std::set<std::shared_ptr<RigidBody>> > rigidBodyChildrenMap;
+  std::set<std::shared_ptr<RigidBody>> rigidBodyLeafNodes;
+//  std::set<std::shared_ptr<RigidBody>> activeRigidBodies;
+
+
+
   void initializeGurobiModel();
   void initializeFrictionCone();
   void publishPointEstimate(const MeasurementUpdate & measurementUpdate, bool publishOnUniqueChannel=true);
+  void initializeDrakeModelDetails();
+  std::set<std::shared_ptr<RigidBody>> findActiveLinks(Eigen::VectorXd &residual);
 
 
 public:
@@ -54,6 +64,7 @@ public:
   virtual ~ContactFilter(void);
 
   void addRobotFromURDFString(std::string URDFString);
+  void addRobotFromURDF(std::string urdfFilename="");
   void addContactPoints(std::vector<ContactFilterPoint> contactPointsToAdd);
 
   // contact position and contact normal are both in body frame
@@ -65,9 +76,13 @@ public:
 
   void publishMostLikelyEstimate();
 
+
+  void runFindLinkTest();
+
   void testQP();
   void printGurobiModel();
 };
 
 Eigen::Matrix<double, 3, 3> rotateVectorToAlign(Eigen::Vector3d a, Eigen::Vector3d b);
 Matrix<double,6,3> computeForceToWrenchTransform(Vector3d p);
+

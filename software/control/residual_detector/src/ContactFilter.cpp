@@ -4,12 +4,15 @@
 
 #include "ContactFilter.hpp"
 #include <Eigen/Geometry>
+#include <Eigen/Dense>
 #include <math.h>
 #include "gurobiUtil.hpp"
 #include "lcmtypes/drc/contact_filter_estimate_t.hpp"
 #include <tuple>
 #define MU 0.6
+#define DETECTION_THRESHOLD 1.0
 #define PUBLISH_CHANNEL "CONTACT_FILTER_POINT_ESTIMATE"
+#include <utility>
 
 
 const double pi = 3.14159265358;
@@ -17,6 +20,7 @@ using namespace Eigen;
 
 ContactFilter::ContactFilter(void):grbModel(grbEnv),grbModelInitialized(false){
   this->mu = MU;
+  this->detectionThreshold = DETECTION_THRESHOLD;
   this->initializeGurobiModel();
   this->initializeFrictionCone();
   this->publishChannel = PUBLISH_CHANNEL;
@@ -38,15 +42,51 @@ ContactFilter::~ContactFilter(void){
 void ContactFilter::addRobotFromURDFString(std::string URDFString){
   this->drake_model.addRobotFromURDFString(URDFString);
   this->drake_model.compile();
+  this->initializeDrakeModelDetails();
+}
+
+void ContactFilter::addRobotFromURDF(std::string urdfFilename){
+  if (urdfFilename.empty()){
+    std::cout << "no urdf received, building atlas_v5 minimal contact model" << std::endl;
+    std::string drcBase = std::string(std::getenv("DRC_BASE"));
+    urdfFilename = drcBase + "/software/models/atlas_v5/model_minimal_contact.urdf";
+  }
+
+  this->drake_model.addRobotFromURDF(urdfFilename);
+  this->drake_model.compile();
+  this->initializeDrakeModelDetails();
+}
+
+void ContactFilter::initializeDrakeModelDetails(){
   this->nq = drake_model.num_positions;
   this->nv = drake_model.num_velocities;
   this->W = MatrixXd::Identity(this->nv, this->nv);
   this->determinantW = this->W.determinant();
+  this->detectionThresholdVec = this->detectionThreshold*VectorXd::Ones(this->nv);
 
   for(int i = 0; i < this->nv; i++){
     this->velocity_names.push_back(this->drake_model.getVelocityName(i));
   }
 
+  for (const auto& rigidBodyPointer: this->drake_model.bodies){
+    std::pair<std::shared_ptr<RigidBody>, std::set<std::shared_ptr<RigidBody>>> mapPair;
+    mapPair.first = rigidBodyPointer;
+    this->rigidBodyChildrenMap.insert(mapPair);
+  }
+
+  // populate the children map
+  for (auto & p: this->rigidBodyChildrenMap){
+    if (p.first->hasParent()){
+      this->rigidBodyChildrenMap.at(p.first->parent).insert(p.first);
+    }
+  }
+
+  //figure out which are the leaf nodes
+  for (auto &p: this->rigidBodyChildrenMap){
+    if (p.second.empty()){
+      this->rigidBodyLeafNodes.insert(p.first);
+    }
+  }
 }
 
 void ContactFilter::initializeFrictionCone() {
@@ -238,6 +278,46 @@ void ContactFilter::publishMostLikelyEstimate() {
   this->publishPointEstimate(*mostLikelyMeasurementUpdate, false);
 }
 
+std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(Eigen::VectorXd &residual) {
+  std::set<std::shared_ptr<RigidBody>> activeRigidBodies;
+  for (auto &p: this->rigidBodyChildrenMap) {
+    auto &rb = p.first;
+    if (!rb->hasJoint()) {
+      continue;
+    }
+    int velocityIdxStart = rb->velocity_num_start;
+    int numVelocities = rb->getJoint().getNumVelocities();
+    VectorXd temp = residual.segment(velocityIdxStart, numVelocities).cwiseAbs() -
+                    this->detectionThresholdVec.segment(velocityIdxStart, numVelocities);
+    if ((temp.array() > 0).any()) {
+      std::cout << "potentiall active:  " + rb->linkname << std::endl;
+      activeRigidBodies.insert(rb);
+    }
+  }
+
+  // start in the leaf nodes and work backwards. Remove anything from active set that has something further down the tree
+  // which is in activeRigidBodies
+  for (auto &rb: this->rigidBodyLeafNodes) {
+    std::shared_ptr<RigidBody> firstActiveRB = rb;
+    while ((activeRigidBodies.find(firstActiveRB) == activeRigidBodies.end()) && firstActiveRB->hasParent()) {
+      //this means it has a parent (i.e. is not the root) and that it is not active
+      firstActiveRB = firstActiveRB->parent;
+    }
+
+    std::cout << "leaf node = " + rb->linkname << std::endl;
+    std::cout << "firstActiveRB = " + firstActiveRB->linkname << std::endl;
+    std::shared_ptr<RigidBody> current = firstActiveRB;
+    while (current->hasParent()) {
+      current = current->parent;
+      std::cout << "removing from activeRigidBodies: " + current->linkname << std::endl;
+      activeRigidBodies.erase(current);
+    }
+
+  }
+
+  return activeRigidBodies;
+}
+
 
 
 void ContactFilter::testQP(){
@@ -311,6 +391,39 @@ void ContactFilter::initializeGurobiModel() {
 
 }
 
+void ContactFilter::runFindLinkTest() {
+  std::cout << "the RigidBody elements are" << std::endl;
+  for (auto &p: this->rigidBodyChildrenMap){
+    std::cout << "linkname = " << p.first->linkname << std::endl;
+    if (p.first->hasJoint()){
+      std::cout << "joint name = " << p.first->getJoint().getName() << std::endl;
+      std::cout << "position num start = " << p.first->position_num_start << std::endl;
+      std::cout << "joint num velocities = " << p.first->getJoint().getNumVelocities() << std::endl;
+    }
+    else{
+      std::cout << "this body has no joint" << std::endl;
+    }
+    std::cout << std::endl;
+  }
+
+  std::cout << "the leaf nodes are" << std::endl;
+
+  for (auto& p: this->rigidBodyLeafNodes){
+    std::cout << p->linkname << std::endl;
+  }
+
+  std::cout << std::endl;
+
+  VectorXd residual = VectorXd::Zero(this->nv);
+  residual(7) = 2.0;
+
+  auto activeRigidBodies = this->findActiveLinks(residual);
+  std::cout << "active rigid bodies are" << std::endl;
+  for (auto& rb: activeRigidBodies){
+    std::cout << rb->linkname << std::endl;
+  }
+}
+
 // returns the rotation matrix that rotates vector a to vector b
 Eigen::Matrix<double, 3, 3> rotateVectorToAlign(Eigen::Vector3d a, Eigen::Vector3d b){
   Matrix<double, 3, 3> R;
@@ -352,3 +465,6 @@ Matrix<double,6,3> computeForceToWrenchTransform(Vector3d p){
 
   return fM;
 };
+
+
+
