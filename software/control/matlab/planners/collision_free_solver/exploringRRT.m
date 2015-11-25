@@ -10,13 +10,16 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'scene'), options.scene = 1; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
-  if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
+  if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'costType'), options.costType = 'length'; end;
   if ~isfield(options,'firstFeasibleTraj'), options.firstFeasibleTraj = false; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'nTrees'), options.nTrees = 4; end;
-  if ~isfield(options,'goalObject'), options.goalObject = 1; end;
+  if ~isfield(options,'feet_constraint'), options.feet_constraint = 'sliding'; end
   
+  if ~any(strcmp(options.model, {'val1', 'val2'}))
+    error('Only valkyrie robot is supported')
+  end
   
   options.floating = true;
   options.terrain = RigidBodyFlatTerrain(); %Changed to a smaller terrain to avoid visualization problem when zooming
@@ -24,16 +27,25 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   options.viewer = 'NullVisualizer';
   
   if isempty(options.robot)
-    r = Scenes.generateScene(options);
+    [r, robotURDF] = Scenes.generateScene(options);
   else
     r = options.robot;
   end
   
-  addpath(fullfile(getDrakePath(), '../../', 'director/src/matlab') )
-  fixed_point_file = [getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat'];
-  left_foot_link = 'LeftFoot';
-  right_foot_link = 'RightFoot';
-  runRRTIKServer
+  if options.visualize
+    plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, r.getPositionFrame.getCoordinateNames);
+    visWorld = RigidBodyManipulator();
+    for b = 1:numel(r.body(1).visual_geometry)
+      visWorld = addGeometryToBody(visWorld, 1, r.body(1).visual_geometry{b});
+    end
+    visWorld = visWorld.compile();
+    visWorld.constructVisualizer();
+    addpath(fullfile(getDrakePath(), '../../', 'ddapp/src/matlab') )
+    fixed_point_file = [getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat'];
+    left_foot_link = 'LeftFoot';
+    right_foot_link = 'RightFoot';
+%     runIKServer
+  end
   
   if nargin > 1
     rng(rng_seed);
@@ -49,15 +61,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
   q_nom = Scenes.getFP(options.model, r);
   
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if options.visualize
-    visWorld = RigidBodyManipulator();
-    for b = 1:numel(r.body(1).visual_geometry)
-      visWorld = addGeometryToBody(visWorld, 1, r.body(1).visual_geometry{b});
-    end
-    visWorld = visWorld.compile();
-    visWorld.constructVisualizer();
-    s.publishTraj(PPTrajectory(q_nom), 1)
+    publishTraj(r, plan_publisher, q_nom)
   end
   
   %Set IK options
@@ -70,6 +75,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         cost(r.getBody(r.getBody(i).parent).position_num) + cost(r.getBody(i).position_num);
     end
   end
+  cost(1:6) = max(cost(7:end))/2;
   cost = cost/min(cost);
   Q = diag(cost);
   ikoptions = IKoptions(r);
@@ -78,52 +84,49 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   ikoptions = ikoptions.setMajorOptimalityTolerance(1e-3);
   
   %Set start pose constraints and compute starting configuration
-  startPoseConstraints = [Scenes.fixedFeetConstraints(options, r),...
-                          {Scenes.addQuasiStaticConstraint(options, r),...
+  startPoseConstraints = [Scenes.generateFeetConstraints(options, r, q_nom),...
+                         {Scenes.generateQuasiStaticConstraint(options, r),...
                           Scenes.nonGraspingHandDistanceConstraint(options, r, 0.4)}];
-  [q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
+  [q_start, info] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
+  if info > 10, error('Starting pose is invalid'); end
   if options.visualize
-    s.publishTraj(PPTrajectory(q_start), 1)
-    %     drawLinkFrame(r, g_hand, q_start, 'Grasping Hand Start');
-    %     drawLinkFrame(r, Scenes.getNonGraspingHand(options, r), q_start, 'Non Grasping Hand Start');
-    %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_start, 'Forearm Start');
+    publishTraj(r, plan_publisher, q_start)
   end
   
-  %Set end pose constraints and compute end configuration
-  goalConstraints = Scenes.addGoalConstraint(options, r);
-  endPoseConstraints = [startPoseConstraints, goalConstraints];
-  switch options.scene
-    case 2
-%       if strcmp(options.model, 'val')
-%         endPoseConstraints = [endPoseConstraints, {Scenes.nonGraspingHandPositionConstraint(options, r)}];
-%       else
-        endPoseConstraints = [endPoseConstraints, {Scenes.graspingForearmAlignConstraint(options, r)}];
-%       end
-    case 3
-      endPoseConstraints = [endPoseConstraints, {Scenes.pelvisOffsetConstraint(options,r)}];%, Scenes.nonGraspingHandPositionConstraint(options, r)}];
-  end
-  [q_end, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, endPoseConstraints{:}, ikoptions);
+  %Compute final pose
+  
+  cm = CapabilityMap([getenv('DRC_BASE') '/software/control/matlab/data/val_description/capabilityMap.mat']);
+  x_end.val1.right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
+  x_end.val1.left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
+  x_end.val2 = x_end.val1;
+
+  finalPose = FinalPoseProblem(r, g_hand, q_start, x_end.(options.model).(options.graspingHand), ...
+    startPoseConstraints, q_nom, cm, ikoptions, ...
+    'graspinghand', options.graspingHand, ...
+    'endeffectorpoint', point_in_link_frame, ...
+    'debug', false);
+  
+  [xGoalFull, info] = finalPose.findFinalPose();
+  if info > 10, error('Failed to find a final pose'); end
+  q_end = xGoalFull(8:end);
   if options.visualize
-    s.publishTraj(PPTrajectory(q_end), 1)
-    %     drawLinkFrame(r, g_hand, q_end, 'Grasping Hand End');
-    %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_end, 'Forearm End');
+    publishTraj(r, plan_publisher, q_end)
+%     v.draw(0, q_end)
   end
+  
+  %Recompute starting configuration
+  options.feet_constraint = 'fixed';
+  startPoseConstraints = [Scenes.generateFeetConstraints(options, r, q_end),...
+                         {Scenes.generateQuasiStaticConstraint(options, r),...
+                          Scenes.nonGraspingHandDistanceConstraint(options, r, 0.4)}];
+  [q_start, info] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
+  if info > 10, error('Starting pose is invalid'); end
+  if options.visualize
+    publishTraj(r, plan_publisher, q_start)
+  end
+  
   
   %Create RRTs
-  
-  % internal parts removed as they created self collisions:
-  if strcmp(options.model, 'val2')
-    LeftHipYawLink = r.findLinkId('LeftHipYawLink');
-    RightHipYawLink = r.findLinkId('RightHipYawLink');
-    LowerNeckPitchLink = r.findLinkId('LowerNeckPitchLink');
-    TorsoPitchLink = r.findLinkId('TorsoPitchLink');
-    TorsoYawLink = r.findLinkId('TorsoYawLink');
-    
-    inactive_collision_bodies = [lFoot,rFoot, LowerNeckPitchLink, RightHipYawLink,...
-      LeftHipYawLink, TorsoPitchLink, TorsoYawLink];
-  else
-    inactive_collision_bodies = [lFoot,rFoot];
-  end
 
   kinsol = r.doKinematics(q_start);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
@@ -137,11 +140,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     min_distance = 0.01;
     active_collision_options.body_idx = setdiff(1:r.getNumBodies(),inactive_collision_bodies);
     options.display_after_every = 1;
-    if any(strcmp(options.planning_mode, 'rrt*'))
-      TA = OptimalMotionPlanningTree(r, g_hand, point_in_link_frame);
-    else
-      TA = TaskSpaceMotionPlanningTree(r, g_hand, point_in_link_frame);
-    end
+    TA = TaskSpaceMotionPlanningTree(r, g_hand, point_in_link_frame);
     TA  = TA.setMinDistance(min_distance);
     TA  = TA.setOrientationWeight(1);
     TA.max_edge_length = 0.05;
@@ -189,9 +188,9 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   kinsol = r.doKinematics(qNominalC);
   EEpose = r.forwardKin(kinsol, Scenes.getGraspingHand(options, r), Scenes.getPointInLinkFrame(options), 2);
   constraints = [startPoseConstraints, Scenes.generateEEConstraints(r, options, EEpose)];
-  [qStartC, info, infeasible_constraint] = inverseKin(r, qNominalC, qNominalC, constraints{:}, ikoptions);
+  qStartC = inverseKin(r, qNominalC, qNominalC, constraints{:}, ikoptions);
   if options.visualize
-    s.publishTraj(PPTrajectory(qStartC), 1);
+    publishTraj(r, plan_publisher, qStartC)
   end
   kinsol = r.doKinematics(qStartC);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
@@ -200,81 +199,55 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   kinsol = r.doKinematics(qNominalD);
   EEpose = r.forwardKin(kinsol, Scenes.getGraspingHand(options, r), Scenes.getPointInLinkFrame(options), 2);
   constraints = [startPoseConstraints, Scenes.generateEEConstraints(r, options, EEpose)];
-  [qStartD, info, infeasible_constraint] = inverseKin(r, qNominalD, qNominalD, constraints{:}, ikoptions);
+  qStartD = inverseKin(r, qNominalD, qNominalD, constraints{:}, ikoptions);
   if options.visualize
-    s.publishTraj(PPTrajectory(qStartD), 1);
+    publishTraj(r, plan_publisher, qStartD)
   end
   kinsol = r.doKinematics(qStartD);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
   xStartD = [xyz_quat_start; qStartD];
   
   if options.visualize
-    s.publishTraj(PPTrajectory(q_start), 1);
+    publishTraj(r, plan_publisher, q_start)
   end
   
   rrt_timer = tic;
-  %display('About to plan ...')
+  display('Computing motion plan ...')
   switch options.planning_mode
     case 'rrt'
       [TA, path_ids_A, info] = TA.rrt(x_start, x_goal, TA, options);
     case 'rrt_connect'
-      %display('Running RRTConnect')
       [TA, path_ids_A, info, TB] = TA.rrtConnect(x_start, x_goal, TB, options);
-    case 'rrt*'
-      [TA, info, cost, q_path] = TA.rrtStar(x_start, x_goal, options);
     case 'multiRRT'
-      cm = CapabilityMap([getenv('DRC_BASE') '/software/control/matlab/data/val_description/capabilityMap.mat']);
-      x_end.val1.right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
-      x_end.val1.left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
-      x_end.val2 = x_end.val1;
-      x_end.v5.left = x_goal;
-      x_end.v5.right = x_goal;
-      
-      finalPose = FinalPoseProblem(r, g_hand, x_start(8:end), x_end.(options.model).(options.graspingHand), ...
-        startPoseConstraints, q_nom, ...
-        'capabilityMap', cm, 'graspinghand', options.graspingHand, ...
-        'activecollisionoptions', ...
-        struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
-        'ikoptions', ikoptions, ...
-        'endeffectorpoint', point_in_link_frame);
       
       optionsPlanner = struct();
       if ~isfield(optionsPlanner,'costType'), optionsPlanner.costType = 'length'; end;
       
       switch options.nTrees
         case 4
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model).(options.graspingHand), ...
-            [xStartC, xStartD], startPoseConstraints, q_nom,...
-            'activecollisionoptions', ...
-            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
-            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
-          
+          additionalTrees = [xStartC, xStartD];
         case 3
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model).(options.graspingHand), ...
-            [xStartC], startPoseConstraints, q_nom,...
-            'activecollisionoptions', ...
-            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
-            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
+          additionalTrees = xStartC;
         case 2
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model).(options.graspingHand), ...
-            [], startPoseConstraints, q_nom,...
-            'activecollisionoptions', ...
-            struct('body_idx', setdiff(1:r.getNumBodies(), inactive_collision_bodies)),...
-            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
+          additionalTrees = [];
       end
+          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model).(options.graspingHand), ...
+            additionalTrees, startPoseConstraints, q_nom,...
+            'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
 
-      [xGoalFull, info] = finalPose.findFinalPose(optionsPlanner);
       [multiTree, info, cost, q_path] = multiTree.rrtStar(optionsPlanner, xGoalFull);
 
       if info == 1
+        disp('Motion plan computed')
         path_length = size(q_path,2);
         xtraj = PPTrajectory(pchip(linspace(0, 1, path_length), [q_path(8:end,:); zeros(r.getNumVelocities(), size(q_path,2))] ));
       else
+        disp('Failded to compute a motion plan')
         xtraj = [];
         info = 13;
       end
-      if ~isempty(xtraj), qtraj = xtraj(1:r.getNumPositions()); else, qtraj = []; end;
-      if ~isempty(qtraj), s.publishTraj(qtraj, info); end;
+      if ~isempty(xtraj), qtraj = xtraj(1:r.getNumPositions()); else qtraj = []; end;
+%       if ~isempty(qtraj), publishTraj(r, plan_publisher, [q_path(8:end,:);zeros(size(q_path(8:end,:)))]); end
 
 
       TA = multiTree.trees(1);
@@ -329,6 +302,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     rState = r.getStateFrame();
     xtraj = PPTrajectory(pchip(t_scaled,[q_path(:,idx_unique); zeros(r.getNumVelocities(),numel(t_scaled))]));
     xtraj = xtraj.setOutputFrame(r.getStateFrame());
+    publishTraj(r, plan_publisher, xtraj)
+%     s.publishTraj(xtraj, 1)
     
     %Output structures
     switch options.planning_mode
@@ -357,15 +332,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         q_pathC = extractPath(simVars.TConnected, path_ids_C);
         TClengths = q_pathC(1:3,2:end)-q_pathC(1:3, 1:end-1);
         statVars.TClength = sum(diag(sqrt(TClengths'*TClengths)));
-        statVars.options = rmfield(options, {'robot', 'terrain'});
-        %distance
-      case 'rrt*'
-        simVars.TA = TA;        
-        simVars.info = info;
-        statVars.time = rrt_time;
-        statVars.numberOfVertices = TA.n;
-        statVars.info = info;
-        statVars.cost = cost;
         statVars.options = rmfield(options, {'robot', 'terrain'});
       case 'multiRRT'
         if size(x_end.(options.model).(options.graspingHand), 2) <= 7
@@ -442,6 +408,22 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   end
   
 end
+  
+  function publishTraj(r, plan_publisher, xtraj)
+    if ~isa(xtraj, 'PPTrajectory')
+      xtraj = PPTrajectory(xtraj);
+    end
+    utime = now() * 24 * 60 * 60;
+    nq_atlas = r.getNumPositions;
+    ts = xtraj.pp.breaks;
+    q = xtraj.eval(ts);
+    xtraj_atlas = zeros(2+2*nq_atlas,length(ts));
+    xtraj_atlas(2+(1:nq_atlas),:) = q(1:nq_atlas,:);
+    snopt_info_vector = 1*ones(1, size(xtraj_atlas,2));
+
+    ts = [0, 1];
+    plan_publisher.publish(xtraj_atlas, ts, utime, snopt_info_vector);
+  end
 
 
 
