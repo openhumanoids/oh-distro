@@ -12,3 +12,10 @@ add_executable(drc-testIKMoreConstraintsLCM testIKMoreConstraintsLCM.cpp)
 target_link_libraries(drc-testIKMoreConstraintsLCM boost_thread boost_system boost_filesystem boost_signals)
 pods_use_pkg_config_packages(drc-testIKMoreConstraintsLCM drake-rbm drake-ik lcm eigen3)
 pods_install_executables(drc-testIKMoreConstraintsLCM )
+
+# Test for collision between points and robot model using drake and bullet
+add_executable(drc-testDrakeBulletCollisions testDrakeBulletCollisions.cpp)
+target_link_libraries(drc-testDrakeBulletCollisions boost_system)
+pods_use_pkg_config_packages(drc-testDrakeBulletCollisions lcm 
+  bot2-lcmgl-client drake-rbm drake-geometry-util)
+pods_install_executables(drc-testDrakeBulletCollisions)
