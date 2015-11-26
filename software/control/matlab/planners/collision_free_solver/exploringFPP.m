@@ -32,6 +32,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     end
     visWorld = visWorld.compile();
     visWorld.constructVisualizer();
+    Scenes.visualizePointCloud(options);
   end
   
   if nargin > 1

@@ -178,6 +178,20 @@ classdef Scenes
       robot = robot.compile();
     end
     
+    function visualizePointCloud(options)
+      switch options.scene
+        case {1, 2, 3, 4, 5}
+          pc_file = sprintf('scene%d', options.scene);
+        case {6, 7, 8, 9}
+          pc_file = 'scene6-9';
+      end
+      pc_file = fullfile(getDrakePath(),'../../control/matlab/planners/collision_free_solver/point_clouds_test_files', pc_file);
+      load(pc_file);
+      lcmClient = LCMGLClient(sprintf('point cloud (scene%d)', options.scene));
+      lcmClient.points(points(1,:), points(2,:), points(3,:))
+      lcmClient.switchBuffers();
+    end
+    
     function robot = graspObject(T, options)      
       object = RigidBodyCylinder(.045, .19, T);
       robot = Scenes.generateRobot(options);  
