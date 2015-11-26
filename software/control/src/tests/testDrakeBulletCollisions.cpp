@@ -66,7 +66,7 @@ void Pass::DoCollisionCheck(){
   vector< Vector3d > points;
   std::vector<unsigned int> possible_indices; // the indices of points that could possibly be in intersection: not to near and not too far
   if (which_ ==1){
-    for( unsigned int i = 0; i < 1000; i++ ){
+    for( unsigned int i = 0; i < 10000; i++ ){
       Vector3d point(robot_pos(0) +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
                     robot_pos(1) + -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
                     robot_pos(2) +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0 );
