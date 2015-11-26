@@ -58,7 +58,7 @@ group "3.plan_and_control" {
     }
 
     cmd "plan_eval_proxi" {
-        exec = "ipab-plan-eval-proxi";
+        exec = "drc-plan-eval-proxi";
         host = "localhost";
     }
 
