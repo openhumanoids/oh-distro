@@ -1,10 +1,4 @@
-// Lidar Pass trough filter
-// TODO/Bugs:
-// - Timing of bullet collision detection seems quasi random.
-//   difficult to see how to optimize this as a result
-// - Collision is done by intersecting spheres with the model. The spheres size is set in collision_object_point_cloud.cc
-//   as of march 2013 it was increased from 0.01m to 0.04m
-
+// Lidar Passthrough filter, demo program
 
 #include <stdio.h>
 #include <inttypes.h>
@@ -38,13 +32,9 @@ using namespace Eigen;
 //using namespace collision;
 using namespace boost::assign; // bring 'operator+()' into scope
 
-#define DO_TIMING_PROFILE FALSE
-
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_, double collision_threshold_,
-         bool simulated_data_, double delta_threshold_);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, double collision_threshold_);
     
     ~Pass(){
     }    
@@ -54,17 +44,8 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
     bool verbose_;
-    bool simulated_data_;
-    std::string lidar_channel_;
-    
     double collision_threshold_;
-    double delta_threshold_;
 
-    bool running_;
-    std::list<std::shared_ptr<bot_core::planar_lidar_t> > data_queue_;
-    std::mutex data_mutex_;
-    std::mutex robot_state_mutex_;
-    
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg); 
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
 
@@ -90,14 +71,10 @@ class Pass{
     map<string, int> dofMap_;
 };
 
-Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-         std::string lidar_channel_, double collision_threshold_,
-         bool simulated_data_, double delta_threshold_):
+Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, double collision_threshold_):
     lcm_(lcm_), verbose_(verbose_),
-    lidar_channel_(lidar_channel_),urdf_parsed_(false),
-    simulated_data_(simulated_data_),
-    collision_threshold_(collision_threshold_),
-    delta_threshold_(delta_threshold_){
+    urdf_parsed_(false),
+    collision_threshold_(collision_threshold_){
   do {
     botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   } while (botparam_ == NULL);
@@ -116,6 +93,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   
   printf_counter_ =0;
   
+  n_collision_points_ = 1000;
   init_rstate_ =false;
   
   cout << "Finished setting up\n";
@@ -232,6 +210,9 @@ void Pass::DoCollisionCheck(){
   
   // 2. Extract the indices of the points in collision:
   VectorXd q(robotStateToDrakePosition(rstate, dofMap_, drake_model_.num_positions));
+  std::cout << q << "\n";
+  std::cout << drake_model_.num_positions << " np\n";
+
   KinematicsCache<double> cache = drake_model_.doKinematics(q, 0);
   vector<size_t> filtered_point_indices = drake_model_.collidingPoints(cache, points, collision_threshold_);
   
@@ -290,30 +271,21 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "lidar-passthrough");
   bool verbose=FALSE;
-  string lidar_channel="SCAN";
   // was 0.04 for a long time
   // using 0.06 for the simulator
   // using 0.1 for the real robot - until the new urdf arrives ... aug 2013
   double collision_threshold = 0.06; 
-  double delta_threshold = 0.03; 
-  bool simulated_data = FALSE;
   parser.add(verbose, "v", "verbose", "Verbosity");
-  parser.add(simulated_data, "s", "simulated_data", "Simulated Data expected (don't filter with intensities)");  
-  parser.add(lidar_channel, "l", "lidar_channel", "Incoming LIDAR channel");
   parser.add(collision_threshold, "c", "collision_threshold", "Lidar sphere radius [higher removes more points close to the robot]");
-  parser.add(delta_threshold, "d", "delta_threshold", "Maximum Delta in Lidar Range allowed in workspace");
   parser.parse();
   cout << verbose << " is verbose\n";
-  cout << lidar_channel << " is lidar_channel\n";
-  cout << simulated_data << " is simulated_data\n";
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  Pass app(lcm,verbose,lidar_channel, collision_threshold, 
-           simulated_data, delta_threshold);
+  Pass app(lcm,verbose,collision_threshold);
   cout << "Ready to filter lidar points" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
