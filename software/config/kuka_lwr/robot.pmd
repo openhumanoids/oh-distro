@@ -64,8 +64,8 @@ group "4.mapping" {
     }
 }
 
-cmd "drake-designer" {
-    exec = "drake-designer -lwr -c $DRC_BASE/software/config/kuka_lwr.cfg";
+cmd "director" {
+    exec = "director -lwr -c $DRC_BASE/software/config/kuka_lwr.cfg";
     host = "localhost";
 }
 
@@ -77,5 +77,5 @@ script "start" {
     wait ms 1000;
     start group "1.state";
     start group "2.sensors";
-    start cmd "drake-designer";
+    start cmd "director";
 }

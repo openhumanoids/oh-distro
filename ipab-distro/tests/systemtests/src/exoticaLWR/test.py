@@ -1,4 +1,4 @@
-from ddapp import transformUtils
+from director import transformUtils
 import numpy
 
 if ikPlanner.pushToMatlab==True:

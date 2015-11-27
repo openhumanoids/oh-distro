@@ -90,8 +90,8 @@ group "4.maps" {
 }
 
 
-cmd "drake-designer" {
-    exec = "drake-designer -c $DRC_BASE/software/config/atlas_sim_scs/robot.cfg -v5";
+cmd "director" {
+    exec = "director -c $DRC_BASE/software/config/atlas_sim_scs/robot.cfg -v5";
     host = "localhost";
 }
 
@@ -108,7 +108,7 @@ script "start_ui" {
     start group "2.state_without_pronto";
     start group "3.plan_and_control";
     start group "4.maps";
-    start cmd "drake-designer";
+    start cmd "director";
 }
 
 script "start_ui_with_pronto" {
@@ -118,6 +118,6 @@ script "start_ui_with_pronto" {
     start group "2.state_with_pronto";
     start group "3.plan_and_control";
     start group "4.maps";
-    start cmd "drake-designer";
+    start cmd "director";
 }
 

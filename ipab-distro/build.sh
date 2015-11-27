@@ -1,25 +1,19 @@
 #!/bin/bash
-# Compiles the ipab-distro from the ground up
+# Updates/compiles all folders sequentially
 
 # Source environment
-. ~/ipab-distro/drc/software/config/drc_environment.sh
-. ~/ipab-distro/drc/catkin_ws/devel/setup.bash
-
-# two step make - if fails, then do both
+. ../software/config/drc_environment.sh
+. ../catkin_ws/devel/setup.bash
 
 # DRC
 ## externals
-cd drc/software/externals
-make -j6 $1 # $1 so we can overwrite -j6 by -j1 in case parallel build is broken
-# might need to:
-# cd opencv/pod-build
-# ccmake .
-# WITH_CUDA = OFF, then [c] and [e]
+cd ../software/externals
+make -j8 $1
 
 ## drc
 cd ..
-make -j6 $1
+make -j8 $1
 
-# ipab-ros-workspace
+## ROS/ catkin workspace
 cd ../catkin_ws
-catkin_make -DCMAKE_BUILD_TYPE=RelWithDebInfo -j6 $1
+catkin_make -DCMAKE_BUILD_TYPE=RelWithDebInfo -j8 $1

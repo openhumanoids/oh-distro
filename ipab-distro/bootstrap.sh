@@ -11,7 +11,7 @@ cd drc
 git remote add sandbox git@github.com:drcbot/main-distro.git
 git fetch sandbox
 
-cd software/ddapp
+cd software/director
 git remote add sandbox git@github.com:openhumanoids/director.git
 git fetch sandbox
 

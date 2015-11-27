@@ -35,8 +35,9 @@ group "2.vis" {
         host = "localhost";
     }
 
-    cmd "designer" {
-        exec = "drake-designer -c $DRC_BASE/software/config/husky/robot.cfg --director_config $DRC_BASE/software/models/common_components/multisense_sl/director_config.json";
+
+    cmd "director" {
+        exec = "director -c $DRC_BASE/software/config/husky/robot.cfg  --director_config $DRC_BASE/software/models/common_components/multisense_sl/director_config.json";
         host = "localhost";
     }
 }

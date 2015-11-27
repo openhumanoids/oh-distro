@@ -26,8 +26,8 @@ cmd "microstrain_from_sudo" {
     host = "localhost";
 }
 
-cmd "drake-designer" {
-    exec = "drake-designer";
+cmd "director" {
+    exec = "director";
     host = "localhost";
 }
 

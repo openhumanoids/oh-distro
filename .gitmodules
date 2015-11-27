@@ -5,7 +5,7 @@
 	path = software/pronto
 	url = git@github.com:openhumanoids/pronto.git
 [submodule "software/ddapp"]
-	path = software/ddapp
+	path = software/director
 	url = git@github.com:RobotLocomotion/director.git
 [submodule "software/motion_estimate/signal-scope"]
 	path = software/motion_estimate/signal-scope

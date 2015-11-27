@@ -26,7 +26,7 @@ extra_frame.subscribe('ATLAS_STATE_EXTRA');
 
 joint_index_map = struct(); % maps joint names to indices
 for i=1:nq
-  joint_index_map.(state_frame.coordinates{i}) = i;
+  joint_index_map.(state_frame.getCoordinateNames{i}) = i;
 end
 
 act_idx = getActuatedJoints(r);

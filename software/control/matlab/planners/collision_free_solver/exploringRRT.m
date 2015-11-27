@@ -31,7 +31,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     r = options.robot;
   end
   
-  addpath(fullfile(getDrakePath(), '../../', 'ddapp/src/matlab') )
+  addpath(fullfile(getDrakePath(), '../../', 'director/src/matlab') )
   fixed_point_file = [getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat'];
   left_foot_link = 'LeftFoot';
   right_foot_link = 'RightFoot';
