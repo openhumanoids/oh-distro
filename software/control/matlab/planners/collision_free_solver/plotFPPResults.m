@@ -23,7 +23,7 @@ function plotFPPResults(input, model, scene, hand, variable, group)
   
   if ~isempty(scene)
     if isnumeric(scene)
-      scene = sprintf('scene%d', scene);
+      scene = strcat({'scene'},int2str(scene.')).';
     else
       error('Scene must be an integer')
     end
