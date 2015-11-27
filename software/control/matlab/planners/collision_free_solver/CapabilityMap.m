@@ -92,10 +92,11 @@ classdef CapabilityMap
       
     end
 
-    function obj = reduceActiveSet(obj, direction, des_sph_num, reset_active, rbm, EE_pose, sagittal_angle,...
+    function obj = reduceActiveSet(obj, direction, des_sph_num, reset_active,...
+        rbm, point_in_link, point_cloud, EE_pose, sagittal_angle,...
         transverse_angle, sagittal_weight, transverse_weight)
       
-      obj = obj.deactivateCollidingSpheres(rbm, EE_pose, reset_active);
+      obj = obj.deactivateCollidingSamples(rbm, point_in_link, point_cloud, EE_pose, reset_active);
       
 %       if nargin > 7
 %         obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, false);
@@ -146,6 +147,25 @@ classdef CapabilityMap
         end
       end
       lcmClient.switchBuffers();
+    end
+    
+    function obj = deactivateCollidingSamples(obj, rbm, point_in_link, point_cloud, EE_pose, reset_active)
+      
+      if reset_active
+        obj = obj.resetActiveSpheres();
+      end
+%       v = rbm.constructVisualizer();
+      sph_idx = find(obj.active_spheres);
+      for sph = sph_idx'
+        q = [EE_pose(1:3)-obj.sph_centers(:,sph)-point_in_link; 0; 0; 0];
+%         v.draw(0, q);
+%         drawTreePoints(EE_pose(1:3)-obj.sph_centers(:,sph));
+        kinsol = rbm.doKinematics(q);
+        colliding_points = rbm.collidingPointsCheckOnly(kinsol, point_cloud, obj.sph_diameter/2);
+        if colliding_points
+          obj.deactivateSpheres(sph);
+        end
+      end
     end
     
     function obj = deactivateCollidingSpheres(obj, rbm, EE_pose, reset_active)

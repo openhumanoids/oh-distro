@@ -64,7 +64,7 @@ classdef FinalPoseProblem
 
     end
 
-    function [x_goal, info, debug_vars] = findFinalPose(obj)
+    function [x_goal, info, debug_vars] = findFinalPose(obj, point_cloud)
       
       info = obj.SUCCESS;
       if obj.debug
@@ -80,7 +80,7 @@ classdef FinalPoseProblem
         if obj.debug
           timer = tic();
         end
-        [qGoal, debug_vars] = obj.searchFinalPose(debug_vars);
+        [qGoal, debug_vars] = obj.searchFinalPose(point_cloud, debug_vars);
         if isempty(qGoal)
           info = obj.FAIL_NO_FINAL_POSE;
           x_goal = obj.x_goal;
@@ -110,12 +110,12 @@ classdef FinalPoseProblem
       end
     end
     
-    function [qOpt, debug_vars] = searchFinalPose(obj, debug_vars)
+    function [qOpt, debug_vars] = searchFinalPose(obj, point_cloud, debug_vars)
       
-      filename = [getenv('DRC_BASE'), '/software/models/val_description/model/meshes/torso/torso.stl'];
-      torso = RigidBodyManipulator();
-      torso = torso.addGeometryToBody(1, RigidBodyMesh(filename));
-      torso = torso.compile();
+      filename = [getenv('DRC_BASE'), '/software/control/matlab/planners/collision_free_solver/torso.urdf'];
+      torso = RigidBodyManipulator(filename, struct('floating', true));
+%       torso = torso.addGeometryToBody(1, RigidBodyMesh(filename));
+%       torso = torso.compile();
 %       tv = torso.constructVisualizer();
       
       kinSol = obj.robot.doKinematics(obj.q_start);
@@ -157,8 +157,8 @@ classdef FinalPoseProblem
       
       ee_rotmat = quat2rotmat(obj.x_goal(4:7));
       ee_direction = ee_rotmat(:,2);
-      obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, obj.robot, obj.x_goal, 0, 0, 2, 1.5);
-%       obj.capability_map.drawActiveMapCentredOnEE(obj.x_goal)
+      obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, torso, tr2root, point_cloud, obj.x_goal, 0, 0, 2, 1.5);
+      obj.capability_map.drawActiveMapCentredOnEE(obj.x_goal)
       sphCenters = obj.capability_map.getActiveSphereCentres();
       nSph = obj.capability_map.n_active_spheres;
       iter = 0;
