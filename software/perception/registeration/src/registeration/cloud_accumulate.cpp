@@ -28,7 +28,7 @@ CloudAccumulate::CloudAccumulate(boost::shared_ptr<lcm::LCM> &lcm_, const CloudA
   
   const char * laser_name;
   if(ca_cfg_.lidar_channel == "FIXED_SCAN")
-    laser_name = "FIXED_SCAN";
+    laser_name = ca_cfg_.lidar_channel.c_str();
   else
     laser_name = "laser";
 
@@ -71,7 +71,7 @@ int get_trans_with_utime(BotFrames *bot_frames,
 
 void CloudAccumulate::publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   Eigen::Isometry3d local_to_fixscan;
-  get_trans_with_utime( botframes_ , "FIXED_SCAN", "local"  , 1, local_to_fixscan);
+  get_trans_with_utime( botframes_ , ca_cfg_.lidar_channel.c_str(), "local"  , 1, local_to_fixscan);
   
   Isometry3dTime local_to_fixscan_T = Isometry3dTime(1, local_to_fixscan );
   Isometry3dTime null_T = Isometry3dTime(1, Eigen::Isometry3d::Identity()  );

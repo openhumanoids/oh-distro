@@ -52,7 +52,7 @@ int icp_testing_routine(int argc, const char *argv[])
 
   string filename;
   filename.append(homedir);
-  filename.append("/main-distro/software/perception/registeration/initialization/initTransf.txt");
+  filename.append("/logs/multisenselog__2015-11-16/initialization/initTransf.txt");
 
   const int ret = validateArgs(argc, argv);
 

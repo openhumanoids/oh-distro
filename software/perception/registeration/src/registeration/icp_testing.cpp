@@ -1,6 +1,12 @@
 // cddrc
 // drc-icp-testing
 
+/**
+  * Code for ICP reading : 1) two 3D point clouds relatively close 
+  * and computing the transformation between them. 2) two 2D point clouds 
+  * relatively close and computing the transformation between them.
+  */
+
 #include "pointmatcher/PointMatcher.h"
 #include <cassert>
 #include <iostream>
@@ -40,12 +46,6 @@ void applyRigidTransform(DP &pointCloud);
 
 int validateArgs(const int argc, const char *argv[]);
 void usage(const char *argv[]);
-
-/**
-  * Code for ICP reading : 1) two 3D point clouds relatively close 
-  * and computing the transformation between them. 2) two 2D point clouds 
-  * relatively close and computing the transformation between them.
-  */
 
 int main(int argc, const char *argv[])
 {

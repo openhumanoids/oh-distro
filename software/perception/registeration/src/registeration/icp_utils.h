@@ -16,8 +16,6 @@
 using namespace std;
 using namespace PointMatcherSupport;
 
-#define PI 3.14159265
-
 typedef PointMatcher<float> PM;
 typedef PM::DataPoints DP;
 typedef PM::Parameters Parameters;

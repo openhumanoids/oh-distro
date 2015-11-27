@@ -10,7 +10,6 @@ sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
 import lcm
-from ddapp.utime import getUtime
 import multisense as lcmmultisense
 
 print "drc-send-rotate-and-record: "
@@ -32,6 +31,9 @@ class LCMLoggerManager(object):
     @staticmethod
     def getTimeTag():
         return datetime.datetime.now().strftime('%Y-%m-%d__%H-%M')
+
+    def timestamp_now(): 
+        return int (time.time () * 1000000)
 
     def startNewLogger(self, tag='', baseDir=None):
         filePattern = [self.filePatternPrefix, self.getTimeTag()]
@@ -63,7 +65,7 @@ print "Waiting 5 seconds..."
 lc = lcm.LCM()
 time.sleep(5)
 msg = lcmmultisense.command_t()
-msg.utime = getUtime()
+msg.utime = timestamp_now()
 msg.fps = 15
 msg.gain = -1
 msg.exposure_us = 10000
