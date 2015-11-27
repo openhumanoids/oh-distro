@@ -148,7 +148,6 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
         else
           pt = obj.interpolate(x2, x1, j/n);
           if ~obj.isValid(pt)
-            disp(pt)
             constraints = obj.generateEndEffectorConstraints(pt(1:7));
             [qNew, valid] = cSpaceTree.solveIK(pt(8:end), qNew, constraints);
             if valid
