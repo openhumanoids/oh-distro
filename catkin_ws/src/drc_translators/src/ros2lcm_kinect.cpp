@@ -64,7 +64,7 @@ void callback(const sensor_msgs::ImageConstPtr& rgb, const sensor_msgs::ImageCon
     // TODO(tbd): reallocate to speed?
     void* bytes = const_cast<void*>(static_cast<const void*>(rgb->data.data()));
     cv::Mat mat(rgb->height, rgb->width, CV_8UC3, bytes, n_colors * rgb->width);
-    cv::cvtColor(mat, mat, CV_BGR2RGB);
+    //cv::cvtColor(mat, mat, CV_BGR2RGB);
 
     std::vector<int> params;
     params.push_back(cv::IMWRITE_JPEG_QUALITY);
@@ -117,21 +117,16 @@ int main(int argc, char** argv)
     std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
 
-  ros::init(argc, argv, "vision_node");
+  ros::init(argc, argv, "kinect_node");
 
   ros::NodeHandle nh;
-  // message_filters::Subscriber<Image> image1_sub(nh, "/camera/rgb/image_raw", 1);
-  // message_filters::Subscriber<Image> image2_sub(nh, "/camera/depth/image_raw", 1);
+  // rgb: image_color, image_rect_color
+  // depth: 32FC1: image, image_rect and 16UC1: image_raw, image_rect_raw
 
-  message_filters::Subscriber<sensor_msgs::Image> image1_sub(nh, "/camera/rgb/image_rect_color", 1);
-  message_filters::Subscriber<sensor_msgs::Image> image2_sub(nh, "/camera/depth/image_rect_raw", 1);
-
-  // To replay the running logs from 2012-04-22-highspeed-psdk:
-  // passport0/data/2012-marine/rgbd/ros_openni/2012-04-22-highspeed-psdk/4
-  // ROS_NAMESPACE=camera/rgb rosrun image_proc image_proc
-  // Remove color space conversion above
-  // message_filters::Subscriber<Image> image1_sub(nh, "/camera/rgb/image_rect_color", 1);
-  // message_filters::Subscriber<Image> image2_sub(nh, "/camera/depth/image_raw", 1);
+  message_filters::Subscriber<sensor_msgs::Image> image1_sub(nh, "/camera/rgb/image_color", 1);
+  message_filters::Subscriber<sensor_msgs::Image> image2_sub(nh, "/camera/depth/image_raw", 1);
+  //message_filters::Subscriber<sensor_msgs::Image> image1_sub(nh, "/camera/rgb/image_rect_color", 1);
+  //message_filters::Subscriber<sensor_msgs::Image> image2_sub(nh, "/camera/depth/image_rect_raw", 1);
 
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
