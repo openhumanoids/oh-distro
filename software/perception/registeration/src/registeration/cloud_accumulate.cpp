@@ -26,9 +26,13 @@ CloudAccumulate::CloudAccumulate(boost::shared_ptr<lcm::LCM> &lcm_, const CloudA
   
   finished_ = false;
   
-  
-  
-  laser_projector_ = laser_projector_new(botparam_, botframes_, "laser", 1); //TODO: laser name should be a param
+  const char * laser_name;
+  if(ca_cfg_.lidar_channel == "FIXED_SCAN")
+    laser_name = ca_cfg_.lidar_channel.c_str();
+  else
+    laser_name = "laser";
+
+  laser_projector_ = laser_projector_new(botparam_, botframes_, laser_name, 1); //TODO: "laser" name should be a param
 }
 
 
@@ -66,7 +70,13 @@ int get_trans_with_utime(BotFrames *bot_frames,
 
 
 void CloudAccumulate::publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+  Eigen::Isometry3d local_to_fixscan;
+  get_trans_with_utime( botframes_ , ca_cfg_.lidar_channel.c_str(), "local"  , 1, local_to_fixscan);
+  
+  Isometry3dTime local_to_fixscan_T = Isometry3dTime(1, local_to_fixscan );
   Isometry3dTime null_T = Isometry3dTime(1, Eigen::Isometry3d::Identity()  );
+  pc_vis_->pose_to_lcm_from_list(60000, local_to_fixscan_T);
+  pc_vis_->ptcld_to_lcm_from_list(60001, *cloud, 1,1);
   pc_vis_->pose_to_lcm_from_list(60010, null_T);
   pc_vis_->ptcld_to_lcm_from_list(60012, *cloud, 1,1);
 }
@@ -90,7 +100,7 @@ void transformPointCloud(pronto::PointCloud &cloud_in, pronto::PointCloud &cloud
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertPlanarScanToCloud(std::shared_ptr<bot_core::planar_lidar_t> this_msg){
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_local (new pcl::PointCloud<pcl::PointXYZRGB> ());
-    
+  
   // 1. Convert the Lidar scan into a libbot set of points
   bot_core_planar_lidar_t * laser_msg_c = convertPlanarLidarCppToC(this_msg);
   // 100 scans per rev = 2.5 sec per rev = 24 rpm = 144 deg per second = 2.5136 rad/sec, 3.6 deg per scan.

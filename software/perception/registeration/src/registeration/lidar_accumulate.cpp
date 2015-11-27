@@ -8,6 +8,14 @@
 #include <pcl/io/vtk_io.h>
 #include <ConciseArgs>
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
+#include "clouds_io_utils.h"
+
+const char *homedir;
+
 struct AppConfig
 {
 };
@@ -63,18 +71,31 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
               << " points" ;
       std::cout << message.str() << "\n";      
 
-      pcl::PCDWriter writer;
-      std::stringstream pcd_fname;
-      pcd_fname << "/tmp/multisense_" << "00" << ".pcd";
-      std::cout << pcd_fname.str() << " written\n";
-      writer.write (pcd_fname.str() , *cloud, false);  
+      if(ca_cfg_.lidar_channel == "FIXED_SCAN")
+      {
+        // Writing to .csv file when planar pointcloud from fixed laser 
+        std::stringstream csv_fname;
+        csv_fname << homedir << "/logs/multisenselog__2015-11-26/tmp/scan_" << "00" << ".csv";
+        std::cout << csv_fname.str() << " written\n";
+        pcl::PCLPointCloud2::Ptr cloud_output (new pcl::PCLPointCloud2);
+        pcl::toPCLPointCloud2 (*cloud, *cloud_output);
+        savePlanarCloudCSV (csv_fname.str(), *cloud_output);
+      }
+      else
+      {
+        pcl::PCDWriter writer;
+        std::stringstream pcd_fname;
+        pcd_fname << homedir << "/logs/multisenselog__2015-11-26/tmp/multisense_" << "02_3" << ".pcd";
+        std::cout << pcd_fname.str() << " written\n";
+        writer.write (pcd_fname.str() , *cloud, false);  
 
-      std::stringstream vtk_fname;
-      vtk_fname << "/tmp/multisense_" << "00" << ".vtk";
-      std::cout << vtk_fname.str() << " written\n";
-      pcl::PCLPointCloud2::Ptr cloud_output (new pcl::PCLPointCloud2);
-      pcl::toPCLPointCloud2 (*cloud, *cloud_output);
-      pcl::io::saveVTKFile (vtk_fname.str(), *cloud_output) ;
+        std::stringstream vtk_fname;
+        vtk_fname << homedir << "/logs/multisenselog__2015-11-26/tmp/multisense_" << "02_3" << ".vtk";
+        std::cout << vtk_fname.str() << " written\n";
+        pcl::PCLPointCloud2::Ptr cloud_output (new pcl::PCLPointCloud2);
+        pcl::toPCLPointCloud2 (*cloud, *cloud_output);
+        pcl::io::saveVTKFile (vtk_fname.str(), *cloud_output);
+      }
 
       accu_->publishCloud(cloud);
 
@@ -84,6 +105,10 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 
 
 int main(int argc, char ** argv) {
+  if ((homedir = getenv("HOME")) == NULL) {
+    homedir = getpwuid(getuid())->pw_dir;
+  }
+
   CloudAccumulateConfig ca_cfg;
   ca_cfg.lidar_channel ="SCAN";
   ca_cfg.batch_size = 240; // about 1 sweep

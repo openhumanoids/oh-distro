@@ -1,0 +1,35 @@
+{
+  "modelName" : "multisense_sl",
+  "urdfConfig": {
+    "default": "./multisense_sl.urdf",
+    "robotState": "./multisense_sl.urdf",
+    "ik":         "./multisense_sl.urdf",
+    "chull":      "./multisense_sl.urdf",
+    "playback":   "./multisense_sl.urdf",
+    "teleop":     "./multisense_sl.urdf"
+  },
+  "colorMode": "Texture",
+
+  "teleopJointGroups" : [
+    ],
+
+  "drakeJointNames": [
+    "base_x",
+    "base_y",
+    "base_z",
+    "base_roll",
+    "base_pitch",
+    "base_yaw",
+   "hokuyo_joint"
+  ],
+  "robotStateJointNames": [
+   "hokuyo_joint"
+  ],
+  "fixedPointFile" : "../../../control/matlab/data/multisense_sl/multisense_sl_fp.mat",
+
+  "handCombinations": [
+  ],
+
+  "userConfig" : ["fixedBaseArm"],
+  "disableComponents" : ["useFootsteps","usePlanning","useFootContactVis","useCOPMonitor"]
+}

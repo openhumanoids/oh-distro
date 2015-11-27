@@ -1,5 +1,5 @@
 // cddrc
-// oh-icp-simple externals/libpointmatcher/examples/data/car_cloud400.csv externals/libpointmatcher/examples/data/car_cloud401.csv
+// drc-icp-simple externals/libpointmatcher/examples/data/car_cloud400.csv externals/libpointmatcher/examples/data/car_cloud401.csv
 
 
 // kate: replace-tabs on; indent-width 2; indent-mode normal

@@ -3,7 +3,10 @@ group "0.params_and_model_pub" {
         exec = "bot-param-server $DRC_BASE/software/config/husky/robot.cfg";
         host = "localhost";
     }
-
+    cmd "model" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/common_components/multisense_sl/multisense_sl.urdf";
+        host = "localhost";
+    }
 }
 
 group "1.sensing" {
@@ -11,16 +14,20 @@ group "1.sensing" {
         exec = "multisense-lcm-driver -o 0 -n hokuyo_joint";
         host = "localhost";
     }
-    cmd "ipab-send-pose-body" {
-        exec = "ipab-send-pose-body";
+    cmd "hokuyo" {
+        exec = "hokuyo -d /dev/ttyACM0 -c FIXED_SCAN -I";
         host = "localhost";
     }
-}
+    cmd "microstrain" {
+        exec = "microstrain -d /dev/ttyACM1 -r";
+        host = "localhost";
+    }
 
+}
 
 group "2.vis" {
     cmd "drc-viewer" {
-        exec = "pronto-viewer -c husky.cfg";
+        exec = "pronto-viewer -c husky/robot.cfg";
         host = "localhost";
     }
     cmd "glview" {
@@ -30,9 +37,22 @@ group "2.vis" {
 
 
     cmd "director" {
-        exec = "director -c $DRC_BASE/software/config/husky/robot.cfg";
+        exec = "director -c $DRC_BASE/software/config/husky/robot.cfg  --director_config $DRC_BASE/software/models/common_components/multisense_sl/director_config.json";
         host = "localhost";
     }
 }
 
+cmd "3.drc-send-robot-state" {
+    exec = "drc-send-robot-state multisense static";
+    host = "localhost";
+}
 
+cmd "4.drc-send-rotate-and-record" {
+    exec = "drc-send-rotate-and-record";
+    host = "localhost";
+}
+
+cmd "5.drc-send-pose-body" {
+    exec = "drc-send-pose-body";
+    host = "localhost";
+}

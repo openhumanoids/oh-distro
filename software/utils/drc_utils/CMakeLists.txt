@@ -46,3 +46,7 @@ pods_install_python_script(drc-republish-old-valkyrie-logs python/republish_old_
 # not using python interp:
 file(COPY python/drc-robot-pose-util DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 file(COPY scripts/drc-atlas-rsync DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+
+pods_install_python_script(drc-send-robot-state python/send_robot_state.py)
+pods_install_python_script(drc-send-rotate-and-record python/send_rotate_and_record.py)
