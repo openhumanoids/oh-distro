@@ -74,8 +74,8 @@ msg.leds_duty_cycle = 0
 lc.publish("MULTISENSE_COMMAND", msg.encode())
 print "Publishing Multisense command to spin at 5rpm!"
 
-print "Recording for 25 seconds more..."
-time.sleep(25)
+print "Recording for 60 seconds more..."
+time.sleep(60)
 
 logger.killAllLoggingProcesses()
 print "Stop recording!"

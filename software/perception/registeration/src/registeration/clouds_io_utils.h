@@ -4,4 +4,3 @@
 #include <pcl/common/io.h>
 
 int savePlanarCloudCSV (const std::string &file_name, const pcl::PCLPointCloud2 &cloud);
-

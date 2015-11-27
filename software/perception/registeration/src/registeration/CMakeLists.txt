@@ -30,3 +30,10 @@ pods_use_pkg_config_packages(drc-icp-testing path-util ${REQUIRED_PACKAGES} pcl_
 target_link_libraries(drc-icp-testing pointmatcher lcm pronto_math 
                         boost_system boost_thread)
 pods_install_executables(drc-icp-testing)
+
+add_executable(drc-icp-testing-routine icp_testing_routine.cpp icp_utils.cpp)
+pods_use_pkg_config_packages(drc-icp-testing-routine path-util ${REQUIRED_PACKAGES} pcl_io-1.7
+    pronto_vis eigen3 bot2-frames)
+target_link_libraries(drc-icp-testing-routine pointmatcher lcm pronto_math 
+                        boost_system boost_thread)
+pods_install_executables(drc-icp-testing-routine)

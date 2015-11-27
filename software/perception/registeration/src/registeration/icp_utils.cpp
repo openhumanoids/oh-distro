@@ -78,3 +78,76 @@ void computeCloudsDistance (PM::ICP &icp, DP &cloud_ref, DP &data_out)
 
 	cout << "------------------" << endl << endl;
 }
+
+string readLineFromFile(string& filename, int line_number)
+{
+  string lines, line;
+  int index = 0;
+
+  ifstream trasfFile (filename);
+  if (trasfFile.is_open())
+  {
+    while ( getline (trasfFile, lines) )
+    {
+      if (index == line_number)
+      {
+      	getline (trasfFile, line);
+      }
+      index ++;
+    }
+    trasfFile.close();
+  }
+  else cout << "Unable to open init tranform file."; 
+
+  return line;
+}
+
+PM::TransformationParameters parseTransformation(string& transform, const int cloudDimension) 
+{
+  PM::TransformationParameters parsedTrans;
+  parsedTrans = PM::TransformationParameters::Identity(
+        cloudDimension+1,cloudDimension+1);
+
+  transform.erase(std::remove(transform.begin(), transform.end(), '['),
+            transform.end());
+  transform.erase(std::remove(transform.begin(), transform.end(), ']'),
+            transform.end());
+  std::replace( transform.begin(), transform.end(), ',', ' ');
+  std::replace( transform.begin(), transform.end(), ';', ' ');
+
+  float transValues[3] = {0};
+  stringstream transStringStream(transform);
+  for( int i = 0; i < 3; i++) {
+    if(!(transStringStream >> transValues[i])) {
+      cerr << "An error occured while trying to parse the initial "
+         << "transformation." << endl
+         << "No initial transformation will be used" << endl;
+      return parsedTrans;
+    }
+  }
+  /*
+  float extraOutput = 0;
+  if((translationStringStream >> extraOutput)) {
+    cerr << "Wrong initial transformation size" << endl
+       << "No initial transformation will be used" << endl;
+    return parsedTranslation;
+  }*/
+
+  for( int i = 0; i < 3; i++) {
+    if (i == 2)
+    {
+      parsedTrans(i-2,i-2) = cos ( transValues[i] * PI / 180.0 );
+      parsedTrans(i-2,i-1) = - sin ( transValues[i] * PI / 180.0 );
+      parsedTrans(i-1,i-2) = sin ( transValues[i] * PI / 180.0 );
+      parsedTrans(i-1,i-1) = cos ( transValues[i] * PI / 180.0 );
+    }
+    else
+    {
+      parsedTrans(i,cloudDimension) = transValues[i];
+    }
+  }
+
+  //cout << "Parsed initial transformation:" << endl << parsedTrans << endl;
+
+  return parsedTrans;
+}

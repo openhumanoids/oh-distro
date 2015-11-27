@@ -75,7 +75,7 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
       {
         // Writing to .csv file when planar pointcloud from fixed laser 
         std::stringstream csv_fname;
-        csv_fname << homedir << "/logs/multisenselog__2015-11-16/tmp/scan_long_" << "08" << ".csv";
+        csv_fname << homedir << "/logs/multisenselog__2015-11-26/tmp/scan_" << "00" << ".csv";
         std::cout << csv_fname.str() << " written\n";
         pcl::PCLPointCloud2::Ptr cloud_output (new pcl::PCLPointCloud2);
         pcl::toPCLPointCloud2 (*cloud, *cloud_output);
@@ -85,12 +85,12 @@ void App::planarLidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
       {
         pcl::PCDWriter writer;
         std::stringstream pcd_fname;
-        pcd_fname << homedir << "/logs/multisenselog__2015-11-16/tmp/multisense_" << "00" << ".pcd";
+        pcd_fname << homedir << "/logs/multisenselog__2015-11-26/tmp/multisense_" << "02_3" << ".pcd";
         std::cout << pcd_fname.str() << " written\n";
         writer.write (pcd_fname.str() , *cloud, false);  
 
         std::stringstream vtk_fname;
-        vtk_fname << homedir << "/logs/multisenselog__2015-11-16/tmp/multisense_" << "00" << ".vtk";
+        vtk_fname << homedir << "/logs/multisenselog__2015-11-26/tmp/multisense_" << "02_3" << ".vtk";
         std::cout << vtk_fname.str() << " written\n";
         pcl::PCLPointCloud2::Ptr cloud_output (new pcl::PCLPointCloud2);
         pcl::toPCLPointCloud2 (*cloud, *cloud_output);

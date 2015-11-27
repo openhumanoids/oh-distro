@@ -37,7 +37,8 @@ transformationCheckers:
       smoothLength: 4   
       
 inspector:
-  PerformanceInspector
+  NullInspector
+#  PerformanceInspector
 
 logger:
 #  FileLogger

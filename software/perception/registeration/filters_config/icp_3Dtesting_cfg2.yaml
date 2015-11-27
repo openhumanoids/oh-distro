@@ -2,10 +2,14 @@ readingDataPointsFilters:
   - SurfaceNormalDataPointsFilter:
         knn: 10
         keepDensities: 1
+  - MaxDensityDataPointsFilter:
+       maxDensity: 50
 
 referenceDataPointsFilters:
   - SurfaceNormalDataPointsFilter:
       knn: 10
+  - RandomSamplingDataPointsFilter:
+      prob: 0.50
 
 matcher:
   KDTreeMatcher:
@@ -17,19 +21,20 @@ outlierFilters:
       ratio: 0.75
 
 errorMinimizer:
-  PointToPointErrorMinimizer
+  PointToPlaneErrorMinimizer
 
 transformationCheckers:
   - CounterTransformationChecker:
-      maxIterationCount: 100
+      maxIterationCount: 30
   - DifferentialTransformationChecker:
-      minDiffRotErr: 0.0001
-      minDiffTransErr: 0.0001
+      minDiffRotErr: 0.001
+      minDiffTransErr: 0.01
       smoothLength: 4   
       
 inspector:
   NullInspector
 #  VTKFileInspector
+#  PerformanceInspector
 
 logger:
   NullLogger
