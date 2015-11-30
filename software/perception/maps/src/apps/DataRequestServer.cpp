@@ -303,8 +303,11 @@ struct Worker {
   }
 
   void sendDepthMapWorkspaceRequestCenter() {
-    return sendDepthMapWorkspaceRequestNarrow
-      (0,drc::data_request_t::DEPTH_MAP_WORKSPACE_C);
+    return sendDepthMapWorkspaceRequest();
+    // This request was not working so
+    // I went back to the original full frontal view
+    //return sendDepthMapWorkspaceRequestNarrow
+    //  (0,drc::data_request_t::DEPTH_MAP_WORKSPACE_C);
   }
 
   void sendDepthMapWorkspaceRequestLeft() {
@@ -317,7 +320,7 @@ struct Worker {
       (-40,drc::data_request_t::DEPTH_MAP_WORKSPACE_R);
   }
 
-  /* deprecated
+
   void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
     msg.map_id = 3;
@@ -336,7 +339,6 @@ struct Worker {
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
-  */
 
   void sendDenseCloudLeftHandRequest() {
     Eigen::Vector3f handPos(0,0,0);
