@@ -18,13 +18,19 @@ classdef CapabilityMap
     base_link
     active_spheres
     n_active_spheres
+    EE_pose
+    base2root
+    occupancy_map
   end
   
   methods
     
-    function obj = CapabilityMap(mat_file)
+    function obj = CapabilityMap(mat_file, EE_pose)
       if nargin > 0
         obj = obj.generateFromFile(mat_file);
+      end
+      if nargin > 1
+        obj = obj.setEEPose(EE_pose);
       end
     end
     
@@ -47,6 +53,8 @@ classdef CapabilityMap
       obj.base_link = vars.options.base_link;
       obj.active_spheres = true(obj.n_spheres, 1);
       obj.n_active_spheres = obj.n_spheres;
+      obj.base2root = vars.options.base2root;
+      obj.occupancy_map = vars.occupancy_map;
       
       obj = obj.resetActiveSpheres();
     end
@@ -59,6 +67,18 @@ classdef CapabilityMap
     function obj = deactivateSpheres(obj, idx)
       obj.active_spheres(idx) = false;
       obj.n_active_spheres = nnz(obj.active_spheres);
+    end
+    
+    function obj = setEEPose(obj, EE_pose)
+      obj.EE_pose = EE_pose(1:3);
+    end
+    
+    function centres = getCentresRelativeToWorld(obj)
+      centres = bsxfun(@plus, obj.EE_pose, obj.sph_centers);
+    end
+    
+    function centres = getActiveCentresRelativeToOrigin(obj)
+      centres = bsxfun(@plus, obj.getActiveSphereCentres(), obj.EE_pose);
     end
     
     function points = findPointsFromDirection(obj, direction, threshold)
@@ -93,14 +113,11 @@ classdef CapabilityMap
     end
 
     function obj = reduceActiveSet(obj, direction, des_sph_num, reset_active,...
-        rbm, point_in_link, point_cloud, EE_pose, sagittal_angle,...
-        transverse_angle, sagittal_weight, transverse_weight)
+        point_cloud, sagittal_angle, transverse_angle, sagittal_weight, transverse_weight)
       
-      obj = obj.deactivateCollidingSamples(rbm, point_in_link, point_cloud, EE_pose, reset_active);
-      
-%       if nargin > 7
-%         obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, 0, false);
-%       end
+      collidingTimer = tic;
+      obj = obj.deactivateCollidingSpheres(point_cloud, reset_active);
+      fprintf('Colliding Time: %.2f s\n', toc(collidingTimer))
       
       if obj.n_active_spheres > des_sph_num
         max_threshold = pi;
@@ -119,7 +136,6 @@ classdef CapabilityMap
         idx_max = obj.findSpheresFromDirection(direction, max_threshold, true);
         idx = min(abs([numel(idx_min), numel(idx_max)] - des_sph_num));
         obj = obj.activateSpheres(idx);
-%         obj.drawActiveMapCentredOnEE(EE_pose)
       end
       
       reachability_weight = 0;
@@ -129,56 +145,41 @@ classdef CapabilityMap
       end
     end
     
-    function drawActiveSpheres(obj)
-      lcmClient = LCMGLClient('CapabilityMap');
-      for sph = 1:obj.n_spheres
-        if obj.active_spheres(sph)
-          lcmClient.sphere(obj.sph_centers(:,sph), obj.sph_diameter/2, 20, 20);
-        end
-      end
-      lcmClient.switchBuffers();
+    function drawMap(obj, colour, text)
+      if nargin < 2, colour = [0 1 0]; end
+      if nargin < 3, text = 'Capability Map'; end
+      obj.drawSpheres(obj.sph_centers, colour, text);
     end
     
-    function drawActiveMapCentredOnEE(obj, EE_pose)
-      lcmClient = LCMGLClient('CapabilityMap');
-      for sph = 1:obj.n_spheres
-        if obj.active_spheres(sph)
-          lcmClient.sphere(EE_pose(1:3)-obj.sph_centers(:,sph), obj.sph_diameter/10, 20, 20);
-        end
-      end
-      lcmClient.switchBuffers();
+    function drawActiveMap(obj, colour, text)
+      if nargin < 2, colour = [0 1 1]; end
+      if nargin < 3, text = 'Active Capability Map'; end
+      obj.drawSpheres(obj.getActiveSphereCentres(), colour, text);
     end
     
-    function obj = deactivateCollidingSamples(obj, rbm, point_in_link, point_cloud, EE_pose, reset_active)
-      
-      if reset_active
-        obj = obj.resetActiveSpheres();
-      end
-%       v = rbm.constructVisualizer();
-      sph_idx = find(obj.active_spheres);
-      for sph = sph_idx'
-        q = [EE_pose(1:3)-obj.sph_centers(:,sph)-point_in_link; 0; 0; 0];
-%         v.draw(0, q);
-%         drawTreePoints(EE_pose(1:3)-obj.sph_centers(:,sph));
-        kinsol = rbm.doKinematics(q);
-        colliding_points = rbm.collidingPointsCheckOnly(kinsol, point_cloud, obj.sph_diameter/2);
-        if colliding_points
-          obj.deactivateSpheres(sph);
-        end
-      end
+    function drawActiveMapCentredOnPoint(obj, point, colour, text)
+      if nargin < 3, colour = [0 1 1]; end
+      if nargin < 4, text = 'Active Capability Map'; end
+      obj.drawSpheres(bsxfun(@plus, point, obj.getActiveSphereCentres()), colour, text);
     end
     
-    function obj = deactivateCollidingSpheres(obj, rbm, EE_pose, reset_active)
+    function obj = deactivateCollidingSpheres(obj, point_cloud, reset_active)
       
       if reset_active
         obj = obj.resetActiveSpheres();
       end
       
-      points = bsxfun(@minus, EE_pose(1:3), obj.getActiveSphereCentres());
-      sph_idx = find(obj.active_spheres);
-      kinsol = rbm.doKinematics(zeros(rbm.num_positions, 1));
-      colliding_points = rbm.collidingPoints(kinsol, points, obj.sph_diameter/2);
-      obj = obj.deactivateSpheres(sph_idx(colliding_points));
+      cm_ub = max(obj.getActiveCentresRelativeToOrigin(), [], 2);
+      cm_lb = min(obj.getActiveCentresRelativeToOrigin(), [], 2);
+      nSphPerEdge = nthroot(obj.n_spheres, 3);
+      
+      for pt = 1:size(point_cloud, 2)
+        if all(point_cloud(:,pt) < cm_ub) && all(point_cloud(:,pt) > cm_lb)
+          sub = ceil((point_cloud(:,pt) - obj.EE_pose(1:3))/obj.sph_diameter) + nSphPerEdge/2 * ones(3,1);
+          sphInd = sub2ind(nSphPerEdge * ones(1,3), sub(1), sub(2), sub(3));
+          obj = obj.deactivateSpheres(obj.occupancy_map(:,sphInd));
+        end
+      end
     end
     
     function obj = prune(obj, sagittal_angle,...
@@ -193,7 +194,9 @@ classdef CapabilityMap
       for sph = 1:obj.n_spheres
         if obj.active_spheres(sph)
           sa = atan2(obj.sph_centers(3,sph), obj.sph_centers(1,sph));
+          sa = sa - sign(sa) * pi;
           ta = atan2(obj.sph_centers(2,sph), obj.sph_centers(1,sph));
+          ta = ta - sign(ta) * pi;
           sagittal_cost = sagittal_weight * abs(sa - sagittal_angle);
           transverse_cost = transverse_weight * abs(ta - transverse_angle);
           reachability_cost = reachability_weight * (Dmax - obj.reachability_index(sph));
@@ -216,6 +219,21 @@ classdef CapabilityMap
     
     function centres = getActiveSphereCentres(obj)
       centres = obj.sph_centers(:, obj.active_spheres);
+    end
+    
+    function obj = generateBaseOccupancyMap(obj)
+      filename = [getenv('DRC_BASE'), '/software/control/matlab/planners/collision_free_solver/torso.urdf'];
+      base = RigidBodyManipulator(filename, struct('floating', true));
+      obj.occupancy_map = false(obj.n_spheres, obj.n_spheres);
+      obj.drawMap()
+      for sph = 1:obj.n_spheres;
+        q = [obj.sph_centers(:,sph)-obj.base2root; 0; 0; 0];
+        kinsol = base.doKinematics(q);
+        colliding_points = base.collidingPoints(kinsol, obj.sph_centers, obj.sph_diameter/2);
+        if ~isempty(colliding_points)
+          obj.occupancy_map(sph, colliding_points) = ~obj.occupancy_map(sph, colliding_points);
+        end
+      end
     end
     
   end
@@ -247,6 +265,13 @@ classdef CapabilityMap
         frame(:,2) = cross(frame(:,3), frame(:,1));
         frames(p, :, :) = frame;
       end
+    end
+    
+    function drawSpheres(coords, colour, text)
+      lcmClient = LCMGLClient(text);
+      lcmClient.glColor3f(colour(1), colour(2), colour(3));
+      lcmClient.points(coords(1,:), coords(2,:), coords(3,:));
+      lcmClient.switchBuffers();
     end
     
   end
