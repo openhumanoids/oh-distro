@@ -2,6 +2,28 @@
 // Created by manuelli on 11/25/15.
 //
 
+
+#include <mutex>
+#include <thread>
+#include <chrono>
+#include "drake/ForceTorqueMeasurement.h"
+#include "drake/QPCommon.h"
+#include "drake/Side.h"
+#include "RobotStateDriver.hpp"
+#include "ContactFilter.hpp"
+#include "FootContactDriver.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/foot_force_torque_t.hpp"
+#include "lcmtypes/drc/residual_observer_state_t.hpp"
+#include <bot_param/param_client.h>
+#include <lcm/lcm-cpp.hpp>
+#include <Eigen/Core>
+#include <string>
+#include <memory>
+#include <vector>
+#include <iostream>
+#include <fstream>
+
 #ifndef CONTROL_RESIDUAL_DETECTOR_H
 #define CONTROL_RESIDUAL_DETECTOR_H
 
@@ -37,7 +59,7 @@ class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename="");
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename="none");
   ~ResidualDetector(){
   }
   void residualThreadLoop();

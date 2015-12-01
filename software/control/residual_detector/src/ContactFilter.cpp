@@ -5,13 +5,16 @@
 #include "ContactFilter.hpp"
 #include <Eigen/Geometry>
 #include <Eigen/Dense>
+#include <Eigen/SVD>
 #include <math.h>
 #include "gurobiUtil.hpp"
 #include "lcmtypes/drc/contact_filter_estimate_t.hpp"
+#include "lcmtypes/drc/contact_filter_body_wrench_estimate_t.hpp"
 #include <tuple>
 #define MU 0.6
-#define DETECTION_THRESHOLD 1.0
+#define DETECTION_THRESHOLD 0.2
 #define PUBLISH_CHANNEL "CONTACT_FILTER_POINT_ESTIMATE"
+#define BODY_WRENCH_PUBLISH_CHANNEL "CONTACT_FILTER_BODY_WRENCH_ESTIMATE"
 #include <utility>
 
 
@@ -24,6 +27,7 @@ ContactFilter::ContactFilter(void):grbModel(grbEnv),grbModelInitialized(false){
   this->initializeGurobiModel();
   this->initializeFrictionCone();
   this->publishChannel = PUBLISH_CHANNEL;
+  this->bodyWrenchPublishChannel = BODY_WRENCH_PUBLISH_CHANNEL;
 
   //check that our lcm publisher is good
   if(!lcm.good()){
@@ -49,7 +53,7 @@ void ContactFilter::addRobotFromURDF(std::string urdfFilename){
   if (urdfFilename.empty()){
     std::cout << "no urdf received, building atlas_v5 minimal contact model" << std::endl;
     std::string drcBase = std::string(std::getenv("DRC_BASE"));
-    urdfFilename = drcBase + "/software/models/atlas_v5/model_minimal_contact.urdf";
+    urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
   }
 
   this->drake_model.addRobotFromURDF(urdfFilename);
@@ -278,7 +282,7 @@ void ContactFilter::publishMostLikelyEstimate() {
   this->publishPointEstimate(*mostLikelyMeasurementUpdate, false);
 }
 
-std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(Eigen::VectorXd &residual) {
+std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(const Eigen::VectorXd &residual) {
   std::set<std::shared_ptr<RigidBody>> activeRigidBodies;
   for (auto &p: this->rigidBodyChildrenMap) {
     auto &rb = p.first;
@@ -290,13 +294,14 @@ std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(Eigen::Vecto
     VectorXd temp = residual.segment(velocityIdxStart, numVelocities).cwiseAbs() -
                     this->detectionThresholdVec.segment(velocityIdxStart, numVelocities);
     if ((temp.array() > 0).any()) {
-      std::cout << "potentiall active:  " + rb->linkname << std::endl;
+//      std::cout << "potentially active:  " + rb->linkname << std::endl;
       activeRigidBodies.insert(rb);
     }
   }
 
   // start in the leaf nodes and work backwards. Remove anything from active set that has something further down the tree
   // which is in activeRigidBodies
+//  std::cout << std::endl;
   for (auto &rb: this->rigidBodyLeafNodes) {
     std::shared_ptr<RigidBody> firstActiveRB = rb;
     while ((activeRigidBodies.find(firstActiveRB) == activeRigidBodies.end()) && firstActiveRB->hasParent()) {
@@ -304,12 +309,12 @@ std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(Eigen::Vecto
       firstActiveRB = firstActiveRB->parent;
     }
 
-    std::cout << "leaf node = " + rb->linkname << std::endl;
-    std::cout << "firstActiveRB = " + firstActiveRB->linkname << std::endl;
+//    std::cout << "leaf node = " + rb->linkname << std::endl;
+//    std::cout << "firstActiveRB = " + firstActiveRB->linkname << std::endl;
     std::shared_ptr<RigidBody> current = firstActiveRB;
     while (current->hasParent()) {
       current = current->parent;
-      std::cout << "removing from activeRigidBodies: " + current->linkname << std::endl;
+//      std::cout << "removing from activeRigidBodies: " + current->linkname << std::endl;
       activeRigidBodies.erase(current);
     }
 
@@ -317,6 +322,83 @@ std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(Eigen::Vecto
 
   return activeRigidBodies;
 }
+
+void ContactFilter::computeActiveLinkForceTorque(double t, const Eigen::VectorXd & residual, const Eigen::VectorXd &q,
+                                                 const Eigen::VectorXd &v, bool publish){
+  std::set<std::shared_ptr<RigidBody>> activeRigidBodies = this->findActiveLinks(residual);
+
+  if (activeRigidBodies.empty()){
+    return;
+  }
+  if (activeRigidBodies.size() > 1){
+    std::cout << std::endl;
+    std::cout << "more than one rigid body is active, I am confused, doing nothing" << std::endl;
+    std::cout << "the active rigid bodies are \n";
+    for (auto & rb: activeRigidBodies){
+      std::cout << rb->linkname + "\n";
+    }
+    std::cout << std::endl;
+    return;
+  }
+
+  std::cout << std::endl;
+  std::cout << "attempting to compute body wrench" << std::endl;
+  this->drake_model.doKinematics(q, v, false, false);
+//  Vector3d points << 0,0,0;
+//  MatrixXd R_world_to_body = this->drake_model.forwardKin(points, )
+  std::vector<int> v_indices;
+  std::shared_ptr<RigidBody> rb = *activeRigidBodies.begin();
+  int body_id = this->drake_model.findLinkId(rb->linkname);
+
+
+  MatrixXd linkJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, false, &v_indices).value();
+  // need to convert this to full sized Jacobian!
+  MatrixXd linkJacobianFull = MatrixXd::Zero(6, this->nv);
+  for (int i=0; i < v_indices.size(); i++){
+    linkJacobianFull.col(v_indices[i]) = linkJacobian.col(i);
+  }
+
+
+  // construct s
+  VectorXd wrench = linkJacobianFull.transpose().jacobiSvd(ComputeThinU | ComputeThinV).solve(residual);
+  VectorXd estResidual = linkJacobianFull.transpose()*wrench;
+  double exponentVal = -1/2.0*(residual - estResidual).transpose()*this->W*(residual - estResidual);
+
+//  std::cout << std::endl;
+//  std::cout << "active link = " + rb->linkname + "\n";
+//  std::cout << "active joint = " + rb->linkname + "\n";
+//  std::cout << "wrench is " << wrench << std::endl;
+//  std::cout << std::endl;
+  if (publish){
+    this->publishBodyFrameWrench(t, rb->linkname, rb->getJoint().getName(), wrench, exponentVal);
+  }
+
+}
+
+void ContactFilter::publishBodyFrameWrench(double t, std::string linkname, std::string jointName,
+                                           const Eigen::VectorXd & wrench, double exponentVal){
+
+  std::cout << "attempting to publish body wrench" << std::endl;
+  std::cout << std::endl;
+
+  drc::contact_filter_body_wrench_estimate_t msg;
+  msg.utime = static_cast<int64_t> (t*1e6);
+  msg.body_name = linkname;
+  msg.joint_name = jointName;
+  msg.exponentVal = (float) exponentVal;
+
+  msg.tx = (float) wrench(0);
+  msg.ty = (float) wrench(1);
+  msg.tz = (float) wrench(2);
+  msg.fx = (float) wrench(3);
+  msg.fy = (float) wrench(4);
+  msg.fz = (float) wrench(5);
+
+  this->lcm.publish(this->bodyWrenchPublishChannel, &msg);
+
+}
+
+
 
 
 
@@ -415,13 +497,21 @@ void ContactFilter::runFindLinkTest() {
   std::cout << std::endl;
 
   VectorXd residual = VectorXd::Zero(this->nv);
-  residual(7) = 2.0;
+  residual(5) = 2.0;
+  residual(7) = -2.0;
 
   auto activeRigidBodies = this->findActiveLinks(residual);
   std::cout << "active rigid bodies are" << std::endl;
   for (auto& rb: activeRigidBodies){
     std::cout << rb->linkname << std::endl;
   }
+
+
+  // SVD Test
+  MatrixXf A = MatrixXf::Random(3, 2);
+  VectorXf b = VectorXf::Random(3);
+  VectorXf test = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+
 }
 
 // returns the rotation matrix that rotates vector a to vector b
@@ -458,8 +548,8 @@ Eigen::Matrix<double, 3, 3> rotateVectorToAlign(Eigen::Vector3d a, Eigen::Vector
 
 Matrix<double,6,3> computeForceToWrenchTransform(Vector3d p){
   Matrix<double,6,3> fM;
-  fM.block(0,0,3,3) << 0, -p(0), p(1),
-                       p(0), 0, -p(0),
+  fM.block(0,0,3,3) << 0, -p(2), p(1),
+                       p(2), 0, -p(0),
                        -p(1), p(0), 0;
   fM.block(3,0,3,3) = MatrixXd::Identity(3,3);
 

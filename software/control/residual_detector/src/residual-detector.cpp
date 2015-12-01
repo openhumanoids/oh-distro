@@ -1,131 +1,32 @@
-#include <mutex>
-#include <thread>
-#include <chrono>
-#include "FootContactDriver.hpp"
-#include "drake/ForceTorqueMeasurement.h"
-#include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/drc/foot_force_torque_t.hpp"
-#include "lcmtypes/drc/residual_observer_state_t.hpp"
-#include "drake/Side.h"
-#include "drake/QPCommon.h"
-#include "RobotStateDriver.hpp"
-#include "ContactFilter.hpp"
-#include <lcm/lcm-cpp.hpp>
+#include "residual-detector.hpp"
 #include <model-client/model-client.hpp>
-#include <bot_param/param_client.h>
-#include <Eigen/Core>
-#include <string>
-#include <memory>
-#include <vector>
-#include <iostream>
-#include <fstream>
-
 
 #define RESIDUAL_GAIN 10.0;
 #define PUBLISH_CHANNEL "RESIDUAL_OBSERVER_STATE"
 using namespace Eigen;
-
-std::vector<ContactFilterPoint> constructContactFilterPoints();
-std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename);
-
-struct ResidualDetectorState{
-  double t_prev;
-  VectorXd r;
-  VectorXd integral;
-  VectorXd gamma;
-  VectorXd p_0;
-  bool running;
-
-  // for debugging purposes
-  VectorXd gravity;
-  VectorXd torque;
-  VectorXd foot_contact_joint_torque;
-
-};
-
-struct ResidualArgs{
-  // information that updateResidualState will need
-  std::shared_ptr<DrakeRobotStateWithTorque> robot_state;
-  std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurement;
-  std::map<Side, ForceTorqueMeasurement> foot_ft_meas_6_axis;
-  std::map<Side, bool> b_contact_force;
-};
-
-class ResidualDetector{
-
-public:
-  // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename="");
-  ~ResidualDetector(){
-  }
-  void residualThreadLoop();
-  void useFootForce(bool useGeometricJacobian = false);
-  void useFootForceTorque();
-  void kinematicChain(std::string linkName, int body_id =-1);
-  void testContactFilterRotationMethod(bool useRandom=false);
-  void testQP();
-  void contactFilterThreadLoop(std::string filename);
-
-private:
-  std::shared_ptr<lcm::LCM> lcm_;
-  bool running_;
-  bool verbose_;
-  bool useFootForceFlag;
-  bool useFootFTFlag;
-  bool newStateAvailable;
-  bool newResidualStateAvailable;
-  bool foot_FT_6_axis_available;
-  bool useGeometricJacobianFlag;
-  int nq;
-  int nv;
-  double t_prev;
-  BotParam* botparam_;
-  RigidBodyManipulator drake_model;
-  std::mutex pointerMutex;
-  std::vector<std::string> state_coordinate_names;
-  std::string publishChannel;
-
-  VectorXd residualGainVector;
-  double residualGain;
-  ResidualArgs args;
-  ResidualDetectorState residual_state;
-//  ResidualDetectorState residual_state_w_forces;
-  drc::residual_observer_state_t residual_state_msg;
-
-
-  std::map<Side, int> foot_body_ids;
-
-  std::shared_ptr<RobotStateDriver> state_driver;
-  std::shared_ptr<FootContactDriver> foot_contact_driver;
-
-  ContactFilter contactFilter;
-
-  // forward declarations
-  void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
-  void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg);
-  void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
-  void updateResidualState();
-  void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
-  void computeContactFilter(bool publishMostLikely, bool publishAll=false);
-};
 
 
 ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename):
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
     useFootForceFlag(false), useFootFTFlag(false), useGeometricJacobianFlag(false){
 
-  do {
-    botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
-  } while(botparam_ == NULL);
 
-  if (urdfFilename.empty()) {
+
+  if (urdfFilename=="none"){
+    std::string drcBase = std::string(std::getenv("DRC_BASE"));
+    urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
+    drake_model.addRobotFromURDF(urdfFilename);
+    this->contactFilter.addRobotFromURDF(urdfFilename);
+  }
+  else if (urdfFilename.empty()) {
+    do {
+      botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+    } while(botparam_ == NULL);
     std::shared_ptr<ModelClient> model = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(),0));
     drake_model.addRobotFromURDFString(model->getURDFString());
     this->contactFilter.addRobotFromURDFString(model->getURDFString());
   }
   else{
-    std::string drcBase = std::string(std::getenv("DRC_BASE"));
-    urdfFilename = drcBase + "/software/models/atlas_v5/model_minimal_contact.urdf";
     drake_model.addRobotFromURDF(urdfFilename);
     this->contactFilter.addRobotFromURDF(urdfFilename);
   }
@@ -140,6 +41,8 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   lcm_->subscribe("FOOT_FORCE_TORQUE", &ResidualDetector::onFootForceTorque, this);
 
 
+
+
   //need to initialize the state_driver
 //  std::cout << "this should only be printed once" << std::endl;
 //  std::vector<std::string> state_coordinate_nadrakemes;
@@ -147,6 +50,8 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   // build this up manually for now, hacky solution
   this->nq = drake_model.num_positions;
   this->nv = drake_model.num_velocities;
+
+  std::cout << "robot num velocities  = " + this->nv << std::endl;
 
   for(int i = 0; i < this->nq; i++){
     std::string joint_name = drake_model.getStateName(i);
@@ -434,6 +339,7 @@ void ResidualDetector::updateResidualState() {
                                foot_ft_to_joint_torques[Side::LEFT] - foot_ft_to_joint_torques[Side::RIGHT]; // this is the integrand;
   this->residual_state.t_prev = t;
   this->newResidualStateAvailable = true;
+  this->newResidualStateAvailableForActiveLink = true;
 
   //DEBUGGING
   this->residual_state.gravity = alpha;
@@ -494,6 +400,16 @@ void ResidualDetector::computeContactFilter(bool publishMostLikely, bool publish
   this->contactFilter.computeLikelihoodFull(t, residual, q, v, publishMostLikely, publishAll);
 }
 
+void ResidualDetector::computeActiveLinkContactFilter(bool publish){
+  std::unique_lock<std::mutex> lck(pointerMutex);
+  VectorXd residual = this->residual_state.r;
+  double t = this->args.robot_state->t;
+  VectorXd q = this->args.robot_state->q;
+  VectorXd v = this->args.robot_state->qd;
+  lck.unlock();
+  this->contactFilter.computeActiveLinkForceTorque(t, residual, q, v, publish);
+}
+
 void ResidualDetector::residualThreadLoop() {
   bool done = false;
 
@@ -528,6 +444,19 @@ void ResidualDetector::contactFilterThreadLoop(std::string filename) {
     }
     this->computeContactFilter(publishMostLikely, publishAll);
     this->newResidualStateAvailable = false;
+  }
+}
+
+void ResidualDetector::activeLinkContactFilterThreadLoop() {
+  std::cout << "entered contact filter body wrench loop" << std::endl;
+  bool publish = true;
+  bool done = false;
+  while (!done){
+    while (!this->residual_state.running || !this->newResidualStateAvailableForActiveLink){
+      std::this_thread::yield();
+    }
+    this->computeActiveLinkContactFilter(publish);
+    this->newResidualStateAvailableForActiveLink = false;
   }
 }
 
@@ -692,18 +621,18 @@ std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string
   std::string filenameWithPath = drcBase + "/software/control/residual_detector/src/particle_grids/" + filename;
   std::vector<std::vector<std::string>> fileString = parseCSVFile(filenameWithPath);
 
-  // print out the file that you just read in
-  for (auto & line: fileString){
-    for (auto & word: line){
-      std::cout << word << ",";
-    }
-    std::cout << std::endl;
-  }
+//  // print out the file that you just read in
+//  for (auto & line: fileString){
+//    for (auto & word: line){
+//      std::cout << word << ",";
+//    }
+//    std::cout << std::endl;
+//  }
 
   std::vector<ContactFilterPoint> cfpVec;
   for (auto & line: fileString){
-    std::cout << "attemping to make cfp object" << std::endl;
-    std::cout << "line has size " << line.size() << std::endl;
+//    std::cout << "attemping to make cfp object" << std::endl;
+//    std::cout << "line has size " << line.size() << std::endl;
     ContactFilterPoint cfp;
     cfp.body_name = line[0];
     Vector3d contactPoint(atof(line[1].c_str()), atof(line[2].c_str()), atof(line[3].c_str()));
@@ -729,9 +658,10 @@ int main( int argc, char* argv[]){
   bool isVerbose = false;
   bool runDetectorLoop = true;
   bool runContactFilterLoop = true;
+  bool runContactFilterActiveLinkLoop = true;
   bool runCSVTest = false;
   std::string urdfFilename = "";
-  std::string filename = "testCFP.csv";
+  std::string filename = "directorDense.csv";
   std::string linkName;
 
 
@@ -817,6 +747,13 @@ int main( int argc, char* argv[]){
     std::cout << "attemping to start contact filter thread loop" << std::endl;
     std::thread contactFilterThread(&ResidualDetector::contactFilterThreadLoop, &residualDetector, filename);
     std::cout << "started contact filter thread loop, detaching thread" << std::endl;
+    contactFilterThread.detach();
+  }
+
+  if (runContactFilterActiveLinkLoop){
+    std::cout << "attemping to start contact filter active link thread loop" << std::endl;
+    std::thread contactFilterThread(&ResidualDetector::activeLinkContactFilterThreadLoop, &residualDetector);
+    std::cout << "started active link contact filter thread loop, detaching thread" << std::endl;
     contactFilterThread.detach();
   }
 

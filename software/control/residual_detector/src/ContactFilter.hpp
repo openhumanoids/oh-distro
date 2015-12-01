@@ -35,6 +35,7 @@ private:
   std::vector<ContactFilterPoint> contactPoints;
   std::vector<MeasurementUpdate> measurementUpdateVec;
   std::string publishChannel;
+  std::string bodyWrenchPublishChannel;
   lcm::LCM lcm;
   std::vector<std::string> velocity_names;
   GRBEnv grbEnv;
@@ -54,7 +55,10 @@ private:
   void initializeFrictionCone();
   void publishPointEstimate(const MeasurementUpdate & measurementUpdate, bool publishOnUniqueChannel=true);
   void initializeDrakeModelDetails();
-  std::set<std::shared_ptr<RigidBody>> findActiveLinks(Eigen::VectorXd &residual);
+  std::set<std::shared_ptr<RigidBody>> findActiveLinks(const Eigen::VectorXd &residual);
+
+  void publishBodyFrameWrench(double t, std::string linkname, std::string jointName, const Eigen::VectorXd & wrench,
+                              double exponentVal);
 
 
 public:
@@ -75,6 +79,8 @@ public:
                              const Eigen::VectorXd &v, bool publishMostLikely=false, bool publishAll=false);
 
   void publishMostLikelyEstimate();
+  void computeActiveLinkForceTorque(double t, const Eigen::VectorXd & residual, const Eigen::VectorXd &q,
+                                    const Eigen::VectorXd &v, bool publish=false);
 
 
   void runFindLinkTest();
