@@ -160,7 +160,7 @@ classdef CapabilityMap
     function drawActiveMapCentredOnPoint(obj, point, colour, text)
       if nargin < 3, colour = [0 1 1]; end
       if nargin < 4, text = 'Active Capability Map'; end
-      obj.drawSpheres(bsxfun(@plus, point, obj.getActiveSphereCentres()), colour, text);
+      obj.drawSpheres(bsxfun(@plus, point(1:3), obj.getActiveSphereCentres()), colour, text);
     end
     
     function obj = deactivateCollidingSpheres(obj, point_cloud, reset_active)

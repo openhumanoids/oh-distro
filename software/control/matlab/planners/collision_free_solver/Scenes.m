@@ -192,7 +192,7 @@ classdef Scenes
     
     function visualizePointCloud(options)
       points = Scenes.getPointCloud(options);
-      lcmClient = LCMGLClient(sprintf('point cloud (scene%d)', options.scene));
+      lcmClient = LCMGLClient('point cloud');
       lcmClient.points(points(1,:), points(2,:), points(3,:))
       lcmClient.switchBuffers();
     end
