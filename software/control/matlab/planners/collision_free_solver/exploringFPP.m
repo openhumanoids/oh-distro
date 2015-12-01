@@ -16,10 +16,9 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   if ~isfield(options,'feet_constraint'), options.feet_constraint = 'sliding'; end
   
   options.floating = true;
-  options.terrain = RigidBodyFlatTerrain();
   
   if isempty(options.robot)
-    r = Scenes.generateScene(options);
+    r = Scenes.generateRobot(options);
   else
     r = options.robot;
   end

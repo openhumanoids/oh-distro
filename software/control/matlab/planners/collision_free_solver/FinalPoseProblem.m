@@ -111,12 +111,7 @@ classdef FinalPoseProblem
     end
     
     function [qOpt, debug_vars] = searchFinalPose(obj, point_cloud, debug_vars)
-      
-      filename = [getenv('DRC_BASE'), '/software/control/matlab/planners/collision_free_solver/torso.urdf'];
-      torso = RigidBodyManipulator(filename, struct('floating', true));
-%       torso = torso.addGeometryToBody(1, RigidBodyMesh(filename));
-%       torso = torso.compile();
-%       tv = torso.constructVisualizer();
+      setupTimer = tic;
       
       kinSol = obj.robot.doKinematics(obj.q_start);
       options.rotation_type = 2;
@@ -132,50 +127,27 @@ classdef FinalPoseProblem
       rootPose = obj.robot.forwardKin(kinSol, root, rootPoint, 2);
       trPose = obj.robot.forwardKin(kinSol, base, [0;0;0], 2);
       tr2root = quat2rotmat(trPose(4:end))\(rootPose(1:3)-trPose(1:3));
-%       !!!!!!WARNING:This works for val2 only!!!!!!!!!
-      if strcmp(obj.grasping_hand, 'right')
-        armJoints = 13:19;
-      else
-        armJoints = 20:26;
-      end
-%       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      nArmJoints = size(armJoints, 2);
       np = obj.robot.num_positions;
-%       !!!!!!WARNING:This works for val2 only!!!!!!!!!
-      if isfield(obj.active_collision_options, 'body_idx')
-        if strcmp(obj.grasping_hand, 'right')
-          collisionLinksBody = setdiff(obj.active_collision_options.body_idx, 9:15);
-        else
-          collisionLinksBody = setdiff(obj.active_collision_options.body_idx, 16:22);
-        end
-      else
-        collisionLinksBody = setdiff(1:numel(obj.robot.body), 16:22);
-      end
-%       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      mapMirror.right = [1; 1; 1];
-      mapMirror.left = [1; -1; 1];
       
       ee_rotmat = quat2rotmat(obj.x_goal(4:7));
       ee_direction = ee_rotmat(:,2);
-      obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, torso, tr2root, point_cloud, obj.x_goal, 0, 0, 2, 1.5);
-      obj.capability_map.drawActiveMapCentredOnEE(obj.x_goal)
+      obj.capability_map = obj.capability_map.setEEPose(obj.x_goal);
+      reduceTimer = tic;
+      obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, point_cloud, 0, 0, 2, 1.5);
+      fprintf('reduce Time: %.4f s\n', toc(reduceTimer))
       sphCenters = obj.capability_map.getActiveSphereCentres();
       nSph = obj.capability_map.n_active_spheres;
       iter = 0;
       qOpt = [];
       cost = [];
-      c = 1/obj.min_distance;
-      deltaQmax = 0.05;
       validConfs =  double.empty(np+1, 0);
-      succ = zeros(nSph, 2);
-      pelvis = obj.robot.findLinkId('pelvis');
-      pelvisPos = obj.robot.forwardKin(kinSol, pelvis, [0;0;0]);
+      fprintf('Setup time: %.2f s\n', toc(setupTimer))
+      iterationTimer = tic;
       
       for sph = randperm(nSph)
         iter = iter + 1;
-        point = (sphCenters(:,sph).*mapMirror.(obj.grasping_hand)) + tr2root;
-        dist = norm(sphCenters(1:3,sph));
-        axis = sphCenters(:,sph)/norm(sphCenters(:,sph));
+        dist = norm(sphCenters(:,sph));
+        axis = -sphCenters(:,sph)/dist;
 %         drawTreePoints([[0;0;0] sphCenters(1:3,sph)], 'lines', true, 'text', 'cm_point')
 %         drawTreePoints([obj.x_goal(1:3) - sphCenters(1:3,sph), obj.x_goal(1:3)], 'lines', true)
         shDistance = Point2PointDistanceConstraint(obj.robot, root, obj.robot.findLinkId('world'), [0;0;0], obj.x_goal(1:3), dist, dist);
@@ -186,97 +158,18 @@ classdef FinalPoseProblem
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
-        palmPose = obj.robot.forwardKin(kinSol, endEffector, EEPoint, options);
-        targetPos = palmPose;
-        deltaX = zeros(6,1);
         if valid
-          if obj.debug
-            debug_vars.n_body_collision_iter = debug_vars.n_body_collision_iter + 1;
-          end
-          phiBody = obj.robot.collisionDetect(q, false, struct('body_idx', collisionLinksBody));
-          if all(phiBody > obj.min_distance)
-            if obj.debug
-              debug_vars.n_arm_collision_iter = debug_vars.n_arm_collision_iter + 1;
-            end
-            eps  = Inf;
-            nIter = 0;
-            [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.active_collision_options);
-            nullspace = false;
-            if any(phi < obj.min_distance)
+          valid = ~obj.robot.collidingPointsCheckOnly(kinSol, point_cloud, obj.min_distance);
+          if valid
+            cost = (obj.q_nom - q)'*obj.ikoptions.Q*(obj.q_nom - q);
+            validConfs(:,sph) = [cost; q];
+            if cost < 20
               if obj.debug
-                debug_vars.n_nullspace_iter = debug_vars.n_nullspace_iter + 1;
+                debug_vars.cost_below_threshold = true;
               end
-              phi = phi - obj.min_distance;
-%{
-              while (eps > 1e-3 || any(phi < 0)) && nIter < 1
-                if obj.debug
-                  nullspace = true;
-                end
-                qNdot = zeros(nArmJoints, 1);
-                for joint = 1:nArmJoints
-                  dgamma_dq = zeros(size(phi));
-                  for coll = 1:size(phi,1)
-                    if phi(coll) < 0
-                      [~,JA] = obj.robot.forwardKin(kinSol, idxA(coll), [0;0;0], options);
-                      [~,JB] = obj.robot.forwardKin(kinSol, idxB(coll), [0;0;0], options);
-                      JA = JA(:,armJoints);
-                      JB = JB(:,armJoints);
-                      dD_dq = normal(:,coll)'*(JB(1:3,joint) - JA(1:3,joint));
-                      dgamma_dq(coll) = exp(1./(c*phi(coll))).*(1-c*phi(coll))./(c*phi(coll))*c.*dD_dq;
-                    else
-                      dgamma_dq(coll) = 0;
-                    end
-                  end
-                  qNdot(joint) = sum(dgamma_dq);
-                end
-                [~,J] = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
-                J = J(:,armJoints);
-                Jpsi = J'*inv(J*J');
-                deltaQ = Jpsi*deltaX + (eye(nArmJoints) - Jpsi*J) * qNdot;
-                if any(abs(deltaQ) > deltaQmax)
-                  alpha = deltaQmax/abs(deltaQ);
-                elseif all(deltaQ < 1e-3)
-                  break
-                else
-                  alpha = 1;
-                end
-                q(armJoints) = q(armJoints) + alpha*deltaQ;
-                [phi,normal,~,~,idxA,idxB] = obj.robot.collisionDetect(q, false, obj.active_collision_options);
-                kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
-                palmPose = obj.robot.forwardKin(kinSol, endEffector, [0;0;0], options);
-                deltaX = targetPos - palmPose;
-                eps = norm(deltaX);
-                nIter = nIter + 1;
-                phi = phi - obj.min_distance;
-              end
-              %}
-              if obj.debug
-                debug_vars.nullspace_iter.success(debug_vars.n_nullspace_iter) = eps <= 1e-3 && all(phi >= 0);
-                debug_vars.nullspace_iter.nIter(debug_vars.n_nullspace_iter) = nIter;
-              end
-            else
-              if obj.debug
-                debug_vars.n_accepted_after_armcollision = debug_vars.n_accepted_after_armcollision + 1;
-              end
-              phi = phi - obj.min_distance;
-              eps = 1e-3;
+              break
             end
-            if eps <= 1e-3 && all(phi >= 0)
-              if obj.debug && nullspace
-                debug_vars.n_accepted_after_nullspace = debug_vars.n_accepted_after_nullspace + 1;
-              end
-              cost = (obj.q_nom - q)'*obj.ikoptions.Q*(obj.q_nom - q);
-              validConfs(:,sph) = [cost; q];
-              succ(sph, :) = [1, nIter];
-              if cost < 20
-                if obj.debug
-                  debug_vars.cost_below_threshold = true;
-                end
-                break
-              end
-            else
-              succ(sph, :) = [0, nIter];
-            end
+          else
           end
         end
       end
@@ -285,6 +178,7 @@ classdef FinalPoseProblem
         [cost, qOptIdx] =  min(validConfs(1,:));
         qOpt = validConfs(2:end, qOptIdx);
       end
+      fprintf('iteration Time: %.4f\n', toc(iterationTimer))
       
       debug_vars.n_capability_map_samples = iter;
       debug_vars.cost = cost;
