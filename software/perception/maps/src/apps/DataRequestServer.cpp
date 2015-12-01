@@ -528,7 +528,8 @@ struct Worker {
     msg.time_max = 0;
     msg.time_mode = drc::map_request_t::RELATIVE;
     msg.relative_location = true;
-    msg.accum_type = drc::map_request_t::CLOSEST;
+    // this used to be CLOSEST, but wasn't working, so flipped it:
+    msg.accum_type = drc::map_request_t::FURTHEST;
     msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, 5}));
     msg.clip_planes.push_back(std::vector<float>({-1, 0, 0, 5}));
     msg.clip_planes.push_back(std::vector<float>({ 0, 1, 0, 5}));
