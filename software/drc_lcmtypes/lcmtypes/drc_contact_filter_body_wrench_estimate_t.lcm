@@ -1,0 +1,21 @@
+package drc;
+
+// Estimated body wrench expressed in body frame
+
+struct contact_filter_body_wrench_estimate_t
+{
+  int64_t utime;
+
+  int16_t body_id;
+  string body_name;
+  string joint_name;
+  float likelihood; //this is only up to scaling, doesn't include normalizing constant
+  float exponentVal;
+  float fx;
+  float fy;
+  float fz;
+  float tx;
+  float ty;
+  float tz;
+
+}
