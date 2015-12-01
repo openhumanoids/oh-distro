@@ -5,7 +5,7 @@ joints = ['base_x', 'base_y', 'base_z', 'r_leg_kny', 'l_leg_kny', 'l_leg_hpy', '
 # shortened set of joint names to keep it readable for now.
 joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw', 'r_leg_aky', 'r_leg_kny', 'r_leg_hpy', 'r_leg_hpx', 'l_leg_kny', 'l_arm_shz']
 
-joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw']
+# joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw']
 # joints = ['base_z','base_roll', 'base_pitch', 'base_yaw']
 # joints = ['base_x','base_z','base_roll', 'base_pitch', 'l_leg_kny']
 # joints = ['base_z','base_roll', 'base_pitch']
@@ -38,9 +38,9 @@ addPlot(timeWindow=30, yLimits=[-200, 800])
 # addSignals('RESIDUAL_OBSERVER_STATE_W_FOOT_FORCE', msg.utime, msg.residual, joints, keyLookup=names)
 addSignals('RESIDUAL_OBSERVER_STATE_W_FOOT_FT', msg.utime, msg.residual, joints, keyLookup=names)
 
-for ext in channel_extensions:
-    channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
-    addSignals(channel, msg.utime, msg.implied_residual, joints_w_dot, keyLookup=vel_names)
+# for ext in channel_extensions:
+#     channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
+#     addSignals(channel, msg.utime, msg.implied_residual, joints_w_dot, keyLookup=vel_names)
 
 addPlot(timeWindow=30, yLimits=[-50,50])
 for ext in channel_extensions:
