@@ -187,14 +187,16 @@ elseif strcmp(model,'val2')
   upperNeckPitchLink = r.findLinkId('upperNeckPitchLink');
   torsoPitchLink = r.findLinkId('torsoPitchLink'); % main welding link
   torsoYawLink = r.findLinkId('torsoYawLink'); % main welding link
-
+  rightShoulderYawLink = r.findLinkId('rightShoulderYawLink');
+  leftShoulderYawLink = r.findLinkId('leftShoulderYawLink');
+  
   % these shouldn't be culled from the link list but its easier too do than
   % fixing meshes now:
   rightForearmLink = r.findLinkId('rightForearmLink'); % main welding link
   leftForearmLink = r.findLinkId('leftForearmLink'); % main welding link
   head = r.findLinkId('head'); % main welding link
 
-  inactive_collision_bodies = [l_foot,r_foot, torsoPitchLink, torsoYawLink, leftHipYawLink, leftHipRollLink,  rightHipYawLink, rightHipRollLink, upperNeckPitchLink, leftForearmLink, rightForearmLink, head];
+  inactive_collision_bodies = [l_foot,r_foot, torsoPitchLink, torsoYawLink, leftHipYawLink, leftHipRollLink,  rightHipYawLink, rightHipRollLink, upperNeckPitchLink, leftForearmLink, rightForearmLink, head, rightShoulderYawLink, leftShoulderYawLink];
 end
 
 
@@ -284,7 +286,6 @@ TA.angle_tol = 1*pi/180;
 TA.position_tol = 1e-3;
 % this seems to disable these joints from being used for collision checking:
 TA.trees{TA.cspace_idx}.active_collision_options.body_idx = setdiff(1:r.getNumBodies(), inactive_collision_bodies);
-
 
 ik_seed_pose = q_nom;
 ik_nominal_pose = q_nom;
