@@ -166,7 +166,7 @@ struct Worker {
 
   void sendOctreeWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.map_id = 2;
+    msg.map_id = 1; // 1 means use SCAN_FREE | 2 or 3 means use SCAN
     msg.view_id = drc::data_request_t::OCTREE_WORKSPACE;
     msg.resolution = 0.01;
     msg.time_min = 0;
@@ -323,7 +323,7 @@ struct Worker {
 
   void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.map_id = 3;
+    msg.map_id = 1; // 2 or 3 means use SCAN | 1 means use SCAN_FREE
     msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE_C;
     msg.resolution = 0.01;
     msg.width = msg.height = 200;
