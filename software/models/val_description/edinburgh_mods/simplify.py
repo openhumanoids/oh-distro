@@ -1,7 +1,9 @@
 import os
 import sys
 import xml.dom.minidom
-
+# List of meshes that will be replaced with shape primitives.
+# Each entry specifies the mesh filename and a list of shape primives. 
+# The format is as follows:
 # "mesh name": ["link name (optional)"]
 # [
 #   ["shape type", {"shape param":"value","shape param":"value",...}, {"origin param":"value","origin param":"value",...}, {"material param":"value","material param":"value",...}],
@@ -21,6 +23,7 @@ shapes={
       ["box",{"size":"0.25 0.36 0.42"}, {"rpy":"0 0 0", "xyz":"-0.17 0 0.20"},{"name":"White"}], 
     ],
   ],  
+
   "head_multisense_no_visor.dae": ["",
     [
       ["sphere",{"radius":"0.15"}, {"xyz":"0.09 0 0"},{"name":"White"}],
@@ -258,9 +261,127 @@ shapes={
   ],
 }
 
+# Collision filter groups to be added/replaced at the end of the URDF
+# Note: If the file already contains collision_filter_group nodes, 
+# these will be deleted and replaced with the new ones.
+coll="""  <collision_filter_group name="feet">
+    <member link="leftFoot"/> _
+    <member link="rightFoot"/>
+    <ignored_collision_filter_group collision_filter_group="feet"/>
+  </collision_filter_group>
+  <collision_filter_group name="core">
+    <member link="torso"/>
+    <member link="torsoYawLink"/>
+    <member link="torsoPitchLink"/>
+    <member link="pelvis"/>
+    <member link="lowerNeckPitchLink"/>
+    <member link="neckYawLink"/>
+    <member link="upperNeckPitchLink"/>
+    <member link="head"/>
+    <member link="head_imu_link"/>
+    <member link="hokuyo_link"/>
+    <member link="rightHipYawLink"/>
+    <member link="rightHipRollLink"/>
+    <member link="rightHipPitchLink"/>
+    <member link="leftHipYawLink"/>
+    <member link="leftHipRollLink"/>
+    <member link="leftHipPitchLink"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+  </collision_filter_group>
+  <collision_filter_group name="ignore_core">
+    <member link="rightShoulderRollLink"/>
+    <member link="leftShoulderRollLink"/>
+    <member link="rightShoulderPitchLink"/>
+    <member link="leftShoulderPitchLink"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+    <ignored_collision_filter_group collision_filter_group="ignore_core"/>
+  </collision_filter_group>
+  <collision_filter_group name="r_uleg">
+    <member link="rightHipYawLink"/>
+    <member link="rightHipRollLink"/>
+    <member link="rightHipPitchLink"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+    <ignored_collision_filter_group collision_filter_group="r_uleg"/>
+    <ignored_collision_filter_group collision_filter_group="r_leg"/>
+    <ignored_collision_filter_group collision_filter_group="l_uleg"/>
+  </collision_filter_group>
+  <collision_filter_group name="l_uleg">
+    <member link="leftHipYawLink"/>
+    <member link="leftHipRollLink"/>
+    <member link="leftHipPitchLink"/>
+    <ignored_collision_filter_group collision_filter_group="core"/>
+    <ignored_collision_filter_group collision_filter_group="r_uleg"/>
+    <ignored_collision_filter_group collision_filter_group="l_uleg"/>
+    <ignored_collision_filter_group collision_filter_group="l_leg"/>
+  </collision_filter_group>
+  <collision_filter_group name="r_leg">
+    <member link="rightKneePitchLink"/>
+    <member link="rightAnklePitchLink"/>
+    <member link="rightFoot"/>
+    <ignored_collision_filter_group collision_filter_group="r_leg"/>
+    <ignored_collision_filter_group collision_filter_group="r_uleg"/>
+  </collision_filter_group>
+  <collision_filter_group name="l_leg">
+    <member link="leftKneePitchLink"/>
+    <member link="leftAnklePitchLink"/>
+    <member link="leftFoot"/>
+    <ignored_collision_filter_group collision_filter_group="l_leg"/>
+    <ignored_collision_filter_group collision_filter_group="l_uleg"/>
+  </collision_filter_group>
+  <collision_filter_group name="r_arm">
+    <member link="rightShoulderPitchLink"/>
+    <member link="rightShoulderRollLink"/>
+    <member link="rightShoulderYawLink"/>
+    <member link="rightElbowPitchLink"/>
+    <member link="rightForearmLink"/>
+    <member link="rightWristRollLink"/>
+    <member link="rightPalm"/>
+    <member link="right_palm"/>
+    <member link="r_hand_force_torque"/>
+    <member link="rightIndexFingerPitch1Link"/>
+    <member link="rightIndexFingerPitch2Link"/>
+    <member link="rightIndexFingerPitch3Link"/>
+    <member link="rightMiddleFingerPitch1Link"/>
+    <member link="rightMiddleFingerPitch2Link"/>
+    <member link="rightMiddleFingerPitch3Link"/>
+    <member link="rightPinkyPitch1Link"/>
+    <member link="rightPinkyPitch2Link"/>
+    <member link="rightPinkyPitch3Link"/>
+    <member link="rightThumbPitch1Link"/>
+    <member link="rightThumbPitch2Link"/>
+    <member link="rightThumbPitch3Link"/>
+    <member link="rightThumbRollLink"/>
+    <ignored_collision_filter_group collision_filter_group="r_arm"/>
+  </collision_filter_group>
+  <collision_filter_group name="l_arm">
+    <member link="leftShoulderPitchLink"/>
+    <member link="leftShoulderRollLink"/>
+    <member link="leftShoulderYawLink"/>
+    <member link="leftElbowPitchLink"/>
+    <member link="leftForearmLink"/>
+    <member link="leftWristRollLink"/>
+    <member link="leftPalm"/>
+    <member link="left_palm"/>
+    <member link="l_hand_force_torque"/>
+    <member link="leftIndexFingerPitch1Link"/>
+    <member link="leftIndexFingerPitch2Link"/>
+    <member link="leftIndexFingerPitch3Link"/>
+    <member link="leftMiddleFingerPitch1Link"/>
+    <member link="leftMiddleFingerPitch2Link"/>
+    <member link="leftMiddleFingerPitch3Link"/>
+    <member link="leftPinkyPitch1Link"/>
+    <member link="leftPinkyPitch2Link"/>
+    <member link="leftPinkyPitch3Link"/>
+    <member link="leftThumbPitch1Link"/>
+    <member link="leftThumbPitch2Link"/>
+    <member link="leftThumbPitch3Link"/>
+    <member link="leftThumbRollLink"/>
+    <ignored_collision_filter_group collision_filter_group="l_arm"/>
+  </collision_filter_group>"""
+
 def usage():
     print 'usage:   python simplify.py input.urdf output.urdf' 
-    print 'vanilla: python simplify.py input.urdf output.urdf -v'
+    print 'vanilla (removes custom tags): python simplify.py input.urdf output.urdf -v'
 
 def remove(root,name):
     collection= root.getElementsByTagName(name)
@@ -276,6 +397,13 @@ def addChild(tree,root,name,attrs):
     for attr, val in attrs.items():
       node.setAttribute(attr,val)
     root.appendChild(node)
+    return node
+
+def addChildPre(tree,root,name,attrs):
+    node=tree.createElement(name)
+    for attr, val in attrs.items():
+      node.setAttribute(attr,val)
+    root.insertBefore(node,root.firstChild)    
     return node
 
 def updateLinks(tree,root,geomtype,vanilla):
@@ -294,14 +422,15 @@ def updateLinks(tree,root,geomtype,vanilla):
                   for geom in geoms:
                     meshes=geom.getElementsByTagName("mesh")
                     if len(meshes)==0:
-                      # Remove simple geometry used to model the sensors (small boxes that do not collide anyway)
-                      if link.getAttribute("name")=="leftFoot" or link.getAttribute("name")=="rightFoot":
-                        addChild(tree,col,"material",{"name":"White"})
-                        if geomtype=="collision":
-                          continue
-                      link.removeChild(col)
-                      removed=True
-                      break
+                        # Remove simple geometry used to model the sensors (small boxes that do not collide anyway)
+                        #if vanilla:
+                        if link.getAttribute("name")=="leftFoot" or link.getAttribute("name")=="rightFoot":
+                          addChild(tree,col,"material",{"name":"White"})
+                          if geomtype=="collision":
+                            continue
+                        link.removeChild(col)
+                        removed=True
+                        break
                     else:
                       for mesh in meshes:
                         filename=mesh.getAttribute("filename")[mesh.getAttribute("filename").rindex("/")+1:]
@@ -321,7 +450,8 @@ def updateLinks(tree,root,geomtype,vanilla):
                                 for origin in origins:
                                   node.appendChild(origin)
                             if len(shape[3])>0:
-                              addChild(tree,node,"material",shape[3])
+                              if geomtype=="visual":
+                                addChild(tree,node,"material",shape[3])
                             else:
                               materials=col.getElementsByTagName("material")
                               if len(materials)>0:
@@ -342,24 +472,44 @@ if __name__ == "__main__":
     ofile=sys.argv[len(sys.argv)-1]
     vanilla=False
     if len(sys.argv)>2:
-       vanilla=True
+       if sys.argv[len(sys.argv)-3]=='-v':
+         vanilla=True
     print 'Parsing '+ifile
     DOMTree = xml.dom.minidom.parse(ifile)
     robot = DOMTree.documentElement
+    
+    # Remove collision filter groups
+    remove(robot,"collision_filter_group")
+    
+    # Remove non-vanilla nodes
     if vanilla:
+       print 'Vanilla simplification.';
        remove(robot,"gazebo")
        remove(robot,"actuator")
        remove(robot,"mode")
        remove(robot,"transmission")
        remove(robot,"copSensor")
        remove(robot,"imuSensor")
-    updateLinks(DOMTree,robot,"collision",vanilla)
+    else:
+       print 'Keepeing all tags and attributes.';
+    # Update collision and visual sub-nodes (removes the ones with meshes)
     updateLinks(DOMTree,robot,"visual",vanilla)
+    updateLinks(DOMTree,robot,"collision",vanilla)
 
-    node=addChild(DOMTree,robot,"material",{"name":"White"})
+    # Add basic materials (used in the list of shapes above)
+    node=addChildPre(DOMTree,robot,"material",{"name":"White"})
     addChild(DOMTree,node,"color",{"rgba":"1.0 1.0 1.0 1.0"})
-    node1=addChild(DOMTree,robot,"material",{"name":"Gold"})
-    addChild(DOMTree,node1,"color",{"rgba":"1.0 0.75 0.01 1.0"})
+    node=addChildPre(DOMTree,robot,"material",{"name":"Gold"})
+    addChild(DOMTree,node,"color",{"rgba":"1.0 0.75 0.01 1.0"})
 
+    # Insert new collision filter groups
+    if not vanilla:
+      tmpTree = xml.dom.minidom.parseString("<tmp>"+coll+"</tmp>"); 
+      collElem= tmpTree.getElementsByTagName('collision_filter_group')
+      for node in collElem:
+        robot.appendChild(node)
+
+    # Write a pretty file with no extra blank lines
     writer = open(ofile,"wb")
-    DOMTree.writexml(writer)
+    writer.write('\n'.join([line for line in DOMTree.toprettyxml(indent=' '*2).split('\n') if line.strip()]))
+
