@@ -163,6 +163,8 @@ on_frame(const lcm_recv_buf_t* lcm, const char* channel, const multisense_images
   int i;
   png_bytep* row_pointers;
   // TODO check image width, height
+  width = msg->images[0].width;
+  height = msg->images[0].height;
 
   if(msg->images[0].size) {
     //memcpy(left_img_data, msg->images[0].data, msg->images[0].size * sizeof(uint8_t));
