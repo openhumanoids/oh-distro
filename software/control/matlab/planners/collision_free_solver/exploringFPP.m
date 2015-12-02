@@ -31,7 +31,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     end
     visWorld = visWorld.compile();
     visWorld.constructVisualizer();
-    Scenes.visualizePointCloud(options);
+    Scenes.visualizeOctomap(options);
   end
   
   if nargin > 1
@@ -96,7 +96,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     'endeffectorpoint', point_in_link_frame, ...
     'debug', true);
 
-  [xGoalFull, info, debug_vars] = finalPose.findFinalPose(Scenes.getPointCloud(options));
+  [xGoalFull, info, debug_vars] = finalPose.findFinalPose(Scenes.getOctomap(options));
   q_end = xGoalFull(8:end);
   if options.visualize && info == 1
     pose_publisher.publish([q_end; zeros(size(q_end))], get_timestamp_now())

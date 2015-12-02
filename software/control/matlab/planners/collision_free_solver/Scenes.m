@@ -178,20 +178,20 @@ classdef Scenes
       robot = robot.compile();
     end
     
-    function points = getPointCloud(options)
+    function points = getOctomap(options)
       switch options.scene
         case {1, 2, 3, 4, 5}
-          pc_file = sprintf('scene%d', options.scene);
+          om_file = sprintf('scene%d', options.scene);
         case {6, 7, 8, 9}
-          pc_file = 'scene6-9';
+          om_file = 'scene6-9';
       end
-      pc_file = fullfile(getDrakePath(),'../../control/matlab/planners/collision_free_solver/point_clouds_test_files', pc_file);
-      points = load(pc_file);
+      om_file = fullfile(getDrakePath(),'../../control/matlab/planners/collision_free_solver/octomaps', om_file);
+      points = load(om_file);
       points = points.points;
     end
     
-    function visualizePointCloud(options)
-      points = Scenes.getPointCloud(options);
+    function visualizeOctomap(options)
+      points = Scenes.getOctomap(options);
       lcmClient = LCMGLClient('point cloud');
       lcmClient.points(points(1,:), points(2,:), points(3,:))
       lcmClient.switchBuffers();
