@@ -135,8 +135,8 @@ classdef FinalPoseProblem
       reduceTimer = tic;
       obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, point_cloud, 0, 0, 2, 1.5);
       fprintf('reduce Time: %.4f s\n', toc(reduceTimer))
-      sphCenters = obj.capability_map.getActiveSphereCentres();
-      nSph = obj.capability_map.n_active_spheres;
+      vox_centers = obj.capability_map.getActiveVoxelCentres();
+      n_vox = obj.capability_map.n_active_voxels;
       iter = 0;
       qOpt = [];
       cost = [];
@@ -144,15 +144,15 @@ classdef FinalPoseProblem
       fprintf('Setup time: %.2f s\n', toc(setupTimer))
       iterationTimer = tic;
       
-      for sph = randperm(nSph)
+      for vox = randperm(n_vox)
         iter = iter + 1;
-        dist = norm(sphCenters(:,sph));
-        axis = -sphCenters(:,sph)/dist;
-%         drawTreePoints([[0;0;0] sphCenters(1:3,sph)], 'lines', true, 'text', 'cm_point')
-%         drawTreePoints([obj.x_goal(1:3) - sphCenters(1:3,sph), obj.x_goal(1:3)], 'lines', true)
+        dist = norm(vox_centers(:,vox));
+        axis = -vox_centers(:,vox)/dist;
+%         drawTreePoints([[0;0;0] vox_centers(1:3,vox)], 'lines', true, 'text', 'cm_point')
+%         drawTreePoints([obj.x_goal(1:3) - vox_centers(1:3,vox), obj.x_goal(1:3)], 'lines', true)
         shDistance = Point2PointDistanceConstraint(obj.robot, root, obj.robot.findLinkId('world'), [0;0;0], obj.x_goal(1:3), dist, dist);
         shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), tr2root, 0);
-%         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - sphCenters(1:3,sph), obj.x_goal(1:3) - sphCenters(1:3,sph));
+%         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - vox_centers(1:3,vox), obj.x_goal(1:3) - vox_centers(1:3,vox));
         shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
         constraints = [{shDistance, shGaze, shOrient}, obj.goal_constraints, obj.additional_constraints];
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
@@ -162,7 +162,7 @@ classdef FinalPoseProblem
           valid = ~obj.robot.collidingPointsCheckOnly(kinSol, point_cloud, obj.min_distance);
           if valid
             cost = (obj.q_nom - q)'*obj.ikoptions.Q*(obj.q_nom - q);
-            validConfs(:,sph) = [cost; q];
+            validConfs(:,vox) = [cost; q];
             if cost < 20
               if obj.debug
                 debug_vars.cost_below_threshold = true;
@@ -192,29 +192,6 @@ classdef FinalPoseProblem
       goalQuatConstraint = WorldQuatConstraint(obj.robot, end_effector, obj.x_goal(4:7), 1/180*pi);
       constraints = {goalDistConstraint, goalQuatConstraint};
 %       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    end
-    
-    function obj = pruneCapabilityMap(obj, sagittalAngle,...
-        transverseAngle, sagittalWeight, transverseWeight, reachabilityWeight)
-      
-      Dmax = max(obj.capability_map.reachabilityIndex);
-      nSph = length(obj.capability_map.map);
-      indices = [];
-      
-      for sph = 1:nSph
-        sa = atan2(obj.capability_map.sphCenters(3,sph), obj.capability_map.sphCenters(1,sph));
-        ta = atan2(obj.capability_map.sphCenters(2,sph), obj.capability_map.sphCenters(1,sph));
-        sagittalCost = sagittalWeight * abs(sa - sagittalAngle);
-        transverseCost = transverseWeight * abs(ta - transverseAngle);
-        reachabilityCost = reachabilityWeight * (Dmax - obj.capability_map.reachabilityIndex(sph));
-        if sqrt(sagittalCost^2 + transverseCost^2) + reachabilityCost < 2
-          indices(end + 1) = sph;
-        end
-      end
-      obj.capability_map.nSph = length(indices);
-      obj.capability_map.reachabilityIndex = obj.capability_map.reachabilityIndex(indices);
-      obj.capability_map.map = obj.capability_map.map(indices, :);
-      obj.capability_map.sphCenters = obj.capability_map.sphCenters(:, indices);
     end
     
   end
