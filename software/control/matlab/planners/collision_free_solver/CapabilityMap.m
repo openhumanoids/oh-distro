@@ -221,9 +221,27 @@ classdef CapabilityMap
       centres = obj.vox_centers(:, obj.active_voxels);
     end
     
-    function obj = generateBaseOccupancyMap(obj)
-      filename = [getenv('DRC_BASE'), '/software/control/matlab/planners/collision_free_solver/torso.urdf'];
-      base = RigidBodyManipulator(filename, struct('floating', true));
+    function obj = generateOccupancyMap(obj)
+%       Generate rigid body manipulator from urdf
+      doc = com.mathworks.xml.XMLUtils.createDocument('robot');
+      robotNode = doc.getDocumentElement;
+      robot_name = obj.urdf.getDocumentElement().getAttribute('name');
+      if ~isempty(robot_name)
+        robotNode.setAttribute('name',robot_name);
+      end
+      
+      links = obj.urdf.getDocumentElement().getElementsByTagName('link');
+      for l = 0:links.getLength()-1
+        if strcmp(links.item(l).getAttribute('name'), obj.base_link)
+          linkNode = doc.importNode(links.item(l), true);
+          robotNode.appendChild(linkNode)
+          break
+        end
+      end
+      xmlwrite('base.urdf', doc)
+      base = RigidBodyManipulator('base.urdf', struct('floating', true));
+      delete('base.urdf')
+      
       obj.occupancy_map = false(obj.n_voxels, obj.n_voxels);
       obj.drawMap()
       for vox = 1:obj.n_voxels;
