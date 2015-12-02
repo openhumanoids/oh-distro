@@ -166,7 +166,7 @@ struct Worker {
 
   void sendOctreeWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.map_id = 2;
+    msg.map_id = 1; // 1 means use SCAN_FREE | 2 or 3 means use SCAN
     msg.view_id = drc::data_request_t::OCTREE_WORKSPACE;
     msg.resolution = 0.01;
     msg.time_min = 0;
@@ -323,7 +323,7 @@ struct Worker {
 
   void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.map_id = 3;
+    msg.map_id = 1; // 2 or 3 means use SCAN | 1 means use SCAN_FREE
     msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE_C;
     msg.resolution = 0.01;
     msg.width = msg.height = 200;
@@ -528,7 +528,8 @@ struct Worker {
     msg.time_max = 0;
     msg.time_mode = drc::map_request_t::RELATIVE;
     msg.relative_location = true;
-    msg.accum_type = drc::map_request_t::CLOSEST;
+    // this used to be CLOSEST, but wasn't working, so flipped it:
+    msg.accum_type = drc::map_request_t::FURTHEST;
     msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, 5}));
     msg.clip_planes.push_back(std::vector<float>({-1, 0, 0, 5}));
     msg.clip_planes.push_back(std::vector<float>({ 0, 1, 0, 5}));
