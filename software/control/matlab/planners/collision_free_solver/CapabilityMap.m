@@ -21,6 +21,11 @@ classdef CapabilityMap
     EE_pose
     base2root
     occupancy_map
+    occupancy_map_resolution
+    occupancy_map_dimensions
+    occupancy_map_n_voxels
+    occupancy_map_lb
+    occupancy_map_ub
   end
   
   methods
@@ -221,7 +226,7 @@ classdef CapabilityMap
       centres = obj.vox_centers(:, obj.active_voxels);
     end
     
-    function obj = generateOccupancyMap(obj)
+    function obj = generateOccupancyMap(obj, resolution)
 %       Generate rigid body manipulator from urdf
       doc = com.mathworks.xml.XMLUtils.createDocument('robot');
       robotNode = doc.getDocumentElement;
@@ -234,24 +239,51 @@ classdef CapabilityMap
       for l = 0:links.getLength()-1
         if strcmp(links.item(l).getAttribute('name'), obj.base_link)
           linkNode = doc.importNode(links.item(l), true);
-          robotNode.appendChild(linkNode)
+          robotNode.appendChild(linkNode);
           break
         end
       end
       xmlwrite('base.urdf', doc)
       base = RigidBodyManipulator('base.urdf', struct('floating', true));
-      delete('base.urdf')
       
-      obj.occupancy_map = false(obj.n_voxels, obj.n_voxels);
-      obj.drawMap()
-      for vox = 1:obj.n_voxels;
-        q = [obj.vox_centers(:,vox)-obj.base2root; 0; 0; 0];
+      base_BB = base.body(2).collision_geometry{1}.getBoundingBoxPoints();
+      obj.occupancy_map_resolution = resolution;
+      obj.occupancy_map_lb = min(bsxfun(@plus, obj.vox_centers(:,1) - obj.base2root, base_BB), [], 2);
+      obj.occupancy_map_ub = max(bsxfun(@plus, obj.vox_centers(:,end) - obj.base2root, base_BB), [], 2);
+      obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution);
+      obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
+      om_n_voxels = prod(obj.occupancy_map_dimensions);
+      
+      centres = obj.vox_centers;
+      b2r = obj.base2root;
+      om_centres = obj.getOccupancyMapCentres();
+      n_vox = obj.n_voxels;
+      om = logical.empty(0, n_vox + 1);
+      parfor vox = 1:n_vox
+        vect = false(1, om_n_voxels);
+        q = [centres(:, vox)- b2r; 0; 0; 0];
         kinsol = base.doKinematics(q);
-        colliding_points = base.collidingPoints(kinsol, obj.vox_centers, obj.vox_edge/2);
+        colliding_points = base.collidingPoints(kinsol, om_centres, resolution/2);
         if ~isempty(colliding_points)
-          obj.occupancy_map(vox, colliding_points) = ~obj.occupancy_map(vox, colliding_points);
+          vect(colliding_points) = ~vect(colliding_points);
+          om = [om; [vox vect]];
         end
       end
+      obj.occupancy_map = [];
+      for i = size(om,1)
+        obj.occupancy_map(om(i,1), :) = om(i,2:end);
+      end
+      obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
+      delete('base.urdf')
+    end
+    
+    function centres = getOccupancyMapCentres(obj)
+      [x,y,z] = meshgrid(obj.occupancy_map_lb(1) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(1), ...
+                         obj.occupancy_map_lb(2) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(2), ...
+                         obj.occupancy_map_lb(3) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(3));
+      centres = [reshape(x, 1, obj.occupancy_map_n_voxels); ...
+                 reshape(y, 1, obj.occupancy_map_n_voxels); ...
+                 reshape(z, 1, obj.occupancy_map_n_voxels)];
     end
     
   end

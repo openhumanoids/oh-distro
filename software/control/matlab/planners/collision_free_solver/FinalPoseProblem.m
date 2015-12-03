@@ -122,7 +122,7 @@ classdef FinalPoseProblem
       endEffector = obj.capability_map.end_effector_link.(obj.grasping_hand);
       rootPoint = obj.capability_map.root_point.(obj.grasping_hand);
       EEPoint = obj.capability_map.end_effector_point.(obj.grasping_hand);
-      base = obj.capability_map.base_link;
+      base = obj.robot.findLinkId(obj.capability_map.base_link);
       
       rootPose = obj.robot.forwardKin(kinSol, root, rootPoint, 2);
       trPose = obj.robot.forwardKin(kinSol, base, [0;0;0], 2);
