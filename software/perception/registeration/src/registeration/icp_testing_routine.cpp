@@ -1,122 +1,191 @@
-// cddrc
-// drc-icp-testing-routine
+#include "icp_testing_routine.hpp"
 
-#include "pointmatcher/PointMatcher.h"
-#include <cassert>
-#include <iostream>
-#include <fstream>
-#include "boost/filesystem.hpp"
-
-#include "cloud_accumulate.hpp"
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-
-#include "icp_utils.h"
-
-using namespace std;
-
-const char *homedir;
-
-typedef PointMatcher<float> PM;
-typedef PM::DataPoints DP;
-
-string configFile2D_, configFile3D_;
-string initTrans_;
-
-int icp_testing_routine(int argc, const char *argv[]);
-
-void getICPTransform(DP &cloud_in, DP &cloud_ref);
-void applyRigidTransform(DP &pointCloud);
-void publishCloud(int cloud_id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_topub);
-void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out);
-
-int validateArgs(const int argc, const char *argv[]);
-void usage(const char *argv[]);
-
-/**
-  * Code for ICP testing...
-  */
-
-int main(int argc, char const *argv[])
-{
-  return icp_testing_routine(argc, argv);
-}
-
-int icp_testing_routine(int argc, const char *argv[])
-{
+RoutineConfig::RoutineConfig(){
   if ((homedir = getenv("HOME")) == NULL) {
     homedir = getpwuid(getuid())->pw_dir;
   }
 
-  string filename;
-  filename.append(homedir);
-  filename.append("/logs/multisenselog__2015-11-16/initialization/initTransf.txt");
+  initFilename.append(homedir);
+  initFilename.append("/logs/multisenselog__2015-11-16/initialization/initTransf.txt");
 
-  const int ret = validateArgs(argc, argv);
+  tot_clouds = 10;
+}
 
-  if (ret == -1)
-    return ret;
+RegistrationRoutine::RegistrationRoutine():
+  cfg_(RoutineConfig()){
+  init();
+}
 
-  int tot_clouds = 10;
+void RegistrationRoutine::init(){
+  cols = 0;
+  for (int i = cfg_.tot_clouds-1; i > 0; i--)
+  {
+    cols = cols + i;
+  }
+}
 
-  string cloud_name_A, cloud_name_B;
-  DP ref, data;
-  int transf_index = 0;
+
+RegistrationRoutine::~RegistrationRoutine()
+{
+}
+
+void RegistrationRoutine::doRoutine(Eigen::MatrixXf &transf_matrix)
+{
+  //-------------------------
+  // To store...
+  transf_matrix = Eigen::MatrixXf::Zero(3, cols);
+  //-------------------------
 
   cout << "Start computing transformations:" << endl;
 
-  for (int i = 0; i < tot_clouds-1; i++)
+  int transf_index = 0;
+  string cloud_name_A, cloud_name_B;
+
+  cout << "initFilename: " << cfg_.initFilename <<endl;
+
+  for (int i = 0; i < cfg_.tot_clouds-1; i++)
   {
-    for (int j = 1+i; j < tot_clouds; j++)
+    // Load reference cloud from file
+    cloud_name_A.clear();
+    cloud_name_A.append(cfg_.homedir);
+    cloud_name_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_0");
+    cloud_name_A.append(to_string(i));
+    cloud_name_A.append(".vtk");
+
+    DP ref = DP::load(cloud_name_A);
+
+    for (int j = 1+i; j < cfg_.tot_clouds; j++)
     {
       cout << transf_index+1 << endl;
 
       // Load inital transformations from file
-      initTrans_ = readLineFromFile(filename, transf_index);
-      if (initTrans_.empty())
-        initTrans_.append("0,0,0");
+      cfg_.initTrans = readLineFromFile(cfg_.initFilename, transf_index);
+      cout << "initTrans: " << cfg_.initTrans <<endl;
+      if (cfg_.initTrans.empty())
+        cfg_.initTrans.append("0,0,0");
       else
         transf_index++;
 
       //cout << "initTrans_: " << initTrans_ << endl;
 
-      // Load clouds from file
-      cloud_name_A.clear();
-      cloud_name_A.append(homedir);
-      cloud_name_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_0");
-      cloud_name_A.append(to_string(i));
-      cloud_name_A.append(".vtk");
-
+      // Load input cloud from file
       cloud_name_B.clear();
-      cloud_name_B.append(homedir);
+      cloud_name_B.append(cfg_.homedir);
       cloud_name_B.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_0");
       cloud_name_B.append(to_string(j));
       cloud_name_B.append(".vtk");
 
-      ref = DP::load(cloud_name_A);
-      data = DP::load(cloud_name_B);
+      cout << "cloud_name_A: " << cloud_name_A <<endl;
+      cout << "cloud_name_B: " << cloud_name_B <<endl;
+
+      DP data = DP::load(cloud_name_B);
       
       //=================================
       // TRANSFORM 3D CLOUD
       //=================================
 
-      getICPTransform(data, ref);
+      cloudDim = ref.getEuclideanDim();
+
+      PM::TransformationParameters T;
+      getICPTransform(data, ref, T);
+
+      cout << "3D Transformation:" << endl << T << endl; 
+
+      transf_matrix(0, transf_index-1) = T(0,cloudDim);
+      transf_matrix(1, transf_index-1) = T(1,cloudDim);
+      transf_matrix(2, transf_index-1) = atan2 (T(1,0),T(0,0)) * 180 / M_PI;
     }
   }
 
   cout << "Completed!" << endl;
-
-  return 0;
 }
 
-//========================================================
-// FUNCTIONS
-//========================================================
+void RegistrationRoutine::getICPTransform(DP &cloud_in, DP &cloud_ref, PM::TransformationParameters &T)
+{
+  // Create the default ICP algorithm
+  PM::ICP icp;
+  
+  if (!(cloudDim == 2 || cloudDim == 3)) 
+  {
+    cerr << "Invalid input point clouds dimension." << endl;
+    exit(1);
+  }
+
+  if (cloudDim == 2)
+  {
+    // ICP chain configuration: check if prefiltering required
+    if (configFile2D.empty())
+    {
+      // See the implementation of setDefault() to create a custom ICP algorithm
+      icp.setDefault();
+    }
+    else
+    {
+      // load YAML config
+      ifstream ifs(configFile2D.c_str());
+      if (!ifs.good())
+      {
+        cerr << "Cannot open config file " << configFile2D << endl; exit(1);
+      }
+      icp.loadFromYaml(ifs);
+      //cout << "Loaded pre-filtering chain from yaml..." << endl;
+    }
+  }
+  else
+  {
+    // ICP chain configuration: check if prefiltering required
+    if (configFile3D.empty())
+    {
+      // See the implementation of setDefault() to create a custom ICP algorithm
+      icp.setDefault();
+    }
+    else
+    {
+      // load YAML config
+      ifstream ifs(configFile3D.c_str());
+      if (!ifs.good())
+      {
+        cerr << "Cannot open config file " << configFile3D << endl; exit(1);
+      }
+      icp.loadFromYaml(ifs);
+      //cout << "Loaded pre-filtering chain from yaml..." << endl;
+    }
+  }
+
+  // Apply rigid transformation (just a "visually good" approximation of the transformation 
+  // between ref and input clouds) to escape local minima
+  PM::TransformationParameters initTransfo = parseTransformation(cfg_.initTrans, cloudDim);
+
+  PM::Transformation* rigidTrans;
+  rigidTrans = PM::get().REG(Transformation).create("RigidTransformation");
+
+  if (!rigidTrans->checkParameters(initTransfo)) {
+    cerr << endl
+       << "Initial transformation is not rigid, identity will be used."
+       << endl;
+    initTransfo = PM::TransformationParameters::Identity(
+          cloudDim+1,cloudDim+1);
+  }
+
+  const DP initializedData = rigidTrans->compute(cloud_in, initTransfo);
+
+  // Compute the transformation to express data in ref
+  T = icp(initializedData, cloud_ref);
+  cout << "Match ratio: " << icp.errorMinimizer->getWeightedPointUsedRatio() << endl;
+
+  // Transform data to express it in ref
+  DP data_out(initializedData);
+  icp.transformations.apply(data_out, T);
+
+  //cout << "Final 3D transformation:" << endl << T << endl;
+
+  //======================== Errors............... ==========================
+  //computeCloudsDistance (icp, cloud_ref, data_out);
+  //=========================================================================
+}
 
 // Make sure that the command arguments make sense
-int validateArgs(const int argc, const char *argv[])
+int RegistrationRoutine::validateArgs(const int argc, const char *argv[])
 {
   if (argc < 3)
   {
@@ -136,14 +205,14 @@ int validateArgs(const int argc, const char *argv[])
       cerr << "Missing value for option " << opt << ", usage:"; usage(argv); exit(1);
     }
     if (opt == "--config2D") {
-      configFile2D_.append(homedir);
-      configFile2D_.append("/main-distro/software/perception/registeration/filters_config/");
-      configFile2D_.append(argv[i+1]);
+      configFile2D.append(cfg_.homedir);
+      configFile2D.append("/main-distro/software/perception/registeration/filters_config/");
+      configFile2D.append(argv[i+1]);
     }
     else if (opt == "--config3D") {
-      configFile3D_.append(homedir);
-      configFile3D_.append("/main-distro/software/perception/registeration/filters_config/");
-      configFile3D_.append(argv[i+1]);
+      configFile3D.append(cfg_.homedir);
+      configFile3D.append("/main-distro/software/perception/registeration/filters_config/");
+      configFile3D.append(argv[i+1]);
     }
     else
     {
@@ -154,7 +223,7 @@ int validateArgs(const int argc, const char *argv[])
 }
 
 // Dump command-line help
-void usage(const char *argv[])
+void RegistrationRoutine::usage(const char *argv[])
 {
   //TODO: add new options --isTransfoSaved, --initTranslation, --initRotation
   cerr << endl << endl;
@@ -167,89 +236,3 @@ void usage(const char *argv[])
   cerr << endl;
 }
 
-
-void getICPTransform(DP &cloud_in, DP &cloud_ref)
-{
-  // Create the default ICP algorithm
-  PM::ICP icp;
-
-  int cloudDimension = cloud_ref.getEuclideanDim();
-  
-  if (!(cloudDimension == 2 || cloudDimension == 3)) 
-  {
-    cerr << "Invalid input point clouds dimension." << endl;
-    exit(1);
-  }
-
-  if (cloudDimension == 2)
-  {
-    // ICP chain configuration: check if prefiltering required
-    if (configFile2D_.empty())
-    {
-      // See the implementation of setDefault() to create a custom ICP algorithm
-      icp.setDefault();
-    }
-    else
-    {
-      // load YAML config
-      ifstream ifs(configFile2D_.c_str());
-      if (!ifs.good())
-      {
-        cerr << "Cannot open config file " << configFile2D_ << endl; exit(1);
-      }
-      icp.loadFromYaml(ifs);
-      //cout << "Loaded pre-filtering chain from yaml..." << endl;
-    }
-  }
-  else
-  {
-    // ICP chain configuration: check if prefiltering required
-    if (configFile3D_.empty())
-    {
-      // See the implementation of setDefault() to create a custom ICP algorithm
-      icp.setDefault();
-    }
-    else
-    {
-      // load YAML config
-      ifstream ifs(configFile3D_.c_str());
-      if (!ifs.good())
-      {
-        cerr << "Cannot open config file " << configFile3D_ << endl; exit(1);
-      }
-      icp.loadFromYaml(ifs);
-      //cout << "Loaded pre-filtering chain from yaml..." << endl;
-    }
-  }
-
-  // Apply rigid transformation (just a "visually good" approximation of the transformation 
-  // between ref and input clouds) to escape local minima
-  PM::TransformationParameters initTransfo = parseTransformation(initTrans_, cloudDimension);
-
-  PM::Transformation* rigidTrans;
-  rigidTrans = PM::get().REG(Transformation).create("RigidTransformation");
-
-  if (!rigidTrans->checkParameters(initTransfo)) {
-    cerr << endl
-       << "Initial transformation is not rigid, identity will be used."
-       << endl;
-    initTransfo = PM::TransformationParameters::Identity(
-          cloudDimension+1,cloudDimension+1);
-  }
-
-  const DP initializedData = rigidTrans->compute(cloud_in, initTransfo);
-
-  // Compute the transformation to express data in ref
-  PM::TransformationParameters T = icp(initializedData, cloud_ref);
-  //cout << "Match ratio: " << icp.errorMinimizer->getWeightedPointUsedRatio() << endl;
-
-  // Transform data to express it in ref
-  DP data_out(initializedData);
-  icp.transformations.apply(data_out, T);
-
-  //cout << "Final 3D transformation:" << endl << T << endl;
-
-  //======================== Errors............... ==========================
-  //computeCloudsDistance (icp, cloud_ref, data_out);
-  //=========================================================================
-}

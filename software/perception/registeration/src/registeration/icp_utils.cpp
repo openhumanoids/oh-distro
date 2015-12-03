@@ -1,5 +1,8 @@
 #include "icp_utils.h"
 
+/* Compute some metrics given registration between a reference and an input cloud 
+(Haussdorff distance, Haussdorff quantile distance and Robust mean distance in meters). */
+
 void computeCloudsDistance (PM::ICP &icp, DP &cloud_ref, DP &data_out)
 {
   cout << endl << "------------------" << endl;
@@ -79,6 +82,8 @@ void computeCloudsDistance (PM::ICP &icp, DP &cloud_ref, DP &data_out)
   cout << "------------------" << endl << endl;
 }
 
+/* Get the line whose index is given as argument from file. */
+
 string readLineFromFile(string& filename, int line_number)
 {
   string lines, line;
@@ -101,6 +106,10 @@ string readLineFromFile(string& filename, int line_number)
 
   return line;
 }
+
+/* Get a transformation matrix (of the type defined in the libpointmatcher library)
+given a string containing info about a translation on the plane x-y and a rotation 
+about the vertical axis z, i.e. [x,y,theta] (meters,meters,degrees). */
 
 PM::TransformationParameters parseTransformation(string& transform, const int cloudDimension) 
 {
@@ -125,13 +134,6 @@ PM::TransformationParameters parseTransformation(string& transform, const int cl
       return parsedTrans;
     }
   }
-  /*
-  float extraOutput = 0;
-  if((translationStringStream >> extraOutput)) {
-    cerr << "Wrong initial transformation size" << endl
-       << "No initial transformation will be used" << endl;
-    return parsedTranslation;
-  }*/
 
   for( int i = 0; i < 3; i++) {
     if (i == 2)
@@ -150,4 +152,34 @@ PM::TransformationParameters parseTransformation(string& transform, const int cl
   //cout << "Parsed initial transformation:" << endl << parsedTrans << endl;
 
   return parsedTrans;
+}
+
+void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out)
+{
+  cloud_out.points.resize(cloud_in.getNbPoints());
+  for (int i = 0; i < cloud_in.getNbPoints(); i++) {
+    cloud_out.points[i].x = (cloud_in.features.col(i))[0];
+    cloud_out.points[i].y = (cloud_in.features.col(i))[1];
+    cloud_out.points[i].z = (cloud_in.features.col(i))[2];
+    //cout << "i=" << i << " " << cloud_out.points[i].x << " " << cloud_out.points[i].y << " " << cloud_out.points[i].z << endl;
+  }  
+  cloud_out.width = cloud_out.points.size();
+  cloud_out.height = 1;
+}
+
+void writeTransformToFile(Eigen::MatrixXf &transformations, string out_file)
+{
+  ofstream file (out_file);
+  if (file.is_open())
+  {
+    file << "x y theta\n";
+    for (int i = 0; i < transformations.cols(); i++)
+    {
+      file << transformations(0,i) << " " << transformations(1,i) 
+      << " " << transformations(2,i) << endl;
+    }
+    file.close();
+  }
+  else cout << "Unable to open file";
+  cout << "Written file: " << out_file << endl;
 }

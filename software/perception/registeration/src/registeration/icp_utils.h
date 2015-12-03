@@ -13,6 +13,8 @@
 
 #include <math.h>       /* cos, sin */
 
+#include <pcl/common/io.h>
+
 using namespace std;
 using namespace PointMatcherSupport;
 
@@ -26,4 +28,8 @@ string readLineFromFile(string& filename, int line_number);
 
 PM::TransformationParameters parseTransformation(string& transform,
                         const int cloudDimension);
+
+void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out);
+
+void writeTransformToFile(Eigen::MatrixXf &transformations, string out_file);
 

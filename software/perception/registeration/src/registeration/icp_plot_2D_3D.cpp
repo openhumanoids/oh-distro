@@ -1,5 +1,5 @@
 // cddrc
-// drc-icp-testing
+// drc-icp-plot
 
 /**
   * Code for ICP reading : 1) two 3D point clouds relatively close 
@@ -17,8 +17,6 @@
 #include <lcmtypes/pronto/pointcloud2_t.hpp>
 #include <pronto_utils/conversions_lcm.hpp>
 
-#include "cloud_accumulate.hpp"
-
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -27,7 +25,8 @@
 #include <pcl/point_types.h>
 #include <pcl/io/vtk_io.h>
 
-#include "icp_utils.h"
+#include <registration-test/icp_utils.h>
+#include <registration-test/cloud_accumulate.hpp>
 
 using namespace std;
 
@@ -40,8 +39,8 @@ string configFile2D_, configFile3D_;
 string initTrans_;
 
 void getICPTransform(DP &cloud_in, DP &cloud_ref);
-void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out);
-void publishCloud(int cloud_id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_topub);
+void publishCloud(int cloud_id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_toPub);
+
 void applyRigidTransform(DP &pointCloud);
 
 int validateArgs(const int argc, const char *argv[]);
@@ -60,7 +59,7 @@ int main(int argc, const char *argv[])
   }
 
   // Init Default
-  initTrans_.append("0,0,0");
+  initTrans_.append("-0.3,-0.7,-135");
 
   const int ret = validateArgs(argc, argv);
 
@@ -88,20 +87,20 @@ int main(int argc, const char *argv[])
   DP ref, data, ref2, data2;
 
   cloud_name_A.append(homedir);
-  cloud_name_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_05.vtk");
+  cloud_name_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_01.vtk");
   //cloud_name_A.append("/logs/multisenselog__2015-11-16/tmp/multisense_00.vtk");
   //cloud_name_A.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud400.csv");
   cloud_name_B.append(homedir);
-  cloud_name_B.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_08.vtk");
+  cloud_name_B.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_06.vtk");
   //cloud_name_B.append("/logs/multisenselog__2015-11-16/tmp/multisense_08.vtk");
   //cloud_name_B.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud401.csv");
 
   scan_name_A.append(homedir);
-  scan_name_A.append("/logs/multisenselog__2015-11-16/planar_scans/scan_03.csv");
+  scan_name_A.append("/logs/multisenselog__2015-11-16/planar_scans/scan_00.csv");
   //scan_name_A.append("/logs/multisenselog__2015-11-16/tmp/scan_00.csv");
   //scan_name_A.append("/main-distro/software/externals/libpointmatcher/examples/data/2D_twoBoxes.csv");
   scan_name_B.append(homedir);
-  scan_name_B.append("/logs/multisenselog__2015-11-16/planar_scans/scan_05.csv");
+  scan_name_B.append("/logs/multisenselog__2015-11-16/planar_scans/scan_02.csv");
   //scan_name_B.append("/logs/multisenselog__2015-11-16/tmp/scan_08.csv");
   //scan_name_B.append("/main-distro/software/externals/libpointmatcher/examples/data/2D_oneBox.csv");
 
@@ -309,25 +308,12 @@ void getICPTransform(DP &cloud_in, DP &cloud_ref)
   //=========================================================================
 }
 
-
-void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out)
-{
-  cloud_out.points.resize(cloud_in.getNbPoints());
-  for (int i = 0; i < cloud_in.getNbPoints(); i++) {
-    cloud_out.points[i].x = (cloud_in.features.col(i))[0];
-    cloud_out.points[i].y = (cloud_in.features.col(i))[1];
-    cloud_out.points[i].z = (cloud_in.features.col(i))[2];
-    //cout << "i=" << i << " " << cloud_out.points[i].x << " " << cloud_out.points[i].y << " " << cloud_out.points[i].z << endl;
-  }  
-  cloud_out.width = cloud_out.points.size();
-  cloud_out.height = 1;
-}
-
-
 void publishCloud(int cloud_id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_toPub)
 {
   Isometry3dTime null_T = Isometry3dTime(1, Eigen::Isometry3d::Identity());
   pc_vis_->pose_to_lcm_from_list(60000, null_T);
   pc_vis_->ptcld_to_lcm_from_list(cloud_id, *cloud_toPub, 1, 1);
 }
+
+
 
