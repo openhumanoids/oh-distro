@@ -9,113 +9,16 @@ This branch inserts edinburgh_mods.xacro into the xacro.
 
 2. Compile the urdf:
 cd val_description/model/robots
-rosrun xacro xacro.py valkyrie_A_sim.xacro -o ../urdf/valkyrie_A_sim.urdf
+rosrun xacro xacro.py valkyrie_sim.xacro -o ../urdf/valkyrie_sim.urdf
 
-3. Current you need to insert the following inside the link tag for LeftFoot and RightFoot:
-This is used for the quasi static balance constraint:
-
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
+3. Currently you need to manually insert the contents of contact_points_block.txt inside the 
+   link tag for leftFoot and rightFoot. This is used for the quasi static balance constraint.
 
 4. move the urdf to this location
-cp valkyrie_A_sim.urdf PATH_TO/drc/software/models/val_description/urdf/valkyrie_A_sim.urdf
+cp valkyrie_sim.urdf PATH_TO/drc/software/models/val_description/urdf/valkyrie_sim.urdf
 
 5. If needed you can make an sdf file like this:
-gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
+gzsdf print valkyrie_sim.urdf  > valkyrie_sim.sdf
 
 6. Generating hands.
 Background: the hands located in models/common_components/hand_factory
