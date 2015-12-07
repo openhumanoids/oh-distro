@@ -45,9 +45,15 @@ set(pcl_external_args
     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
   )
 
-set(octomap-pod_url https://github.com/openhumanoids/octomap-pod.git)
-set(octomap-pod_revision 590b430dfe9f949118fdd618b620d82d84eb0162)
-set(octomap-pod_depends)
+set(octomap_url https://github.com/OctoMap/octomap.git)
+set(octomap_revision 5ba840e58a35e2d14c40d0af807da879a1a2fd83)
+set(octomap_depends)
+set(octomap_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+  )
 
 set(occ-map_url https://github.com/openhumanoids/occ-map.git)
 set(occ-map_revision 34ab71fa693216d2c0508f0f2680b9a68994f473)
@@ -55,7 +61,7 @@ set(occ-map_depends libbot opencv)
 
 set(common_utils_url https://github.com/openhumanoids/common_utils.git)
 set(common_utils_revision 7fc252e3b1baf8ec6a19ee812ae114e8ee460dbd)
-set(common_utils_depends Eigen_pod libbot occ-map octomap-pod)
+set(common_utils_depends Eigen_pod libbot occ-map octomap)
 
 set(frsm_url ssh://git@github.com/openhumanoids/frsm.git)
 set(frsm_revision bbf1d83023ae35ecf595c93e46b8601206be9e9b)
@@ -170,7 +176,7 @@ set(externals
   opencv
   flann
   pcl
-  octomap-pod
+  octomap
   libmultisense
   multisense-lcm
   occ-map
