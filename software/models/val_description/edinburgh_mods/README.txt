@@ -49,6 +49,7 @@ ISSUE: drake can't handle this tag, so I removed its contents:
 - There exists several files in val_description:
   * valkyrie_[ABC]_[hw|no_hands_hw].[urdf|sdf] ... these are the real robot URDFs
   * valkyrie_sim.[urdf|sdf]
+  * these are specified in ValkyrieConfigurationRoot.sdf
 - In SCS simulation, the urdf isn't read, this SDF is: valkyrie_sim.sdf
 - In SCS in the real work, this SDF is read: valkyrie_B_hw.sdf
 - running the following produces an sdf that is identical to the one loaded by IHMC:
