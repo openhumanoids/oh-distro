@@ -43,7 +43,7 @@ classdef Scenes
           end
         case 'val2'
           if options.convex_hull
-            urdf = fullfile(getDrakePath(),'../../','models','val_description/urdf','valkyrie_A_sim_drake.urdf');
+            urdf = fullfile(getDrakePath(),'../../','models','val_description/urdf','valkyrie_sim_drake.urdf');
           else
             urdf = fullfile(getDrakePath(),'../../','models','val_description/urdf','model.urdf');
           end
