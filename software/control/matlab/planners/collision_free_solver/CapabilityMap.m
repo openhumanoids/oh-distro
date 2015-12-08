@@ -10,9 +10,8 @@ classdef CapabilityMap
     pos_tolerance
     urdf
     n_voxels
-    n_points_per_voxel
-    root_link
-    root_point
+    n_directions_per_voxel
+    map_left_centre
     end_effector_link
     end_effector_point
     base_link
@@ -50,7 +49,7 @@ classdef CapabilityMap
       obj.pos_tolerance = vars.options.pos_tolerance;
       obj.urdf = vars.options.urdf;
       obj.n_voxels = size(obj.map, 1);
-      obj.n_points_per_voxel = size(obj.map, 2);
+      obj.n_directions_per_voxel = size(obj.map, 2);
       obj.root_link = vars.options.root_link;
       obj.root_point = vars.options.root_point;
       obj.end_effector_link = vars.options.end_effector_link;
@@ -87,12 +86,12 @@ classdef CapabilityMap
     end
     
     function points = findPointsFromDirection(obj, direction, threshold)
-      [~, frames] = obj.distributePointsOnSphere(obj.n_points_per_voxel);
-      points = false(obj.n_points_per_voxel, 1);
+      [~, frames] = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
+      points = false(obj.n_directions_per_voxel, 1);
 %       voxel();
 %       hold on
 %       plot3(P(1,:), P(2,:), P(3,:), 'r.')
-      for p = 1:obj.n_points_per_voxel
+      for p = 1:obj.n_directions_per_voxel
         if acos(frames(p,:,3)*direction)/norm(direction) <= threshold
           points(p) = true;
 %           plot3([P(1,p), P(1,p) - frames(p, 1, 3)'], [P(2,p), P(2,p) - frames(p, 2, 3)'], [P(3,p), P(3,p) - frames(p, 3, 3)'], 'b')
@@ -154,6 +153,12 @@ classdef CapabilityMap
       if nargin < 2, colour = [0 1 0]; end
       if nargin < 3, text = 'Capability Map'; end
       obj.drawVoxelCentres(obj.vox_centers, colour, text);
+    end
+    
+    function drawMapCentredOnPoint(obj, point, colour, text)
+      if nargin < 3, colour = [0 1 1]; end
+      if nargin < 4, text = 'Capability Map'; end
+      obj.drawVoxelCentres(bsxfun(@plus, point(1:3), obj.vox_centers), colour, text);
     end
     
     function drawActiveMap(obj, colour, text)
@@ -227,13 +232,20 @@ classdef CapabilityMap
     end
     
     function obj = generateCapabilityMap(obj, urdf_file, kinematic_chain_left, ...
-        kinematic_chain_right)
+        end_effector_right, options)
+  
+      if nargin < 5 || isempty(options), options = struct(); end
+      if isfield(options,'vox_edge'), obj.vox_edge = options.vox_edge; else obj.vox_edge = 0.05; end;
+      if isfield(options,'n_samples'), obj.n_samples = options.n_samples; else obj.n_samples = 10e3; end;
+      if isfield(options,'n_directions_per_voxel'), obj.n_directions_per_voxel = options.n_directions_per_voxel; else obj.n_directions_per_voxel = 50; end;
+      if isfield(options,'pos_tolerance'), obj.pos_tolerance = options.pos_tolerance; else obj.pos_tolerance = 0.01; end;
+      if isfield(options,'ang_tolerance'), obj.ang_tolerance = options.ang_tolerance; else obj.ang_tolerance = pi/180; end;
+      if isfield(options,'map_left_centre'), obj.map_left_centre = options.map_left_centre; else obj.map_left_centre = [0;0;0]; end;
+      
       obj.urdf = xmlread(urdf_file);
       obj.base_link = kinematic_chain_left{1};
-      obj.root_link.left = kinematic_chain_left{2};
-      obj.root_link.right = kinematic_chain_right{2};
       obj.end_effector_link.left = kinematic_chain_left{end};
-      obj.end_effector_link.right = kinematic_chain_right{end};
+      obj.end_effector_link.right = end_effector_right;
       
 %       Generate rigid body manipulator from urdf
       doc = com.mathworks.xml.XMLUtils.createDocument('robot');
@@ -264,11 +276,57 @@ classdef CapabilityMap
       end
       
       xmlwrite('capabilityMapManipulator.urdf', doc)
-      rbm = RigidBodyManipulator('capabilityMapManipulator.urdf', struct('floating', true));
+      rbm = RigidBodyManipulator('capabilityMapManipulator.urdf');
+  
+      %Compute arm length
+      q = zeros(rbm.num_positions, 1);
+      kinsol = rbm.doKinematics(q, []);
+      if isnumeric(options.map_left_centre)
+        obj.map_left_centre = options.map_left_centre;
+      else
+        obj.map_left_centre = rbm.forwardKin(kinsol, rbm.findLinkId(options.map_left_centre), [0;0;0]);
+      end
+      end_effector = rbm.findLinkId(obj.end_effector_link.left);
+      end_effector_position = rbm.forwardKin(kinsol, end_effector, [0;0;0]);
+      distance = norm(obj.map_left_centre-end_effector_position);
       
+      % Workspace discretization
+      n_vox_per_edge = 2*ceil(distance/obj.vox_edge);
+      workspace_edge = n_vox_per_edge * obj.vox_edge;
+      obj.n_voxels = n_vox_per_edge^3;
+      sphX = linspace(-(workspace_edge-obj.vox_edge)/2, (workspace_edge-obj.vox_edge)/2, n_vox_per_edge);
+      sphY = linspace(-(workspace_edge-obj.vox_edge)/2, (workspace_edge-obj.vox_edge)/2, n_vox_per_edge);
+      sphZ = linspace(-(workspace_edge-obj.vox_edge)/2, (workspace_edge-obj.vox_edge)/2, n_vox_per_edge);
+      [vecY, vecX, vecZ] = meshgrid(sphY, sphX, sphZ);
+      vecX = reshape(vecX, numel(vecX), 1);
+      vecY = reshape(vecY, numel(vecY), 1);
+      vecZ = reshape(vecZ, numel(vecZ), 1);
+      obj.vox_centers = [vecX vecY vecZ]';
+
+      directions = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
+      obj.map = false(obj.n_voxels, obj.n_directions_per_voxel);
+      
+      %Compute map
+      pp = gcp;
+      n_samples_per_worker = ceil(obj.n_samples/pp.NumWorkers);
+      nv = obj.n_voxels;
+      ndpv = obj.n_directions_per_voxel;
+      ve = obj.vox_edge;
+      vc = obj.vox_centers;
+      pt = obj.pos_tolerance;
+      at = obj.ang_tolerance;
+      mc = obj.map_left_centre;
+      parfor w = 1:pp.NumWorkers
+        worker_map{w} = CapabilityMap.computeMap(nv, ndpv, ...
+          n_vox_per_edge, n_samples_per_worker, ve, vc, ...
+          directions, pt, at, end_effector, mc);
+      end
+      
+      for w = 1:numel(worker_map)
+        obj.map = obj.map | worker_map{w};
+      end
       
       delete('capabilityMapManipulator.urdf')
-      
     end
     
     function obj = generateOccupancyMap(obj, resolution)
@@ -367,6 +425,51 @@ classdef CapabilityMap
       lcmClient.glColor3f(colour(1), colour(2), colour(3));
       lcmClient.points(coords(1,:), coords(2,:), coords(3,:));
       lcmClient.switchBuffers();
+    end
+    
+    function worker_map = computeMap(n_voxels, n_directions_per_voxel, n_vox_per_edge, ...
+        n_samples, vox_edge, centers, directions, pos_tolerance, ang_tolerance, ...
+        end_effector, map_centre)
+      
+      rbm = RigidBodyManipulator('capabilityMapManipulator.urdf', struct('floating', true));
+      
+      %IK Options
+      Q = diag(rbm.num_positions:-1:1);
+      ikoptions = IKoptions(rbm);
+      ikoptions = ikoptions.setMajorIterationsLimit(100);
+      ikoptions = ikoptions.setQ(Q);
+      ikoptions = ikoptions.setMajorOptimalityTolerance(1e-3);
+      
+      worker_map = false(n_voxels, n_directions_per_voxel);
+      for sample = 1:n_samples
+        fprintf('Sample %d of %d\n', sample, n_samples)
+        active_joints = 7:rbm.num_positions;
+        q = [-map_centre; 0; 0; 0; rbm.joint_limit_min(active_joints) + (rbm.joint_limit_max(active_joints)- ...
+          rbm.joint_limit_min(active_joints)).*rand(rbm.num_positions-6,1)];
+        kinsol = rbm.doKinematics(q);
+        pos = rbm.forwardKin(kinsol, end_effector, [0;0;0]);
+        sub = ceil(pos/vox_edge) + (n_vox_per_edge/2) * ones(3,1);
+        vox_ind = sub2ind(n_vox_per_edge * ones(1,3), sub(1), sub(2), sub(3));
+%           if options.visualize
+%             drawTreePoints(sphCenters(:,sphInd), 'pointsize', diameter/2)
+%             v.draw(0, q);
+%           end
+        for point = 1:n_directions_per_voxel
+          pos = centers(:,vox_ind) + directions(:, point)*vox_edge/2;
+%             quat = rotmat2quat(squeeze(frames(point,:,:)));
+          posConstraint = WorldPositionConstraint(rbm, end_effector, [0;0;0], pos - pos_tolerance/2, pos + pos_tolerance/2);
+          GazeConstraint = WorldGazeDirConstraint(rbm, end_effector, [-1; 0; 0], directions(:, point), ang_tolerance);
+          [~, info] = rbm.inverseKin(q, q, posConstraint, GazeConstraint, ikoptions);
+%             if options.visualize
+%               drawTreePoints([pos; quat], 'frame', true, 'text', 'frame')
+%               v.draw(0, qNew)
+%               drawLinkFrame(r, palm, qNew, 'palm');
+%             end
+          if info < 10
+            worker_map(vox_ind, point) = true;
+          end
+        end
+      end
     end
     
   end
