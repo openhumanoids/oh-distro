@@ -226,6 +226,51 @@ classdef CapabilityMap
       centres = obj.vox_centers(:, obj.active_voxels);
     end
     
+    function obj = generateCapabilityMap(obj, urdf_file, kinematic_chain_left, ...
+        kinematic_chain_right)
+      obj.urdf = xmlread(urdf_file);
+      obj.base_link = kinematic_chain_left{1};
+      obj.root_link.left = kinematic_chain_left{2};
+      obj.root_link.right = kinematic_chain_right{2};
+      obj.end_effector_link.left = kinematic_chain_left{end};
+      obj.end_effector_link.right = kinematic_chain_right{end};
+      
+%       Generate rigid body manipulator from urdf
+      doc = com.mathworks.xml.XMLUtils.createDocument('robot');
+      robotNode = doc.getDocumentElement;
+      robot_name = obj.urdf.getDocumentElement().getAttribute('name');
+      if ~isempty(robot_name)
+        robotNode.setAttribute('name',robot_name);
+      end
+      
+      links = obj.urdf.getDocumentElement().getElementsByTagName('link');
+      for l = 0:links.getLength()-1
+        if any(strcmp(links.item(l).getAttribute('name'), kinematic_chain_left))
+          linkNode = doc.importNode(links.item(l), true);
+          robotNode.appendChild(linkNode);
+        end
+      end
+      
+      joints = obj.urdf.getDocumentElement().getElementsByTagName('joint');
+      for j = 0:joints.getLength()-1
+        parent = joints.item(j).getElementsByTagName('parent').item(0);
+        child = joints.item(j).getElementsByTagName('child').item(0);
+        if ~isempty(parent) && ~isempty(child) && ...
+            any(strcmp(parent.getAttribute('link'), kinematic_chain_left)) && ...
+            any(strcmp(child.getAttribute('link'), kinematic_chain_left))
+          jointNode = doc.importNode(joints.item(j), true);
+          robotNode.appendChild(jointNode);
+        end
+      end
+      
+      xmlwrite('capabilityMapManipulator.urdf', doc)
+      rbm = RigidBodyManipulator('capabilityMapManipulator.urdf', struct('floating', true));
+      
+      
+      delete('capabilityMapManipulator.urdf')
+      
+    end
+    
     function obj = generateOccupancyMap(obj, resolution)
 %       Generate rigid body manipulator from urdf
       doc = com.mathworks.xml.XMLUtils.createDocument('robot');
