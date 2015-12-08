@@ -5,10 +5,10 @@
 //
 // Example invocations:
 // bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} 
-// drc-testDrakeBulletCollisions -c 0.0 -v -u /home/mfallon/main-distro/software/models/val_description/urdf/valkyrie_A_sim_drake.urdf -w 4
+// drc-testDrakeBulletCollisions -c 0.0 -v -u /home/mfallon/main-distro/software/models/val_description/urdf/valkyrie_sim_drake.urdf -w 4
 //
 // bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} 
-// drc-testDrakeBulletCollisions -c 0.0 -v -u /home/mfallon/main-distro/software/models/val_description/urdf/valkyrie_A_sim.urdf -w 1'
+// drc-testDrakeBulletCollisions -c 0.0 -v -u /home/mfallon/main-distro/software/models/val_description/urdf/valkyrie_sim.urdf -w 1'
 
 #include <stdio.h>
 #include <inttypes.h>

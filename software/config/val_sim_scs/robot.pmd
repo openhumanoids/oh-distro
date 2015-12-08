@@ -16,7 +16,7 @@ group "1.params_and_model_pub" {
     }
 
     cmd "model" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/val_description/urdf/valkyrie_A_sim.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/val_description/urdf/valkyrie_sim.urdf";
         host = "localhost";
     }
 

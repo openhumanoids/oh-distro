@@ -1,4 +1,4 @@
-***Generating a Drake (and Director) compatiable URDF***
+***Generating a Drake (and Director) compatible URDF***
 
 To add the required frames and contact points to the NASA urdf so that Drake and director can read it:
 
@@ -9,113 +9,17 @@ This branch inserts edinburgh_mods.xacro into the xacro.
 
 2. Compile the urdf:
 cd val_description/model/robots
-rosrun xacro xacro.py valkyrie_A_sim.xacro -o ../urdf/valkyrie_A_sim.urdf
+rosrun xacro xacro.py valkyrie_sim.xacro -o ../urdf/valkyrie_sim.urdf
 
-3. Current you need to insert the following inside the link tag for LeftFoot and RightFoot:
-This is used for the quasi static balance constraint:
-
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="heel">
-      <origin rpy="0 0 0" xyz="-0.0676 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="toe">
-      <origin rpy="0 0 0" xyz="0.1928 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_rear">
-      <origin rpy="0 0 0" xyz="0.0192 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
-    <collision group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.0"/>
-      </geometry>
-    </collision>
-    <visual group="midfoot_front">
-      <origin rpy="0 0 0" xyz="0.106 -0.0624435 -0.07645"/>
-      <geometry>
-        <sphere radius="0.01"/>
-      </geometry>
-    </visual>
+3. Currently you need to manually insert the contents of contact_points_block.txt 
+   (found in this folder) inside of the link tag for leftFoot and rightFoot. 
+   This is used for the quasi static balance constraint.
 
 4. move the urdf to this location
-cp valkyrie_A_sim.urdf PATH_TO/drc/software/models/val_description/urdf/valkyrie_A_sim.urdf
+cp valkyrie_sim.urdf PATH_TO/drc/software/models/val_description/urdf/valkyrie_sim.urdf
 
 5. If needed you can make an sdf file like this:
-gzsdf print valkyrie_A.urdf  > valkyrie_A.sdf
+gzsdf print valkyrie_sim.urdf  > valkyrie_sim.sdf
 
 6. Generating hands.
 Background: the hands located in models/common_components/hand_factory
@@ -126,21 +30,31 @@ rosrun xacro xacro.py valkyrie_hand_right.xacro -o ../urdf/valkyrie_hand_right.u
 Then rename the files from .dae to .obj and then copy into the above locations
 
 ===Current Issues===
-ISSUE: leftFootSixAxis needs to be renamed leftLegSixAxis due to drake parse conflict
-ISSUE: this is not parsed properly - '<frame>child</frame>' confused drake
-  <gazebo reference="rightFootSixAxis_Offset">
-    <sensor name="rightFootSixAxis" type="force_torque">
-      <frame>child</frame>
+ISSUE: drake can't handle this tag, so I removed its contents:
+  <gazebo reference="leftAnkleRoll">
+    <sensor name="leftFootSixAxis" type="force_torque">
+      <pose>0.0215646 0.0 -0.051054 3.14 0.0 -1.047</pose>
+      <sensor_number id="FT001SIM"/>
+      <node id="/sensors/leftFootSixAxis"/>
+      <api name="TurbodriverForceTorqueSensor_v1"/>
+      <always_on>true</always_on>
+      <update_rate>1000</update_rate>
+      <force_torque>
+        <frame>sensor</frame>
+      </force_torque>
     </sensor>
   </gazebo>
 
 ***IHMC URDF/SDF***
-- There exists 4 files in val_description: valkyrie_A_[hw|sw].[urdf|sdf]
-- the urdf isn't read by SCS
-- These SDF is: valkyrie_A_sim.sdf
+- There exists several files in val_description:
+  * valkyrie_[ABC]_[hw|no_hands_hw].[urdf|sdf] ... these are the real robot URDFs
+  * valkyrie_sim.[urdf|sdf]
+  * these are specified in ValkyrieConfigurationRoot.sdf
+- In SCS simulation, the urdf isn't read, this SDF is: valkyrie_sim.sdf
+- In SCS in the real work, this SDF is read: valkyrie_B_hw.sdf
 - running the following produces an sdf that is identical to the one loaded by IHMC:
-  cd ~/workspace_alpha/ValkyrieHardwareDrivers/bin/models/val_description/urdf
-  gzsdf print valkyrie_A_sim.urdf > valkyrie_A_sim.sdf
+  cd ~/workspace/Valkyrie/ValkyrieHardwareDrivers/bin/models/val_description/urdf
+  gzsdf print valkyrie_sim.urdf > valkyrie_sim.sdf
 
 
 ***3D File Formats***
@@ -160,6 +74,4 @@ Development process:
 4. remove STL
 5. changing the normal smoothing file in director
 
-
-
-- Maurice, june 2015
+- Maurice, december 2015

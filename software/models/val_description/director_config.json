@@ -1,12 +1,12 @@
 {
   "modelName" : "valkyrie_v2",
   "urdfConfig": {
-    "default": "./urdf/valkyrie_A_sim.urdf",
-    "robotState": "./urdf/valkyrie_A_sim.urdf",
-    "ik":         "./urdf/valkyrie_A_sim_drake.urdf",
-    "chull":      "./urdf/valkyrie_A_sim_drake.urdf",
-    "playback":   "./urdf/valkyrie_A_sim.urdf",
-    "teleop":     "./urdf/valkyrie_A_sim.urdf"
+    "default": "./urdf/valkyrie_sim.urdf",
+    "robotState": "./urdf/valkyrie_sim.urdf",
+    "ik":         "./urdf/valkyrie_sim_drake.urdf",
+    "chull":      "./urdf/valkyrie_sim_drake.urdf",
+    "playback":   "./urdf/valkyrie_sim.urdf",
+    "teleop":     "./urdf/valkyrie_sim.urdf"
   },
   "colorMode": "Textures",
 
