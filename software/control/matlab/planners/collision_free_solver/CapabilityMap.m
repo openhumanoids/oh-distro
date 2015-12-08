@@ -316,14 +316,21 @@ classdef CapabilityMap
       pt = obj.pos_tolerance;
       at = obj.ang_tolerance;
       mc = obj.map_left_centre;
-      parfor w = 1:pp.NumWorkers
-        worker_map{w} = CapabilityMap.computeMap(nv, ndpv, ...
-          n_vox_per_edge, n_samples_per_worker, ve, vc, ...
+      v = ver;
+      if any(strcmp({v.Name}, 'Paralel Computing Toolbox'))
+        parfor w = 1:pp.NumWorkers
+          worker_map{w} = CapabilityMap.computeMap(nv, ndpv, ...
+            n_vox_per_edge, n_samples_per_worker, ve, vc, ...
+            directions, pt, at, end_effector, mc);
+        end
+        for w = 1:numel(worker_map)
+          obj.map = obj.map | worker_map{w};
+        end
+      else
+        disp('No parallel toolbox installed, computation might take very long!')
+        obj.map = CapabilityMap.computeMap(nv, ndpv, ...
+          n_vox_per_edge, obj.n_samples, ve, vc, ...
           directions, pt, at, end_effector, mc);
-      end
-      
-      for w = 1:numel(worker_map)
-        obj.map = obj.map | worker_map{w};
       end
       
       delete('capabilityMapManipulator.urdf')
