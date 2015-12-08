@@ -50,8 +50,7 @@ classdef CapabilityMap
       obj.urdf = vars.options.urdf;
       obj.n_voxels = size(obj.map, 1);
       obj.n_directions_per_voxel = size(obj.map, 2);
-      obj.root_link = vars.options.root_link;
-      obj.root_point = vars.options.root_point;
+      obj.map_left_centre = vars.options.map_left_centre;
       obj.end_effector_link = vars.options.end_effector_link;
       obj.end_effector_point = vars.options.end_effector_point;
       obj.base_link = vars.options.base_link;
@@ -149,28 +148,42 @@ classdef CapabilityMap
       end
     end
     
-    function drawMap(obj, colour, text)
-      if nargin < 2, colour = [0 1 0]; end
+    function drawMap(obj, text)
+      if nargin < 2, text = 'Capability Map'; end
+      obj.drawVoxelCentres((1:obj.n_voxels)', text);
+    end
+    
+    function drawMapCentredOnPoint(obj, point, text)
       if nargin < 3, text = 'Capability Map'; end
-      obj.drawVoxelCentres(obj.vox_centers, colour, text);
+      obj.drawVoxelCentres((1:obj.n_voxels)', text, point);
     end
     
-    function drawMapCentredOnPoint(obj, point, colour, text)
-      if nargin < 3, colour = [0 1 1]; end
-      if nargin < 4, text = 'Capability Map'; end
-      obj.drawVoxelCentres(bsxfun(@plus, point(1:3), obj.vox_centers), colour, text);
+    function drawActiveMap(obj, text)
+      if nargin < 2, text = 'Active Capability Map'; end
+      obj.drawVoxelCentres(obj.active_voxels, text);
     end
     
-    function drawActiveMap(obj, colour, text)
-      if nargin < 2, colour = [0 1 1]; end
+    function drawActiveMapCentredOnPoint(obj, point, text)
       if nargin < 3, text = 'Active Capability Map'; end
-      obj.drawVoxelCentres(obj.getActiveVoxelCentres(), colour, text);
+      obj.drawVoxelCentres(obj.active_voxels, text, point);
     end
     
-    function drawActiveMapCentredOnPoint(obj, point, colour, text)
-      if nargin < 3, colour = [0 1 1]; end
-      if nargin < 4, text = 'Active Capability Map'; end
-      obj.drawVoxelCentres(bsxfun(@plus, point(1:3), obj.getActiveVoxelCentres()), colour, text);
+    function drawVoxelCentres(obj, voxels, text, offset)
+      lcmClient = LCMGLClient(text);
+      for i = 0:obj.n_directions_per_voxel
+        h = 1-(i/obj.n_directions_per_voxel*2/3);
+        rgb = hsv2rgb(h, 1, 1);
+        lcmClient.glColor3f(rgb(1), rgb(2), rgb(3));
+        lcmClient.glPointSize(5);
+        coords = obj.vox_centers(:, (obj.reachability_index == i/obj.n_directions_per_voxel) & voxels);
+        if nargin > 3
+          coords = bsxfun(@plus, offset(1:3), coords);
+        end
+        if ~isempty(coords)
+          lcmClient.points(coords(1,:), coords(2,:), coords(3,:));
+        end
+      end
+      lcmClient.switchBuffers();
     end
     
     function obj = deactivateCollidingVoxels(obj, point_cloud, reset_active)
@@ -317,7 +330,7 @@ classdef CapabilityMap
       at = obj.ang_tolerance;
       mc = obj.map_left_centre;
       v = ver;
-      if any(strcmp({v.Name}, 'Paralel Computing Toolbox'))
+      if any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
         parfor w = 1:pp.NumWorkers
           worker_map{w} = CapabilityMap.computeMap(nv, ndpv, ...
             n_vox_per_edge, n_samples_per_worker, ve, vc, ...
@@ -331,6 +344,9 @@ classdef CapabilityMap
         obj.map = CapabilityMap.computeMap(nv, ndpv, ...
           n_vox_per_edge, obj.n_samples, ve, vc, ...
           directions, pt, at, end_effector, mc);
+      end
+      for v = 1:obj.n_voxels
+        obj.reachability_index(v) = nnz(obj.map(v,:))/obj.n_directions_per_voxel;
       end
       
       delete('capabilityMapManipulator.urdf')
@@ -425,13 +441,6 @@ classdef CapabilityMap
         frame(:,2) = cross(frame(:,3), frame(:,1));
         frames(p, :, :) = frame;
       end
-    end
-    
-    function drawVoxelCentres(coords, colour, text)
-      lcmClient = LCMGLClient(text);
-      lcmClient.glColor3f(colour(1), colour(2), colour(3));
-      lcmClient.points(coords(1,:), coords(2,:), coords(3,:));
-      lcmClient.switchBuffers();
     end
     
     function worker_map = computeMap(n_voxels, n_directions_per_voxel, n_vox_per_edge, ...
