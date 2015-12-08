@@ -249,7 +249,7 @@ classdef CapabilityMap
   
       if nargin < 5 || isempty(options), options = struct(); end
       if isfield(options,'vox_edge'), obj.vox_edge = options.vox_edge; else obj.vox_edge = 0.05; end;
-      if isfield(options,'n_samples'), obj.n_samples = options.n_samples; else obj.n_samples = 10e3; end;
+      if isfield(options,'n_samples'), obj.n_samples = options.n_samples; else obj.n_samples = 10e6; end;
       if isfield(options,'n_directions_per_voxel'), obj.n_directions_per_voxel = options.n_directions_per_voxel; else obj.n_directions_per_voxel = 50; end;
       if isfield(options,'pos_tolerance'), obj.pos_tolerance = options.pos_tolerance; else obj.pos_tolerance = 0.01; end;
       if isfield(options,'ang_tolerance'), obj.ang_tolerance = options.ang_tolerance; else obj.ang_tolerance = pi/180; end;
@@ -294,10 +294,8 @@ classdef CapabilityMap
       %Compute arm length
       q = zeros(rbm.num_positions, 1);
       kinsol = rbm.doKinematics(q, []);
-      if isnumeric(options.map_left_centre)
-        obj.map_left_centre = options.map_left_centre;
-      else
-        obj.map_left_centre = rbm.forwardKin(kinsol, rbm.findLinkId(options.map_left_centre), [0;0;0]);
+      if ~isnumeric(obj.map_left_centre)
+        obj.map_left_centre = rbm.forwardKin(kinsol, rbm.findLinkId(obj.map_left_centre), [0;0;0]);
       end
       end_effector = rbm.findLinkId(obj.end_effector_link.left);
       end_effector_position = rbm.forwardKin(kinsol, end_effector, [0;0;0]);
@@ -334,7 +332,7 @@ classdef CapabilityMap
         parfor w = 1:pp.NumWorkers
           worker_map{w} = CapabilityMap.computeMap(nv, ndpv, ...
             n_vox_per_edge, n_samples_per_worker, ve, vc, ...
-            directions, pt, at, end_effector, mc);
+            directions, pt, at, end_effector, mc, w);
         end
         for w = 1:numel(worker_map)
           obj.map = obj.map | worker_map{w};
@@ -445,7 +443,7 @@ classdef CapabilityMap
     
     function worker_map = computeMap(n_voxels, n_directions_per_voxel, n_vox_per_edge, ...
         n_samples, vox_edge, centers, directions, pos_tolerance, ang_tolerance, ...
-        end_effector, map_centre)
+        end_effector, map_centre, worker)
       
       rbm = RigidBodyManipulator('capabilityMapManipulator.urdf', struct('floating', true));
       
@@ -457,8 +455,12 @@ classdef CapabilityMap
       ikoptions = ikoptions.setMajorOptimalityTolerance(1e-3);
       
       worker_map = false(n_voxels, n_directions_per_voxel);
+      status = 0;
       for sample = 1:n_samples
-        fprintf('Sample %d of %d\n', sample, n_samples)
+        if floor(sample/n_samples*100) > status
+          status = floor(sample/n_samples*100);
+          fprintf('Worker %d: %d%% complete\n', worker, status)
+        end
         active_joints = 7:rbm.num_positions;
         q = [-map_centre; 0; 0; 0; rbm.joint_limit_min(active_joints) + (rbm.joint_limit_max(active_joints)- ...
           rbm.joint_limit_min(active_joints)).*rand(rbm.num_positions-6,1)];
@@ -466,21 +468,11 @@ classdef CapabilityMap
         pos = rbm.forwardKin(kinsol, end_effector, [0;0;0]);
         sub = ceil(pos/vox_edge) + (n_vox_per_edge/2) * ones(3,1);
         vox_ind = sub2ind(n_vox_per_edge * ones(1,3), sub(1), sub(2), sub(3));
-%           if options.visualize
-%             drawTreePoints(sphCenters(:,sphInd), 'pointsize', diameter/2)
-%             v.draw(0, q);
-%           end
         for point = 1:n_directions_per_voxel
           pos = centers(:,vox_ind) + directions(:, point)*vox_edge/2;
-%             quat = rotmat2quat(squeeze(frames(point,:,:)));
           posConstraint = WorldPositionConstraint(rbm, end_effector, [0;0;0], pos - pos_tolerance/2, pos + pos_tolerance/2);
           GazeConstraint = WorldGazeDirConstraint(rbm, end_effector, [-1; 0; 0], directions(:, point), ang_tolerance);
           [~, info] = rbm.inverseKin(q, q, posConstraint, GazeConstraint, ikoptions);
-%             if options.visualize
-%               drawTreePoints([pos; quat], 'frame', true, 'text', 'frame')
-%               v.draw(0, qNew)
-%               drawLinkFrame(r, palm, qNew, 'palm');
-%             end
           if info < 10
             worker_map(vox_ind, point) = true;
           end
