@@ -31,5 +31,5 @@ PM::TransformationParameters parseTransformation(string& transform,
 
 void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_out);
 
-void writeTransformToFile(Eigen::MatrixXf &transformations, string out_file);
+void writeTransformToFile(Eigen::MatrixXf &transformations, string out_file, int num_clouds);
 

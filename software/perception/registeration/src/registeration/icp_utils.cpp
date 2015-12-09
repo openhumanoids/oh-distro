@@ -167,15 +167,28 @@ void fromDataPointsToPCL(DP &cloud_in, pcl::PointCloud<pcl::PointXYZRGB> &cloud_
   cloud_out.height = 1;
 }
 
-void writeTransformToFile(Eigen::MatrixXf &transformations, string out_file)
+void writeTransformToFile(Eigen::MatrixXf &transformations, string out_file, int num_clouds)
 {
+  std::vector<string> v;
+  for (int i = 0; i < num_clouds-1; i++)
+  {
+    for (int j = 1+i; j < num_clouds; j++)
+    {
+      string str;
+      str.append(to_string(i));
+      str.append(to_string(j));
+      v.push_back(str);
+    }
+  }
+
   ofstream file (out_file);
+
   if (file.is_open())
   {
-    file << "x y theta\n";
-    for (int i = 0; i < transformations.cols(); i++)
+    //file << "x y theta\n";
+    for (int i = 0; i < v.size(); i++)
     {
-      file << transformations(0,i) << " " << transformations(1,i) 
+      file << v[i] << " " << transformations(0,i) << " " << transformations(1,i) 
       << " " << transformations(2,i) << endl;
     }
     file.close();

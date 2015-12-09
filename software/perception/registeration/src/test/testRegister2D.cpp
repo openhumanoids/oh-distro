@@ -18,6 +18,7 @@
 
 #include <iterator>
 #include <sstream>
+#include <iostream>
 
 void parseTransf(string& transform, float& x, float& y, float& theta) 
 {
@@ -51,6 +52,20 @@ struct CommandLineConfig
   std::string filenameC;
 };
 
+Eigen::Isometry3d getXYThetaAsIsometry3d(Eigen::Vector3d transl, Eigen::Vector3d rpy){
+  Eigen::Isometry3d tf_out;
+  tf_out.setIdentity();
+  tf_out.translation()  << transl[0], transl[1], transl[2];
+
+  double rpy_d[3] = { rpy[0], rpy[1], rpy[2] };
+  double quat[4];
+  bot_roll_pitch_yaw_to_quat(rpy_d, quat);
+  Eigen::Quaterniond q(quat[0], quat[1],quat[2],quat[3]);
+  tf_out.rotate(q);
+
+  return tf_out;
+}
+
 class App{
   public:
     App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, int indTransfFile);
@@ -60,10 +75,21 @@ class App{
 
     const char *homedir;
 
+    Eigen::Vector3d transl_head_to_fixed;
+    Eigen::Vector3d rpy_head_to_fixed;
+
     int tot_clouds; //number of clouds to combine
 
     string cloudA;
     string cloudB;
+
+    string initialT;  // We store the transform used to initialize the 
+                      // pose of cloud B. The lidar odometry class outputs the complete
+                      // transformation from the starting pose (without initialization) 
+                      // of cloud B to cloud A. Instead, we want to store just the remaining 
+                      // x,y,theta after initialization. 
+    ScanTransform initInput;
+    ScanTransform initReference;
 
     void doWork(Eigen::MatrixXf &transf_matrix, int transf_index);
     void doWork();
@@ -82,6 +108,9 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, in
   
   LidarOdomConfig lo_cfg = LidarOdomConfig();
 
+  transl_head_to_fixed << -0.076 , 0.0 , 0.221;
+  rpy_head_to_fixed << 0.0 , 0.0 , 0.0;
+
   // Overwrite default config values with more brute force search:
   lo_cfg.matchingMode = FRSM_GRID_COORD;
   lo_cfg.initialSearchRangeXY = 1.7;
@@ -94,15 +123,20 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, in
   fileinitname.append(homedir);
   fileinitname.append("/logs/multisenselog__2015-11-16/initialization/initTransf.txt");
   
-  cout << "indTransfFile: " << indTransfFile << endl;
-  string initialT = readLineFromFile(fileinitname, indTransfFile);
+  initialT = readLineFromFile(fileinitname, indTransfFile);
 
-  cout << "STRING initialT: " << initialT << endl;
+  float tmpx, tmpy, tmptheta;
+  parseTransf(initialT, tmpx, tmpy, tmptheta);
+  initInput.x = tmpx;
+  initInput.y = tmpy;
+  initInput.theta = (tmptheta * M_PI)/180;
 
-  parseTransf(initialT, lo_cfg.startPoseInputX, 
-         lo_cfg.startPoseInputY, lo_cfg.startPoseInputTheta);
+  cout << "initInput: " << tmpx << "," << tmpy << "," << tmptheta << endl;
 
-  lo_cfg.do_two_scans_matching = true;
+  initReference.x = 0;
+  initReference.y = 0;
+  initReference.theta = (0 * M_PI)/180;
+
   tot_clouds = 10;
   
   lidarOdom_ = new LidarOdom(lcm_, lo_cfg);
@@ -132,43 +166,44 @@ void App::doWork(Eigen::MatrixXf &transf_matrix, int transf_index){
   std::vector<float> yA;
   readCSVFile(cloudA, xA, yA);
   std::cout << xA.size() << " points in File A\n";
-  lidarOdom_->doOdometry(xA, yA, xA.size(), 0);
+  lidarOdom_->doOdometry(xA, yA, xA.size(), 0, initReference);
 
   std::vector<float> xB;
   std::vector<float> yB;
   readCSVFile(cloudB, xB, yB);
   std::cout << xB.size() << " points in File B\n";
-  lidarOdom_->doOdometry(xB, yB, xB.size(), 1);
+  lidarOdom_->doOdometry(xB, yB, xB.size(), 1, initInput);
 
   // Match third scan giving a prior rotation for the heading
   // this alignment would otherwise fail:
   cout << "Match C: Continue? ";
   cin >> i;
 
-  std::vector<float> xC;
-  std::vector<float> yC;
-  readCSVFile(cl_cfg_.filenameC, xC, yC);
-  std::cout << xC.size() << " points in File C\n";
-
-  ScanTransform prior;
-  prior.x = 0;
-  prior.y = 0;
-  prior.theta = 1.7;
-  lidarOdom_->doOdometry(xC, yC, xC.size(), 2, &prior);
-
-
-
   // 2. Determine the body position using the LIDAR motion estimate:
-  Eigen::Isometry3d pose = lidarOdom_->getCurrentPose();
-  Eigen::Quaterniond orientation(pose.rotation());
+  /*
+  Eigen::Isometry3d tf_01_fixed = lidarOdom_->getCurrentPose();
+  Eigen::Isometry3d head_to_fixscan, fixscan_to_head;
+  head_to_fixscan = getXYThetaAsIsometry3d(transl_head_to_fixed, rpy_head_to_fixed);
+  fixscan_to_head = head_to_fixscan.inverse();
+  Eigen::Isometry3d tf_01_head = fixscan_to_head * tf_01_fixed * head_to_fixscan;
+  */
+  Eigen::Isometry3d tf_01_head = lidarOdom_->getCurrentPose();
 
+  Eigen::Quaterniond orientation(tf_01_head.rotation());
   Eigen::Vector3d rpy = orientation.matrix().eulerAngles(0,1,2);
 
-  std::cout << "\n";
-  std::cout << "x,y,yaw (m,m,deg): "<< pose.translation().x() << ", " << pose.translation().y()
-            << ", "
-            << rpy[2]*180/M_PI << "\n";
+  float xres,yres,thetares;
+  xres = tf_01_head.translation().x();
+  yres = tf_01_head.translation().y();
+  thetares = rpy[2] * 180 / M_PI;
+
+  transf_matrix(0, transf_index-1) = xres;
+  transf_matrix(1, transf_index-1) = yres;   
+  transf_matrix(2, transf_index-1) = thetares;
+
+  cout << "x,y,yaw (m,m,deg): "<< xres << ", " << yres << ", " << thetares << "\n";
 }
+
 
 int main(int argc, char **argv){
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
@@ -220,6 +255,10 @@ int main(int argc, char **argv){
 
         app->doWork(truth_res, transf_index);
 
+        // Uncomment for visualization of matching results one by one:
+        //cout << "Press ENTER to continue..." << endl;
+        //cin.get();
+
         app->~App();
         app = new App(lcm, cl_cfg, transf_index);
       }
@@ -229,13 +268,17 @@ int main(int argc, char **argv){
     string out_file;
     out_file.append(app->homedir);
     out_file.append("/logs/multisenselog__2015-11-16/results/truth_transf.txt");
-    writeTransformToFile(truth_res, out_file);
+    writeTransformToFile(truth_res, out_file, app->tot_clouds);
   }
   else
   {
+    app->~App();
+    app = new App(lcm, cl_cfg, 0);
+
     app->cloudA = cl_cfg.filenameA;
     app->cloudB = cl_cfg.filenameB;
 
-    app->doWork();
+    Eigen::MatrixXf truth_res = Eigen::MatrixXf::Zero(3, 1);
+    app->doWork(truth_res, 0);
   }
 }

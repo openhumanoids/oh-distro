@@ -58,8 +58,8 @@ int main(const int argc, const char **argv){
 
   string out_file;
   out_file.append(fo.registrationRoutine_->cfg_.homedir);
-  out_file.append("/logs/multisenselog__2015-11-16/results/registr_transf.txt");
-  writeTransformToFile(registr_res, out_file);
+  out_file.append("/logs/multisenselog__2015-11-16/results/registr_transf_new.txt");
+  writeTransformToFile(registr_res, out_file, fo.registrationRoutine_->cfg_.tot_clouds);
 
   return fo.ret;
 }

@@ -75,9 +75,10 @@ void RegistrationRoutine::doRoutine(Eigen::MatrixXf &transf_matrix)
       cloud_name_B.append(to_string(j));
       cloud_name_B.append(".vtk");
 
-      cout << "cloud_name_A: " << cloud_name_A <<endl;
-      cout << "cloud_name_B: " << cloud_name_B <<endl;
+      //cout << "cloud_name_A: " << cloud_name_A <<endl;
+      //cout << "cloud_name_B: " << cloud_name_B <<endl;
 
+      ref = DP::load(cloud_name_A);
       DP data = DP::load(cloud_name_B);
       
       //=================================
@@ -86,7 +87,7 @@ void RegistrationRoutine::doRoutine(Eigen::MatrixXf &transf_matrix)
 
       cloudDim = ref.getEuclideanDim();
 
-      PM::TransformationParameters T;
+      PM::TransformationParameters T = PM::TransformationParameters::Identity(4,4);
       getICPTransform(data, ref, T);
 
       cout << "3D Transformation:" << endl << T << endl; 
@@ -170,11 +171,14 @@ void RegistrationRoutine::getICPTransform(DP &cloud_in, DP &cloud_ref, PM::Trans
   const DP initializedData = rigidTrans->compute(cloud_in, initTransfo);
 
   // Compute the transformation to express data in ref
-  T = icp(initializedData, cloud_ref);
+  T = icp(cloud_in, cloud_ref, initTransfo);
+  // Uncomment this and comment previous line to
+  // compute the transformation to express initialized data in ref 
+  //T = icp(initializedData, cloud_ref);
   cout << "Match ratio: " << icp.errorMinimizer->getWeightedPointUsedRatio() << endl;
 
   // Transform data to express it in ref
-  DP data_out(initializedData);
+  DP data_out(cloud_in);
   icp.transformations.apply(data_out, T);
 
   //cout << "Final 3D transformation:" << endl << T << endl;

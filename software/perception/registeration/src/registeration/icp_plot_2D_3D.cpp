@@ -59,7 +59,7 @@ int main(int argc, const char *argv[])
   }
 
   // Init Default
-  initTrans_.append("-0.3,-0.7,-135");
+  initTrans_.append("0,0,0");
 
   const int ret = validateArgs(argc, argv);
 
@@ -87,22 +87,14 @@ int main(int argc, const char *argv[])
   DP ref, data, ref2, data2;
 
   cloud_name_A.append(homedir);
-  cloud_name_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_01.vtk");
-  //cloud_name_A.append("/logs/multisenselog__2015-11-16/tmp/multisense_00.vtk");
-  //cloud_name_A.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud400.csv");
+  cloud_name_A.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_00.vtk");
   cloud_name_B.append(homedir);
-  cloud_name_B.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_06.vtk");
-  //cloud_name_B.append("/logs/multisenselog__2015-11-16/tmp/multisense_08.vtk");
-  //cloud_name_B.append("/main-distro/software/externals/libpointmatcher/examples/data/car_cloud401.csv");
+  cloud_name_B.append("/logs/multisenselog__2015-11-16/pointclouds/multisense_03.vtk");
 
   scan_name_A.append(homedir);
   scan_name_A.append("/logs/multisenselog__2015-11-16/planar_scans/scan_00.csv");
-  //scan_name_A.append("/logs/multisenselog__2015-11-16/tmp/scan_00.csv");
-  //scan_name_A.append("/main-distro/software/externals/libpointmatcher/examples/data/2D_twoBoxes.csv");
   scan_name_B.append(homedir);
   scan_name_B.append("/logs/multisenselog__2015-11-16/planar_scans/scan_02.csv");
-  //scan_name_B.append("/logs/multisenselog__2015-11-16/tmp/scan_08.csv");
-  //scan_name_B.append("/main-distro/software/externals/libpointmatcher/examples/data/2D_oneBox.csv");
 
   // Load point clouds from file
   ref = DP::load(cloud_name_A);
@@ -271,11 +263,11 @@ void getICPTransform(DP &cloud_in, DP &cloud_ref)
   DP initializedData = rigidTrans->compute(cloud_in, initTransfo);
 
   // Compute the transformation to express data in ref
-  PM::TransformationParameters T = icp(initializedData, cloud_ref);
+  PM::TransformationParameters T = icp(cloud_in, cloud_ref, initTransfo);
   cout << "Match ratio: " << icp.errorMinimizer->getWeightedPointUsedRatio() << endl;
 
   // Transform data to express it in ref
-  DP data_out(initializedData);
+  DP data_out(cloud_in);
   icp.transformations.apply(data_out, T);
 
   // Transform output cloud to pcl::PointCloud<pcl::PointXYZRGB>
