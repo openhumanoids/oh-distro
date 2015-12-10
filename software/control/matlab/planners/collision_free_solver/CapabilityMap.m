@@ -293,8 +293,9 @@ classdef CapabilityMap
         end
       end
       
-      xmlwrite('capabilityMapManipulator.urdf', doc)
-      rbm = RigidBodyManipulator('capabilityMapManipulator.urdf');
+      urdf_string = xmlwrite(doc);
+      rbm = RigidBodyManipulator();
+      rbm = rbm.addRobotFromURDFString(urdf_string);
   
       %Compute arm length
       q = zeros(rbm.num_positions, 1);
@@ -339,7 +340,7 @@ classdef CapabilityMap
         pp = gcp;
         n_samples_per_worker = ceil(obj.n_samples/pp.NumWorkers);
         parfor w = 1:pp.NumWorkers
-          worker_map{w} = CapabilityMap.computeMap(nv, ndpv, ...
+          worker_map{w} = CapabilityMap.computeMap(urdf_string, nv, ndpv, ...
             n_vox_per_edge, n_samples_per_worker, eep, eea, ve, vc, ...
             directions, pt, at, end_effector, mc, w);
         end
@@ -348,7 +349,7 @@ classdef CapabilityMap
         end
       else
         disp('No parallel toolbox installed, computation might take very long!')
-        obj.map = CapabilityMap.computeMap(nv, ndpv, ...
+        obj.map = CapabilityMap.computeMap(urdf_string, nv, ndpv, ...
           n_vox_per_edge, obj.n_samples, eep, eea, ve, vc, ...
           directions, pt, at, end_effector, mc, 1);
       end
@@ -450,11 +451,12 @@ classdef CapabilityMap
       end
     end
     
-    function worker_map = computeMap(n_voxels, n_directions_per_voxel, n_vox_per_edge, ...
+    function worker_map = computeMap(urdf_string, n_voxels, n_directions_per_voxel, n_vox_per_edge, ...
         n_samples, end_effector_point, end_effector_axis, vox_edge, centres, ...
         directions, pos_tolerance, ang_tolerance, end_effector, map_centre, worker)
       
-      rbm = RigidBodyManipulator('capabilityMapManipulator.urdf', struct('floating', true));
+      rbm = RigidBodyManipulator();
+      rbm = rbm.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
       torso_constraint = PostureConstraint(rbm);
       torso_constraint = torso_constraint.setJointLimits((1:6)', [-map_centre; 0; 0; 0], [-map_centre; 0; 0; 0]);
       
