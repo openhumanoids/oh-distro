@@ -256,6 +256,7 @@ classdef CapabilityMap
       if isfield(options,'pos_tolerance'), obj.pos_tolerance = options.pos_tolerance; else obj.pos_tolerance = 0.01; end;
       if isfield(options,'ang_tolerance'), obj.ang_tolerance = options.ang_tolerance; else obj.ang_tolerance = pi/180; end;
       if isfield(options,'end_effector_point'), obj.end_effector_point = options.end_effector_point; else obj.end_effector_point = [0;0;0]; end;
+      if ~isfield(options,'use_parallel_toolbox'), options.use_parallel_toolbox = true; end;
       
       
       obj.urdf = xmlread(urdf_file);
@@ -334,7 +335,7 @@ classdef CapabilityMap
       at = obj.ang_tolerance;
       mc = obj.map_left_centre;
       v = ver;
-      if any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
+      if options.use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
         pp = gcp;
         n_samples_per_worker = ceil(obj.n_samples/pp.NumWorkers);
         parfor w = 1:pp.NumWorkers
@@ -455,7 +456,7 @@ classdef CapabilityMap
       
       rbm = RigidBodyManipulator('capabilityMapManipulator.urdf', struct('floating', true));
       torso_constraint = PostureConstraint(rbm);
-      torso_constraint = torso_constraint.setJointLimits((1:6)', zeros(6,1), zeros(6,1));
+      torso_constraint = torso_constraint.setJointLimits((1:6)', [-map_centre; 0; 0; 0], [-map_centre; 0; 0; 0]);
       
       %IK Options
       Q = diag(rbm.num_positions:-1:1);
@@ -491,6 +492,7 @@ classdef CapabilityMap
         active_joints = 7:rbm.num_positions;
         q = [-map_centre; 0; 0; 0; rbm.joint_limit_min(active_joints) + (rbm.joint_limit_max(active_joints)- ...
           rbm.joint_limit_min(active_joints)).*rand(rbm.num_positions-6,1)];
+%         v.draw(0, q)
         kinsol = rbm.doKinematics(q);
         pos = rbm.forwardKin(kinsol, end_effector, [0;0;0]);
         sub = ceil(pos/vox_edge) + (n_vox_per_edge/2) * ones(3,1);
