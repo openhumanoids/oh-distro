@@ -166,13 +166,13 @@ void App::doWork(Eigen::MatrixXf &transf_matrix, int transf_index){
   std::vector<float> yA;
   readCSVFile(cloudA, xA, yA);
   std::cout << xA.size() << " points in File A\n";
-  lidarOdom_->doOdometry(xA, yA, xA.size(), 0, initReference);
+  lidarOdom_->doOdometry(xA, yA, xA.size(), 0, &initReference);
 
   std::vector<float> xB;
   std::vector<float> yB;
   readCSVFile(cloudB, xB, yB);
   std::cout << xB.size() << " points in File B\n";
-  lidarOdom_->doOdometry(xB, yB, xB.size(), 1, initInput);
+  lidarOdom_->doOdometry(xB, yB, xB.size(), 1, &initInput);
 
   // 2. Determine the body position using the LIDAR motion estimate:
   /*
