@@ -3,7 +3,7 @@
 // settings
 //
 // Example with attached data sample:
-// testRegister2D -a scan_00.csv  -b scan_01.csv  -c scan_02.csv
+// doMatching2D -a scan_00.csv  -b scan_01.csv
 
 #include <registration-test/icp_utils.h>
 
@@ -173,11 +173,6 @@ void App::doWork(Eigen::MatrixXf &transf_matrix, int transf_index){
   readCSVFile(cloudB, xB, yB);
   std::cout << xB.size() << " points in File B\n";
   lidarOdom_->doOdometry(xB, yB, xB.size(), 1, initInput);
-
-  // Match third scan giving a prior rotation for the heading
-  // this alignment would otherwise fail:
-  cout << "Match C: Continue? ";
-  cin >> i;
 
   // 2. Determine the body position using the LIDAR motion estimate:
   /*
