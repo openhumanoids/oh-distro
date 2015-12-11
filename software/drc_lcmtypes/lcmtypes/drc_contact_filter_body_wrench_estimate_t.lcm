@@ -5,17 +5,20 @@ package drc;
 struct contact_filter_body_wrench_estimate_t
 {
   int64_t utime;
-
-  int16_t body_id;
-  string body_name;
-  string joint_name;
+  int32_t num_bodies;
+  int32_t num_velocities;
   float likelihood; //this is only up to scaling, doesn't include normalizing constant
   float exponentVal;
-  float fx;
-  float fy;
-  float fz;
-  float tx;
-  float ty;
-  float tz;
+  float implied_residual[num_velocities];
+
+  string body_name[num_bodies];
+  string joint_name[num_bodies];
+
+  float fx[num_bodies];
+  float fy[num_bodies];
+  float fz[num_bodies];
+  float tx[num_bodies];
+  float ty[num_bodies];
+  float tz[num_bodies];
 
 }
