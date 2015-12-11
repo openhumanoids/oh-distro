@@ -56,7 +56,7 @@ classdef CapabilityMap
       obj.base_link = vars.options.base_link;
       obj.active_voxels = true(obj.n_voxels, 1);
       obj.n_active_voxels = obj.n_voxels;
-      obj.base2root = vars.options.base2root;
+      obj.map_left_centre = vars.options.map_left_centre;
       obj.occupancy_map = vars.occupancy_map;
       
       obj = obj.resetActiveVoxels();
@@ -150,12 +150,12 @@ classdef CapabilityMap
     
     function drawMap(obj, text)
       if nargin < 2, text = 'Capability Map'; end
-      obj.drawVoxelCentres(true(1, obj.n_voxels), text);
+      obj.drawVoxelCentres(true(obj.n_voxels, 1), text);
     end
     
     function drawMapCentredOnPoint(obj, point, text)
       if nargin < 3, text = 'Capability Map'; end
-      obj.drawVoxelCentres(true(1, obj.n_voxels), text, point);
+      obj.drawVoxelCentres(true(obj.n_voxels, 1), text, point);
     end
     
     function drawActiveMap(obj, text)
@@ -174,7 +174,11 @@ classdef CapabilityMap
         h = 1-(i/obj.n_directions_per_voxel*2/3);
         rgb = hsv2rgb(h, 1, 1);
         lcmClient.glColor3f(rgb(1), rgb(2), rgb(3));
-        lcmClient.glPointSize(5);
+        if i == 0
+          lcmClient.glPointSize(1);
+        else
+          lcmClient.glPointSize(5);
+        end
         coords = obj.vox_centres(:, (obj.reachability_index == i/obj.n_directions_per_voxel) & voxels);
         if nargin > 3
           coords = bsxfun(@plus, offset(1:3), coords);
@@ -182,6 +186,28 @@ classdef CapabilityMap
         if ~isempty(coords)
           lcmClient.points(coords(1,:), coords(2,:), coords(3,:));
         end
+      end
+      lcmClient.switchBuffers();
+    end
+    
+    function drawOccupancyMap(obj, voxel, offset, text)
+      if nargin < 3, text = 'Occupancy Map'; end
+      lcmClient = LCMGLClient(text);
+      coords = obj.getOccupancyMapCentres();
+      if nargin > 2
+        coords = bsxfun(@plus, offset(1:3), coords);
+      end
+      colliding_points = coords(:,obj.occupancy_map(:, voxel));
+      free_points = coords(:,~obj.occupancy_map(:, voxel));
+      if ~isempty(colliding_points)
+        lcmClient.glPointSize(5);
+        lcmClient.glColor3f(1, 0, 0);
+        lcmClient.points(colliding_points(1,:), colliding_points(2,:), colliding_points(3,:))
+      end
+      if ~isempty(free_points)
+        lcmClient.glPointSize(1);
+        lcmClient.glColor3f(0, 1, 0);
+        lcmClient.points(free_points(1,:), free_points(2,:), free_points(3,:))
       end
       lcmClient.switchBuffers();
     end
@@ -360,8 +386,14 @@ classdef CapabilityMap
       delete('capabilityMapManipulator.urdf')
     end
     
-    function obj = generateOccupancyMap(obj, resolution)
+    function obj = generateOccupancyMap(obj, resolution, use_parallel_toolbox)
+      
+      if nargin < 3, use_parallel_toolbox = true; end
+      
 %       Generate rigid body manipulator from urdf
+      if isempty(obj.map)
+        error('A capability map is needed to generate an occupancy map.')
+      end
       doc = com.mathworks.xml.XMLUtils.createDocument('robot');
       robotNode = doc.getDocumentElement;
       robot_name = obj.urdf.getDocumentElement().getAttribute('name');
@@ -377,38 +409,44 @@ classdef CapabilityMap
           break
         end
       end
-      xmlwrite('base.urdf', doc)
-      base = RigidBodyManipulator('base.urdf', struct('floating', true));
+      urdf_string = xmlwrite(doc);
+      base = RigidBodyManipulator();
+      base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
       
       base_BB = base.body(2).collision_geometry{1}.getBoundingBoxPoints();
       obj.occupancy_map_resolution = resolution;
-      obj.occupancy_map_lb = min(bsxfun(@plus, obj.vox_centres(:,1) - obj.base2root, base_BB), [], 2);
-      obj.occupancy_map_ub = max(bsxfun(@plus, obj.vox_centres(:,end) - obj.base2root, base_BB), [], 2);
+      obj.occupancy_map_lb = min(bsxfun(@plus, obj.vox_centres(:,1) - obj.map_left_centre, base_BB), [], 2);
+      obj.occupancy_map_ub = max(bsxfun(@plus, obj.vox_centres(:,end) - obj.map_left_centre, base_BB), [], 2);
       obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution);
       obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
-      om_n_voxels = prod(obj.occupancy_map_dimensions);
+      obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
       
-      centres = obj.vox_centres;
-      b2r = obj.base2root;
-      om_centres = obj.getOccupancyMapCentres();
-      n_vox = obj.n_voxels;
-      om = logical.empty(0, n_vox + 1);
-      parfor vox = 1:n_vox
-        vect = false(1, om_n_voxels);
-        q = [centres(:, vox)- b2r; 0; 0; 0];
-        kinsol = base.doKinematics(q);
-        colliding_points = base.collidingPoints(kinsol, om_centres, resolution/2);
-        if ~isempty(colliding_points)
-          vect(colliding_points) = ~vect(colliding_points);
-          om = [om; [vox vect]];
+      %Compute map
+      omnv = prod(obj.occupancy_map_dimensions);
+      vc = obj.vox_centres;
+      mc = obj.map_left_centre;
+      omc = obj.getOccupancyMapCentres();
+      voxels_to_check = find(obj.reachability_index~=0);
+      v = ver;
+      if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
+        spmd
+          om = false(omnv, length(voxels_to_check), 'codistributed');
+          base = RigidBodyManipulator();
+          base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
+          for i = drange(1:length(voxels_to_check))
+            q = [vc(:, voxels_to_check(i))- mc; 0; 0; 0];
+            kinsol = base.doKinematics(q);
+            colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
+            if ~isempty(colliding_points)
+              om(colliding_points, i) = ~om(colliding_points, i);
+            end
+          end
         end
       end
-      obj.occupancy_map = [];
-      for i = size(om,1)
-        obj.occupancy_map(om(i,1), :) = om(i,2:end);
-      end
-      obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
-      delete('base.urdf')
+      
+      obj.occupancy_map = true(omnv, obj.n_voxels);
+      om = gather(om);
+      obj.occupancy_map(:, voxels_to_check) = om;
     end
     
     function centres = getOccupancyMapCentres(obj)
