@@ -106,6 +106,15 @@ void ContactFilter::addContactPoints(std::vector<ContactFilterPoint> contactPoin
     // always go by body_names, this is the safest
     cfp.body_id = this->drake_model.findLinkId(cfp.body_name);
     this->contactPoints.push_back(cfp);
+
+    // also insert it into the contactPointMap according to the body it is on
+    if (this->contactPointMap.count(cfp.body_name) > 0){
+      this->contactPointMap.at(cfp.body_name).push_back(cfp);
+    }
+    else{
+      std::vector<ContactFilterPoint> vec{cfp};
+      this->contactPointMap.insert(std::make_pair(cfp.body_name, vec));
+    }
   }
 }
 
@@ -264,6 +273,56 @@ void ContactFilter::computeLikelihoodFull(double t, const Eigen::VectorXd &resid
 
 }
 
+MultiContactMeasurementUpdate ContactFilter::computeMultiContactLikelihood(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q,
+                                                             const Eigen::VectorXd &v,
+                                                             const std::vector<ContactFilterPoint>& contactFilterPointsVec,
+                                                             bool publish){
+  MultiContactMeasurementUpdate mcMeasurementUpdate;
+
+  // need to actually implement this, requires setting up a new QP type problem
+  // should be able to handle different numbers of active contact points
+
+  return mcMeasurementUpdate;
+}
+
+void ContactFilter::computeMultiContactLikelihoodFull(double t, const Eigen::VectorXd &residual, const Eigen::VectorXd &q,
+                                       const Eigen::VectorXd &v, std::vector<std::string> activeLinks,
+                                       bool publishMostLikely,
+                                       bool publishAll){
+
+
+  this->multiContactMeasurementUpdateVec.clear();
+
+  std::vector<std::vector<ContactFilterPoint>::iterator> it;
+  std::vector<std::vector<ContactFilterPoint>> vec;
+  int K = activeLinks.size();
+
+  for (auto activeLinkName: activeLinks){
+    auto & contactFilterPointVec = this->contactPointMap.at(activeLinkName);
+    it.push_back(contactFilterPointVec.begin());
+    vec.push_back(contactFilterPointVec);
+  }
+
+  while (it[0] != vec[0].end()) {
+
+    std::vector<ContactFilterPoint> contactPointVec;
+    for (int i = 0; i < K; i++){
+      contactPointVec.push_back(*it[i]);
+    }
+
+    auto mcMeasurementUpdate = this->computeMultiContactLikelihood(t, residual, q, v, contactPointVec, publishAll);
+    this->multiContactMeasurementUpdateVec.push_back(mcMeasurementUpdate);
+    // the following increments the "odometer" by 1
+    ++it[K-1];
+    for (int i = K-1; (i > 0) && (it[i] == vec[i].end()); --i) {
+      it[i] = vec[i].begin();
+      ++it[i-1];
+    }
+  }
+
+
+}
+
 // loop through this->measurementUpdateVec, record the most likely estimate and publish it
 void ContactFilter::publishMostLikelyEstimate() {
 
@@ -324,77 +383,125 @@ std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(const Eigen:
 }
 
 void ContactFilter::computeActiveLinkForceTorque(double t, const Eigen::VectorXd & residual, const Eigen::VectorXd &q,
-                                                 const Eigen::VectorXd &v, bool publish){
+                                                 const Eigen::VectorXd &v, bool publish, std::vector<std::string> activeLinkNames){
   std::set<std::shared_ptr<RigidBody>> activeRigidBodies = this->findActiveLinks(residual);
 
   if (activeRigidBodies.empty()){
     return;
   }
-  if (activeRigidBodies.size() > 1){
-    std::cout << std::endl;
-    std::cout << "more than one rigid body is active, I am confused, doing nothing" << std::endl;
-    std::cout << "the active rigid bodies are \n";
-    for (auto & rb: activeRigidBodies){
-      std::cout << rb->linkname + "\n";
-    }
-    std::cout << std::endl;
-    return;
+//  if (activeRigidBodies.size() > 1){
+//    std::cout << std::endl;
+//    std::cout << "more than one rigid body is active, I am confused, doing nothing" << std::endl;
+//    std::cout << "the active rigid bodies are \n";
+//    for (auto & rb: activeRigidBodies){
+//      std::cout << rb->linkname + "\n";
+//    }
+//    std::cout << std::endl;
+//    return;
+//  }
+
+
+  this->drake_model.doKinematics(q, v, false, false);
+  std::vector<MatrixXd> linkJacobianVec;
+  std::vector<BodyWrenchEstimate> bodyWrenchEstimateVec;
+
+  for (auto & rb: activeRigidBodies){
+    int body_id = this->drake_model.findLinkId(rb->linkname);
+    BodyWrenchEstimate bwe;
+    bwe.linkName = rb->linkname;
+    bwe.jointName = rb->getJoint().getName();
+    bodyWrenchEstimateVec.push_back(bwe);
+
+    MatrixXd linkJacobianFull = this->geometricJacobianFull(0, body_id, body_id, 0, false);
+    linkJacobianVec.push_back(linkJacobianFull.transpose());
   }
 
-  std::cout << std::endl;
-  std::cout << "attempting to compute body wrench" << std::endl;
-  this->drake_model.doKinematics(q, v, false, false);
-//  Vector3d points << 0,0,0;
-//  MatrixXd R_world_to_body = this->drake_model.forwardKin(points, )
+  // construct the large matrix we are going to use to do the pseudo-inverse
+  MatrixXd A(this->nv, 6*activeRigidBodies.size());
+  for (int i = 0; i < linkJacobianVec.size(); i++){
+    int startRow = 0;
+    int startColumn = 6*i;
+    int blockRows = this->nv;
+    int blockCols = 6;
+    A.block(startRow, startColumn, blockRows, blockCols) = linkJacobianVec[i];
+  }
+
+  VectorXd wrenchEstimateFull = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(residual);
+  VectorXd estResidual = A*wrenchEstimateFull;
+  double exponentVal = -1/2.0*(residual - estResidual).transpose()*this->W*(residual - estResidual);
+
+  for (int i = 0; i < bodyWrenchEstimateVec.size(); i++){
+    BodyWrenchEstimate& bwe = bodyWrenchEstimateVec[i];
+    bwe.exponentVal = exponentVal;
+    bwe.estResidual = estResidual;
+    bwe.t = t;
+    bwe.wrench = wrenchEstimateFull.segment(6*i, 6);
+  }
+
+
+  if (publish){
+    this->publishBodyFrameWrench(bodyWrenchEstimateVec);
+  }
+
+}
+
+void ContactFilter::publishBodyFrameWrench(const std::vector<BodyWrenchEstimate> & wrenchEstimateVec){
+
+//  std::cout << "attempting to publish body wrench" << std::endl;
+//  std::cout << std::endl;
+
+  drc::contact_filter_body_wrench_estimate_t msg;
+  msg.num_bodies = static_cast<int32_t> (wrenchEstimateVec.size());
+  msg.num_velocities = static_cast<int32_t> (this->nv);
+  msg.utime = static_cast<int64_t> (wrenchEstimateVec[0].t*1e6);
+  msg.exponentVal = (float) (wrenchEstimateVec[0].exponentVal);
+  msg.implied_residual.resize(this->nv);
+
+  for (int i = 0; i < this->nv; i++){
+    msg.implied_residual[i] = wrenchEstimateVec[0].estResidual[i];
+  }
+
+  msg.body_name.resize(msg.num_bodies);
+  msg.joint_name.resize(msg.num_bodies);
+  msg.tx.resize(msg.num_bodies);
+  msg.ty.resize(msg.num_bodies);
+  msg.tz.resize(msg.num_bodies);
+  msg.fx.resize(msg.num_bodies);
+  msg.fy.resize(msg.num_bodies);
+  msg.fz.resize(msg.num_bodies);
+
+  for (int i = 0; i < wrenchEstimateVec.size(); i++){
+    const BodyWrenchEstimate & wrenchEstimate = wrenchEstimateVec[i];
+    msg.body_name[i] = wrenchEstimate.linkName;
+    msg.joint_name[i] = wrenchEstimate.jointName;
+    msg.tx[i] = (float) wrenchEstimate.wrench(0);
+    msg.ty[i] = (float) wrenchEstimate.wrench(1);
+    msg.tz[i] = (float) wrenchEstimate.wrench(2);
+    msg.fx[i] = (float) wrenchEstimate.wrench(3);
+    msg.fy[i] = (float) wrenchEstimate.wrench(4);
+    msg.fz[i] = (float) wrenchEstimate.wrench(5);
+  }
+
+  this->lcm.publish(this->bodyWrenchPublishChannel, &msg);
+
+}
+
+// this method assumes that you have already called doKinematics with the desired position, velocity
+MatrixXd ContactFilter::geometricJacobianFull(int base_body_or_frame_ind, int end_effector_body_or_frame_ind,
+                           int expressed_in_body_or_frame_ind, int gradient_order,
+                           bool in_terms_of_qdot){
+
   std::vector<int> v_indices;
-  std::shared_ptr<RigidBody> rb = *activeRigidBodies.begin();
-  int body_id = this->drake_model.findLinkId(rb->linkname);
-
-
-  MatrixXd linkJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, false, &v_indices).value();
+  MatrixXd linkJacobian = this->drake_model.geometricJacobian<double>(base_body_or_frame_ind, end_effector_body_or_frame_ind,
+                                                                      expressed_in_body_or_frame_ind, gradient_order,
+                                                                      in_terms_of_qdot, &v_indices).value();
   // need to convert this to full sized Jacobian!
   MatrixXd linkJacobianFull = MatrixXd::Zero(6, this->nv);
   for (int i=0; i < v_indices.size(); i++){
     linkJacobianFull.col(v_indices[i]) = linkJacobian.col(i);
   }
 
-
-  // construct s
-  VectorXd wrench = linkJacobianFull.transpose().jacobiSvd(ComputeThinU | ComputeThinV).solve(residual);
-  VectorXd estResidual = linkJacobianFull.transpose()*wrench;
-  double exponentVal = -1/2.0*(residual - estResidual).transpose()*this->W*(residual - estResidual);
-
-//  std::cout << std::endl;
-//  std::cout << "active link = " + rb->linkname + "\n";
-//  std::cout << "active joint = " + rb->linkname + "\n";
-//  std::cout << "wrench is " << wrench << std::endl;
-//  std::cout << std::endl;
-  if (publish){
-    this->publishBodyFrameWrench(t, rb->linkname, rb->getJoint().getName(), wrench, exponentVal);
-  }
-
-}
-
-void ContactFilter::publishBodyFrameWrench(double t, std::string linkname, std::string jointName,
-                                           const Eigen::VectorXd & wrench, double exponentVal){
-
-  std::cout << "attempting to publish body wrench" << std::endl;
-  std::cout << std::endl;
-
-  drc::contact_filter_body_wrench_estimate_t msg;
-  msg.utime = static_cast<int64_t> (t*1e6);
-  msg.body_name = linkname;
-  msg.joint_name = jointName;
-  msg.exponentVal = (float) exponentVal;
-
-  msg.tx = (float) wrench(0);
-  msg.ty = (float) wrench(1);
-  msg.tz = (float) wrench(2);
-  msg.fx = (float) wrench(3);
-  msg.fy = (float) wrench(4);
-  msg.fz = (float) wrench(5);
-
-  this->lcm.publish(this->bodyWrenchPublishChannel, &msg);
+  return linkJacobianFull;
 
 }
 
