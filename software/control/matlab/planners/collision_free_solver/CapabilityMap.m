@@ -33,7 +33,7 @@ classdef CapabilityMap
     function obj = CapabilityMap(file_path, kinematic_chain_left, ...
         end_effector_right, end_effector_axis, map_left_centre, nominal_configuration)
       if nargin == 1
-        obj = obj.generateFromFile(file_path);
+        obj = obj.loadFromFile(file_path);
       elseif nargin > 1
       
         original_urdf = xmlread(file_path);
@@ -42,7 +42,6 @@ classdef CapabilityMap
         obj.end_effector_link.right = end_effector_right;
         obj.end_effector_axis = end_effector_axis;
       
-%       Generate rigid body manipulator from urdf
         doc = com.mathworks.xml.XMLUtils.createDocument('robot');
         robotNode = doc.getDocumentElement;
         robot_name = original_urdf.getDocumentElement().getAttribute('name');
@@ -90,28 +89,91 @@ classdef CapabilityMap
       end
     end
     
-    function obj = generateFromFile(obj, matFile)
-      vars = load(matFile);
-      obj.map = vars.map;
-      obj.reachability_index = vars.reachability_index;
-      obj.vox_centres = vars.vox_centres;
-      obj.vox_edge = vars.options.vox_edge;
-      obj.n_samples = vars.options.n_samples;
-      obj.ang_tolerance = vars.options.ang_tolerance;
-      obj.pos_tolerance = vars.options.pos_tolerance;
-      obj.urdf = vars.options.urdf;
-      obj.n_voxels = size(obj.map, 1);
-      obj.n_directions_per_voxel = size(obj.map, 2);
-      obj.map_left_centre = vars.options.map_left_centre;
-      obj.end_effector_link = vars.options.end_effector_link;
-      obj.end_effector_point = vars.options.end_effector_point;
-      obj.base_link = vars.options.base_link;
-      obj.active_voxels = true(obj.n_voxels, 1);
-      obj.n_active_voxels = obj.n_voxels;
-      obj.map_left_centre = vars.options.map_left_centre;
-      obj.occupancy_map = vars.occupancy_map;
-      
-      obj = obj.resetActiveVoxels();
+    function obj = loadFromFile(obj, file)
+      vars = load(file);
+      if ~all(isfield(vars, {'urdf', 'map_left_centre', 'end_effector_link', 'end_effector_axis', ...
+        'base_link', 'nominal_configuration'}))
+        error('Some data is missing')
+      end
+      obj.urdf = vars.urdf;
+      obj.map_left_centre = vars.map_left_centre;
+      obj.end_effector_link = vars.end_effector_link;
+      obj.end_effector_axis = vars.end_effector_axis;
+      obj.base_link = vars.base_link;
+      obj.nominal_configuration = vars.nominal_configuration;
+      obj.rbm = RigidBodyManipulator();
+      obj.rbm = obj.rbm.addRobotFromURDFString(xmlwrite(obj.urdf));
+      if isfield(vars, 'map')
+        if ~all(isfield(vars,  {'map', 'reachability_index', ...
+        'vox_centres', 'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
+        'n_voxels', 'n_directions_per_voxel'}))
+          error('Some data is missing')
+        end
+        obj.map = vars.map;
+        obj.reachability_index = vars.reachability_index;
+        obj.vox_centres = vars.vox_centres;
+        obj.vox_edge = vars.vox_edge;
+        obj.n_samples = vars.n_samples;
+        obj.ang_tolerance = vars.ang_tolerance;
+        obj.pos_tolerance = vars.pos_tolerance;
+        obj.n_voxels = size(obj.map, 1);
+        obj.n_directions_per_voxel = size(obj.map, 2);
+        obj = obj.resetActiveVoxels();
+      else
+        warning('No map data found')
+      end
+      if isfield(vars, 'occupancy_map')
+        if ~all(isfield(vars,  {'occupancy_map', ...
+        'occupancy_map_resolution', 'occupancy_map_dimensions', ...
+        'occupancy_map_n_voxels', 'occupancy_map_lb', 'occupancy_map_ub'}))
+          error('Some data is missing')
+        end
+        obj.occupancy_map = vars.occupancy_map;
+        obj.occupancy_map_resolution = vars.occupancy_map_resolution;
+        obj.occupancy_map_dimensions = vars.occupancy_map_dimensions;
+        obj.occupancy_map_n_voxels = vars.occupancy_map_n_voxels;
+        obj.occupancy_map_lb = vars.occupancy_map_lb;
+        obj.occupancy_map_ub = vars.occupancy_map_ub;
+      else
+        warning('No occupancy map data found')
+      end
+    end
+    
+    function saveToFile(obj, file)
+      urdf = obj.urdf;
+      map_left_centre = obj.map_left_centre;
+      end_effector_link = obj.end_effector_link;
+      end_effector_axis = obj.end_effector_axis;
+      base_link = obj.base_link;
+      nominal_configuration = obj.nominal_configuration;
+      vars = {'urdf', 'map_left_centre', 'end_effector_link', 'end_effector_axis', ...
+        'base_link', 'nominal_configuration'};
+      if ~isempty(obj.map)
+        map = obj.map;
+        reachability_index = obj.reachability_index;
+        vox_centres = obj.vox_centres;
+        vox_edge = obj.vox_edge;
+        n_samples = obj.n_samples;
+        ang_tolerance = obj.ang_tolerance;
+        pos_tolerance = obj.pos_tolerance;
+        n_voxels = obj.n_voxels;
+        n_directions_per_voxel = obj.n_directions_per_voxel;
+        vars = [vars, {'map', 'reachability_index', ...
+        'vox_centres', 'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
+        'n_voxels', 'n_directions_per_voxel'}];
+      end
+      if ~isempty(obj.occupancy_map)
+        occupancy_map = obj.occupancy_map;
+        occupancy_map_resolution = obj.occupancy_map_resolution;
+        occupancy_map_dimensions = obj.occupancy_map_dimensions;
+        occupancy_map_n_voxels = obj.occupancy_map_n_voxels;
+        occupancy_map_lb = obj.occupancy_map_lb;
+        occupancy_map_ub = obj.occupancy_map_ub;
+        vars = [vars, {'occupancy_map', ...
+        'occupancy_map_resolution', 'occupancy_map_dimensions', ...
+        'occupancy_map_n_voxels', 'occupancy_map_lb', 'occupancy_map_ub'}];
+      end
+      save(file, vars{:});
     end
     
     function obj = activateVoxels(obj, idx)
