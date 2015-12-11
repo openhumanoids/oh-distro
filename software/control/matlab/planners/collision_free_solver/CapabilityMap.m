@@ -1,6 +1,7 @@
 classdef CapabilityMap
   
   properties
+    rbm
     map
     reachability_index
     vox_centres
@@ -13,11 +14,11 @@ classdef CapabilityMap
     n_directions_per_voxel
     map_left_centre
     end_effector_link
-    end_effector_point
     end_effector_axis
     base_link
     active_voxels
     n_active_voxels
+    nominal_configuration
     EE_pose
     occupancy_map
     occupancy_map_resolution
@@ -29,12 +30,63 @@ classdef CapabilityMap
   
   methods
     
-    function obj = CapabilityMap(mat_file, EE_pose)
-      if nargin > 0
-        obj = obj.generateFromFile(mat_file);
-      end
-      if nargin > 1
-        obj = obj.setEEPose(EE_pose);
+    function obj = CapabilityMap(file_path, kinematic_chain_left, ...
+        end_effector_right, end_effector_axis, map_left_centre, nominal_configuration)
+      if nargin == 1
+        obj = obj.generateFromFile(file_path);
+      elseif nargin > 1
+      
+        original_urdf = xmlread(file_path);
+        obj.base_link = kinematic_chain_left{1};
+        obj.end_effector_link.left = kinematic_chain_left{end};
+        obj.end_effector_link.right = end_effector_right;
+        obj.end_effector_axis = end_effector_axis;
+      
+%       Generate rigid body manipulator from urdf
+        doc = com.mathworks.xml.XMLUtils.createDocument('robot');
+        robotNode = doc.getDocumentElement;
+        robot_name = original_urdf.getDocumentElement().getAttribute('name');
+        if ~isempty(robot_name)
+          robotNode.setAttribute('name',robot_name);
+        end
+
+        links = original_urdf.getDocumentElement().getElementsByTagName('link');
+        for l = 0:links.getLength()-1
+          if any(strcmp(links.item(l).getAttribute('name'), kinematic_chain_left))
+            linkNode = doc.importNode(links.item(l), true);
+            robotNode.appendChild(linkNode);
+          end
+        end
+
+        joints = original_urdf.getDocumentElement().getElementsByTagName('joint');
+        for j = 0:joints.getLength()-1
+          parent = joints.item(j).getElementsByTagName('parent').item(0);
+          child = joints.item(j).getElementsByTagName('child').item(0);
+          if ~isempty(parent) && ~isempty(child) && ...
+              any(strcmp(parent.getAttribute('link'), kinematic_chain_left)) && ...
+              any(strcmp(child.getAttribute('link'), kinematic_chain_left))
+            jointNode = doc.importNode(joints.item(j), true);
+            robotNode.appendChild(jointNode);
+          end
+        end
+
+        urdf_string = xmlwrite(doc);
+        obj.urdf = doc;
+        obj.rbm = RigidBodyManipulator();
+        obj.rbm = obj.rbm.addRobotFromURDFString(urdf_string);
+        
+        if nargin < 6
+          obj.nominal_configuration = zeros(obj.rbm.num_positions, 1);
+        else
+          obj.nominal_configuration = nominal_configuration;
+        end
+        kinsol = obj.rbm.doKinematics(obj.nominal_configuration, []);
+        
+        if isnumeric(map_left_centre)
+          obj.map_left_centre = map_left_centre;
+        else
+          obj.map_left_centre = obj.rbm.forwardKin(kinsol, obj.rbm.findLinkId(map_left_centre), [0;0;0]);
+        end
       end
     end
     
@@ -270,69 +322,20 @@ classdef CapabilityMap
       centres = obj.vox_centres(:, obj.active_voxels);
     end
     
-    function obj = generateCapabilityMap(obj, urdf_file, kinematic_chain_left, ...
-        end_effector_right, end_effector_axis, map_left_centre, options)
-      
-      obj = CapabilityMap();
+    function obj = generateCapabilityMap(obj, options)
   
-      if nargin < 7 || isempty(options), options = struct(); end
+      if nargin < 2 || isempty(options), options = struct(); end
       if isfield(options,'vox_edge'), obj.vox_edge = options.vox_edge; else obj.vox_edge = 0.05; end;
       if isfield(options,'n_samples'), obj.n_samples = options.n_samples; else obj.n_samples = 1e6; end;
       if isfield(options,'n_directions_per_voxel'), obj.n_directions_per_voxel = options.n_directions_per_voxel; else obj.n_directions_per_voxel = 50; end;
       if isfield(options,'pos_tolerance'), obj.pos_tolerance = options.pos_tolerance; else obj.pos_tolerance = 0.01; end;
       if isfield(options,'ang_tolerance'), obj.ang_tolerance = options.ang_tolerance; else obj.ang_tolerance = pi/180; end;
-      if isfield(options,'end_effector_point'), obj.end_effector_point = options.end_effector_point; else obj.end_effector_point = [0;0;0]; end;
       if ~isfield(options,'use_parallel_toolbox'), options.use_parallel_toolbox = true; end;
-      
-      
-      obj.urdf = xmlread(urdf_file);
-      obj.base_link = kinematic_chain_left{1};
-      obj.end_effector_link.left = kinematic_chain_left{end};
-      obj.end_effector_link.right = end_effector_right;
-      obj.end_effector_axis = end_effector_axis;
-      
-%       Generate rigid body manipulator from urdf
-      doc = com.mathworks.xml.XMLUtils.createDocument('robot');
-      robotNode = doc.getDocumentElement;
-      robot_name = obj.urdf.getDocumentElement().getAttribute('name');
-      if ~isempty(robot_name)
-        robotNode.setAttribute('name',robot_name);
-      end
-      
-      links = obj.urdf.getDocumentElement().getElementsByTagName('link');
-      for l = 0:links.getLength()-1
-        if any(strcmp(links.item(l).getAttribute('name'), kinematic_chain_left))
-          linkNode = doc.importNode(links.item(l), true);
-          robotNode.appendChild(linkNode);
-        end
-      end
-      
-      joints = obj.urdf.getDocumentElement().getElementsByTagName('joint');
-      for j = 0:joints.getLength()-1
-        parent = joints.item(j).getElementsByTagName('parent').item(0);
-        child = joints.item(j).getElementsByTagName('child').item(0);
-        if ~isempty(parent) && ~isempty(child) && ...
-            any(strcmp(parent.getAttribute('link'), kinematic_chain_left)) && ...
-            any(strcmp(child.getAttribute('link'), kinematic_chain_left))
-          jointNode = doc.importNode(joints.item(j), true);
-          robotNode.appendChild(jointNode);
-        end
-      end
-      
-      urdf_string = xmlwrite(doc);
-      rbm = RigidBodyManipulator();
-      rbm = rbm.addRobotFromURDFString(urdf_string);
   
       %Compute arm length
-      q = zeros(rbm.num_positions, 1);
-      kinsol = rbm.doKinematics(q, []);
-      if isnumeric(map_left_centre)
-        obj.map_left_centre = map_left_centre;
-      else
-        obj.map_left_centre = rbm.forwardKin(kinsol, rbm.findLinkId(map_left_centre), [0;0;0]);
-      end
-      end_effector = rbm.findLinkId(obj.end_effector_link.left);
-      end_effector_position = rbm.forwardKin(kinsol, end_effector, [0;0;0]);
+      kinsol = obj.rbm.doKinematics(obj.nominal_configuration, []);
+      end_effector = obj.rbm.findLinkId(obj.end_effector_link.left);
+      end_effector_position = obj.rbm.forwardKin(kinsol, end_effector, [0;0;0]);
       distance = norm(obj.map_left_centre-end_effector_position);
       
       % Workspace discretization
@@ -354,7 +357,6 @@ classdef CapabilityMap
       %Compute map
       nv = obj.n_voxels;
       ndpv = obj.n_directions_per_voxel;
-      eep = obj.end_effector_point;
       eea = obj.end_effector_axis;
       ve = obj.vox_edge;
       vc = obj.vox_centres;
@@ -362,12 +364,13 @@ classdef CapabilityMap
       at = obj.ang_tolerance;
       mc = obj.map_left_centre;
       v = ver;
+      urdf_string = xmlwrite(obj.urdf);
       if options.use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
         pp = gcp;
         n_samples_per_worker = ceil(obj.n_samples/pp.NumWorkers);
         parfor w = 1:pp.NumWorkers
           worker_map{w} = CapabilityMap.computeMap(urdf_string, nv, ndpv, ...
-            n_vox_per_edge, n_samples_per_worker, eep, eea, ve, vc, ...
+            n_vox_per_edge, n_samples_per_worker, eea, ve, vc, ...
             directions, pt, at, end_effector, mc, w);
         end
         for w = 1:numel(worker_map)
@@ -376,19 +379,18 @@ classdef CapabilityMap
       else
         disp('No parallel toolbox installed, computation might take very long!')
         obj.map = CapabilityMap.computeMap(urdf_string, nv, ndpv, ...
-          n_vox_per_edge, obj.n_samples, eep, eea, ve, vc, ...
+          n_vox_per_edge, obj.n_samples, eea, ve, vc, ...
           directions, pt, at, end_effector, mc, 1);
       end
       for v = 1:obj.n_voxels
         obj.reachability_index(v) = nnz(obj.map(v,:))/obj.n_directions_per_voxel;
       end
       obj = obj.resetActiveVoxels();
-      delete('capabilityMapManipulator.urdf')
     end
     
-    function obj = generateOccupancyMap(obj, resolution, use_parallel_toolbox)
+    function obj = generateOccupancyMap(obj, resolution, orientation_steps, use_parallel_toolbox)
       
-      if nargin < 3, use_parallel_toolbox = true; end
+      if nargin < 4, use_parallel_toolbox = true; end
       
 %       Generate rigid body manipulator from urdf
       if isempty(obj.map)
@@ -500,17 +502,17 @@ classdef CapabilityMap
     end
     
     function worker_map = computeMap(urdf_string, n_voxels, n_directions_per_voxel, n_vox_per_edge, ...
-        n_samples, end_effector_point, end_effector_axis, vox_edge, centres, ...
+        n_samples, end_effector_axis, vox_edge, centres, ...
         directions, pos_tolerance, ang_tolerance, end_effector, map_centre, worker)
       
-      rbm = RigidBodyManipulator();
-      rbm = rbm.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
-      torso_constraint = PostureConstraint(rbm);
+      manipulator = RigidBodyManipulator();
+      manipulator = manipulator.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
+      torso_constraint = PostureConstraint(manipulator);
       torso_constraint = torso_constraint.setJointLimits((1:6)', [-map_centre; 0; 0; 0], [-map_centre; 0; 0; 0]);
       
       %IK Options
-      Q = diag(rbm.num_positions:-1:1);
-      ikoptions = IKoptions(rbm);
+      Q = diag(manipulator.num_positions:-1:1);
+      ikoptions = IKoptions(manipulator);
       ikoptions = ikoptions.setMajorIterationsLimit(100);
       ikoptions = ikoptions.setQ(Q);
       ikoptions = ikoptions.setMajorOptimalityTolerance(1e-3);
@@ -520,10 +522,10 @@ classdef CapabilityMap
       pos_constraints = WorldPositionConstraint.empty(0,size(centres,2));
       gaze_constraints = WorldGazeDirConstraint.empty(0, n_directions_per_voxel);
       for c = 1:size(centres,2)
-        pos_constraints(c) = WorldPositionConstraint(rbm, end_effector, end_effector_point, centres(:,c) - pos_tolerance/2, centres(:,c) + pos_tolerance/2);
+        pos_constraints(c) = WorldPositionConstraint(manipulator, end_effector, [0;0;0], centres(:,c) - pos_tolerance/2, centres(:,c) + pos_tolerance/2);
       end
       for p = 1:n_directions_per_voxel
-        gaze_constraints(p) = WorldGazeDirConstraint(rbm, end_effector, end_effector_axis, directions(:, p), ang_tolerance/2);
+        gaze_constraints(p) = WorldGazeDirConstraint(manipulator, end_effector, end_effector_axis, directions(:, p), ang_tolerance/2);
       end
         
 %       counter_times = zeros(n_samples, 1);
@@ -539,12 +541,12 @@ classdef CapabilityMap
         end
 %         counter_times(sample) = toc(counter_timer);
 %         setup_timer = tic;
-        active_joints = 7:rbm.num_positions;
-        q = [-map_centre; 0; 0; 0; rbm.joint_limit_min(active_joints) + (rbm.joint_limit_max(active_joints)- ...
-          rbm.joint_limit_min(active_joints)).*rand(rbm.num_positions-6,1)];
+        active_joints = 7:manipulator.num_positions;
+        q = [-map_centre; 0; 0; 0; manipulator.joint_limit_min(active_joints) + (manipulator.joint_limit_max(active_joints)- ...
+          manipulator.joint_limit_min(active_joints)).*rand(manipulator.num_positions-6,1)];
 %         v.draw(0, q)
-        kinsol = rbm.doKinematics(q);
-        pos = rbm.forwardKin(kinsol, end_effector, [0;0;0]);
+        kinsol = manipulator.doKinematics(q);
+        pos = manipulator.forwardKin(kinsol, end_effector, [0;0;0]);
         sub = ceil(pos/vox_edge) + (n_vox_per_edge/2) * ones(3,1);
         vox_ind = sub2ind(n_vox_per_edge * ones(1,3), sub(1), sub(2), sub(3));
 %         posConstraint = WorldPositionConstraint(rbm, end_effector, end_effector_point, centres(:,vox_ind) - pos_tolerance/2, centres(:,vox_ind) + pos_tolerance/2);
@@ -558,7 +560,7 @@ classdef CapabilityMap
 %           GazeConstraint = WorldGazeDirConstraint(rbm, end_effector, end_effector_axis, directions(:, point), ang_tolerance/2);
 %           constraint_times(sample*(n_directions_per_voxel-1)+point) = toc(constraint_timer);
 %           ik_timer = tic;
-          [q_new, info] = rbm.inverseKin(q, q, pos_constraints(vox_ind), gaze_constraints(point), torso_constraint, ikoptions);
+          [q_new, info] = manipulator.inverseKin(q, q, pos_constraints(vox_ind), gaze_constraints(point), torso_constraint, ikoptions);
 %           ik_times(sample*(n_directions_per_voxel-1)+point) = toc(ik_timer);
           if info < 10
 %             v.draw(0, q_new)
