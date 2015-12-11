@@ -442,10 +442,20 @@ classdef CapabilityMap
             end
           end
         end
+        om = gather(om);
+      else
+        om = false(omnv, length(voxels_to_check));
+        for i = 1:length(voxels_to_check)
+          q = [vc(:, voxels_to_check(i))- mc; 0; 0; 0];
+          kinsol = base.doKinematics(q);
+          colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
+          if ~isempty(colliding_points)
+            om(colliding_points, i) = ~om(colliding_points, i);
+          end
+        end
       end
       
       obj.occupancy_map = true(omnv, obj.n_voxels);
-      om = gather(om);
       obj.occupancy_map(:, voxels_to_check) = om;
     end
     
