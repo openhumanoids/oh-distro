@@ -394,6 +394,7 @@ classdef CapabilityMap
       
       if reset_active
         obj = obj.resetActiveVoxels();
+        obj = obj.resetActiveOrient();
       end
       
       cm_ub = max(obj.getActiveCentresRelativeToOrigin(), [], 2);
@@ -404,6 +405,7 @@ classdef CapabilityMap
         if all(point_cloud(:,pt) < cm_ub) && all(point_cloud(:,pt) > cm_lb)
           sub = ceil((point_cloud(:,pt) - obj.EE_pose(1:3))/obj.vox_edge) + n_vox_per_edge/2 * ones(3,1);
           voxInd = sub2ind(n_vox_per_edge * ones(1,3), sub(1), sub(2), sub(3));
+%           obj = obj.deactivateOrient(obj.occupancy_map(
           obj = obj.deactivateVoxels(obj.occupancy_map(:,voxInd));
         end
       end
@@ -548,12 +550,12 @@ classdef CapabilityMap
       base = RigidBodyManipulator();
       base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
       
-      base_BB = base.body(2).collision_geometry{1}.getBoundingBoxPoints();
+      [BB_lb, BB_ub] = obj.getBoundingBoxBoundsRelativeToMapCentre(base.body(2));
       voxels_to_check = find(obj.reachability_index~=0);
       
       obj.occupancy_map_resolution = resolution;
-      obj.occupancy_map_lb = min(bsxfun(@plus, obj.vox_centres(:,1) - obj.map_left_centre, base_BB), [], 2);
-      obj.occupancy_map_ub = max(bsxfun(@plus, obj.vox_centres(:,end) - obj.map_left_centre, base_BB), [], 2);
+      obj.occupancy_map_lb = min(bsxfun(@plus, obj.vox_centres(:,1) - obj.map_left_centre, BB_lb), [], 2);
+      obj.occupancy_map_ub = max(bsxfun(@plus, obj.vox_centres(:,end) - obj.map_left_centre, BB_ub), [], 2);
       obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution);
       obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
       obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
@@ -604,6 +606,19 @@ classdef CapabilityMap
         obj.occupancy_map(:, :, idx) = true(omnv, obj.n_voxels);
         obj.occupancy_map(:, voxels_to_check, idx) = om;
       end
+    end
+    
+    function [lb, ub] = getBoundingBoxBoundsRelativeToMapCentre(obj, body)
+      [r,p,y] = meshgrid(obj.occupancy_map_orient_steps.roll,...
+                         obj.occupancy_map_orient_steps.pitch,...
+                         obj.occupancy_map_orient_steps.yaw);
+       body_BB = bsxfun(@minus, body.collision_geometry{1}.getBoundingBoxPoints(), obj.map_left_centre);
+       ub = zeros(3,1);
+       lb = zeros(3,1);
+       for o = 1:obj.occupancy_map_n_orient
+         ub = max([max(rpy2rotmat([r(o); p(o); y(o)])*body_BB, [], 2), ub], [], 2);
+         lb = min([min(rpy2rotmat([r(o); p(o); y(o)])*body_BB, [], 2), lb], [], 2);
+       end
     end
     
     function centres = getOccupancyMapCentres(obj)
