@@ -148,8 +148,9 @@ classdef CapabilityMap
       end_effector_axis = obj.end_effector_axis;
       base_link = obj.base_link;
       nominal_configuration = obj.nominal_configuration;
+      saved_on = datestr(now);
       vars = {'urdf', 'map_left_centre', 'end_effector_link', 'end_effector_axis', ...
-        'base_link', 'nominal_configuration'};
+        'base_link', 'nominal_configuration', 'saved_on'};
       if ~isempty(obj.map)
         map = obj.map;
         reachability_index = obj.reachability_index;
@@ -267,12 +268,12 @@ classdef CapabilityMap
     
     function drawMap(obj, text)
       if nargin < 2, text = 'Capability Map'; end
-      obj.drawVoxelCentres(true(obj.n_voxels, 1), text);
+      obj.drawVoxelCentres(true(1, obj.n_voxels), text);
     end
     
     function drawMapCentredOnPoint(obj, point, text)
       if nargin < 3, text = 'Capability Map'; end
-      obj.drawVoxelCentres(true(obj.n_voxels, 1), text, point);
+      obj.drawVoxelCentres(true(1, obj.n_voxels), text, point);
     end
     
     function drawActiveMap(obj, text)
@@ -446,6 +447,8 @@ classdef CapabilityMap
 
       directions = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
       obj.map = false(obj.n_voxels, obj.n_directions_per_voxel);
+      obj.reachability_index = zeros(1, obj.n_voxels);
+      obj.active_voxels = false(1, obj.n_voxels);
       
       %Compute map
       nv = obj.n_voxels;
@@ -566,8 +569,8 @@ classdef CapabilityMap
     end
     
     function centres = getOccupancyMapCentres(obj)
-      [x,y,z] = meshgrid(obj.occupancy_map_lb(1) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(1), ...
-                         obj.occupancy_map_lb(2) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(2), ...
+      [y,x,z] = meshgrid(obj.occupancy_map_lb(2) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(2), ...
+                         obj.occupancy_map_lb(1) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(1), ...
                          obj.occupancy_map_lb(3) + obj.occupancy_map_resolution/2:obj.occupancy_map_resolution:obj.occupancy_map_ub(3));
       centres = [reshape(x, 1, obj.occupancy_map_n_voxels); ...
                  reshape(y, 1, obj.occupancy_map_n_voxels); ...
