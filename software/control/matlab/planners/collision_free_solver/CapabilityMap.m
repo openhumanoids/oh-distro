@@ -27,6 +27,8 @@ classdef CapabilityMap
     occupancy_map_lb
     occupancy_map_ub
     occupancy_map_orient_steps
+    occupancy_map_active_orient
+    occupancy_map_n_orient
   end
   
   methods
@@ -177,7 +179,7 @@ classdef CapabilityMap
           'occupancy_map_dimensions', 'occupancy_map_n_voxels', ...
           'occupancy_map_lb', 'occupancy_map_ub', 'occupancy_map_orient_steps'}];
       end
-      save(file, vars{:});
+      save(file, vars{:}, '-v7.3');
     end
     
     function obj = activateVoxels(obj, idx)
@@ -188,6 +190,36 @@ classdef CapabilityMap
     function obj = deactivateVoxels(obj, idx)
       obj.active_voxels(idx) = false;
       obj.n_active_voxels = nnz(obj.active_voxels);
+    end
+    
+    function obj = activateOrient(obj, voxels, active_orients)
+      if length(voxels) > 1
+        if ~iscell(active_orients)
+          error('active_orients must be a cell with the orientations idx to activate for each voxel')
+        end
+      else
+        if iscell(active_orients)
+          active_orients = active_orients{1};
+        end
+      end
+      for vox = 1:length(voxels)
+        obj.occupancy_map_active_orient(vox,active_orients) = true;
+      end
+    end
+    
+    function obj = deactivateOrient(obj, voxels, inactive_orients)
+      if length(voxels) > 1
+        if ~iscell(inactive_orients)
+          error('inactive_orients must be a cell with the orientations idx to deactivate for each voxel')
+        end
+      else
+        if iscell(inactive_orients)
+          inactive_orients = inactive_orients{1};
+        end
+      end
+      for vox = 1:length(voxels)
+        obj.occupancy_map_active_orient(vox,inactive_orients) = false;
+      end
     end
     
     function obj = setEEPose(obj, EE_pose)
@@ -412,6 +444,10 @@ classdef CapabilityMap
       end
     end
     
+    function obj = resetActiveOrient(obj)
+      obj = obj.deactivateOrient(1:obj.n_voxels, false(obj.n_voxels, obj.occupancy_map_n_orient));
+    end
+    
     function centres = getActiveVoxelCentres(obj)
       centres = obj.vox_centres(:, obj.active_voxels);
     end
@@ -513,6 +549,8 @@ classdef CapabilityMap
       base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
       
       base_BB = base.body(2).collision_geometry{1}.getBoundingBoxPoints();
+      voxels_to_check = find(obj.reachability_index~=0);
+      
       obj.occupancy_map_resolution = resolution;
       obj.occupancy_map_lb = min(bsxfun(@plus, obj.vox_centres(:,1) - obj.map_left_centre, base_BB), [], 2);
       obj.occupancy_map_ub = max(bsxfun(@plus, obj.vox_centres(:,end) - obj.map_left_centre, base_BB), [], 2);
@@ -520,18 +558,18 @@ classdef CapabilityMap
       obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
       obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
       obj.occupancy_map_orient_steps = struct('roll', roll_steps, 'pitch', pitch_steps, 'yaw', yaw_steps);
+      obj.occupancy_map_n_orient = length(roll_steps)*length(pitch_steps)*length(yaw_steps);
+      obj.occupancy_map_active_orient = false(obj.n_voxels, obj.occupancy_map_n_orient);
+      obj.occupancy_map = false(obj.occupancy_map_n_voxels, obj.n_voxels, obj.occupancy_map_n_orient);
       
       %Compute map
-      vis = base.constructVisualizer();
-      omnv = prod(obj.occupancy_map_dimensions);
+%       vis = base.constructVisualizer();
+      omnv = obj.occupancy_map_n_voxels;
       vc = obj.vox_centres;
       mc = obj.map_left_centre;
       omc = obj.getOccupancyMapCentres();
-      voxels_to_check = find(obj.reachability_index~=0);
       v = ver;
-      n_orient_steps = length(roll_steps)*length(pitch_steps)*length(yaw_steps);
       [p, r, y] = meshgrid(pitch_steps, roll_steps, yaw_steps);
-      obj.occupancy_map = false(omnv, obj.n_voxels, n_orient_steps);
       for idx = 1:n_orient_steps
         fprintf('Computing map %d of %d\n', idx, n_orient_steps);
         if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
@@ -556,9 +594,9 @@ classdef CapabilityMap
             kinsol = base.doKinematics(q);
             colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
             if ~isempty(colliding_points)
-              vis.draw(0, q)
-              drawTreePoints(omc(:, colliding_points));
-              drawTreePoints(vc(:, voxels_to_check(i)), 'colour', [1 0 1], 'text', 'joint')
+%               vis.draw(0, q)
+%               drawTreePoints(omc(:, colliding_points));
+%               drawTreePoints(vc(:, voxels_to_check(i)), 'colour', [1 0 1], 'text', 'joint')
               om(colliding_points, i) = ~om(colliding_points, i);
             end
           end
