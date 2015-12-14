@@ -19,6 +19,8 @@ classdef CapabilityMap
     active_voxels
     n_active_voxels
     nominal_configuration
+    map_ub
+    map_lb
     EE_pose
     occupancy_map
     occupancy_map_resolution
@@ -109,7 +111,7 @@ classdef CapabilityMap
       if isfield(vars, 'map')
         if ~all(isfield(vars,  {'map', 'reachability_index', ...
         'vox_centres', 'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
-        'n_voxels', 'n_directions_per_voxel'}))
+        'n_voxels', 'n_directions_per_voxel', 'map_lb', 'map_ub'}))
           error('Some data is missing')
         end
         obj.map = vars.map;
@@ -121,6 +123,8 @@ classdef CapabilityMap
         obj.pos_tolerance = vars.pos_tolerance;
         obj.n_voxels = size(obj.map, 1);
         obj.n_directions_per_voxel = size(obj.map, 2);
+        obj.map_ub = vars.map_ub;
+        obj.map_lb = vars.map_lb;
         obj = obj.resetActiveVoxels();
       else
         warning('No map data found')
@@ -128,7 +132,8 @@ classdef CapabilityMap
       if isfield(vars, 'occupancy_map')
         if ~all(isfield(vars,  {'occupancy_map', 'occupancy_map_resolution',...
             'occupancy_map_dimensions', 'occupancy_map_n_voxels', ...
-            'occupancy_map_lb', 'occupancy_map_ub', 'occupancy_map_orient_steps'}))
+            'occupancy_map_lb', 'occupancy_map_ub', ...
+            'occupancy_map_orient_steps', 'occupancy_map_n_orient'}))
           error('Some data is missing')
         end
         obj.occupancy_map = vars.occupancy_map;
@@ -138,6 +143,7 @@ classdef CapabilityMap
         obj.occupancy_map_lb = vars.occupancy_map_lb;
         obj.occupancy_map_ub = vars.occupancy_map_ub;
         obj.occupancy_map_orient_steps = vars.occupancy_map_orient_steps;
+        obj.occupancy_map_n_orient = vars.occupancy_map_n_orient;
       else
         warning('No occupancy map data found')
       end
@@ -163,9 +169,11 @@ classdef CapabilityMap
         pos_tolerance = obj.pos_tolerance;
         n_voxels = obj.n_voxels;
         n_directions_per_voxel = obj.n_directions_per_voxel;
+        map_lb = obj.map_lb;
+        map_ub = obj.map_ub;
         vars = [vars, {'map', 'reachability_index', ...
         'vox_centres', 'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
-        'n_voxels', 'n_directions_per_voxel'}];
+        'n_voxels', 'n_directions_per_voxel', 'map_lb', 'map_ub'}];
       end
       if ~isempty(obj.occupancy_map)
         occupancy_map = obj.occupancy_map;
@@ -175,9 +183,11 @@ classdef CapabilityMap
         occupancy_map_lb = obj.occupancy_map_lb;
         occupancy_map_ub = obj.occupancy_map_ub;
         occupancy_map_orient_steps = obj.occupancy_map_orient_steps;
+        occupancy_map_n_orient = obj.occupancy_map_n_orient;
         vars = [vars, {'occupancy_map', 'occupancy_map_resolution', ...
           'occupancy_map_dimensions', 'occupancy_map_n_voxels', ...
-          'occupancy_map_lb', 'occupancy_map_ub', 'occupancy_map_orient_steps'}];
+          'occupancy_map_lb', 'occupancy_map_ub',...
+          'occupancy_map_orient_steps', 'occupancy_map_n_orient'}];
       end
       save(file, vars{:}, '-v7.3');
     end
@@ -298,36 +308,48 @@ classdef CapabilityMap
       end
     end
     
-    function drawMap(obj, text)
-      if nargin < 2, text = 'Capability Map'; end
-      obj.drawVoxelCentres(true(1, obj.n_voxels), text);
+    function drawCapabilityMap(obj, text, draw_cubes)
+      if nargin < 2 || isempty(text), text = 'Capability Map'; end
+      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(true(1, obj.n_voxels), text, [], draw_cubes);
     end
     
-    function drawMapCentredOnPoint(obj, point, text)
-      if nargin < 3, text = 'Capability Map'; end
-      obj.drawVoxelCentres(true(1, obj.n_voxels), text, point);
+    function drawCapabilityMapCentredOnPoint(obj, point, text, draw_cubes)
+      if nargin < 3 || isempty(text), text = 'Capability Map'; end
+      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(true(1, obj.n_voxels), text, point, draw_cubes);
     end
     
-    function drawActiveMap(obj, text)
-      if nargin < 2, text = 'Active Capability Map'; end
-      obj.drawVoxelCentres(obj.active_voxels, text);
+    function drawActiveMap(obj, text, draw_cubes)
+      if nargin < 2 || isempty(text), text = 'Active Capability Map'; end
+      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(obj.active_voxels, text, [], draw_cubes);
     end
     
-    function drawActiveMapCentredOnPoint(obj, point, text)
-      if nargin < 3, text = 'Active Capability Map'; end
-      obj.drawVoxelCentres(obj.active_voxels, text, point);
+    function drawActiveMapCentredOnPoint(obj, point, text, draw_cubes)
+      if nargin < 3 || isempty(text), text = 'Active Capability Map'; end
+      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(obj.active_voxels, text, point, draw_cubes);
     end
     
-    function drawVoxelCentres(obj, voxels, text, offset)
+    function drawMap(obj, voxels, text, offset, draw_cubes)
       lcmClient = LCMGLClient(text);
-      for i = 0:obj.n_directions_per_voxel
+      if nargin < 4 || isempty(offset), offset = [0;0;0]; end
+      if nargin < 5, draw_cubes = true; end
+      if draw_cubes
+        lcmClient = obj.drawMapCubes(lcmClient, obj.map_lb + offset, obj.map_ub + offset, obj.vox_edge, offset);
+        start_idx = 0;
+      else
+        start_idx = 1;
+      end
+      for i = start_idx:obj.n_directions_per_voxel
         h = 1-(i/obj.n_directions_per_voxel*2/3);
         rgb = hsv2rgb(h, 1, 1);
         lcmClient.glColor3f(rgb(1), rgb(2), rgb(3));
         if i == 0
           lcmClient.glPointSize(1);
         else
-          lcmClient.glPointSize(5);
+          lcmClient.glPointSize(10);
         end
         coords = obj.vox_centres(:, (obj.reachability_index == i/obj.n_directions_per_voxel) & voxels);
         if nargin > 3
@@ -340,49 +362,59 @@ classdef CapabilityMap
       lcmClient.switchBuffers();
     end
     
-    function drawOccupancyMap(obj, voxel, r, p, y, offset, text)
-      if nargin < 7, text = 'Occupancy Map'; end
+    function drawOccupancyMap(obj, voxel, r, p, y, offset, text, draw_cubes, draw_base)
+      if nargin < 7 || isempty(text), text = 'Occupancy Map'; end
+      if nargin < 8 || isempty(draw_cubes), draw_cubes = true; end
+      if nargin < 8, draw_base = false; end
       lcmClient = LCMGLClient(text);
       coords = obj.getOccupancyMapCentres();
       
-      doc = com.mathworks.xml.XMLUtils.createDocument('robot');
-      robotNode = doc.getDocumentElement;
-      robot_name = obj.urdf.getDocumentElement().getAttribute('name');
-      if ~isempty(robot_name)
-        robotNode.setAttribute('name',robot_name);
-      end
-      
-      links = obj.urdf.getDocumentElement().getElementsByTagName('link');
-      for l = 0:links.getLength()-1
-        if strcmp(links.item(l).getAttribute('name'), obj.base_link)
-          linkNode = doc.importNode(links.item(l), true);
-          robotNode.appendChild(linkNode);
-          break
+      if draw_base
+        doc = com.mathworks.xml.XMLUtils.createDocument('robot');
+        robotNode = doc.getDocumentElement;
+        robot_name = obj.urdf.getDocumentElement().getAttribute('name');
+        if ~isempty(robot_name)
+          robotNode.setAttribute('name',robot_name);
         end
+
+        links = obj.urdf.getDocumentElement().getElementsByTagName('link');
+        for l = 0:links.getLength()-1
+          if strcmp(links.item(l).getAttribute('name'), obj.base_link)
+            linkNode = doc.importNode(links.item(l), true);
+            robotNode.appendChild(linkNode);
+            break
+          end
+        end
+        urdf_string = xmlwrite(doc);
+        base = RigidBodyManipulator();
+        base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
+        v = base.constructVisualizer();
+        rpy = [obj.occupancy_map_orient_steps.roll(r); obj.occupancy_map_orient_steps.pitch(p); obj.occupancy_map_orient_steps.yaw(y)];
+        pos = obj.vox_centres(:,voxel)-rpy2rotmat(rpy)*obj.map_left_centre;
+        v.draw(0, [pos;rpy])
       end
-      urdf_string = xmlwrite(doc);
-      base = RigidBodyManipulator();
-      base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
-      v = base.constructVisualizer();
-      rpy = [obj.occupancy_map_orient_steps.roll(r); obj.occupancy_map_orient_steps.pitch(p); obj.occupancy_map_orient_steps.yaw(y)];
-      pos = obj.vox_centres(:,voxel)-rpy2rotmat(rpy)*obj.map_left_centre;
-      v.draw(0, [pos;rpy])
-      drawTreePoints(obj.vox_centres(:,voxel));
       
-      if nargin > 5
+      if nargin < 6 || isempty(offset)
+        offset = [0;0;0];
+      end
+      if any(offset ~= 0)
         coords = bsxfun(@plus, offset(1:3), coords);
+      end
+      
+      if draw_cubes
+        lcmClient = obj.drawMapCubes(lcmClient, obj.occupancy_map_lb, obj.occupancy_map_ub, obj.occupancy_map_resolution, offset);
       end
       orient_size = [length(obj.occupancy_map_orient_steps.roll),...
         length(obj.occupancy_map_orient_steps.pitch),...
         length(obj.occupancy_map_orient_steps.yaw)];
-      colliding_points = coords(:,obj.occupancy_map(:, voxel, sub2ind(orient_size,r,p,y)));
-      free_points = coords(:,~obj.occupancy_map(:, voxel));
+      colliding_points = coords(:,obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
+      free_points = coords(:,~obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
       if ~isempty(colliding_points)
-        lcmClient.glPointSize(5);
+        lcmClient.glPointSize(10);
         lcmClient.glColor3f(1, 0, 0);
         lcmClient.points(colliding_points(1,:), colliding_points(2,:), colliding_points(3,:))
       end
-      if ~isempty(free_points)
+      if ~isempty(free_points) && ~draw_cubes
         lcmClient.glPointSize(1);
         lcmClient.glColor3f(0, 1, 0);
         lcmClient.points(free_points(1,:), free_points(2,:), free_points(3,:))
@@ -397,13 +429,17 @@ classdef CapabilityMap
         obj = obj.resetActiveOrient();
       end
       
-      cm_ub = max(obj.getActiveCentresRelativeToOrigin(), [], 2);
-      cm_lb = min(obj.getActiveCentresRelativeToOrigin(), [], 2);
-      n_vox_per_edge = nthroot(obj.n_voxels, 3);
+      if isempty(obj.EE_pose)
+        obj.EE_pose = [0;0;0];
+      end
+      
+%       cm_ub = max(obj.getActiveCentresRelativeToOrigin(), [], 2);
+%       cm_lb = min(obj.getActiveCentresRelativeToOrigin(), [], 2);
+%       n_vox_per_edge = nthroot(obj.n_voxels, 3);
       
       for pt = 1:size(point_cloud, 2)
-        if all(point_cloud(:,pt) < cm_ub) && all(point_cloud(:,pt) > cm_lb)
-          sub = ceil((point_cloud(:,pt) - obj.EE_pose(1:3))/obj.vox_edge) + n_vox_per_edge/2 * ones(3,1);
+        if all(point_cloud(:,pt) < obj.occupancy_map_ub) && all(point_cloud(:,pt) > obj.occupancy_map_lb)
+          sub = ceil((point_cloud(:,pt) - obj.EE_pose(1:3))/obj.occupancy_map_resolution) + n_vox_per_edge/2 * ones(3,1);
           voxInd = sub2ind(n_vox_per_edge * ones(1,3), sub(1), sub(2), sub(3));
 %           obj = obj.deactivateOrient(obj.occupancy_map(
           obj = obj.deactivateVoxels(obj.occupancy_map(:,voxInd));
@@ -482,6 +518,8 @@ classdef CapabilityMap
       vecY = reshape(vecY, numel(vecY), 1);
       vecZ = reshape(vecZ, numel(vecZ), 1);
       obj.vox_centres = [vecX vecY vecZ]';
+      obj.map_lb = obj.vox_centres(:,1) - ones(3,1) * obj.vox_edge/2;
+      obj.map_ub = obj.vox_centres(:,end) + ones(3,1) * obj.vox_edge/2;
 
       directions = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
       obj.map = false(obj.n_voxels, obj.n_directions_per_voxel);
@@ -550,30 +588,30 @@ classdef CapabilityMap
       base = RigidBodyManipulator();
       base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
       
-      [BB_lb, BB_ub] = obj.getBoundingBoxBoundsRelativeToMapCentre(base.body(2));
-      voxels_to_check = find(obj.reachability_index~=0);
-      
+      obj.occupancy_map_orient_steps = struct('roll', roll_steps, 'pitch', pitch_steps, 'yaw', yaw_steps);
       obj.occupancy_map_resolution = resolution;
-      obj.occupancy_map_lb = min(bsxfun(@plus, obj.vox_centres(:,1) - obj.map_left_centre, BB_lb), [], 2);
-      obj.occupancy_map_ub = max(bsxfun(@plus, obj.vox_centres(:,end) - obj.map_left_centre, BB_ub), [], 2);
+      obj.occupancy_map_n_orient = length(roll_steps)*length(pitch_steps)*length(yaw_steps);
+      [BB_lb, BB_ub] = obj.getBoundingBoxBoundsRelativeToMapCentre(base.body(2));
+      obj.occupancy_map_lb = obj.vox_centres(:,1) + BB_lb;
+      obj.occupancy_map_ub = obj.vox_centres(:,end) + BB_ub;
       obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution);
       obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
       obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
-      obj.occupancy_map_orient_steps = struct('roll', roll_steps, 'pitch', pitch_steps, 'yaw', yaw_steps);
-      obj.occupancy_map_n_orient = length(roll_steps)*length(pitch_steps)*length(yaw_steps);
       obj.occupancy_map_active_orient = false(obj.n_voxels, obj.occupancy_map_n_orient);
-      obj.occupancy_map = false(obj.occupancy_map_n_voxels, obj.n_voxels, obj.occupancy_map_n_orient);
+      obj.occupancy_map = cell(obj.occupancy_map_n_orient);
+      
       
       %Compute map
-%       vis = base.constructVisualizer();
+      vis = base.constructVisualizer();
+      voxels_to_check = find(obj.reachability_index~=0);
       omnv = obj.occupancy_map_n_voxels;
       vc = obj.vox_centres;
       mc = obj.map_left_centre;
       omc = obj.getOccupancyMapCentres();
       v = ver;
       [p, r, y] = meshgrid(pitch_steps, roll_steps, yaw_steps);
-      for idx = 1:n_orient_steps
-        fprintf('Computing map %d of %d\n', idx, n_orient_steps);
+      for idx = 1:obj.occupancy_map_n_orient
+        fprintf('Computing map %d of %d\n', idx, obj.occupancy_map_n_orient);
         if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
           spmd
             om = false(omnv, length(voxels_to_check), 'codistributed');
@@ -596,15 +634,15 @@ classdef CapabilityMap
             kinsol = base.doKinematics(q);
             colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
             if ~isempty(colliding_points)
-%               vis.draw(0, q)
-%               drawTreePoints(omc(:, colliding_points));
-%               drawTreePoints(vc(:, voxels_to_check(i)), 'colour', [1 0 1], 'text', 'joint')
+              vis.draw(0, q)
+              drawTreePoints(omc(:, colliding_points));
+              drawTreePoints(vc(:, voxels_to_check(i)), 'colour', [1 0 1], 'text', 'joint')
               om(colliding_points, i) = ~om(colliding_points, i);
             end
           end
         end
-        obj.occupancy_map(:, :, idx) = true(omnv, obj.n_voxels);
-        obj.occupancy_map(:, voxels_to_check, idx) = om;
+%         obj.occupancy_map(:, :, idx) = false(omnv, obj.n_voxels);
+        obj.occupancy_map{idx} = sparse(om);
       end
     end
     
@@ -736,6 +774,52 @@ classdef CapabilityMap
 %               'tot time: %.1d h\n'], mean(counter_times), mean(setup_times), mean(constraint_times), mean(ik_times),...
 %               sum([mean(counter_times), mean(setup_times), 50*mean(constraint_times), 50*mean(ik_times)]),...
 %               sum([mean(counter_times), mean(setup_times), 50*mean(constraint_times), 50*mean(ik_times)])*1e6/3600)
+    end
+    
+    function lcmClient = drawMapCubes(lcmClient, lb, ub, resolution, centre)
+      dimensions = (ub - lb)/resolution;
+      lcmClient.glColor3f(0.3,0.3,0.3);
+      lcmClient.glLineWidth(.1);
+      for i = 1:dimensions(2) + 1
+        for j = 1:dimensions(3) + 1
+          lcmClient.line3(lb(1),...
+                          lb(2) + resolution * (i-1),...
+                          lb(3) + resolution * (j-1),...
+                          ub(1),...
+                          lb(2) + resolution * (i-1),...
+                          lb(3) + resolution * (j-1))
+        end
+      end
+      for i = 1:dimensions(3) + 1
+        for j = 1:dimensions(1) + 1
+          lcmClient.line3(lb(1) + resolution * (j-1),...
+                          lb(2),...
+                          lb(3) + resolution * (i-1),...
+                          lb(1) + resolution * (j-1),...
+                          ub(2),...
+                          lb(3) + resolution * (i-1))
+        end
+      end
+      for i = 1:dimensions(1) + 1
+        for j = 1:dimensions(2) + 1
+          lcmClient.line3(lb(1) + resolution * (i-1),...
+                          lb(2) + resolution * (j-1),...
+                          lb(3),...
+                          lb(1) + resolution * (i-1),...
+                          lb(2) + resolution * (j-1),...
+                          ub(3))
+        end
+      end
+      lcmClient.glLineWidth(4);
+      lcmClient.glColor3f(1,0,0);
+      lcmClient.line3(centre(1), centre(2), centre(3),...
+                      centre(1) + 0.2, centre(2), centre(3))
+      lcmClient.glColor3f(0,1,0);
+      lcmClient.line3(centre(1), centre(2), centre(3),...
+                      centre(1), centre(2) + 0.2, centre(3))
+      lcmClient.glColor3f(0,0,1);
+      lcmClient.line3(centre(1), centre(2), centre(3),...
+                      centre(1), centre(2), centre(3) + 0.2)
     end
     
   end
