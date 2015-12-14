@@ -1,29 +1,9 @@
-#include <registration-test/icp_testing_routine.hpp>
+#include <icp-registration/icp_testing_routine.hpp>
 #include "statistics.h"
 
 /**
   * Code for ICP testing... It calls the icp_testing_routine...
   */
-/*
-int main(int argc, char const *argv[])
-{
-  Eigen::MatrixXf transfs_registr;
-  int ret = icp_testing_routine(argc, argv, transfs_registr);
-  if(ret == -1)
-  	return ret;
-
-  cout << "Transformations: " << transfs_registr << endl;
-
-  float et = translationError(1, 2, 1, 5);
-
-  cout << "Transl error: " << et << endl;
-
-  float er = rotationError(1, 2, -40, 1, 5, 30);
-
-  cout << "Rot error: " << er << endl;
-
-  return 0;
-}*/
 
 class App{
   public:

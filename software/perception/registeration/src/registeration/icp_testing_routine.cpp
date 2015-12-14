@@ -1,3 +1,6 @@
+// Code for registration of 10 clouds 
+//in all of their possible combinations.
+
 #include "icp_testing_routine.hpp"
 
 RoutineConfig::RoutineConfig(){

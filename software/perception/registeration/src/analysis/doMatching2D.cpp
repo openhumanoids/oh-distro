@@ -1,11 +1,10 @@
-// Example test program for 2D LIDAR alignment
+// Program for 2D LIDAR alignment
 // using the FRSM library. It uses pretty brute force
 // settings
 //
-// Example with attached data sample:
-// doMatching2D -a scan_00.csv  -b scan_01.csv
+// Ground-truth generation for icp testing.
 
-#include <registration-test/icp_utils.h>
+#include <icp-registration/icp_utils.h>
 
 #include <zlib.h>
 #include <lcm/lcm-cpp.hpp>

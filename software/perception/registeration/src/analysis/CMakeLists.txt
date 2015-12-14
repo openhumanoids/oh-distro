@@ -10,7 +10,7 @@ target_link_libraries(doMatching2D boost_system)
 pods_use_pkg_config_packages(doMatching2D eigen3
   lcm    bot2-frames
   lcmtypes_bot2-core  
-  lidar-odom registration-test
+  lidar-odom icp-registration
   ${FK_PACKAGES})
 pods_install_executables(doMatching2D)
 
@@ -20,7 +20,7 @@ pods_use_pkg_config_packages(icp-error-compute eigen3
   lcm    bot2-frames
   lcmtypes_bot2-core  
   lidar-odom ${REQUIRED_PACKAGES} pcl_io-1.7
-  pronto_vis registration-test
+  pronto_vis icp-registration
   ${FK_PACKAGES})
 pods_install_executables(icp-error-compute)
 
