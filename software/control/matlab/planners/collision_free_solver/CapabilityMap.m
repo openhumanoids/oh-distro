@@ -392,6 +392,9 @@ classdef CapabilityMap
         rpy = [obj.occupancy_map_orient_steps.roll(r); obj.occupancy_map_orient_steps.pitch(p); obj.occupancy_map_orient_steps.yaw(y)];
         pos = obj.vox_centres(:,voxel)-rpy2rotmat(rpy)*obj.map_left_centre;
         v.draw(0, [pos;rpy])
+        lcmClient.glColor3f(0,1,0)
+        lcmClient.glPointSize(10)
+        lcmClient.points(obj.vox_centres(1,voxel),obj.vox_centres(2,voxel),obj.vox_centres(3,voxel))
       end
       
       if nargin < 6 || isempty(offset)
@@ -408,6 +411,8 @@ classdef CapabilityMap
         length(obj.occupancy_map_orient_steps.pitch),...
         length(obj.occupancy_map_orient_steps.yaw)];
       colliding_points = coords(:,obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
+      idxs = find(obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
+      save cp_draw colliding_points idxs coords
       free_points = coords(:,~obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
       if ~isempty(colliding_points)
         lcmClient.glPointSize(10);
@@ -598,52 +603,54 @@ classdef CapabilityMap
       obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
       obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
       obj.occupancy_map_active_orient = false(obj.n_voxels, obj.occupancy_map_n_orient);
-      obj.occupancy_map = cell(obj.occupancy_map_n_orient);
       
       
       %Compute map
-      vis = base.constructVisualizer();
-      voxels_to_check = find(obj.reachability_index~=0);
+      idx_to_check = find(obj.reachability_index~=0);
+      voxels_to_check = obj.vox_centres(:,idx_to_check);
       omnv = obj.occupancy_map_n_voxels;
-      vc = obj.vox_centres;
+      nv = obj.n_voxels;
       mc = obj.map_left_centre;
       omc = obj.getOccupancyMapCentres();
       v = ver;
+      omno = obj.occupancy_map_n_orient;
+      om = cell(obj.occupancy_map_n_orient);
       [p, r, y] = meshgrid(pitch_steps, roll_steps, yaw_steps);
-      for idx = 1:obj.occupancy_map_n_orient
-        fprintf('Computing map %d of %d\n', idx, obj.occupancy_map_n_orient);
-        if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
-          spmd
-            om = false(omnv, length(voxels_to_check), 'codistributed');
-            base = RigidBodyManipulator();
-            base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
-            for i = drange(1:length(voxels_to_check))
-              q = [vc(:, voxels_to_check(i))- rpy2rotmat([r(idx); p(idx); y(idx)])*mc; r(idx); p(idx); y(idx)];
-              kinsol = base.doKinematics(q);
-              colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
-              if ~isempty(colliding_points)
-                om(colliding_points, i) = ~om(colliding_points, i);
-              end
-            end
-          end
-          om = gather(om);
-        else
-          om = false(omnv, length(voxels_to_check));
-          for i = 1:length(voxels_to_check)
-            q = [vc(:, voxels_to_check(i))- rpy2rotmat([r(idx); p(idx); y(idx)])*mc; r(idx); p(idx); y(idx)];
+      if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
+        parfor orient = 1:obj.occupancy_map_n_orient
+          fprintf('Computing map %d of %d\n', orient, omno);
+          single_om = false(omnv, nv);
+          base = RigidBodyManipulator();
+          base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
+          for i = 1:length(idx_to_check)
+            q = [voxels_to_check(:,i)- rpy2rotmat([r(orient); p(orient); y(orient)])*mc; r(orient); p(orient); y(orient)];
             kinsol = base.doKinematics(q);
             colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
             if ~isempty(colliding_points)
-              vis.draw(0, q)
-              drawTreePoints(omc(:, colliding_points));
-              drawTreePoints(vc(:, voxels_to_check(i)), 'colour', [1 0 1], 'text', 'joint')
-              om(colliding_points, i) = ~om(colliding_points, i);
+              single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
             end
           end
+          om{orient} = single_om;
         end
-%         obj.occupancy_map(:, :, idx) = false(omnv, obj.n_voxels);
-        obj.occupancy_map{idx} = sparse(om);
-      end
+        obj.occupancy_map = om;
+      else
+        for orient = 1:obj.occupancy_map_n_orient
+          fprintf('Computing map %d of %d\n', orient, omno);
+          single_om = false(omnv, nv);
+          base = RigidBodyManipulator();
+          base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
+          for i = 1:length(idx_to_check)
+            q = [voxels_to_check(:,i)- rpy2rotmat([r(orient); p(orient); y(orient)])*mc; r(orient); p(orient); y(orient)];
+            kinsol = base.doKinematics(q);
+            colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
+            if ~isempty(colliding_points)
+              single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
+            end
+          end
+          om{orient} = single_om;
+        end
+      end      
+      obj.occupancy_map = om;
     end
     
     function [lb, ub] = getBoundingBoxBoundsRelativeToMapCentre(obj, body)
