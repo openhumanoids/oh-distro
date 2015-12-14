@@ -12,7 +12,7 @@ particle_filter
 jpl-tags
 plane-seg
 car-tags
-registeration
+registration
 octrees_difference
 
 # check of lidar self observations (uses drake)
