@@ -144,6 +144,7 @@ classdef CapabilityMap
         obj.occupancy_map_ub = vars.occupancy_map_ub;
         obj.occupancy_map_orient_steps = vars.occupancy_map_orient_steps;
         obj.occupancy_map_n_orient = vars.occupancy_map_n_orient;
+        obj = obj.resetActiveOrient();
       else
         warning('No occupancy map data found')
       end
@@ -286,8 +287,11 @@ classdef CapabilityMap
     function obj = reduceActiveSet(obj, direction, des_vox_num, reset_active,...
         point_cloud, sagittal_angle, transverse_angle, sagittal_weight, transverse_weight)
       
+      obj = obj.deactivateVoxelsOutsideTransverseRange([-pi/3, pi/3], reset_active);
+      obj = obj.deactivateVoxelsOutsideSagittalRange([-pi/3, pi/3]);
+      
       collidingTimer = tic;
-      obj = obj.deactivateCollidingVoxels(point_cloud, reset_active);
+      obj = obj.deactivateCollidingVoxels(point_cloud);
       fprintf('Colliding Time: %.2f s\n', toc(collidingTimer))
       
       if obj.n_active_voxels > des_vox_num
@@ -338,6 +342,18 @@ classdef CapabilityMap
       if nargin < 3 || isempty(text), text = 'Active Capability Map'; end
       if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
       obj.drawMap(obj.active_voxels, text, point, draw_cubes);
+    end
+    
+    function drawOrientedActiveMap(obj, orient, text, draw_cubes)
+      if nargin < 3 || isempty(text), text = 'Oriented Capability Map'; end
+      if nargin < 4 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(obj.occupancy_map_active_orient(:, orient)', text, [], draw_cubes);
+    end
+    
+    function drawOrientedActiveMapCentredOnPoint(obj, orient, offset, text, draw_cubes)
+      if nargin < 3 || isempty(text), text = 'Oriented Capability Map'; end
+      if nargin < 4 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(all([obj.occupancy_map_active_orient(:, orient)'; obj.active_voxels]), text, offset, draw_cubes);
     end
     
     function drawMap(obj, voxels, text, offset, draw_cubes)
@@ -436,6 +452,7 @@ classdef CapabilityMap
     end
     
     function obj = deactivateCollidingVoxels(obj, point_cloud, reset_active)
+      if nargin < 3, reset_active = false; end
       
       if reset_active
         obj = obj.resetActiveVoxels();
@@ -446,9 +463,6 @@ classdef CapabilityMap
         error('End effector pose must be set in order to detect colliding voxels')
       end
       
-%       cm_ub = max(obj.getActiveCentresRelativeToOrigin(), [], 2);
-%       cm_lb = min(obj.getActiveCentresRelativeToOrigin(), [], 2);
-%       n_vox_per_edge = nthroot(obj.n_voxels, 3);
       point_cloud = point_cloud(:,all([all(bsxfun(@gt, point_cloud,  obj.occupancy_map_lb + obj.EE_pose(1:3))); ...
                                                all(bsxfun(@lt, point_cloud,  obj.occupancy_map_ub + obj.EE_pose(1:3)))]));
       sub = ceil(bsxfun(@rdivide, bsxfun(@minus, point_cloud, obj.occupancy_map_lb + obj.EE_pose(1:3)), obj.occupancy_map_resolution));
@@ -458,14 +472,26 @@ classdef CapabilityMap
                                                             obj.occupancy_map_active_orient(:, orient)']);
       end
       obj = obj.deactivateVoxels(all(~obj.occupancy_map_active_orient, 2));
-      
-%       orients = cell(1,obj.n_voxels);
-%         orients{obj.occupancy_map{orient}(voxInd,:)} = orients{obj.occupancy_map{orient}(voxInd,:)};
-%         if numel(orients) > 0
-%           obj = obj.deactivateOrient(find(), orients);
-%         end
-%       end
-% %           obj = obj.deactivateVoxels(obj.occupancy_map(:,voxInd));
+    end
+    
+    function obj = deactivateVoxelsOutsideSagittalRange(obj, range, reset_active)
+      if nargin < 3, reset_active = false; end
+      if reset_active
+        obj = obj.resetActiveVoxels();
+      end
+      angle = atan2(obj.vox_centres(3,:), obj.vox_centres(1,:));
+      angle = angle - sign(angle) * pi;
+      obj = obj.deactivateVoxels(any([angle < range(1) ; angle > range(2)]));
+    end
+    
+    function obj = deactivateVoxelsOutsideTransverseRange(obj, range, reset_active)
+      if nargin < 3, reset_active = false; end
+      if reset_active
+        obj = obj.resetActiveVoxels();
+      end
+      angle = atan2(obj.vox_centres(2,:), obj.vox_centres(1,:));
+      angle = angle - sign(angle) * pi;
+      obj = obj.deactivateVoxels(any([angle < range(1) ; angle > range(2)]));
     end
     
     function obj = prune(obj, sagittal_angle,...
@@ -674,6 +700,7 @@ classdef CapabilityMap
         end
       end      
       obj.occupancy_map = om;
+      obj = obj.resetActiveOrient();
     end
     
     function [lb, ub] = getBoundingBoxBoundsRelativeToMapCentre(obj, body)
