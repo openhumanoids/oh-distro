@@ -95,7 +95,8 @@ pods_use_pkg_config_packages(ros2lcm_exotica lcm lcmtypes_pronto-lcmtypes bot2-c
 add_executable(lcm2ros_exotica src/lcm2ros_exotica.cpp)
 target_link_libraries(lcm2ros_exotica ${catkin_LIBRARIES})
 add_dependencies(lcm2ros_exotica ipab_msgs_generate_messages_cpp ihmc_msgs_generate_messages_cpp)
-pods_use_pkg_config_packages(lcm2ros_exotica lcm lcmtypes_pronto-lcmtypes bot2-core eigen3)
+pods_use_pkg_config_packages(lcm2ros_exotica lcm lcmtypes_pronto-lcmtypes
+  bot2-core eigen3 octomap)
 
 ######################################################
 add_executable(ros2lcm_sdh src/ros2lcm_sdh.cpp)
