@@ -6,10 +6,10 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   warning('off','Drake:CollisionFilterGroup:DiscardingCollisionFilteringInfo');
   warning('off','Drake:RigidBodyManipulator:WeldedLinkInd');
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 1; end;
+  if ~isfield(options,'scene'), options.scene = 2; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
-  if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
+  if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'back_constraint'), options.back_constraint = 'free'; end
   if ~isfield(options,'base_constraint'), options.base_constraint = 'free'; end

@@ -113,20 +113,11 @@ classdef FinalPoseProblem
     function [qOpt, debug_vars] = searchFinalPose(obj, point_cloud, debug_vars)
       setupTimer = tic;
       
-      kinSol = obj.robot.doKinematics(obj.q_start);
       options.rotation_type = 2;
       options.compute_gradients = true;
       options.rotation_type = 1;
       
-      root = obj.capability_map.root_link.(obj.grasping_hand);
-      endEffector = obj.capability_map.end_effector_link.(obj.grasping_hand);
-      rootPoint = obj.capability_map.root_point.(obj.grasping_hand);
-      EEPoint = obj.capability_map.end_effector_point.(obj.grasping_hand);
       base = obj.robot.findLinkId(obj.capability_map.base_link);
-      
-      rootPose = obj.robot.forwardKin(kinSol, root, rootPoint, 2);
-      trPose = obj.robot.forwardKin(kinSol, base, [0;0;0], 2);
-      tr2root = quat2rotmat(trPose(4:end))\(rootPose(1:3)-trPose(1:3));
       np = obj.robot.num_positions;
       
       ee_rotmat = quat2rotmat(obj.x_goal(4:7));
@@ -150,8 +141,8 @@ classdef FinalPoseProblem
         axis = -vox_centers(:,vox)/dist;
 %         drawTreePoints([[0;0;0] vox_centers(1:3,vox)], 'lines', true, 'text', 'cm_point')
 %         drawTreePoints([obj.x_goal(1:3) - vox_centers(1:3,vox), obj.x_goal(1:3)], 'lines', true)
-        shDistance = Point2PointDistanceConstraint(obj.robot, root, obj.robot.findLinkId('world'), [0;0;0], obj.x_goal(1:3), dist, dist);
-        shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), tr2root, 0);
+        shDistance = Point2PointDistanceConstraint(obj.robot, base, obj.robot.findLinkId('world'), obj.capability_map.map_left_centre, obj.x_goal(1:3), dist, dist);
+        shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), obj.capability_map.map_left_centre, 0);
 %         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - vox_centers(1:3,vox), obj.x_goal(1:3) - vox_centers(1:3,vox));
         shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
         constraints = [{shDistance, shGaze, shOrient}, obj.goal_constraints, obj.additional_constraints];
@@ -187,7 +178,7 @@ classdef FinalPoseProblem
     
     function constraints = generateGoalConstraints(obj)
 %       !!!!!!WARNING:This works for val2 only!!!!!!!!!
-      end_effector = obj.capability_map.end_effector_link.(obj.grasping_hand);
+      end_effector = obj.robot.findLinkId(obj.capability_map.end_effector_link.(obj.grasping_hand));
       goalDistConstraint = Point2PointDistanceConstraint(obj.robot, end_effector, obj.robot.findLinkId('world'), obj.end_effector_point, obj.x_goal(1:3), -0.001, 0.001);
       goalQuatConstraint = WorldQuatConstraint(obj.robot, end_effector, obj.x_goal(4:7), 1/180*pi);
       constraints = {goalDistConstraint, goalQuatConstraint};

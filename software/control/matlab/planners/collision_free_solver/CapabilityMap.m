@@ -193,13 +193,21 @@ classdef CapabilityMap
     end
     
     function obj = activateVoxels(obj, idx)
-      obj.active_voxels(idx) = true;
-      obj.n_active_voxels = nnz(obj.active_voxels);
+      if islogical(idx)
+        obj.active_voxels = any([obj.active_voxels; reshape( idx, size(obj.active_voxels))]);
+      else
+        obj.active_voxels(idx) = true;
+        obj.n_active_voxels = nnz(obj.active_voxels);
+      end
     end
     
     function obj = deactivateVoxels(obj, idx)
-      obj.active_voxels(idx) = false;
-      obj.n_active_voxels = nnz(obj.active_voxels);
+      if islogical(idx)
+        obj.active_voxels = all([obj.active_voxels; reshape( ~idx, size(obj.active_voxels))]);
+      else
+        obj.active_voxels(idx) = false;
+        obj.n_active_voxels = nnz(obj.active_voxels);
+      end
     end
     
     function obj = activateOrient(obj, voxels, active_orients)
@@ -208,12 +216,12 @@ classdef CapabilityMap
           error('active_orients must be a cell with the orientations idx to activate for each voxel')
         end
       else
-        if iscell(active_orients)
-          active_orients = active_orients{1};
+        if ~iscell(active_orients)
+          active_orients = {active_orients};
         end
       end
       for vox = 1:length(voxels)
-        obj.occupancy_map_active_orient(vox,active_orients) = true;
+        obj.occupancy_map_active_orient(voxels(vox),active_orients{vox}) = true;
       end
     end
     
@@ -223,12 +231,12 @@ classdef CapabilityMap
           error('inactive_orients must be a cell with the orientations idx to deactivate for each voxel')
         end
       else
-        if iscell(inactive_orients)
-          inactive_orients = inactive_orients{1};
+        if ~iscell(inactive_orients)
+          inactive_orients = {inactive_orients};
         end
       end
       for vox = 1:length(voxels)
-        obj.occupancy_map_active_orient(vox,inactive_orients) = false;
+        obj.occupancy_map_active_orient(voxels(vox),inactive_orients{vox}) = false;
       end
     end
     
@@ -337,7 +345,7 @@ classdef CapabilityMap
       if nargin < 4 || isempty(offset), offset = [0;0;0]; end
       if nargin < 5, draw_cubes = true; end
       if draw_cubes
-        lcmClient = obj.drawMapCubes(lcmClient, obj.map_lb + offset, obj.map_ub + offset, obj.vox_edge, offset);
+        lcmClient = obj.drawMapCubes(lcmClient, obj.map_lb, obj.map_ub, obj.vox_edge, offset);
         start_idx = 0;
       else
         start_idx = 1;
@@ -435,21 +443,29 @@ classdef CapabilityMap
       end
       
       if isempty(obj.EE_pose)
-        obj.EE_pose = [0;0;0];
+        error('End effector pose must be set in order to detect colliding voxels')
       end
       
 %       cm_ub = max(obj.getActiveCentresRelativeToOrigin(), [], 2);
 %       cm_lb = min(obj.getActiveCentresRelativeToOrigin(), [], 2);
 %       n_vox_per_edge = nthroot(obj.n_voxels, 3);
-      
-      for pt = 1:size(point_cloud, 2)
-        if all(point_cloud(:,pt) < obj.occupancy_map_ub) && all(point_cloud(:,pt) > obj.occupancy_map_lb)
-          sub = ceil((point_cloud(:,pt) - obj.EE_pose(1:3))/obj.occupancy_map_resolution) + n_vox_per_edge/2 * ones(3,1);
-          voxInd = sub2ind(n_vox_per_edge * ones(1,3), sub(1), sub(2), sub(3));
-%           obj = obj.deactivateOrient(obj.occupancy_map(
-          obj = obj.deactivateVoxels(obj.occupancy_map(:,voxInd));
-        end
+      point_cloud = point_cloud(:,all([all(bsxfun(@gt, point_cloud,  obj.occupancy_map_lb + obj.EE_pose(1:3))); ...
+                                               all(bsxfun(@lt, point_cloud,  obj.occupancy_map_ub + obj.EE_pose(1:3)))]));
+      sub = ceil(bsxfun(@rdivide, bsxfun(@minus, point_cloud, obj.occupancy_map_lb + obj.EE_pose(1:3)), obj.occupancy_map_resolution));
+      vox_idx = unique(sub2ind(obj.occupancy_map_dimensions, sub(1,:), sub(2,:), sub(3,:)));
+      for orient = 1:obj.occupancy_map_n_orient
+          obj.occupancy_map_active_orient(:, orient) = all([~any(obj.occupancy_map{orient}(vox_idx,:)); ...
+                                                            obj.occupancy_map_active_orient(:, orient)']);
       end
+      obj = obj.deactivateVoxels(all(~obj.occupancy_map_active_orient, 2));
+      
+%       orients = cell(1,obj.n_voxels);
+%         orients{obj.occupancy_map{orient}(voxInd,:)} = orients{obj.occupancy_map{orient}(voxInd,:)};
+%         if numel(orients) > 0
+%           obj = obj.deactivateOrient(find(), orients);
+%         end
+%       end
+% %           obj = obj.deactivateVoxels(obj.occupancy_map(:,voxInd));
     end
     
     function obj = prune(obj, sagittal_angle,...
@@ -487,8 +503,14 @@ classdef CapabilityMap
       end
     end
     
-    function obj = resetActiveOrient(obj)
-      obj = obj.deactivateOrient(1:obj.n_voxels, false(obj.n_voxels, obj.occupancy_map_n_orient));
+    function obj = resetActiveOrient(obj, include_zero_reachability)
+      if nargin < 2
+        include_zero_reachability = false;
+      end
+      obj.occupancy_map_active_orient = true(obj.n_voxels, obj.occupancy_map_n_orient);
+      if ~include_zero_reachability
+        obj.occupancy_map_active_orient(obj.reachability_index == 0, :) = false(nnz(obj.reachability_index == 0), obj.occupancy_map_n_orient);
+      end
     end
     
     function centres = getActiveVoxelCentres(obj)
@@ -599,7 +621,7 @@ classdef CapabilityMap
       [BB_lb, BB_ub] = obj.getBoundingBoxBoundsRelativeToMapCentre(base.body(2));
       obj.occupancy_map_lb = obj.vox_centres(:,1) + BB_lb;
       obj.occupancy_map_ub = obj.vox_centres(:,end) + BB_ub;
-      obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution);
+      obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution)';
       obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
       obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
       obj.occupancy_map_active_orient = false(obj.n_voxels, obj.occupancy_map_n_orient);
@@ -614,12 +636,12 @@ classdef CapabilityMap
       omc = obj.getOccupancyMapCentres();
       v = ver;
       omno = obj.occupancy_map_n_orient;
-      om = cell(obj.occupancy_map_n_orient);
+      om = cell(1,obj.occupancy_map_n_orient);
       [p, r, y] = meshgrid(pitch_steps, roll_steps, yaw_steps);
       if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
         parfor orient = 1:obj.occupancy_map_n_orient
           fprintf('Computing map %d of %d\n', orient, omno);
-          single_om = false(omnv, nv);
+          single_om = sparse(false(omnv, nv));
           base = RigidBodyManipulator();
           base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
           for i = 1:length(idx_to_check)
@@ -630,13 +652,14 @@ classdef CapabilityMap
               single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
             end
           end
-          om{orient} = single_om;
+          om{orient} = sparse(single_om);
+          single_om = [];
         end
         obj.occupancy_map = om;
       else
         for orient = 1:obj.occupancy_map_n_orient
           fprintf('Computing map %d of %d\n', orient, omno);
-          single_om = false(omnv, nv);
+          single_om = sparse(false(omnv, nv));
           base = RigidBodyManipulator();
           base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
           for i = 1:length(idx_to_check)
@@ -647,7 +670,7 @@ classdef CapabilityMap
               single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
             end
           end
-          om{orient} = single_om;
+          om{orient} = sparse(single_om);
         end
       end      
       obj.occupancy_map = om;
@@ -789,32 +812,32 @@ classdef CapabilityMap
       lcmClient.glLineWidth(.1);
       for i = 1:dimensions(2) + 1
         for j = 1:dimensions(3) + 1
-          lcmClient.line3(lb(1),...
-                          lb(2) + resolution * (i-1),...
-                          lb(3) + resolution * (j-1),...
-                          ub(1),...
-                          lb(2) + resolution * (i-1),...
-                          lb(3) + resolution * (j-1))
+          lcmClient.line3(lb(1) + centre(1),...
+                          lb(2) + centre(2) + resolution * (i-1),...
+                          lb(3) + centre(3) + resolution * (j-1),...
+                          ub(1) + centre(1),...
+                          lb(2) + centre(2) + resolution * (i-1),...
+                          lb(3) + centre(3) + resolution * (j-1))
         end
       end
       for i = 1:dimensions(3) + 1
         for j = 1:dimensions(1) + 1
-          lcmClient.line3(lb(1) + resolution * (j-1),...
-                          lb(2),...
-                          lb(3) + resolution * (i-1),...
-                          lb(1) + resolution * (j-1),...
-                          ub(2),...
-                          lb(3) + resolution * (i-1))
+          lcmClient.line3(lb(1) + centre(1) + resolution * (j-1),...
+                          lb(2) + centre(2),...
+                          lb(3) + centre(3) + resolution * (i-1),...
+                          lb(1) + centre(1) + resolution * (j-1),...
+                          ub(2) + centre(2),...
+                          lb(3) + centre(3) + resolution * (i-1))
         end
       end
       for i = 1:dimensions(1) + 1
         for j = 1:dimensions(2) + 1
-          lcmClient.line3(lb(1) + resolution * (i-1),...
-                          lb(2) + resolution * (j-1),...
-                          lb(3),...
-                          lb(1) + resolution * (i-1),...
-                          lb(2) + resolution * (j-1),...
-                          ub(3))
+          lcmClient.line3(lb(1) + centre(1) + resolution * (i-1),...
+                          lb(2) + centre(2) + resolution * (j-1),...
+                          lb(3) + centre(3),...
+                          lb(1) + centre(1) + resolution * (i-1),...
+                          lb(2) + centre(2) + resolution * (j-1),...
+                          ub(3) + centre(3))
         end
       end
       lcmClient.glLineWidth(4);
