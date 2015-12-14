@@ -14,7 +14,7 @@ class RoutineConfig
     string initFilename; //name of file containing initial transf
     string initTrans; //initial transformation for the reading cloud in the form [x,y,theta]
 
-    int tot_clouds; //number of clouds to combine
+    int num_clouds; //number of clouds to combine
 
   private:
 };

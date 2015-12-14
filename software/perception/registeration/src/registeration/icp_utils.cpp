@@ -109,9 +109,56 @@ string readLineFromFile(string& filename, int line_number)
 
 /* Get a transformation matrix (of the type defined in the libpointmatcher library)
 given a string containing info about a translation on the plane x-y and a rotation 
-about the vertical axis z, i.e. [x,y,theta] (meters,meters,degrees). */
+about the vertical axis z, i.e. [x,y,theta] (meters,meters,radians). */
 
 PM::TransformationParameters parseTransformation(string& transform, const int cloudDimension) 
+{
+  PM::TransformationParameters parsedTrans;
+  parsedTrans = PM::TransformationParameters::Identity(
+        cloudDimension+1,cloudDimension+1);
+
+  transform.erase(std::remove(transform.begin(), transform.end(), '['),
+            transform.end());
+  transform.erase(std::remove(transform.begin(), transform.end(), ']'),
+            transform.end());
+  std::replace( transform.begin(), transform.end(), ',', ' ');
+  std::replace( transform.begin(), transform.end(), ';', ' ');
+
+  float transValues[3] = {0};
+  stringstream transStringStream(transform);
+  for( int i = 0; i < 3; i++) {
+    if(!(transStringStream >> transValues[i])) {
+      cerr << "An error occured while trying to parse the initial "
+         << "transformation." << endl
+         << "No initial transformation will be used" << endl;
+      return parsedTrans;
+    }
+  }
+
+  for( int i = 0; i < 3; i++) {
+    if (i == 2)
+    {
+      parsedTrans(i-2,i-2) = cos ( transValues[i] );
+      parsedTrans(i-2,i-1) = - sin ( transValues[i] );
+      parsedTrans(i-1,i-2) = sin ( transValues[i] );
+      parsedTrans(i-1,i-1) = cos ( transValues[i] );
+    }
+    else
+    {
+      parsedTrans(i,cloudDimension) = transValues[i];
+    }
+  }
+
+  //cout << "Parsed initial transformation:" << endl << parsedTrans << endl;
+
+  return parsedTrans;
+}
+
+/* Get a transformation matrix (of the type defined in the libpointmatcher library)
+given a string containing info about a translation on the plane x-y and a rotation 
+about the vertical axis z, i.e. [x,y,theta] (meters,meters,degrees). */
+
+PM::TransformationParameters parseTransformationDeg(string& transform, const int cloudDimension) 
 {
   PM::TransformationParameters parsedTrans;
   parsedTrans = PM::TransformationParameters::Identity(

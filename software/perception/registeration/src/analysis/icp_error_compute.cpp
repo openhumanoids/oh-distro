@@ -1,5 +1,4 @@
 #include <icp-registration/icp_testing_routine.hpp>
-#include "statistics.h"
 
 /**
   * Code for ICP testing... It calls the icp_testing_routine...
@@ -39,7 +38,7 @@ int main(const int argc, const char **argv){
   string out_file;
   out_file.append(fo.registrationRoutine_->cfg_.homedir);
   out_file.append("/logs/multisenselog__2015-11-16/results/registr_transf_new.txt");
-  writeTransformToFile(registr_res, out_file, fo.registrationRoutine_->cfg_.tot_clouds);
+  writeTransformToFile(registr_res, out_file, fo.registrationRoutine_->cfg_.num_clouds);
 
   return fo.ret;
 }

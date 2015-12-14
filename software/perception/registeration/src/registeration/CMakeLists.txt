@@ -20,20 +20,6 @@ pods_install_pkg_config_file(icp-registration
     REQUIRES 
     VERSION 0.0.1)
 
-
-################
-# create an executable, and make it public
-add_executable(drc-icp-simple icp_simple.cpp)
-pods_use_pkg_config_packages(drc-icp-simple eigen3)
-target_link_libraries(drc-icp-simple pointmatcher boost_system)
-pods_install_executables(drc-icp-simple)
-
-###############
-add_executable(drc-icp-advanced icp.cpp)
-pods_use_pkg_config_packages(drc-icp-advanced eigen3)
-target_link_libraries(drc-icp-advanced pointmatcher boost_system)
-pods_install_executables(drc-icp-advanced)
-
 ###############
 add_executable(drc-lidar-accumulate lidar_accumulate.cpp  clouds_io_utils.cpp)
 pods_use_pkg_config_packages(drc-lidar-accumulate icp-registration bot2-frames laser-util

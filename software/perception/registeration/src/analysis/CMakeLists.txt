@@ -14,7 +14,7 @@ pods_use_pkg_config_packages(doMatching2D eigen3
   ${FK_PACKAGES})
 pods_install_executables(doMatching2D)
 
-add_executable (icp-error-compute icp_error_compute.cpp statistics.cpp)
+add_executable (icp-error-compute icp_error_compute.cpp)
 target_link_libraries(icp-error-compute boost_system)
 pods_use_pkg_config_packages(icp-error-compute eigen3
   lcm    bot2-frames

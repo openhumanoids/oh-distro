@@ -26,6 +26,8 @@ void computeCloudsDistance (PM::ICP &icp, DP &cloud_ref, DP &data_out);
 
 string readLineFromFile(string& filename, int line_number);
 
+PM::TransformationParameters parseTransformationDeg(string& transform,
+                        const int cloudDimension);
 PM::TransformationParameters parseTransformation(string& transform,
                         const int cloudDimension);
 

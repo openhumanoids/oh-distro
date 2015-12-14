@@ -1,8 +1,11 @@
+// doMatching2D
+
 // Program for 2D LIDAR alignment
 // using the FRSM library. It uses pretty brute force
-// settings
+// settings.
 //
-// Ground-truth generation for icp testing.
+// Options: - take 2 scans from user and give transformation between them (-a reference.csv, -b input.csv)
+//          - loop over a dataset and give transformation between all combinations (write to file)
 
 #include <icp-registration/icp_utils.h>
 
@@ -48,7 +51,6 @@ struct CommandLineConfig
 {
   std::string filenameA;
   std::string filenameB;
-  std::string filenameC;
 };
 
 Eigen::Isometry3d getXYThetaAsIsometry3d(Eigen::Vector3d transl, Eigen::Vector3d rpy){
@@ -74,10 +76,7 @@ class App{
 
     const char *homedir;
 
-    Eigen::Vector3d transl_head_to_fixed;
-    Eigen::Vector3d rpy_head_to_fixed;
-
-    int tot_clouds; //number of clouds to combine
+    int num_clouds; //number of clouds to combine
 
     string cloudA;
     string cloudB;
@@ -97,7 +96,26 @@ class App{
     boost::shared_ptr<lcm::LCM> lcm_;
     const CommandLineConfig cl_cfg_;    
     LidarOdom* lidarOdom_;
-};    
+};   
+
+void readCSVFile(std::string filename, std::vector<float> &x, std::vector<float> &y){
+
+    std::vector<std::vector<double> > values;
+    std::ifstream fin(filename.c_str());
+    for (std::string line; std::getline(fin, line); )
+    {
+        std::replace(line.begin(), line.end(), ',', ' ');
+        std::istringstream in(line);
+        values.push_back(
+            std::vector<double>(std::istream_iterator<double>(in),
+                                std::istream_iterator<double>()));
+    }
+
+   for (size_t i=0; i<values.size(); i++){
+     x.push_back(values[i][0]);
+     y.push_back(values[i][1]);
+   }
+} 
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, int indTransfFile) : 
        lcm_(lcm_), cl_cfg_(cl_cfg_){
@@ -106,9 +124,6 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, in
   }
   
   LidarOdomConfig lo_cfg = LidarOdomConfig();
-
-  transl_head_to_fixed << -0.076 , 0.0 , 0.221;
-  rpy_head_to_fixed << 0.0 , 0.0 , 0.0;
 
   // Overwrite default config values with more brute force search:
   lo_cfg.matchingMode = FRSM_GRID_COORD;
@@ -136,28 +151,9 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, in
   initReference.y = 0;
   initReference.theta = (0 * M_PI)/180;
 
-  tot_clouds = 10;
+  num_clouds = 10;
   
   lidarOdom_ = new LidarOdom(lcm_, lo_cfg);
-}
-
-void readCSVFile(std::string filename, std::vector<float> &x, std::vector<float> &y){
-
-    std::vector<std::vector<double> > values;
-    std::ifstream fin(filename.c_str());
-    for (std::string line; std::getline(fin, line); )
-    {
-        std::replace(line.begin(), line.end(), ',', ' ');
-        std::istringstream in(line);
-        values.push_back(
-            std::vector<double>(std::istream_iterator<double>(in),
-                                std::istream_iterator<double>()));
-    }
-
-   for (size_t i=0; i<values.size(); i++){
-     x.push_back(values[i][0]);
-     y.push_back(values[i][1]);
-   }
 }
 
 void App::doWork(Eigen::MatrixXf &transf_matrix, int transf_index){
@@ -209,7 +205,6 @@ int main(int argc, char **argv){
   ConciseArgs parser(argc, argv, "simple-fusion");
   parser.add(cl_cfg.filenameA, "a", "filenameA", "FilenameA.csv");
   parser.add(cl_cfg.filenameB, "b", "filenameB", "FilenameB.csv");
-  parser.add(cl_cfg.filenameC, "c", "filenameC", "FilenameC.csv");
   parser.parse();
 
   App* app = new App(lcm, cl_cfg, 0);
@@ -220,15 +215,15 @@ int main(int argc, char **argv){
     //-------------------------
     // To store...
     int cols = 0;
-    for (int i = app->tot_clouds-1; i > 0; i--)
+    for (int i = app->num_clouds-1; i > 0; i--)
     { 
       cols = cols + i;
     }
     Eigen::MatrixXf truth_res = Eigen::MatrixXf::Zero(3, cols);
     //-------------------------
-    for (int i = 0; i < app->tot_clouds-1; i++)
+    for (int i = 0; i < app->num_clouds-1; i++)
     {
-      for (int j = 1+i; j < app->tot_clouds; j++)
+      for (int j = 1+i; j < app->num_clouds; j++)
       {
         // Set index to load inital transformations from file
         transf_index++;
@@ -262,7 +257,7 @@ int main(int argc, char **argv){
     string out_file;
     out_file.append(app->homedir);
     out_file.append("/logs/multisenselog__2015-11-16/results/truth_transf.txt");
-    writeTransformToFile(truth_res, out_file, app->tot_clouds);
+    writeTransformToFile(truth_res, out_file, app->num_clouds);
   }
   else
   {

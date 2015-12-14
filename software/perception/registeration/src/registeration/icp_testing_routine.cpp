@@ -11,7 +11,7 @@ RoutineConfig::RoutineConfig(){
   initFilename.append(homedir);
   initFilename.append("/logs/multisenselog__2015-11-16/initialization/initTransf.txt");
 
-  tot_clouds = 10;
+  num_clouds = 10;
 }
 
 RegistrationRoutine::RegistrationRoutine():
@@ -21,7 +21,7 @@ RegistrationRoutine::RegistrationRoutine():
 
 void RegistrationRoutine::init(){
   cols = 0;
-  for (int i = cfg_.tot_clouds-1; i > 0; i--)
+  for (int i = cfg_.num_clouds-1; i > 0; i--)
   {
     cols = cols + i;
   }
@@ -46,7 +46,7 @@ void RegistrationRoutine::doRoutine(Eigen::MatrixXf &transf_matrix)
 
   cout << "initFilename: " << cfg_.initFilename <<endl;
 
-  for (int i = 0; i < cfg_.tot_clouds-1; i++)
+  for (int i = 0; i < cfg_.num_clouds-1; i++)
   {
     // Load reference cloud from file
     cloud_name_A.clear();
@@ -57,7 +57,7 @@ void RegistrationRoutine::doRoutine(Eigen::MatrixXf &transf_matrix)
 
     DP ref = DP::load(cloud_name_A);
 
-    for (int j = 1+i; j < cfg_.tot_clouds; j++)
+    for (int j = 1+i; j < cfg_.num_clouds; j++)
     {
       cout << transf_index+1 << endl;
 
@@ -158,7 +158,7 @@ void RegistrationRoutine::getICPTransform(DP &cloud_in, DP &cloud_ref, PM::Trans
 
   // Apply rigid transformation (just a "visually good" approximation of the transformation 
   // between ref and input clouds) to escape local minima
-  PM::TransformationParameters initTransfo = parseTransformation(cfg_.initTrans, cloudDim);
+  PM::TransformationParameters initTransfo = parseTransformationDeg(cfg_.initTrans, cloudDim);
 
   PM::Transformation* rigidTrans;
   rigidTrans = PM::get().REG(Transformation).create("RigidTransformation");
@@ -212,12 +212,12 @@ int RegistrationRoutine::validateArgs(const int argc, const char *argv[])
       cerr << "Missing value for option " << opt << ", usage:"; usage(argv); exit(1);
     }
     if (opt == "--config2D") {
-      configFile2D.append(cfg_.homedir);
-      configFile2D.append("/main-distro/software/perception/registeration/filters_config/");
+      configFile2D.append(getenv("DRC_BASE"));
+      configFile2D.append("/software/perception/registeration/filters_config/");
       configFile2D.append(argv[i+1]);
     }
     else if (opt == "--config3D") {
-      configFile3D.append(cfg_.homedir);
+      configFile3D.append(getenv("DRC_BASE"));
       configFile3D.append("/main-distro/software/perception/registeration/filters_config/");
       configFile3D.append(argv[i+1]);
     }

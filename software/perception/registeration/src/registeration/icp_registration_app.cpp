@@ -1,3 +1,11 @@
+// drc-icp-plot
+
+// Program for 3D clouds alignment
+// using libpointmatcher (library for ICP).
+//
+// Options: - take 2 clouds from user (or default) and give 
+//            transformation between them (-a reference, -b input)
+
 #include <sstream>      // std::stringstream
 
 #include "icp_3Dreg_and_plot.hpp"
@@ -47,6 +55,7 @@ int main(int argc, const char *argv[])
   // Init Default
   RegistrationConfig reg_cfg;
   reg_cfg.configFile3D_.clear();
+  reg_cfg.initTrans_.clear();
   reg_cfg.initTrans_.append("0,0,0");
   AppConfig app_cfg;
 

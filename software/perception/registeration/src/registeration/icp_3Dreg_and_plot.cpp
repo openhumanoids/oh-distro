@@ -76,7 +76,7 @@ void Registration::getICPTransform(DP &cloud_in, DP &cloud_ref)
 
   // Apply rigid transformation (just a "visually good" approximation of the transformation 
   // between ref and input clouds) to escape local minima
-  PM::TransformationParameters initT = parseTransformation(reg_cfg_.initTrans_, cloudDimension);
+  PM::TransformationParameters initT = parseTransformationDeg(reg_cfg_.initTrans_, cloudDimension);
 
   PM::Transformation* rigidTrans;
   rigidTrans = PM::get().REG(Transformation).create("RigidTransformation");
