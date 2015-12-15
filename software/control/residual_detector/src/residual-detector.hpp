@@ -15,6 +15,7 @@
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/foot_force_torque_t.hpp"
 #include "lcmtypes/drc/residual_observer_state_t.hpp"
+#include "lcmtypes/drake/lcmt_external_force_torque.hpp"
 #include <bot_param/param_client.h>
 #include <lcm/lcm-cpp.hpp>
 #include <Eigen/Core>
@@ -69,7 +70,7 @@ public:
   void testContactFilterRotationMethod(bool useRandom=false);
   void testQP();
   void contactFilterThreadLoop(std::string filename);
-  void computeActiveLinkContactFilter(bool publish);
+  void computeActiveLinkContactFilter(bool publish, bool useActiveLinkInfo);
   void activeLinkContactFilterThreadLoop();
 
 private:
@@ -92,6 +93,8 @@ private:
   std::vector<std::string> state_coordinate_names;
   std::string publishChannel;
 
+  std::vector<std::string> linksWithExternalForce;
+
   VectorXd residualGainVector;
   double residualGain;
   ResidualArgs args;
@@ -111,6 +114,7 @@ private:
   void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg);
   void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
+  void onExternalForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_external_force_torque* msg);
   void updateResidualState();
   void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
   void computeContactFilter(bool publishMostLikely, bool publishAll=false);

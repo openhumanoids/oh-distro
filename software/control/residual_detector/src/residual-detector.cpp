@@ -39,6 +39,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   lcm_->subscribe("EST_ROBOT_STATE", &ResidualDetector::onRobotState, this);
   lcm_->subscribe("FOOT_CONTACT_ESTIMATE", &ResidualDetector::onFootContact, this);
   lcm_->subscribe("FOOT_FORCE_TORQUE", &ResidualDetector::onFootForceTorque, this);
+  lcm_->subscribe("EXTERNAL_FORCE_TORQUE", &ResidualDetector::onExternalForceTorque, this);
 
 
 
@@ -176,6 +177,17 @@ void ResidualDetector::onFootForceTorque(const lcm::ReceiveBuffer *rbuf, const s
   this->args.foot_ft_meas_6_axis[Side::RIGHT].wrench << msg->r_foot_torque[0], msg->r_foot_torque[1], msg->r_foot_torque[2], msg->r_foot_force[0], msg->r_foot_force[1], msg->r_foot_force[2];
   lck.unlock();
 }
+
+void ResidualDetector::onExternalForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+                           const drake::lcmt_external_force_torque* msg){
+  std::unique_lock<std::mutex> lck(pointerMutex);
+  this->linksWithExternalForce.clear();
+  for (int i=0; i<msg->num_external_forces; i++){
+    this->linksWithExternalForce.push_back(msg->body_names[i]);
+  }
+  lck.unlock();
+}
+
 
 void ResidualDetector::updateResidualState() {
 
@@ -400,14 +412,20 @@ void ResidualDetector::computeContactFilter(bool publishMostLikely, bool publish
   this->contactFilter.computeLikelihoodFull(t, residual, q, v, publishMostLikely, publishAll);
 }
 
-void ResidualDetector::computeActiveLinkContactFilter(bool publish){
+void ResidualDetector::computeActiveLinkContactFilter(bool publish, bool useActiveLinkInfo){
   std::unique_lock<std::mutex> lck(pointerMutex);
   VectorXd residual = this->residual_state.r;
   double t = this->args.robot_state->t;
   VectorXd q = this->args.robot_state->q;
   VectorXd v = this->args.robot_state->qd;
+  std::vector<std::string> activeLinkNames = this->linksWithExternalForce;
   lck.unlock();
-  this->contactFilter.computeActiveLinkForceTorque(t, residual, q, v, publish);
+
+  if (!useActiveLinkInfo){
+    activeLinkNames.clear();
+  }
+
+  this->contactFilter.computeActiveLinkForceTorque(t, residual, q, v, publish, activeLinkNames);
 }
 
 void ResidualDetector::residualThreadLoop() {
@@ -450,12 +468,13 @@ void ResidualDetector::contactFilterThreadLoop(std::string filename) {
 void ResidualDetector::activeLinkContactFilterThreadLoop() {
   std::cout << "entered contact filter body wrench loop" << std::endl;
   bool publish = true;
+  bool useActiveLinkInfo = true;
   bool done = false;
   while (!done){
     while (!this->residual_state.running || !this->newResidualStateAvailableForActiveLink){
       std::this_thread::yield();
     }
-    this->computeActiveLinkContactFilter(publish);
+    this->computeActiveLinkContactFilter(publish, useActiveLinkInfo);
     this->newResidualStateAvailableForActiveLink = false;
   }
 }

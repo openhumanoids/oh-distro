@@ -384,22 +384,21 @@ std::set<std::shared_ptr<RigidBody>> ContactFilter::findActiveLinks(const Eigen:
 
 void ContactFilter::computeActiveLinkForceTorque(double t, const Eigen::VectorXd & residual, const Eigen::VectorXd &q,
                                                  const Eigen::VectorXd &v, bool publish, std::vector<std::string> activeLinkNames){
-  std::set<std::shared_ptr<RigidBody>> activeRigidBodies = this->findActiveLinks(residual);
+
+  std::set<std::shared_ptr<RigidBody>> activeRigidBodies;
+  if (activeLinkNames.empty()){
+     activeRigidBodies = this->findActiveLinks(residual);
+  }
+  else{
+    for (auto& linkName: activeLinkNames){
+      activeRigidBodies.insert(this->drake_model.findLink(linkName));
+    }
+  }
+
 
   if (activeRigidBodies.empty()){
     return;
   }
-//  if (activeRigidBodies.size() > 1){
-//    std::cout << std::endl;
-//    std::cout << "more than one rigid body is active, I am confused, doing nothing" << std::endl;
-//    std::cout << "the active rigid bodies are \n";
-//    for (auto & rb: activeRigidBodies){
-//      std::cout << rb->linkname + "\n";
-//    }
-//    std::cout << std::endl;
-//    return;
-//  }
-
 
   this->drake_model.doKinematics(q, v, false, false);
   std::vector<MatrixXd> linkJacobianVec;
