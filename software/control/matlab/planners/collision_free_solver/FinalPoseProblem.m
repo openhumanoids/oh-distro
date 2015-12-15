@@ -126,49 +126,62 @@ classdef FinalPoseProblem
       reduceTimer = tic;
       obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, point_cloud, 0, 0, 2, 1.5);
       fprintf('reduce Time: %.4f s\n', toc(reduceTimer))
-      vox_centers = obj.capability_map.getActiveVoxelCentres();
-      n_vox = obj.capability_map.n_active_voxels;
+      active_voxels = find(obj.capability_map.active_voxels);
+      valid_samples = obj.capability_map.occupancy_map_active_orient(obj.capability_map.active_voxels, :);
+      n_valid_samples = nnz(valid_samples);
+      orient_prob = obj.capability_map.occupancy_map_orient_prob;
       iter = 0;
       qOpt = [];
       cost = [];
-      validConfs =  double.empty(np+1, 0);
       fprintf('Setup time: %.2f s\n', toc(setupTimer))
       iterationTimer = tic;
-      
-      for vox = randperm(n_vox)
+      for vox = 1:n_valid_samples
+        orient_prob(~any(valid_samples)) = 0;
+        cum_prob = cumsum(orient_prob) / sum(orient_prob);
+        orient_idx = find(rand() < cum_prob, 1);
+        rpy = obj.capability_map.occupancy_map_orient(:, orient_idx);
+        voxel_idx = find(valid_samples(:, orient_idx));
+        rand_voxel = randi(length(voxel_idx));
+        voxel_idx = voxel_idx(rand_voxel);
+        pos = obj.capability_map.vox_centres(:, active_voxels(voxel_idx));
+        valid_samples(voxel_idx, orient_idx) = false;
+        
         iter = iter + 1;
-        dist = norm(vox_centers(:,vox));
-        axis = -vox_centers(:,vox)/dist;
+%         dist = norm(vox_centers(:,vox));
+%         axis = -vox_centers(:,vox)/dist;
 %         drawTreePoints([[0;0;0] vox_centers(1:3,vox)], 'lines', true, 'text', 'cm_point')
 %         drawTreePoints([obj.x_goal(1:3) - vox_centers(1:3,vox), obj.x_goal(1:3)], 'lines', true)
-        shDistance = Point2PointDistanceConstraint(obj.robot, base, obj.robot.findLinkId('world'), obj.capability_map.map_left_centre, obj.x_goal(1:3), dist, dist);
-        shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), obj.capability_map.map_left_centre, 0);
+%         shDistance = Point2PointDistanceConstraint(obj.robot, base, obj.robot.findLinkId('world'), obj.capability_map.map_left_centre, obj.x_goal(1:3), dist, dist);
+%         shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), obj.capability_map.map_left_centre, 0);
 %         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - vox_centers(1:3,vox), obj.x_goal(1:3) - vox_centers(1:3,vox));
-        shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
-        constraints = [{shDistance, shGaze, shOrient}, obj.goal_constraints, obj.additional_constraints];
+%         shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
+        torsoPosConstraint = WorldPositionConstraint(obj.robot, base, obj.capability_map.map_left_centre, pos + obj.x_goal(1:3),  pos + obj.x_goal(1:3));
+        torsoEulerConstraint = WorldEulerConstraint(obj.robot, base, rpy, rpy);
+        constraints = [{torsoPosConstraint, torsoEulerConstraint}, obj.goal_constraints, obj.additional_constraints];
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         if valid
           valid = ~obj.robot.collidingPointsCheckOnly(kinSol, point_cloud, obj.min_distance);
           if valid
-            cost = (obj.q_nom - q)'*obj.ikoptions.Q*(obj.q_nom - q);
-            validConfs(:,vox) = [cost; q];
-            if cost < 20
-              if obj.debug
-                debug_vars.cost_below_threshold = true;
-              end
-              break
-            end
-          else
+            qOpt = q;
+            break
+%             cost = (obj.q_nom - q)'*obj.ikoptions.Q*(obj.q_nom - q);
+%             validConfs(:,vox) = [cost; q];
+%             if cost < 20
+%               if obj.debug
+%                 debug_vars.cost_below_threshold = true;
+%               end
+%               break
+%             end
           end
         end
       end
-      if ~isempty(validConfs)
-        validConfs = validConfs(:, validConfs(1,:) > 0);
-        [cost, qOptIdx] =  min(validConfs(1,:));
-        qOpt = validConfs(2:end, qOptIdx);
-      end
+%       if ~isempty(validConfs)
+%         validConfs = validConfs(:, validConfs(1,:) > 0);
+%         [cost, qOptIdx] =  min(validConfs(1,:));
+%         qOpt = validConfs(2:end, qOptIdx);
+%       end
       fprintf('iteration Time: %.4f\n', toc(iterationTimer))
       
       debug_vars.n_capability_map_samples = iter;

@@ -30,7 +30,9 @@ classdef CapabilityMap
     occupancy_map_ub
     occupancy_map_orient_steps
     occupancy_map_active_orient
+    occupancy_map_orient
     occupancy_map_n_orient
+    occupancy_map_orient_prob
   end
   
   methods
@@ -145,6 +147,8 @@ classdef CapabilityMap
         obj.occupancy_map_orient_steps = vars.occupancy_map_orient_steps;
         obj.occupancy_map_n_orient = vars.occupancy_map_n_orient;
         obj = obj.resetActiveOrient();
+        obj = obj.computeOccupancyMapOrientations();
+        obj = obj.computeOrientationProbabilityDistribution();
       else
         warning('No occupancy map data found')
       end
@@ -294,30 +298,30 @@ classdef CapabilityMap
       obj = obj.deactivateCollidingVoxels(point_cloud);
       fprintf('Colliding Time: %.2f s\n', toc(collidingTimer))
       
-      if obj.n_active_voxels > des_vox_num
-        max_threshold = pi;
-        min_threshold = 0;
-        threshold_range = pi/50;
-        while max_threshold - min_threshold > threshold_range
-          mid_threshold = (max_threshold + min_threshold)/2;
-          idx_mid = obj.findVoxelsFromDirection(direction, mid_threshold, true);
-          if length(idx_mid) > des_vox_num
-            max_threshold = mid_threshold;
-          else
-            min_threshold = mid_threshold;
-          end
-        end
-        idx_min = obj.findVoxelsFromDirection(direction, min_threshold, true);
-        idx_max = obj.findVoxelsFromDirection(direction, max_threshold, true);
-        idx = min(abs([numel(idx_min), numel(idx_max)] - des_vox_num));
-        obj = obj.activateVoxels(idx);
-      end
-      
-      reachability_weight = 0;
-      while obj.n_active_voxels > des_vox_num
-        reachability_weight = reachability_weight + 0.5;
-        obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, reachability_weight, false);
-      end
+%       if obj.n_active_voxels > des_vox_num
+%         max_threshold = pi;
+%         min_threshold = 0;
+%         threshold_range = pi/50;
+%         while max_threshold - min_threshold > threshold_range
+%           mid_threshold = (max_threshold + min_threshold)/2;
+%           idx_mid = obj.findVoxelsFromDirection(direction, mid_threshold, true);
+%           if length(idx_mid) > des_vox_num
+%             max_threshold = mid_threshold;
+%           else
+%             min_threshold = mid_threshold;
+%           end
+%         end
+%         idx_min = obj.findVoxelsFromDirection(direction, min_threshold, true);
+%         idx_max = obj.findVoxelsFromDirection(direction, max_threshold, true);
+%         idx = min(abs([numel(idx_min), numel(idx_max)] - des_vox_num));
+%         obj = obj.activateVoxels(idx);
+%       end
+%       
+%       reachability_weight = 0;
+%       while obj.n_active_voxels > des_vox_num
+%         reachability_weight = reachability_weight + 0.5;
+%         obj = obj.prune(sagittal_angle, transverse_angle, sagittal_weight, transverse_weight, reachability_weight, false);
+%       end
     end
     
     function drawCapabilityMap(obj, text, draw_cubes)
@@ -701,6 +705,8 @@ classdef CapabilityMap
       end      
       obj.occupancy_map = om;
       obj = obj.resetActiveOrient();
+      obj = obj.computeOccupancyMapOrientations();
+      obj = obj.computeOrientationProbabilityDistribution();
     end
     
     function [lb, ub] = getBoundingBoxBoundsRelativeToMapCentre(obj, body)
@@ -724,6 +730,27 @@ classdef CapabilityMap
                  reshape(y, 1, obj.occupancy_map_n_voxels); ...
                  reshape(z, 1, obj.occupancy_map_n_voxels)];
     end
+    
+    function obj = computeOrientationProbabilityDistribution(obj, sigma, mu)
+      if nargin < 3, mu = [0 0 0]; end
+      if nargin < 2 || isempty(sigma), sigma = [0.5 0.5 0.8]; end
+      x = bsxfun(@rdivide, obj.occupancy_map_orient', [max(abs(obj.occupancy_map_orient_steps.roll)),...
+                                        max(abs(obj.occupancy_map_orient_steps.pitch)),...
+                                        max(abs(obj.occupancy_map_orient_steps.yaw))]);
+      obj.occupancy_map_orient_prob = mvnpdf(x, mu, sigma);
+    end
+    
+    function obj = computeOccupancyMapOrientations(obj)
+      [r,p,y] = ind2sub([numel(obj.occupancy_map_orient_steps.roll),...
+                           numel(obj.occupancy_map_orient_steps.pitch),...
+                           numel(obj.occupancy_map_orient_steps.yaw)],...
+                           1:obj.occupancy_map_n_orient);
+      r = obj.occupancy_map_orient_steps.roll(r);
+      p = obj.occupancy_map_orient_steps.pitch(p);
+      y = obj.occupancy_map_orient_steps.yaw(y);
+      obj.occupancy_map_orient = [r; p; y];
+    end
+        
     
   end
     
