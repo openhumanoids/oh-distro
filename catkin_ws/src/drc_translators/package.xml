@@ -27,6 +27,7 @@
   <depend>ipab_lwr_msgs</depend>
   <depend>ipab_msgs</depend>
   <depend>kdl_conversions</depend>
+  <depend>octomap_msgs</depend>
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
