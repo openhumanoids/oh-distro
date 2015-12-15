@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2013 Blackmagic Design
+** Copyright (c) 2015 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -53,7 +53,8 @@ BMD_CONST REFIID IID_IDeckLinkTimecode                            = /* BC6CFBD3-
 typedef uint32_t BMDTimecodeFlags;
 enum _BMDTimecodeFlags {
     bmdTimecodeFlagDefault                                       = 0,
-    bmdTimecodeIsDropFrame                                       = 1 << 0
+    bmdTimecodeIsDropFrame                                       = 1 << 0,
+    bmdTimecodeFieldMark                                         = 1 << 1
 };
 
 /* Enum BMDVideoConnection - Video connection types */
@@ -66,6 +67,27 @@ enum _BMDVideoConnection {
     bmdVideoConnectionComponent                                  = 1 << 3,
     bmdVideoConnectionComposite                                  = 1 << 4,
     bmdVideoConnectionSVideo                                     = 1 << 5
+};
+
+/* Enum BMDAudioConnection - Audio connection types */
+
+typedef uint32_t BMDAudioConnection;
+enum _BMDAudioConnection {
+    bmdAudioConnectionEmbedded                                   = 1 << 0,
+    bmdAudioConnectionAESEBU                                     = 1 << 1,
+    bmdAudioConnectionAnalog                                     = 1 << 2,
+    bmdAudioConnectionAnalogXLR                                  = 1 << 3,
+    bmdAudioConnectionAnalogRCA                                  = 1 << 4,
+    bmdAudioConnectionMicrophone                                 = 1 << 5,
+    bmdAudioConnectionHeadphones                                 = 1 << 6
+};
+
+/* Enum BMDDeckControlConnection - Deck control connections */
+
+typedef uint32_t BMDDeckControlConnection;
+enum _BMDDeckControlConnection {
+    bmdDeckControlConnectionRS422Remote1                         = 1 << 0,
+    bmdDeckControlConnectionRS422Remote2                         = 1 << 1
 };
 
 // Forward Declarations
@@ -84,7 +106,7 @@ public:
     virtual HRESULT GetTimecodeUserBits (/* out */ BMDTimecodeUserBits *userBits) = 0;
 
 protected:
-    virtual ~IDeckLinkTimecode () {}; // call Release method to drop reference count
+    virtual ~IDeckLinkTimecode () {} // call Release method to drop reference count
 };
 
 /* Functions */
@@ -92,7 +114,7 @@ protected:
 extern "C" {
 
 
-};
+}
 
 
 #endif /* defined(BMD_DECKLINKAPITYPES_H) */

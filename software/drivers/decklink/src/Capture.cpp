@@ -51,50 +51,53 @@ static int				g_videoOutputFile = -1;
 static int				g_audioOutputFile = -1;
 static bool				g_do_exit = false;
 
+IDeckLinkIterator*				g_deckLinkIterator = NULL;
+IDeckLink*						g_deckLink = NULL;
+
+IDeckLinkAttributes*			g_deckLinkAttributes = NULL;
+bool							g_formatDetectionSupported;
+
+IDeckLinkDisplayModeIterator*	g_displayModeIterator = NULL;
+IDeckLinkDisplayMode*			g_displayMode = NULL;
+char*							g_displayModeName = NULL;
+BMDDisplayModeSupport			g_displayModeSupported;
+
+DeckLinkCaptureDelegate*		g_delegate = NULL;
+
 static BMDConfig		g_config;
 
-static IDeckLinkInput*	g_deckLinkInput = NULL;
+static IDeckLinkInput* g_deckLinkInput = NULL;
 
 static IDeckLinkOutput* g_deckLinkOutput = NULL;
 
 static lcm::LCM* g_lcm = NULL;
 
-static IDeckLinkVideoConversion* conversionInst = NULL;
+static IDeckLinkVideoConversion* g_conversionInst = NULL;
 
-static unsigned long	g_frameCount = 0;
+static unsigned long g_frameCount = 0;
 
 DeckLinkCaptureDelegate::DeckLinkCaptureDelegate() : m_refCount(0)
 {
-	pthread_mutex_init(&m_mutex, NULL);
 }
 
 DeckLinkCaptureDelegate::~DeckLinkCaptureDelegate()
 {
-	pthread_mutex_destroy(&m_mutex);
 }
 
 ULONG DeckLinkCaptureDelegate::AddRef(void)
 {
-	pthread_mutex_lock(&m_mutex);
-		m_refCount++;
-	pthread_mutex_unlock(&m_mutex);
-
-	return (ULONG)m_refCount;
+    return __sync_add_and_fetch(&m_refCount, 1);
 }
 
 ULONG DeckLinkCaptureDelegate::Release(void)
 {
-	pthread_mutex_lock(&m_mutex);
-		m_refCount--;
-	pthread_mutex_unlock(&m_mutex);
-
-	if (m_refCount == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return (ULONG)m_refCount;
+    int32_t newRefValue = __sync_sub_and_fetch(&m_refCount, 1);
+    if (newRefValue == 0)
+    {
+        delete this;
+        return 0;
+    }
+    return newRefValue;
 }
 
 
@@ -105,77 +108,77 @@ namespace
 template<typename T>
 class SynchronizedQueue
 {
-  public:
+public:
 
     SynchronizedQueue () :
-      queue_(), mutex_(), cond_(), request_to_end_(false), enqueue_data_(true) { }
+        queue_(), mutex_(), cond_(), request_to_end_(false), enqueue_data_(true) { }
 
     void
     enqueue (const T& data)
     {
-      boost::unique_lock<boost::mutex> lock (mutex_);
+        boost::unique_lock<boost::mutex> lock (mutex_);
 
-      if (enqueue_data_)
-      {
-        queue_.push (data);
-        cond_.notify_one ();
-      }
+        if (enqueue_data_)
+        {
+            queue_.push (data);
+            cond_.notify_one ();
+        }
     }
 
     bool
     dequeue (T& result)
     {
-      boost::unique_lock<boost::mutex> lock (mutex_);
+        boost::unique_lock<boost::mutex> lock (mutex_);
 
-      while (queue_.empty () && (!request_to_end_))
-      {
-        cond_.wait (lock);
-      }
+        while (queue_.empty () && (!request_to_end_))
+        {
+            cond_.wait (lock);
+        }
 
-      if (request_to_end_)
-      {
-        doEndActions ();
-        return false;
-      }
+        if (request_to_end_)
+        {
+            doEndActions ();
+            return false;
+        }
 
-      result = queue_.front ();
-      queue_.pop ();
+        result = queue_.front ();
+        queue_.pop ();
 
-      return true;
+        return true;
     }
 
     void
     stopQueue ()
     {
-      boost::unique_lock<boost::mutex> lock (mutex_);
-      request_to_end_ = true;
-      cond_.notify_one ();
+        boost::unique_lock<boost::mutex> lock (mutex_);
+        request_to_end_ = true;
+        cond_.notify_one ();
     }
 
     unsigned int
     size ()
     {
-      boost::unique_lock<boost::mutex> lock (mutex_);
-      return static_cast<unsigned int> (queue_.size ());
+        boost::unique_lock<boost::mutex> lock (mutex_);
+        return static_cast<unsigned int> (queue_.size ());
     }
 
     bool
     isEmpty () const
     {
-      boost::unique_lock<boost::mutex> lock (mutex_);
-      return (queue_.empty ());
+        boost::unique_lock<boost::mutex> lock (mutex_);
+        return (queue_.empty ());
     }
 
-  private:
+private:
     void
     doEndActions ()
     {
-      enqueue_data_ = false;
+        enqueue_data_ = false;
 
-      while (!queue_.empty ())
-      {
-        queue_.pop ();
-      }
+        while (!queue_.empty ())
+        {
+            queue_.pop ();
+        }
     }
 
     std::queue<T> queue_;              // Use STL queue to store data
@@ -188,60 +191,60 @@ class SynchronizedQueue
 
 void convert(IDeckLinkMutableVideoFrame* videoFrame, bot_core::image_t& oImage) {
 
-  oImage.width = videoFrame->GetWidth();
-  oImage.height = videoFrame->GetHeight();
-  oImage.row_stride = videoFrame->GetRowBytes();
-  oImage.size = oImage.height*oImage.row_stride;
-  oImage.nmetadata = 0;
+    oImage.width = videoFrame->GetWidth();
+    oImage.height = videoFrame->GetHeight();
+    oImage.row_stride = videoFrame->GetRowBytes();
+    oImage.size = oImage.height*oImage.row_stride;
+    oImage.nmetadata = 0;
 
-  //printf("frame: %d x %d  (%d row bytes)\n", oImage.width, oImage.height, oImage.row_stride);
+    //printf("frame: %d x %d  (%d row bytes)\n", oImage.width, oImage.height, oImage.row_stride);
 
-  // compress if necessary
-  uint8_t* data = 0;
-  videoFrame->GetBytes((void**)&data);
+    // compress if necessary
+    uint8_t* data = 0;
+    videoFrame->GetBytes((void**)&data);
 
 
-  bool shouldCompress = true;
+    bool shouldCompress = true;
 
-  if (shouldCompress) {
+    if (shouldCompress) {
 
-    //double oldMB = oImage.size / (1024.0*1024.0);
+        //double oldMB = oImage.size / (1024.0*1024.0);
 
-    int compressionQuality = g_config.m_compressionQuality;
-    std::vector<uint8_t> dest(oImage.size);
-    jpeg_compress_8u_bgra(data, oImage.width, oImage.height, oImage.row_stride,
-                         dest.data(), &oImage.size, compressionQuality);
-    oImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
-    oImage.data.resize(oImage.size);
-    std::copy(dest.data(), dest.data()+oImage.size, oImage.data.begin());
+        int compressionQuality = g_config.m_compressionQuality;
+        std::vector<uint8_t> dest(oImage.size);
+        jpeg_compress_8u_bgra(data, oImage.width, oImage.height, oImage.row_stride,
+                              dest.data(), &oImage.size, compressionQuality);
+        oImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+        oImage.data.resize(oImage.size);
+        std::copy(dest.data(), dest.data()+oImage.size, oImage.data.begin());
 
-    //double newMB = oImage.size / (1024.0*1024.0);
-    //printf("compression %.2f --> %.2f MB\n", oldMB, newMB);
-  }
+        //double newMB = oImage.size / (1024.0*1024.0);
+        //printf("compression %.2f --> %.2f MB\n", oldMB, newMB);
+    }
 
-  // otherwise just set raw bytes
-  else {
+    // otherwise just set raw bytes
+    else {
 
-    oImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_BGRA;
-    oImage.data.resize(oImage.size);
-    std::copy(data, data + oImage.size, oImage.data.begin());
-  }
+        oImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_BGRA;
+        oImage.data.resize(oImage.size);
+        std::copy(data, data + oImage.size, oImage.data.begin());
+    }
 }
 
 class FrameData
 {
 public:
-  FrameData()
-  {
-    timestamp = 0;
-    outputFrame = NULL;
-  }
+    FrameData()
+    {
+        timestamp = 0;
+        outputFrame = NULL;
+    }
 
-  FrameData(IDeckLinkMutableVideoFrame* frame, int64_t t) : timestamp(t), outputFrame(frame)
-  {
-  }
-  int64_t timestamp;
-  IDeckLinkMutableVideoFrame* outputFrame;
+    FrameData(IDeckLinkMutableVideoFrame* frame, int64_t t) : timestamp(t), outputFrame(frame)
+    {
+    }
+    int64_t timestamp;
+    IDeckLinkMutableVideoFrame* outputFrame;
 };
 
 
@@ -249,48 +252,48 @@ class FrameConsumer
 {
 public:
 
-  FrameConsumer()
-  {
-  }
-
-  void Start()
-  {
-    this->Thread = boost::shared_ptr<boost::thread>(
-      new boost::thread(boost::bind(&FrameConsumer::ThreadLoop, this)));
-
-    this->Thread2 = boost::shared_ptr<boost::thread>(
-      new boost::thread(boost::bind(&FrameConsumer::ThreadLoop, this)));
-  }
-
-  void Stop()
-  {
-    this->Queue.stopQueue();
-  }
-
-  void ThreadLoop()
-  {
-    FrameData frameData;
-
-    while (this->Queue.dequeue(frameData))
+    FrameConsumer()
     {
-      bot_core::image_t msg;
-      msg.utime = frameData.timestamp;
-
-      double latencyWarningTime = 0.25;
-      double latencyTime = (bot_timestamp_now() - frameData.timestamp)*1e-6;
-      if (latencyTime > latencyWarningTime)
-      {
-        printf("%.3f seconds behind.  %u frames in queue\n", latencyTime, this->Queue.size());
-      }
-      convert(frameData.outputFrame, msg);
-      g_lcm->publish(g_config.m_lcmChannelName, &msg);
-      frameData.outputFrame->Release();
     }
-  }
 
-  SynchronizedQueue<FrameData> Queue;
-  boost::shared_ptr<boost::thread> Thread;
-  boost::shared_ptr<boost::thread> Thread2;
+    void Start()
+    {
+        this->Thread = boost::shared_ptr<boost::thread>(
+                    new boost::thread(boost::bind(&FrameConsumer::ThreadLoop, this)));
+
+        this->Thread2 = boost::shared_ptr<boost::thread>(
+                    new boost::thread(boost::bind(&FrameConsumer::ThreadLoop, this)));
+    }
+
+    void Stop()
+    {
+        this->Queue.stopQueue();
+    }
+
+    void ThreadLoop()
+    {
+        FrameData frameData;
+
+        while (this->Queue.dequeue(frameData))
+        {
+            bot_core::image_t msg;
+            msg.utime = frameData.timestamp;
+
+            double latencyWarningTime = 0.25;
+            double latencyTime = (bot_timestamp_now() - frameData.timestamp)*1e-6;
+            if (latencyTime > latencyWarningTime)
+            {
+                printf("%.3f seconds behind.  %u frames in queue\n", latencyTime, this->Queue.size());
+            }
+            convert(frameData.outputFrame, msg);
+            g_lcm->publish(g_config.m_lcmChannelName, &msg);
+            frameData.outputFrame->Release();
+        }
+    }
+
+    SynchronizedQueue<FrameData> Queue;
+    boost::shared_ptr<boost::thread> Thread;
+    boost::shared_ptr<boost::thread> Thread2;
 };
 
 
@@ -301,402 +304,406 @@ FrameConsumer frameConsumer;
 
 HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame, IDeckLinkAudioInputPacket* audioFrame)
 {
-	IDeckLinkVideoFrame*				rightEyeFrame = NULL;
-	IDeckLinkVideoFrame3DExtensions*	threeDExtensions = NULL;
-	void*								frameBytes;
-	void*								audioFrameBytes;
+    IDeckLinkVideoFrame*				rightEyeFrame = NULL;
+    IDeckLinkVideoFrame3DExtensions*	threeDExtensions = NULL;
+    void*								frameBytes;
+    void*								audioFrameBytes;
 
-	// Handle Video Frame
-	if (videoFrame)
-	{
-		// If 3D mode is enabled we retreive the 3D extensions interface which gives.
-		// us access to the right eye frame by calling GetFrameForRightEye() .
-		if ( (videoFrame->QueryInterface(IID_IDeckLinkVideoFrame3DExtensions, (void **) &threeDExtensions) != S_OK) ||
-			(threeDExtensions->GetFrameForRightEye(&rightEyeFrame) != S_OK))
-		{
-			rightEyeFrame = NULL;
-		}
+    // Handle Video Frame
+    if (videoFrame)
+    {
+        // If 3D mode is enabled we retreive the 3D extensions interface which gives.
+        // us access to the right eye frame by calling GetFrameForRightEye() .
+        if ( (videoFrame->QueryInterface(IID_IDeckLinkVideoFrame3DExtensions, (void **) &threeDExtensions) != S_OK) ||
+             (threeDExtensions->GetFrameForRightEye(&rightEyeFrame) != S_OK))
+        {
+            rightEyeFrame = NULL;
+        }
 
-		if (threeDExtensions)
-			threeDExtensions->Release();
+        if (threeDExtensions)
+            threeDExtensions->Release();
 
-		if (videoFrame->GetFlags() & bmdFrameHasNoInputSource)
-		{
-			printf("Frame received (#%lu) - No input signal detected\n", g_frameCount);
-		}
-		else
-		{
-			const char *timecodeString = NULL;
-			if (g_config.m_timecodeFormat != 0)
-			{
-				IDeckLinkTimecode *timecode;
-				if (videoFrame->GetTimecode(g_config.m_timecodeFormat, &timecode) == S_OK)
-				{
-					timecode->GetString(&timecodeString);
-				}
-			}
+        if (videoFrame->GetFlags() & bmdFrameHasNoInputSource)
+        {
+            printf("Frame received (#%lu) - No input signal detected\n", g_frameCount);
+        }
+        else
+        {
+            const char *timecodeString = NULL;
+            if (g_config.m_timecodeFormat != 0)
+            {
+                IDeckLinkTimecode *timecode;
+                if (videoFrame->GetTimecode(g_config.m_timecodeFormat, &timecode) == S_OK)
+                {
+                    timecode->GetString(&timecodeString);
+                }
+            }
 
-			//printf("Frame received (#%lu) [%s] - %s - Size: %li bytes\n",
-			//	g_frameCount,
-			//	timecodeString != NULL ? timecodeString : "No timecode",
-			//	rightEyeFrame != NULL ? "Valid Frame (3D left/right)" : "Valid Frame",
-			//	videoFrame->GetRowBytes() * videoFrame->GetHeight());
+            int64_t timestampNow = bot_timestamp_now();
 
-      int64_t timestampNow = bot_timestamp_now();
+            if (g_config.m_lcmChannelName)
+            {
+                IDeckLinkMutableVideoFrame* outputFrame;
+                g_deckLinkOutput->CreateVideoFrame(videoFrame->GetWidth(), videoFrame->GetHeight(), videoFrame->GetWidth()*4, bmdFormat8BitBGRA, bmdFrameFlagDefault, &outputFrame);
+                HRESULT convertResult = g_conversionInst->ConvertFrame(videoFrame, outputFrame);
 
-      if (g_config.m_lcmChannelName)
-      {
-        IDeckLinkMutableVideoFrame* outputFrame;
-        g_deckLinkOutput->CreateVideoFrame(videoFrame->GetWidth(), videoFrame->GetHeight(), videoFrame->GetWidth()*4, bmdFormat8BitBGRA, bmdFrameFlagDefault, &outputFrame);
-        HRESULT convertResult = conversionInst->ConvertFrame(videoFrame, outputFrame);
+                frameConsumer.Queue.enqueue(FrameData(outputFrame, timestampNow));
+            }
 
-        frameConsumer.Queue.enqueue(FrameData(outputFrame, timestampNow));
-      }
+            static int64_t baseTime = timestampNow;
+            static uint64_t frameCount = g_frameCount;
+            double elapsedTime = (timestampNow - baseTime) * 1e-6;
+            if (elapsedTime > 1.0)
+            {
+                printf("capturing at %.2f fps.\n", (g_frameCount - frameCount)/elapsedTime);
+                baseTime = timestampNow;
+                frameCount = g_frameCount;
+            }
 
-      static int64_t baseTime = timestampNow;
-      static uint64_t frameCount = g_frameCount;
-      double elapsedTime = (timestampNow - baseTime) * 1e-6;
-      if (elapsedTime > 1.0)
-      {
-        printf("capturing at %.2f fps.\n", (g_frameCount - frameCount)/elapsedTime);
-        baseTime = timestampNow;
-        frameCount = g_frameCount;
-      }
+            if (timecodeString)
+                free((void*)timecodeString);
 
-			if (timecodeString)
-				free((void*)timecodeString);
+            if (g_videoOutputFile != -1)
+            {
+                videoFrame->GetBytes(&frameBytes);
+                write(g_videoOutputFile, frameBytes, videoFrame->GetRowBytes() * videoFrame->GetHeight());
 
-			if (g_videoOutputFile != -1)
-			{
-				videoFrame->GetBytes(&frameBytes);
-				write(g_videoOutputFile, frameBytes, videoFrame->GetRowBytes() * videoFrame->GetHeight());
+                if (rightEyeFrame)
+                {
+                    rightEyeFrame->GetBytes(&frameBytes);
+                    write(g_videoOutputFile, frameBytes, videoFrame->GetRowBytes() * videoFrame->GetHeight());
+                }
+            }
+        }
 
-				if (rightEyeFrame)
-				{
-					rightEyeFrame->GetBytes(&frameBytes);
-					write(g_videoOutputFile, frameBytes, videoFrame->GetRowBytes() * videoFrame->GetHeight());
-				}
-			}
-		}
+        if (rightEyeFrame)
+            rightEyeFrame->Release();
 
-		if (rightEyeFrame)
-			rightEyeFrame->Release();
+        g_frameCount++;
+    }
 
-		g_frameCount++;
-	}
+    // Handle Audio Frame
+    if (audioFrame)
+    {
+        if (g_audioOutputFile != -1)
+        {
+            audioFrame->GetBytes(&audioFrameBytes);
+            write(g_audioOutputFile, audioFrameBytes, audioFrame->GetSampleFrameCount() * g_config.m_audioChannels * (g_config.m_audioSampleDepth / 8));
+        }
+    }
 
-	// Handle Audio Frame
-	if (audioFrame)
-	{
-		if (g_audioOutputFile != -1)
-		{
-			audioFrame->GetBytes(&audioFrameBytes);
-			write(g_audioOutputFile, audioFrameBytes, audioFrame->GetSampleFrameCount() * g_config.m_audioChannels * (g_config.m_audioSampleDepth / 8));
-		}
-	}
+    if (g_config.m_maxFrames > 0 && videoFrame && g_frameCount >= g_config.m_maxFrames)
+    {
+        g_do_exit = true;
+        pthread_cond_signal(&g_sleepCond);
+    }
 
-	if (g_config.m_maxFrames > 0 && videoFrame && g_frameCount >= g_config.m_maxFrames)
-	{
-		g_do_exit = true;
-		pthread_cond_signal(&g_sleepCond);
-	}
-
-	return S_OK;
+    return S_OK;
 }
 
 HRESULT DeckLinkCaptureDelegate::VideoInputFormatChanged(BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode *mode, BMDDetectedVideoInputFormatFlags)
 {
-	// This only gets called if bmdVideoInputEnableFormatDetection was set
-	// when enabling video input
-	HRESULT	result;
-	char*	displayModeName = NULL;
+    // This only gets called if bmdVideoInputEnableFormatDetection was set
+    // when enabling video input
+    HRESULT	result;
+    char*	displayModeName = NULL;
 
-	if (!(events & bmdVideoInputDisplayModeChanged))
-		return S_OK;
+    if (!(events & bmdVideoInputDisplayModeChanged))
+        return S_OK;
 
-	mode->GetName((const char**)&displayModeName);
-	printf("Video format changed to %s\n", displayModeName);
+    mode->GetName((const char**)&displayModeName);
+    printf("Video format changed to %s\n", displayModeName);
 
-	if (displayModeName)
-		free(displayModeName);
+    if (displayModeName)
+        free(displayModeName);
 
-	if (g_deckLinkInput)
-	{
-		g_deckLinkInput->StopStreams();
+    if (g_deckLinkInput)
+    {
+        g_deckLinkInput->StopStreams();
 
-		result = g_deckLinkInput->EnableVideoInput(mode->GetDisplayMode(), g_config.m_pixelFormat, g_config.m_inputFlags);
-		if (result != S_OK)
-		{
-			fprintf(stderr, "Failed to switch video mode\n");
-			goto bail;
-		}
+        result = g_deckLinkInput->EnableVideoInput(mode->GetDisplayMode(), g_config.m_pixelFormat, g_config.m_inputFlags);
+        if (result != S_OK)
+        {
+            fprintf(stderr, "Failed to switch video mode\n");
+            return S_OK;
+        }
 
-		g_deckLinkInput->StartStreams();
-	}
+        g_deckLinkInput->StartStreams();
+    }
 
-bail:
-	return S_OK;
+    return S_OK;
 }
 
 static void sigfunc(int signum)
 {
-	if (signum == SIGINT || signum == SIGTERM)
-		g_do_exit = true;
+    if (signum == SIGINT || signum == SIGTERM)
+        g_do_exit = true;
 
-	pthread_cond_signal(&g_sleepCond);
+    pthread_cond_signal(&g_sleepCond);
+}
+
+void cleanup()
+{
+    delete g_lcm;
+
+    if (g_videoOutputFile != 0)
+        close(g_videoOutputFile);
+
+    if (g_audioOutputFile != 0)
+        close(g_audioOutputFile);
+
+    if (g_displayModeName != NULL)
+        free(g_displayModeName);
+
+    if (g_displayMode != NULL)
+        g_displayMode->Release();
+
+    if (g_displayModeIterator != NULL)
+        g_displayModeIterator->Release();
+
+    if (g_conversionInst != NULL)
+        g_conversionInst->Release();
+
+    if (g_deckLinkInput != NULL)
+    {
+        g_deckLinkInput->Release();
+        g_deckLinkInput = NULL;
+    }
+
+    if (g_deckLinkOutput != NULL)
+    {
+        g_deckLinkOutput->Release();
+        g_deckLinkOutput = NULL;
+    }
+
+    if (g_deckLinkAttributes != NULL)
+        g_deckLinkAttributes->Release();
+
+    if (g_deckLink != NULL)
+        g_deckLink->Release();
+
+    if (g_deckLinkIterator != NULL)
+        g_deckLinkIterator->Release();
 }
 
 int main(int argc, char *argv[])
 {
-	HRESULT							result;
-	int								exitStatus = 1;
-	int								idx;
+    HRESULT							result;
+    int								exitStatus = 1;
+    int								idx;
 
-	IDeckLinkIterator*				deckLinkIterator = NULL;
-	IDeckLink*						deckLink = NULL;
+    pthread_mutex_init(&g_sleepMutex, NULL);
+    pthread_cond_init(&g_sleepCond, NULL);
 
-	IDeckLinkAttributes*			deckLinkAttributes = NULL;
-	bool							formatDetectionSupported;
+    signal(SIGINT, sigfunc);
+    signal(SIGTERM, sigfunc);
+    signal(SIGHUP, sigfunc);
 
-	IDeckLinkDisplayModeIterator*	displayModeIterator = NULL;
-	IDeckLinkDisplayMode*			displayMode = NULL;
-	char*							displayModeName = NULL;
-	BMDDisplayModeSupport			displayModeSupported;
+    // Process the command line arguments
+    if (!g_config.ParseArguments(argc, argv))
+    {
+        g_config.DisplayUsage(exitStatus);
+        cleanup();
+        return exitStatus;
+    }
 
-	DeckLinkCaptureDelegate*		delegate = NULL;
+    g_lcm = new lcm::LCM();
+    g_conversionInst = CreateVideoConversionInstance();
 
-	pthread_mutex_init(&g_sleepMutex, NULL);
-	pthread_cond_init(&g_sleepCond, NULL);
+    // Get the DeckLink device
+    g_deckLinkIterator = CreateDeckLinkIteratorInstance();
+    if (!g_deckLinkIterator)
+    {
+        fprintf(stderr, "This application requires the DeckLink drivers installed.\n");
+        cleanup();
+        return exitStatus;
+    }
 
-	signal(SIGINT, sigfunc);
-	signal(SIGTERM, sigfunc);
-	signal(SIGHUP, sigfunc);
+    idx = g_config.m_deckLinkIndex;
 
-	// Process the command line arguments
-	if (!g_config.ParseArguments(argc, argv))
-	{
-		g_config.DisplayUsage(exitStatus);
-		goto bail;
-	}
+    while ((result = g_deckLinkIterator->Next(&g_deckLink)) == S_OK)
+    {
+        if (idx == 0)
+            break;
+        --idx;
 
-  g_lcm = new lcm::LCM();
-  conversionInst = CreateVideoConversionInstance();
+        g_deckLink->Release();
+    }
 
-	// Get the DeckLink device
-	deckLinkIterator = CreateDeckLinkIteratorInstance();
-	if (!deckLinkIterator)
-	{
-		fprintf(stderr, "This application requires the DeckLink drivers installed.\n");
-		goto bail;
-	}
+    if (result != S_OK || g_deckLink == NULL)
+    {
+        fprintf(stderr, "Unable to get DeckLink device %u\n", g_config.m_deckLinkIndex);
+        cleanup();
+        return exitStatus;
+    }
 
-	idx = g_config.m_deckLinkIndex;
-
-	while ((result = deckLinkIterator->Next(&deckLink)) == S_OK)
-	{
-		if (idx == 0)
-			break;
-		--idx;
-
-		deckLink->Release();
-	}
-
-	if (result != S_OK || deckLink == NULL)
-	{
-		fprintf(stderr, "Unable to get DeckLink device %u\n", g_config.m_deckLinkIndex);
-		goto bail;
-	}
-
-	// Get the input (capture) interface of the DeckLink device
-	result = deckLink->QueryInterface(IID_IDeckLinkInput, (void**)&g_deckLinkInput);
-	if (result != S_OK)
-		goto bail;
+    // Get the input (capture) interface of the DeckLink device
+    result = g_deckLink->QueryInterface(IID_IDeckLinkInput, (void**)&g_deckLinkInput);
+    if (result != S_OK)
+    {
+        cleanup();
+        return exitStatus;
+    }
 
 
 
-	// Get the output (display) interface of the DeckLink device
-	if (deckLink->QueryInterface(IID_IDeckLinkOutput, (void**)&g_deckLinkOutput) != S_OK)
-		goto bail;
+    // Get the output (display) interface of the DeckLink device
+    if (g_deckLink->QueryInterface(IID_IDeckLinkOutput, (void**)&g_deckLinkOutput) != S_OK)
+    {
+        cleanup();
+        return exitStatus;
+    }
 
 
-	// Get the display mode
-	if (g_config.m_displayModeIndex == -1)
-	{
-		// Check the card supports format detection
-		result = deckLink->QueryInterface(IID_IDeckLinkAttributes, (void**)&deckLinkAttributes);
-		if (result == S_OK)
-		{
-			result = deckLinkAttributes->GetFlag(BMDDeckLinkSupportsInputFormatDetection, &formatDetectionSupported);
-			if (result != S_OK || !formatDetectionSupported)
-			{
-				fprintf(stderr, "Format detection is not supported on this device\n");
-				goto bail;
-			}
-		}
+    // Get the display mode
+    if (g_config.m_displayModeIndex == -1)
+    {
+        // Check the card supports format detection
+        result = g_deckLink->QueryInterface(IID_IDeckLinkAttributes, (void**)&g_deckLinkAttributes);
+        if (result == S_OK)
+        {
+            result = g_deckLinkAttributes->GetFlag(BMDDeckLinkSupportsInputFormatDetection, &g_formatDetectionSupported);
+            if (result != S_OK || !g_formatDetectionSupported)
+            {
+                fprintf(stderr, "Format detection is not supported on this device\n");
+                cleanup();
+                return exitStatus;
+            }
+        }
 
-		g_config.m_inputFlags |= bmdVideoInputEnableFormatDetection;
+        g_config.m_inputFlags |= bmdVideoInputEnableFormatDetection;
 
-		// Format detection still needs a valid mode to start with
-		idx = 0;
-	}
-	else
-	{
-		idx = g_config.m_displayModeIndex;
-	}
+        // Format detection still needs a valid mode to start with
+        idx = 0;
+    }
+    else
+    {
+        idx = g_config.m_displayModeIndex;
+    }
 
-	result = g_deckLinkInput->GetDisplayModeIterator(&displayModeIterator);
-	if (result != S_OK)
-		goto bail;
+    result = g_deckLinkInput->GetDisplayModeIterator(&g_displayModeIterator);
+    if (result != S_OK)
+    {
+        cleanup();
+        return exitStatus;
+    }
 
-	while ((result = displayModeIterator->Next(&displayMode)) == S_OK)
-	{
-		if (idx == 0)
-			break;
-		--idx;
+    while ((result = g_displayModeIterator->Next(&g_displayMode)) == S_OK)
+    {
+        if (idx == 0)
+            break;
+        --idx;
 
-		displayMode->Release();
-	}
+        g_displayMode->Release();
+    }
 
-	if (result != S_OK || displayMode == NULL)
-	{
-		fprintf(stderr, "Unable to get display mode %d\n", g_config.m_displayModeIndex);
-		goto bail;
-	}
+    if (result != S_OK || g_displayMode == NULL)
+    {
+        fprintf(stderr, "Unable to get display mode %d\n", g_config.m_displayModeIndex);
+        cleanup();
+        return exitStatus;
+    }
 
-	// Get display mode name
-	result = displayMode->GetName((const char**)&displayModeName);
-	if (result != S_OK)
-	{
-		displayModeName = (char *)malloc(32);
-		snprintf(displayModeName, 32, "[index %d]", g_config.m_displayModeIndex);
-	}
+    // Get display mode name
+    result = g_displayMode->GetName((const char**)&g_displayModeName);
+    if (result != S_OK)
+    {
+        g_displayModeName = (char *)malloc(32);
+        snprintf(g_displayModeName, 32, "[index %d]", g_config.m_displayModeIndex);
+    }
 
-	// Check display mode is supported with given options
-	result = g_deckLinkInput->DoesSupportVideoMode(displayMode->GetDisplayMode(), g_config.m_pixelFormat, bmdVideoInputFlagDefault, &displayModeSupported, NULL);
-	if (result != S_OK)
-		goto bail;
+    // Check display mode is supported with given options
+    result = g_deckLinkInput->DoesSupportVideoMode(g_displayMode->GetDisplayMode(), g_config.m_pixelFormat, bmdVideoInputFlagDefault, &g_displayModeSupported, NULL);
+    if (result != S_OK)
+    {
+        cleanup();
+        return exitStatus;
+    }
 
-	if (displayModeSupported == bmdDisplayModeNotSupported)
-	{
-		fprintf(stderr, "The display mode %s is not supported with the selected pixel format\n", displayModeName);
-		goto bail;
-	}
+    if (g_displayModeSupported == bmdDisplayModeNotSupported)
+    {
+        fprintf(stderr, "The display mode %s is not supported with the selected pixel format\n", g_displayModeName);
+        cleanup();
+        return exitStatus;
+    }
 
-	if (g_config.m_inputFlags & bmdVideoInputDualStream3D)
-	{
-		if (!(displayMode->GetFlags() & bmdDisplayModeSupports3D))
-		{
-			fprintf(stderr, "The display mode %s is not supported with 3D\n", displayModeName);
-			goto bail;
-		}
-	}
+    if (g_config.m_inputFlags & bmdVideoInputDualStream3D)
+    {
+        if (!(g_displayMode->GetFlags() & bmdDisplayModeSupports3D))
+        {
+            fprintf(stderr, "The display mode %s is not supported with 3D\n", g_displayModeName);
+            cleanup();
+            return exitStatus;
+        }
+    }
 
-	// Print the selected configuration
-	g_config.DisplayConfiguration();
+    // Print the selected configuration
+    g_config.DisplayConfiguration();
 
-	// Configure the capture callback
-	delegate = new DeckLinkCaptureDelegate();
-	g_deckLinkInput->SetCallback(delegate);
+    // Configure the capture callback
+    g_delegate = new DeckLinkCaptureDelegate();
+    g_deckLinkInput->SetCallback(g_delegate);
 
-	// Open output files
-	if (g_config.m_videoOutputFile != NULL)
-	{
-		g_videoOutputFile = open(g_config.m_videoOutputFile, O_WRONLY|O_CREAT|O_TRUNC, 0664);
-		if (g_videoOutputFile < 0)
-		{
-			fprintf(stderr, "Could not open video output file \"%s\"\n", g_config.m_videoOutputFile);
-			goto bail;
-		}
-	}
+    // Open output files
+    if (g_config.m_videoOutputFile != NULL)
+    {
+        g_videoOutputFile = open(g_config.m_videoOutputFile, O_WRONLY|O_CREAT|O_TRUNC, 0664);
+        if (g_videoOutputFile < 0)
+        {
+            fprintf(stderr, "Could not open video output file \"%s\"\n", g_config.m_videoOutputFile);
+            cleanup();
+            return exitStatus;
+        }
+    }
 
-	if (g_config.m_audioOutputFile != NULL)
-	{
-		g_audioOutputFile = open(g_config.m_audioOutputFile, O_WRONLY|O_CREAT|O_TRUNC, 0664);
-		if (g_audioOutputFile < 0)
-		{
-			fprintf(stderr, "Could not open audio output file \"%s\"\n", g_config.m_audioOutputFile);
-			goto bail;
-		}
-	}
+    if (g_config.m_audioOutputFile != NULL)
+    {
+        g_audioOutputFile = open(g_config.m_audioOutputFile, O_WRONLY|O_CREAT|O_TRUNC, 0664);
+        if (g_audioOutputFile < 0)
+        {
+            fprintf(stderr, "Could not open audio output file \"%s\"\n", g_config.m_audioOutputFile);
+            cleanup();
+            return exitStatus;
+        }
+    }
 
-	// Block main thread until signal occurs
-	while (!g_do_exit)
-	{
-		// Start capturing
-		result = g_deckLinkInput->EnableVideoInput(displayMode->GetDisplayMode(), g_config.m_pixelFormat, g_config.m_inputFlags);
-		if (result != S_OK)
-		{
-			fprintf(stderr, "Failed to enable video input. Is another application using the card?\n");
-			goto bail;
-		}
+    // Block main thread until signal occurs
+    while (!g_do_exit)
+    {
+        // Start capturing
+        result = g_deckLinkInput->EnableVideoInput(g_displayMode->GetDisplayMode(), g_config.m_pixelFormat, g_config.m_inputFlags);
+        if (result != S_OK)
+        {
+            fprintf(stderr, "Failed to enable video input. Is another application using the card?\n");
+        }
+        else
+        {
+            result = g_deckLinkInput->EnableAudioInput(bmdAudioSampleRate48kHz, g_config.m_audioSampleDepth, g_config.m_audioChannels);
+            if (result == S_OK)
+            {
+                frameConsumer.Start();
 
-		result = g_deckLinkInput->EnableAudioInput(bmdAudioSampleRate48kHz, g_config.m_audioSampleDepth, g_config.m_audioChannels);
-		if (result != S_OK)
-			goto bail;
+                result = g_deckLinkInput->StartStreams();
+                if (result == S_OK)
+                {
+                    // All Okay.
+                    exitStatus = 0;
 
+                    pthread_mutex_lock(&g_sleepMutex);
+                    pthread_cond_wait(&g_sleepCond, &g_sleepMutex);
+                    pthread_mutex_unlock(&g_sleepMutex);
 
-    frameConsumer.Start();
+                    fprintf(stderr, "Stopping Capture\n");
+                    frameConsumer.Stop();
+                    g_deckLinkInput->StopStreams();
+                    g_deckLinkInput->DisableAudioInput();
+                    g_deckLinkInput->DisableVideoInput();
+                }
+            }
+        }
+    }
 
-		result = g_deckLinkInput->StartStreams();
-		if (result != S_OK)
-			goto bail;
+    cleanup();
 
-		// All Okay.
-		exitStatus = 0;
-
-		pthread_mutex_lock(&g_sleepMutex);
-		pthread_cond_wait(&g_sleepCond, &g_sleepMutex);
-		pthread_mutex_unlock(&g_sleepMutex);
-
-		fprintf(stderr, "Stopping Capture\n");
-    frameConsumer.Stop();
-		g_deckLinkInput->StopStreams();
-		g_deckLinkInput->DisableAudioInput();
-		g_deckLinkInput->DisableVideoInput();
-	}
-
-bail:
-
-  delete g_lcm;
-
-	if (g_videoOutputFile != 0)
-		close(g_videoOutputFile);
-
-	if (g_audioOutputFile != 0)
-		close(g_audioOutputFile);
-
-	if (displayModeName != NULL)
-		free(displayModeName);
-
-	if (displayMode != NULL)
-		displayMode->Release();
-
-	if (displayModeIterator != NULL)
-		displayModeIterator->Release();
-
-  if (conversionInst != NULL)
-    conversionInst->Release();
-
-	if (g_deckLinkInput != NULL)
-	{
-		g_deckLinkInput->Release();
-		g_deckLinkInput = NULL;
-	}
-
-	if (g_deckLinkOutput != NULL)
-	{
-		g_deckLinkOutput->Release();
-		g_deckLinkOutput = NULL;
-	}
-
-	if (deckLinkAttributes != NULL)
-		deckLinkAttributes->Release();
-
-	if (deckLink != NULL)
-		deckLink->Release();
-
-	if (deckLinkIterator != NULL)
-		deckLinkIterator->Release();
-
-	return exitStatus;
+    return exitStatus;
 }

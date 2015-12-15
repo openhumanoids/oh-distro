@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2013 Blackmagic Design
+** Copyright (c) 2015 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -158,7 +158,7 @@ public:
     virtual HRESULT DeckControlStatusChanged (/* in */ BMDDeckControlStatusFlags flags, /* in */ uint32_t mask) = 0;
 
 protected:
-    virtual ~IDeckLinkDeckControlStatusCallback () {}; // call Release method to drop reference count
+    virtual ~IDeckLinkDeckControlStatusCallback () {} // call Release method to drop reference count
 };
 
 /* Interface IDeckLinkDeckControl - Deck Control main interface */
@@ -201,7 +201,7 @@ public:
     virtual HRESULT SetCallback (/* in */ IDeckLinkDeckControlStatusCallback *callback) = 0;
 
 protected:
-    virtual ~IDeckLinkDeckControl () {}; // call Release method to drop reference count
+    virtual ~IDeckLinkDeckControl () {} // call Release method to drop reference count
 };
 
 /* Functions */
@@ -209,7 +209,7 @@ protected:
 extern "C" {
 
 
-};
+}
 
 
 #endif /* defined(BMD_DECKLINKAPIDECKCONTROL_H) */
