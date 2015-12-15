@@ -85,7 +85,7 @@ void LCM2ROS::ikRequestHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "lcm2ros", ros::init_options::NoSigintHandler);
+  ros::init(argc, argv, "lcm2ros_exotica", ros::init_options::NoSigintHandler);
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if (!lcm->good())
   {
