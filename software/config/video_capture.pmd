@@ -10,7 +10,7 @@ group "start" {
     }
 
     cmd "server" {
-        exec = "bash -c 'LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 python $HOME/drc/software/director/src/python/scripts/videoLogServer.py $HOME/logs/video-logs'";
+        exec = "bash -c 'LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 python $DRC_BASE/software/director/src/python/scripts/videoLogServer.py $HOME/logs/video-logs'";
         host = "localhost";
     }
 }
