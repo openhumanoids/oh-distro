@@ -22,6 +22,7 @@ classdef CapabilityMap
     map_ub
     map_lb
     EE_pose
+    active_side
     occupancy_map
     occupancy_map_resolution
     occupancy_map_dimensions
@@ -47,7 +48,7 @@ classdef CapabilityMap
         obj.base_link = kinematic_chain_left{1};
         obj.end_effector_link.left = kinematic_chain_left{end};
         obj.end_effector_link.right = end_effector_right;
-        obj.end_effector_axis = end_effector_axis;
+        obj.end_effector_axis = reshape(end_effector_axis, [3,1]);
       
         doc = com.mathworks.xml.XMLUtils.createDocument('robot');
         robotNode = doc.getDocumentElement;
@@ -197,13 +198,19 @@ classdef CapabilityMap
       save(file, vars{:}, '-v7.3');
     end
     
+    function obj = setActiveSide(obj, side)
+      if ~strcmp(side, obj.active_side)
+%         obj.
+      end
+    end
+    
     function obj = activateVoxels(obj, idx)
       if islogical(idx)
         obj.active_voxels = any([obj.active_voxels; reshape( idx, size(obj.active_voxels))]);
       else
         obj.active_voxels(idx) = true;
-        obj.n_active_voxels = nnz(obj.active_voxels);
       end
+      obj.n_active_voxels = nnz(obj.active_voxels);
     end
     
     function obj = deactivateVoxels(obj, idx)
@@ -211,8 +218,8 @@ classdef CapabilityMap
         obj.active_voxels = all([obj.active_voxels; reshape( ~idx, size(obj.active_voxels))]);
       else
         obj.active_voxels(idx) = false;
-        obj.n_active_voxels = nnz(obj.active_voxels);
       end
+      obj.n_active_voxels = nnz(obj.active_voxels);
     end
     
     function obj = activateOrient(obj, voxels, active_orients)
@@ -258,34 +265,24 @@ classdef CapabilityMap
     end
     
     function points = findPointsFromDirection(obj, direction, threshold)
-      [~, frames] = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
-      points = false(obj.n_directions_per_voxel, 1);
-%       voxel();
+      directions = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
+      direction = reshape(direction/norm(direction), [3,1]);
+      points = acos(directions'*direction) <= threshold;
+%       clf
 %       hold on
-%       plot3(P(1,:), P(2,:), P(3,:), 'r.')
-      for p = 1:obj.n_directions_per_voxel
-        if acos(frames(p,:,3)*direction)/norm(direction) <= threshold
-          points(p) = true;
-%           plot3([P(1,p), P(1,p) - frames(p, 1, 3)'], [P(2,p), P(2,p) - frames(p, 2, 3)'], [P(3,p), P(3,p) - frames(p, 3, 3)'], 'b')
-        end
-      end
+%       plot3(directions(1,~points), directions(2,~points), directions(3,~points), 'r.')
+%       plot3(directions(1,points), directions(2,points), directions(3,points), 'g.')
+%       plot3(direction(1,:), direction(2,:), direction(3,:), 'b.')
     end
     
     function idx = findVoxelsFromDirection(obj, direction, threshold, in_active_set)
-      
-      if in_active_set
-        active_idx = find(obj.active_voxels);
-      else
-        active_idx = 1:obj.n_voxels;
-      end
-      idx = [];
+      if nargin < 4, in_active_set = true; end
       points = obj.findPointsFromDirection(direction, threshold);
-      for s = active_idx'
-        if any(obj.map(s, points))
-          idx(end+1) = s;
-        end
-      end  
-      
+      if in_active_set
+        idx = all([any(obj.map(:, points), 2)'; obj.active_voxels]);
+      else
+        idx = any(obj.map(:, points), 2)';
+      end
     end
 
     function obj = reduceActiveSet(obj, direction, des_vox_num, reset_active,...
@@ -293,6 +290,8 @@ classdef CapabilityMap
       
       obj = obj.deactivateVoxelsOutsideTransverseRange([-pi/3, pi/3], reset_active);
       obj = obj.deactivateVoxelsOutsideSagittalRange([-pi/3, pi/3]);
+      obj = obj.deactivateVoxelsOutsideBaseHeightRange([0.7, 1.1]);
+      obj = obj.deactivateVoxels(~obj.findVoxelsFromDirection(direction, pi/6, true));
       
       collidingTimer = tic;
       obj = obj.deactivateCollidingVoxels(point_cloud);
@@ -390,7 +389,7 @@ classdef CapabilityMap
       lcmClient.switchBuffers();
     end
     
-    function drawOccupancyMap(obj, voxel, r, p, y, offset, text, draw_cubes, draw_base)
+    function drawOccupancyMap(obj, voxel, orient, offset, text, draw_cubes, draw_base)
       if nargin < 7 || isempty(text), text = 'Occupancy Map'; end
       if nargin < 8 || isempty(draw_cubes), draw_cubes = true; end
       if nargin < 8, draw_base = false; end
@@ -417,9 +416,8 @@ classdef CapabilityMap
         base = RigidBodyManipulator();
         base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
         v = base.constructVisualizer();
-        rpy = [obj.occupancy_map_orient_steps.roll(r); obj.occupancy_map_orient_steps.pitch(p); obj.occupancy_map_orient_steps.yaw(y)];
-        pos = obj.vox_centres(:,voxel)-rpy2rotmat(rpy)*obj.map_left_centre;
-        v.draw(0, [pos;rpy])
+        pos = obj.vox_centres(:,voxel)-rpy2rotmat(orient)*obj.map_left_centre;
+        v.draw(0, [pos;orient])
         lcmClient.glColor3f(0,1,0)
         lcmClient.glPointSize(10)
         lcmClient.points(obj.vox_centres(1,voxel),obj.vox_centres(2,voxel),obj.vox_centres(3,voxel))
@@ -458,22 +456,37 @@ classdef CapabilityMap
     function obj = deactivateCollidingVoxels(obj, point_cloud, reset_active)
       if nargin < 3, reset_active = false; end
       
+      if isempty(obj.EE_pose)
+        error('End effector pose must be set in order to detect colliding voxels')
+      end
+      
       if reset_active
         obj = obj.resetActiveVoxels();
         obj = obj.resetActiveOrient();
       end
       
-      if isempty(obj.EE_pose)
-        error('End effector pose must be set in order to detect colliding voxels')
-      end
-      
       point_cloud = point_cloud(:,all([all(bsxfun(@gt, point_cloud,  obj.occupancy_map_lb + obj.EE_pose(1:3))); ...
-                                               all(bsxfun(@lt, point_cloud,  obj.occupancy_map_ub + obj.EE_pose(1:3)))]));
+                                       all(bsxfun(@lt, point_cloud,  obj.occupancy_map_ub + obj.EE_pose(1:3)))]));
       sub = ceil(bsxfun(@rdivide, bsxfun(@minus, point_cloud, obj.occupancy_map_lb + obj.EE_pose(1:3)), obj.occupancy_map_resolution));
       vox_idx = unique(sub2ind(obj.occupancy_map_dimensions, sub(1,:), sub(2,:), sub(3,:)));
       for orient = 1:obj.occupancy_map_n_orient
           obj.occupancy_map_active_orient(:, orient) = all([~any(obj.occupancy_map{orient}(vox_idx,:)); ...
                                                             obj.occupancy_map_active_orient(:, orient)']);
+      end
+      obj = obj.deactivateVoxels(all(~obj.occupancy_map_active_orient, 2));
+    end
+    
+    function obj = deactivateVoxelsOutsideBaseHeightRange(obj, range, reset_active)      
+      if isempty(obj.EE_pose)
+        error('End effector pose must be set in order to detect colliding voxels')
+      end
+      if nargin < 3, reset_active = false; end
+      if reset_active
+        obj = obj.resetActiveVoxels();
+      end
+      for o = 1:obj.occupancy_map_n_orient
+        h = bsxfun(@plus, obj.vox_centres, obj.EE_pose(1:3) - rpy2rotmat(obj.occupancy_map_orient(:,o)) * obj.map_left_centre);
+        obj.occupancy_map_active_orient(:,o) =  all([h(3,:) > range(1); h(3, :) < range(2)]);
       end
       obj = obj.deactivateVoxels(all(~obj.occupancy_map_active_orient, 2));
     end
@@ -606,7 +619,7 @@ classdef CapabilityMap
           obj.map = obj.map | worker_map{w};
         end
       else
-        disp('No parallel toolbox installed, computation might take very long!')
+        disp('Not using parallel toolbox, computation might take very long!')
         obj.map = CapabilityMap.computeMap(urdf_string, nv, ndpv, ...
           n_vox_per_edge, obj.n_samples, eea, ve, vc, ...
           directions, pt, at, end_effector, mc, 1);
@@ -652,7 +665,7 @@ classdef CapabilityMap
       obj.occupancy_map_lb = obj.vox_centres(:,1) + BB_lb;
       obj.occupancy_map_ub = obj.vox_centres(:,end) + BB_ub;
       obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution)';
-      obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions * obj.occupancy_map_resolution;
+      obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions' * obj.occupancy_map_resolution;
       obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
       obj.occupancy_map_active_orient = false(obj.n_voxels, obj.occupancy_map_n_orient);
       
@@ -687,6 +700,7 @@ classdef CapabilityMap
         end
         obj.occupancy_map = om;
       else
+        disp('Not using parallel toolbox, computation might take very long!')
         for orient = 1:obj.occupancy_map_n_orient
           fprintf('Computing map %d of %d\n', orient, omno);
           single_om = sparse(false(omnv, nv));
@@ -756,7 +770,8 @@ classdef CapabilityMap
     
   methods (Static)
     
-    function [P, frames] = distributePointsOnSphere(N)
+    function [P, frames] = distributePointsOnSphere(N, compute_frames)
+      if nargin < 2, compute_frames = false; end
       k = 1:N;
       h = -1 + 2*(k-1)/(N-1);
       theta = acos(h);
@@ -769,17 +784,19 @@ classdef CapabilityMap
       z = cos(theta);
       P = [x; y; z];
       frames = zeros(N, 3, 3);
-      for p = 1:N
-        frame = zeros(3);
-        frame(1:3,3) = -P(:,p);
-        if abs(frame(1,3)) <= 1e-10 && abs(frame(2,3)) <= 1e-10
-          frame(:,1) = [sign(frame(3,3)); 0; 0];
-        else
-          frame(2,1) = sqrt(frame(1,3)^2/(frame(2,3)^2 + frame(1,3)^2));
-          frame(1,1) = -sign(frame(1,3)*frame(2,3))*sqrt(1-frame(2,1)^2);
+      if compute_frames
+        for p = 1:N
+          frame = zeros(3);
+          frame(1:3,3) = -P(:,p);
+          if abs(frame(1,3)) <= 1e-10 && abs(frame(2,3)) <= 1e-10
+            frame(:,1) = [sign(frame(3,3)); 0; 0];
+          else
+            frame(2,1) = sqrt(frame(1,3)^2/(frame(2,3)^2 + frame(1,3)^2));
+            frame(1,1) = -sign(frame(1,3)*frame(2,3))*sqrt(1-frame(2,1)^2);
+          end
+          frame(:,2) = cross(frame(:,3), frame(:,1));
+          frames(p, :, :) = frame;
         end
-        frame(:,2) = cross(frame(:,3), frame(:,1));
-        frames(p, :, :) = frame;
       end
     end
     
@@ -814,7 +831,6 @@ classdef CapabilityMap
 %       setup_times = zeros(n_samples, 1);
 %       constraint_times = zeros(n_samples*n_directions_per_voxel,1);
 %       ik_times = zeros(n_samples*n_directions_per_voxel, 1);
-%       v = rbm.constructVisualizer();
       for sample = 1:n_samples
 %         counter_timer = tic;
         if floor(sample/n_samples*100) > status
@@ -826,7 +842,6 @@ classdef CapabilityMap
         active_joints = 7:manipulator.num_positions;
         q = [-map_centre; 0; 0; 0; manipulator.joint_limit_min(active_joints) + (manipulator.joint_limit_max(active_joints)- ...
           manipulator.joint_limit_min(active_joints)).*rand(manipulator.num_positions-6,1)];
-%         v.draw(0, q)
         kinsol = manipulator.doKinematics(q);
         pos = manipulator.forwardKin(kinsol, end_effector, [0;0;0]);
         sub = ceil(pos/vox_edge) + (n_vox_per_edge/2) * ones(3,1);
@@ -845,11 +860,11 @@ classdef CapabilityMap
           [q_new, info] = manipulator.inverseKin(q, q, pos_constraints(vox_ind), gaze_constraints(point), torso_constraint, ikoptions);
 %           ik_times(sample*(n_directions_per_voxel-1)+point) = toc(ik_timer);
           if info < 10
-%             v.draw(0, q_new)
             worker_map(vox_ind, point) = true;
           end
         end
       end
+      worker_map = flipud(worker_map);
 %       sprintf(['counter: %.1d\n' ...
 %               'setup: %.1d\n' ...
 %               'constraints: %.1d\n'...
