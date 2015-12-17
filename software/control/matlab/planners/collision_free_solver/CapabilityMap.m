@@ -1,4 +1,4 @@
-classdef CapabilityMap
+ classdef CapabilityMap
   
   properties
     rbm
@@ -390,9 +390,9 @@ classdef CapabilityMap
     end
     
     function drawOccupancyMap(obj, voxel, orient, offset, text, draw_cubes, draw_base)
-      if nargin < 7 || isempty(text), text = 'Occupancy Map'; end
-      if nargin < 8 || isempty(draw_cubes), draw_cubes = true; end
-      if nargin < 8, draw_base = false; end
+      if nargin < 5 || isempty(text), text = 'Occupancy Map'; end
+      if nargin < 6 || isempty(draw_cubes), draw_cubes = true; end
+      if nargin < 7, draw_base = false; end
       lcmClient = LCMGLClient(text);
       coords = obj.getOccupancyMapCentres();
       
@@ -416,8 +416,8 @@ classdef CapabilityMap
         base = RigidBodyManipulator();
         base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
         v = base.constructVisualizer();
-        pos = obj.vox_centres(:,voxel)-rpy2rotmat(orient)*obj.map_left_centre;
-        v.draw(0, [pos;orient])
+        pos = obj.vox_centres(:,voxel)-rpy2rotmat(obj.occupancy_map_orient(:,orient))*obj.map_left_centre;
+        v.draw(0, [pos;obj.occupancy_map_orient(:,orient)])
         lcmClient.glColor3f(0,1,0)
         lcmClient.glPointSize(10)
         lcmClient.points(obj.vox_centres(1,voxel),obj.vox_centres(2,voxel),obj.vox_centres(3,voxel))
@@ -436,10 +436,10 @@ classdef CapabilityMap
       orient_size = [length(obj.occupancy_map_orient_steps.roll),...
         length(obj.occupancy_map_orient_steps.pitch),...
         length(obj.occupancy_map_orient_steps.yaw)];
-      colliding_points = coords(:,obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
-      idxs = find(obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
+      colliding_points = coords(:,obj.occupancy_map{orient}(:, voxel));
+      idxs = find(obj.occupancy_map{orient}(:, voxel));
       save cp_draw colliding_points idxs coords
-      free_points = coords(:,~obj.occupancy_map{sub2ind(orient_size,r,p,y)}(:, voxel));
+      free_points = coords(:,~obj.occupancy_map{orient}(:, voxel));
       if ~isempty(colliding_points)
         lcmClient.glPointSize(10);
         lcmClient.glColor3f(1, 0, 0);
