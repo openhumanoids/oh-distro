@@ -151,6 +151,7 @@ bool BMDConfig::ParseArguments(int argc,  char** argv)
 				displayHelp = true;
 		}
 	}
+        
 
 	if (m_deckLinkIndex < 0)
 	{
@@ -169,6 +170,7 @@ bool BMDConfig::ParseArguments(int argc,  char** argv)
 
 	// Get device and display mode names
 	IDeckLink* deckLink = GetDeckLink(m_deckLinkIndex);
+
 	if (deckLink != NULL)
 	{
 		if (m_displayModeIndex != -1)
@@ -212,10 +214,9 @@ IDeckLink* BMDConfig::GetDeckLink(int idx)
 		if (i == 0)
 			break;
 		--i;
-
 		deckLink->Release();
-	}
 
+	}
 	deckLinkIterator->Release();
 
 	if (result != S_OK)

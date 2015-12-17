@@ -43,8 +43,7 @@ public:
 	virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(IDeckLinkVideoInputFrame*, IDeckLinkAudioInputPacket*);
 
 private:
-	ULONG				m_refCount;
-	pthread_mutex_t		m_mutex;
+    ULONG				m_refCount;
 };
 
 #endif
