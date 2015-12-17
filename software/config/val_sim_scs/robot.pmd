@@ -4,7 +4,7 @@ group "0.ros_bridge" {
         host = "localhost";
     }
     cmd "ros_bridge_with_pronto" {
-        exec = "roslaunch drc_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_leftPelvisIMU";
+        exec = "roslaunch drc_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_pelvisMiddleImu";
         host = "localhost";
     }
 }
