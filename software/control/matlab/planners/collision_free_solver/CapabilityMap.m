@@ -354,17 +354,18 @@
     end
     
     function drawOrientedActiveMapCentredOnPoint(obj, orient, offset, text, draw_cubes)
-      if nargin < 3 || isempty(text), text = 'Oriented Capability Map'; end
-      if nargin < 4 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(all([obj.occupancy_map_active_orient(:, orient)'; obj.active_voxels]), text, offset, draw_cubes);
+      if nargin < 4 || isempty(text), text = 'Oriented Capability Map'; end
+      if nargin < 5 || isempty(draw_cubes), draw_cubes = true; end
+%       obj.drawMap(all([obj.occupancy_map_active_orient(:, orient)'; obj.active_voxels]), text, offset, draw_cubes);
+      obj.drawMap(obj.active_voxels, text, orient, offset, draw_cubes)
     end
     
-    function drawMap(obj, voxels, text, offset, draw_cubes)
+    function drawMap(obj, voxels, text, orient, offset, draw_cubes)
       lcmClient = LCMGLClient(text);
-      if nargin < 4 || isempty(offset), offset = [0;0;0]; end
-      if nargin < 5, draw_cubes = true; end
+      if nargin < 5 || isempty(offset), offset = [0;0;0]; end
+      if nargin < 6, draw_cubes = true; end
       if draw_cubes
-        lcmClient = obj.drawMapCubes(lcmClient, obj.map_lb, obj.map_ub, obj.vox_edge, offset);
+        lcmClient = obj.drawMapCubes(lcmClient, obj.map_lb, obj.map_ub, obj.vox_edge, offset, rpy2rotmat(obj.occupancy_map_orient(:,orient)));
         start_idx = 0;
       else
         start_idx = 1;
@@ -658,9 +659,16 @@
       base = RigidBodyManipulator();
       base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
       
+      obj.occupancy_map_n_orient = length(roll_steps)*length(pitch_steps)*length(yaw_steps);
+      vc = obj.vox_centres;
+      obj.vox_centres = cell(1,obj.occupancy_map_n_orient);
+      obj = obj.computeOccupancyMapOrientations();
+      for o = 1:obj.occupancy_map_n_orient
+        orient = rpy2rotmat(obj.occupancy_map_orient(:,o));
+        obj.vox_centres{o} = orient*vc;
+      end
       obj.occupancy_map_orient_steps = struct('roll', roll_steps, 'pitch', pitch_steps, 'yaw', yaw_steps);
       obj.occupancy_map_resolution = resolution;
-      obj.occupancy_map_n_orient = length(roll_steps)*length(pitch_steps)*length(yaw_steps);
       [BB_lb, BB_ub] = obj.getBoundingBoxBoundsRelativeToMapCentre(base.body(2));
       obj.occupancy_map_lb = obj.vox_centres(:,1) + BB_lb;
       obj.occupancy_map_ub = obj.vox_centres(:,end) + BB_ub;
@@ -719,7 +727,6 @@
       end      
       obj.occupancy_map = om;
       obj = obj.resetActiveOrient();
-      obj = obj.computeOccupancyMapOrientations();
       obj = obj.computeOrientationProbabilityDistribution();
     end
     
@@ -875,39 +882,48 @@
 %               sum([mean(counter_times), mean(setup_times), 50*mean(constraint_times), 50*mean(ik_times)])*1e6/3600)
     end
     
-    function lcmClient = drawMapCubes(lcmClient, lb, ub, resolution, centre)
+    function lcmClient = drawMapCubes(lcmClient, lb, ub, resolution, centre, rotmat)
       dimensions = (ub - lb)/resolution;
       lcmClient.glColor3f(0.3,0.3,0.3);
       lcmClient.glLineWidth(.1);
-      for i = 1:dimensions(2) + 1
-        for j = 1:dimensions(3) + 1
-          lcmClient.line3(lb(1) + centre(1),...
-                          lb(2) + centre(2) + resolution * (i-1),...
-                          lb(3) + centre(3) + resolution * (j-1),...
-                          ub(1) + centre(1),...
-                          lb(2) + centre(2) + resolution * (i-1),...
-                          lb(3) + centre(3) + resolution * (j-1))
-        end
+      [p1y, p1z, p1x] = meshgrid(lb(2):resolution:ub(2), lb(3):resolution:ub(3), [lb(1), ub(1)]);
+      [p2z, p2x, p2y] = meshgrid(lb(3):resolution:ub(3), lb(1):resolution:ub(1), [lb(2), ub(2)]);
+      [p3x, p3y, p3z] = meshgrid(lb(1):resolution:ub(1), lb(2):resolution:ub(2), [lb(3), ub(3)]);
+      p1x = reshape(p1x, [1, (dimensions(2)+1)*(dimensions(3)+1)*2]);
+      p1y = reshape(p1y, [1, (dimensions(2)+1)*(dimensions(3)+1)*2]);
+      p1z = reshape(p1z, [1, (dimensions(2)+1)*(dimensions(3)+1)*2]);
+      p2x = reshape(p2x, [1, (dimensions(1)+1)*(dimensions(3)+1)*2]);
+      p2y = reshape(p2y, [1, (dimensions(1)+1)*(dimensions(3)+1)*2]);
+      p2z = reshape(p2z, [1, (dimensions(1)+1)*(dimensions(3)+1)*2]);
+      p3x = reshape(p3x, [1, (dimensions(1)+1)*(dimensions(2)+1)*2]);
+      p3y = reshape(p3y, [1, (dimensions(1)+1)*(dimensions(2)+1)*2]);
+      p3z = reshape(p3z, [1, (dimensions(1)+1)*(dimensions(2)+1)*2]);
+      p1 = rotmat * [p1x;p1y;p1z];
+      p2 = rotmat * [p2x;p2y;p2z];
+      p3 = rotmat * [p3x;p3y;p3z];
+      for i = 1:length(p1)/2
+        lcmClient.line3(p1(1, i) + centre(1),...
+                        p1(2, i) + centre(2),...
+                        p1(3, i) + centre(3),...
+                        p1(1, i + length(p1)/2) + centre(1),...
+                        p1(2, i + length(p1)/2) + centre(2),...
+                        p1(3, i + length(p1)/2) + centre(3))
       end
-      for i = 1:dimensions(3) + 1
-        for j = 1:dimensions(1) + 1
-          lcmClient.line3(lb(1) + centre(1) + resolution * (j-1),...
-                          lb(2) + centre(2),...
-                          lb(3) + centre(3) + resolution * (i-1),...
-                          lb(1) + centre(1) + resolution * (j-1),...
-                          ub(2) + centre(2),...
-                          lb(3) + centre(3) + resolution * (i-1))
-        end
+      for i = 1:length(p2)/2
+        lcmClient.line3(p2(1, i) + centre(1),...
+                        p2(2, i) + centre(2),...
+                        p2(3, i) + centre(3),...
+                        p2(1, i + length(p2)/2) + centre(1),...
+                        p2(2, i + length(p2)/2) + centre(2),...
+                        p2(3, i + length(p2)/2) + centre(3))
       end
-      for i = 1:dimensions(1) + 1
-        for j = 1:dimensions(2) + 1
-          lcmClient.line3(lb(1) + centre(1) + resolution * (i-1),...
-                          lb(2) + centre(2) + resolution * (j-1),...
-                          lb(3) + centre(3),...
-                          lb(1) + centre(1) + resolution * (i-1),...
-                          lb(2) + centre(2) + resolution * (j-1),...
-                          ub(3) + centre(3))
-        end
+      for i = 1:length(p3)/2
+        lcmClient.line3(p3(1, i) + centre(1),...
+                        p3(2, i) + centre(2),...
+                        p3(3, i) + centre(3),...
+                        p3(1, i + length(p3)/2) + centre(1),...
+                        p3(2, i + length(p3)/2) + centre(2),...
+                        p3(3, i + length(p3)/2) + centre(3))
       end
       lcmClient.glLineWidth(4);
       lcmClient.glColor3f(1,0,0);
