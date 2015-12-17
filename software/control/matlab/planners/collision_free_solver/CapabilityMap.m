@@ -380,6 +380,7 @@
           lcmClient.glPointSize(10);
         end
         coords = obj.vox_centres(:, (obj.reachability_index == i/obj.n_directions_per_voxel) & voxels);
+        coords = rpy2rotmat(obj.occupancy_map_orient(:,orient)) * coords;
         if nargin > 3
           coords = bsxfun(@plus, offset(1:3), coords);
         end
@@ -927,14 +928,15 @@
       end
       lcmClient.glLineWidth(4);
       lcmClient.glColor3f(1,0,0);
+      centre2 = bsxfun(@plus, rotmat * eye(3) * 0.2, centre);
       lcmClient.line3(centre(1), centre(2), centre(3),...
-                      centre(1) + 0.2, centre(2), centre(3))
+                      centre2(1, 1), centre2(2, 1), centre2(3, 1))
       lcmClient.glColor3f(0,1,0);
       lcmClient.line3(centre(1), centre(2), centre(3),...
-                      centre(1), centre(2) + 0.2, centre(3))
+                      centre2(1, 2), centre2(2, 2), centre2(3, 2))
       lcmClient.glColor3f(0,0,1);
       lcmClient.line3(centre(1), centre(2), centre(3),...
-                      centre(1), centre(2), centre(3) + 0.2)
+                      centre2(1, 3), centre2(2, 3), centre2(3, 3))
     end
     
   end
