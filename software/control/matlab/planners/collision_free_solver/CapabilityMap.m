@@ -383,6 +383,8 @@
     end
     
     function drawOccupancyMap(obj, voxel, orient, offset, text, draw_cubes, draw_base)
+      if nargin < 3 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 4 || isempty(offset), offset = [0;0;0]; end
       if nargin < 5 || isempty(text), text = 'Occupancy Map'; end
       if nargin < 6 || isempty(draw_cubes), draw_cubes = true; end
       if nargin < 7, draw_base = false; end
@@ -409,29 +411,21 @@
         base = RigidBodyManipulator();
         base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
         v = base.constructVisualizer();
-        pos = obj.vox_centres(:,voxel)-rpy2rotmat(obj.occupancy_map_orient(:,orient))*obj.map_left_centre;
+        pos = rpy2rotmat(obj.occupancy_map_orient(:,orient)) * (obj.vox_centres(:,voxel)-obj.map_left_centre);
         v.draw(0, [pos;obj.occupancy_map_orient(:,orient)])
         lcmClient.glColor3f(0,1,0)
         lcmClient.glPointSize(10)
-        lcmClient.points(obj.vox_centres(1,voxel),obj.vox_centres(2,voxel),obj.vox_centres(3,voxel))
-      end
-      
-      if nargin < 6 || isempty(offset)
-        offset = [0;0;0];
+        centre = rpy2rotmat(obj.occupancy_map_orient(:,orient)) * obj.vox_centres(:,voxel);
+        lcmClient.points(centre(1), centre(2), centre(3))
       end
       if any(offset ~= 0)
         coords = bsxfun(@plus, offset(1:3), coords);
       end
       
       if draw_cubes
-        lcmClient = obj.drawMapCubes(lcmClient, obj.occupancy_map_lb, obj.occupancy_map_ub, obj.occupancy_map_resolution, offset);
+        lcmClient = obj.drawMapCubes(lcmClient, obj.occupancy_map_lb, obj.occupancy_map_ub, obj.occupancy_map_resolution, offset, eye(3));
       end
-      orient_size = [length(obj.occupancy_map_orient_steps.roll),...
-        length(obj.occupancy_map_orient_steps.pitch),...
-        length(obj.occupancy_map_orient_steps.yaw)];
       colliding_points = coords(:,obj.occupancy_map{orient}(:, voxel));
-      idxs = find(obj.occupancy_map{orient}(:, voxel));
-      save cp_draw colliding_points idxs coords
       free_points = coords(:,~obj.occupancy_map{orient}(:, voxel));
       if ~isempty(colliding_points)
         lcmClient.glPointSize(10);
@@ -658,18 +652,10 @@
       base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
       
       obj.occupancy_map_n_orient = length(roll_steps)*length(pitch_steps)*length(yaw_steps);
-      vc = obj.vox_centres;
-      obj.vox_centres = cell(1,obj.occupancy_map_n_orient);
-      obj = obj.computeOccupancyMapOrientations();
-      for o = 1:obj.occupancy_map_n_orient
-        orient = rpy2rotmat(obj.occupancy_map_orient(:,o));
-        obj.vox_centres{o} = orient*vc;
-      end
       obj.occupancy_map_orient_steps = struct('roll', roll_steps, 'pitch', pitch_steps, 'yaw', yaw_steps);
+      obj = obj.computeOccupancyMapOrientations();
       obj.occupancy_map_resolution = resolution;
-      [BB_lb, BB_ub] = obj.getBoundingBoxBoundsRelativeToMapCentre(base.body(2));
-      obj.occupancy_map_lb = obj.vox_centres(:,1) + BB_lb;
-      obj.occupancy_map_ub = obj.vox_centres(:,end) + BB_ub;
+      [obj.occupancy_map_lb, obj.occupancy_map_ub] = obj.getOccupancyMapBounds(base.body(2));
       obj.occupancy_map_dimensions = ceil((obj.occupancy_map_ub - obj.occupancy_map_lb)/obj.occupancy_map_resolution)';
       obj.occupancy_map_ub = obj.occupancy_map_lb + obj.occupancy_map_dimensions' * obj.occupancy_map_resolution;
       obj.occupancy_map_n_voxels = prod(obj.occupancy_map_dimensions);
@@ -686,7 +672,7 @@
       v = ver;
       omno = obj.occupancy_map_n_orient;
       om = cell(1,obj.occupancy_map_n_orient);
-      [p, r, y] = meshgrid(pitch_steps, roll_steps, yaw_steps);
+      o = obj.occupancy_map_orient;
       if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
         parfor orient = 1:obj.occupancy_map_n_orient
           fprintf('Computing map %d of %d\n', orient, omno);
@@ -694,7 +680,7 @@
           base = RigidBodyManipulator();
           base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
           for i = 1:length(idx_to_check)
-            q = [voxels_to_check(:,i)- rpy2rotmat([r(orient); p(orient); y(orient)])*mc; r(orient); p(orient); y(orient)];
+            q = [rpy2rotmat(o(:,orient)) * (voxels_to_check(:,i)- mc); o(:,orient)];
             kinsol = base.doKinematics(q);
             colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
             if ~isempty(colliding_points)
@@ -713,7 +699,7 @@
           base = RigidBodyManipulator();
           base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
           for i = 1:length(idx_to_check)
-            q = [voxels_to_check(:,i)- rpy2rotmat([r(orient); p(orient); y(orient)])*mc; r(orient); p(orient); y(orient)];
+            q = [rpy2rotmat(o(:,orient)) * (voxels_to_check(:,i)- mc); o(:,orient)];
             kinsol = base.doKinematics(q);
             colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
             if ~isempty(colliding_points)
@@ -728,17 +714,13 @@
       obj = obj.computeOrientationProbabilityDistribution();
     end
     
-    function [lb, ub] = getBoundingBoxBoundsRelativeToMapCentre(obj, body)
-      [r,p,y] = meshgrid(obj.occupancy_map_orient_steps.roll,...
-                         obj.occupancy_map_orient_steps.pitch,...
-                         obj.occupancy_map_orient_steps.yaw);
-       body_BB = bsxfun(@minus, body.collision_geometry{1}.getBoundingBoxPoints(), obj.map_left_centre);
-       ub = zeros(3,1);
-       lb = zeros(3,1);
-       for o = 1:obj.occupancy_map_n_orient
-         ub = max([max(rpy2rotmat([r(o); p(o); y(o)])*body_BB, [], 2), ub], [], 2);
-         lb = min([min(rpy2rotmat([r(o); p(o); y(o)])*body_BB, [], 2), lb], [], 2);
-       end
+    function [lb, ub] = getOccupancyMapBounds(obj, body)
+      norms = arrayfun(@(idx) norm(obj.vox_centres(:, idx)), 1:obj.n_voxels);
+      [~, furthest_voxel] = max(norms.*obj.active_voxels);
+      body_BB = bsxfun(@minus, body.collision_geometry{1}.getBoundingBoxPoints(), obj.map_left_centre - obj.vox_centres(:, furthest_voxel));
+      max_dist = max(arrayfun(@(idx) norm(body_BB(:, idx)), 1:8));
+      lb = -max_dist * ones(3,1);
+      ub = max_dist * ones(3,1);
     end
     
     function centres = getOccupancyMapCentres(obj)
