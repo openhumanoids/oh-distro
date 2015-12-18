@@ -103,6 +103,7 @@ private:
   bool getChestTrajectoryPlan(const drc::robot_plan_t* msg, std::vector<geometry_msgs::Quaternion> &m);
 
   void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg);
+  void headOrientationHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
   ros::Publisher neck_orientation_pub_;
 
   void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::scs_api_command_t* msg);
@@ -161,6 +162,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   scs_api_pub_ = nh_.advertise<std_msgs::String>("/ihmc_ros/" + robotName_ + "/api_command", 10);
 
   lcm_->subscribe("DESIRED_NECK_PITCH", &LCM2ROS::neckPitchHandler, this);
+  lcm_->subscribe("DESIRED_HEAD_ORIENTATION", &LCM2ROS::headOrientationHandler, this);
   neck_orientation_pub_ = nh_.advertise<ihmc_msgs::HeadOrientationPacketMessage>(
       "/ihmc_ros/" + robotName_ + "/control/head_orientation", 10);
 
@@ -379,6 +381,19 @@ void LCM2ROS::neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   mout.orientation.x = quat.x();
   mout.orientation.y = quat.y();
   mout.orientation.z = quat.z();
+  mout.unique_id = msg->utime;
+  neck_orientation_pub_.publish(mout);
+}
+
+void LCM2ROS::headOrientationHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg)
+{
+  ROS_ERROR("LCM2ROS got desired desired head orientation");
+  ihmc_msgs::HeadOrientationPacketMessage mout;
+  mout.trajectory_time = 1;
+  mout.orientation.w = msg->orientation[0];
+  mout.orientation.x = msg->orientation[1];
+  mout.orientation.y = msg->orientation[2];
+  mout.orientation.z = msg->orientation[3];
   mout.unique_id = msg->utime;
   neck_orientation_pub_.publish(mout);
 }
@@ -715,6 +730,32 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   whole_body_trajectory_pub_.publish(wbt_msg);
 
   ROS_ERROR("LCM2ROS sent Whole Body Trajectory");
+
+  if (1==0){
+    if (robotName_.compare("valkyrie") == 0){
+
+      std::vector<std::string>::iterator it1 = find(input_joint_names.begin(),
+          input_joint_names.end(), "lowerNeckPitch");
+      int lowerNeckPitchIndex = std::distance(input_joint_names.begin(), it1);
+      float lowerNeckPitchAngle = msg->plan[ msg->num_states-1 ].joint_position[lowerNeckPitchIndex];
+
+      std::vector<std::string>::iterator it2 = find(input_joint_names.begin(),
+          input_joint_names.end(), "neckYaw");
+      int neckYawIndex = std::distance(input_joint_names.begin(), it2);
+      float neckYawAngle = msg->plan[ msg->num_states-1 ].joint_position[neckYawIndex];
+
+      Eigen::Quaterniond headOrientation = euler_to_quat(0, lowerNeckPitchAngle, neckYawAngle);
+      ihmc_msgs::HeadOrientationPacketMessage mout;
+      mout.trajectory_time = 1; // time doesn't seem to be tracked currently.
+      mout.orientation.w = headOrientation.w();
+      mout.orientation.x = headOrientation.x();
+      mout.orientation.y = headOrientation.y();
+      mout.orientation.z = headOrientation.z();
+      mout.unique_id = msg->utime;
+      neck_orientation_pub_.publish(mout);
+      ROS_ERROR("LCM2ROS sent desired head orientation");
+    }
+  }
 
   /*
    sendSingleArmPlan(msg, l_arm_strings, input_joint_names, false);
