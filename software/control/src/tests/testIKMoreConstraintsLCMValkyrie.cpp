@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   if ((argc > 1)){
     file_path = argv[1];
   }else{
-    std::cout << "you need to provide the path to atlas_minimal_contact.urdf\n";
+    std::cout << "you need to provide the path to valkyrie_sim.urdf\n";
     return 1;
   }
 
@@ -148,15 +148,14 @@ int main(int argc, char *argv[])
 
   // Default Atlas v5 posture:
   VectorXd qstar(model.num_positions);
-  qstar <<
-  -0.0260, 0, 0.8440, 0, 0, 0, 0, 0, 0, 0.2700, 0, 0.0550, -0.5700, 1.1300, -0.5500, -0.0550, -1.3300, 2.1530, 0.5000, 0.0985, 0, 0.0008, -0.2700, 0, -0.0550, -0.5700, 1.1300, -0.5500, 0.0550, 1.3300, 2.1530, -0.5000, 0.0985, 0, 0.0008, 0.2564;
+  qstar << 0. ,  0. ,  1.025     ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. , 0. ,  0. ,  0.30019662,  1.25      ,  0. , 0.78539819,  1.57099998,  0. ,  0. ,  0.30019662,       -1.25      ,  0. , -0.78539819,  1.57099998,  0. , 0. ,  0. ,  0. , -0.49000001,  1.20500004,       -0.70999998,  0. ,  0. ,  0. , -0.49000001,        1.20500004, -0.70999998,  0.;
 
   // 1 Back Posture Constraint
   PostureConstraint kc_posture_back(&model, tspan);
   std::vector<int> back_idx;
-  findJointAndInsert(model, "back_bkz", back_idx);
-  findJointAndInsert(model, "back_bky", back_idx);
-  findJointAndInsert(model, "back_bkx", back_idx);
+  findJointAndInsert(model, "torsoYaw", back_idx);
+  findJointAndInsert(model, "torsoPitch", back_idx);
+  findJointAndInsert(model, "torsoRoll", back_idx);
   VectorXd back_lb = VectorXd::Zero(3);
   VectorXd back_ub = VectorXd::Zero(3);
   kc_posture_back.setJointLimits(3, back_idx.data(), back_lb, back_ub);
@@ -164,39 +163,39 @@ int main(int argc, char *argv[])
   // 2 Knees Constraint
   PostureConstraint kc_posture_knees(&model, tspan);
   std::vector<int> knee_idx;
-  findJointAndInsert(model, "l_leg_kny", knee_idx);
-  findJointAndInsert(model, "r_leg_kny", knee_idx);
+  findJointAndInsert(model, "leftKneePitch", knee_idx);
+  findJointAndInsert(model, "rightKneePitch", knee_idx);
   VectorXd knee_lb = VectorXd::Zero(2);
-  knee_lb(0) = 1.0; // usually use 0.6
-  knee_lb(1) = 1.0; // usually use 0.6
+  knee_lb(0) = 0.6; // usually use 0.6
+  knee_lb(1) = 0.6; // usually use 0.6
   VectorXd knee_ub = VectorXd::Zero(2);
-  knee_ub(0) = 2.5;
-  knee_ub(1) = 2.5;
+  knee_ub(0) = 1.9;
+  knee_ub(1) = 1.9;
   kc_posture_knees.setJointLimits(2, knee_idx.data(), knee_lb, knee_ub);
 
   // 3 Left Arm Constraint
   PostureConstraint kc_posture_larm(&model, tspan);
   std::vector<int> larm_idx;
-  findJointAndInsert(model, "l_arm_shz", larm_idx);
-  findJointAndInsert(model, "l_arm_shx", larm_idx);
-  findJointAndInsert(model, "l_arm_ely", larm_idx);
-  findJointAndInsert(model, "l_arm_elx", larm_idx);
-  findJointAndInsert(model, "l_arm_uwy", larm_idx);
-  findJointAndInsert(model, "l_arm_mwx", larm_idx);
-  findJointAndInsert(model, "l_arm_lwy", larm_idx);
+  findJointAndInsert(model, "leftShoulderPitch", larm_idx);
+  findJointAndInsert(model, "leftShoulderRoll", larm_idx);
+  findJointAndInsert(model, "leftShoulderYaw", larm_idx);
+  findJointAndInsert(model, "leftElbowPitch", larm_idx);
+  findJointAndInsert(model, "leftForearmYaw", larm_idx);
+  findJointAndInsert(model, "leftWristRoll", larm_idx);
+  findJointAndInsert(model, "leftWristPitch", larm_idx);
   VectorXd larm_lb = VectorXd::Zero(7);
-  larm_lb(0) = 0.27;
-  larm_lb(1) = -1.33;
-  larm_lb(2) = 2.153;
-  larm_lb(3) = 0.500;
-  larm_lb(4) = 0.0985;
+  larm_lb(0) = 0.3;
+  larm_lb(1) = -1.25;
+  larm_lb(2) =0;
+  larm_lb(3) =-0.785;
+  larm_lb(4) =1.571;
   larm_lb(5) = 0;
-  larm_lb(6) = 0.0008;
+  larm_lb(6) = 0;
   VectorXd larm_ub = larm_lb;
   kc_posture_larm.setJointLimits(7, larm_idx.data(), larm_lb, larm_ub);
 
   // 4 Left Foot Position and Orientation Constraints
-  int l_foot = model.findLinkId("l_foot");
+  int l_foot = model.findLinkId("leftFoot");
   Vector3d l_foot_pt = Vector3d::Zero();
   Vector3d lfoot_pos0;
   lfoot_pos0(0) = 0;
@@ -215,7 +214,7 @@ int main(int argc, char *argv[])
   WorldQuatConstraint kc_lfoot_quat(&model, l_foot, quat_des, tol, tspan);
 
   // 5 Right Foot Position and Orientation Constraints
-  int r_foot = model.findLinkId("r_foot");
+  int r_foot = model.findLinkId("rightFoot");
   Vector3d r_foot_pt = Vector3d::Zero();
   Vector3d rfoot_pos0;
   rfoot_pos0(0) = 0;
@@ -233,13 +232,13 @@ int main(int argc, char *argv[])
 
 
   // 6 Right Position Constraints (actual reaching constraint)
-  int r_hand = model.findLinkId("r_hand");
+  int r_hand = model.findLinkId("rightPalm");
   Vector3d r_hand_pt = Vector3d::Zero();
   Vector3d rhand_pos0;
   //Vector3d rhand_pos0 = model.forwardKin(r_hand_pt, r_hand, 0, 0, 0).value();
   rhand_pos0(0) = 0.2;
   rhand_pos0(1) = -0.5;
-  rhand_pos0(2) = 0.4;
+  rhand_pos0(2) = 0.5;
   Vector3d rhand_pos_lb = rhand_pos0;
   rhand_pos_lb(0) += 0.05;
   rhand_pos_lb(1) += 0.05;
@@ -275,7 +274,7 @@ int main(int argc, char *argv[])
   constraint_array.push_back(&kc_rfoot_quat);
   constraint_array.push_back(&kc_rhand);
   constraint_array.push_back(&kc_posture_larm);
-  constraint_array.push_back(&kc_posture_back);
+//  constraint_array.push_back(&kc_posture_back); // over constrains robot
 
   IKoptions ikoptions(&model);
   VectorXd q_sol(model.num_positions);

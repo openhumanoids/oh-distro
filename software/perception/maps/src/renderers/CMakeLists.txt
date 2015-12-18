@@ -1,6 +1,9 @@
 add_subdirectory(maps-renderer)
-add_subdirectory(data-control-renderer)
-add_subdirectory(camera-renderer)
+add_subdirectory(maps-viewer)
+
+# Last compiled in 2014:
+#add_subdirectory(data-control-renderer)
+#add_subdirectory(camera-renderer)
 
 # annotated camera renderer ###############################
 # set(PACKAGE_NAME renderer_annotated_camera)
