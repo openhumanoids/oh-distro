@@ -18,17 +18,18 @@ pods_use_pkg_config_packages(icp-octrees-diff eigen3
 pods_install_executables(icp-octrees-diff)
 
 ##################
-add_executable (test_icp_changedkeys test_changedkeys.cpp)
-target_link_libraries(test_icp_changedkeys boost_system
+# Executables for testing - copied from lib tutorial - TODO remove
+add_executable (testing_colortree test_color_tree.cpp)
+target_link_libraries(testing_colortree boost_system
                        boost_thread octomap)
-pods_use_pkg_config_packages(test_icp_changedkeys eigen3
-  lcm    bot2-frames
+pods_use_pkg_config_packages(testing_colortree eigen3
+  bot2-frames
   path-util
-  lcmtypes_bot2-core octomap
-  lidar-odom ${REQUIRED_PACKAGES} pcl_io-1.7
-  pronto_vis icp-registration
+  ${REQUIRED_PACKAGES} pcl_io-1.7
+  pronto_vis
   octomap-util
   ${FK_PACKAGES})
-pods_install_executables(test_icp_changedkeys)
+pods_install_executables(testing_colortree)
+
 
 

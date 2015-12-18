@@ -14,6 +14,8 @@
 #include <path_util/path_util.h>
 #include <pronto_utils/pronto_vis.hpp>
 
+#include <octomap/ColorOcTree.h>
+
 using namespace std;
 using namespace octomap;
 
@@ -34,27 +36,35 @@ class ConvertOctomap{
 
     void doWork(pronto::PointCloud* &cloud);
     void doWork(pronto::PointCloud* &cloud, string octree_channel);
-    OcTree* getTree(){ return tree_; }
+    ColorOcTree* getTree(){ return tree_; }
     bool clearTree(){ 
       tree_->clear();
       return true; 
     }
-    void publishOctree(OcTree* tree, std::string channel);
+    void publishOctree(ColorOcTree* tree, std::string channel);
+    void printChangesByColor(ColorOcTree& tree);
+    void printChangesAndActual(ColorOcTree& tree);
+    void colorChanges(ColorOcTree& tree, int idx); //idx is an index representing 
+                                                   //the current cloud, either 0 or 1
     
   private:
 
-    OcTree* convertPointCloudToOctree(pronto::PointCloud* &cloud);
-    void convertCloudAndUpdateOctree(pronto::PointCloud* &cloud, octomap::OcTree& tree);
+    void updateOctree(pronto::PointCloud* &cloud, octomap::ColorOcTree* tree);
+    ScanGraph* convertPointCloudToScanGraph(pronto::PointCloud* &cloud);
 
     pronto_vis* pc_vis_ ;
-
-    OcTree* tree_;    
-
     boost::shared_ptr<lcm::LCM> lcm_;
+
+    ColorOcTree* tree_;    
     
     const ConvertOctomapConfig co_cfg_;   
     
     int verbose_;
+
+    //Colors for change detection
+    ColorOcTreeNode::Color* yellow;
+    ColorOcTreeNode::Color* blue;
+    ColorOcTreeNode::Color* green;
 };
 
 

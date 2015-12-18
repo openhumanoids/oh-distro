@@ -65,7 +65,7 @@ print "Waiting 5 seconds..."
 lc = lcm.LCM()
 time.sleep(5)
 msg = lcmmultisense.command_t()
-msg.utime = timestamp_now()
+msg.utime = time.time () * 1000000
 msg.fps = 15
 msg.gain = -1
 msg.exposure_us = 10000
@@ -76,8 +76,8 @@ msg.leds_duty_cycle = 0
 lc.publish("MULTISENSE_COMMAND", msg.encode())
 print "Publishing Multisense command to spin at 5rpm!"
 
-print "Recording for 60 seconds more..."
-time.sleep(60)
+print "Recording for 20 seconds more..."
+time.sleep(20)
 
 logger.killAllLoggingProcesses()
 print "Stop recording!"

@@ -2,7 +2,9 @@
 // Perform registration (input cloud aligned to reference).
 // Convert to octomap, blur and save to file.
 // Republish the octomap.
-// icp-octrees-diff -h
+// Plot and store changes.
+
+// Command: icp-octrees-diff -h
 
 #include <sstream>      // std::stringstream
 
@@ -60,12 +62,10 @@ App::App(boost::shared_ptr< lcm::LCM >& lcm_, RegistrationConfig reg_cfg_,
   do_republish_ = false;
 }
 
-OcTree* doConversion(App* app, int cloud_idx); // NOTE: accepted cloud indexes are 0 (reference) and 1 (input).
+ColorOcTree* doConversion(App* app, int cloud_idx); // NOTE: accepted cloud indexes are 0 (reference) and 1 (input).
 void convertCloudPclToPronto(pcl::PointCloud<pcl::PointXYZRGB> &cloud, pronto::PointCloud &cloud_out);
 int validateArgs(const int argc, const char *argv[], RegistrationConfig& reg_cfg, ConvertOctomapConfig& co_cfg);
 void usage(const char *argv[]);
-
-void printChanges(OcTree& tree);
 
 int main(int argc, const char *argv[])
 {
@@ -127,69 +127,25 @@ int main(int argc, const char *argv[])
 
   if ( app->do_convert_cloud_ ) {
 
-    OcTree* treeA = doConversion(app, 0);
-    cout << "========================================" << endl;
+    ColorOcTree* treeA = doConversion(app, 0);
+    //cout << "Pruned tree A size: " << treeA->size() <<" nodes." << endl;
     cout << "Changes A:" << endl;
-    printChanges(*treeA);
+    app->convert_->printChangesAndActual(*treeA);
+
+    // Uncomment for visualization of matching results one by one:
+    cout << "Press ENTER to continue..." << endl;
+    cin.get();
     
-    //app->convert_->clearTree();
-    OcTree* treeB = doConversion(app, 1);
-    cout << "========================================" << endl;
+    ColorOcTree* treeB = doConversion(app, 1);
+    //cout << "Pruned tree B size: " << treeB->size() <<" nodes." << endl;
     cout << "Changes B:" << endl;
-    printChanges(*treeB);
+    app->convert_->printChangesByColor(*treeB);
   }
   
   return 0;
 }
 
-void printChanges(OcTree& tree){
-  unsigned int changedOccupied = 0;
-  unsigned int changedFree = 0;
-  unsigned int actualOccupied = 0;
-  unsigned int actualFree = 0;
-  unsigned int missingChanged = 0;
-
-  tree.expand();
-
-  // iterate through the changed nodes
-  KeyBoolMap::const_iterator it;
-  for (it=tree.changedKeysBegin(); it!=tree.changedKeysEnd(); it++) {
-    OcTreeNode* node = tree.search(it->first);
-    if (node != NULL) {
-      if (tree.isNodeOccupied(node)) {
-        changedOccupied += 1;
-      }
-      else {
-        changedFree += 1;
-      }
-    } else {
-      missingChanged +=1;
-    }
-  }
-
-
-  // iterate through the entire tree
-  for(OcTree::tree_iterator it=tree.begin_tree(),
-      end=tree.end_tree(); it!= end; ++it) {
-    if (it.isLeaf()) {
-      if (tree.isNodeOccupied(*it)) {
-        actualOccupied += 1;
-      }
-      else {
-        actualFree += 1;
-      }
-    }
-  }
-  
-  cout << "Change detection: " << changedOccupied << " occ; " << changedFree << " free; "<< missingChanged << " missing" << endl;
-  cout << "Number of changed nodes: " << changedOccupied+changedFree << endl;
-  cout << "Actual: " << actualOccupied << " occ; " << actualFree << " free; " << endl;
-  cout << "Number of nodes: " << actualOccupied+actualFree << endl;
-
-  tree.prune();
-}
-
-OcTree* doConversion(App* app, int cloud_idx)
+ColorOcTree* doConversion(App* app, int cloud_idx)
 {
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcl_cloud = app->registr_->getCloud(cloud_idx);
 
@@ -205,16 +161,16 @@ OcTree* doConversion(App* app, int cloud_idx)
   else
     current_cloud = "OCTOMAP_IN";
 
-  app->convert_->doWork(pronto_cloud, current_cloud);
-      
-  cout << "Finished processing." << endl;      
+  app->convert_->doWork(pronto_cloud, current_cloud); 
+
+  cout << "Processing completed!" << endl;
+  cout << "====================================================" << endl;
            
   app->do_republish_ = true;
   app->do_convert_cloud_ = false;
 
   if (app->do_republish_){
     //std::cout << "Republishing unblurred octomap.\n";
-    //fprintf(stderr, "r");
     app->convert_->publishOctree(app->convert_->getTree(),current_cloud);
   }
 
@@ -248,7 +204,7 @@ int validateArgs(const int argc, const char *argv[], RegistrationConfig& reg_cfg
     }
     if (opt == "-c" || opt == "-config") {
       reg_cfg.configFile3D_.append(getenv("DRC_BASE"));
-      reg_cfg.configFile3D_.append("/software/perception/registeration/filters_config/");
+      reg_cfg.configFile3D_.append("/software/perception/registration/filters_config/");
       reg_cfg.configFile3D_.append(argv[i+1]);
     }
     else if (opt == "-i" || opt == "--initT") {
