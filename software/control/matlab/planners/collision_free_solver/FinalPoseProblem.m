@@ -124,7 +124,7 @@ classdef FinalPoseProblem
       ee_direction = ee_rotmat(:,2);
       obj.capability_map = obj.capability_map.setEEPose(obj.x_goal);
       reduceTimer = tic;
-      obj.capability_map = obj.capability_map.reduceActiveSet(ee_direction, 1000, true, point_cloud, 0, 0, 2, 1.5);
+      obj.capability_map = obj.capability_map.reduceActiveSet(true, point_cloud);
       fprintf('reduce Time: %.4f s\n', toc(reduceTimer))
       active_voxels = find(obj.capability_map.active_voxels);
       valid_samples = obj.capability_map.occupancy_map_active_orient(obj.capability_map.active_voxels, :);

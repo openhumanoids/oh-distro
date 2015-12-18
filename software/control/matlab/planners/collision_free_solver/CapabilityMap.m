@@ -253,15 +253,16 @@
     end
     
     function obj = setEEPose(obj, EE_pose)
-      obj.EE_pose = EE_pose(1:3);
+      assert(length(EE_pose) == 7)
+      obj.EE_pose = reshape(EE_pose, [7,1]);
     end
     
     function centres = getCentresRelativeToWorld(obj)
-      centres = bsxfun(@plus, obj.EE_pose, obj.vox_centres);
+      centres = bsxfun(@plus, obj.EE_pose(1:3), obj.vox_centres);
     end
     
     function centres = getActiveCentresRelativeToOrigin(obj)
-      centres = bsxfun(@plus, obj.getActiveVoxelCentres(), obj.EE_pose);
+      centres = bsxfun(@plus, obj.getActiveVoxelCentres(), obj.EE_pose(1:3));
     end
     
     function points = findPointsFromDirection(obj, direction, threshold)
@@ -284,14 +285,29 @@
         idx = any(obj.map(:, points), 2)';
       end
     end
+    
+    function obj = deactivateVoxelsByDirection(obj, direction, threshold, reset_active)
+      if nargin < 4, reset_active = false; end
+      if reset_active
+        obj = obj.resetActiveVoxels();
+      end
+      for o = 1:obj.occupancy_map_n_orient
+        obj.deactivateVoxels(~obj.findVoxelsFromDirection(rpy2rotmat(obj.occupancy_map_orient(:,o))' * direction, threshold, true));
+      end
+    end
 
-    function obj = reduceActiveSet(obj, direction, des_vox_num, reset_active,...
-        point_cloud, sagittal_angle, transverse_angle, sagittal_weight, transverse_weight)
+    function obj = reduceActiveSet(obj, reset_active,...
+        point_cloud, sagittal_range, transverse_range, height_range, direction_threshold)
+      if nargin < 5 || isempty(sagittal_range), sagittal_range = [-pi/3, pi/3]; end
+      if nargin < 6 || isempty(transverse_range), transverse_range = [-pi/3, pi/3]; end
+      if nargin < 7 || isempty(height_range), height_range = [0.7, 1.1]; end
+      if nargin < 8, direction_threshold = pi/6; end
       
-      obj = obj.deactivateVoxelsOutsideTransverseRange([-pi/3, pi/3], reset_active);
-      obj = obj.deactivateVoxelsOutsideSagittalRange([-pi/3, pi/3]);
-      obj = obj.deactivateVoxelsOutsideBaseHeightRange([0.7, 1.1]);
-      obj = obj.deactivateVoxels(~obj.findVoxelsFromDirection(direction, pi/6, true));
+      obj = obj.deactivateVoxelsOutsideTransverseRange(transverse_range, reset_active);
+      obj = obj.deactivateVoxelsOutsideSagittalRange(sagittal_range);
+      obj = obj.deactivateVoxelsOutsideBaseHeightRange(height_range);
+      direction = quat2rotmat(obj.EE_pose(4:7)) * obj.end_effector_axis;
+      obj = obj.deactivateVoxelsByDirection(direction, direction_threshold, true);
       
       collidingTimer = tic;
       obj = obj.deactivateCollidingVoxels(point_cloud);
@@ -463,9 +479,9 @@
       obj = obj.deactivateVoxels(all(~obj.occupancy_map_active_orient, 2));
     end
     
-    function obj = deactivateVoxelsOutsideBaseHeightRange(obj, range, reset_active)      
+    function obj = deactivateVoxelsOutsideBaseHeightRange(obj, range, reset_active)
       if isempty(obj.EE_pose)
-        error('End effector pose must be set in order to detect colliding voxels')
+        error('End effector pose must be set in order to deactivate voxels')
       end
       if nargin < 3, reset_active = false; end
       if reset_active
