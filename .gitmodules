@@ -19,3 +19,6 @@
 [submodule "catkin_ws/src/ipab_lwr_msgs"]
 	path = catkin_ws/src/ipab_lwr_msgs
 	url = git@github.com:ipab-slmc/ipab_lwr_msgs.git
+[submodule "catkin_ws/src/exotica-dev"]
+	path = catkin_ws/src/exotica-dev
+	url = git@github.com:openhumanoids/exotica-dev.git
