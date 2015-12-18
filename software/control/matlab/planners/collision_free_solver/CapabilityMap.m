@@ -323,41 +323,32 @@
 %       end
     end
     
-    function drawCapabilityMap(obj, text, draw_cubes)
-      if nargin < 2 || isempty(text), text = 'Capability Map'; end
-      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(true(1, obj.n_voxels), text, [], draw_cubes);
-    end
-    
-    function drawCapabilityMapCentredOnPoint(obj, point, text, draw_cubes)
+    function drawCapabilityMap(obj, orient, text, draw_cubes)
+      if nargin < 2 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
       if nargin < 3 || isempty(text), text = 'Capability Map'; end
-      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(true(1, obj.n_voxels), text, point, draw_cubes);
-    end
-    
-    function drawActiveMap(obj, text, draw_cubes)
-      if nargin < 2 || isempty(text), text = 'Active Capability Map'; end
-      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(obj.active_voxels, text, [], draw_cubes);
-    end
-    
-    function drawActiveMapCentredOnPoint(obj, point, text, draw_cubes)
-      if nargin < 3 || isempty(text), text = 'Active Capability Map'; end
-      if nargin < 3 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(obj.active_voxels, text, point, draw_cubes);
-    end
-    
-    function drawOrientedActiveMap(obj, orient, text, draw_cubes)
-      if nargin < 3 || isempty(text), text = 'Oriented Capability Map'; end
       if nargin < 4 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(obj.occupancy_map_active_orient(:, orient)', text, [], draw_cubes);
+      obj.drawMap(true(1, obj.n_voxels), text, orient, [], draw_cubes);
     end
     
-    function drawOrientedActiveMapCentredOnPoint(obj, orient, offset, text, draw_cubes)
-      if nargin < 4 || isempty(text), text = 'Oriented Capability Map'; end
+    function drawCapabilityMapCentredOnPoint(obj, offset, orient, text, draw_cubes)
+      if nargin < 3 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 4 || isempty(text), text = 'Capability Map'; end
       if nargin < 5 || isempty(draw_cubes), draw_cubes = true; end
-%       obj.drawMap(all([obj.occupancy_map_active_orient(:, orient)'; obj.active_voxels]), text, offset, draw_cubes);
-      obj.drawMap(obj.active_voxels, text, orient, offset, draw_cubes)
+      obj.drawMap(true(1, obj.n_voxels), text, orient, offset, draw_cubes)
+    end
+    
+    function drawActiveMap(obj, orient, text, draw_cubes)
+      if nargin < 2 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 3 || isempty(text), text = 'Active Capability Map'; end
+      if nargin < 4 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(obj.occupancy_map_active_orient(:, orient)', text, orient, [], draw_cubes);
+    end
+    
+    function drawActiveMapCentredOnPoint(obj, offset, orient, text, draw_cubes)
+      if nargin < 3 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 4 || isempty(text), text = 'Active Capability Map'; end
+      if nargin < 5 || isempty(draw_cubes), draw_cubes = true; end
+      obj.drawMap(obj.occupancy_map_active_orient(:, orient)', text, orient, offset, draw_cubes)
     end
     
     function drawMap(obj, voxels, text, orient, offset, draw_cubes)
@@ -488,9 +479,11 @@
       end
       for o = 1:obj.occupancy_map_n_orient
         h = bsxfun(@plus, obj.vox_centres, obj.EE_pose(1:3) - rpy2rotmat(obj.occupancy_map_orient(:,o)) * obj.map_left_centre);
-        obj.occupancy_map_active_orient(:,o) =  all([h(3,:) > range(1); h(3, :) < range(2)]);
+        obj.occupancy_map_active_orient(:,o) =  all([h(3,:) > range(1); h(3, :) < range(2); obj.active_voxels]);
       end
-      obj = obj.deactivateVoxels(all(~obj.occupancy_map_active_orient, 2));
+      voxels = all(~obj.occupancy_map_active_orient, 2);
+      obj = obj.deactivateVoxels(voxels);
+      obj.occupancy_map_active_orient(voxels, :) = false(nnz(voxels), obj.occupancy_map_n_orient);
     end
     
     function obj = deactivateVoxelsOutsideSagittalRange(obj, range, reset_active)
@@ -500,7 +493,9 @@
       end
       angle = atan2(obj.vox_centres(3,:), obj.vox_centres(1,:));
       angle = angle - sign(angle) * pi;
-      obj = obj.deactivateVoxels(any([angle < range(1) ; angle > range(2)]));
+      voxels = any([angle < range(1) ; angle > range(2)]);
+      obj = obj.deactivateVoxels(voxels);
+      obj.occupancy_map_active_orient(voxels, :) = false(nnz(voxels), obj.occupancy_map_n_orient);
     end
     
     function obj = deactivateVoxelsOutsideTransverseRange(obj, range, reset_active)
@@ -510,7 +505,9 @@
       end
       angle = atan2(obj.vox_centres(2,:), obj.vox_centres(1,:));
       angle = angle - sign(angle) * pi;
-      obj = obj.deactivateVoxels(any([angle < range(1) ; angle > range(2)]));
+      voxels = any([angle < range(1) ; angle > range(2)]);
+      obj = obj.deactivateVoxels(voxels);
+      obj.occupancy_map_active_orient(voxels, :) = false(nnz(voxels), obj.occupancy_map_n_orient);
     end
     
     function obj = prune(obj, sagittal_angle,...
