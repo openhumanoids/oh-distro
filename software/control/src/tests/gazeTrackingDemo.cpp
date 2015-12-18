@@ -214,9 +214,9 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   int pelvis_link = model_.findLinkId("pelvis");
   Vector3d pelvis_pt = Vector3d::Zero();
   Vector3d pelvis_pos0;
-  pelvis_pos0(0) = 0;
-  pelvis_pos0(1) = 0.0;
-  pelvis_pos0(2) = 1.025;
+  pelvis_pos0(0) = rstate_.pose.translation.x;
+  pelvis_pos0(1) = rstate_.pose.translation.y;
+  pelvis_pos0(2) = rstate_.pose.translation.z;
   Vector3d pelvis_pos_lb = pelvis_pos0;
   //pelvis_pos_lb(0) += 0.001;
   //pelvis_pos_lb(1) += 0.001;
@@ -224,7 +224,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   Vector3d pelvis_pos_ub = pelvis_pos_lb;
   //pelvis_pos_ub(2) += 0.001;
   WorldPositionConstraint kc_pelvis_pos(&model_, pelvis_link, pelvis_pt, pelvis_pos_lb, pelvis_pos_ub, tspan);
-  Eigen::Vector4d pelvis_quat_des(1, 0, 0, 0);
+  Eigen::Vector4d pelvis_quat_des(rstate_.pose.rotation.w , rstate_.pose.rotation.x, rstate_.pose.rotation.y, rstate_.pose.rotation.z);
   double pelvis_tol = 0;//0.0017453292519943296;
   WorldQuatConstraint kc_pelvis_quat(&model_, pelvis_link, pelvis_quat_des, pelvis_tol, tspan);
 
@@ -252,7 +252,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   int head_link = model_.findLinkId("head");
   Eigen::Vector3d gaze_axis = Eigen::Vector3d(1,0,0);
   Eigen::Vector3d target = cl_cfg_.gazeGoal;
-  Eigen::Vector3d gaze_origin = Eigen::Vector3d(0,0,0);
+  Eigen::Vector3d gaze_origin = Eigen::Vector3d(0,0, 0);//0.45);// inserting this offset almost achieves the required look-at
   double conethreshold = 0;
   WorldGazeTargetConstraint kc_gaze(&model_, head_link, gaze_axis, target, gaze_origin, conethreshold, tspan);
 
@@ -271,6 +271,30 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   inverseKin(&model_, q_star, q_star, constraint_array.size(), constraint_array.data(), q_sol, info, infeasible_constraint, ikoptions);
   printf("INFO = %d\n", info);
   return info;
+}
+
+
+Eigen::Isometry3d matrixdToIsometry3d(Matrix<double,7,1>  input){
+  Eigen::Isometry3d output;
+  output.setIdentity();
+  output.translation() = Eigen::Vector3d( input[0], input[1], input[2] );
+  Eigen::Quaterniond quat = Eigen::Quaterniond(input[3], input[4], input[5], input[6]);
+  output.rotate(quat); 
+  return output;
+}
+
+static inline bot_core::pose_t getPoseAsBotPose(Eigen::Isometry3d pose, int64_t utime){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime =   utime;
+  pose_msg.pos[0] = pose.translation().x();
+  pose_msg.pos[1] = pose.translation().y();
+  pose_msg.pos[2] = pose.translation().z();  
+  Eigen::Quaterniond r_x(pose.rotation());
+  pose_msg.orientation[0] =  r_x.w();  
+  pose_msg.orientation[1] =  r_x.x();  
+  pose_msg.orientation[2] =  r_x.y();  
+  pose_msg.orientation[3] =  r_x.z();  
+  return pose_msg;
 }
 
 
@@ -297,49 +321,80 @@ void App::solveGazeProblem(){
     return;
   }
 
-  // Fish out the two neck joints (in simulation) and send as a command:
-  std::vector<string> jointNames;
-  for (int i=0 ; i <model_.num_positions ; i++){
-    // std::cout << model.getPositionName(i) << " " << i << "\n";
-    jointNames.push_back( model_.getPositionName(i) ) ;
-  }  
-  //drc::robot_state_t robot_state_msg;
-  //getRobotState(robot_state_msg, 0*1E6, q_sol , jointNames);
-  //lcm_->publish("EST_ROBOT_STATE",&robot_state_msg);
 
-  std::vector<std::string>::iterator it1 = find(jointNames.begin(),
-      jointNames.end(), "lowerNeckPitch");
-  int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
-  float lowerNeckPitchAngle = q_sol[lowerNeckPitchIndex];
+  bool mode = 0;
+  if (mode==0){ // publish utorso-to-head as orientation, not properly tracking but works with different orientations
+    // Get the utorso to head frame:
+    int pelvis_link = model_.findLinkId("pelvis");
+    int head_link = model_.findLinkId("head");
+    int utorso_link = model_.findLinkId("torso");
+    KinematicsCache<double> cache = model_.doKinematics(q_sol,0);
+    Eigen::Isometry3d world_to_pelvis = matrixdToIsometry3d( model_.forwardKin(cache, Vector3d::Zero().eval(), pelvis_link, 0, 2, 0).value() );
+    Eigen::Isometry3d world_to_head = matrixdToIsometry3d( model_.forwardKin(cache, Vector3d::Zero().eval(), head_link, 0, 2, 0).value() );
+    Eigen::Isometry3d pelvis_to_head = world_to_head.inverse()*world_to_pelvis;
+    Eigen::Isometry3d pelvis_to_utorso  = matrixdToIsometry3d( model_.forwardKin(cache, Vector3d::Zero().eval(), utorso_link, 0, 2, 0).value() ).inverse()*world_to_pelvis;
+    Eigen::Isometry3d utorso_to_head =  pelvis_to_utorso.inverse()*pelvis_to_head;
 
-  std::vector<std::string>::iterator it2 = find(jointNames.begin(),
-      jointNames.end(), "neckYaw");
-  int neckYawIndex = std::distance(jointNames.begin(), it2);
-  float neckYawAngle = q_sol[neckYawIndex];
+    // Apply 180 roll as head orientation control seems to be in z-up frame
+    Eigen::Isometry3d rotation_frame;
+    rotation_frame.setIdentity();
+    Eigen::Quaterniond quat = euler_to_quat( M_PI, 0, 0);
+    rotation_frame.rotate(quat); 
+    utorso_to_head = utorso_to_head*rotation_frame;
 
-  std::cout << lowerNeckPitchAngle << " (" << lowerNeckPitchAngle*180.0/M_PI << ") is lowerNeckPitchAngle\n";
-  std::cout << neckYawAngle << " (" << neckYawAngle*180.0/M_PI << ") is neckYawAngle\n";
+    bot_core::pose_t world_to_head_frame_pose_msg =  getPoseAsBotPose(world_to_head, rstate_.utime);
+    lcm_->publish("POSE_VICON",&world_to_head_frame_pose_msg);// for debug
+    bot_core::pose_t utorso_to_head_frame_pose_msg =  getPoseAsBotPose(utorso_to_head, rstate_.utime);
+    lcm_->publish("DESIRED_HEAD_ORIENTATION",&utorso_to_head_frame_pose_msg);// temp
+  }else{ // publish neck pitch and yaw joints as orientation. this works ok when robot is facing 1,0,0,0
+    // Fish out the two neck joints (in simulation) and send as a command:
+    std::vector<string> jointNames;
+    for (int i=0 ; i <model_.num_positions ; i++){
+      // std::cout << model.getPositionName(i) << " " << i << "\n";
+      jointNames.push_back( model_.getPositionName(i) ) ;
+    }
+    drc::robot_state_t robot_state_msg;
+    getRobotState(robot_state_msg, 0*1E6, q_sol , jointNames);
+    lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg);
 
-  bot_core::pose_t headOrientationMsg;
-  headOrientationMsg.utime = rstate_.utime;
-  headOrientationMsg.pos[0] = 0;
-  headOrientationMsg.pos[1] = 0;
-  headOrientationMsg.pos[2] = 0;
-  Eigen::Quaterniond quat = euler_to_quat(0, lowerNeckPitchAngle, neckYawAngle);
-  headOrientationMsg.orientation[0] = quat.w();
-  headOrientationMsg.orientation[1] = quat.x();
-  headOrientationMsg.orientation[2] = quat.y();
-  headOrientationMsg.orientation[3] = quat.z();
-  lcm_->publish("DESIRED_HEAD_ORIENTATION",&headOrientationMsg);
-  lcm_->publish("POSE_GROUND",&headOrientationMsg);// temp
-  std::cout << "Desired orientation sent, exiting\n";
-  exit(-1);
+    std::vector<std::string>::iterator it1 = find(jointNames.begin(),
+        jointNames.end(), "lowerNeckPitch");
+    int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
+    float lowerNeckPitchAngle = q_sol[lowerNeckPitchIndex];
+
+    std::vector<std::string>::iterator it2 = find(jointNames.begin(),
+        jointNames.end(), "neckYaw");
+    int neckYawIndex = std::distance(jointNames.begin(), it2);
+    float neckYawAngle = q_sol[neckYawIndex];
+
+    std::cout << lowerNeckPitchAngle << " (" << lowerNeckPitchAngle*180.0/M_PI << ") is lowerNeckPitchAngle\n";
+    std::cout << neckYawAngle << " (" << neckYawAngle*180.0/M_PI << ") is neckYawAngle\n";
+
+    bot_core::pose_t headOrientationMsg;
+    headOrientationMsg.utime = rstate_.utime;
+    headOrientationMsg.pos[0] = 0;
+    headOrientationMsg.pos[1] = 0;
+    headOrientationMsg.pos[2] = 0;
+    Eigen::Quaterniond quat = euler_to_quat(0, lowerNeckPitchAngle, neckYawAngle);
+    headOrientationMsg.orientation[0] = quat.w();
+    headOrientationMsg.orientation[1] = quat.x();
+    headOrientationMsg.orientation[2] = quat.y();
+    headOrientationMsg.orientation[3] = quat.z();
+    lcm_->publish("DESIRED_HEAD_ORIENTATION",&headOrientationMsg);
+    lcm_->publish("POSE_VICON",&headOrientationMsg); // for debug
+  }
+
+  //std::cout << "Desired orientation sent, exiting\n";
+  //exit(-1);
 }
 
-
+int counter=0;
 void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   rstate_= *msg;
-  solveGazeProblem();
+  if (counter%400 == 0 ){
+    solveGazeProblem();
+  }
+  counter++;
 }
 
 
