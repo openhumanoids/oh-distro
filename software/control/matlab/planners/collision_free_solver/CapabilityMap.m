@@ -300,7 +300,7 @@
         point_cloud, sagittal_range, transverse_range, height_range, direction_threshold)
       if nargin < 5 || isempty(sagittal_range), sagittal_range = [-pi/3, pi/3]; end
       if nargin < 6 || isempty(transverse_range), transverse_range = [-pi/3, pi/3]; end
-      if nargin < 7 || isempty(height_range), height_range = [0.7, 1.1]; end
+      if nargin < 7 || isempty(height_range), height_range = [0.6, 1.1]; end
       if nargin < 8, direction_threshold = pi/6; end
       
       obj = obj.deactivateVoxelsOutsideTransverseRange(transverse_range, reset_active);
@@ -340,59 +340,77 @@
     end
     
     function drawCapabilityMap(obj, orient, text, draw_cubes)
-      if nargin < 2 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 2, orient = []; end
       if nargin < 3 || isempty(text), text = 'Capability Map'; end
       if nargin < 4 || isempty(draw_cubes), draw_cubes = true; end
       obj.drawMap(true(1, obj.n_voxels), text, orient, [], draw_cubes);
     end
     
     function drawCapabilityMapCentredOnPoint(obj, offset, orient, text, draw_cubes)
-      if nargin < 3 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 3, orient = []; end
       if nargin < 4 || isempty(text), text = 'Capability Map'; end
       if nargin < 5 || isempty(draw_cubes), draw_cubes = true; end
       obj.drawMap(true(1, obj.n_voxels), text, orient, offset, draw_cubes)
     end
     
     function drawActiveMap(obj, orient, text, draw_cubes)
-      if nargin < 2 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 2, orient = []; end
       if nargin < 3 || isempty(text), text = 'Active Capability Map'; end
       if nargin < 4 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(obj.occupancy_map_active_orient(:, orient)', text, orient, [], draw_cubes);
+      if length(orient) > 1
+        voxels = any(obj.occupancy_map_active_orient(:, orient)');
+      else
+        voxels = obj.occupancy_map_active_orient(:, orient)';
+      end
+      obj.drawMap(voxels, text, orient, [], draw_cubes);
     end
     
     function drawActiveMapCentredOnPoint(obj, offset, orient, text, draw_cubes)
-      if nargin < 3 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
+      if nargin < 3, orient = []; end
       if nargin < 4 || isempty(text), text = 'Active Capability Map'; end
       if nargin < 5 || isempty(draw_cubes), draw_cubes = true; end
-      obj.drawMap(obj.occupancy_map_active_orient(:, orient)', text, orient, offset, draw_cubes)
+      if length(orient) > 1
+        voxels = any(obj.occupancy_map_active_orient(:, orient)');
+      else
+        voxels = obj.occupancy_map_active_orient(:, orient)';
+      end
+      obj.drawMap(voxels, text, orient, offset, draw_cubes)
     end
     
     function drawMap(obj, voxels, text, orient, offset, draw_cubes)
       lcmClient = LCMGLClient(text);
+      if nargin < 4 || isempty(orient), [~,orient] = ismember([0 0 0], obj.occupancy_map_orient', 'rows'); end
       if nargin < 5 || isempty(offset), offset = [0;0;0]; end
       if nargin < 6, draw_cubes = true; end
+      if length(orient) > 1, draw_cubes = false; end
       if draw_cubes
         lcmClient = obj.drawMapCubes(lcmClient, obj.map_lb, obj.map_ub, obj.vox_edge, offset, rpy2rotmat(obj.occupancy_map_orient(:,orient)));
         start_idx = 0;
       else
         start_idx = 1;
       end
-      for i = start_idx:obj.n_directions_per_voxel
-        h = 1-(i/obj.n_directions_per_voxel*2/3);
-        rgb = hsv2rgb(h, 1, 1);
-        lcmClient.glColor3f(rgb(1), rgb(2), rgb(3));
-        if i == 0
-          lcmClient.glPointSize(1);
-        else
-          lcmClient.glPointSize(10);
-        end
-        coords = obj.vox_centres(:, (obj.reachability_index == i/obj.n_directions_per_voxel) & voxels);
-        coords = rpy2rotmat(obj.occupancy_map_orient(:,orient)) * coords;
-        if nargin > 3
-          coords = bsxfun(@plus, offset(1:3), coords);
-        end
-        if ~isempty(coords)
-          lcmClient.points(coords(1,:), coords(2,:), coords(3,:));
+      if ischar(orient) && strcmp(orient, 'all')
+        orient = 1:obj.occupancy_map_n_orient;
+      end
+      for o = orient
+        for i = start_idx:obj.n_directions_per_voxel
+          h = 1-(i/obj.n_directions_per_voxel*2/3);
+          rgb = hsv2rgb(h, 1, 1);
+          lcmClient.glColor3f(rgb(1), rgb(2), rgb(3));
+          if i == 0
+            lcmClient.glPointSize(1);
+          else
+            lcmClient.glPointSize(10);
+          end
+          coords = obj.vox_centres(:, all([(obj.reachability_index == i/obj.n_directions_per_voxel);...
+                                            voxels; obj.occupancy_map_active_orient(:,o)']));
+          coords = rpy2rotmat(obj.occupancy_map_orient(:,o)) * coords;
+          if nargin > 3
+            coords = bsxfun(@plus, offset(1:3), coords);
+          end
+          if ~isempty(coords)
+            lcmClient.points(coords(1,:), coords(2,:), coords(3,:));
+          end
         end
       end
       lcmClient.switchBuffers();
@@ -488,7 +506,7 @@
         obj = obj.resetActiveVoxels();
       end
       for o = 1:obj.occupancy_map_n_orient
-        h = bsxfun(@plus, obj.vox_centres, obj.EE_pose(1:3) - rpy2rotmat(obj.occupancy_map_orient(:,o)) * obj.map_left_centre);
+        h = rpy2rotmat(obj.occupancy_map_orient(:,o)) * bsxfun(@plus, obj.vox_centres, obj.EE_pose(1:3) - obj.map_left_centre);
         obj.occupancy_map_active_orient(:,o) =  all([h(3,:) > range(1); h(3, :) < range(2); obj.active_voxels]);
       end
       voxels = all(~obj.occupancy_map_active_orient, 2);
