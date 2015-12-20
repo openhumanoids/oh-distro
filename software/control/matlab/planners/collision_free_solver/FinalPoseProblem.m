@@ -118,10 +118,7 @@ classdef FinalPoseProblem
       options.rotation_type = 1;
       
       base = obj.robot.findLinkId(obj.capability_map.base_link);
-      np = obj.robot.num_positions;
       
-      ee_rotmat = quat2rotmat(obj.x_goal(4:7));
-      ee_direction = ee_rotmat(:,2);
       obj.capability_map = obj.capability_map.setEEPose(obj.x_goal);
       reduceTimer = tic;
       obj.capability_map = obj.capability_map.reduceActiveSet(true, point_cloud);
@@ -135,6 +132,7 @@ classdef FinalPoseProblem
       cost = [];
       fprintf('Setup time: %.2f s\n', toc(setupTimer))
       iterationTimer = tic;
+      debug_vars.n_valid_samples = n_valid_samples;
       for vox = 1:n_valid_samples
         orient_prob(~any(valid_samples)) = 0;
         cum_prob = cumsum(orient_prob) / sum(orient_prob);
@@ -143,7 +141,7 @@ classdef FinalPoseProblem
         voxel_idx = find(valid_samples(:, orient_idx));
         rand_voxel = randi(length(voxel_idx));
         voxel_idx = voxel_idx(rand_voxel);
-        pos = obj.capability_map.vox_centres(:, active_voxels(voxel_idx));
+        pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:, active_voxels(voxel_idx));
         valid_samples(voxel_idx, orient_idx) = false;
         
         iter = iter + 1;
@@ -184,8 +182,9 @@ classdef FinalPoseProblem
 %       end
       fprintf('iteration Time: %.4f\n', toc(iterationTimer))
       
-      debug_vars.n_capability_map_samples = iter;
+      debug_vars.n_valid_samples_used = iter;
       debug_vars.cost = cost;
+      debug_vars.final_orient = orient_idx;
       
     end
     
@@ -204,16 +203,11 @@ classdef FinalPoseProblem
     
     function debug_vars = initDebugVars()
       debug_vars = struct(...
-        'n_capability_map_samples', [], ...
+        'final_orient', [], ...
+        'n_valid_samples', [], ...
+        'n_valid_samples_used', [], ...
         'cost', [], ...
         'info', [], ...
-        'cost_below_threshold', [], ...
-        'n_body_collision_iter', 0, ...
-        'n_arm_collision_iter', 0, ...
-        'n_nullspace_iter', 0, ...
-        'n_accepted_after_armcollision', 0, ...
-        'n_accepted_after_nullspace', 0, ...
-        'nullspace_iter', struct('success', [], 'nIter', []), ...
         'computation_time', []...
         );
     end
