@@ -12,7 +12,8 @@ if(NOT USE_SYSTEM_LCM)
 endif()
 
 set(libbot_url https://github.com/openhumanoids/libbot.git)
-set(libbot_revision 92cf3eaef17659990104da40866c5d466a453b17)
+#set(libbot_revision 92cf3eaef17659990104da40866c5d466a453b17) # this revision needs a few more fixes
+set(libbot_revision eb61f9bed5df654ffb0ce47ce44ca3d379a6e6e8)
 set(libbot_depends ${lcm_proj})
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
@@ -42,7 +43,8 @@ set(flann_external_args
   )
 
 set(pcl_url http://github.com/pointcloudlibrary/pcl.git)
-set(pcl_revision pcl-1.7.2)
+#set(pcl_revision pcl-1.7.2) # this version introduces some missing openni pkg-config file bug
+set(pcl_revision pcl-1.7.1)
 set(pcl_depends flann Eigen_pod)
 set(pcl_external_args
   CMAKE_CACHE_ARGS
@@ -82,7 +84,8 @@ set(bullet_revision 4319ffd7e9251066d93064f5a8dab12e33dbe5e2)
 set(bullet_depends)
 
 set(fovis_url ssh://git@github.com/fovis/fovis.git)
-set(fovis_revision 2862e080dee2519932585b46cc301a38d8cad1f4)
+#set(fovis_revision 2862e080dee2519932585b46cc301a38d8cad1f4) # this is the newer version, but removes fovis-bot2
+set(fovis_revision ee2fe6593ed9e7e5ce2b2f6f1c64b627da119090)
 set(fovis_depends libbot)
 
 set(estimate-pose_url https://github.com/openhumanoids/estimate-pose.git)
