@@ -19,7 +19,7 @@ export BUILD_PREFIX
 $(VERBOSE).SILENT:
 
 all: 
-	if [ -e build/externals.md5 ] && [ "`cat build/externals.md5`" = "`cat externals/cmake/externals.cmake externals/cmake/dd-externals.cmake | md5sum`" ]; then \
+	if [ -e build/externals.md5 ] && [ "`cat build/externals.md5`" = "`cat externals/cmake/externals.cmake | md5sum`" ]; then \
 		echo "Externals are up to date"; \
 	else \
 		echo "Externals are out of date!"; \

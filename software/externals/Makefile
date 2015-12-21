@@ -23,7 +23,7 @@ endif
 
 all: pod-build/Makefile
 	$(MAKE) -C pod-build all
-	cat cmake/externals.cmake cmake/dd-externals.cmake | md5sum > ../build/externals.md5
+	cat cmake/externals.cmake | md5sum > ../build/externals.md5
 
 pod-build/Makefile:
 	$(MAKE) configure
