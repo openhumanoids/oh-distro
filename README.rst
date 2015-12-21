@@ -1,3 +1,28 @@
+===================================
+Warning: Don't expect this to work!
+===================================
+
+We're releasing most of the source code from the MIT DRC project in
+the hope that it will benefit the robotics community. But there are
+parts of this software, like the Boston Dynamics Atlas software
+interface, which we are not allowed to release publicly. As a result,
+this public repo is *incomplete*. Some of the submodules and external
+projects are *private*, and you won't be able to access them unless
+you're a member of the team. Sorry!
+
+We're actively working on making this a project that can be used by
+people outside the group, but for now, you should consider it a
+collection of (potentially) interesting code, not a functional
+application.
+
+The core algorithms and tools, however, live in their own projects
+which are much better supported:
+
+* Drake (planning, control, simulation, optimization): http://drake.mit.edu
+* Pronto (state estimation): https://github.com/mitdrc/pronto
+* Director (user interface): https://github.com/RobotLocomotion/director
+
+
 =============
 OpenHumanoids
 =============
@@ -56,8 +81,6 @@ Next, add your public SSH key to your GitHub account so that you can easily
 push and pull over SSH.  Read the `generating ssh keys <https://help.github.com/articles/generating-ssh-keys>`_
 article for instructions to generate and link an ssh key to your account.
 
-Finally, send your GitHub username to russt, scottk, rdeits, or another team member so you can be granted access.
-
 Download the source code
 ------------------------
 
@@ -73,6 +96,8 @@ Initialize the submodules (Drake, director, pronto):
 
     cd drc
     git submodule update --init --recursive
+
+Note: this may fail if you're not a member of the OpenHumanoids organization, since some submodules are private. 
 
 Add the *sandbox* remote. The *sandbox* is the location where branches can be shared.
 
@@ -179,14 +204,14 @@ Environment Setup
 
 The behavior of certain build steps can be affected by environment
 variables, so you should setup your environment before starting the
-build. The DRC environment is setup by sourcing the file
-*drc/software/config/drc\_environment.sh*. Typically, users will source
+build. The environment is setup by sourcing the file
+*main-distro/software/config/drc\_environment.sh*. Typically, users will source
 this file automatically in their ~/.bashrc file by adding this line to
 ~/.bashrc:
 
 ::
 
-    source /path-to/drc/software/config/drc_environment.sh
+    source /path-to/main-distro/software/config/drc_environment.sh
 
 If you have already done this, make sure your ~/.bashrc contains the
 correct path to the drc\_environment.sh file in the drc source code
@@ -213,7 +238,7 @@ automatically in ~/.bashrc, then do so now with the following command:
 
 ::
 
-    cd drc
+    cd main-distro
     source software/config/drc_environment.sh
 
 Run make to build externals and then the main codebase:
@@ -267,37 +292,6 @@ The grbgetkey module is built as part of the externals.
 
 Note that the tarball for Gurobi is part of our tree and the gurobi pod uses it
 to avoid needing to download it from Gurobi.
-
-
-Data Storage Policy
-===================
-
-All logs should be uploaded to virgo.csail.mit.edu
-This a virtual machine managed by TIG with two NFS drives of two 2TB:
-
-
-::
-
-    /var/www/projects/drc
-    2013-05-00-spring
-    2013-06-18-vrc
-    2013-09-00-autumn
-    2013-10-00-drc-quals
-    2014-01-00-spring
-
-::
-
-    /var/www/projects/drc-logs
-    2013-12-00-trials
-    2014-05-00-summer
-    2014-09-00-autumn
-    2014-09-00-autumn-raw-logs
-
-This rysnc command can easily transfer logs to Virgo: 
-
-::
-
-    rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /home/drc/logs/<logname>  <username>@virgo.csail.mit.edu:/var/www/projects/drc-logs
 
 ROS
 ===
