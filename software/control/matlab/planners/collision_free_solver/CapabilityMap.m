@@ -12,7 +12,7 @@
     urdf
     n_voxels
     n_directions_per_voxel
-    map_left_centre
+    map_centre
     end_effector_link
     end_effector_axis
     base_link
@@ -90,21 +90,22 @@
         kinsol = obj.rbm.doKinematics(obj.nominal_configuration, []);
         
         if isnumeric(map_left_centre)
-          obj.map_left_centre = map_left_centre;
+          obj.map_centre.left = map_left_centre;
         else
-          obj.map_left_centre = obj.rbm.forwardKin(kinsol, obj.rbm.findLinkId(map_left_centre), [0;0;0]);
+          obj.map_centre.left = obj.rbm.forwardKin(kinsol, obj.rbm.findLinkId(map_left_centre), [0;0;0]);
         end
+        obj.map_centre.right = obj.map_centre.left .* [1; -1; 1];
       end
     end
     
     function obj = loadFromFile(obj, file)
       vars = load(file);
-      if ~all(isfield(vars, {'urdf', 'map_left_centre', 'end_effector_link', 'end_effector_axis', ...
+      if ~all(isfield(vars, {'urdf', 'map_centre', 'end_effector_link', 'end_effector_axis', ...
         'base_link', 'nominal_configuration'}))
         error('Some data is missing')
       end
       obj.urdf = vars.urdf;
-      obj.map_left_centre = vars.map_left_centre;
+      obj.map_centre = vars.map_centre;
       obj.end_effector_link = vars.end_effector_link;
       obj.end_effector_axis = vars.end_effector_axis;
       obj.base_link = vars.base_link;
@@ -129,6 +130,7 @@
         obj.map_ub = vars.map_ub;
         obj.map_lb = vars.map_lb;
         obj = obj.resetActiveVoxels();
+        obj.active_side = 'left';
       else
         warning('No map data found')
       end
@@ -156,14 +158,15 @@
     end
     
     function saveToFile(obj, file)
+      obj = obj.setActiveSide('left');
       urdf = obj.urdf;
-      map_left_centre = obj.map_left_centre;
+      map_centre = obj.map_centre;
       end_effector_link = obj.end_effector_link;
       end_effector_axis = obj.end_effector_axis;
       base_link = obj.base_link;
       nominal_configuration = obj.nominal_configuration;
       saved_on = datestr(now);
-      vars = {'urdf', 'map_left_centre', 'end_effector_link', 'end_effector_axis', ...
+      vars = {'urdf', 'map_centre', 'end_effector_link', 'end_effector_axis', ...
         'base_link', 'nominal_configuration', 'saved_on'};
       if ~isempty(obj.map)
         map = obj.map;
@@ -199,9 +202,13 @@
     end
     
     function obj = setActiveSide(obj, side)
+      assert(any(strcmp(side, {'left', 'right'})))
       if ~strcmp(side, obj.active_side)
-%         obj.
+        obj.vox_centres = bsxfun(@times, obj.vox_centres, [1; -1; 1]);
       end
+      obj.active_side = side;
+      obj = obj.resetActiveVoxels();
+      obj = obj.resetActiveOrient();
     end
     
     function obj = activateVoxels(obj, idx)
@@ -268,6 +275,9 @@
     function points = findPointsFromDirection(obj, direction, threshold)
       directions = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
       direction = reshape(direction/norm(direction), [3,1]);
+      if strcmp(obj.active_side, 'right')
+        direction = direction .* [1; -1; 1];
+      end
       points = acos(directions'*direction) <= threshold;
 %       clf
 %       hold on
@@ -309,9 +319,9 @@
       direction = quat2rotmat(obj.EE_pose(4:7)) * obj.end_effector_axis;
       obj = obj.deactivateVoxelsByDirection(direction, direction_threshold, true);
       
-      collidingTimer = tic;
+%       collidingTimer = tic;
       obj = obj.deactivateCollidingVoxels(point_cloud);
-      fprintf('Colliding Time: %.2f s\n', toc(collidingTimer))
+%       fprintf('Colliding Time: %.2f s\n', toc(collidingTimer))
       
 %       if obj.n_active_voxels > des_vox_num
 %         max_threshold = pi;
@@ -424,6 +434,9 @@
       if nargin < 7, draw_base = false; end
       lcmClient = LCMGLClient(text);
       coords = obj.getOccupancyMapCentres();
+      if any(offset ~= 0)
+        coords = bsxfun(@plus, offset(1:3), coords);
+      end
       
       if draw_base
         doc = com.mathworks.xml.XMLUtils.createDocument('robot');
@@ -445,22 +458,22 @@
         base = RigidBodyManipulator();
         base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
         v = base.constructVisualizer();
-        pos = rpy2rotmat(obj.occupancy_map_orient(:,orient)) * (obj.vox_centres(:,voxel)-obj.map_left_centre);
+        pos = rpy2rotmat(obj.occupancy_map_orient(:,orient)) * (obj.vox_centres(:,voxel)-obj.map_centre.(obj.active_side));
+        if any(offset ~= 0)
+          pos = pos + offset(1:3);
+        end
         v.draw(0, [pos;obj.occupancy_map_orient(:,orient)])
         lcmClient.glColor3f(0,1,0)
         lcmClient.glPointSize(10)
         centre = rpy2rotmat(obj.occupancy_map_orient(:,orient)) * obj.vox_centres(:,voxel);
         lcmClient.points(centre(1), centre(2), centre(3))
       end
-      if any(offset ~= 0)
-        coords = bsxfun(@plus, offset(1:3), coords);
-      end
       
       if draw_cubes
         lcmClient = obj.drawMapCubes(lcmClient, obj.occupancy_map_lb, obj.occupancy_map_ub, obj.occupancy_map_resolution, offset, eye(3));
       end
-      colliding_points = coords(:,obj.occupancy_map{orient}(:, voxel));
-      free_points = coords(:,~obj.occupancy_map{orient}(:, voxel));
+      colliding_points = coords(:,obj.occupancy_map.(obj.active_side){orient}(:, voxel));
+      free_points = coords(:,~obj.occupancy_map.(obj.active_side){orient}(:, voxel));
       if ~isempty(colliding_points)
         lcmClient.glPointSize(10);
         lcmClient.glColor3f(1, 0, 0);
@@ -491,8 +504,10 @@
       sub = ceil(bsxfun(@rdivide, bsxfun(@minus, point_cloud, obj.occupancy_map_lb + obj.EE_pose(1:3)), obj.occupancy_map_resolution));
       vox_idx = unique(sub2ind(obj.occupancy_map_dimensions, sub(1,:), sub(2,:), sub(3,:)));
       for orient = 1:obj.occupancy_map_n_orient
-          obj.occupancy_map_active_orient(:, orient) = all([~any(obj.occupancy_map{orient}(vox_idx,:)); ...
+%           obj.drawActiveMapCentredOnPoint(obj.EE_pose(1:3), orient, [], 0)
+          obj.occupancy_map_active_orient(:, orient) = all([~any(obj.occupancy_map.(obj.active_side){orient}(vox_idx,:)); ...
                                                             obj.occupancy_map_active_orient(:, orient)']);
+%           obj.drawActiveMapCentredOnPoint(obj.EE_pose(1:3), orient, [], 0)
       end
       obj = obj.deactivateVoxels(all(~obj.occupancy_map_active_orient, 2));
     end
@@ -506,7 +521,7 @@
         obj = obj.resetActiveVoxels();
       end
       for o = 1:obj.occupancy_map_n_orient
-        h = rpy2rotmat(obj.occupancy_map_orient(:,o)) * bsxfun(@plus, obj.vox_centres, obj.EE_pose(1:3) - obj.map_left_centre);
+        h = rpy2rotmat(obj.occupancy_map_orient(:,o)) * bsxfun(@plus, obj.vox_centres, obj.EE_pose(1:3) - obj.map_centre.(obj.active_side));
         obj.occupancy_map_active_orient(:,o) =  all([h(3,:) > range(1); h(3, :) < range(2); obj.active_voxels]);
       end
       voxels = all(~obj.occupancy_map_active_orient, 2);
@@ -601,7 +616,7 @@
       kinsol = obj.rbm.doKinematics(obj.nominal_configuration, []);
       end_effector = obj.rbm.findLinkId(obj.end_effector_link.left);
       end_effector_position = obj.rbm.forwardKin(kinsol, end_effector, [0;0;0]);
-      distance = norm(obj.map_left_centre-end_effector_position);
+      distance = norm(obj.map_centre.left-end_effector_position);
       
       % Workspace discretization
       n_vox_per_edge = 2*ceil(distance/obj.vox_edge);
@@ -631,7 +646,7 @@
       vc = obj.vox_centres;
       pt = obj.pos_tolerance;
       at = obj.ang_tolerance;
-      mc = obj.map_left_centre;
+      mc = obj.map_centre.left;
       v = ver;
       urdf_string = xmlwrite(obj.urdf);
       if options.use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
@@ -698,52 +713,55 @@
       
       %Compute map
       idx_to_check = find(obj.reachability_index~=0);
-      voxels_to_check = obj.vox_centres(:,idx_to_check);
       omnv = obj.occupancy_map_n_voxels;
       nv = obj.n_voxels;
-      mc = obj.map_left_centre;
+      mc.left = obj.map_centre.left;
+      mc.right = obj.map_centre.right;
       omc = obj.getOccupancyMapCentres();
       v = ver;
       omno = obj.occupancy_map_n_orient;
       om = cell(1,obj.occupancy_map_n_orient);
       o = obj.occupancy_map_orient;
-      if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
-        parfor orient = 1:obj.occupancy_map_n_orient
-          fprintf('Computing map %d of %d\n', orient, omno);
-          single_om = sparse(false(omnv, nv));
-          base = RigidBodyManipulator();
-          base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
-          for i = 1:length(idx_to_check)
-            q = [rpy2rotmat(o(:,orient)) * (voxels_to_check(:,i)- mc); o(:,orient)];
-            kinsol = base.doKinematics(q);
-            colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
-            if ~isempty(colliding_points)
-              single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
+      for side = {'left', 'right'}
+        obj = obj.setActiveSide(side{1});
+        voxels_to_check = obj.vox_centres(:,idx_to_check);
+        if use_parallel_toolbox && any(strcmp({v.Name}, 'Parallel Computing Toolbox'))
+          parfor orient = 1:obj.occupancy_map_n_orient
+            fprintf('Computing map %d of %d for %s side\n', orient, omno, side{1});
+            single_om = sparse(false(omnv, nv));
+            base = RigidBodyManipulator();
+            base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
+            for i = 1:length(idx_to_check)
+              q = [rpy2rotmat(o(:,orient)) * (voxels_to_check(:,i)- mc.(side{1})); o(:,orient)];
+              kinsol = base.doKinematics(q);
+              colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
+              if ~isempty(colliding_points)
+                single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
+              end
             end
+            om{orient} = sparse(single_om);
+            single_om = [];
           end
-          om{orient} = sparse(single_om);
-          single_om = [];
-        end
-        obj.occupancy_map = om;
-      else
-        disp('Not using parallel toolbox, computation might take very long!')
-        for orient = 1:obj.occupancy_map_n_orient
-          fprintf('Computing map %d of %d\n', orient, omno);
-          single_om = sparse(false(omnv, nv));
-          base = RigidBodyManipulator();
-          base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
-          for i = 1:length(idx_to_check)
-            q = [rpy2rotmat(o(:,orient)) * (voxels_to_check(:,i)- mc); o(:,orient)];
-            kinsol = base.doKinematics(q);
-            colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
-            if ~isempty(colliding_points)
-              single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
+        else
+          disp('Not using parallel toolbox, computation might take very long!')
+          for orient = 1:obj.occupancy_map_n_orient
+            fprintf('Computing map %d of %d for %s side\n', orient, omno, side{1});
+            single_om = sparse(false(omnv, nv));
+            base = RigidBodyManipulator();
+            base = base.addRobotFromURDFString(urdf_string, [], [], struct('floating', true));
+            for i = 1:length(idx_to_check)
+              q = [rpy2rotmat(o(:,orient)) * (voxels_to_check(:,i)- mc.(side{1})); o(:,orient)];
+              kinsol = base.doKinematics(q);
+              colliding_points = base.collidingPoints(kinsol, omc, resolution/2);
+              if ~isempty(colliding_points)
+                single_om(colliding_points, idx_to_check(i)) = ~single_om(colliding_points, idx_to_check(i));
+              end
             end
+            om{orient} = sparse(single_om);
           end
-          om{orient} = sparse(single_om);
         end
-      end      
-      obj.occupancy_map = om;
+        obj.occupancy_map.(side{1}) = om;
+      end
       obj = obj.resetActiveOrient();
       obj = obj.computeOrientationProbabilityDistribution();
     end
@@ -751,7 +769,7 @@
     function [lb, ub] = getOccupancyMapBounds(obj, body)
       norms = arrayfun(@(idx) norm(obj.vox_centres(:, idx)), 1:obj.n_voxels);
       [~, furthest_voxel] = max(norms.*obj.active_voxels);
-      body_BB = bsxfun(@minus, body.collision_geometry{1}.getBoundingBoxPoints(), obj.map_left_centre - obj.vox_centres(:, furthest_voxel));
+      body_BB = bsxfun(@minus, body.collision_geometry{1}.getBoundingBoxPoints(), obj.map_centre.left - obj.vox_centres(:, furthest_voxel));
       max_dist = max(arrayfun(@(idx) norm(body_BB(:, idx)), 1:8));
       lb = -max_dist * ones(3,1);
       ub = max_dist * ones(3,1);
@@ -897,6 +915,7 @@
     end
     
     function lcmClient = drawMapCubes(lcmClient, lb, ub, resolution, centre, rotmat)
+      centre = centre(1:3);
       dimensions = (ub - lb)/resolution;
       lcmClient.glColor3f(0.3,0.3,0.3);
       lcmClient.glLineWidth(.1);

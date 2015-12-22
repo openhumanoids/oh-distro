@@ -15,6 +15,7 @@ classdef FinalPoseProblem
     grasping_hand
     active_collision_options
     debug
+    verbose
   end
   
   properties (Constant)
@@ -32,6 +33,7 @@ classdef FinalPoseProblem
       opt.activecollisionoptions = struct();
       opt.endeffectorpoint = [0; 0; 0]';
       opt.debug = false;
+      opt.verbose = true;
       
       optNames = fieldnames(opt);
       nArgs = length(varargin);
@@ -61,6 +63,7 @@ classdef FinalPoseProblem
       obj.active_collision_options = opt.activecollisionoptions;
       obj.goal_constraints = obj.generateGoalConstraints();
       obj.debug = opt.debug;
+      obj.verbose = opt.verbose;
 
     end
 
@@ -76,7 +79,7 @@ classdef FinalPoseProblem
       %compute final pose
       tic
       if length(obj.x_goal) == 7
-        disp('Searching for a feasible final configuration...')
+        if obj.verbose, disp('Searching for a feasible final configuration...'); end
         if obj.debug
           timer = tic();
         end
@@ -84,29 +87,29 @@ classdef FinalPoseProblem
         if isempty(qGoal)
           info = obj.FAIL_NO_FINAL_POSE;
           x_goal = obj.x_goal;
-          disp('Failed to find a feasible final configuration')
+          if obj.verbose, disp('Failed to find a feasible final configuration'); end
           return
         else
           kinsol = obj.robot.doKinematics(qGoal);
           obj.x_goal = obj.robot.forwardKin(kinsol, obj.end_effector_id, obj.end_effector_point, 2);
           obj.x_goal = [obj.x_goal; qGoal];
-          disp('Final configuration found')
+          if obj.verbose, disp('Final configuration found'); end
         end
       elseif length(obj.x_goal) == 7 + obj.robot.num_positions
-        disp('Final configuration input found A')
+        if obj.verbose, disp('Final configuration input found A'); end
       elseif length(obj.x_goal) == obj.robot.num_positions
         kinsol = obj.robot.doKinematics(obj.x_goal);
         obj.x_goal = [obj.robot.forwardKin(kinsol, obj.end_effector_id, obj.end_effector_point, 2); obj.x_goal];
-        disp('Final configuration input found B')
+        if obj.verbose, disp('Final configuration input found B'); end
       else
-        error('Bad final configuration input')
+        if obj.verbose, error('Bad final configuration input'); end
       end
       
       x_goal = obj.x_goal;
       if obj.debug
         debug_vars.info = info;
         debug_vars.computation_time = toc(timer);
-        fprintf('Computation Time: %.2f s', debug_vars.computation_time)
+        if obj.verbose, fprintf('Computation Time: %.2f s', debug_vars.computation_time); end
       end
     end
     
@@ -120,9 +123,10 @@ classdef FinalPoseProblem
       base = obj.robot.findLinkId(obj.capability_map.base_link);
       
       obj.capability_map = obj.capability_map.setEEPose(obj.x_goal);
+      obj.capability_map = obj.capability_map.setActiveSide(obj.grasping_hand);
       reduceTimer = tic;
       obj.capability_map = obj.capability_map.reduceActiveSet(true, point_cloud);
-      fprintf('reduce Time: %.4f s\n', toc(reduceTimer))
+      if obj.verbose, fprintf('reduce Time: %.4f s\n', toc(reduceTimer)); end
       active_voxels = find(obj.capability_map.active_voxels);
       valid_samples = obj.capability_map.occupancy_map_active_orient(obj.capability_map.active_voxels, :);
       n_valid_samples = nnz(valid_samples);
@@ -130,7 +134,7 @@ classdef FinalPoseProblem
       iter = 0;
       qOpt = [];
       cost = [];
-      fprintf('Setup time: %.2f s\n', toc(setupTimer))
+      if obj.verbose, fprintf('Setup time: %.2f s\n', toc(setupTimer)); end
       iterationTimer = tic;
       debug_vars.n_valid_samples = n_valid_samples;
       for vox = 1:n_valid_samples
@@ -153,7 +157,7 @@ classdef FinalPoseProblem
 %         shGaze = WorldGazeTargetConstraint(obj.robot, base, axis, obj.x_goal(1:3), obj.capability_map.map_left_centre, 0);
 %         shConstraint = WorldPositionConstraint(obj.robot, root, [0;0;0], obj.x_goal(1:3) - vox_centers(1:3,vox), obj.x_goal(1:3) - vox_centers(1:3,vox));
 %         shOrient = WorldEulerConstraint(obj.robot, base, [-pi/50;-pi/20; -pi/20], [pi/50; pi/20; pi/20]);
-        torsoPosConstraint = WorldPositionConstraint(obj.robot, base, obj.capability_map.map_left_centre, pos + obj.x_goal(1:3),  pos + obj.x_goal(1:3));
+        torsoPosConstraint = WorldPositionConstraint(obj.robot, base, obj.capability_map.map_centre.(obj.grasping_hand), pos + obj.x_goal(1:3),  pos + obj.x_goal(1:3));
         torsoEulerConstraint = WorldEulerConstraint(obj.robot, base, rpy, rpy);
         constraints = [{torsoPosConstraint, torsoEulerConstraint}, obj.goal_constraints, obj.additional_constraints];
         [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
@@ -180,8 +184,9 @@ classdef FinalPoseProblem
 %         [cost, qOptIdx] =  min(validConfs(1,:));
 %         qOpt = validConfs(2:end, qOptIdx);
 %       end
-      fprintf('iteration Time: %.4f\n', toc(iterationTimer))
+      if obj.verbose, fprintf('iteration Time: %.4f\n', toc(iterationTimer)); end
       
+      debug_vars.cost = (obj.q_nom - qOpt)'*obj.ikoptions.Q*(obj.q_nom - qOpt);
       debug_vars.n_valid_samples_used = iter;
       debug_vars.cost = cost;
       debug_vars.final_orient = orient_idx;
