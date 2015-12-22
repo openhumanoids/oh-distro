@@ -20,8 +20,11 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
   
   methods
     
-    function obj = OptimalTaskSpaceMotionPlanningTree(robot, endEffectorId, endEffectorPoint)
+    function obj = OptimalTaskSpaceMotionPlanningTree(robot, endEffectorId, endEffectorPoint, point_cloud)
       obj = obj@TaskSpaceMotionPlanningTree(robot, endEffectorId, endEffectorPoint);
+      obj.trees{obj.tspace_idx}.point_cloud = point_cloud;
+      obj.trees{obj.cspace_idx}.point_cloud = point_cloud;
+%       obj.point_cloud = point_cloud;
     end
     
     function [obj, id_last] = init(obj, q_init)
@@ -67,8 +70,7 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
             constraints = obj.generateEndEffectorConstraints(v(1:7));
             [q, valid] = obj.trees{obj.cspace_idx}.solveIK(v(obj.idx{obj.cspace_idx}), v(obj.idx{obj.cspace_idx}), constraints);
             if valid
-              phi = obj.trees{obj.cspace_idx}.rbm.collisionDetect(q, false, obj.trees{obj.cspace_idx}.active_collision_options);
-              valid = all(phi > obj.trees{obj.cspace_idx}.min_distance);
+              valid = obj.trees{obj.cspace_idx}.isCollisionFree(q);
             end
           end
           if valid
@@ -151,8 +153,7 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
             constraints = obj.generateEndEffectorConstraints(pt(1:7));
             [qNew, valid] = cSpaceTree.solveIK(pt(8:end), qNew, constraints);
             if valid
-              phi = cSpaceTree.rbm.collisionDetect(qNew, false, cSpaceTree.active_collision_options);
-              valid = all(phi > cSpaceTree.min_distance);
+              valid = cSpaceTree.isCollisionFree(qNew);
             end
           end
         end
