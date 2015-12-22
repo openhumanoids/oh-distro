@@ -12,7 +12,7 @@ function output = batchFPP(n, scenes, options)
   
   if ~isfield(options,'grasping_hands')
     grasping_hands = {'right'};
-  elseif ischar(options.grasping_hands)
+  elseif ~iscell(options.grasping_hands)
     grasping_hands = {options.grasping_hands};
   else
     grasping_hands = options.grasping_hands;
@@ -33,6 +33,7 @@ function output = batchFPP(n, scenes, options)
       opt.model = models{model_idx};
       opt.convex_hull = true;
       opt.visualize = false;
+      opt.verbose = false;
 
       opt.robot = Scenes.generateRobot(opt);
 

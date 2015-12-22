@@ -5,15 +5,18 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits');
   warning('off','Drake:CollisionFilterGroup:DiscardingCollisionFilteringInfo');
   warning('off','Drake:RigidBodyManipulator:WeldedLinkInd');
+  warning('off', 'Drake:RigidBodyManipulator:UnsupportedContactPoints')
+  warning('off', 'Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
   if ~isfield(options,'visualize'), options.visualize = true; end;
   if ~isfield(options,'scene'), options.scene = 2; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
-  if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
+  if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
   if ~isfield(options,'robot'), options.robot = []; end;
   if ~isfield(options,'back_constraint'), options.back_constraint = 'free'; end
   if ~isfield(options,'base_constraint'), options.base_constraint = 'free'; end
   if ~isfield(options,'feet_constraint'), options.feet_constraint = 'sliding'; end
+  if ~isfield(options,'verbose'), options.verbose = true; end
   
   options.floating = true;
   
@@ -94,7 +97,8 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     startPoseConstraints, q_nom, cm, ikoptions, ...
     'graspinghand', options.graspingHand, ...
     'endeffectorpoint', point_in_link_frame, ...
-    'debug', true);
+    'debug', true, ...
+    'verbose', options.verbose);
 
   [xGoalFull, info, debug_vars] = finalPose.findFinalPose(Scenes.getOctomap(options));
   q_end = xGoalFull(8:end);

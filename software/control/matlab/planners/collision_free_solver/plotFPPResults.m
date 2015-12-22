@@ -26,7 +26,7 @@ function plotFPPResults(input_file)
       fnames = fnames(~strcmp(fnames, 'details'));
     end
     current_cell = current_cell.(Variables{var}{1});
-    if numel(fnames) > 2
+    if numel(fnames) > 1
       prompt = sprintf('%1$s SELECTION (press enter to use it as independent variable)\n', upper(var_names{var}));
       for i = 1:numel(fnames)
         prompt = [prompt, sprintf('\t%d. %s\n', i, fnames{i})];
@@ -94,7 +94,7 @@ function plotFPPResults(input_file)
       ylabelstr = [ylabelstr, ', ', strrep(variables{4}{v}, '_', ' ')];
     end
     ylabel(ylabelstr)
-    if nargin > 5
+    if any(group_var)
       legend(strrep(variables{group_var}, '_', ' '))
     end
   end
