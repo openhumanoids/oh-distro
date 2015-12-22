@@ -28,12 +28,6 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   
   if options.visualize
     pose_publisher = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE', true, r.getPositionFrame.getCoordinateNames);
-    visWorld = RigidBodyManipulator();
-    for b = 1:numel(r.body(1).visual_geometry)
-      visWorld = addGeometryToBody(visWorld, 1, r.body(1).visual_geometry{b});
-    end
-    visWorld = visWorld.compile();
-    visWorld.constructVisualizer();
     Scenes.visualizeOctomap(options);
   end
   
@@ -42,9 +36,6 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   end
   rndSeed = rng;
   save lastRndg.mat rndSeed
-  
-  lFoot = Scenes.getLeftFoot(options, r);
-  rFoot = Scenes.getRightFoot(options, r);
   
   g_hand = Scenes.getGraspingHand(options, r);
   point_in_link_frame = Scenes.getPointInLinkFrame(options);
@@ -81,7 +72,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
                           Scenes.generateBackConstraint(options, r, q_nom), ...
                           Scenes.generateBaseConstraint(options, r, q_nom), ...
                           Scenes.nonGraspingHandDistanceConstraint(options, r, 0.4)}];
-  [q_start, info, infeasible_constraint] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
+  q_start = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
   
   if options.visualize
     pose_publisher.publish([q_start; zeros(size(q_start))], get_timestamp_now())

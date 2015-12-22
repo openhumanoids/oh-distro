@@ -188,7 +188,6 @@ classdef FinalPoseProblem
       
       debug_vars.cost = (obj.q_nom - qOpt)'*obj.ikoptions.Q*(obj.q_nom - qOpt);
       debug_vars.n_valid_samples_used = iter;
-      debug_vars.cost = cost;
       debug_vars.final_orient = orient_idx;
       
     end

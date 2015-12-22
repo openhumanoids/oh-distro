@@ -25,18 +25,14 @@ function output = batchFPP(n, scenes, options)
   output.details.time = datestr(now);
   
   for model_idx = 1:numel(models)
+    opt.model = models{model_idx};
+    opt.convex_hull = true;
+    opt.visualize = false;
+    opt.verbose = false;
+    opt.floating = true;
+    opt.robot = Scenes.generateRobot(opt);
     for scene = scenes
-
-      opt.floating = true;
-
       opt.scene = scene;
-      opt.model = models{model_idx};
-      opt.convex_hull = true;
-      opt.visualize = false;
-      opt.verbose = false;
-
-      opt.robot = Scenes.generateRobot(opt);
-
       for hand_idx = 1:numel(grasping_hands)
         opt.graspingHand = grasping_hands{hand_idx};
         parfor i = 1:n
