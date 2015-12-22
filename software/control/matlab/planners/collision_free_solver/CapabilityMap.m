@@ -114,13 +114,12 @@
       obj.rbm = obj.rbm.addRobotFromURDFString(xmlwrite(obj.urdf));
       if isfield(vars, 'map')
         if ~all(isfield(vars,  {'map', 'reachability_index', ...
-        'vox_centres', 'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
+        'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
         'n_voxels', 'n_directions_per_voxel', 'map_lb', 'map_ub'}))
           error('Some data is missing')
         end
         obj.map = vars.map;
         obj.reachability_index = vars.reachability_index;
-        obj.vox_centres = vars.vox_centres;
         obj.vox_edge = vars.vox_edge;
         obj.n_samples = vars.n_samples;
         obj.ang_tolerance = vars.ang_tolerance;
@@ -131,6 +130,7 @@
         obj.map_lb = vars.map_lb;
         obj = obj.resetActiveVoxels();
         obj.active_side = 'left';
+        obj = obj.computeVoxelsCentres();
       else
         warning('No map data found')
       end
@@ -171,7 +171,6 @@
       if ~isempty(obj.map)
         map = obj.map;
         reachability_index = obj.reachability_index;
-        vox_centres = obj.vox_centres;
         vox_edge = obj.vox_edge;
         n_samples = obj.n_samples;
         ang_tolerance = obj.ang_tolerance;
@@ -181,7 +180,7 @@
         map_lb = obj.map_lb;
         map_ub = obj.map_ub;
         vars = [vars, {'map', 'reachability_index', ...
-        'vox_centres', 'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
+        'vox_edge', 'n_samples', 'ang_tolerance', 'pos_tolerance', ...
         'n_voxels', 'n_directions_per_voxel', 'map_lb', 'map_ub'}];
       end
       if ~isempty(obj.occupancy_map)
@@ -600,6 +599,15 @@
     
     function centres = getActiveVoxelCentres(obj)
       centres = obj.vox_centres(:, obj.active_voxels);
+    end
+    
+    function obj = computeVoxelsCentres(obj)
+      [y,x,z] = meshgrid(obj.map_lb(2) + obj.vox_edge/2:obj.vox_edge:obj.map_ub(2), ...
+                         obj.map_lb(1) + obj.vox_edge/2:obj.vox_edge:obj.map_ub(1), ...
+                         obj.map_lb(3) + obj.vox_edge/2:obj.vox_edge:obj.map_ub(3));
+      obj.vox_centres = [reshape(x, 1, obj.n_voxels); ...
+                         reshape(y, 1, obj.n_voxels); ...
+                         reshape(z, 1, obj.n_voxels)];
     end
     
     function obj = generateCapabilityMap(obj, options)
