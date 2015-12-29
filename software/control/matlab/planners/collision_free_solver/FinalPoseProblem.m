@@ -31,7 +31,7 @@ classdef FinalPoseProblem
       opt.graspinghand =  'right';
       opt.mindistance = 0.005;
       opt.activecollisionoptions = struct();
-      opt.endeffectorpoint = [0; 0; 0]';
+      opt.endeffectorpoint = [0; 0; 0];
       opt.debug = false;
       opt.verbose = true;
       
@@ -77,12 +77,11 @@ classdef FinalPoseProblem
       end
       
       %compute final pose
-      tic
+      if obj.verbose || obj.debug
+        FPP_timer = tic();
+      end
       if length(obj.x_goal) == 7
         if obj.verbose, disp('Searching for a feasible final configuration...'); end
-        if obj.debug
-          timer = tic();
-        end
         [qGoal, debug_vars] = obj.searchFinalPose(point_cloud, debug_vars);
         if isempty(qGoal)
           info = obj.FAIL_NO_FINAL_POSE;
@@ -106,15 +105,18 @@ classdef FinalPoseProblem
       end
       
       x_goal = obj.x_goal;
-      if obj.debug
-        debug_vars.info = info;
-        debug_vars.computation_time = toc(timer);
-        if obj.verbose, fprintf('Computation Time: %.2f s', debug_vars.computation_time); end
+      if obj.verbose || obj.debug
+        computation_time = toc(FPP_timer);
+        if obj.verbose, fprintf('Computation Time: %.2f s\n', computation_time); end
+        if obj.debug
+          debug_vars.info = info;
+          debug_vars.computation_time = computation_time;
+        end
       end
     end
     
     function [qOpt, debug_vars] = searchFinalPose(obj, point_cloud, debug_vars)
-      setupTimer = tic;
+      if obj.verbose, setupTimer = tic; end
       
       options.rotation_type = 2;
       options.compute_gradients = true;
@@ -124,20 +126,22 @@ classdef FinalPoseProblem
       
       obj.capability_map = obj.capability_map.setEEPose(obj.x_goal);
       obj.capability_map = obj.capability_map.setActiveSide(obj.grasping_hand);
-      reduceTimer = tic;
+      if obj.verbose, reduceTimer = tic; end
       obj.capability_map = obj.capability_map.reduceActiveSet(true, point_cloud);
       if obj.verbose, fprintf('reduce Time: %.4f s\n', toc(reduceTimer)); end
       active_voxels = find(obj.capability_map.active_voxels);
       valid_samples = obj.capability_map.occupancy_map_active_orient(obj.capability_map.active_voxels, :);
       n_valid_samples = nnz(valid_samples);
+      if obj.verbose, fprintf('n valid samples: %d\n', n_valid_samples); end
       orient_prob = obj.capability_map.occupancy_map_orient_prob;
       iter = 0;
       qOpt = [];
       cost = [];
-      if obj.verbose, fprintf('Setup time: %.2f s\n', toc(setupTimer)); end
-      iterationTimer = tic;
-      debug_vars.n_valid_samples = n_valid_samples;
-      for vox = 1:n_valid_samples
+      if obj.verbose
+        fprintf('Setup time: %.2f s\n', toc(setupTimer));
+        iterationTimer = tic;
+      end
+      for vox = 1:min([n_valid_samples, 100])
         orient_prob(~any(valid_samples)) = 0;
         cum_prob = cumsum(orient_prob) / sum(orient_prob);
         orient_idx = find(rand() < cum_prob, 1);
@@ -147,8 +151,8 @@ classdef FinalPoseProblem
         voxel_idx = voxel_idx(rand_voxel);
         pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:, active_voxels(voxel_idx));
         valid_samples(voxel_idx, orient_idx) = false;
-        
         iter = iter + 1;
+        if obj.verbose, fprintf('Iteration %d:', iter); end
 %         dist = norm(vox_centers(:,vox));
 %         axis = -vox_centers(:,vox)/dist;
 %         drawTreePoints([[0;0;0] vox_centers(1:3,vox)], 'lines', true, 'text', 'cm_point')
@@ -160,14 +164,22 @@ classdef FinalPoseProblem
         torsoPosConstraint = WorldPositionConstraint(obj.robot, base, obj.capability_map.map_centre.(obj.grasping_hand), pos + obj.x_goal(1:3),  pos + obj.x_goal(1:3));
         torsoEulerConstraint = WorldEulerConstraint(obj.robot, base, rpy, rpy);
         constraints = [{torsoPosConstraint, torsoEulerConstraint}, obj.goal_constraints, obj.additional_constraints];
-        [q, info] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
+        [q, info, infeasible_constraints] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
         kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
         if valid
           valid = ~obj.robot.collidingPointsCheckOnly(kinSol, point_cloud, obj.min_distance);
           if valid
-            qOpt = q;
-            break
+            phi = obj.robot.collisionDetect(q, false);
+            if all(phi > obj.min_distance)
+              qOpt = q;
+              if obj.verbose, fprintf('Solution found\n'); end
+              break
+            else
+              if obj.verbose, fprintf('Solution in collision\n'); end
+            end
+          else
+            if obj.verbose, fprintf('Solution in collision\n'); end
 %             cost = (obj.q_nom - q)'*obj.ikoptions.Q*(obj.q_nom - q);
 %             validConfs(:,vox) = [cost; q];
 %             if cost < 20
@@ -177,6 +189,13 @@ classdef FinalPoseProblem
 %               break
 %             end
           end
+        else
+          if obj.verbose
+            fprintf('IK solution not valid because of\n')
+            for i = 1:numel(infeasible_constraints)
+              fprintf('\t%s\n', infeasible_constraints{i})
+            end
+          end
         end
       end
 %       if ~isempty(validConfs)
@@ -185,10 +204,12 @@ classdef FinalPoseProblem
 %         qOpt = validConfs(2:end, qOptIdx);
 %       end
       if obj.verbose, fprintf('iteration Time: %.4f\n', toc(iterationTimer)); end
-      
-      debug_vars.cost = (obj.q_nom - qOpt)'*obj.ikoptions.Q*(obj.q_nom - qOpt);
-      debug_vars.n_valid_samples_used = iter;
-      debug_vars.final_orient = orient_idx;
+      if obj.debug
+        debug_vars.n_valid_samples = n_valid_samples;
+        debug_vars.cost = (obj.q_nom - qOpt)'*obj.ikoptions.Q*(obj.q_nom - qOpt);
+        debug_vars.n_valid_samples_used = iter;
+        debug_vars.final_orient = orient_idx;
+      end
       
     end
     
