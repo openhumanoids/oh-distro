@@ -1,4 +1,4 @@
-classdef FinalPoseProblem
+classdef FinalPosePlanner
   
   properties
     robot
@@ -25,7 +25,7 @@ classdef FinalPoseProblem
   
   methods
     
-    function obj = FinalPoseProblem(robot, end_effector_id,...
+    function obj = FinalPosePlanner(robot, end_effector_id,...
          q_start, x_goal, additional_constraints, q_nom, capabilty_map, ikoptions, varargin)
       
       opt.graspinghand =  'right';

@@ -1,4 +1,4 @@
-classdef MultipleTreeProblem
+classdef MultipleTreePlanner
   
   properties
     robot
@@ -29,7 +29,7 @@ classdef MultipleTreeProblem
   
   methods
     
-    function obj = MultipleTreeProblem(robot, endEffectorId, xStart, ...
+    function obj = MultipleTreePlanner(robot, endEffectorId, xStart, ...
         xGoal, xStartAddTrees, additionalConstraints, qNom, point_cloud, varargin)
       % Class which builds and maintains multiple motion planning trees
       % (i.e. two or more) and searches to connect them such that a
