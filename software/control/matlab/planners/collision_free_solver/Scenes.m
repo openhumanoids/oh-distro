@@ -185,7 +185,7 @@ classdef Scenes
         case {6, 7, 8, 9}
           om_file = 'scene6-9';
       end
-      om_file = fullfile(getDrakePath(),'../../control/matlab/planners/collision_free_solver/octomaps', om_file);
+      om_file = fullfile(getDrakePath(),'../../../../drc-testing-data/final_pose_planner_octomaps', om_file);
       points = load(om_file);
       points = points.points;
     end
