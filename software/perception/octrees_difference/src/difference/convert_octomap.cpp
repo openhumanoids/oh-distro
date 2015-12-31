@@ -344,7 +344,7 @@ void ConvertOctomap::doWork(pronto::PointCloud* &cloud, string octree_channel){
   cout << "Saving color octree to: " << col_path << endl;;
   tree_->write(col_path);
 
-
+  /*
   octomap::OcTree * tree_blurred;
   if (co_cfg_.blur_map){
     timeval start; 
@@ -376,4 +376,5 @@ void ConvertOctomap::doWork(pronto::PointCloud* &cloud, string octree_channel){
     //std::cout << "Saving blurred map to: " << s.str() << " with blur sigma of " << co_cfg_.blur_sigma << "\n" ;
     //octomap_utils::saveOctomap(tree_blurred, s.str().c_str(), minNegLogLike);      
   } 
+  */
 }
