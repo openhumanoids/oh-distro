@@ -158,7 +158,7 @@ void CloudAccumulate::processLidar(const  bot_core::planar_lidar_t* msg){
   combined_cloud_->points.insert(combined_cloud_->points.end(), scan_local->points.begin(), scan_local->points.end());
   
   counter_++;  
-  if (counter_ > ca_cfg_.batch_size){
+  if (counter_ >= ca_cfg_.batch_size){
     std::cout << "Finished Collecting: " << this_msg->utime << "\n";
     finished_ = true;
   }

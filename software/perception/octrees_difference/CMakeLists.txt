@@ -5,7 +5,4 @@ set(POD_NAME registeration)
 include(cmake/pods.cmake)
 
 # create an executable, and make it public
-add_subdirectory(src/registeration)
-
-
-add_subdirectory(src/test)
+add_subdirectory(src/difference)
