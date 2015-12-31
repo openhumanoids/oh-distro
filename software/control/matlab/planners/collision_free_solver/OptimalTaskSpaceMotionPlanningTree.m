@@ -52,24 +52,33 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
       if all(obj.getVertex(obj.traj(1)) == x_goal)
         obj.traj = fliplr(obj.traj);
       end
-      qPath = [];
+      qPath = obj.getVertex(obj.traj(1));
       for i = 2:length(obj.traj)
-        qPath =  [qPath obj.getVertex(obj.traj(i-1))]; %#ok<AGROW>
-        cSpaceTree = obj.trees{obj.cspace_idx};
-        qNew = cSpaceTree.getVertex(obj.traj(i-1));
-        points = obj.getVertex([obj.traj(i), obj.traj(i-1)]);
-        d = obj.trees{obj.tspace_idx}.distanceMetric(points(1:7, 1), points(1:7, 2));
-        n = ceil(d/obj.max_edge_length);
-        edgePath = NaN(obj.num_vars, n-1);
-        for j = 1:n-1
-          pt = obj.interpolate(points(:,2), points(:,1), j/n);
-          constraints = obj.generateEndEffectorConstraints(pt(1:7));
-          qNew = cSpaceTree.solveIK(pt(8:end), qNew, constraints);
-          edgePath(:,j) = [pt(1:7); qNew];
+        verts = [obj.getVertex(obj.traj(i-1)), obj.getVertex(obj.traj(i))];
+        d = obj.trees{obj.tspace_idx}.distanceMetric(verts(:,1), verts(:,2));
+        inf_norm = obj.trees{obj.cspace_idx}.distanceInfinityNorm(verts(:,1), verts(:,2));
+        n = max([ceil(d/obj.max_edge_length), ceil(inf_norm/0.1)]);
+        
+        for i = 1:n-1
+          v = obj.interpolate(verts(:,1), verts(:,2), i/n);
+          valid = true;
+          if ~obj.isValid(v)
+            valid = false;
+            constraints = obj.generateEndEffectorConstraints(v(1:7));
+            [q, valid] = obj.trees{obj.cspace_idx}.solveIK(v(obj.idx{obj.cspace_idx}), v(obj.idx{obj.cspace_idx}), constraints);
+            if valid
+              phi = obj.trees{obj.cspace_idx}.rbm.collisionDetect(q, false, obj.trees{obj.cspace_idx}.active_collision_options);
+              valid = all(phi > obj.trees{obj.cspace_idx}.min_distance);
+            end
+          end
+          if valid
+            qPath = [qPath, v];
+          else
+            error('Failed to rebuild trajectory')
+          end
         end
-        qPath = [qPath edgePath];
+        
       end
-      qPath = [qPath x_goal];
     end
     
     function obj = addPointToTraj(obj, point, p1, p2)      
@@ -125,7 +134,8 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
       
       cSpaceTree = obj.trees{obj.cspace_idx};
       d = obj.trees{obj.tspace_idx}.distanceMetric(x1(obj.idx{obj.tspace_idx}), x2(obj.idx{obj.tspace_idx}));
-      n = ceil(d/obj.max_edge_length);
+      inf_norm = obj.trees{obj.cspace_idx}.distanceInfinityNorm(x1(obj.idx{obj.cspace_idx}), x2(obj.idx{obj.cspace_idx}));
+      n = max([ceil(d/obj.max_edge_length), ceil(inf_norm/0.1)]);
       valid = true;
       
       qNew = x1(obj.idx{obj.cspace_idx});
@@ -137,11 +147,13 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
           break
         else
           pt = obj.interpolate(x2, x1, j/n);
-          constraints = obj.generateEndEffectorConstraints(pt(1:7));
-          [qNew, valid] = cSpaceTree.solveIK(pt(8:end), qNew, constraints);
-          if valid
-            phi = cSpaceTree.rbm.collisionDetect(qNew, false, cSpaceTree.active_collision_options);
-            valid = all(phi > cSpaceTree.min_distance);
+          if ~obj.isValid(pt)
+            constraints = obj.generateEndEffectorConstraints(pt(1:7));
+            [qNew, valid] = cSpaceTree.solveIK(pt(8:end), qNew, constraints);
+            if valid
+              phi = cSpaceTree.rbm.collisionDetect(qNew, false, cSpaceTree.active_collision_options);
+              valid = all(phi > cSpaceTree.min_distance);
+            end
           end
         end
         qPath(:,j+1) = qNew;

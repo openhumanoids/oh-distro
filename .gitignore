@@ -5,6 +5,7 @@ pod-build/
 .viewer-prefs
 logfile.tmp
 drake_viewer.out
+ddConsoleApp.out
 *~
 jef-client_*.txt
 *.jef

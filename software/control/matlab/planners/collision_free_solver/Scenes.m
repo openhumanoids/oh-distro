@@ -13,7 +13,11 @@ classdef Scenes
       nScenes = 9;
     end
     
-    function robot = generateRobot(options)
+    function [robot, urdf] = generateRobot(options)
+      warning('off','Drake:RigidBodyManipulator:ReplacedCylinder');
+      warning('off','Drake:CollisionFilterGroup:DiscardingCollisionFilteringInfo');
+      warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
+      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
       switch options.model
 %         case 'v3'
 %           if options.convex_hull
@@ -167,11 +171,30 @@ classdef Scenes
       end
     end
     
-    function robot = generateScene(options)
-      robot = Scenes.generateRobot(options);
+    function [robot, urdf] = generateScene(options)
+      [robot, urdf] = Scenes.generateRobot(options);
       world = robot.findLinkId('world');
       robot = Scenes.generateWorld(options, robot, world);
       robot = robot.compile();
+    end
+    
+    function points = getOctomap(options)
+      switch options.scene
+        case {1, 2, 3, 4, 5}
+          om_file = sprintf('scene%d', options.scene);
+        case {6, 7, 8, 9}
+          om_file = 'scene6-9';
+      end
+      om_file = fullfile(getDrakePath(),'../../../../drc-testing-data/final_pose_planner', om_file);
+      points = load(om_file);
+      points = points.points;
+    end
+    
+    function visualizeOctomap(options)
+      points = Scenes.getOctomap(options);
+      lcmClient = LCMGLClient('point cloud');
+      lcmClient.points(points(1,:), points(2,:), points(3,:))
+      lcmClient.switchBuffers();
     end
     
     function robot = graspObject(T, options)      
@@ -230,58 +253,96 @@ classdef Scenes
       end
     end
     
+    function ee_pose = getDesiredEePose(options)
+      ee_pose.val2(1).right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
+      ee_pose.val2(1).left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
+      ee_pose.val2(2) = ee_pose.val2(1);
+      ee_pose.val2(3) = ee_pose.val2(1);
+      ee_pose.val2(4).right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 3*pi/4])];
+      ee_pose.val2(4).left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -3*pi/4])];
+      ee_pose.val2(5) = ee_pose.val2(1);
+      ee_pose.val2(6) = ee_pose.val2(1);
+      ee_pose.val2(7).right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/4])];
+      ee_pose.val2(7).left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
+      ee_pose.val2(8) = ee_pose.val2(1);
+      ee_pose.val2(9) = ee_pose.val2(1);
+      ee_pose = ee_pose.(options.model)(options.scene).(options.graspingHand);
+    end
+    
+    function hand = getHand(options, robot, side)
+      hand.v3.left = 'l_hand';
+      hand.v4.left = 'l_hand';
+      hand.v5.left = 'l_hand';
+      hand.val1.left = 'LeftPalm';
+      hand.val2.left = 'leftPalm';
+      hand.v3.right = 'r_hand';
+      hand.v4.right = 'r_hand';
+      hand.v5.right = 'r_hand';
+      hand.val1.right = 'RightPalm';
+      hand.val2.right = 'rightPalm';
+      hand = robot.findLinkId(hand.(options.model).(side));
+    end
+    
     function hand = getGraspingHand(options, robot)
-      if strcmp(options.graspingHand, 'left')
-        if any(strcmp(options.model, {'val1', 'val2'}))
-          hand = robot.findLinkId('LeftPalm');
-        else
-          hand = robot.findLinkId('l_hand');
-        end
-      else
-        if any(strcmp(options.model, {'val1', 'val2'}))
-          hand = robot.findLinkId('RightPalm');
-        else
-          hand = robot.findLinkId('r_hand');
-        end
-      end
+      hand = Scenes.getHand(options, robot, options.graspingHand);
     end
     
     function hand = getNonGraspingHand(options, robot)
       if strcmp(options.graspingHand, 'left')
-        if any(strcmp(options.model, {'val1', 'val2'}))
-          hand = robot.findLinkId('RightPalm');
-        else
-          hand = robot.findLinkId('r_hand');
-        end
+        hand = Scenes.getHand(options, robot, 'right');
       else
-        if any(strcmp(options.model, {'val1', 'val2'}))
-          hand = robot.findLinkId('LeftPalm');
-        else
-          hand = robot.findLinkId('l_hand');
-        end
+        hand = Scenes.getHand(options, robot, 'left');
       end
     end
     
-    function lFoot = getLeftFoot(options, robot)
-      switch options.model
-        case {'v3', 'v4', 'v5'}
-          lFoot = robot.findLinkId('l_foot');
-        case 'val1'
-          lFoot = robot.findLinkId('LeftUpperFoot');
-        case 'val2'
-          lFoot = robot.findLinkId('LeftFoot');
-      end
+    function l_foot = getLeftFoot(options, robot)
+      l_foot.v3 = 'l_foot';
+      l_foot.v4 = 'l_foot';
+      l_foot.v5 = 'l_foot';
+      l_foot.val1 = 'LeftUpperFoot';
+      l_foot.val2 = 'LeftFoot';
+      l_foot = robot.findLinkId(l_foot.(options.model));
     end
     
-    function rFoot = getRightFoot(options, robot)
-      switch options.model
-        case {'v3', 'v4', 'v5'}
-          rFoot = robot.findLinkId('r_foot');
-        case 'val1'
-          rFoot = robot.findLinkId('RightUpperFoot');
-        case 'val2'
-          rFoot = robot.findLinkId('RightFoot');
-      end
+    function r_foot = getRightFoot(options, robot)
+      r_foot.v3 = 'r_foot';
+      r_foot.v4 = 'r_foot';
+      r_foot.v5 = 'r_foot';
+      r_foot.val1 = 'RightUpperFoot';
+      r_foot.val2 = 'RightFoot';
+      r_foot = robot.findLinkId(r_foot.(options.model));
+    end
+    
+    function base = getBase(options, robot)
+      base.v3 = 'pelvis';
+      base.v4 = 'pelvis';
+      base.v5 = 'pelvis';
+      base.val1 = 'Pelvis';
+      base.val2 = 'pelvis';
+      base = robot.findLinkId(base.(options.model));
+    end
+    
+    function joint_idx = getBackJoints(options, robot)
+      names.v3 = {'back_bkz', 'back_bky', 'back_bkx'};
+      names.v4 = {'back_bkz', 'back_bky', 'back_bkx'};
+      names.v5 = {'back_bkz', 'back_bky', 'back_bkx'};
+      names.val1 = {'WaistRotator', 'WaistExtensor', 'WaistLateralExtensor'};
+      names.val2 = {'torsoYaw', 'torsoPitch', 'torsoRoll'};
+      joint_idx = cellfun(@robot.findPositionIndices, names.(options.model)');
+    end
+    
+    function forearm = getForearm(options, robot, side)
+      forearm.v3.left = 'l_farm';
+      forearm.v4.left = 'l_ufarm';
+      forearm.v5.left = 'l_ufarm';
+      forearm.val1.left = 'LeftForearm';
+      forearm.val2.left = 'leftForearmLink';
+      forearm.v3.right = 'r_farm';
+      forearm.v4.right = 'r_ufarm';
+      forearm.v5.right = 'r_ufarm';
+      forearm.val1.right = 'RightForearm';
+      forearm.val2.right = 'rightForearmLink';
+      forearm = robot.findLinkId(forearm.(options.model).(side));
     end
 %NOTEST
 
@@ -299,7 +360,7 @@ classdef Scenes
       frame = frame.(options.model).(options.graspingHand);
     end
     
-    function quasiStaticConstraint = addQuasiStaticConstraint(options, robot)
+    function quasiStaticConstraint = generateQuasiStaticConstraint(options, robot)
       l_foot = Scenes.getLeftFoot(options, robot);
       r_foot = Scenes.getRightFoot(options, robot);
       l_foot_pts = robot.getBody(l_foot).getTerrainContactPoints();
@@ -311,60 +372,43 @@ classdef Scenes
       quasiStaticConstraint = quasiStaticConstraint.addContact(r_foot, r_foot_pts);
     end
     
-    function constraints = fixedFeetConstraints(options, robot, state, foot)
-      if nargin < 4, foot = 'both'; end;
+    function constraints = generateFeetConstraints(options, robot, state)
       if nargin < 3
         state = Scenes.getFP(options.model, robot);
       end
-      leftConstraints = {};
-      rightConstraints = {};
-      kinsol = robot.doKinematics(state);
       l_foot = Scenes.getLeftFoot(options, robot);
       r_foot = Scenes.getRightFoot(options, robot);
-      if any(strcmp(foot, {'both', 'left'}))
-        footPose = robot.forwardKin(kinsol,l_foot, [0; 0; 0], 2);
-        %                 drawLinkFrame(robot, l_foot, state, 'Left Foot Frame');
-        leftFootPosConstraint = WorldPositionConstraint(robot, l_foot, [0; 0; 0], footPose(1:3), footPose(1:3));
-        leftFootQuatConstraint = WorldQuatConstraint(robot, l_foot, footPose(4:7), 0.0, [0.0, 1.0]);
-        leftConstraints = {leftFootPosConstraint, leftFootQuatConstraint};
-      end
-      if any(strcmp(foot, {'both', 'right'}))
-        footPose = robot.forwardKin(kinsol,r_foot, [0; 0; 0], 2);
-        %                 drawLinkFrame(robot, r_foot, state, 'Right Foot Frame');
-        rightFootPosConstraint = WorldPositionConstraint(robot, r_foot, [0; 0; 0], footPose(1:3), footPose(1:3));
-        rightFootQuatConstraint = WorldQuatConstraint(robot, r_foot, footPose(4:7), 0.0, [0.0, 1.0]);
-        rightConstraints = {rightFootPosConstraint, rightFootQuatConstraint};
-      end
-      constraints = [leftConstraints, rightConstraints];
+      kinsol = robot.doKinematics(state);
+      l_pose = robot.forwardKin(kinsol,l_foot, [0; 0; 0], 2);
+      r_pose = robot.forwardKin(kinsol,r_foot, [0; 0; 0], 2);
+      lb.fixed = [0; 0; 0];
+      lb.sliding = [-inf; -inf; 0];
+      ub.fixed = [0; 0; 0];
+      ub.sliding = [inf; inf; 0];
+      l_pos_const = WorldPositionConstraint(robot, l_foot, [0; 0; 0], l_pose(1:3) + lb.(options.feet_constraint), l_pose(1:3) + ub.(options.feet_constraint));
+      l_quat_const = WorldQuatConstraint(robot, l_foot, l_pose(4:7), 0.0);
+      r_pos_const = WorldPositionConstraint(robot, r_foot, [0; 0; 0], r_pose(1:3) + lb.(options.feet_constraint), r_pose(1:3) + ub.(options.feet_constraint));
+      r_quat_const = WorldQuatConstraint(robot, r_foot, r_pose(4:7), 0.0);
+      rel_const = RelativePositionConstraint(robot, [0;0;0], l_pose(1:3) - r_pose(1:3), l_pose(1:3) - r_pose(1:3), l_foot, r_foot);
+      constraints = {l_pos_const, l_quat_const, r_pos_const, r_quat_const, rel_const};
     end
     
     function constraint = graspingForearmAlignConstraint(options, robot)
       grHand = options.graspingHand;
+      forearm = Scenes.getForearm(options, robot, grHand);
       switch options.model
-        case 'v3'
-          name.right = 'r_farm';
-          name.left = 'l_farm';
-        case 'v4'
-          name.right = 'r_ufarm';
-          name.left = 'l_ufarm';
         case 'v5'
           rotation.right = [0; 0; 0];
           rotation.left = [0; pi; 0];
-          name.right = 'r_ufarm';
-          name.left = 'l_ufarm';
         case 'val1'
           rotation.right = [0; -pi/2; -pi/2];
           rotation.left = [0; pi/2; -pi/2];
-          name.right = 'RightForearm';
-          name.left = 'LeftForearm';
         case 'val2'
           rotation.right = [0; -pi/2; -pi/2];
           rotation.left = [0; pi/2; -pi/2];
-          name.right = 'RightForearmLink';
-          name.left = 'LeftForearmLink';
       end
       hand = Scenes.getGraspingHand(options, robot);
-      constraint = RelativeQuatConstraint(robot, hand, name.(grHand), rpy2quat(rotation.(grHand)), 0);
+      constraint = RelativeQuatConstraint(robot, hand, forearm, rpy2quat(rotation.(grHand)), 0);
     end
     
     function constraint = nonGraspingHandPositionConstraint(options, robot)
@@ -403,7 +447,7 @@ classdef Scenes
         state = Scenes.getFP(options.model, robot);
       end
       kinsol = robot.doKinematics(state);
-      pelvis = robot.findLinkId('pelvis');
+      pelvis = Scenes.getBase(options, robot);
       pelvisPose = robot.forwardKin(kinsol,pelvis, [0; 0; 0], 2);
       constraint = WorldPositionConstraint(robot, pelvis, [0; 0; 0], pelvisPose(1:3) + [0; 0; offset], pelvisPose(1:3) + [0; 0; offset]);
     end
@@ -422,6 +466,36 @@ classdef Scenes
       constraints = {goalDistConstraint, goalEulerConstraint.(options.graspingHand).(options.model)}; 
 %       drawFrame(ref_frame, 'Goal Frame')
 %       drawFrame(ref_frame*rot_mat*trans_mat, 'Goal Offset Frame');
+    end
+    
+    function constraint = generateBackConstraint(options, robot, q_start)
+      joint_idx = Scenes.getBackJoints(options, robot);
+      lb.free = q_start(joint_idx) + deg2rad([-15; -5; -inf]);
+      lb.limited = q_start(joint_idx) + deg2rad([-5; -5; -inf]);
+      lb.fixed = q_start(joint_idx) + deg2rad([0; 0; 0]);
+      ub.free = q_start(joint_idx) + deg2rad([15; 25; inf]);
+      ub.limited = q_start(joint_idx) + deg2rad([5; 5; inf]);
+      ub.fixed = q_start(joint_idx) + deg2rad([0; 0; 0]);
+      
+      constraint = PostureConstraint(robot);
+      constraint = constraint.setJointLimits(joint_idx, lb.(options.back_constraint), ub.(options.back_constraint));
+    end
+    
+    function constraint = generateBaseConstraint(options, robot, q_start)
+      joint_idx = robot.body(Scenes.getBase(options, robot)).position_num;
+      lb.free = q_start(joint_idx) + [-inf; -inf; -inf; -pi; -pi; -pi];
+      lb.limited = q_start(joint_idx) + [[-inf; -inf; -inf]; deg2rad([-5; -5; -inf])];
+      lb.fixed = q_start(joint_idx) + [0; 0; 0; 0; 0; 0];
+      lb.xyz = q_start(joint_idx) + [-inf; -inf; -inf; 0; 0; 0];
+      lb.z = q_start(joint_idx) + [0; 0; -inf; 0; 0; 0];
+      ub.free = q_start(joint_idx) + [inf; inf; inf; pi; pi; pi];
+      ub.limited = q_start(joint_idx) + [[inf; inf; inf]; deg2rad([5; 15; inf])];
+      ub.fixed = q_start(joint_idx) + [0; 0; 0; 0; 0; 0];
+      ub.xyz = q_start(joint_idx) + [inf; inf; inf; 0; 0; 0];
+      ub.z = q_start(joint_idx) + [0; 0; inf; 0; 0; 0];
+      
+      constraint = PostureConstraint(robot);
+      constraint = constraint.setJointLimits(joint_idx, lb.(options.base_constraint), ub.(options.base_constraint));
     end
     
 
