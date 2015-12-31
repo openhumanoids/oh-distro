@@ -87,7 +87,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     %     drawLinkFrame(r, r.findLinkId('l_ufarm'), q_start, 'Forearm Start');
   end
   
-  cm = CapabilityMap([getenv('DRC_BASE') '/software/control/matlab/data/val_description/capabilityMap.mat']);
+  cm = CapabilityMap([getenv('DRC_BASE') '/../drc-testing-data/final_pose_planner/val_description/capabilityMap.mat']);
   x_end = Scenes.getDesiredEePose(options);
 
   finalPose = FinalPoseProblem(r, g_hand, q_start, x_end, ...
