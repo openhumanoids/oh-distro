@@ -51,7 +51,7 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
       end
     end
     
-    function qPath = rebuildTraj(obj, x_goal)      
+    function qPath = rebuildTraj(obj, x_goal)
       if all(obj.getVertex(obj.traj(1)) == x_goal)
         obj.traj = fliplr(obj.traj);
       end
@@ -62,8 +62,8 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
         inf_norm = obj.trees{obj.cspace_idx}.distanceInfinityNorm(verts(:,1), verts(:,2));
         n = max([ceil(d/obj.max_edge_length), ceil(inf_norm/0.1)]);
         
-        for i = 1:n-1
-          v = obj.interpolate(verts(:,1), verts(:,2), i/n);
+        for j = 1:n-1
+          v = obj.interpolate(verts(:,1), verts(:,2), j/n);
           valid = true;
           if ~obj.isValid(v)
             valid = false;
@@ -81,6 +81,7 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
         end
         
       end
+      qPath = [qPath, obj.getVertex(obj.traj(end))];
     end
     
     function obj = addPointToTraj(obj, point, p1, p2)      

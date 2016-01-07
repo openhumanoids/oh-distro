@@ -71,7 +71,6 @@ classdef MultipleTreePlanner
         point_cloud = point_cloud';
       end
       obj.point_cloud = point_cloud;
-      obj.point_cloud(:, 1:10)
       
       %compute sampling space
       xyzMin = [min([xStart(1:2), xGoal(1:2)], [], 2) - 0.5; 0];

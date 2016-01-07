@@ -193,6 +193,7 @@ classdef Scenes
     function visualizeOctomap(options)
       points = Scenes.getOctomap(options);
       lcmClient = LCMGLClient('point cloud');
+      lcmClient.glPointSize(10)
       lcmClient.points(points(1,:), points(2,:), points(3,:))
       lcmClient.switchBuffers();
     end
