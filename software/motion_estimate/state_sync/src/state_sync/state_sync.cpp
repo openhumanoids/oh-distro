@@ -710,26 +710,29 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::six_axis_force
   
   // Limb Sensor states
   drc::force_torque_t force_torque_convert;
-  force_torque_convert.l_foot_force_z = force_torque_msg.sensors[0].force[2];
-  force_torque_convert.l_foot_torque_x = force_torque_msg.sensors[0].moment[0];
-  force_torque_convert.l_foot_torque_y = force_torque_msg.sensors[0].moment[1];
+  if (force_torque_msg.sensors.size() > 2) {
+    force_torque_convert.l_foot_force_z = force_torque_msg.sensors[0].force[2];
+    force_torque_convert.l_foot_torque_x = force_torque_msg.sensors[0].moment[0];
+    force_torque_convert.l_foot_torque_y = force_torque_msg.sensors[0].moment[1];
 
-  force_torque_convert.r_foot_force_z = force_torque_msg.sensors[1].force[2];
-  force_torque_convert.r_foot_torque_x = force_torque_msg.sensors[1].moment[0];
-  force_torque_convert.r_foot_torque_y = force_torque_msg.sensors[1].moment[1];
+    force_torque_convert.r_foot_force_z = force_torque_msg.sensors[1].force[2];
+    force_torque_convert.r_foot_torque_x = force_torque_msg.sensors[1].moment[0];
+    force_torque_convert.r_foot_torque_y = force_torque_msg.sensors[1].moment[1];
 
-  force_torque_convert.l_hand_force[0] = force_torque_msg.sensors[2].force[0];
-  force_torque_convert.l_hand_force[1] = force_torque_msg.sensors[2].force[1];
-  force_torque_convert.l_hand_force[2] = force_torque_msg.sensors[2].force[2];
-  force_torque_convert.l_hand_torque[0] = force_torque_msg.sensors[2].moment[0];
-  force_torque_convert.l_hand_torque[1] = force_torque_msg.sensors[2].moment[1];
-  force_torque_convert.l_hand_torque[2] = force_torque_msg.sensors[2].moment[2];
-  force_torque_convert.r_hand_force[0] = force_torque_msg.sensors[3].force[0];
-  force_torque_convert.r_hand_force[1] = force_torque_msg.sensors[3].force[1];
-  force_torque_convert.r_hand_force[2] = force_torque_msg.sensors[3].force[2];
-  force_torque_convert.r_hand_torque[0] = force_torque_msg.sensors[3].moment[0];
-  force_torque_convert.r_hand_torque[1] = force_torque_msg.sensors[3].moment[1];
-  force_torque_convert.r_hand_torque[2] = force_torque_msg.sensors[3].moment[2];
+    force_torque_convert.l_hand_force[0] = force_torque_msg.sensors[2].force[0];
+    force_torque_convert.l_hand_force[1] = force_torque_msg.sensors[2].force[1];
+    force_torque_convert.l_hand_force[2] = force_torque_msg.sensors[2].force[2];
+    force_torque_convert.l_hand_torque[0] = force_torque_msg.sensors[2].moment[0];
+    force_torque_convert.l_hand_torque[1] = force_torque_msg.sensors[2].moment[1];
+    force_torque_convert.l_hand_torque[2] = force_torque_msg.sensors[2].moment[2];
+
+    force_torque_convert.r_hand_force[0] = force_torque_msg.sensors[3].force[0];
+    force_torque_convert.r_hand_force[1] = force_torque_msg.sensors[3].force[1];
+    force_torque_convert.r_hand_force[2] = force_torque_msg.sensors[3].force[2];
+    force_torque_convert.r_hand_torque[0] = force_torque_msg.sensors[3].moment[0];
+    force_torque_convert.r_hand_torque[1] = force_torque_msg.sensors[3].moment[1];
+    force_torque_convert.r_hand_torque[2] = force_torque_msg.sensors[3].moment[2];
+  }
 
   robot_state_msg.force_torque = force_torque_convert;
   
