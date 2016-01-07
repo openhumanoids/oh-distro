@@ -84,6 +84,10 @@ classdef JointSpaceMotionPlanningTree < CartesianMotionPlanningTree
     function valid = isCollisionFree(obj, q)
       kinsol = obj.rbm.doKinematics(q);
       valid = ~obj.rbm.collidingPointsCheckOnly(kinsol, obj.point_cloud, obj.min_distance);
+      if valid
+        phi = obj.rbm.collisionDetect(q, false, obj.active_collision_options);
+        valid = all(phi > obj.min_distance);
+      end
     end
 
     function obj = addGeometryToWorld(obj, geom)
