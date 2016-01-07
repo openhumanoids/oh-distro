@@ -1,10 +1,10 @@
 group "startup" {
     cmd "model" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/multisense_sl/multisense_sl_sim.urdf ";
+        exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/multisense_sl/multisense_sl.urdf ";
         host = "localhost";
     }
     cmd "param" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_mit.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/atlas/robot.cfg";
         host = "localhost";
     }
     cmd "sync" {
@@ -28,11 +28,6 @@ cmd "microstrain_from_sudo" {
 
 cmd "director" {
     exec = "director";
-    host = "localhost";
-}
-
-cmd "drc-viewer" {
-    exec = "drc-viewer";
     host = "localhost";
 }
 
