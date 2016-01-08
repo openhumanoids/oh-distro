@@ -271,6 +271,12 @@
       centres = bsxfun(@plus, obj.getActiveVoxelCentres(), obj.EE_pose(1:3));
     end
     
+    function vox_idx = findVoxelFromCoordinates(obj, coords)
+      n_voxels_per_edge = nthroot(obj.n_voxels, 3);
+      sub = ceil(coords - obj.occupancy_map_lb - obj.EE_pose(1:3) / n_voxels_per_edge);
+      vox_idx = unique(sub2ind(n_voxels_per_edge * ones(1,3), sub(1,:), sub(2,:), sub(3,:)));
+    end
+    
     function points = findPointsFromDirection(obj, direction, threshold)
       directions = obj.distributePointsOnSphere(obj.n_directions_per_voxel);
       direction = reshape(direction/norm(direction), [3,1]);
