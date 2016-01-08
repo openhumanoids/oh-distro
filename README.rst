@@ -106,16 +106,6 @@ Add the *sandbox* remote. The *sandbox* is the location where branches can be sh
     git remote add sandbox git@github.com:drcbot/main-distro.git
     git fetch sandbox
 
-**Instructions for Edinburgh users**
-
-For Edinburgh users the typical approach is to instead check out:
-
-::
-
-    https://github.com/ipab-slmc/ipab-distro
-
-which includes the DRC repo as well as the LCM-to-ROS interface to NASA Valkyrie, IHMC's SCS, Kuka LWR arm and the Exotica planner.
-
 
 Dependencies
 ============
@@ -301,13 +291,4 @@ ROS is not required per se. If you would like to use this distribution in conjun
 ::
 
     sudo apt-get install ros-indigo-desktop-full ros-indigo-moveit-full
-
-
-
-DEPRECATED INSTRUCTIONS
-=======================
-
-Deprecated instructions regarding the use of Subversion or Gazebo can be found here_.
-
-.. _here: README_DEPRECATED.rst
 
