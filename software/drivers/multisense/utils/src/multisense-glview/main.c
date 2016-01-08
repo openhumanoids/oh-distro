@@ -287,12 +287,13 @@ on_frame(const lcm_recv_buf_t* lcm, const char* channel, const multisense_images
       char filename[1024];
       sprintf(filename, "%s/img%08i.png", outputPath, pngFileIndex++);
       write_png_file(filename, width*2, height, row_pointers);
-      for ( i = 0; i < height; i++ ) {
-	free(row_pointers[i]);
-      }
-      free(row_pointers);
     }
-    
+
+    for ( i = 0; i < height; i++ ) {
+      free(row_pointers[i]);
+    }
+    free(row_pointers);
+
     pthread_mutex_unlock( &mutex1 );
     //exit(-1);
   }else{
