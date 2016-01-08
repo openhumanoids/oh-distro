@@ -116,9 +116,10 @@ script "start_ui" {
     start cmd "ros_bridge_without_pronto";
     start group "1.params_and_model_pub";
     wait ms 1000;
-    start group "2.state_without_pronto";
-    start group "3.plan_and_control";
-    start group "4.maps";
+    start group "2.drivers";
+    start group "3.state_without_pronto";
+    start group "4.plan_and_control";
+    start group "5.maps";
     start cmd "director";
 }
 
