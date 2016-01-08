@@ -710,7 +710,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::six_axis_force
   
   // Limb Sensor states
   drc::force_torque_t force_torque_convert;
-  if (force_torque_msg.sensors.size() > 2) {
+  if (force_torque_msg.sensors.size() == 4) {
     force_torque_convert.l_foot_force_z = force_torque_msg.sensors[0].force[2];
     force_torque_convert.l_foot_torque_x = force_torque_msg.sensors[0].moment[0];
     force_torque_convert.l_foot_torque_y = force_torque_msg.sensors[0].moment[1];
