@@ -61,6 +61,9 @@ pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 int pngFileIndex = 0;
 
+// Explicit declaration
+void write_png_file(char* file_name, int width, int height, png_bytep* row_pointers);
+
 void DrawGLScene()
 {
   struct pollfd pfd = { lcm_get_fileno(lcm), POLLIN, 0 };
@@ -160,7 +163,6 @@ uint16_t t_gamma[DEPTH_VAL];
 static void
 on_frame(const lcm_recv_buf_t* lcm, const char* channel, const multisense_images_t* msg, void* user)
 {
-  int i;
   png_bytep* row_pointers;
   // TODO check image width, height
   width = msg->images[0].width;
@@ -326,7 +328,6 @@ void write_png_file(char* file_name, int width, int height, png_bytep* row_point
 {
   png_byte color_type = PNG_COLOR_TYPE_RGB;
   png_byte bit_depth = 8;
-  int y;
 
   /* create file */
   FILE *fp = fopen(file_name, "wb");
