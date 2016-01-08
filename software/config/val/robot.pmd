@@ -22,7 +22,7 @@ group "1.params_and_model_pub" {
 
 group "2.drivers" {
     cmd "multisense" {
-        exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a 10.185.0.32";
+        exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a 10.185.0.32 -m 1500";
         host = "localhost";
     }
 }
