@@ -5,6 +5,7 @@
     map
     reachability_index
     vox_centres
+    vox_centres_prob
     vox_edge
     n_samples
     ang_tolerance
@@ -272,8 +273,10 @@
     end
     
     function vox_idx = findVoxelFromCoordinates(obj, coords)
+      assert(~isempty(obj.EE_pose))
+      assert(all(coords >= obj.map_lb + obj.EE_pose(1:3)) && all(coords <= obj.map_ub + obj.EE_pose(1:3)))
       n_voxels_per_edge = nthroot(obj.n_voxels, 3);
-      sub = ceil(coords - obj.occupancy_map_lb - obj.EE_pose(1:3) / n_voxels_per_edge);
+      sub = ceil(coords - obj.map_lb - obj.EE_pose(1:3) / n_voxels_per_edge);
       vox_idx = unique(sub2ind(n_voxels_per_edge * ones(1,3), sub(1,:), sub(2,:), sub(3,:)));
     end
     
@@ -800,11 +803,20 @@
     
     function obj = computeOrientationProbabilityDistribution(obj, sigma, mu)
       if nargin < 3, mu = [0 0 0]; end
-      if nargin < 2 || isempty(sigma), sigma = [0.5 0.5 0.8]; end
+      if nargin < 2 || isempty(sigma), sigma = [5 0.5 10]; end
       x = bsxfun(@rdivide, obj.occupancy_map_orient', [max(abs(obj.occupancy_map_orient_steps.roll)),...
                                         max(abs(obj.occupancy_map_orient_steps.pitch)),...
                                         max(abs(obj.occupancy_map_orient_steps.yaw))]);
       obj.occupancy_map_orient_prob = mvnpdf(x, mu, sigma);
+      obj.occupancy_map_orient_prob = obj.occupancy_map_orient_prob / sum(obj.occupancy_map_orient_prob);
+    end
+    
+    function obj = computePositionProbabilityDistribution(obj, sigma, mu)
+      if nargin < 3, mu = [0 0 0]; end
+      if nargin < 2 || isempty(sigma), sigma = [1e10 1e10 0.01]; end
+      x = bsxfun(@rdivide, obj.vox_centres, obj.map_ub);
+      obj.vox_centres_prob = mvnpdf(x', mu, sigma);
+      obj.vox_centres_prob = obj.vox_centres_prob / sum(obj.vox_centres_prob);
     end
     
     function obj = computeOccupancyMapOrientations(obj)

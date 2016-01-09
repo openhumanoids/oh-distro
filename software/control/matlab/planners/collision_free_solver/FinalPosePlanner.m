@@ -107,7 +107,7 @@ classdef FinalPosePlanner
       x_goal = obj.x_goal;
       if obj.verbose || obj.debug
         computation_time = toc(FPP_timer);
-        if obj.verbose, fprintf('Computation Time: %.2f s\n', computation_time); end
+        fprintf('Computation Time: %.2f s\n', computation_time)
         if obj.debug
           debug_vars.info = info;
           debug_vars.computation_time = computation_time;
@@ -122,18 +122,27 @@ classdef FinalPosePlanner
       options.compute_gradients = true;
       options.rotation_type = 1;
       
-      base = obj.robot.findLinkId(obj.capability_map.base_link);
-      
       obj.capability_map = obj.capability_map.setEEPose(obj.x_goal);
       obj.capability_map = obj.capability_map.setActiveSide(obj.grasping_hand);
       if obj.verbose, reduceTimer = tic; end
       obj.capability_map = obj.capability_map.reduceActiveSet(true, point_cloud);
       if obj.verbose, fprintf('reduce Time: %.4f s\n', toc(reduceTimer)); end
       active_voxels = find(obj.capability_map.active_voxels);
-      valid_samples = obj.capability_map.occupancy_map_active_orient(obj.capability_map.active_voxels, :);
-      n_valid_samples = nnz(valid_samples);
+      valid_voxels = obj.capability_map.occupancy_map_active_orient(obj.capability_map.active_voxels, :);
+      n_valid_samples = nnz(valid_voxels);
       if obj.verbose, fprintf('n valid samples: %d\n', n_valid_samples); end
       orient_prob = obj.capability_map.occupancy_map_orient_prob;
+      
+      base = obj.robot.findLinkId(obj.capability_map.base_link);
+      map_centre = obj.capability_map.map_centre.(obj.grasping_hand);
+      kinsol = obj.robot.doKinematics(obj.q_start);
+      init_torso_pose = obj.robot.forwardKin(kinsol, base, [0;0;0], obj.q_start);
+      obj.capability_map = obj.capability_map.computePositionProbabilityDistribution([], bsxfun(@rdivide, map_centre, obj.capability_map.map_ub)');
+      pos_prob = obj.capability_map.vox_centres_prob;
+      
+      tot_prob = pos_prob * orient_prob';
+      tot_prob = tot_prob .* obj.capability_map.occupancy_map_active_orient;
+      tot_prob = reshape(tot_prob, 1, []);
       iter = 0;
       qOpt = [];
       cost = [];
@@ -141,16 +150,12 @@ classdef FinalPosePlanner
         fprintf('Setup time: %.2f s\n', toc(setupTimer));
         iterationTimer = tic;
       end
-      for vox = 1:min([n_valid_samples, 100])
-        orient_prob(~any(valid_samples)) = 0;
-        cum_prob = cumsum(orient_prob) / sum(orient_prob);
-        orient_idx = find(rand() < cum_prob, 1);
+      for vox = 1:min([n_valid_samples, 1000])
+        cum_prob = cumsum(tot_prob) / sum(tot_prob);
+        [voxel_idx, orient_idx] = ind2sub([obj.capability_map.n_voxels, obj.capability_map.occupancy_map_n_orient],  find(rand() < cum_prob, 1));
         rpy = obj.capability_map.occupancy_map_orient(:, orient_idx);
-        voxel_idx = find(valid_samples(:, orient_idx));
-        rand_voxel = randi(length(voxel_idx));
-        voxel_idx = voxel_idx(rand_voxel);
-        pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:, active_voxels(voxel_idx));
-        valid_samples(voxel_idx, orient_idx) = false;
+        pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:, voxel_idx);
+        tot_prob(voxel_idx + orient_idx * obj.capability_map.n_voxels) = 0;
         iter = iter + 1;
         if obj.verbose, fprintf('Iteration %d:', iter); end
 %         dist = norm(vox_centers(:,vox));
@@ -206,7 +211,11 @@ classdef FinalPosePlanner
       if obj.verbose, fprintf('iteration Time: %.4f\n', toc(iterationTimer)); end
       if obj.debug
         debug_vars.n_valid_samples = n_valid_samples;
-        debug_vars.cost = (obj.q_nom - qOpt)'*obj.ikoptions.Q*(obj.q_nom - qOpt);
+        if ~isempty(qOpt)
+          debug_vars.cost = (obj.q_nom - qOpt)'*obj.ikoptions.Q*(obj.q_nom - qOpt);
+        else
+          debug_vars.cost = NaN;
+        end
         debug_vars.n_valid_samples_used = iter;
         debug_vars.final_orient = orient_idx;
       end
