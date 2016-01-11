@@ -31,6 +31,15 @@ addSignalFunction('COMMITTED_ROBOT_PLAN_STATES', rollFunction)
 addSignalFunction('COMMITTED_ROBOT_PLAN_STATES', pitchFunction)
 addSignalFunction('COMMITTED_ROBOT_PLAN_STATES', yawFunction)
 
+addPlot(timeWindow=15, yLimits=[-1, 1])
+addSignal('EST_ROBOT_STATE', msg.utime, msg.pose.translation.x)
+addSignal('EST_ROBOT_STATE', msg.utime, msg.pose.translation.y)
+addSignal('EST_ROBOT_STATE', msg.utime, msg.pose.translation.z)
+addSignal('COMMITTED_ROBOT_PLAN_STATES', msg.utime, msg.pose.translation.x)
+addSignal('COMMITTED_ROBOT_PLAN_STATES', msg.utime, msg.pose.translation.y)
+addSignal('COMMITTED_ROBOT_PLAN_STATES', msg.utime, msg.pose.translation.z)
+
+
 # position plot
 addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
 for joint in joints:
