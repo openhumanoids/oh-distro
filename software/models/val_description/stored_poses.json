@@ -159,6 +159,51 @@
       },
       "name": "safe nominal",
       "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "test pose B",
+      "joints": {
+        "leftElbowPitch": -1.6489437818527222,
+        "leftForearmYaw": 0.0,
+        "leftShoulderPitch": -0.05614438280463219,
+        "leftShoulderRoll": -0.20348390936851501,
+        "leftShoulderYaw": -1.672377109527588,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0
+      },
+      "name": "test pose B",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "test pose A",
+      "joints": {
+        "leftElbowPitch": -1.7120814323425293,
+        "leftForearmYaw": 0.0,
+        "leftShoulderPitch": 0.44678211212158203,
+        "leftShoulderRoll": -1.214901089668274,
+        "leftShoulderYaw": -1.3564238548278809,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0
+      },
+      "name": "test pose A",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "test pose C",
+      "joints": {
+        "leftElbowPitch": -1.7698363065719604,
+        "leftForearmYaw": 0.0,
+        "leftShoulderPitch": 0.016027990728616714,
+        "leftShoulderRoll": 0.04918278753757477,
+        "leftShoulderYaw": -1.4619526863098145,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0
+      },
+      "name": "test pose C",
+      "nominal_handedness": "left"
     }
   ]
 }

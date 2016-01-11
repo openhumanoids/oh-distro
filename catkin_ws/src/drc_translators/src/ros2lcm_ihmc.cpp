@@ -81,6 +81,7 @@ private:
   int mode_;
   std::string robotName_;
   std::string imuSensor_;
+  bool verbose_;
 
   ros::Subscriber jointStatesSub_;
   ros::Subscriber headJointStatesSub_;
@@ -124,9 +125,13 @@ private:
   geometry_msgs::WrenchStamped lastRightFootSensorMsg_;
   geometry_msgs::WrenchStamped lastLeftHandSensorMsg_;
   geometry_msgs::WrenchStamped lastRightHandSensorMsg_;
-
   int64_t lastJointStateUtime_;
-  bool verbose_;
+
+  // NASA Data
+  ros::Subscriber jointCommandsNasaSub_, jointStatesNasaSub_;
+  void jointCommandsNasaCallback(const sensor_msgs::JointStateConstPtr& msg);
+  void jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg);
+
 };
 
 App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::string imuSensor_in) :
@@ -137,6 +142,7 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
   {
     std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
+  verbose_ = false;
 
   lastPoseMsg_.pose.pose.position.x = 0;
   lastPoseMsg_.pose.pose.position.y = 0;
@@ -187,7 +193,11 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
   }
   laserScanSub_ = node_.subscribe(std::string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
 
-  verbose_ = false;
+
+  jointStatesNasaSub_ = node_.subscribe(std::string("/joint_states"), queue_size,
+                                    &App::jointStatesNasaCallback, this);
+  jointCommandsNasaSub_ = node_.subscribe(std::string("/joint_commands"), queue_size,
+                                    &App::jointCommandsNasaCallback, this);
 }
 
 App::~App()
@@ -709,6 +719,39 @@ void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_ms
   sensors.push_back(r_hand);
 
   msg_out.sensors = sensors;
+}
+
+
+void App::jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
+{
+    pronto::joint_state_t amsg;
+    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
+
+    for (int i = 0; i < msg->position.size(); i++)
+    {
+        amsg.joint_name.push_back(msg->name[i]);
+        amsg.joint_position.push_back(msg->position[i]);
+        amsg.joint_velocity.push_back(msg->velocity[i]);
+        amsg.joint_effort.push_back(msg->effort[i]);
+    }
+    amsg.num_joints = amsg.joint_name.size();
+    lcmPublish_.publish("STATE_NASA", &amsg);
+}
+
+void App::jointCommandsNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
+{
+    pronto::joint_state_t amsg;
+    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
+
+    for (int i = 0; i < msg->position.size(); i++)
+    {
+        amsg.joint_name.push_back(msg->name[i]);
+        amsg.joint_position.push_back(msg->position[i]);
+        amsg.joint_velocity.push_back(msg->effort[i]);
+        amsg.joint_effort.push_back(msg->effort[i]);
+    }
+    amsg.num_joints = amsg.joint_name.size();
+    lcmPublish_.publish("COMMAND_NASA", &amsg);
 }
 
 
