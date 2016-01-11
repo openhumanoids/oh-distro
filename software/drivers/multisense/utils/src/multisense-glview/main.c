@@ -23,6 +23,7 @@
 #include <GL/glu.h>
 #endif
 
+#include <stdbool.h>
 #include <math.h>
 
 #include "jpeg-utils-ijg.h"
@@ -36,6 +37,8 @@ int window;
 // 1024x1024 - extended HFOV real sensor
 int width = 1024;
 int height = 1024;
+
+bool rotateImg = false;
 
 GLuint gl_leftpane_tex;
 int32_t left_color_format;
@@ -310,7 +313,8 @@ static void usage(const char* progname)
 	              "  -c channel  Subscribe channel name\n"
         	         "  -o path     Save frames to PNG\n",
                    "  -p          Use previous resolution (1024x544)\n",
-                   "  -h          This help message\n", 
+                   "  -r          Rotate/flip image(s) by 180 degrees\n",
+                   "  -h          This help message\n",
                    g_path_get_basename(progname));
   exit(1);
 }
@@ -394,7 +398,7 @@ int main(int argc, char **argv)
   char *lcm_url = NULL;
 
   int c;
-  while ((c = getopt (argc, argv, "hl:c:o:p")) >= 0) {
+  while ((c = getopt (argc, argv, "hl:c:o:p:r")) >= 0) {
     switch (c) {
     case 'l':
       lcm_url = strdup(optarg);
@@ -403,7 +407,7 @@ int main(int argc, char **argv)
     case 'c' :
       strcpy(channelName, optarg);
       printf("Listening to channel %s\n", channelName);
-      break;    
+      break;
     case 'o' :
       strcpy(outputPath, optarg);
       printf("Capturing PNGs to %s\n", outputPath);
@@ -412,6 +416,9 @@ int main(int argc, char **argv)
     case 'p' :
       width = 1024;
       height = 544;
+      break;
+    case 'r' :
+      rotateImg = true;
       break;
     case 'h':
     case '?':
