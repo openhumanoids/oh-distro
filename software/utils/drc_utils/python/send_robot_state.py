@@ -14,8 +14,9 @@ import time
 import numpy as np
 import math
 
-from ddapp.utime import getUtime
 import multisense as lcmmultisense
+
+def timestamp_now (): return int (time.time () * 1000000)
 
 print "drc-send-robot-state [v5|val1|val2|multisense]"
 
