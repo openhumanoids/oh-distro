@@ -36,22 +36,6 @@ group "3.state_without_pronto" {
 }
 
 
-group "3.state_with_pronto" {
-    cmd "state-sync" {
-        exec = "drc-state-sync -a 5";
-        host = "localhost";
-    }
-    cmd "joints2frames_with" {
-        exec = "drc-joints2frames";
-        host = "localhost";
-    }
-    cmd "se-fusion" {
-        exec = "se-fusion";
-        host = "localhost";
-    }
-}
-
-
 group "4.plan_and_control" {
     cmd "drc-ihmc-step-translator" {
         exec = "drc-ihmc-step-translator";
@@ -106,11 +90,6 @@ cmd "pose-util" {
 }
 
 
-cmd "scs" {
-    exec = "$DRC_BASE/software/config/val_sim_scs/runscs.bash";
-    host = "localhost";
-}
-
 
 script "start_ui" {
     start cmd "ros_bridge_without_pronto";
@@ -130,14 +109,4 @@ script "start_ui_with_pronto" {
     start group "3.plan_and_control";
     start group "4.maps";
     start cmd "director";
-}
-
-script "start_ui_with_scs" {
-    run_script "start_without_pronto";
-    start cmd "scs";
-}
-
-script "start_ui_with_scs_pronto" {
-    run_script "start_with_pronto";
-    start cmd "scs";
 }
