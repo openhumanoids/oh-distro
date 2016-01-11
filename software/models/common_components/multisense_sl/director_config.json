@@ -8,7 +8,7 @@
     "playback":   "./multisense_sl.urdf",
     "teleop":     "./multisense_sl.urdf"
   },
-  "colorMode": "Texture",
+  "colorMode": "Textures",
 
   "teleopJointGroups" : [
     ],
