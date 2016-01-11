@@ -14,8 +14,9 @@ import time
 import numpy as np
 import math
 
-from ddapp.utime import getUtime
 import multisense as lcmmultisense
+
+def timestamp_now (): return int (time.time () * 1000000)
 
 print "drc-send-robot-state [v5|val1|val2|multisense]"
 
@@ -116,7 +117,7 @@ if mode == "static":
   if rotation_flag == 'rotate':
     time.sleep(5)
     msg3 = lcmmultisense.command_t()
-    msg3.utime = getUtime()
+    msg3.utime = timestamp_now()
     msg3.fps = 15
     msg3.gain = -1
     msg3.exposure_us = 10000
