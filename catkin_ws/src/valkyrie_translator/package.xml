@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>valkyrie_translator</name>
+  <version>0.0.0</version>
+  <description>Package providing translators between Drake controller and Valkyrie ROS Control system.</description>
+
+  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
+  <maintainer email="drc@todo.todo">TODO</maintainer>
+
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>TODO</license>
+
+  <url type="repository">https://github.com/openhumanoids/main-distro</url>
+  <url type="bugtracker">https://github.com/openhumanoids/main-distro/issues</url>
+
+  <author email="gizatt@mit.edu">Gregory Izatt</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>ros_control</depend>
+  <depend>pluginlib</depend>
+  <depend>controller_interface</depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <controller_interface plugin="${prefix}/SimpleController.xml"/>
+  </export>
+</package>
