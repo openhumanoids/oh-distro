@@ -89,7 +89,10 @@ cmd "pose-util" {
     host = "localhost";
 }
 
-
+cmd "ros-multisense" {
+    exec = "roslaunch multisense_bringup multisense.launch ip_address:=10.185.0.32 mtu:=1500";
+    host = "localhost";
+}
 
 script "start_ui" {
     start cmd "ros_bridge_without_pronto";
