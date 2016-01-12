@@ -32,6 +32,7 @@
 #include <ihmc_msgs/WholeBodyTrajectoryPacketMessage.h>
 #include <ihmc_msgs/StopMotionPacketMessage.h>
 #include <ihmc_msgs/HeadOrientationPacketMessage.h>
+#include <ihmc_msgs/FootPosePacketMessage.h>
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
@@ -105,6 +106,10 @@ private:
   void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg);
   void headOrientationHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
   ros::Publisher neck_orientation_pub_;
+  void lFootPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
+  ros::Publisher lfoot_pose_pub_;
+  void rFootPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
+  ros::Publisher rfoot_pose_pub_;
 
   void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::scs_api_command_t* msg);
   ros::Publisher scs_api_pub_;
@@ -165,6 +170,14 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   lcm_->subscribe("DESIRED_HEAD_ORIENTATION", &LCM2ROS::headOrientationHandler, this);
   neck_orientation_pub_ = nh_.advertise<ihmc_msgs::HeadOrientationPacketMessage>(
       "/ihmc_ros/" + robotName_ + "/control/head_orientation", 10);
+
+  lcm_->subscribe("DESIRED_LEFT_FOOT_POSE", &LCM2ROS::lFootPoseHandler, this);
+  lfoot_pose_pub_ = nh_.advertise<ihmc_msgs::FootPosePacketMessage>(
+      "/ihmc_ros/" + robotName_ + "/control/foot_pose", 10);
+
+  lcm_->subscribe("DESIRED_RIGHT_FOOT_POSE", &LCM2ROS::rFootPoseHandler, this);
+  rfoot_pose_pub_ = nh_.advertise<ihmc_msgs::FootPosePacketMessage>(
+      "/ihmc_ros/" + robotName_ + "/control/foot_pose", 10);
 
   // depreciated:
   // lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
@@ -396,6 +409,40 @@ void LCM2ROS::headOrientationHandler(const lcm::ReceiveBuffer* rbuf, const std::
   mout.orientation.z = msg->orientation[3];
   mout.unique_id = msg->utime;
   neck_orientation_pub_.publish(mout);
+}
+
+void LCM2ROS::lFootPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg)
+{
+  ROS_ERROR("LCM2ROS got desired foot pose");
+  ihmc_msgs::FootPosePacketMessage mout;
+  mout.trajectory_time = 1;
+  mout.position.x = msg->pos[0];
+  mout.position.y = msg->pos[1];
+  mout.position.z = msg->pos[2];
+  mout.orientation.w = msg->orientation[0];
+  mout.orientation.x = msg->orientation[1];
+  mout.orientation.y = msg->orientation[2];
+  mout.orientation.z = msg->orientation[3];
+  mout.unique_id = msg->utime;
+  mout.robot_side = 0;
+  lfoot_pose_pub_.publish(mout);
+}
+
+void LCM2ROS::rFootPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg)
+{
+  ROS_ERROR("LCM2ROS got desired foot pose");
+  ihmc_msgs::FootPosePacketMessage mout;
+  mout.trajectory_time = 1;
+  mout.position.x = msg->pos[0];
+  mout.position.y = msg->pos[1];
+  mout.position.z = msg->pos[2];
+  mout.orientation.w = msg->orientation[0];
+  mout.orientation.x = msg->orientation[1];
+  mout.orientation.y = msg->orientation[2];
+  mout.orientation.z = msg->orientation[3];
+  mout.unique_id = msg->utime;
+  mout.robot_side = 1;
+  rfoot_pose_pub_.publish(mout);
 }
 
 void filterJointNamesToIHMC(std::vector<std::string> &joint_name)
