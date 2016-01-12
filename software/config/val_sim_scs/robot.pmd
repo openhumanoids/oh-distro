@@ -89,9 +89,25 @@ group "4.maps" {
 
 }
 
+group "5.exotica" {
+
+    cmd "exotica_bridge" {
+        exec = "roslaunch drc_translators exotica_bridge.launch";
+        host = "localhost";
+    }
+    cmd "exotica_json" {
+        exec = "roslaunch exotica_json OMPL_DRM.launch";
+        host = "localhost";
+    }
+}
 
 cmd "director" {
     exec = "director -c $DRC_BASE/software/config/val_sim_scs/robot.cfg -val2";
+    host = "localhost";
+}
+
+cmd "director_exotica" {
+    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2 -exo";
     host = "localhost";
 }
 
@@ -106,6 +122,16 @@ cmd "scs" {
     host = "localhost";
 }
 
+script "start_ui_exotica" {
+    start cmd "ros_bridge_without_pronto";
+    start group "1.params_and_model_pub";
+    wait ms 1000;
+    start group "2.state_without_pronto";
+    start group "3.plan_and_control";
+    start group "4.maps";
+    start group "5.exotica";
+    start cmd "director_exotica";
+}
 
 script "start_ui" {
     start cmd "ros_bridge_without_pronto";
