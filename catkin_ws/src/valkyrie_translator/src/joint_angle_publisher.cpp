@@ -7,7 +7,8 @@
 int main(int argc, char** argv)
 {
   if (argc == 1){
-    printf("Usage: \n\t Pairs of <jointname> <jointval>\n");
+    printf("Usage: \n\t Pairs of <jointname> <jointforce>\n");
+    printf("\t (Eg: rightKneePitch 0.1 leftKneePitch 0.1\n");
     return 0;
   }
   if ((argc-1)%2 != 0){

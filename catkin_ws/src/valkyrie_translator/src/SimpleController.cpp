@@ -31,11 +31,10 @@ namespace valkyrie_translator
                  effortJointHandles.push_back(hw->getHandle(jointNames[i]));
              }
 
-             buffer_command_effort.resize(effortJointHandles.size(), 0.0);
+             buffer_command_efforts.resize(effortJointHandles.size(), 0.0);
              buffer_current_positions.resize(effortJointHandles.size(), 0.0);
              buffer_current_velocities.resize(effortJointHandles.size(), 0.0);
              buffer_current_efforts.resize(effortJointHandles.size(), 0.0);
-             latest_setpoints.resize(effortJointHandles.size(), 0.0);
           }
           else
           {
@@ -74,14 +73,18 @@ namespace valkyrie_translator
 
       for(unsigned int i = 0; i < effortJointHandles.size(); ++i)
       {
+          if (fabs(buffer_command_efforts[i]) < 1.){
+            effortJointHandles[i].setCommand(buffer_command_efforts[i]);
+          } else{
+            printf("Dangerous buffer_command_efforts[%d]: %f\n", i, buffer_command_efforts[i]);
+          }
           buffer_current_positions[i] = effortJointHandles[i].getPosition();
           buffer_current_velocities[i] = effortJointHandles[i].getVelocity();
-          buffer_command_effort[i] = -30*(buffer_current_positions[i] - latest_setpoints[i]) - buffer_current_velocities[i];
-          effortJointHandles[i].setCommand(buffer_command_effort[i]);
+          buffer_current_efforts[i] = buffer_command_efforts[i];
 
           lcm_pose_msg.joint_position[i] = buffer_current_positions[i];
           lcm_pose_msg.joint_velocity[i] = buffer_current_velocities[i];
-          lcm_pose_msg.joint_effort[i] = buffer_command_effort[i];
+          lcm_pose_msg.joint_effort[i] = buffer_current_efforts[i];
           lcm_pose_msg.joint_name[i] = effortJointHandles[i].getName();
       }   
 
@@ -101,8 +104,9 @@ namespace valkyrie_translator
         for(unsigned int j = 0; j < effortJointHandles.size(); j++){
           printf("\t to jointname %s...\n", effortJointHandles[j].getName().c_str());
           if (msg->joint_name[i] == effortJointHandles[j].getName()){
-            printf("\t\tMatch, updating setpoint to %f\n", msg->joint_position[i]);
-            latest_setpoints[j] = msg->joint_position[i];
+            printf("\t\tMatch, updating force to %f\n", msg->joint_position[i]);
+            printf("\t\t\t(But not actually... zeroing until we verify these are OK.\n");
+            buffer_current_efforts[j] = 0.0; //msg->joint_position[i];
           }
         }
       }
