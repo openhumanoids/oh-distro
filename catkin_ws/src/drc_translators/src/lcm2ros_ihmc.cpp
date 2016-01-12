@@ -48,6 +48,8 @@
 
 #define LEFT 0
 #define RIGHT 1
+#define MIN_SWING_HEIGHT 0.05
+#define MAX_SWING_HEIGHT 0.3
 
 typedef unsigned char BYTE;
 
@@ -73,8 +75,7 @@ private:
   void footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                   const drc::footstep_plan_t* msg);
   ros::Publisher walking_plan_pub_;
-  ihmc_msgs::FootstepDataMessage createFootStepList(int foot_to_start_with, BYTE support_contact_groups, double x_pos, double y_pos, double z_pos,
-                                                    double orient_w, double orient_x, double orient_y, double orient_z);
+  ihmc_msgs::FootstepDataMessage convertFootStepToIHMC(const drc::footstep_t & drc_step);
 
   void comHeightHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                         const ihmc::com_height_packet_message_t* msg);
@@ -173,19 +174,16 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   node_ = new ros::NodeHandle();
 }
 
-ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_with, BYTE support_contact_groups, double x_pos, double y_pos,
-                                                           double z_pos, double orient_w, double orient_x,
-                                                           double orient_y, double orient_z)
-{
-  ihmc_msgs::FootstepDataMessage footStepList;
-  footStepList.robot_side = foot_to_start_with;
-  footStepList.location.x = x_pos;
-  footStepList.location.y = y_pos;
-  footStepList.location.z = z_pos;
-  footStepList.orientation.w = orient_w;
-  footStepList.orientation.x = orient_x;
-  footStepList.orientation.y = orient_y;
-  footStepList.orientation.z = orient_z;
+ihmc_msgs::FootstepDataMessage LCM2ROS::convertFootStepToIHMC(const drc::footstep_t &drc_step) {
+  ihmc_msgs::FootstepDataMessage ihmc_step;
+  ihmc_step.robot_side = drc_step.is_right_foot;
+  ihmc_step.location.x = drc_step.pos.translation.x;
+  ihmc_step.location.y = drc_step.pos.translation.y;
+  ihmc_step.location.z = drc_step.pos.translation.z;
+  ihmc_step.orientation.w = drc_step.pos.rotation.w;
+  ihmc_step.orientation.x = drc_step.pos.rotation.x;
+  ihmc_step.orientation.y = drc_step.pos.rotation.y;
+  ihmc_step.orientation.z = drc_step.pos.rotation.z;
 
   // Used values from footstepsdriver.py for Valkyrie version 2
   // foot_length = 0.21, foot_width = 0.11 (dimension of the sole))
@@ -196,42 +194,67 @@ ihmc_msgs::FootstepDataMessage LCM2ROS::createFootStepList(int foot_to_start_wit
     double foot_width = 0.15 - footsizeReduction;
     // if (support_contact_groups == 0) we do not set the contact points because
     // a value of null will default to use the entire foot
-    if (support_contact_groups == 1)
+    if (drc_step.params.support_contact_groups == 1)
     {
       ihmc_msgs::Point2dMessage point;
       point.x = 0.5 * foot_length;
       point.y = -0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
       point.x = 0.5 * foot_length;
       point.y = 0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
       point.x = -0.166666667 * foot_length;
       point.y = -0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
       point.x = -0.166666667 * foot_length;
       point.y = 0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
     }
-    else if (support_contact_groups == 2)
+    else if (drc_step.params.support_contact_groups == 2)
     {
       ihmc_msgs::Point2dMessage point;
       point.x = 0.166666667 * foot_length;
       point.y = -0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
       point.x = 0.166666667 * foot_length;
       point.y = 0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
       point.x = -0.5 * foot_length;
       point.y = -0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
       point.x = -0.5 * foot_length;
       point.y = 0.5 * foot_width;
-      footStepList.predicted_contact_points.push_back(point);
+      ihmc_step.predicted_contact_points.push_back(point);
     }
   }
   // else if atlas, always use the entire foot
 
-  return footStepList;
+
+  double max_relative_terrain_height = 0.0;
+  ihmc_step.trajectory_type = ihmc_step.BASIC;
+
+  if (drc_step.terrain_height.size() > 0) {
+    assert(drc_step.terrain_height.size() == drc_step.terrain_path_dist.size());
+    double starting_terrain_height = drc_step.terrain_height[0];
+    max_relative_terrain_height = *std::max_element(drc_step.terrain_height.begin(), drc_step.terrain_height.end()) - starting_terrain_height;
+    double swing_distance_in_plane = drc_step.terrain_path_dist[drc_step.terrain_path_dist.size() - 1] - drc_step.terrain_path_dist[0];
+    if (swing_distance_in_plane > 0) {
+      // Does the terrain rise significantly above a triangle that starts at the initial foot pose, rises to the maximum terrain height halfway through the swing, and finishes at the final foot pose? If so, do a high clearance step. 
+      for (size_t i = 0; i < drc_step.terrain_height.size(); i++) {
+        double expected_relative_terrain_height = max_relative_terrain_height * (1 - std::abs(drc_step.terrain_path_dist[i] - swing_distance_in_plane / 2.0) / (swing_distance_in_plane / 2.0));
+        if (drc_step.terrain_height[i] > expected_relative_terrain_height + starting_terrain_height + 0.02) {
+          ihmc_step.trajectory_type = ihmc_step.OBSTACLE_CLEARANCE;
+          break;
+        }
+      }
+    }
+  }
+
+  double swing_height = max_relative_terrain_height + drc_step.params.step_height;
+  ihmc_step.swing_height = std::min(std::max(swing_height, MIN_SWING_HEIGHT),
+                                    MAX_SWING_HEIGHT);
+
+  return ihmc_step;
 }
 
 Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw)
@@ -279,29 +302,12 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 {
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
 
-  std::vector<Eigen::Isometry3d> steps;
-  for (int i = 0; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
-  {
-    drc::footstep_t s = msg->footstep_plan.footsteps[i];
-    Eigen::Isometry3d step;
-    step.setIdentity();
-    step.translation().x() = s.pos.translation.x;
-    step.translation().y() = s.pos.translation.y;
-    step.translation().z() = s.pos.translation.z;
-    step.rotate(Eigen::Quaterniond(s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z));
-    steps.push_back(step);
-  }
-
   ihmc_msgs::FootstepDataListMessage mout;
   mout.transfer_time = 1.2;
   mout.swing_time = 1.2;
   for (int i = 2; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
-    drc::footstep_t s = msg->footstep_plan.footsteps[i];
-    Eigen::Quaterniond r(steps[i].rotation());
-    Eigen::Vector3d t(steps[i].translation());
-    mout.footstep_data_list.push_back(
-        createFootStepList(s.is_right_foot, s.params.support_contact_groups, t[0], t[1], t[2], r.w(), r.x(), r.y(), r.z()));
+    mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footstep_plan.footsteps[i]));
   }
   walking_plan_pub_.publish(mout);
 }
@@ -316,10 +322,7 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   mout.swing_time = 1.2;
   for (int i = 2; i < msg->num_steps; i++)  // skip the first two standing steps
   {
-    drc::footstep_t s = msg->footsteps[i];
-    mout.footstep_data_list.push_back(
-        createFootStepList(s.is_right_foot, s.params.support_contact_groups, s.pos.translation.x, s.pos.translation.y, s.pos.translation.z,
-                           s.pos.rotation.w, s.pos.rotation.x, s.pos.rotation.y, s.pos.rotation.z));
+    mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footsteps[i]));
   }
   walking_plan_pub_.publish(mout);
 }
