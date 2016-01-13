@@ -292,3 +292,16 @@ ROS is not required per se. If you would like to use this distribution in conjun
 
     sudo apt-get install ros-indigo-desktop-full ros-indigo-moveit-full
 
+Compile catkin workspace:
+
+::
+
+    cd $DRC_BASE/catkin_ws
+    catkin_make -DCMAKE_BUILD_TYPE=RelWithDebInfo
+ 
+Before you run any ROS code from the catkin workspace, source the setup script:
+
+::
+
+    source catkin_ws/devel/setup.bash
+
