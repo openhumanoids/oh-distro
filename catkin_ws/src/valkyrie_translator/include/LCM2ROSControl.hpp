@@ -11,8 +11,13 @@
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/pronto/joint_state_t.hpp"
 #include "lcmtypes/pronto/joint_angles_t.hpp"
-#include "lcmtypes/pronto/six_axis_force_torque_array_t.hpp"
+
 #include "lcmtypes/pronto/force_torque_t.hpp"
+
+#include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
+#include "lcmtypes/drc/six_axis_force_torque_t.hpp"
+
+#include "lcmtypes/mav/ins_t.hpp"
 
 namespace valkyrie_translator
 {

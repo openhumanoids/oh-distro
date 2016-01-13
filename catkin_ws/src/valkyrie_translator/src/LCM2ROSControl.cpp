@@ -41,7 +41,7 @@ namespace valkyrie_translator
           std::cerr << "ERROR: lcm is not good()" << std::endl;
           return false;
         }
-        lcm_->subscribe("VAL_TRANSLATOR_JOINT_COMMAND", &LCM2ROSControl::jointCommandHandler, this);
+        lcm_->subscribe("NASA_COMMAND", &LCM2ROSControl::jointCommandHandler, this);
         
         // get a pointer to the effort interface
         hardware_interface::EffortJointInterface* effort_hw = robot_hw->get<hardware_interface::EffortJointInterface>();
@@ -155,28 +155,30 @@ namespace valkyrie_translator
 
           i++;
       }   
-      lcm_->publish("VAL_TRANSLATOR_JOINT_STATE", &lcm_pose_msg);
+      lcm_->publish("NASA_STATE", &lcm_pose_msg);
 
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
-        pronto::force_torque_t lcm_imu_msg;
+        mav::ins_t lcm_imu_msg;
         //lcm_imu_msg.utime = utime;
         std::ostringstream imuchannel;
-        imuchannel << "VAL_TRANSLATOR_IMU_" << iter->first;
-        lcm_imu_msg.l_foot_force_z = iter->second.getOrientation()[0];
-        lcm_imu_msg.l_foot_torque_x = iter->second.getOrientation()[1];
-        lcm_imu_msg.l_foot_torque_y = iter->second.getOrientation()[2];
-        lcm_imu_msg.r_foot_force_z = iter->second.getAngularVelocity()[0];
-        lcm_imu_msg.r_foot_torque_x = iter->second.getAngularVelocity()[1];
-        lcm_imu_msg.r_foot_torque_y = iter->second.getAngularVelocity()[2];
-        lcm_imu_msg.l_hand_force[0] = iter->second.getLinearAcceleration()[0];
-        lcm_imu_msg.l_hand_force[1] = iter->second.getLinearAcceleration()[1];
-        lcm_imu_msg.l_hand_force[2] = iter->second.getLinearAcceleration()[2];
+        imuchannel << "NASA_INS_" << iter->first;
+        lcm_imu_msg.utime = utime;
+        for (i=0; i<3; i++){
+          lcm_imu_msg.quat[i]= iter->second.getOrientation()[i];
+          lcm_imu_msg.gyro[i] = iter->second.getAngularVelocity()[i];
+          lcm_imu_msg.accel[i] = iter->second.getLinearAcceleration()[i];
+          lcm_imu_msg.mag[i] = 0.0;
+        }
+        lcm_imu_msg.quat[3] = iter->second.getOrientation()[3];
+        lcm_imu_msg.pressure = 0.0;
+        lcm_imu_msg.rel_alt = 0.0;
+
         lcm_->publish(imuchannel.str(), &lcm_imu_msg);
       }
 
       // push out the measurements for all ft's we see advertised
-      pronto::six_axis_force_torque_array_t lcm_ft_array_msg;
+      drc::six_axis_force_torque_array_t lcm_ft_array_msg;
       lcm_ft_array_msg.utime = utime;
       lcm_ft_array_msg.num_sensors = forceTorqueHandles.size();
       lcm_ft_array_msg.names.resize(forceTorqueHandles.size());
@@ -195,7 +197,7 @@ namespace valkyrie_translator
         lcm_ft_array_msg.names[i] = iter->first;
         i++;
       }
-      lcm_->publish("VAL_TRANSLATOR_FT_STATE", &lcm_ft_array_msg);
+      lcm_->publish("NASA_FORCE_TORQUE", &lcm_ft_array_msg);
       
    }
 
