@@ -64,7 +64,8 @@ namespace valkyrie_translator
    void SimpleController::update(const ros::Time& time, const ros::Duration& period)
    {
 
-      drc::joint_state_t lcm_pose_msg;
+      lcm_->handleTimeout(0);
+      pronto::joint_state_t lcm_pose_msg;
       lcm_pose_msg.num_joints = effortJointHandles.size();
       lcm_pose_msg.joint_name.assign(effortJointHandles.size(), "");
       lcm_pose_msg.joint_position.assign(effortJointHandles.size(), 0.);
@@ -76,7 +77,7 @@ namespace valkyrie_translator
           if (fabs(buffer_command_efforts[i]) < 1.){
             effortJointHandles[i].setCommand(buffer_command_efforts[i]);
           } else{
-            printf("Dangerous buffer_command_efforts[%d]: %f\n", i, buffer_command_efforts[i]);
+            ROS_INFO("Dangerous buffer_command_efforts[%d]: %f\n", i, buffer_command_efforts[i]);
           }
           buffer_current_positions[i] = effortJointHandles[i].getPosition();
           buffer_current_velocities[i] = effortJointHandles[i].getVelocity();
@@ -96,17 +97,16 @@ namespace valkyrie_translator
    {}
 
    void SimpleController::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                           const drc::joint_angles_t* msg)
+                           const pronto::joint_angles_t* msg)
    {
-      printf("Got new setpoints\n");
+      ROS_INFO("Got new setpoints\n");
       for(unsigned int i = 0; i < msg->num_joints; ++i){
-        printf("Comparing joint %s...\n", msg->joint_name[i].c_str());
+        ROS_INFO("Comparing joint %s...\n", msg->joint_name[i].c_str());
         for(unsigned int j = 0; j < effortJointHandles.size(); j++){
-          printf("\t to jointname %s...\n", effortJointHandles[j].getName().c_str());
+          ROS_INFO("\t to jointname %s...\n", effortJointHandles[j].getName().c_str());
           if (msg->joint_name[i] == effortJointHandles[j].getName()){
-            printf("\t\tMatch, updating force to %f\n", msg->joint_position[i]);
-            printf("\t\t\t(But not actually... zeroing until we verify these are OK.\n");
-            buffer_current_efforts[j] = 0.0; //msg->joint_position[i];
+            ROS_INFO("\t\tMatch, updating force to %f\n", msg->joint_position[i]);
+            buffer_command_efforts[j] = msg->joint_position[i];
           }
         }
       }

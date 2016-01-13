@@ -7,8 +7,8 @@
 #include <ros/node_handle.h>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc/joint_state_t.hpp"
-#include "lcmtypes/drc/joint_angles_t.hpp"
+#include "lcmtypes/pronto/joint_state_t.hpp"
+#include "lcmtypes/pronto/joint_angles_t.hpp"
 
 namespace valkyrie_translator
 {
@@ -25,7 +25,7 @@ namespace valkyrie_translator
 
 
         void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                           const drc::joint_angles_t* msg);
+                           const pronto::joint_angles_t* msg);
 
    private:
         boost::shared_ptr<lcm::LCM> lcm_;

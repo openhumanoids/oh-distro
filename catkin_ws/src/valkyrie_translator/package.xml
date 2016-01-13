@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>valkyrie_translator</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>Package providing translators between Drake controller and Valkyrie ROS Control system.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -25,5 +25,6 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <controller_interface plugin="${prefix}/SimpleController.xml"/>
+    <controller_interface plugin="${prefix}/LCM2ROSControl.xml"/>
   </export>
 </package>
