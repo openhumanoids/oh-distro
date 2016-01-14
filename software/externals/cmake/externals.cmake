@@ -143,7 +143,7 @@ set(swigmake_url ssh://git@github.com/rdeits/swigmake.git)
 set(swigmake_revision ab03741a0627e99589ecbc1c088a4db05755e3c2)
 set(swigmake_depends )
 
-set(iris_url ssh://git@github.com/openhumanoids/iris-distro.git)
+set(iris_url https://github.com/rdeits/iris-distro.git)
 set(iris_revision 7442fbca7a456f5564296902d8e2130a751bf3e3)
 set(iris_depends Eigen_pod)
 set(iris_external_args
