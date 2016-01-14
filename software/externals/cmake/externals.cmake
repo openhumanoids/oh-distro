@@ -131,6 +131,14 @@ set(atlas-driver_external_args
   SOURCE_DIR ${source_prefix}/../drivers/atlas
   )
 
+set(flycapture_url ssh://git@github.com/openhumanoids/flycapture-pod.git)
+set(flycapture_revision be27acc7effd83b0cb5648742b915eb4a6181f49)
+set(flycapture_depends)
+set(flycapture_external_args
+  ${download_only_args}
+  SOURCE_DIR ${source_prefix}/../drivers/flycapture
+  )
+
 set(iris_url ssh://git@github.com/openhumanoids/iris-distro.git)
 set(iris_revision b278a85ba4b3b3da3af41feb39c13e4150d12d98)
 set(iris_depends Eigen_pod)
@@ -268,6 +276,7 @@ if(BUILD_PRIVATE_EXTERNALS)
     gurobi-private
     gurobi
     snopt
+    flycapture
     )
 
 endif()
