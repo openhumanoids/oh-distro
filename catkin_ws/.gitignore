@@ -47,3 +47,4 @@ qtcreator-*
 CATKIN_IGNORE
 devel/
 .metadata/
+install/
