@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <iostream>
 #include <string>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/drc/robot_command_t.hpp"
@@ -46,7 +47,7 @@ int main(int argc, char** argv)
     printf("%d: %s, %f\n", i, lcm_pose_msg.joint_commands[i].joint_name.c_str(), lcm_pose_msg.joint_commands[i].effort);
   }
   lcm->publish("NASA_COMMAND", &lcm_pose_msg);
-  
+
 
 
   return 0;
