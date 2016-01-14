@@ -17,42 +17,42 @@ For a given joint, offers utilities for:
 
 '''
 
-joint = 'leftKneePitch'
+joint = 'leftElbowPitch'
 mode = 'position'
 signal = 'foh'
 
-# joint, joint position, gain multiplier
+# joint, joint position, K gain multiplier, D gain multiplier
 val_default_pose = (
-  ('torsoYaw', 0.0, 10.0),
-  ('torsoPitch', 0.0, 10.0),
-  ('torsoRoll', 0.0, 10.0),
-  ('lowerNeckPitch', 0.0, 10.0),
-  ('neckYaw', 0.0, 10.0),
-  ('upperNeckPitch', 0.0, 10.0),
-  ('rightShoulderPitch', 0.0, 10.0),
-  ('rightShoulderRoll', 0.0, 10.0),
-  ('rightShoulderYaw', 0.0, 10.0),
-  ('rightElbowPitch', 0.0, 10.0),
-  ('rightForearmYaw', 0.0, 10.0),
-  ('rightWristRoll', 0.0, 10.0),
-  ('leftShoulderPitch', 0.0, 10.0),
-  ('leftShoulderRoll', 0.0, 10.0),
-  ('leftShoulderYaw', 0.0, 10.0),
-  ('leftElbowPitch', 0.0, 10.0),
-  ('leftForearmYaw', 0.0, 10.0),
-  ('leftWristRoll', 0.0, 10.0),
-  ('rightHipYaw', 0.0, 10.0),
-  ('rightHipRoll', 0.0, 10.0),
-  ('rightHipPitch', 0.0, 10.0),
-  ('rightKneePitch', 0.0, 10.0),
-  ('rightAnklePitch', 0.0, 1.0),
-  ('rightAnkleRoll', 0.0, 1.0),
-  ('leftHipYaw', 0.0, 10.0),
-  ('leftHipRoll', 0.0, 10.0),
-  ('leftHipPitch', 0.0, 10.0),
-  ('leftKneePitch', 0.0, 10.0),
-  ('leftAnklePitch', 0.0, 1.0),
-  ('leftAnkleRoll', 0.0, 1.0)
+  ('torsoYaw', 0.0, 30.0, 1.0),
+  ('torsoPitch', 0.0, 30.0, 1.0),
+  ('torsoRoll', 0.0, 30.0, 1.0),
+  ('lowerNeckPitch', 0.0, 30.0, 1.0),
+  ('neckYaw', 0.0, 30.0, 1.0),
+  ('upperNeckPitch', 0.0, 30.0, 1.0),
+  ('rightShoulderPitch', 0.0, 30.0, 1.0),
+  ('rightShoulderRoll', 0.0, 30.0, 1.0),
+  ('rightShoulderYaw', 0.0, 30.0, 1.0),
+  ('rightElbowPitch', 0.0, 30.0, 1.0),
+  ('rightForearmYaw', 0.0, 30.0, 1.0),
+  ('rightWristRoll', 0.0, 30.0, 1.0),
+  ('leftShoulderPitch', 0.0, 30.0, 1.0),
+  ('leftShoulderRoll', 0.0, 30.0, 1.0),
+  ('leftShoulderYaw', 0.0, 30.0, 1.0),
+  ('leftElbowPitch', 0.0, 30.0, 1.0),
+  ('leftForearmYaw', 0.0, 30.0, 1.0),
+  ('leftWristRoll', 0.0, 30.0, 1.0),
+  ('rightHipYaw', 0.0, 30.0, 1.0),
+  ('rightHipRoll', 0.0, 30.0, 1.0),
+  ('rightHipPitch', 0.0, 30.0, 1.0),
+  ('rightKneePitch', 0.0, 30.0, 1.0),
+  ('rightAnklePitch', 0.0, 30.0, 1.0),
+  ('rightAnkleRoll', 0.0, 30.0, 1.0),
+  ('leftHipYaw', 0.0, 30.0, 1.0),
+  ('leftHipRoll', 0.0, 30.0, 1.0),
+  ('leftHipPitch', 0.0, 30.0, 1.0),
+  ('leftKneePitch', 0.0, 30.0, 1.0),
+  ('leftAnklePitch', 0.0, 30.0, 1.0),
+  ('leftAnkleRoll', 0.0, 30.0, 1.0)
 )
 
 T = 30. # duration, s
@@ -77,8 +77,8 @@ ff_qd_d = 0.
 ff_f_d = 0.
 ff_const = 0.
 
-# gains for the other joints
-other_k_q_p = 10.
+# base gains for the other joints
+other_k_q_p = 1.
 other_k_q_i = 0.
 other_k_qd_p = 1.
 other_k_f_p = 0.
@@ -121,13 +121,13 @@ for i in range(msg.num_joints):
   command = joint_command_t()
   command.joint_name = val_default_pose[i][0]
   command.k_q_p = other_k_q_p*val_default_pose[i][2]
-  command.k_q_i = other_k_q_i*val_default_pose[i][2]
-  command.k_qd_p = other_k_qd_p*val_default_pose[i][2]
-  command.k_f_p = other_k_f_p*val_default_pose[i][2]
-  command.ff_qd = other_ff_qd*val_default_pose[i][2]
-  command.ff_qd_d = other_ff_qd_d*val_default_pose[i][2]
-  command.ff_f_d = other_ff_f_d*val_default_pose[i][2]
-  command.ff_const = other_ff_const*val_default_pose[i][2]
+  command.k_q_i = other_k_q_i
+  command.k_qd_p = other_k_qd_p*val_default_pose[i][3]
+  command.k_f_p = other_k_f_p
+  command.ff_qd = other_ff_qd
+  command.ff_qd_d = other_ff_qd_d
+  command.ff_f_d = other_ff_f_d
+  command.ff_const = other_ff_const
   command.position = val_default_pose[i][1]
   command.velocity = 0
   command.effort = 0
@@ -152,9 +152,9 @@ for i in range(ts.shape[0]):
 
   command = joint_command_t()
   command.joint_name = joint
-  command.k_q_p = k_q_p
+  command.k_q_p = k_q_p*val_default_pose[command_i][2]
   command.k_q_i = k_q_i
-  command.k_qd_p = k_qd_p
+  command.k_qd_p = k_qd_p*val_default_pose[command_i][3]
   command.k_f_p = k_f_p
   command.ff_qd = ff_qd
   command.ff_qd_d = ff_qd_d
