@@ -51,9 +51,9 @@ namespace valkyrie_translator
           return false;
         }
 
-        // return which resources are claimed by this controller
         effort_hw->clearClaims();
         const std::vector<std::string>& effortNames = effort_hw->getNames();
+        // initialize command buffer for each joint we found on the HW
         for(unsigned int i=0; i<effortNames.size(); i++)
         {
           effortJointHandles[effortNames[i]] = effort_hw->getHandle(effortNames[i]);
@@ -84,7 +84,6 @@ namespace valkyrie_translator
           return false;
         }
 
-        // return which resources are claimed by this controller
         imu_hw->clearClaims();
         const std::vector<std::string>& imuNames = imu_hw->getNames();
         for(unsigned int i=0; i<imuNames.size(); i++)
@@ -96,7 +95,6 @@ namespace valkyrie_translator
         claimed_resources.insert(imu_hw_claims.begin(), imu_hw_claims.end());
         imu_hw->clearClaims();
 
-        // get a pointer to the effort interface
         hardware_interface::ForceTorqueSensorInterface* forceTorque_hw = robot_hw->get<hardware_interface::ForceTorqueSensorInterface>();
         if (!forceTorque_hw)
         {
@@ -104,7 +102,7 @@ namespace valkyrie_translator
           return false;
         }
 
-        // return which resources are claimed by this controller
+        // get pointer to forcetorque interface
         forceTorque_hw->clearClaims();
         const std::vector<std::string>& forceTorqueNames = forceTorque_hw->getNames();
         for(unsigned int i=0; i<forceTorqueNames.size(); i++)
