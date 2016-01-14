@@ -62,7 +62,14 @@ namespace valkyrie_translator
           latest_commands[effortNames[i]].position = 0.0;
           latest_commands[effortNames[i]].velocity = 0.0;
           latest_commands[effortNames[i]].effort = 0.0;
-          // set gains to zero as well? 
+          latest_commands[effortNames[i]].k_q_p = 0.0;
+          latest_commands[effortNames[i]].k_q_i = 0.0;
+          latest_commands[effortNames[i]].k_qd_p = 0.0;
+          latest_commands[effortNames[i]].k_f_p = 0.0;
+          latest_commands[effortNames[i]].ff_qd = 0.0;
+          latest_commands[effortNames[i]].ff_qd_d = 0.0;
+          latest_commands[effortNames[i]].ff_f_d = 0.0;
+          latest_commands[effortNames[i]].ff_const = 0.0;
         }
 
         auto effort_hw_claims = effort_hw->getClaims();
@@ -162,6 +169,7 @@ namespace valkyrie_translator
             iter->second.setCommand(0.0);
           }
 
+          lcm_pose_msg.joint_name[i] = iter->first;
           lcm_pose_msg.joint_position[i] = q;
           lcm_pose_msg.joint_velocity[i] = qd;
           // TODO: is this right? or should I just assign f?
@@ -221,18 +229,18 @@ namespace valkyrie_translator
    void LCM2ROSControl::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                            const drc::robot_command_t* msg)
    {
-      ROS_INFO("Got new setpoints\n");
+      //ROS_INFO("Got new setpoints\n");
       
       // TODO: zero non-mentioned joints for safety? 
       
       for(unsigned int i = 0; i < msg->num_joints; ++i){
-        ROS_INFO("Joint %s ", msg->joint_commands[i].joint_name.c_str());
+        //ROS_INFO("Joint %s ", msg->joint_commands[i].joint_name.c_str());
         auto search = latest_commands.find(msg->joint_commands[i].joint_name);
         if (search != latest_commands.end()) {
-          ROS_INFO("found in keys");
+          //ROS_INFO("found in keys");
           latest_commands[msg->joint_commands[i].joint_name] = msg->joint_commands[i];
         } else {
-          ROS_INFO("had no match.");
+          //ROS_INFO("had no match.");
         }
       }
    }

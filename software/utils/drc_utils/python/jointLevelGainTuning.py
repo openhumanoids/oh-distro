@@ -6,6 +6,7 @@ from drc.robot_command_t import robot_command_t
 from drc.joint_command_t import joint_command_t
 import time
 import numpy as np
+import math
 
 '''
 
@@ -19,7 +20,7 @@ For a given joint, offers utilities for:
 
 joint = 'leftElbowPitch'
 mode = 'position'
-signal = 'foh'
+signal = 'chirp'
 
 # joint, joint position, K gain multiplier, D gain multiplier
 val_default_pose = (
@@ -55,14 +56,16 @@ val_default_pose = (
   ('leftAnkleRoll', 0.0, 30.0, 1.0)
 )
 
+
 T = 30. # duration, s
 dt = 0.05
 
 # chirp specific params
-amp = 0.15 # Nm or radians
+amp = 0.25 # Nm or radians
 chirp_f0 = 0.1 # starting freq, hz
 chirp_fT = 0.5 # ending freq, hz
 chirp_sign = 0 # 1: below offset, 1: above offset, 0: centered on offset
+chirp_offset = -0.5
 
 # zoh/foh
 foh_vals = [0., 1., -1., 0.] # Nm or radians
@@ -86,30 +89,6 @@ other_ff_qd = 0.
 other_ff_qd_d = 0.
 other_ff_f_d = 0.
 other_ff_const = 0.
-
-ts = np.arange(0, T, dt)
-vals = 0. * ts
-if signal == 'foh':
-  per_step = ts.shape[0] / len(foh_vals)
-  for val in range(len(foh_vals)-1):
-    start = foh_vals[val]
-    end = foh_vals[val+1]
-    startstep = int(per_step*val)
-    endstep = startstep + per_step
-    for j in range(startstep, endstep):
-      vals[j] = (end - start)*float(j - startstep) / float(endstep - startstep) + start
-elif signal == 'chirp':
-  print "NOT IMPLEMENTED YET!"
-  exit(0)
-
-#import matplotlib.pyplot as plt
-#plt.scatter(ts, vals)
-#plt.show()
-
-home_dir =os.getenv("HOME")
-#print home_dir
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
 
 msg = robot_command_t();  
@@ -136,6 +115,33 @@ for i in range(msg.num_joints):
 if command_i == -1:
   print "Couldn't find the desired joint!"
   exit(0)
+
+ts = np.arange(0, T, dt)
+vals = 0. * ts
+if signal == 'foh':
+  per_step = ts.shape[0] / len(foh_vals)
+  for val in range(len(foh_vals)-1):
+    start = foh_vals[val]
+    end = foh_vals[val+1]
+    startstep = int(per_step*val)
+    endstep = startstep + per_step
+    for j in range(startstep, endstep):
+      vals[j] = (end - start)*float(j - startstep) / float(endstep - startstep) + start
+elif signal == 'chirp':
+  freq = np.linspace(chirp_f0, chirp_fT, ts.shape[0])
+  if chirp_sign == 0:
+    vals = chirp_offset + amp * np.sin(ts * freq * 2 * math.pi)
+  else:
+    vals = chirp_offset + chirp_sign * (0.5*amp - 0.5 * amp * np.cos(ts * freq * 2 * math.pi))
+
+#import matplotlib.pyplot as plt
+#plt.scatter(ts, vals)
+#plt.show()
+
+home_dir =os.getenv("HOME")
+#print home_dir
+sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
+sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
 
 lc = lcm.LCM()
