@@ -16,6 +16,8 @@
 
 #include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
+#include "lcmtypes/drc/robot_command_t.hpp"
+#include "lcmtypes/drc/joint_command_t.hpp"
 
 #include "lcmtypes/mav/ins_t.hpp"
 
@@ -32,7 +34,7 @@ namespace valkyrie_translator
         void stopping(const ros::Time& time);
 
         void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                           const pronto::joint_angles_t* msg);
+                           const drc::robot_command_t* msg);
 
    protected:        
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw, 
@@ -45,10 +47,11 @@ namespace valkyrie_translator
         std::map<std::string, hardware_interface::JointHandle> effortJointHandles;
         std::map<std::string, hardware_interface::ImuSensorHandle> imuSensorHandles;
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> forceTorqueHandles;
-        std::map<std::string, double> buffer_command_efforts;
-        std::map<std::string, double> buffer_current_positions;
-        std::map<std::string, double> buffer_current_velocities;
-        std::map<std::string, double> buffer_current_efforts;
+
+        std::map<std::string, drc::joint_command_t> latest_commands;
+
+        ros::Time last_update;
+
    };
 }
 #endif

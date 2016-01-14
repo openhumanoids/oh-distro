@@ -57,10 +57,12 @@ namespace valkyrie_translator
         for(unsigned int i=0; i<effortNames.size(); i++)
         {
           effortJointHandles[effortNames[i]] = effort_hw->getHandle(effortNames[i]);
-          buffer_current_positions[effortNames[i]] = 0.0;
-          buffer_current_velocities[effortNames[i]] = 0.0;
-          buffer_current_efforts[effortNames[i]] = 0.0;
-          buffer_command_efforts[effortNames[i]] = 0.0;
+          latest_commands[effortNames[i]] = drc::joint_command_t();
+          latest_commands[effortNames[i]].joint_name = effortNames[i];
+          latest_commands[effortNames[i]].position = 0.0;
+          latest_commands[effortNames[i]].velocity = 0.0;
+          latest_commands[effortNames[i]].effort = 0.0;
+          // set gains to zero as well? 
         }
 
         auto effort_hw_claims = effort_hw->getClaims();
@@ -114,18 +116,15 @@ namespace valkyrie_translator
 
    void LCM2ROSControl::starting(const ros::Time& time)
    {
-      for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
-      {
-          buffer_current_positions[iter->first] = iter->second.getPosition();
-          buffer_current_velocities[iter->first] = iter->second.getVelocity();
-          buffer_current_efforts[iter->first] = iter->second.getEffort();
-      }
+      last_update = time;
    }
 
    void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
    {
       lcm_->handleTimeout(0);
 
+      double dt = (time - last_update).toSec();
+      last_update = time;
       int64_t utime = time.toSec() * 100000.;
 
       // push out the joint states for all joints we see advertised
@@ -139,19 +138,34 @@ namespace valkyrie_translator
       int i = 0;
       for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
       {
-          if (fabs(buffer_command_efforts[iter->first]) < 1.){
-            iter->second.setCommand(buffer_command_efforts[iter->first]);
-          } else{
-            ROS_INFO("Dangerous buffer_command_efforts[%s]: %f\n", iter->first.c_str(), buffer_command_efforts[iter->first]);
-          }
-          buffer_current_positions[iter->first] = iter->second.getPosition();
-          buffer_current_velocities[iter->first] = iter->second.getVelocity();
-          buffer_current_efforts[iter->first] = buffer_command_efforts[iter->first];
+          // see drc_joint_command_t.lcm for explanation of gains and
+          // force calculation.
+          double q = iter->second.getPosition();
+          double qd = iter->second.getVelocity();
+          double f = iter->second.getEffort();
 
-          lcm_pose_msg.joint_position[i] = buffer_current_positions[iter->first];
-          lcm_pose_msg.joint_velocity[i] = buffer_current_velocities[iter->first];
-          lcm_pose_msg.joint_effort[i] = buffer_current_efforts[iter->first];
-          lcm_pose_msg.joint_name[i] = iter->first;
+          drc::joint_command_t command = latest_commands[iter->first];
+          double command_effort = 
+            command.k_q_p * ( command.position - q ) + 
+            command.k_q_i * ( command.position - q ) * dt + 
+            command.k_qd_p * ( command.velocity - qd) + 
+            command.k_f_p * ( command.effort - f) + 
+            command.ff_qd * ( qd ) + 
+            command.ff_qd_d * ( command.velocity ) + 
+            command.ff_f_d * ( command.effort ) + 
+            command.ff_const;
+
+          if (fabs(command_effort) < 100.){
+            iter->second.setCommand(command_effort);
+          } else{
+            ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
+            iter->second.setCommand(0.0);
+          }
+
+          lcm_pose_msg.joint_position[i] = q;
+          lcm_pose_msg.joint_velocity[i] = qd;
+          // TODO: is this right? or should I just assign f?
+          lcm_pose_msg.joint_effort[i] = iter->second.getEffort(); // is this commanded or measured?
 
           i++;
       }   
@@ -205,15 +219,18 @@ namespace valkyrie_translator
    {}
 
    void LCM2ROSControl::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                           const pronto::joint_angles_t* msg)
+                           const drc::robot_command_t* msg)
    {
       ROS_INFO("Got new setpoints\n");
+      
+      // TODO: zero non-mentioned joints for safety? 
+      
       for(unsigned int i = 0; i < msg->num_joints; ++i){
-        ROS_INFO("Joint %s ", msg->joint_name[i].c_str());
-        auto search = buffer_command_efforts.find(msg->joint_name[i]);
-        if (search != buffer_command_efforts.end()) {
-          ROS_INFO("found in keys, updating force to %f\n", msg->joint_position[i]);
-          buffer_command_efforts[msg->joint_name[i]] = msg->joint_position[i];
+        ROS_INFO("Joint %s ", msg->joint_commands[i].joint_name.c_str());
+        auto search = latest_commands.find(msg->joint_commands[i].joint_name);
+        if (search != latest_commands.end()) {
+          ROS_INFO("found in keys");
+          latest_commands[msg->joint_commands[i].joint_name] = msg->joint_commands[i];
         } else {
           ROS_INFO("had no match.");
         }
