@@ -2,7 +2,7 @@ import numpy
 import colorsys
 
 # joints to plot
-joints = ['leftShoulderPitch','leftShoulderRoll','leftShoulderYaw','leftElbowPitch']#,'leftForearmYaw']#,'leftWristRoll','leftWristPitch']
+joints = ['rightShoulderPitch','rightShoulderRoll','rightShoulderYaw','rightElbowPitch']#,'rightForearmYaw']#,'rightWristRoll','rightWristPitch']
 
 # string arrays for EST_ROBOT_STATE and ATLAS_COMMAND
 jn = msg.joint_name

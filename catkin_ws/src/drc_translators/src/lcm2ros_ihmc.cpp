@@ -71,6 +71,9 @@ private:
   boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
   std::string chestLinkName_;
 
+  double default_transfer_time_;
+  double default_swing_time_;
+
   void footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                            const drc::walking_plan_request_t* msg);
   void footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
@@ -134,11 +137,14 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
     chestLinkName_ = "torso";
   std::cout << "Using "<< robotName_ << " so expecting chest link called " << chestLinkName_ << "\n";
 
+  // Made more conservative for Valkyrie using defaults from IHMC
+  default_transfer_time_ = 2.0;
+  default_swing_time_ = 1.5;
 
   // If pronto is running never send plans like this:
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST", &LCM2ROS::footstepPlanHandler, this);
-  // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into BDI/IHMC frame:
-  // COMMITTED_FOOTSTEP_PLAN or BDI_ADJUSTED_FOOTSTEP_PLAN
+  // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into 
+  // BDI/IHMC coordinate frame using BDI_ADJUSTED_FOOTSTEP_PLAN
   lcm_->subscribe("BDI_ADJUSTED_FOOTSTEP_PLAN", &LCM2ROS::footstepPlanBDIModeHandler, this);
   walking_plan_pub_ = nh_.advertise<ihmc_msgs::FootstepDataListMessage>(
       "/ihmc_ros/" + robotName_ + "/control/footstep_list", 10);
@@ -316,8 +322,8 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = 1.2;
-  mout.swing_time = 1.2;
+  mout.transfer_time = default_transfer_time_;
+  mout.swing_time = default_swing_time_;
   for (int i = 2; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footstep_plan.footsteps[i]));
@@ -331,8 +337,8 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   ROS_ERROR("LCM2ROS got BDI_ADJUSTED_FOOTSTEP_PLAN or COMMITTED_FOOTSTEP_PLAN (pronto and bdi mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = 1.2;
-  mout.swing_time = 1.2;
+  mout.transfer_time = default_transfer_time_;
+  mout.swing_time = default_swing_time_;
   for (int i = 2; i < msg->num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footsteps[i]));
