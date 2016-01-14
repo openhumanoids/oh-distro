@@ -21,6 +21,40 @@ joint = 'leftKneePitch'
 mode = 'position'
 signal = 'foh'
 
+# joint, joint position, gain multiplier
+val_default_pose = (
+  ('torsoYaw', 0.0, 10.0),
+  ('torsoPitch', 0.0, 10.0),
+  ('torsoRoll', 0.0, 10.0),
+  ('lowerNeckPitch', 0.0, 10.0),
+  ('neckYaw', 0.0, 10.0),
+  ('upperNeckPitch', 0.0, 10.0),
+  ('rightShoulderPitch', 0.0, 10.0),
+  ('rightShoulderRoll', 0.0, 10.0),
+  ('rightShoulderYaw', 0.0, 10.0),
+  ('rightElbowPitch', 0.0, 10.0),
+  ('rightForearmYaw', 0.0, 10.0),
+  ('rightWristRoll', 0.0, 10.0),
+  ('leftShoulderPitch', 0.0, 10.0),
+  ('leftShoulderRoll', 0.0, 10.0),
+  ('leftShoulderYaw', 0.0, 10.0),
+  ('leftElbowPitch', 0.0, 10.0),
+  ('leftForearmYaw', 0.0, 10.0),
+  ('leftWristRoll', 0.0, 10.0),
+  ('rightHipYaw', 0.0, 10.0),
+  ('rightHipRoll', 0.0, 10.0),
+  ('rightHipPitch', 0.0, 10.0),
+  ('rightKneePitch', 0.0, 10.0),
+  ('rightAnklePitch', 0.0, 1.0),
+  ('rightAnkleRoll', 0.0, 1.0),
+  ('leftHipYaw', 0.0, 10.0),
+  ('leftHipRoll', 0.0, 10.0),
+  ('leftHipPitch', 0.0, 10.0),
+  ('leftKneePitch', 0.0, 10.0),
+  ('leftAnklePitch', 0.0, 1.0),
+  ('leftAnkleRoll', 0.0, 1.0)
+)
+
 T = 30. # duration, s
 dt = 0.05
 
@@ -33,7 +67,7 @@ chirp_sign = 0 # 1: below offset, 1: above offset, 0: centered on offset
 # zoh/foh
 foh_vals = [0., 1., -1., 0.] # Nm or radians
 
-# gains
+# gains for the joint of interest
 k_q_p = 100.
 k_q_i = 0.
 k_qd_p = 10.
@@ -42,6 +76,16 @@ ff_qd = 0.
 ff_qd_d = 0.
 ff_f_d = 0.
 ff_const = 0.
+
+# gains for the other joints
+other_k_q_p = 10.
+other_k_q_i = 0.
+other_k_qd_p = 1.
+other_k_f_p = 0.
+other_ff_qd = 0.
+other_ff_qd_d = 0.
+other_ff_f_d = 0.
+other_ff_const = 0.
 
 ts = np.arange(0, T, dt)
 vals = 0. * ts
@@ -55,7 +99,7 @@ if signal == 'foh':
     for j in range(startstep, endstep):
       vals[j] = (end - start)*float(j - startstep) / float(endstep - startstep) + start
 elif signal == 'chirp':
-  print "NOT IMPLEMENTED YET"
+  print "NOT IMPLEMENTED YET!"
   exit(0)
 
 #import matplotlib.pyplot as plt
@@ -66,6 +110,33 @@ home_dir =os.getenv("HOME")
 #print home_dir
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
+
+
+msg = robot_command_t();  
+msg.num_joints = len(val_default_pose)
+command_i = -1
+for i in range(msg.num_joints):
+  if val_default_pose[i][0] == joint:
+    command_i = i
+  command = joint_command_t()
+  command.joint_name = val_default_pose[i][0]
+  command.k_q_p = other_k_q_p*val_default_pose[i][2]
+  command.k_q_i = other_k_q_i*val_default_pose[i][2]
+  command.k_qd_p = other_k_qd_p*val_default_pose[i][2]
+  command.k_f_p = other_k_f_p*val_default_pose[i][2]
+  command.ff_qd = other_ff_qd*val_default_pose[i][2]
+  command.ff_qd_d = other_ff_qd_d*val_default_pose[i][2]
+  command.ff_f_d = other_ff_f_d*val_default_pose[i][2]
+  command.ff_const = other_ff_const*val_default_pose[i][2]
+  command.position = val_default_pose[i][1]
+  command.velocity = 0
+  command.effort = 0
+  msg.joint_commands.append(command)
+
+if command_i == -1:
+  print "Couldn't find the desired joint!"
+  exit(0)
+
 
 lc = lcm.LCM()
 
@@ -78,9 +149,6 @@ for i in range(ts.shape[0]):
 
   while (time.time() - starttime < t):
     time.sleep(0.001)
-
-  msg = robot_command_t();
-  msg.num_joints = 1
 
   command = joint_command_t()
   command.joint_name = joint
@@ -102,5 +170,5 @@ for i in range(ts.shape[0]):
   elif mode == 'position':
     command.position = val
 
-  msg.joint_commands.append(command)
+  msg.joint_commands[command_i] = command
   lc.publish("NASA_COMMAND", msg.encode())

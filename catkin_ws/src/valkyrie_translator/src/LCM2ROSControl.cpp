@@ -155,7 +155,7 @@ namespace valkyrie_translator
             command.ff_f_d * ( command.effort ) + 
             command.ff_const;
 
-          if (fabs(command_effort) < 100.){
+          if (fabs(command_effort) < 1000.){
             iter->second.setCommand(command_effort);
           } else{
             ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
