@@ -36,7 +36,7 @@
 #include "lcmtypes/drc/robot_urdf_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include <ConciseArgs>
-#include <drake/RigidBodyManipulator.h>
+#include <drake/RigidBodyTree.h>
 #include <drake/drakeGeometryUtil.h>
 
 using namespace std;
@@ -116,7 +116,7 @@ class Pass{
     drc::robot_state_t last_rstate_;
     bool init_rstate_;
 
-    RigidBodyManipulator drake_model_;
+    RigidBodyTree drake_model_;
     map<string, int> dofMap_;
 };
 
