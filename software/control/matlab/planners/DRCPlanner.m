@@ -173,6 +173,7 @@ classdef DRCPlanner
       coordinate_names = obj.biped.getStateFrame.getCoordinateNames;
       joint_names = coordinate_names(1:nq);
       [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
+      xtraj(4:6,:) = unwrap(xtraj(4:6,:), [], 2);
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
 
       qtraj = PPTrajectory(qtraj_pp);
@@ -187,6 +188,7 @@ classdef DRCPlanner
       coordinate_names = obj.biped.getStateFrame.getCoordinateNames;
       joint_names = coordinate_names(1:nq);
       [X,T,options] = RobotPlanListener.decodeRobotPlanWithSupports(msg,true,joint_names);
+      X(4:6,:) = unwrap(X(4:6,:), [], 2);
       options.bodies_to_control_when_in_contact = [obj.biped.findLinkId('pelvis'), obj.biped.foot_body_id.right, obj.biped.foot_body_id.left];
       nq = obj.biped.getNumPositions();
       Q = X(1:nq,:); % extract just the q poses
