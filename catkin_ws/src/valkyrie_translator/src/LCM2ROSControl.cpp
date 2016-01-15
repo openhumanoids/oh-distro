@@ -150,6 +150,13 @@ namespace valkyrie_translator
       lcm_commanded_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
       lcm_commanded_msg.joint_effort.assign(effortJointHandles.size(), 0.);
 
+      pronto::joint_angles_t lcm_torque_msg;
+      lcm_torque_msg.robot_name = "val!";
+      lcm_torque_msg.utime = utime;
+      lcm_torque_msg.num_joints = effortJointHandles.size();
+      lcm_torque_msg.joint_name.assign(effortJointHandles.size(), "");
+      lcm_torque_msg.joint_position.assign(effortJointHandles.size(), 0.);
+
       int i = 0;
       for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
       {
@@ -183,17 +190,23 @@ namespace valkyrie_translator
           lcm_pose_msg.joint_effort[i] = iter->second.getEffort(); // measured!
 
           // republish to guarantee sync
-          
-	  lcm_commanded_msg.joint_name[i] = iter->first;
+          lcm_commanded_msg.joint_name[i] = iter->first;
           lcm_commanded_msg.joint_position[i] = command.position;
           lcm_commanded_msg.joint_velocity[i] = command.velocity;
           lcm_commanded_msg.joint_effort[i] = command.effort;
 
+          lcm_torque_msg.joint_name[i] = iter->first;
+          lcm_torque_msg.joint_position[i] = command_effort;
+
           i++;
       }   
+      ROS_INFO("BEFORE 1");
       lcm_->publish("NASA_STATE", &lcm_pose_msg);
+      ROS_INFO("AFTER 1");
       lcm_->publish("NASA_COMMANDED_VALUES", &lcm_commanded_msg);
-
+      ROS_INFO("AFTER 2");
+      lcm_->publish("NASA_COMMANDED_TORQUE", &lcm_torque_msg);
+      ROS_INFO("AFTER 3");
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
         mav::ins_t lcm_imu_msg;
@@ -244,7 +257,7 @@ namespace valkyrie_translator
    void LCM2ROSControl::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                            const drc::robot_command_t* msg)
    {
-      //ROS_INFO("Got new setpoints\n");
+      ROS_INFO("Got new setpoints\n");
       
       // TODO: zero non-mentioned joints for safety? 
       
