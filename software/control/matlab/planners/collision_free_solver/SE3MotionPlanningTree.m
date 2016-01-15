@@ -27,7 +27,10 @@ classdef SE3MotionPlanningTree < CompositeVertexArrayTree
       valid = valid && obj.isCollisionFree(q);
     end
 
-    function valid = isCollisionFree(obj, q)
+    function valid = isCollisionFree(obj, q, ee_point)
+      if nargin > 2
+        q(1:3) = q(1:3) - quat2rotmat(q(4:7)) * ee_point;
+      end
       kinsol = obj.rbm.doKinematics(q);
       valid = ~obj.rbm.collidingPointsCheckOnly(kinsol, obj.point_cloud, obj.min_distance);
     end

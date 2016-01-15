@@ -64,13 +64,14 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
         
         for j = 1:n-1
           v = obj.interpolate(verts(:,1), verts(:,2), j/n);
-          valid = true;
-          if ~obj.isValid(v)
-            valid = false;
+          if obj.isValid(v)
+            valid = true;
+          else
             constraints = obj.generateEndEffectorConstraints(v(1:7));
             [q, valid] = obj.trees{obj.cspace_idx}.solveIK(v(obj.idx{obj.cspace_idx}), v(obj.idx{obj.cspace_idx}), constraints);
             if valid
               valid = obj.trees{obj.cspace_idx}.isCollisionFree(q);
+              v(8:end) = q;
             end
           end
           if valid
@@ -198,7 +199,7 @@ classdef OptimalTaskSpaceMotionPlanningTree < TaskSpaceMotionPlanningTree
         idNearest = subSet(idx);
         qNearest = obj.trees{obj.cspace_idx}.getVertex(idNearest);
         qNew = obj.steer(idNearest, qRand, d);
-        valid = obj.trees{obj.tspace_idx}.isCollisionFree(qNew(1:7));
+        valid = obj.trees{obj.tspace_idx}.isCollisionFree(qNew(1:7), obj.end_effector_pt);
         if valid
           constraints = obj.generateEndEffectorConstraints(qNew(1:7));
           [qNew(8:end), ~] = obj.trees{obj.cspace_idx}.solveIK(qNearest, qNearest, constraints);
