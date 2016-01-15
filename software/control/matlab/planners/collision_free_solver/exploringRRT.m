@@ -81,7 +81,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
   %Compute final pose
   
-  cm = CapabilityMap([getenv('DRC_BASE') '/software/control/matlab/data/val_description/capabilityMap.mat']);
+  cm = CapabilityMap([getenv('DRC_BASE') '/../drc-testing-data/final_pose_planner/val_description/capabilityMap.mat']);
   x_end.val1.right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
   x_end.val1.left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
   x_end.val2 = x_end.val1;
