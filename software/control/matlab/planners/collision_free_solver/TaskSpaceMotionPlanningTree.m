@@ -23,11 +23,6 @@ classdef TaskSpaceMotionPlanningTree < CompositeVertexArrayTree
         geom = r.getBody(1).collision_geometry{i};
         obj.trees{obj.tspace_idx} = obj.trees{obj.tspace_idx}.addGeometryToWorld(geom);
       end
-      for i = 1:numel(r.getBody(obj.end_effector_id).collision_geometry)
-        geom = r.getBody(obj.end_effector_id).collision_geometry{i};
-        geom.T(1:3,4) = geom.T(1:3,4) - obj.end_effector_pt; 
-        obj.trees{obj.tspace_idx} = obj.trees{obj.tspace_idx}.addGeometryToRobot(geom);
-      end
       obj.trees{obj.cspace_idx}.visualization_point = struct('body', obj.end_effector_id, 'pt',...
                                           obj.end_effector_pt);
     end
