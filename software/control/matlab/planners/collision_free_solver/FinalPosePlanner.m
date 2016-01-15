@@ -33,7 +33,7 @@ classdef FinalPosePlanner
       opt.activecollisionoptions = struct();
       opt.endeffectorpoint = [0; 0; 0];
       opt.debug = false;
-      opt.verbose = true;
+      opt.verbose = false;
       
       optNames = fieldnames(opt);
       nArgs = length(varargin);
