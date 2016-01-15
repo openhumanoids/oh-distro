@@ -1,0 +1,2 @@
+val_knee:
+    type: valkyrie_translator/LCM2ROSControl

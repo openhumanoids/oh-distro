@@ -1,0 +1,7 @@
+<library path="lib/libLCM2ROSControl">
+  <class name="valkyrie_translator/LCM2ROSControl" type="valkyrie_translator::LCM2ROSControl" base_class_type="controller_interface::ControllerBase">
+    <description>
+      LCM for control and state estimation to and from ROSControl API for Val.
+    </description>
+  </class>
+</library>
