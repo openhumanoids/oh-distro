@@ -36,8 +36,8 @@
 #include "lcmtypes/drc/robot_urdf_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include <ConciseArgs>
-#include <drake/RigidBodyTree.h>
-#include <drake/drakeGeometryUtil.h>
+#include <drake/systems/plants/RigidBodyTree.h>
+#include <drake/util/drakeGeometryUtil.h>
 
 using namespace std;
 using namespace drc;
@@ -292,7 +292,7 @@ void Pass::DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_c
   
   // 2. Extract the indices of the points in collision:
   VectorXd q(robotStateToDrakePosition(rstate, dofMap_, drake_model_.num_positions));
-  KinematicsCache<double> cache = drake_model_.doKinematics(q, 0);
+  KinematicsCache<double> cache = drake_model_.doKinematics(q);
   vector<size_t> filtered_point_indices = drake_model_.collidingPoints(cache, points, collision_threshold_);
   
   // 3. Modify the outgoing ranges of the colliding points:
