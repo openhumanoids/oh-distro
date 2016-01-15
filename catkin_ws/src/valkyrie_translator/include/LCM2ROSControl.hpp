@@ -23,6 +23,25 @@
 
 namespace valkyrie_translator
 {
+   class LCM2ROSControl;
+
+   /* Manages subscription for the LCM2ROSControl class. 
+      Presently just a hack to resolve pluginlib compatibility issues... */
+   class LCM2ROSControl_LCMHandler
+   {
+   public:
+        LCM2ROSControl_LCMHandler(LCM2ROSControl& parent);
+        virtual ~LCM2ROSControl_LCMHandler();
+        void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                               const drc::robot_command_t* msg);
+        void update();
+   private:
+        LCM2ROSControl& parent_;
+        // If the subscription is created on LCM2ROSControl's lcm_ object, we see pluginlib
+        // compatibility problems. Mysterious and scary...
+        std::shared_ptr<lcm::LCM> lcm_;
+   };
+   
    class LCM2ROSControl : public controller_interface::Controller<hardware_interface::EffortJointInterface>
    {
    public:
@@ -32,9 +51,10 @@ namespace valkyrie_translator
         void starting(const ros::Time& time);
         void update(const ros::Time& time, const ros::Duration& period);
         void stopping(const ros::Time& time);
-
-        void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                           const drc::robot_command_t* msg);
+        
+        // Public so it can be modified by the LCMHandler. Should eventually create
+        // a friend class arrangement to make this private again.
+        std::map<std::string, drc::joint_command_t> latest_commands;
 
    protected:        
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw, 
@@ -43,15 +63,13 @@ namespace valkyrie_translator
 
    private:
         boost::shared_ptr<lcm::LCM> lcm_;
+        std::shared_ptr<LCM2ROSControl_LCMHandler> handler_;
 
         std::map<std::string, hardware_interface::JointHandle> effortJointHandles;
         std::map<std::string, hardware_interface::ImuSensorHandle> imuSensorHandles;
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> forceTorqueHandles;
 
-        std::map<std::string, drc::joint_command_t> latest_commands;
-
         ros::Time last_update;
-
    };
 }
 #endif

@@ -18,8 +18,7 @@ gizatt@mit.edu, 201601**
 namespace valkyrie_translator
 {
    LCM2ROSControl::LCM2ROSControl()
-   {
-   }
+   {}
 
    LCM2ROSControl::~LCM2ROSControl()
    {}
@@ -41,7 +40,7 @@ namespace valkyrie_translator
           std::cerr << "ERROR: lcm is not good()" << std::endl;
           return false;
         }
-        lcm_->subscribe("NASA_COMMAND", &LCM2ROSControl::jointCommandHandler, this);
+        handler_ = std::shared_ptr<LCM2ROSControl_LCMHandler>(new LCM2ROSControl_LCMHandler(*this));
         
         // get a pointer to the effort interface
         hardware_interface::EffortJointInterface* effort_hw = robot_hw->get<hardware_interface::EffortJointInterface>();
@@ -126,6 +125,7 @@ namespace valkyrie_translator
 
    void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
    {
+      handler_->update();
       lcm_->handleTimeout(0);
 
       double dt = (time - last_update).toSec();
@@ -200,13 +200,10 @@ namespace valkyrie_translator
 
           i++;
       }   
-      ROS_INFO("BEFORE 1");
       lcm_->publish("NASA_STATE", &lcm_pose_msg);
-      ROS_INFO("AFTER 1");
       lcm_->publish("NASA_COMMANDED_VALUES", &lcm_commanded_msg);
-      ROS_INFO("AFTER 2");
       lcm_->publish("NASA_COMMANDED_TORQUE", &lcm_torque_msg);
-      ROS_INFO("AFTER 3");
+
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
         mav::ins_t lcm_imu_msg;
@@ -248,29 +245,41 @@ namespace valkyrie_translator
         i++;
       }
       lcm_->publish("NASA_FORCE_TORQUE", &lcm_ft_array_msg);
-      
    }
 
    void LCM2ROSControl::stopping(const ros::Time& time)
    {}
 
-   void LCM2ROSControl::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                           const drc::robot_command_t* msg)
-   {
-      ROS_INFO("Got new setpoints\n");
-      
+   LCM2ROSControl_LCMHandler::LCM2ROSControl_LCMHandler(LCM2ROSControl& parent) : parent_(parent) { 
+      lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
+      if (!lcm_->good())
+      {
+        std::cerr << "ERROR: handler lcm is not good()" << std::endl;
+      }
+      lcm_->subscribe("NASA_COMMAND", &LCM2ROSControl_LCMHandler::jointCommandHandler, this);
+   }
+   LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
+   
+   void LCM2ROSControl_LCMHandler::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                               const drc::robot_command_t* msg) {
+      //ROS_INFO("Got new setpoints\n");
+      printf("Called\n");
       // TODO: zero non-mentioned joints for safety? 
       
       for(unsigned int i = 0; i < msg->num_joints; ++i){
-        //ROS_INFO("Joint %s ", msg->joint_commands[i].joint_name.c_str());
-        auto search = latest_commands.find(msg->joint_commands[i].joint_name);
-        if (search != latest_commands.end()) {
+        //ROS_INFO("Joint %s ", msg->joint_commands[i].joint_name.c_str());`
+        auto search = parent_.latest_commands.find(msg->joint_commands[i].joint_name);
+        if (search != parent_.latest_commands.end()) {
           //ROS_INFO("found in keys");
-          latest_commands[msg->joint_commands[i].joint_name] = msg->joint_commands[i];
+          parent_.latest_commands[msg->joint_commands[i].joint_name] = msg->joint_commands[i];
         } else {
           //ROS_INFO("had no match.");
         }
       }
    }
+   void LCM2ROSControl_LCMHandler::update(){
+      lcm_->handleTimeout(0);
+   }
 }
+
 PLUGINLIB_EXPORT_CLASS(valkyrie_translator::LCM2ROSControl, controller_interface::ControllerBase)
