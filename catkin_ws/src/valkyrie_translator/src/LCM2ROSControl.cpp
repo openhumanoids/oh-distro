@@ -133,6 +133,7 @@ namespace valkyrie_translator
       int64_t utime = time.toSec() * 100000.;
 
       // push out the joint states for all joints we see advertised
+      // and also the commanded torques, for reference
       pronto::joint_state_t lcm_pose_msg;
       lcm_pose_msg.utime = utime;
       lcm_pose_msg.num_joints = effortJointHandles.size();
@@ -140,6 +141,15 @@ namespace valkyrie_translator
       lcm_pose_msg.joint_position.assign(effortJointHandles.size(), 0.);
       lcm_pose_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
       lcm_pose_msg.joint_effort.assign(effortJointHandles.size(), 0.);
+
+      pronto::joint_state_t lcm_commanded_msg;
+      lcm_commanded_msg.utime = utime;
+      lcm_commanded_msg.num_joints = effortJointHandles.size();
+      lcm_commanded_msg.joint_name.assign(effortJointHandles.size(), "");
+      lcm_commanded_msg.joint_position.assign(effortJointHandles.size(), 0.);
+      lcm_commanded_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
+      lcm_commanded_msg.joint_effort.assign(effortJointHandles.size(), 0.);
+
       int i = 0;
       for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
       {
@@ -165,17 +175,24 @@ namespace valkyrie_translator
           } else{
             ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
             iter->second.setCommand(0.0);
-          }
+          }	
 
           lcm_pose_msg.joint_name[i] = iter->first;
           lcm_pose_msg.joint_position[i] = q;
           lcm_pose_msg.joint_velocity[i] = qd;
-          // TODO: is this right? or should I just assign f?
-          lcm_pose_msg.joint_effort[i] = iter->second.getEffort(); // is this commanded or measured?
+          lcm_pose_msg.joint_effort[i] = iter->second.getEffort(); // measured!
+
+          // republish to guarantee sync
+          
+	  lcm_commanded_msg.joint_name[i] = iter->first;
+          lcm_commanded_msg.joint_position[i] = command.position;
+          lcm_commanded_msg.joint_velocity[i] = command.velocity;
+          lcm_commanded_msg.joint_effort[i] = command.effort;
 
           i++;
       }   
       lcm_->publish("NASA_STATE", &lcm_pose_msg);
+      lcm_->publish("NASA_COMMANDED_VALUES", &lcm_commanded_msg);
 
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
