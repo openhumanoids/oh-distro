@@ -20,9 +20,9 @@ classdef MultipleTreePlanner
   end
   
   properties (Constant)
-    EXPLORING = 1
-    GOAL_REACHED = 2
-    SUCCESS = 1
+    EXPLORING = 2
+    GOAL_REACHED = 1
+    SUCCESS = 3
     FAIL_ITERATION_LIMIT = 11
     FAIL_NO_FINAL_POSE = 12
   end
@@ -199,6 +199,7 @@ classdef MultipleTreePlanner
         obj.trees(1) = obj.trees(1).shortcut();
         qPath = obj.trees(1).rebuildTraj(obj.xGoal);
         cost = obj.trees(1).C(obj.trees(1).traj(1));
+        info = 1;
         if options.visualize
           fprintf('Final Cost = %.4f\n', cost)
         end
