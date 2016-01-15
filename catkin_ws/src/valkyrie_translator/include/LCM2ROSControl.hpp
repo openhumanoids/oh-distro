@@ -17,6 +17,7 @@
 #include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 #include "lcmtypes/drc/robot_command_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/joint_command_t.hpp"
 
 #include "lcmtypes/mav/ins_t.hpp"

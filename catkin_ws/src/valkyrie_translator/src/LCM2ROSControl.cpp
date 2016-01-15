@@ -157,6 +157,29 @@ namespace valkyrie_translator
       lcm_torque_msg.joint_name.assign(effortJointHandles.size(), "");
       lcm_torque_msg.joint_position.assign(effortJointHandles.size(), 0.);
 
+      // need to decide what message we're really using for state. for now,
+      // assembling this to make director happy
+      drc::robot_state_t lcm_state_msg;
+      lcm_state_msg.utime = utime;
+      lcm_state_msg.num_joints = effortJointHandles.size();
+      lcm_state_msg.joint_name.assign(effortJointHandles.size(), "");
+      lcm_state_msg.joint_position.assign(effortJointHandles.size(), 0.);
+      lcm_state_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
+      lcm_state_msg.joint_effort.assign(effortJointHandles.size(), 0.);
+      lcm_state_msg.pose.translation.x = 0.0;
+      lcm_state_msg.pose.translation.y = 0.0;
+      lcm_state_msg.pose.translation.z = 0.0;
+      lcm_state_msg.pose.rotation.w = 1.0;
+      lcm_state_msg.pose.rotation.x = 0.0;
+      lcm_state_msg.pose.rotation.y = 0.0;
+      lcm_state_msg.pose.rotation.z = 0.0;
+      lcm_state_msg.twist.linear_velocity.x = 0.0;
+      lcm_state_msg.twist.linear_velocity.y = 0.0;
+      lcm_state_msg.twist.linear_velocity.z = 0.0;
+      lcm_state_msg.twist.angular_velocity.x = 0.0;
+      lcm_state_msg.twist.angular_velocity.y = 0.0;
+      lcm_state_msg.twist.angular_velocity.z = 0.0;
+
       int i = 0;
       for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
       {
@@ -189,6 +212,12 @@ namespace valkyrie_translator
           lcm_pose_msg.joint_velocity[i] = qd;
           lcm_pose_msg.joint_effort[i] = iter->second.getEffort(); // measured!
 
+          lcm_state_msg.joint_name[i] = iter->first;
+          lcm_state_msg.joint_position[i] = q;
+          lcm_state_msg.joint_velocity[i] = qd;
+          lcm_state_msg.joint_effort[i] = iter->second.getEffort(); // measured!
+
+
           // republish to guarantee sync
           lcm_commanded_msg.joint_name[i] = iter->first;
           lcm_commanded_msg.joint_position[i] = command.position;
@@ -203,6 +232,7 @@ namespace valkyrie_translator
       lcm_->publish("NASA_STATE", &lcm_pose_msg);
       lcm_->publish("NASA_VALUES", &lcm_commanded_msg);
       lcm_->publish("NASA_TORQUE", &lcm_torque_msg);
+      lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
 
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
