@@ -201,8 +201,8 @@ namespace valkyrie_translator
           i++;
       }   
       lcm_->publish("NASA_STATE", &lcm_pose_msg);
-      lcm_->publish("NASA_COMMANDED_VALUES", &lcm_commanded_msg);
-      lcm_->publish("NASA_COMMANDED_TORQUE", &lcm_torque_msg);
+      lcm_->publish("NASA_VALUES", &lcm_commanded_msg);
+      lcm_->publish("NASA_TORQUE", &lcm_torque_msg);
 
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
