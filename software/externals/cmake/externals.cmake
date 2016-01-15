@@ -80,7 +80,7 @@ set(microstrain_revision 93f4582491f0cfec1c658ed3fb84ae84a13bc6c2)
 set(microstrain_depends common_utils)
 
 set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
-set(bullet_revision 4319ffd7e9251066d93064f5a8dab12e33dbe5e2)
+set(bullet_revision 24b0a184e177c793a1b2f37f55d3544f2a7c33ae)
 set(bullet_depends)
 
 set(fovis_url ssh://git@github.com/fovis/fovis.git)
