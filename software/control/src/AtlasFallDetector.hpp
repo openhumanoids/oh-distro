@@ -2,7 +2,7 @@
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
 
-#include "drake/RigidBodyManipulator.h"
+#include "drake/systems/plants/RigidBodyTree.h"
 #include "lcmtypes/drc/fall_detector_status_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
@@ -86,15 +86,15 @@ class AtlasFallDetector {
 public:
   ~AtlasFallDetector() {}
 
-  AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model, bool sim_override = false);
+  AtlasFallDetector(std::shared_ptr<RigidBodyTree> model, bool sim_override = false);
   void run() {
     while(0 == this->lcm.handle());
   }
 
 private:
-  std::shared_ptr<RigidBodyManipulator> model;
+  std::shared_ptr<RigidBodyTree> model;
   std::shared_ptr<RobotStateDriver> state_driver;
-  std::shared_ptr<KinematicsCache<double>> kinematics_cache;
+  KinematicsCache<double> kinematics_cache;
   std::unique_ptr<Debounce> icp_is_ok_debounce;
   std::unique_ptr<Debounce> icp_is_capturable_debounce;
   std::map<FootID, int> foot_body_ids;

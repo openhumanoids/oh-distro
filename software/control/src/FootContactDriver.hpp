@@ -1,5 +1,5 @@
 #include "drc/foot_contact_estimate_t.hpp"
-#include "drake/QPCommon.h"
+#include "drake/systems/controllers/QPCommon.h"
 
 class FootContactDriver {
   private:

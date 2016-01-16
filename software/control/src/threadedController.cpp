@@ -9,12 +9,12 @@
 #include "drc/robot_state_t.hpp"
 #include "drc/atlas_behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
-#include "drake/QPCommon.h"
+#include "drake/systems/controllers/QPCommon.h"
 #include "RobotStateDriver.hpp"
 #include "AtlasCommandDriver.hpp"
 #include "FootContactDriver.hpp"
-#include "drake/ForceTorqueMeasurement.h"
-#include "drake/Side.h"
+#include "drake/systems/plants/ForceTorqueMeasurement.h"
+#include "drake/systems/robotInterfaces/Side.h"
 
 using namespace Eigen;
 
@@ -373,8 +373,8 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       // std::cout << "qd: " << qp_output.qd_ref << std::endl;
       // std::cout << "qdd: " << qp_output.qdd << std::endl;
 
-      AtlasParams *params; 
-      std::map<string,AtlasParams>::iterator it;
+      QPControllerParams *params;
+      std::map<string,QPControllerParams>::iterator it;
       it = solveArgs.pdata->param_sets.find(qp_input->param_set_name);
       if (it == solveArgs.pdata->param_sets.end()) {
         mexWarnMsgTxt("Got a param set I don't recognize! Using standing params instead");

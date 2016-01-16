@@ -1,4 +1,4 @@
-#include "drake/controlUtil.h"
+#include "drake/systems/controllers/controlUtil.h"
 #include "lcmtypes/drc/robot_state_t.hpp"
 
 class RobotStateDriver {

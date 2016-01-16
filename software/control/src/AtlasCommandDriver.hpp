@@ -1,6 +1,6 @@
 #include <string>
 #include "lcmtypes/drc/atlas_command_t.hpp"
-#include "drake/QPCommon.h"
+#include "drake/systems/controllers/QPCommon.h"
 
 class AtlasCommandDriver {
   private:

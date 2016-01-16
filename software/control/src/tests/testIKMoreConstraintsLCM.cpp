@@ -1,8 +1,8 @@
-#include <drake/RigidBodyIK.h>
-#include <drake/RigidBodyManipulator.h>
-#include <drake/RigidBodyConstraint.h>
+#include <drake/systems/plants/RigidBodyIK.h>
+#include <drake/systems/plants/RigidBodyTree.h>
+#include <drake/systems/plants/constraint/RigidBodyConstraint.h>
 
-#include <drake/IKoptions.h>
+#include <drake/systems/plants/IKoptions.h>
 #include <iostream>
 #include <cstdlib>
 #include <limits>
@@ -16,7 +16,7 @@ using namespace Eigen;
 #include <lcm/lcm-cpp.hpp>
 
 // Find the joint position indices corresponding to 'name'
-vector<int> getJointPositionVectorIndices(const RigidBodyManipulator &model, const std::string &name) {
+vector<int> getJointPositionVectorIndices(const RigidBodyTree &model, const std::string &name) {
   shared_ptr<RigidBody> joint_parent_body = model.findJoint(name);
   int num_positions = joint_parent_body->getJoint().getNumPositions();
   vector<int> ret(static_cast<size_t>(num_positions));
@@ -26,7 +26,7 @@ vector<int> getJointPositionVectorIndices(const RigidBodyManipulator &model, con
   return ret;
 }
 
-void findJointAndInsert(const RigidBodyManipulator &model, const std::string &name, vector<int> &position_list) {
+void findJointAndInsert(const RigidBodyTree &model, const std::string &name, vector<int> &position_list) {
   auto position_indices = getJointPositionVectorIndices(model, name);
 
   position_list.insert(position_list.end(), position_indices.begin(), position_indices.end());
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   App app(lcm);
 
-  RigidBodyManipulator model(file_path);
+  RigidBodyTree model(file_path);
 
   Vector2d tspan;
   tspan << 0, 1;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
   int r_hand = model.findLinkId("r_hand");
   Vector3d r_hand_pt = Vector3d::Zero();
   Vector3d rhand_pos0;
-  //Vector3d rhand_pos0 = model.forwardKin(r_hand_pt, r_hand, 0, 0, 0).value();
+  //Vector3d rhand_pos0 = model.forwardKin(r_hand_pt, r_hand, 0, 0);
   rhand_pos0(0) = 0.2;
   rhand_pos0(1) = -0.5;
   rhand_pos0(2) = 0.4;
@@ -290,8 +290,8 @@ int main(int argc, char *argv[])
 
 
   /////////////////////////////////////////
-  KinematicsCache<double> cache = model.doKinematics(q_sol,0);
-  Vector3d com = model.centerOfMass(cache, 0).value();
+  KinematicsCache<double> cache = model.doKinematics(q_sol);
+  Vector3d com = model.centerOfMass(cache);
   printf("%5.2f\n%5.2f\n%5.2f\n",com(0),com(1),com(2));
 
   drc::robot_state_t robot_state_msg;
