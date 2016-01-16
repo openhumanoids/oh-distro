@@ -18,11 +18,45 @@ For a given joint, offers utilities for:
 
 '''
 
-joint = 'rightElbowPitch'
+joint = 'leftAnkleRoll'
 mode = 'position'
 signal = 'chirp'
 
 # joint, joint position, K gain multiplier, D gain multiplier
+val_gains = {
+  'torsoYaw': (100.0, 1.0),
+  'torsoPitch': (800.0, 1.0),
+  'torsoRoll': (800.0, 1.0),
+  'lowerNeckPitch': (30.0, 1.0),
+  'neckYaw': (30.0, 1.0),
+  'upperNeckPitch': (30.0, 1.0),
+  'rightShoulderPitch': (100.0, 1.0),
+  'rightShoulderRoll': (100.0, 1.0),
+  'rightShoulderYaw': (50.0, 1.0),
+  'rightElbowPitch': (50.0, 1.0),
+  'rightForearmYaw': (30.0, 1.0),
+  'rightWristRoll': (30.0, 1.0),
+  'rightWristPitch': (30.0, 1.0),
+  'leftShoulderPitch': (100.0, 1.0),
+  'leftShoulderRoll': ( 100.0, 1.0),
+  'leftShoulderYaw': (50.0, 1.0),
+  'leftElbowPitch': (30.0, 1.0),
+  'leftForearmYaw': (30.0, 1.0),
+  'leftWristRoll': (30.0, 1.0),
+  'leftWristPitch': (30.0, 1.0),
+  'rightHipYaw': (50.0, 1.0),
+  'rightHipRoll': (100.0, 1.0),
+  'rightHipPitch': ( 200.0, 1.0),
+  'rightKneePitch': (50.0, 1.0),
+  'rightAnklePitch': ( 30.0, 1.0),
+  'rightAnkleRoll': ( 30.0, 1.0),
+  'leftHipYaw': (50.0, 1.0),
+  'leftHipRoll': (100.0, 1.0),
+  'leftHipPitch': ( 200.0, 1.0),
+  'leftKneePitch': (50.0, 1.0),
+  'leftAnklePitch': (30.0, 1.0),
+  'leftAnkleRoll': (30.0, 1.0)
+}
 val_default_pose = (
   ('torsoYaw', 0.0, 30.0, 1.0),
   ('torsoPitch', 0.0, 30.0, 1.0),
@@ -50,8 +84,8 @@ val_default_pose = (
   ('rightKneePitch', 1.205, 30.0, 1.0),
   ('rightAnklePitch', -0.71, 30.0, 1.0),
   ('rightAnkleRoll', 0.0, 30.0, 1.0),
-  ('leftHipYaw', 0.0, 30.0, 1.0),
-  ('leftHipRoll', 0.0, 30.0, 1.0),
+  ('leftHipYaw', 0.2, 30.0, 1.0),
+  ('leftHipRoll', 1.0, 30.0, 1.0),
   ('leftHipPitch', -0.49, 30.0, 1.0),
   ('leftKneePitch', 1.205, 30.0, 1.0),
   ('leftAnklePitch', -0.71, 30.0, 1.0),
@@ -62,14 +96,14 @@ T = 25. # duration, s
 dt = 0.05
 
 # chirp specific params
-amp = 0.4 # Nm or radians
+amp = 0.3 # Nm or radians
 chirp_f0 = 0.1 # starting freq, hz
-chirp_fT = 0.5 # ending freq, hz
+chirp_fT = 1.0 # ending freq, hz
 chirp_sign = 0 # 1: below offset, 1: above offset, 0: centered on offset
-chirp_offset = 0.8
+chirp_offset = 0.0
 
 # zoh/foh
-foh_vals = [0.8, 0.0, 0.0, 0.8] # Nm or radians
+foh_vals = [0.0, 0.0, 0.0, 0.0] # Nm or radians
 
 # gains for the joint of interest
 k_q_p = 1
@@ -84,7 +118,7 @@ ff_const = 0.
 # base gains for the other joints
 other_k_q_p = 1
 other_k_q_i = 0.
-other_k_qd_p = 0
+other_k_qd_p = 1
 other_k_f_p = 0.
 other_ff_qd = 0.
 other_ff_qd_d = 0.
@@ -159,9 +193,9 @@ for i in range(ts.shape[0]):
 
   command = joint_command_t()
   command.joint_name = joint
-  command.k_q_p = k_q_p*val_default_pose[command_i][2]
+  command.k_q_p = k_q_p*val_gains[joint][0]
   command.k_q_i = k_q_i
-  command.k_qd_p = k_qd_p*val_default_pose[command_i][3]
+  command.k_qd_p = k_qd_p*val_gains[joint][1]
   command.k_f_p = k_f_p
   command.ff_qd = ff_qd
   command.ff_qd_d = ff_qd_d
