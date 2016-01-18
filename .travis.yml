@@ -4,5 +4,5 @@ services:
   - docker
 
 script:
-  - docker pull openhumanoids/oh-distro-base
+  - docker pull openhumanoids/oh-distro-base:1.0
   - docker run openhumanoids/oh-distro-base "./build-oh-distro.sh"
