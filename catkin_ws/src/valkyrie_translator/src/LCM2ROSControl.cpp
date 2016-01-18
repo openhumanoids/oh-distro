@@ -130,7 +130,7 @@ namespace valkyrie_translator
 
       double dt = (time - last_update).toSec();
       last_update = time;
-      int64_t utime = time.toSec() * 100000.;
+      int64_t utime = time.toSec() * 1000000.;
 
       // push out the joint states for all joints we see advertised
       // and also the commanded torques, for reference
