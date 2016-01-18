@@ -1,5 +1,5 @@
 #include "mex.h"
-#include "control/QPReactiveRecoveryPlan.hpp"
+#include "QPReactiveRecoveryPlan.hpp"
 #include "drake/util/drakeMexUtil.h"
 #include "drake/systems/controllers/QPCommon.h"
 #include "drake/systems/controllers/controlMexUtil.h"
