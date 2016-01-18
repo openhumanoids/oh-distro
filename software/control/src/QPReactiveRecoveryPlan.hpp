@@ -1,7 +1,7 @@
 #include "drake/systems/plants/RigidBodyTree.h"
 #include "drake/util/Polynomial.h"
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
-#include "control/ExponentialForm.hpp"
+#include "drake/control/ExponentialForm.hpp"
 #include "drake/systems/controllers/QPCommon.h"
 #include "drake/lcmt_qp_controller_input.hpp"
 #include <lcm/lcm-cpp.hpp>

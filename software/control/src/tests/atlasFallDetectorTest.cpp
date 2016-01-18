@@ -1,4 +1,4 @@
-#include "control/AtlasFallDetector.hpp"
+#include "drake/control/AtlasFallDetector.hpp"
 
 int testDebounce() {
   std::unique_ptr<Debounce> debounce (new Debounce());
