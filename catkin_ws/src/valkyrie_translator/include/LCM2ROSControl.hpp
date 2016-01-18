@@ -16,14 +16,29 @@
 
 #include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
-#include "lcmtypes/drc/robot_command_t.hpp"
+#include "lcmtypes/drc/atlas_command_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/drc/joint_command_t.hpp"
 
 #include "lcmtypes/mav/ins_t.hpp"
 
 namespace valkyrie_translator
 {
+
+   typedef struct _joint_command {
+    double position;
+    double velocity;
+    double effort;
+
+    double k_q_p; // corresponds to kp_position in drcsim API
+    double k_q_i; // corresponds to ki_position in drcsim API
+    double k_qd_p; // corresponds to kp_velocity in drcsim API
+    double k_f_p;
+    double ff_qd; // maps to kd_position in drcsim API (there isnt an equivalent gain in the bdi api)
+    double ff_qd_d;
+    double ff_f_d;
+    double ff_const;
+   } joint_command;
+
    class LCM2ROSControl;
 
    /* Manages subscription for the LCM2ROSControl class. 
@@ -34,7 +49,7 @@ namespace valkyrie_translator
         LCM2ROSControl_LCMHandler(LCM2ROSControl& parent);
         virtual ~LCM2ROSControl_LCMHandler();
         void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                               const drc::robot_command_t* msg);
+                               const drc::atlas_command_t* msg);
         void update();
    private:
         LCM2ROSControl& parent_;
@@ -55,7 +70,7 @@ namespace valkyrie_translator
         
         // Public so it can be modified by the LCMHandler. Should eventually create
         // a friend class arrangement to make this private again.
-        std::map<std::string, drc::joint_command_t> latest_commands;
+        std::map<std::string, joint_command> latest_commands;
 
    protected:        
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw, 

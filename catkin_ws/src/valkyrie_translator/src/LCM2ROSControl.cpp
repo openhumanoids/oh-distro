@@ -56,8 +56,7 @@ namespace valkyrie_translator
         for(unsigned int i=0; i<effortNames.size(); i++)
         {
           effortJointHandles[effortNames[i]] = effort_hw->getHandle(effortNames[i]);
-          latest_commands[effortNames[i]] = drc::joint_command_t();
-          latest_commands[effortNames[i]].joint_name = effortNames[i];
+          latest_commands[effortNames[i]] = joint_command();
           latest_commands[effortNames[i]].position = 0.0;
           latest_commands[effortNames[i]].velocity = 0.0;
           latest_commands[effortNames[i]].effort = 0.0;
@@ -189,7 +188,7 @@ namespace valkyrie_translator
           double qd = iter->second.getVelocity();
           double f = iter->second.getEffort();
 
-          drc::joint_command_t command = latest_commands[iter->first];
+          joint_command& command = latest_commands[iter->first];
           double command_effort = 
             command.k_q_p * ( command.position - q ) + 
             command.k_q_i * ( command.position - q ) * dt + 
@@ -291,17 +290,27 @@ namespace valkyrie_translator
    LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
    
    void LCM2ROSControl_LCMHandler::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                               const drc::robot_command_t* msg) {
+                               const drc::atlas_command_t* msg) {
       //ROS_INFO("Got new setpoints\n");
-      printf("Called\n");
       // TODO: zero non-mentioned joints for safety? 
       
       for(unsigned int i = 0; i < msg->num_joints; ++i){
         //ROS_INFO("Joint %s ", msg->joint_commands[i].joint_name.c_str());`
-        auto search = parent_.latest_commands.find(msg->joint_commands[i].joint_name);
+        auto search = parent_.latest_commands.find(msg->joint_names[i]);
         if (search != parent_.latest_commands.end()) {
           //ROS_INFO("found in keys");
-          parent_.latest_commands[msg->joint_commands[i].joint_name] = msg->joint_commands[i];
+          joint_command& command = parent_.latest_commands[msg->joint_names[i]];
+          command.position = msg->position[i];
+          command.velocity = msg->velocity[i];
+          command.effort = msg->effort[i];
+          command.k_q_p = msg->k_q_p[i];
+          command.k_q_i = msg->k_q_i[i];
+          command.k_qd_p = msg->k_qd_p[i];
+          command.k_f_p = msg->k_f_p[i];
+          command.ff_qd = msg->ff_qd[i];
+          command.ff_qd_d = msg->ff_qd_d[i];
+          command.ff_f_d = msg->ff_f_d[i];
+          command.ff_const = msg->ff_const[i];
         } else {
           //ROS_INFO("had no match.");
         }
