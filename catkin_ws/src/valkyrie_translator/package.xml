@@ -24,7 +24,6 @@
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <controller_interface plugin="${prefix}/SimpleController.xml"/>
     <controller_interface plugin="${prefix}/LCM2ROSControl.xml"/>
   </export>
 </package>

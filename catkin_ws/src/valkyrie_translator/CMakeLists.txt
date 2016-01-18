@@ -29,10 +29,6 @@ include_directories(
 )
 
 ######################################################
-add_library(SimpleController src/SimpleController.cpp)
-target_link_libraries(SimpleController ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(SimpleController lcm lcmtypes_pronto-lcmtypes)
-
 add_library(LCM2ROSControl src/LCM2ROSControl.cpp)
 target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} )
 pods_use_pkg_config_packages(LCM2ROSControl lcm lcmtypes_pronto-lcmtypes)
