@@ -2,8 +2,7 @@ import numpy
 import colorsys
 
 # joints to plot
-joints = ['leftShoulderPitch','leftShoulderRoll','leftShoulderYaw','leftElbowPitch']#,'leftForearmYaw']#,'leftWristRoll','leftWristPitch']
-
+joints = ["leftHipYaw", "leftHipRoll", "leftHipPitch", "leftKneePitch", "leftAnklePitch", "leftAnkleRoll"]
 # string arrays for EST_ROBOT_STATE and ATLAS_COMMAND
 jn = msg.joint_name
 
@@ -21,12 +20,10 @@ addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
 addSignals('NASA_COMMAND', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples)
 addSignals('NASA_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
 
-
 # velocity plot
 addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
 addSignals('NASA_COMMAND', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples)
 addSignals('NASA_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_dark)
-
 
 # effort plot
 addPlot(timeWindow=15, yLimits=[-2.75, 2.75])

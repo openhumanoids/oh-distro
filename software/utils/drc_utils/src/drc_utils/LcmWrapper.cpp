@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 #include <lcm/lcm-cpp.hpp>
+#include <sys/select.h>
 
 using namespace drc;
 
