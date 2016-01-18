@@ -18,7 +18,7 @@ For a given joint, offers utilities for:
 
 '''
 
-joint = 'leftAnkleRoll'
+targetjoint = 'leftAnkleRoll'
 mode = 'position'
 signal = 'chirp'
 
@@ -57,40 +57,40 @@ val_gains = {
   'leftAnklePitch': (30.0, 1.0),
   'leftAnkleRoll': (30.0, 1.0)
 }
-val_default_pose = (
-  ('torsoYaw', 0.0, 30.0, 1.0),
-  ('torsoPitch', 0.0, 30.0, 1.0),
-  ('torsoRoll', 0.0, 30.0, 1.0),
-  ('lowerNeckPitch', 0.0, 30.0, 1.0),
-  ('neckYaw', 0.0, 30.0, 1.0),
-  ('upperNeckPitch', 0.0, 30.0, 1.0),
-  ('rightShoulderPitch', 0.300196631343, 30.0, 1.0),
-  ('rightShoulderRoll', 1.25, 30.0, 1.0),
-  ('rightShoulderYaw', 0.0, 30.0, 1.0),
-  ('rightElbowPitch', 0.785398163397, 30.0, 1.0),
-  ('rightForearmYaw', 1.571, 30.0, 1.0),
-  ('rightWristRoll', 0.0, 30.0, 1.0),
-  ('rightWristPitch', 0.0, 30.0, 1.0),
-  ('leftShoulderPitch', 0.300196631343, 30.0, 1.0),
-  ('leftShoulderRoll', -1.25, 30.0, 1.0),
-  ('leftShoulderYaw', 0.0, 30.0, 1.0),
-  ('leftElbowPitch', -0.785398163397, 30.0, 1.0),
-  ('leftForearmYaw', 1.571, 30.0, 1.0),
-  ('leftWristRoll', 0.0, 30.0, 1.0),
-  ('leftWristPitch', 0.0, 30.0, 1.0),
-  ('rightHipYaw', 0.0, 30.0, 1.0),
-  ('rightHipRoll', 0.0, 30.0, 1.0),
-  ('rightHipPitch', -0.49, 30.0, 1.0),
-  ('rightKneePitch', 1.205, 30.0, 1.0),
-  ('rightAnklePitch', -0.71, 30.0, 1.0),
-  ('rightAnkleRoll', 0.0, 30.0, 1.0),
-  ('leftHipYaw', 0.2, 30.0, 1.0),
-  ('leftHipRoll', 1.0, 30.0, 1.0),
-  ('leftHipPitch', -0.49, 30.0, 1.0),
-  ('leftKneePitch', 1.205, 30.0, 1.0),
-  ('leftAnklePitch', -0.71, 30.0, 1.0),
-  ('leftAnkleRoll', 0.0, 30.0, 1.0)
-)
+val_default_pose = {
+  'torsoYaw': 0.0,
+  'torsoPitch': 0.0,
+  'torsoRoll': 0.0,
+  'lowerNeckPitch': 0.0,
+  'neckYaw': 0.0,
+  'upperNeckPitch': 0.0,
+  'rightShoulderPitch': 0.300196631343,
+  'rightShoulderRoll': 1.25,
+  'rightShoulderYaw': 0.0,
+  'rightElbowPitch': 0.785398163397,
+  'rightForearmYaw': 1.571,
+  'rightWristRoll': 0.0,
+  'rightWristPitch': 0.0,
+  'leftShoulderPitch': 0.300196631343,
+  'leftShoulderRoll': -1.25,
+  'leftShoulderYaw': 0.0,
+  'leftElbowPitch': -0.785398163397,
+  'leftForearmYaw': 1.571,
+  'leftWristRoll': 0.0,
+  'leftWristPitch': 0.0,
+  'rightHipYaw': 0.0,
+  'rightHipRoll': 0.0,
+  'rightHipPitch': -0.49,
+  'rightKneePitch': 1.205,
+  'rightAnklePitch': -0.71,
+  'rightAnkleRoll': 0.0,
+  'leftHipYaw': 0.2,
+  'leftHipRoll': 1.0,
+  'leftHipPitch': -0.49,
+  'leftKneePitch': 1.205,
+  'leftAnklePitch': -0.71,
+  'leftAnkleRoll': 0.0
+}
 
 T = 25. # duration, s
 dt = 0.05
@@ -98,7 +98,7 @@ dt = 0.05
 # chirp specific params
 amp = 0.3 # Nm or radians
 chirp_f0 = 0.1 # starting freq, hz
-chirp_fT = 1.0 # ending freq, hz
+chirp_fT = 0.5 # ending freq, hz
 chirp_sign = 0 # 1: below offset, 1: above offset, 0: centered on offset
 chirp_offset = 0.0
 
@@ -127,22 +127,22 @@ other_ff_const = 0.
 
 
 msg = robot_command_t();  
-msg.num_joints = len(val_default_pose)
+msg.num_joints = len(val_default_pose.keys())
 command_i = -1
-for i in range(msg.num_joints):
-  if val_default_pose[i][0] == joint:
+for i, joint in enumerate(val_default_pose.keys()):
+  if joint == targetjoint:
     command_i = i
   command = joint_command_t()
-  command.joint_name = val_default_pose[i][0]
-  command.k_q_p = other_k_q_p*val_default_pose[i][2]
+  command.joint_name = joint
+  command.k_q_p = other_k_q_p*val_gains[joint][0]
   command.k_q_i = other_k_q_i
-  command.k_qd_p = other_k_qd_p*val_default_pose[i][3]
+  command.k_qd_p = other_k_qd_p*val_gains[joint][1]
   command.k_f_p = other_k_f_p
   command.ff_qd = other_ff_qd
   command.ff_qd_d = other_ff_qd_d
   command.ff_f_d = other_ff_f_d
   command.ff_const = other_ff_const
-  command.position = val_default_pose[i][1]
+  command.position = val_default_pose[joint]
   command.velocity = 0
   command.effort = 0
   msg.joint_commands.append(command)
@@ -192,10 +192,10 @@ for i in range(ts.shape[0]):
     time.sleep(0.001)
 
   command = joint_command_t()
-  command.joint_name = joint
-  command.k_q_p = k_q_p*val_gains[joint][0]
+  command.joint_name = targetjoint
+  command.k_q_p = k_q_p*val_gains[targetjoint][0]
   command.k_q_i = k_q_i
-  command.k_qd_p = k_qd_p*val_gains[joint][1]
+  command.k_qd_p = k_qd_p*val_gains[targetjoint][1]
   command.k_f_p = k_f_p
   command.ff_qd = ff_qd
   command.ff_qd_d = ff_qd_d
