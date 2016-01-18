@@ -1,0 +1,8 @@
+sudo: required
+
+services:
+  - docker
+
+script:
+  - docker pull openhumanoids/oh-distro-base
+  - docker run openhumanoids/oh-distro-base "./build-oh-distro.sh"
