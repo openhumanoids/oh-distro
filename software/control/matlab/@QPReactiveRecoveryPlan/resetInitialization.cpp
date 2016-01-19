@@ -1,5 +1,5 @@
 #include "mex.h"
-#include "control/QPReactiveRecoveryPlan.hpp"
+#include "../../src/QPReactiveRecoveryPlan.hpp"
 #include "drake/util/drakeMexUtil.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
