@@ -3,13 +3,15 @@ sudo: required
 services:
   - docker
 
-git:
-  submodules: false
+#git:
+#  submodules: false
 
 # need to replace SSH submodule URLs with HTTPS
-before_install:
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' catkin_ws/.gitmodules
+#before_install:
+#  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+#  - sed -i 's/git@github.com:/https:\/\/github.com\//' catkin_ws/.gitmodules
+
+install: true
 
 script:
   - docker pull openhumanoids/oh-distro-base:1.0
