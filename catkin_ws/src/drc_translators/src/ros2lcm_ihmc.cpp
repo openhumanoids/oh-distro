@@ -37,12 +37,6 @@
 #include <ihmc_msgs/RawImuData.h>
 #include <ihmc_msgs/LastReceivedMessage.h>
 #include <ihmc_msgs/FootstepStatusMessage.h>
-// #include <pronto_msgs/CachedRawIMUData.h>
-// #include <pronto_msgs/RawIMUData.h>
-// #include <pronto_msgs/FootSensor.h>
-
-#include <val_hardware_msgs/valImuSensor.h>
-#include <val_hardware_msgs/valAtiSensor.h>
 
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/pronto/force_torque_t.hpp"
@@ -122,13 +116,6 @@ private:
   geometry_msgs::WrenchStamped lastRightHandSensorMsg_;
   int64_t lastJointStateUtime_;
 
-  // NASA Data
-  ros::Subscriber jointCommandsNasaSub_, jointStatesNasaSub_, imuSensorNasaSub_, footSensorNasaSub_;
-  void jointCommandsNasaCallback(const sensor_msgs::JointStateConstPtr& msg);
-  void jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg);
-  void imuSensorNasaCallback(const val_hardware_msgs::valImuSensorConstPtr& msg);
-  void footSensorNasaCallback(const val_hardware_msgs::valAtiSensorConstPtr& msg);
-
 };
 
 App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::string imuSensor_in) :
@@ -190,15 +177,6 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
   }
   laserScanSub_ = node_.subscribe(std::string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
 
-
-  jointStatesNasaSub_ = node_.subscribe(std::string("/joint_states"), queue_size,
-                                    &App::jointStatesNasaCallback, this);
-  jointCommandsNasaSub_ = node_.subscribe(std::string("/joint_commands"), queue_size,
-                                    &App::jointCommandsNasaCallback, this);
-  imuSensorNasaSub_ = node_.subscribe(std::string("/imu_states"), queue_size,
-                                    &App::imuSensorNasaCallback, this);
-  footSensorNasaSub_ = node_.subscribe(std::string("/force_torque_states"), queue_size,
-                                    &App::footSensorNasaCallback, this);
 }
 
 App::~App()
@@ -723,81 +701,6 @@ void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_ms
 }
 
 
-////////////////////// NASA Originating Data ////////////////////////
-void App::jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
-{
-    pronto::joint_state_t amsg;
-    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
-
-    for (int i = 0; i < msg->position.size(); i++)
-    {
-        amsg.joint_name.push_back(msg->name[i]);
-        amsg.joint_position.push_back(msg->position[i]);
-        amsg.joint_velocity.push_back(msg->velocity[i]);
-        amsg.joint_effort.push_back(msg->effort[i]);
-    }
-    amsg.num_joints = amsg.joint_name.size();
-    lcmPublish_.publish("NASA_STATE", &amsg);
-}
-
-void App::jointCommandsNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
-{
-    pronto::joint_state_t amsg;
-    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
-
-    for (int i = 0; i < msg->position.size(); i++)
-    {
-        amsg.joint_name.push_back(msg->name[i]);
-        amsg.joint_position.push_back(msg->position[i]);
-        amsg.joint_velocity.push_back(msg->effort[i]);
-        amsg.joint_effort.push_back(msg->effort[i]);
-    }
-    amsg.num_joints = amsg.joint_name.size();
-    lcmPublish_.publish("NASA_COMMAND", &amsg);
-}
-
-void App::imuSensorNasaCallback(const val_hardware_msgs::valImuSensorConstPtr& msg)
-{
-
-  for (int i=0; i < msg->name.size(); i++){
-    mav::ins_t imu;
-    imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
-    imu.device_time = imu.utime;
-    imu.gyro[0] = msg->angularVelocity[i].x;
-    imu.gyro[1] = msg->angularVelocity[i].y;
-    imu.gyro[2] = msg->angularVelocity[i].z;
-    imu.mag[0] = 0;
-    imu.mag[1] = 0;
-    imu.mag[2] = 0;
-    imu.accel[0] = msg->linearAcceleration[i].x;
-    imu.accel[1] = msg->linearAcceleration[i].y;
-    imu.accel[2] = msg->linearAcceleration[i].z;
-    imu.quat[0] = msg->orientation[i].w;
-    imu.quat[1] = msg->orientation[i].x;
-    imu.quat[2] = msg->orientation[i].y;
-    imu.quat[2] = msg->orientation[i].z;
-    imu.pressure = 0;
-    imu.rel_alt = 0;
-
-    std::string output_channel = "NASA_INS_" + msg->name[i];
-    lcmPublish_.publish(output_channel, &imu);
-  }
-
-}
-
-void App::footSensorNasaCallback(const val_hardware_msgs::valAtiSensorConstPtr& msg)
-{
-
-  lastLeftFootSensorMsg_.wrench = (msg->forceTorque[0]);
-  lastLeftFootSensorMsg_.header = msg->header;
-  lastRightFootSensorMsg_.wrench = (msg->forceTorque[1]);
-  lastRightFootSensorMsg_.header = msg->header;
-
-  drc::six_axis_force_torque_array_t six_axis_force_torque_array;
-  appendSensors(six_axis_force_torque_array, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
-  lcmPublish_.publish("NASA_FORCE_TORQUE", &six_axis_force_torque_array);
-}
-
 int main(int argc, char **argv)
 {
   std::string robotName;  // = "valkyrie";  // "atlas"
@@ -831,10 +734,10 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  ros::init(argc, argv, "ros2lcm");
+  ros::init(argc, argv, "ros2lcm_ihmc");
   ros::NodeHandle nh;
   new App(nh, mode, robotName, imuSensor);
-  ROS_ERROR("ROS2LCM Translator Ready [mode: %d, %s] [robotName: %s] [imuSensor: %s]", mode, modeArgument.c_str(),
+  ROS_ERROR("ROS2LCM IHMC Translator Ready [mode: %d, %s] [robotName: %s] [imuSensor: %s]", mode, modeArgument.c_str(),
             robotName.c_str(), imuSensor.c_str());
   ros::spin();
   return 0;

@@ -39,6 +39,12 @@ include_directories(
 )
 
 ######################################################
+add_executable(ros2lcm_nasa src/ros2lcm_nasa.cpp)
+target_link_libraries(ros2lcm_nasa ${catkin_LIBRARIES} )
+pods_use_pkg_config_packages(ros2lcm_nasa lcm lcmtypes_pronto-lcmtypes bot2-core eigen3)
+#add_dependencies(ros2lcm_nasa)# ipab_msgs_generate_messages_cpp)# ihmc_msgs_generate_messages_cpp)
+
+######################################################
 add_executable(ros2lcm_ihmc src/ros2lcm_ihmc.cpp)
 target_link_libraries(ros2lcm_ihmc ${catkin_LIBRARIES} )
 pods_use_pkg_config_packages(ros2lcm_ihmc lcm lcmtypes_pronto-lcmtypes lcmtypes_ihmc bot2-core eigen3)
