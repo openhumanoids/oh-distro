@@ -1,7 +1,0 @@
-<library path="lib/libSimpleController">
-  <class name="valkyrie_translator/SimpleController" type="valkyrie_translator::SimpleController" base_class_type="controller_interface::ControllerBase">
-    <description>
-      A simple test controller for ros control
-    </description>
-  </class>
-</library>

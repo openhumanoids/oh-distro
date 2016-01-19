@@ -2,8 +2,7 @@
 import os,sys
 import time
 import lcm
-from drc.robot_command_t import robot_command_t
-from drc.joint_command_t import joint_command_t
+from drc.atlas_command_t import atlas_command_t
 import time
 import numpy as np
 import math
@@ -126,26 +125,26 @@ other_ff_f_d = 0.
 other_ff_const = 0.
 
 
-msg = robot_command_t();  
+msg = atlas_command_t();  
 msg.num_joints = len(val_default_pose.keys())
 command_i = -1
 for i, joint in enumerate(val_default_pose.keys()):
   if joint == targetjoint:
     command_i = i
-  command = joint_command_t()
-  command.joint_name = joint
-  command.k_q_p = other_k_q_p*val_gains[joint][0]
-  command.k_q_i = other_k_q_i
-  command.k_qd_p = other_k_qd_p*val_gains[joint][1]
-  command.k_f_p = other_k_f_p
-  command.ff_qd = other_ff_qd
-  command.ff_qd_d = other_ff_qd_d
-  command.ff_f_d = other_ff_f_d
-  command.ff_const = other_ff_const
-  command.position = val_default_pose[joint]
-  command.velocity = 0
-  command.effort = 0
-  msg.joint_commands.append(command)
+  msg.joint_names.append(joint)
+  msg.k_q_p.append(other_k_q_p*val_gains[joint][0])
+  msg.k_q_i.append(other_k_q_i)
+  msg.k_qd_p.append(other_k_qd_p*val_gains[joint][1])
+  msg.k_f_p.append(other_k_f_p)
+  msg.ff_qd.append(other_ff_qd)
+  msg.ff_qd_d.append(other_ff_qd_d)
+  msg.ff_f_d.append(other_ff_f_d)
+  msg.ff_const.append(other_ff_const)
+  msg.position.append(val_default_pose[joint])
+  msg.velocity.append(0)
+  msg.effort.append(0)
+
+  msg.k_effort += ' '
 
 if command_i == -1:
   print "Couldn't find the desired joint!"
@@ -191,25 +190,25 @@ for i in range(ts.shape[0]):
   while (time.time() - starttime < t):
     time.sleep(0.001)
 
-  command = joint_command_t()
-  command.joint_name = targetjoint
-  command.k_q_p = k_q_p*val_gains[targetjoint][0]
-  command.k_q_i = k_q_i
-  command.k_qd_p = k_qd_p*val_gains[targetjoint][1]
-  command.k_f_p = k_f_p
-  command.ff_qd = ff_qd
-  command.ff_qd_d = ff_qd_d
-  command.ff_f_d = ff_f_d
-  command.ff_const = ff_const
+  msg.joint_names[command_i] = targetjoint
+  msg.k_q_p[command_i] = k_q_p*val_gains[targetjoint][0]
+  msg.k_q_i[command_i] = k_q_i
+  msg.k_qd_p[command_i] = k_qd_p*val_gains[targetjoint][1]
+  msg.k_f_p[command_i] = k_f_p
+  msg.ff_qd[command_i] = ff_qd
+  msg.ff_qd_d[command_i] = ff_qd_d
+  msg.ff_f_d[command_i] = ff_f_d
+  msg.ff_const[command_i] = ff_const
 
-  command.position = 0
-  command.velocity = 0
-  command.effort = 0
+  msg.position[command_i] = 0
+  msg.velocity[command_i] = 0
+  msg.effort[command_i] = 0
 
   if mode == 'force':
-    command.effort = val
+    msg.effort[command_i] = val
+    msg.position[command_i] = 0
   elif mode == 'position':
-    command.position = val
+    msg.position[command_i] = val
+    msg.effort[command_i] = 0
 
-  msg.joint_commands[command_i] = command
-  lc.publish("NASA_COMMAND", msg.encode())
+  lc.publish("ROBOT_COMMAND", msg.encode())
