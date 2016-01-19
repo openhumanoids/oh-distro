@@ -76,7 +76,7 @@
           "leftAnklePitch",
           "leftAnkleRoll"
           ],
-        "labels" : ["Yaw", "Roll", "Pitch", "Kneww", "APit", "ARoll"]
+        "labels" : ["Yaw", "Roll", "Pitch", "Knee", "APit", "ARoll"]
       },
 
       { "name" : "Right Leg",
