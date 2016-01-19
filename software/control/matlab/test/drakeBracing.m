@@ -8,8 +8,6 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
-import atlasControllers.*;
-
 options.floating = true;
 options.dt = 0.001;
 options.ignore_friction = 0;
