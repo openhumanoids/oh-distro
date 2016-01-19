@@ -1,8 +1,8 @@
 #include "mex.h"
-#include "control/QPReactiveRecoveryPlan.hpp"
-#include "drake/drakeMexUtil.h"
-#include "drake/QPCommon.h"
-#include "drake/controlMexUtil.h"
+#include "QPReactiveRecoveryPlan.hpp"
+#include "drake/util/drakeMexUtil.h"
+#include "drake/systems/controllers/QPCommon.h"
+#include "drake/systems/controllers/controlMexUtil.h"
 
 using namespace Eigen;
 
@@ -21,7 +21,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   int narg = 0;
   sizecheck(prhs[narg], 1, 1);
-  RigidBodyManipulator* model = (RigidBodyManipulator*) getDrakeMexPointer(prhs[narg]);
+  RigidBodyTree* model = (RigidBodyTree*) getDrakeMexPointer(prhs[narg]);
   ++narg;
 
   sizecheck(prhs[narg], model->num_positions, 1);

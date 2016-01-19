@@ -17,7 +17,7 @@ set(libbot_revision eb61f9bed5df654ffb0ce47ce44ca3d379a6e6e8)
 set(libbot_depends ${lcm_proj})
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
-set(Eigen_pod_revision 9061e9d5481fe0fdf55d5de322dfb1ed9d380a1c)
+set(Eigen_pod_revision ceba39500b89a77a8649b3e8b421b10a3d74d42b)
 set(Eigen_pod_depends)
 
 set(opencv_url https://github.com/Itseez/opencv.git)
@@ -80,7 +80,7 @@ set(microstrain_revision 93f4582491f0cfec1c658ed3fb84ae84a13bc6c2)
 set(microstrain_depends common_utils)
 
 set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
-set(bullet_revision 4319ffd7e9251066d93064f5a8dab12e33dbe5e2)
+set(bullet_revision 24b0a184e177c793a1b2f37f55d3544f2a7c33ae)
 set(bullet_depends)
 
 set(fovis_url ssh://git@github.com/fovis/fovis.git)
@@ -139,8 +139,12 @@ set(flycapture_external_args
   SOURCE_DIR ${source_prefix}/../drivers/flycapture
   )
 
-set(iris_url ssh://git@github.com/openhumanoids/iris-distro.git)
-set(iris_revision b278a85ba4b3b3da3af41feb39c13e4150d12d98)
+set(swigmake_url ssh://git@github.com/rdeits/swigmake.git)
+set(swigmake_revision ab03741a0627e99589ecbc1c088a4db05755e3c2)
+set(swigmake_depends )
+
+set(iris_url https://github.com/rdeits/iris-distro.git)
+set(iris_revision 7442fbca7a456f5564296902d8e2130a751bf3e3)
 set(iris_depends Eigen_pod)
 set(iris_external_args
   CMAKE_CACHE_ARGS
@@ -192,7 +196,7 @@ set(hokuyo_revision 6fc1b804d80838ae314d162929bb0a25a231ca35)
 set(hokuyo_depends libbot)
 
 set(cmake_scripts_url https://github.com/RobotLocomotion/cmake.git)
-set(cmake_scripts_revision 2c4ee11aa719ad548df7eaf3c7047a98c6e3e01c)
+set(cmake_scripts_revision be0915b23c81d4dce8a6f62e4e74214c7047558a)
 set(cmake_scripts_external_args
   ${download_only_args}
   SOURCE_DIR ${source_prefix}/../drake/drake/cmake
@@ -258,6 +262,7 @@ set(externals
   apriltags
   bullet
   spotless
+  swigmake
   iris
   pypolyhedron
   libnabo

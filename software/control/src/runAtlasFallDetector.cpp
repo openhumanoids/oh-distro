@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     sim_override = atoi(argv[1]);
 
 
-  std::shared_ptr<RigidBodyManipulator> model(new RigidBodyManipulator(std::string(drc_path) + "/software/models/atlas_v5/model_minimal_contact.urdf"));
+  std::shared_ptr<RigidBodyTree> model(new RigidBodyTree(std::string(drc_path) + "/software/models/atlas_v5/model_minimal_contact.urdf"));
   model->compile();
 
   std::unique_ptr<AtlasFallDetector> fall_detector(new AtlasFallDetector(model, sim_override));

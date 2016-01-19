@@ -6,7 +6,6 @@ function drakeWalkingWithNoise()
 use_bullet = false;
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
-import atlasControllers.*;
 
 plot_comtraj = false;
 %navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
@@ -98,10 +97,10 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-planeval = atlasControllers.AtlasPlanEval(r, walking_ctrl_data);
+planeval = bipedControllers.BipedPlanEval(r, walking_ctrl_data);
 param_sets = atlasParams.getDefaults(r);
-control = atlasControllers.InstantaneousQPController(r, []);
-qp = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
+control = bipedControllers.InstantaneousQPController(r, []);
+qp = bipedControllers.BipedPlanEvalAndControlSystem(r, control, planeval);
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************

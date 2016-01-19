@@ -5,7 +5,6 @@ if nargin < 1
 end
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
-import atlasControllers.*;
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -123,9 +122,9 @@ qtraj = PPTrajectory(pchip(ts,q));
 plan_settings = QPLocomotionPlanSettings.fromQuasistaticQTraj(r, qtraj);
 plan_settings.gain_set = 'manip';
 plan = QPLocomotionPlanCPPWrapper(plan_settings);
-planeval = atlasControllers.AtlasPlanEval(r, plan);
-control = atlasControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r, true));
-plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
+planeval = bipedControllers.BipedPlanEval(r, plan);
+control = bipedControllers.InstantaneousQPController(r, drcAtlasParams.getDefaults(r, true));
+plancontroller = bipedControllers.BipedPlanEvalAndControlSystem(r, control, planeval);
 
 if noisy
   options.delay_steps = 0;

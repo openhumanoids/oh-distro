@@ -1,4 +1,4 @@
-classdef DRCPlanEval < atlasControllers.AtlasPlanEval
+classdef DRCPlanEval < bipedControllers.BipedPlanEval
   % A standalone PlanEval (DRC-specific) extension 
   % that knows how to read plans from LCM, and offers
   % a blocking run() method to receive and publish
@@ -44,7 +44,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
   methods
     function obj = DRCPlanEval(r, mode, varargin)
       typecheck(r,'DRCAtlas');
-      obj = obj@atlasControllers.AtlasPlanEval(r, varargin{:});
+      obj = obj@bipedControllers.BipedPlanEval(r, varargin{:});
       obj.contact_force_detected = zeros(obj.robot.getNumBodies(), 1);
       assert(strcmp(obj.mode, 'sim') || strcmp(obj.mode, 'hardware'), 'bad mode: %s', mode);
       obj.mode = mode;
@@ -238,7 +238,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function obj = switchToPlan(obj, new_plan)
-      obj = switchToPlan@atlasControllers.AtlasPlanEval(obj, new_plan);
+      obj = switchToPlan@bipedControllers.BipedPlanEval(obj, new_plan);
       obj.sendStatus();
     end
 

@@ -1,5 +1,5 @@
 #include "AtlasFallDetector.hpp"
-#include "drake/convexHull.h"
+#include "drake/util/convexHull.h"
 #include "lcmtypes/drc/recovery_trigger_t.hpp"
 
 using namespace Eigen;
@@ -7,7 +7,9 @@ using namespace Eigen;
 /* Monitors foot contacts and robot state, and applies heuristics to trigger the 
    recovery planner, and the bracing planner. */
 
-AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyManipulator> model, bool sim_override) {
+AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyTree> model, bool sim_override) :
+    kinematics_cache(model->bodies)
+{
   // in sim atlas_status is never published, so make sure the fall detector can still function
   this->atlas_is_in_user = sim_override;
 
@@ -91,8 +93,9 @@ void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
   // std::cout << " active: " << controller_is_active << " user: " << atlas_is_in_user << " contact valid: " << foot_contact_valid;
   if (this->controller_is_active && this->atlas_is_in_user && this->foot_contact_valid) {
     this->state_driver->decode(msg, &(this->robot_state));
-    KinematicsCache<double> cache = this->model->doKinematics( robot_state.q, robot_state.qd);
-    kinematics_cache = std::shared_ptr< KinematicsCache<double> >(&cache);
+    kinematics_cache.initialize(robot_state.q, robot_state.qd);
+    this->model->doKinematics(kinematics_cache, true);
+
     Vector2d icp = this->getICP();
     bool icp_is_ok = this->icp_is_ok_debounce->update(this->robot_state.t, this->isICPCaptured(icp));
     bool icp_is_capturable = this->icp_is_capturable_debounce->update(this->robot_state.t, this->isICPCapturable(icp));
@@ -145,9 +148,8 @@ void AtlasFallDetector::handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
 }
 
 Vector2d AtlasFallDetector::getICP() {
-  auto com = this->model->centerOfMass(*kinematics_cache, 1);
-  Vector3d com_pos = com.value();
-  Vector3d com_vel = com.gradient().value() * this->robot_state.qd;
+  Vector3d com_pos = this->model->centerOfMass(kinematics_cache);
+  Vector3d com_vel = this->model->centerOfMassJacobian(kinematics_cache) * this->robot_state.qd;
   Vector2d icp = com_pos.head<2>() + std::sqrt((com_pos(2) - this->getSupportFootHeight()) / (-this->model->a_grav(5))) * com_vel.head<2>();
   return icp;
 }
@@ -157,7 +159,7 @@ double AtlasFallDetector::getSupportFootHeight() {
   for (std::map<FootID, int>::iterator foot = this->foot_body_ids.begin(); foot != foot_body_ids.end(); ++foot) {
     Matrix3Xd contact_pts;
     this->model->getTerrainContactPoints(*this->model->bodies[foot->second], contact_pts);
-    Matrix3Xd contact_pts_in_world = this->model->forwardKin(*kinematics_cache, contact_pts, foot->second, 0, 0, 0).value();
+    Matrix3Xd contact_pts_in_world = this->model->transformPoints(kinematics_cache, contact_pts, foot->second, 0);
     sole_zs[foot->first] = contact_pts_in_world.row(2).mean();
   }
   if ((this->foot_contact.at(RIGHT) && this->foot_contact.at(LEFT)) || (!this->foot_contact.at(RIGHT) && !this->foot_contact.at(LEFT))) {
@@ -177,7 +179,7 @@ Matrix3Xd AtlasFallDetector::getVirtualSupportPolygon (bool shrink_noncontact_fo
   for (std::map<FootID, int>::iterator foot = this->foot_body_ids.begin(); foot != foot_body_ids.end(); ++foot) {
     Matrix3Xd contact_pts;
     this->model->getTerrainContactPoints(*this->model->bodies[foot->second], contact_pts);
-    Matrix3Xd contact_pts_in_world = this->model->forwardKin(*kinematics_cache, contact_pts, foot->second, 0, 0, 0).value();
+    Matrix3Xd contact_pts_in_world = this->model->transformPoints(kinematics_cache, contact_pts, foot->second, 0);
     if (shrink_noncontact_foot) {
       if (!this->foot_contact.at(foot->first)) {
         // If foot is out of contact, only use its center to define the support polygon

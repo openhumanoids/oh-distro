@@ -12,8 +12,6 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
-import atlasControllers.*;
-
 options.floating = true;
 options.dt = 0.002;
 options.ignore_friction = 1;
@@ -45,9 +43,9 @@ if use_angular_momentum
   param_sets.standing = StandingAngularMomentum(r);
 end
 
-planeval = atlasControllers.AtlasPlanEval(r, standing_plan);
-control = atlasControllers.InstantaneousQPController(r, param_sets);
-plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
+planeval = bipedControllers.BipedPlanEval(r, standing_plan);
+control = bipedControllers.InstantaneousQPController(r, param_sets);
+plancontroller = bipedControllers.BipedPlanEvalAndControlSystem(r, control, planeval);
 
 sys = feedback(r, plancontroller);
 

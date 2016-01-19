@@ -1,6 +1,6 @@
 #include "mex.h"
-#include "control/QPReactiveRecoveryPlan.hpp"
-#include "drake/drakeMexUtil.h"
+#include "../../src/QPReactiveRecoveryPlan.hpp"
+#include "drake/util/drakeMexUtil.h"
 
 using namespace Eigen;
 

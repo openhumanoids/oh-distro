@@ -1,4 +1,4 @@
-classdef DRCInstantaneousQPController < atlasControllers.InstantaneousQPController
+classdef DRCInstantaneousQPController < bipedControllers.InstantaneousQPController
   % A standalone InstantaneousQPController (DRC-specific) extension 
   % that knows how to read plans from LCM, and offers
   % a blocking run() method to receive and publish
@@ -20,7 +20,7 @@ classdef DRCInstantaneousQPController < atlasControllers.InstantaneousQPControll
   methods
     function obj = DRCInstantaneousQPController(r)
       typecheck(r,'DRCAtlas');
-      obj = obj@atlasControllers.InstantaneousQPController(r);
+      obj = obj@bipedControllers.InstantaneousQPController(r);
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.qp_controller_input_monitor = drake.util.MessageMonitor(drake.lcmt_qp_controller_input, 'timestamp');
       obj.qp_controller_input_channel = 'QP_CONTROLLER_INPUT';
@@ -41,7 +41,7 @@ classdef DRCInstantaneousQPController < atlasControllers.InstantaneousQPControll
       S = load(obj.robot.fixed_point_file);
       x0 = double(S.xstar);
       stand_plan = StandingPlan.from_standing_state(x0, obj.robot);
-      rpc = atlasUtil.propertyCache(obj.robot);
+      rpc = robot.getRobotPropertyCache();
       
       disp('DRC Inst QP Controller now listening');
 
@@ -54,7 +54,7 @@ classdef DRCInstantaneousQPController < atlasControllers.InstantaneousQPControll
         qp_input_new = obj.qp_controller_input_monitor.getMessage();
         if ~isempty(qp_input_new)
           qp_input = drake.lcmt_qp_controller_input(qp_input_new);
-          qp_input = atlasControllers.QPInputConstantHeight.from_lcm(qp_input);
+          qp_input = bipedControllers.QPInputConstantHeight.from_lcm(qp_input);
         end
         if (isempty(qp_input))
           continue;

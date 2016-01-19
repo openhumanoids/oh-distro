@@ -1,9 +1,9 @@
 #include "QPReactiveRecoveryPlan.hpp"
 #include <unsupported/Eigen/Polynomials>
 #include <Eigen/StdVector>
-#include "drake/drakeGeometryUtil.h"
-#include "drake/splineGeneration.h"
-#include "drake/lcmUtil.h"
+#include "drake/util/drakeGeometryUtil.h"
+#include "drake/solvers/qpSpline/splineGeneration.h"
+#include "drake/util/lcmUtil.h"
 #include "lcmtypes/drc/reactive_recovery_debug_t.hpp"
 extern "C" {
   #include "iris/solver.h"
@@ -614,13 +614,13 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::swingTrajec
   }
 }
 
-void QPReactiveRecoveryPlan::setRobot(RigidBodyManipulator *robot) {
+void QPReactiveRecoveryPlan::setRobot(RigidBodyTree *robot) {
   this->robot = robot;
   this->findFootSoleFrames();
   this->q_des.resize(robot->num_positions);
 }
 
-QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc) {
+QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyTree *robot, const RobotPropertyCache &rpc) {
   this->robot = robot;
   this->biped = getAtlasDefaults();
   this->robot_property_cache = rpc;
@@ -630,7 +630,7 @@ QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot, cons
   this->initLCM();
 }
 
-QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc, BipedDescription biped) {
+QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyTree *robot, const RobotPropertyCache &rpc, BipedDescription biped) {
   this->robot = robot;
   this->biped = biped;
   this->robot_property_cache = rpc;
@@ -653,7 +653,7 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
       this->foot_frame_ids[RIGHT] = -i - 2;
       Isometry3d Tframe;
       int body_id = this->robot->parseBodyOrFrameID( this->foot_frame_ids[RIGHT], &Tframe);
-      if (!Tframe.matrix().isApprox(this->robot->frames[i]->transform_to_body)) {
+      if (!Tframe.isApprox(this->robot->frames[i]->transform_to_body)) {
         throw std::runtime_error("somehow I got the frame ID/index logic wrong");
       }
       this->foot_body_ids[RIGHT] = body_id;
@@ -662,7 +662,7 @@ void QPReactiveRecoveryPlan::findFootSoleFrames() {
       this->foot_frame_ids[LEFT] = -i - 2;
       Isometry3d Tframe;
       int body_id = this->robot->parseBodyOrFrameID(this->foot_frame_ids[LEFT], &Tframe);
-      if (!Tframe.matrix().isApprox(this->robot->frames[i]->transform_to_body)) {
+      if (!Tframe.isApprox(this->robot->frames[i]->transform_to_body)) {
         throw std::runtime_error("somehow I got the frame ID/index logic wrong");
       }
       this->foot_body_ids[LEFT] = body_id;
@@ -692,7 +692,7 @@ drake::lcmt_qp_controller_input QPReactiveRecoveryPlan::getQPControllerInput(dou
     this->t_start = t_global;
   }
 
-  KinematicsCache<double> cache = this->robot->doKinematics(q, v, true, false);
+  KinematicsCache<double> cache = this->robot->doKinematics(q, v);
 
 
   Vector2d r_ic = this->getICP(cache, v);
@@ -812,13 +812,13 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, drake::lcmt_q
 }
 
 
-void QPReactiveRecoveryPlan::publishForVisualization(KinematicsCache<double> cache, double t_global, const Isometry3d &icp) {
+void QPReactiveRecoveryPlan::publishForVisualization(KinematicsCache<double>& cache, double t_global, const Isometry3d &icp) {
   std::shared_ptr<drc::reactive_recovery_debug_t> msg(new drc::reactive_recovery_debug_t());
 
   msg->utime = static_cast<int64_t> (t_global * 1e6);
 
-  GradientVar<double, 3, 1> com = this->robot->centerOfMass<double>(cache, 0);
-  memcpy(msg->com, com.value().head<3>().data(), 3*sizeof(double));
+  auto com = this->robot->centerOfMass<double>(cache);
+  memcpy(msg->com, com.data(), 3*sizeof(double));
   memcpy(msg->icp, icp.translation().head<2>().data(), 2*sizeof(double));
 
   msg->num_spline_ts = 0;
@@ -1036,25 +1036,27 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
   qp_input.num_tracked_bodies = qp_input.body_motion_data.size();
 }
 
-Vector2d QPReactiveRecoveryPlan::getICP(KinematicsCache<double> cache, const VectorXd &v) {
-  GradientVar<double, 3, 1> com = this->robot->centerOfMass<double>(cache, 1);
-  Vector3d com_position = com.value();
-  Vector3d com_velocity = com.gradient().value() * v;
+Vector2d QPReactiveRecoveryPlan::getICP(KinematicsCache<double>& cache, const VectorXd &v) {
+  Vector3d com_position = this->robot->centerOfMass(cache);
+  Vector3d com_velocity = this->robot->centerOfMassJacobian(cache) * v;
   Vector2d icp = com_position.head(2) + com_velocity.head(2) / this->biped.omega;
   return icp;
 }
 
-FootStateMap QPReactiveRecoveryPlan::getFootStates(KinematicsCache<double> cache, const VectorXd &v, const std::vector<bool>& contact_force_detected) {
+FootStateMap QPReactiveRecoveryPlan::getFootStates(const KinematicsCache<double>& cache, const VectorXd &v, const std::vector<bool>& contact_force_detected) {
   std::vector<FootID> foot_ids = {RIGHT, LEFT};
   FootStateMap foot_states;
   double min_foot_height = std::numeric_limits<double>::infinity();
   for (std::vector<FootID>::iterator id = foot_ids.begin(); id != foot_ids.end(); ++id) {
     const int frame_id = this->foot_frame_ids[*id];
     Vector3d origin = Vector3d::Zero();
-    auto body_pose = this->robot->forwardKin(cache, origin, frame_id, 0, 2, 1);
-    foot_states[*id].pose = Isometry3d(Translation<double, 3>(body_pose.value().head<3>()));
-    foot_states[*id].pose.rotate(quat2eigenQuaternion(body_pose.value().tail<4>()));
-    foot_states[*id].velocity = body_pose.gradient().value() * v;
+    foot_states[*id].pose = robot->relativeTransform(cache, 0, frame_id);
+    auto twist = robot->relativeTwist(cache, 0, frame_id, frame_id);
+    auto quat = rotmat2quat(foot_states[*id].pose.linear());
+    foot_states[*id].velocity.topRows<3>() = foot_states[*id].pose.linear() * twist.bottomRows<3>();
+    Matrix<double, QUAT_SIZE, SPACE_DIMENSION> omega_to_quatdot;
+    angularvel2quatdotMatrix(quat, omega_to_quatdot, static_cast<Gradient<decltype(omega_to_quatdot), Dynamic>::type*>(nullptr));
+    foot_states[*id].velocity.bottomRows<4>() = omega_to_quatdot * foot_states[*id].pose.linear() * twist.topRows<3>();
     int body_id = this->robot->parseBodyOrFrameID(this->foot_frame_ids[*id]);
     foot_states[*id].contact = contact_force_detected[body_id];
     if (foot_states[*id].pose.translation().z() < min_foot_height) {

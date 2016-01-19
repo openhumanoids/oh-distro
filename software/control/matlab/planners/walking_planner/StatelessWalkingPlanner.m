@@ -80,7 +80,7 @@ classdef StatelessWalkingPlanner
         if simulate
           x0_resolved = r.resolveConstraints(r.getInitialState());
           r = r.setInitialState(x0_resolved);
-          traj = atlasUtil.simulateWalking(r, walking_plan_data);
+          traj = r.simulateWalking(walking_plan_data);
           ts = traj.getBreaks();
           if length(ts) > 300
             % Limit the number of samples in the plan to get around LCM packet size issues in Java/Matlab

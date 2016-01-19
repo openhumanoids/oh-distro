@@ -1,6 +1,6 @@
 #include <stdexcept>
 #include "RobotStateDriver.hpp"
-#include "drake/drakeGeometryUtil.h"
+#include "drake/util/drakeGeometryUtil.h"
 
 using namespace std;
 using namespace Eigen;

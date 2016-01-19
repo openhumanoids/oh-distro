@@ -21,7 +21,7 @@
 
 #include <gurobi_c++.h>
 #define mex_h
-#include "RigidBodyManipulator.h"
+#include "RigidBodyTree.h"
 #undef mex_h
 
 namespace mexmaps {
@@ -426,7 +426,7 @@ const int m_surface_tangents = 2;  // number of faces in the friction cone appro
 
 struct QPControllerData {
   GRBenv *env;
-  RigidBodyManipulator* r;
+  RigidBodyTree* r;
   double w; // objective function weight
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
   int Rnnz,*Rind1,*Rind2; double* Rval; // my sparse representation of R_con - the quadratic cost on input
@@ -785,7 +785,7 @@ void mexFunctionQPController(int nlhs, mxArray *plhs[], int nrhs, const mxArray 
 
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   
-  pdata->r->doKinematics(q,false,qd);
+  pdata->r->doKinematics(q,qd);
   
   MatrixXd H(nq,nq);
   VectorXd C(nq);
