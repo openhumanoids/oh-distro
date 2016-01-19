@@ -286,11 +286,11 @@ to avoid needing to download it from Gurobi.
 ROS
 ===
 
-ROS is not required per se. If you would like to use this distribution in conjunction with SCS for the Valkyrie or to use EXOTica for planning and optimisation, please install ROS Indigo including MoveIt:
+ROS is not required per se. If you would like to use this distribution in conjunction with SCS for the Valkyrie or to use EXOTica for planning and optimisation, please install ROS Indigo including MoveIt. Valkyrie uses ROS-Control for the Hardware API and our LCM2ROSControl translator package hence requires ROS Control
 
 ::
 
-    sudo apt-get install ros-indigo-desktop-full ros-indigo-moveit-full
+    sudo apt-get install ros-indigo-desktop-full ros-indigo-moveit-full ros-indigo-ros-control
 
 Compile catkin workspace:
 
