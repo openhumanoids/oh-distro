@@ -196,7 +196,7 @@ set(hokuyo_revision 6fc1b804d80838ae314d162929bb0a25a231ca35)
 set(hokuyo_depends libbot)
 
 set(cmake_scripts_url https://github.com/RobotLocomotion/cmake.git)
-set(cmake_scripts_revision 2c4ee11aa719ad548df7eaf3c7047a98c6e3e01c)
+set(cmake_scripts_revision be0915b23c81d4dce8a6f62e4e74214c7047558a)
 set(cmake_scripts_external_args
   ${download_only_args}
   SOURCE_DIR ${source_prefix}/../drake/drake/cmake
