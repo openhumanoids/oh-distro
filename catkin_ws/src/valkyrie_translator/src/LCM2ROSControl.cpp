@@ -133,7 +133,7 @@ namespace valkyrie_translator
 
       // push out the joint states for all joints we see advertised
       // and also the commanded torques, for reference
-      pronto::joint_state_t lcm_pose_msg;
+      drc::joint_state_t lcm_pose_msg;
       lcm_pose_msg.utime = utime;
       lcm_pose_msg.num_joints = effortJointHandles.size();
       lcm_pose_msg.joint_name.assign(effortJointHandles.size(), "");
@@ -141,7 +141,7 @@ namespace valkyrie_translator
       lcm_pose_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
       lcm_pose_msg.joint_effort.assign(effortJointHandles.size(), 0.);
 
-      pronto::joint_state_t lcm_commanded_msg;
+      drc::joint_state_t lcm_commanded_msg;
       lcm_commanded_msg.utime = utime;
       lcm_commanded_msg.num_joints = effortJointHandles.size();
       lcm_commanded_msg.joint_name.assign(effortJointHandles.size(), "");
@@ -149,7 +149,7 @@ namespace valkyrie_translator
       lcm_commanded_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
       lcm_commanded_msg.joint_effort.assign(effortJointHandles.size(), 0.);
 
-      pronto::joint_angles_t lcm_torque_msg;
+      drc::joint_angles_t lcm_torque_msg;
       lcm_torque_msg.robot_name = "val!";
       lcm_torque_msg.utime = utime;
       lcm_torque_msg.num_joints = effortJointHandles.size();
@@ -228,17 +228,17 @@ namespace valkyrie_translator
 
           i++;
       }   
-      lcm_->publish("NASA_STATE", &lcm_pose_msg);
-      lcm_->publish("NASA_VALUES", &lcm_commanded_msg);
-      lcm_->publish("NASA_TORQUE", &lcm_torque_msg);
+      lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
+      lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
+      lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
       lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
 
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
-        mav::ins_t lcm_imu_msg;
+        drc::ins_t lcm_imu_msg;
         //lcm_imu_msg.utime = utime;
         std::ostringstream imuchannel;
-        imuchannel << "NASA_INS_" << iter->first;
+        imuchannel << "VAL_IMU_" << iter->first;
         lcm_imu_msg.utime = utime;
         for (i=0; i<3; i++){
           lcm_imu_msg.quat[i]= iter->second.getOrientation()[i];
@@ -273,7 +273,7 @@ namespace valkyrie_translator
         lcm_ft_array_msg.names[i] = iter->first;
         i++;
       }
-      lcm_->publish("NASA_FORCE_TORQUE", &lcm_ft_array_msg);
+      lcm_->publish("VAL_FORCE_TORQUE", &lcm_ft_array_msg);
    }
 
    void LCM2ROSControl::stopping(const ros::Time& time)
@@ -285,7 +285,7 @@ namespace valkyrie_translator
       {
         std::cerr << "ERROR: handler lcm is not good()" << std::endl;
       }
-      lcm_->subscribe("NASA_COMMAND", &LCM2ROSControl_LCMHandler::jointCommandHandler, this);
+      lcm_->subscribe("ROBOT_COMMAND", &LCM2ROSControl_LCMHandler::jointCommandHandler, this);
    }
    LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
    

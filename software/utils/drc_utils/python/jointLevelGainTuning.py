@@ -211,4 +211,4 @@ for i in range(ts.shape[0]):
     msg.position[command_i] = val
     msg.effort[command_i] = 0
 
-  lc.publish("NASA_COMMAND", msg.encode())
+  lc.publish("ROBOT_COMMAND", msg.encode())
