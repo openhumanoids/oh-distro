@@ -1,5 +1,0 @@
-simple_val_knee:
-    type: valkyrie_translator/SimpleController
-    joints:
-        - rightKneePitch
-        - leftKneePitch
