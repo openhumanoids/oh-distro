@@ -34,8 +34,11 @@ target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} )
 pods_use_pkg_config_packages(LCM2ROSControl lcm drc-lcmtypes)
 
 
-## Install
-install(TARGETS ${PROJECT_NAME}
+#############
+## Install ##
+#############
+
+install(TARGETS
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
