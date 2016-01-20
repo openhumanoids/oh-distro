@@ -52,7 +52,7 @@
 #define MIN_SWING_HEIGHT 0.05
 #define MAX_SWING_HEIGHT 0.3
 
-typedef unsigned char BYTE;
+enum class TrajectoryMode {wholeBody, leftArm, rightArm};
 
 class LCM2ROS
 {
@@ -74,6 +74,9 @@ private:
   double default_transfer_time_;
   double default_swing_time_;
 
+  TrajectoryMode outputTrajectoryMode_;
+
+  // Subscriptions and Publishes below ////////////////////////////
   void footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                            const drc::walking_plan_request_t* msg);
   void footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
@@ -137,10 +140,14 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
     chestLinkName_ = "torso";
   std::cout << "Using "<< robotName_ << " so expecting chest link called " << chestLinkName_ << "\n";
 
-  // Made more conservative for Valkyrie using defaults from IHMC
+  // Hard Coded Parameters:
+  // Conservative values for real Valkyrie, using defaults used by IHMC
   default_transfer_time_ = 2.0;
   default_swing_time_ = 1.5;
+  // Variable to set what part of a whole body plan gets passed through to Val:
+  outputTrajectoryMode_ = TrajectoryMode::wholeBody;
 
+  ////////////////// Subscriptions and Adverts //////////////////////
   // If pronto is running never send plans like this:
   lcm_->subscribe("WALKING_CONTROLLER_PLAN_REQUEST", &LCM2ROS::footstepPlanHandler, this);
   // COMMITTED_FOOTSTEP_PLAN is creating in Pronto frame and transformed into 
@@ -783,9 +790,24 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   }
   wbt_msg.chest_world_orientation = chest_trajectory;
 
-  whole_body_trajectory_pub_.publish(wbt_msg);
-
-  ROS_ERROR("LCM2ROS sent Whole Body Trajectory");
+  if (outputTrajectoryMode_ == TrajectoryMode::wholeBody)
+  {
+    whole_body_trajectory_pub_.publish(wbt_msg);
+    ROS_ERROR("LCM2ROS sent Whole Body Trajectory");
+  }
+  else if (outputTrajectoryMode_ == TrajectoryMode::leftArm)
+  {
+    sendSingleArmPlan(msg, l_arm_strings, input_joint_names, false);
+    ROS_ERROR("LCM2ROS sent left arm");
+  }
+  else if (outputTrajectoryMode_ == TrajectoryMode::rightArm)
+  {
+    // to send two arm traj, send one and then the other
+    // ROS_ERROR("Sleeping for 1 second");
+    // sleep(1); 
+    ROS_ERROR("LCM2ROS sent right arm");
+    sendSingleArmPlan(msg, r_arm_strings, input_joint_names, true);
+  }
 
   if (1==0){
     if (robotName_.compare("valkyrie") == 0){
@@ -812,14 +834,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
       ROS_ERROR("LCM2ROS sent desired head orientation");
     }
   }
-
-  /*
-   sendSingleArmPlan(msg, l_arm_strings, input_joint_names, false);
-   ROS_ERROR("LCM2ROS sent left arm, sleeping for 1 second");
-   sleep(1);
-   ROS_ERROR("LCM2ROS sent right arm");
-   sendSingleArmPlan(msg, r_arm_strings, input_joint_names, true);
-   */
+   
 }
 
 int main(int argc, char** argv)
