@@ -4,7 +4,7 @@
   <version>0.0.0</version>
   <description>Package providing translators between the MIT DRC, IHMC SCS, and ROS-based systems.</description>
 
-  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <maintainer email="drc@todo.todo">TODO</maintainer>
 
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
@@ -33,6 +33,7 @@
   <depend>std_msgs</depend>
   <depend>trajectory_msgs</depend>
   <depend>tf</depend>
+  <depend>val_hardware_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export />
