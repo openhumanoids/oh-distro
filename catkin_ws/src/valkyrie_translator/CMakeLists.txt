@@ -32,3 +32,21 @@ include_directories(
 add_library(LCM2ROSControl src/LCM2ROSControl.cpp)
 target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} )
 pods_use_pkg_config_packages(LCM2ROSControl lcm drc-lcmtypes)
+
+
+## Install
+install(TARGETS ${PROJECT_NAME}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE
+)
+install(DIRECTORY config/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+  PATTERN ".svn" EXCLUDE
+)
+install(FILES LCM2ROSControl.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
