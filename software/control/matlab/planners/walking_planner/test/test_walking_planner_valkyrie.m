@@ -1,7 +1,7 @@
 %NOTEST
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-r = Valkyrie();
+r = OHValkyrie();
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 
