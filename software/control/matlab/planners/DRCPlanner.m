@@ -35,7 +35,7 @@ classdef DRCPlanner
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
       options.visual = false; % loads faster
-      r = Valkyrie([], options);
+      r = OHValkyrie([], options);
       r = r.removeCollisionGroupsExcept({'heel','toe','midfoot_front','midfoot_rear'},1);
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
       r = compile(r);
@@ -96,8 +96,8 @@ classdef DRCPlanner
       if isa(obj.biped, 'Atlas')
         obj.iris_planner = IRISPlanner(obj.biped,...
          Atlas(strcat(getenv('DRC_PATH'),'/models/atlas_v5/model_convex_hull.urdf'),struct('floating', true, 'atlas_version', 5)));
-      elseif isa(obj.biped, 'Valkyrie')
-        obj.iris_planner = IRISPlanner(Valkyrie([], struct('floating', true)));
+      elseif isa(obj.biped, 'OHValkyrie')
+        obj.iris_planner = IRISPlanner(OHValkyrie([], struct('floating', true)));
       else
         warning('DRC:DRCPlanner:NoFootstepCollisionModel', 'This robot may not support upper body collision planning. Footstep plans may cause the upper body to collide with the terrain');
         obj.iris_planner = IRISPlanner(obj.biped);
