@@ -22,3 +22,6 @@
 [submodule "catkin_ws/src/exotica-dev"]
 	path = catkin_ws/src/exotica-dev
 	url = git@github.com:openhumanoids/exotica-dev.git
+[submodule "catkin_ws/src/ipab_msgs"]
+	path = catkin_ws/src/ipab_msgs
+	url = https://github.com/ipab-slmc/ipab_msgs.git
