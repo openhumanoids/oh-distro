@@ -3,6 +3,7 @@
 
 #include <string>
 #include <Eigen/Dense>
+#include <Eigen/SparseCore>
 #include <drake/systems/plants/RigidBodyTree.h>
 
 class CapabilityMap
@@ -10,15 +11,17 @@ class CapabilityMap
 public:
 	CapabilityMap();
 	CapabilityMap(const std::string & urdf_filename);
-	void generateCapabilityMap(const double vox_edge=0.05, const unsigned int n_samples=1e6, const unsigned int n_directions_per_voxel=50);
 	void loadFromFile(const std::string mapFile);
 	void saveToFile(const std::string mapFile);
+	Eigen::Vector2i getMapSize();
 	int getNVoxels();
-	void setNVoxels(int nVoxels);
+	void setNVoxels(unsigned int nVoxels);
+	void setNDirectionsPerVoxel(unsigned int nDir);
 	Eigen::RowVector2d getCapabilityMapSize();
 private:
-	Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> map;
-	unsigned int nVoxels;
+	size_t nVoxels;
+	size_t nDirectionsPerVoxel;
+	Eigen::SparseMatrix<bool> map;
 	Eigen::VectorXd reachabilityIndex;
 	RigidBodyTree rigidBodyTree;
 };

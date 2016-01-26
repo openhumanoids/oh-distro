@@ -6,15 +6,8 @@ using namespace std;
 int main()
 {
 	CapabilityMap cm;
-	CapabilityMap cm2;
-
-	cout<<cm.getNVoxels()<<'\n';
-	cm.setNVoxels(200);
-	cout<<cm.getNVoxels()<<'\n';
-	cm.saveToFile("test.dat");
-	cout<<cm2.getNVoxels()<<'\n';
-	cm2.loadFromFile("test.dat");
-	cout<<cm2.getNVoxels()<<'\n';
+	cm.loadFromFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport.bin");
+	cout<<cm.getMapSize()<<'\n';
 
 	return 0;
 }

@@ -201,6 +201,16 @@
       save(file, vars{:}, '-v7.3');
     end
     
+    function eigenExport(obj, file)
+      file_id = fopen(file, 'w');
+%       fwrite(file_id, length(obj.urdf), 'uint32');
+%       fwrite(file_id, obj.urdf, 'char*1');
+      fwrite(file_id, obj.n_voxels, 'uint32');
+      fwrite(file_id, obj.n_directions_per_voxel, 'uint32');
+      fwrite(file_id, obj.map, 'ubit8');
+      fclose(file_id);
+    end
+    
     function obj = setActiveSide(obj, side)
       assert(any(strcmp(side, {'left', 'right'})))
       if ~strcmp(side, obj.active_side)
