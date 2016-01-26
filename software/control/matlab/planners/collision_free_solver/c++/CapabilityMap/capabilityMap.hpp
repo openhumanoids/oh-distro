@@ -6,6 +6,11 @@
 #include <Eigen/SparseCore>
 #include <drake/systems/plants/RigidBodyTree.h>
 
+struct map_centre {
+	Eigen::Vector3d left;
+	Eigen::Vector3d right;
+};
+
 class CapabilityMap
 {
 public:
@@ -21,6 +26,7 @@ public:
 private:
 	size_t nVoxels;
 	size_t nDirectionsPerVoxel;
+	map_centre mapCentre;
 	Eigen::SparseMatrix<bool> map;
 	Eigen::VectorXd reachabilityIndex;
 	RigidBodyTree rigidBodyTree;

@@ -205,6 +205,7 @@
       file_id = fopen(file, 'w');
 %       fwrite(file_id, length(obj.urdf), 'uint32');
 %       fwrite(file_id, obj.urdf, 'char*1');
+      fwrite(file_id, obj.map_centre.left, 'double');
       fwrite(file_id, obj.n_voxels, 'uint32');
       fwrite(file_id, obj.n_directions_per_voxel, 'uint32');
       fwrite(file_id, obj.map, 'ubit8');

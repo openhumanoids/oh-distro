@@ -20,6 +20,8 @@ void CapabilityMap::loadFromFile(const std::string mapFile)
 	std::ifstream inputFile(mapFile.c_str(), std::ifstream::binary);
 //	inputFile.read((char *) &urdfLength, sizeof(urdfLength));
 //	inputFile.read((char *) this->urdf.c_str(), sizeof(char)*urdfLength);
+	inputFile.read((char *) this->mapCentre.left.data(), sizeof(this->mapCentre.left));
+	std::cout << "Map Centre: \n" << this->mapCentre.left << '\n';
 	inputFile.read((char *) &this->nVoxels, sizeof(this->nVoxels));
 	inputFile.read((char *) &this->nDirectionsPerVoxel, sizeof(this->nDirectionsPerVoxel));
 	this->map.resize(this->nVoxels, this->nDirectionsPerVoxel);
