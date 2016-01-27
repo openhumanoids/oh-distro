@@ -3,16 +3,11 @@ sudo: required
 services:
   - docker
 
-#git:
-#  submodules: false
-
-# need to replace SSH submodule URLs with HTTPS
-#before_install:
-#  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-#  - sed -i 's/git@github.com:/https:\/\/github.com\//' catkin_ws/.gitmodules
+git:
+  submodules: false
 
 install: true
 
 script:
   - docker pull openhumanoids/oh-distro-base:latest
-  - docker run openhumanoids/oh-distro-base /bin/bash -c "git clone https://github.com/oh-dev/oh-distro.git && cd oh-distro && git checkout wolfgang-make-public-compilable && git config --global url.https://github.com/.insteadOf git@github.com: && echo '' >>  ~/.ssh/known_hosts && ssh-keyscan -H github.com >> ~/.ssh/known_hosts && ssh-keyscan -H bitbucket.org >> ~/.ssh/known_hosts && sed -i 's/git@github.com:/https:\/\/github.com\//g' .gitmodules && sed -i 's/git@github.com:/https:\/\/github.com\//g' catkin_ws/.gitmodules && sed -i 's/ssh:\/\/git@github.com\//https:\/\/github.com\//g' software/externals/cmake/externals.cmake && git config --global user.email 'buildserver@example' && git config --global user.name 'build server' && git commit -am 'module changes' && git submodule deinit catkin_ws/src/exotica-dev && git rm catkin_ws/src/exotica-dev && git submodule update --init --recursive && cd software && source ~/oh-distro/software/config/drc_environment.sh && cd externals && mkdir pod-build && cd pod-build && cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF && cd .. && make -j8 && cd .. && make -j8"
+  - docker run -v $TRAVIS_BUILD_DIR:/home/test/oh-distro openhumanoids/oh-distro-base /bin/bash -c "sed -i 's/git@github.com:/https:\/\/github.com\//g' /home/test/oh-distro/.gitmodules && sed -i 's/git@github.com:/https:\/\/github.com\//g' /home/test/oh-distro/catkin_ws/.gitmodules && sed -i 's/ssh:\/\/git@github.com\//https:\/\/github.com\//g' /home/test/oh-distro/software/externals/cmake/externals.cmake  && cd /home/test/oh-distro && git submodule deinit catkin_ws/src/exotica-dev && rm -rf catkin_ws/src/exotica-dev && git submodule update --init --recursive && cd /home/test/oh-distro/software && source /home/test/oh-distro/software/config/drc_environment.sh &&  mkdir /home/test/oh-distro/software/externals/pod-build && cd /home/test/oh-distro/software/externals/pod-build && cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF && cd /home/test/oh-distro/software/externals && make -j8 && cd /home/test/oh-distro/software && make -j8"
