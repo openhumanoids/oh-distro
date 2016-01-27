@@ -1,8 +1,0 @@
-package drc;
-
-struct atlas_behavior_command_t 
-{
-    int64_t utime;
-    string command;
-}
-
