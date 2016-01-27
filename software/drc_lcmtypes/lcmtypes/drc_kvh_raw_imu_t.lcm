@@ -1,6 +1,6 @@
 package drc;
 
-struct atlas_raw_imu_t
+struct kvh_raw_imu_t
 {
   int64_t utime;
 
