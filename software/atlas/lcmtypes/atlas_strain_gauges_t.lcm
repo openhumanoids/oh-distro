@@ -1,0 +1,25 @@
+package atlas;
+
+// Raw wrist strain gauges - in volts
+// Order given in the API:
+// 	SG_WRIST_G0_LEFT = 0,
+//	SG_WRIST_G1_LEFT,
+//	SG_WRIST_G2_LEFT,
+//	SG_WRIST_G3_LEFT,
+//	SG_WRIST_G4_LEFT,
+//	SG_WRIST_G5_LEFT,
+//	SG_WRIST_G0_RIGHT,
+//	SG_WRIST_G1_RIGHT,
+//	SG_WRIST_G2_RIGHT,
+//	SG_WRIST_G3_RIGHT,
+//	SG_WRIST_G4_RIGHT,
+//	SG_WRIST_G5_RIGHT,
+
+struct strain_gauges_t
+{
+
+  int64_t utime;
+
+  int32_t num_strain_gauges;
+  float strain_gauges[num_strain_gauges];
+}

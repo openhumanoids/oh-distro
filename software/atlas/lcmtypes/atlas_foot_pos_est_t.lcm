@@ -1,0 +1,12 @@
+package atlas;
+
+// Position of the Feet 
+
+struct foot_pos_est_t
+{
+ int64_t utime;
+
+ float left_position[3];
+ float right_position[3];
+}
+

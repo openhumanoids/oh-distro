@@ -1,0 +1,37 @@
+package atlas;
+
+// Contents of AtlasBehaviorStepSpec
+
+struct behavior_step_spec_t
+{
+	//!
+	//!  \brief  Step index.
+	//!
+	//!    Start this at 1 at the beginning of the Step behavior, and
+	//!    monotonically increase it for each step during walking.  Reset to 1
+	//!    if the robot re-enters Step.
+	//!
+	//!    To specify "not a step", i.e., that an instance doesn't contain
+	//!    data that should be considered a step, set the step_index to -1.
+	//!
+	int32_t step_index;
+
+	//!
+	//!  \brief  Foot index (Left/Right); see AtlasFootId enum.
+	//!
+	int32_t foot_index;
+
+	//!
+	//!  \brief  Foothold to step to
+	//!
+	behavior_foot_data_t foot;
+
+	//!
+	//!  \brief  Parameters of the stepping action
+	//!
+	behavior_step_action_t action;
+
+	const int32_t FOOT_LEFT = 0;
+	const int32_t FOOT_RIGHT = 1;
+}
+

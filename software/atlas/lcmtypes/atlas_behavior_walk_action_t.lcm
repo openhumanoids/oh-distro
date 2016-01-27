@@ -1,0 +1,14 @@
+package atlas;
+
+struct behavior_walk_action_t
+{
+	//!
+	//! \brief Step duration
+	//! 
+	float step_duration;
+
+	//!
+	//!  \brief  Step apex swing height as measured from the midpoint between the feet.
+	//!
+	float swing_height;
+}

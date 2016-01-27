@@ -1,0 +1,25 @@
+package atlas;
+
+// Raw Contents of structure sent to the robot
+// AtlasControlDataToRobot in Atlas API
+
+struct control_data_t
+{
+  int64_t utime;
+  
+  // Joint Commands
+  // Note: this does not exactly match the API
+  // The following do not exist in the API:
+  // joint_names, desired_controller_period_ms
+  // and k_effort
+  command_t joints;
+
+  behavior_stand_params_t stand_params;
+  behavior_step_params_t step_params;
+  behavior_walk_params_t walk_params;
+  behavior_manipulate_params_t manipulate_params;
+}
+
+
+
+

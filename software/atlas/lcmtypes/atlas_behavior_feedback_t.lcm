@@ -1,0 +1,12 @@
+package atlas;
+
+// contents of AtlasBehaviorFeedback
+
+struct behavior_feedback_t
+{
+  int32_t status_flags;
+  int32_t trans_from_behavior_index;
+  int32_t trans_to_behavior_index;
+
+  // TODO: add status enums  
+}

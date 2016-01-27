@@ -1,0 +1,19 @@
+package atlas;
+
+// contents of AtlasBehaviorWalkFeedback
+
+struct walk_feedback_t
+{
+  float t_step_rem;
+  int32_t current_step_index;
+  int32_t next_step_index_needed;
+
+  int32_t status_flags;
+
+  // this is actually encoded to be 4 in the API...
+  int32_t num_required_walk_steps;
+  step_data_t step_queue_saturated[num_required_walk_steps];
+  behavior_walk_spec_t walk_spec_queue_saturated[num_required_walk_steps];
+
+  // TODO: add status enums  
+}
