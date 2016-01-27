@@ -310,10 +310,11 @@ endif()
 # Checks whether Matlab is installed, if not remove dependent packages
 find_program(matlab matlab)
 if (NOT matlab)
-  message(WARNING "Could not find matlab executable - not building spotless")
+  message(WARNING "Could not find matlab executable - not building spotless and also skipping control")
   list(REMOVE_ITEM externals
     spotless
   )
+  exec_program("sed -i 's/control/#control/g' ../../tobuild.txt")
 endif()
 
 
