@@ -287,6 +287,13 @@ if(BUILD_PRIVATE_EXTERNALS)
 
 endif()
 
+if(NOT BUILD_PRIVATE_EXTERNALS)
+  # Turn compilation of atlas, flycapture, ptgrey off in drivers so that make can run through in software
+  exec_program("sed -i 's/atlas/#atlas/g' ../../drivers/tobuild.txt")
+  exec_program("sed -i 's/flycapture/#flycapture/g' ../../drivers/tobuild.txt")
+  exec_program("sed -i 's/ptgrey/#ptgrey/g' ../../drivers/tobuild.txt")
+endif()
+
 
 if(NOT APPLE)
 
