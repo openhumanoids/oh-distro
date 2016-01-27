@@ -10,7 +10,7 @@
 #include "lcmtypes/drc/atlas_command_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/utime_two_t.hpp"
-#include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
+#include "lcmtypes/drc/kvh_raw_imu_batch_t.hpp"
 #include "lcmtypes/drc/double_array_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
 
@@ -31,7 +31,7 @@ public:
   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg);
   void handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg);
 
-  void handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_raw_imu_batch_t * msg);
+  void handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::kvh_raw_imu_batch_t * msg);
   void handlePoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg);
 
   // GPF:
@@ -151,7 +151,7 @@ void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& ch
   lats_[3]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[3], lat_msgs_[3] );
 }
 
-void App::handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_raw_imu_batch_t * msg){
+void App::handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::kvh_raw_imu_batch_t * msg){
   lats_[1]->add_from(msg->utime, _timestamp_now() );
 }
 void App::handlePoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg)  {

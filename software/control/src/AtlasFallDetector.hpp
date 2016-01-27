@@ -7,7 +7,7 @@
 #include "lcmtypes/drc/utime_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/controller_status_t.hpp"
-#include "lcmtypes/drc/atlas_status_t.hpp"
+#include "lcmtypes/atlas/status_t.hpp"
 #include "drake/lcmt_qp_controller_input.hpp"
 #include "RobotStateDriver.hpp"
 
@@ -135,5 +135,5 @@ private:
                          const drc::controller_status_t* msg);
   void handleAtlasStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
-                         const drc::atlas_status_t* msg);
+                         const atlas::status_t* msg);
 };

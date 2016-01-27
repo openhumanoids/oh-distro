@@ -10,7 +10,7 @@
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
 #include <lcmtypes/microstrain.hpp>
-#include "lcmtypes/drc/atlas_state_t.hpp"
+//#include "lcmtypes/drc/atlas_state_t.hpp"
 
 #include "drcvision/voconfig.hpp"
 #include "drcvision/vofeatures.hpp"
@@ -94,9 +94,9 @@ class StereoOdom{
     // Kinematics
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
-    drc::atlas_state_t last_atlas_state_msg_;
-    void atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
-    bool getBodyToHead(const drc::atlas_state_t* msg, Eigen::Isometry3d &body_to_head);
+    //drc::atlas_state_t last_atlas_state_msg_;
+    //void atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
+    //bool getBodyToHead(const drc::atlas_state_t* msg, Eigen::Isometry3d &body_to_head);
     JointUtils joint_utils_;
 
     // IMU
@@ -129,7 +129,7 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
     exit(-1);
   }
   fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
-  last_atlas_state_msg_.utime = 0;
+  //last_atlas_state_msg_.utime = 0;
 
   config_ = new voconfig::KmclConfiguration(botparam_, cl_cfg_.camera_config);
   boost::shared_ptr<fovis::StereoCalibration> stereo_calibration_;
@@ -153,7 +153,7 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
   init_pose.translation() = Eigen::Vector3d(0,0,1.65); // nominal head height
   estimator_->setHeadPose(init_pose);
 
-  lcm_->subscribe("ATLAS_STATE",&StereoOdom::atlasStateHandler,this);
+  //lcm_->subscribe("ATLAS_STATE",&StereoOdom::atlasStateHandler,this);
 
 
   // IMU:
@@ -514,7 +514,7 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation, int64_t u
       estimator_->publishUpdate(utime, revised_local_to_head, cl_cfg_.output_signal, false);
 
       // determine the position of the robot given the head, through kinematics:
-
+      /*
       if (last_atlas_state_msg_.utime > 0){
         Eigen::Isometry3d body_to_head;
         bool status = getBodyToHead(&last_atlas_state_msg_, body_to_head);
@@ -530,7 +530,7 @@ void StereoOdom::fuseInterial(Eigen::Quaterniond imu_robotorientation, int64_t u
 
       }else{
         std::cout << "no atlas state provided - refusing to publish\n";
-      }
+      }*/
 
     }
     if (imu_counter_ > cl_cfg_.correction_frequency) { imu_counter_ =0; }
@@ -550,6 +550,7 @@ Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
 }
 
 
+/*
 // Determing the body-to-head
 bool StereoOdom::getBodyToHead(const drc::atlas_state_t* msg, Eigen::Isometry3d &body_to_head){
 
@@ -582,6 +583,7 @@ bool StereoOdom::getBodyToHead(const drc::atlas_state_t* msg, Eigen::Isometry3d 
   }
   return false;
 }
+*/
 
 
 
@@ -629,10 +631,10 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
-void StereoOdom::atlasStateHandler(const lcm::ReceiveBuffer* rbuf,
-     const std::string& channel, const  drc::atlas_state_t* msg){
-  last_atlas_state_msg_ = *msg;
-}
+//void StereoOdom::atlasStateHandler(const lcm::ReceiveBuffer* rbuf,
+//     const std::string& channel, const  drc::atlas_state_t* msg){
+//  last_atlas_state_msg_ = *msg;
+//}
 
 
 
