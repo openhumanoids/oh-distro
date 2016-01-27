@@ -531,7 +531,7 @@ void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   publishRobotState(msg->utime, force_torque_);
 }
 
-void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
+void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  atlas::state_extra_t* msg){
   //std::cout << "got atlasExtraHandler\n";
   core_robot_joints_out_.position = msg->joint_position_out;
   core_robot_joints_out_.velocity = msg->joint_velocity_out;
