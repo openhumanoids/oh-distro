@@ -21,6 +21,8 @@ struct ee_link
 	string right;
 };
 
+typedef vector<SparseMatrix<bool>> OccupancyMap;
+
 class CapabilityMap
 {
 public:
@@ -49,6 +51,9 @@ private:
 	double positionTolerance;
 	Vector3d mapLowerBound;
 	Vector3d mapUpperBound;
+	size_t nOccupancyVoxels;
+	size_t nOccupancyOrient;
+	OccupancyMap occupancyMap;
 	RigidBodyTree rigidBodyTree;
 };
 

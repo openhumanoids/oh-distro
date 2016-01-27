@@ -16,13 +16,13 @@ CapabilityMap::CapabilityMap(const string & urdf_filename):nVoxels(0), nDirectio
 
 void CapabilityMap::loadFromFile(const string mapFile)
 {
-	typedef Matrix<bool, Dynamic, Dynamic> MatrixXb;
 	MatrixX2i idx;
 	unsigned int nnz;
 	unsigned int stringLength;
 	char *buffer;
 	bool containsMap;
 	bool containsOccupancyMap;
+	vector<Triplet<bool>> tripletList;
 
 	cout << "Loading data from" << mapFile << '\n';
 	ifstream inputFile(mapFile.c_str(), ifstream::binary);
@@ -75,14 +75,11 @@ void CapabilityMap::loadFromFile(const string mapFile)
 		inputFile.read((char *) &nnz, sizeof(unsigned int));
 		idx.resize(nnz, 2);
 		inputFile.read((char *) idx.data(), nnz * 2 * sizeof(MatrixXi::Scalar));
-		cout << idx.row(0) <<endl;
-		vector<Triplet<bool>> tripletList;
 		tripletList.reserve(nnz);
 		for (unsigned int i = 0; i < nnz; i++)
 		{
 			tripletList.push_back(Triplet<bool>(idx(i, 0), idx(i, 1), true));
 		}
-		cout<<tripletList[0].row()<<" "<<tripletList[0].col()<<" "<<tripletList[0].value()<<endl;
 		this->map.setFromTriplets(tripletList.begin(), tripletList.end());
 //		cout << "Loaded Capability Map (" << this->map.rows() << "x" << this->map.cols() << ")\n";
 
@@ -113,7 +110,35 @@ void CapabilityMap::loadFromFile(const string mapFile)
 	inputFile.read((char *) &containsOccupancyMap, sizeof(bool));
 	if (containsOccupancyMap)
 	{
-
+		inputFile.read((char *) &this->nOccupancyVoxels, sizeof(unsigned int));
+		cout << "Loaded nOccupancyVoxels: " << this->nOccupancyVoxels << endl;
+		inputFile.read((char *) &this->nOccupancyOrient, sizeof(unsigned int));
+		cout << "Loaded nOccupancyOrient: " << this->nOccupancyOrient << endl;
+//		this->occupancyMap.resize(1);
+		/*
+		for (auto map = this->occupancyMap.begin(); map < this->occupancyMap.begin()+1; map++)
+		{
+			cout << map - occupancyMap.begin()
+			inputFile.read((char *) &nnz, sizeof(unsigned int));
+//			cout << "nnz: " << nnz << endl;
+			idx.resize(nnz, 2);
+			inputFile.read((char *) idx.data(), nnz * 2 * sizeof(MatrixXi::Scalar));
+			tripletList.clear();
+			tripletList.reserve(nnz);
+			for (unsigned int i = 0; i < nnz; i++)
+			{
+				tripletList.push_back(Triplet<bool>(idx(i, 0), idx(i, 1), true));
+			}
+			map->resize(this->nOccupancyVoxels, this->nVoxels);
+//			cout << map->rows() << endl;
+//			cout << idx.col(0).minCoeff() << endl;
+//			cout << idx.col(0).maxCoeff() << endl;
+//			cout << map->cols() << endl;
+//			cout << idx.col(1).minCoeff() << endl;
+//			cout << idx.col(1).maxCoeff() << endl;
+			map->setFromTriplets(tripletList.begin(), tripletList.end());
+		}
+		*/
 	}
 
 	inputFile.close();

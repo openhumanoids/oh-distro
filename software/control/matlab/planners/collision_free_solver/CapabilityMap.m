@@ -231,14 +231,20 @@
         fwrite(file_id, obj.map_ub, 'double');
       end
       fwrite(file_id, ~isempty(obj.occupancy_map), 'ubit8');
-%       if ~isempty(obj.occupancy_map)
-%         for i = 1:numel(obj.occupancy_map.left)
-%           fwrite(file_id, full(obj.occupancy_map.left{i}), 'ubit8');
-%         end
-%         for i = 1:numel(obj.occupancy_map.right)
-%           fwrite(file_id, full(obj.occupancy_map.right{i}), 'ubit8');
-%         end
-%       end
+      if ~isempty(obj.occupancy_map)
+        fwrite(file_id, obj.occupancy_map_n_voxels, 'uint32');
+        fwrite(file_id, obj.occupancy_map_n_orient, 'uint32');
+        for i = 1:numel(obj.occupancy_map.left)
+          fwrite(file_id, nnz(obj.occupancy_map.left{i}), 'uint32');
+          [r, c] = find(obj.occupancy_map.left{i});
+          fwrite(file_id, [r-1, c-1], 'uint32');
+        end
+        for i = 1:numel(obj.occupancy_map.right)
+          fwrite(file_id, nnz(obj.occupancy_map.right{i}), 'uint32');
+          [r, c] = find(obj.occupancy_map.right{i});
+          fwrite(file_id, [r-1, c-1], 'uint32');
+        end
+      end
       fclose(file_id);
     end
     
