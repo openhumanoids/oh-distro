@@ -206,9 +206,31 @@
 %       fwrite(file_id, length(obj.urdf), 'uint32');
 %       fwrite(file_id, obj.urdf, 'char*1');
       fwrite(file_id, obj.map_centre.left, 'double');
-      fwrite(file_id, obj.n_voxels, 'uint32');
-      fwrite(file_id, obj.n_directions_per_voxel, 'uint32');
-      fwrite(file_id, obj.map, 'ubit8');
+      fwrite(file_id, obj.map_centre.right, 'double');
+      fwrite(file_id, length(obj.end_effector_link.left), 'uint32');
+      fwrite(file_id, obj.end_effector_link.left, 'char*1');
+      fwrite(file_id, length(obj.end_effector_link.right), 'uint32');
+      fwrite(file_id, obj.end_effector_link.right, 'char*1');
+      fwrite(file_id, obj.end_effector_axis, 'double');
+      fwrite(file_id, length(obj.base_link), 'uint32');
+      fwrite(file_id, obj.base_link, 'char*1');
+      fwrite(file_id, length(obj.nominal_configuration), 'uint32');
+      fwrite(file_id, obj.nominal_configuration, 'double');
+      fwrite(file_id, ~isempty(obj.map), 'ubit8');
+      if ~isempty(obj.map)
+        fwrite(file_id, obj.n_voxels, 'uint32');
+        fwrite(file_id, obj.n_directions_per_voxel, 'uint32');
+        fwrite(file_id, obj.map, 'ubit8');
+        fwrite(file_id, obj.reachability_index, 'double');
+        fwrite(file_id, obj.vox_edge, 'double');
+        fwrite(file_id, obj.ang_tolerance, 'double');
+        fwrite(file_id, obj.pos_tolerance, 'double');
+        fwrite(file_id, obj.map_lb, 'double');
+        fwrite(file_id, obj.map_ub, 'double');
+      end
+      fwrite(file_id, ~isempty(obj.occupancy_map), 'ubit8');
+      if ~isempty(obj.occupancy_map)
+      end
       fclose(file_id);
     end
     

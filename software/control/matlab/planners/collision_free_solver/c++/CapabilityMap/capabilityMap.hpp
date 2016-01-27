@@ -6,29 +6,49 @@
 #include <Eigen/SparseCore>
 #include <drake/systems/plants/RigidBodyTree.h>
 
-struct map_centre {
-	Eigen::Vector3d left;
-	Eigen::Vector3d right;
+using namespace std;
+using namespace Eigen;
+
+struct map_centre
+{
+	Vector3d left;
+	Vector3d right;
+};
+
+struct ee_link
+{
+	string left;
+	string right;
 };
 
 class CapabilityMap
 {
 public:
 	CapabilityMap();
-	CapabilityMap(const std::string & urdf_filename);
-	void loadFromFile(const std::string mapFile);
-	void saveToFile(const std::string mapFile);
-	Eigen::Vector2i getMapSize();
+	CapabilityMap(const string & urdf_filename);
+	void loadFromFile(const string mapFile);
+	void saveToFile(const string mapFile);
+	Vector2i getMapSize();
 	int getNVoxels();
 	void setNVoxels(unsigned int nVoxels);
 	void setNDirectionsPerVoxel(unsigned int nDir);
-	Eigen::RowVector2d getCapabilityMapSize();
+	RowVector2d getCapabilityMapSize();
 private:
 	size_t nVoxels;
 	size_t nDirectionsPerVoxel;
 	map_centre mapCentre;
-	Eigen::SparseMatrix<bool> map;
-	Eigen::VectorXd reachabilityIndex;
+	ee_link endEffectorLink;
+	Vector3d endEffectorAxis;
+	string baseLink;
+	size_t nJoints;
+	VectorXd nominalConfiguration;
+	SparseMatrix<bool> map;
+	VectorXd reachabilityIndex;
+	double voxelEdge;
+	double angularTolerance;
+	double positionTolerance;
+	Vector3d mapLowerBound;
+	Vector3d mapUpperBound;
 	RigidBodyTree rigidBodyTree;
 };
 
