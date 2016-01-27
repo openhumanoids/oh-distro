@@ -17,7 +17,8 @@ CapabilityMap::CapabilityMap(const string & urdf_filename):nVoxels(0), nDirectio
 void CapabilityMap::loadFromFile(const string mapFile)
 {
 	typedef Matrix<bool, Dynamic, Dynamic> MatrixXb;
-	MatrixXb denseMap;
+	MatrixX2i idx;
+	unsigned int nnz;
 	unsigned int stringLength;
 	char *buffer;
 	bool containsMap;
@@ -70,10 +71,19 @@ void CapabilityMap::loadFromFile(const string mapFile)
 		cout << "Found capability map data" << endl;
 		inputFile.read((char *) &this->nVoxels, sizeof(unsigned int));
 		inputFile.read((char *) &this->nDirectionsPerVoxel, sizeof(unsigned int));
-		denseMap.resize(this->nVoxels, this->nDirectionsPerVoxel);
 		this->map.resize(this->nVoxels, this->nDirectionsPerVoxel);
-		inputFile.read((char *) denseMap.data(), this->nVoxels * this->nDirectionsPerVoxel * sizeof(MatrixXb::Scalar));
-		this->map = denseMap.sparseView();
+		inputFile.read((char *) &nnz, sizeof(unsigned int));
+		idx.resize(nnz, 2);
+		inputFile.read((char *) idx.data(), nnz * 2 * sizeof(MatrixXi::Scalar));
+		cout << idx.row(0) <<endl;
+		vector<Triplet<bool>> tripletList;
+		tripletList.reserve(nnz);
+		for (unsigned int i = 0; i < nnz; i++)
+		{
+			tripletList.push_back(Triplet<bool>(idx(i, 0), idx(i, 1), true));
+		}
+		cout<<tripletList[0].row()<<" "<<tripletList[0].col()<<" "<<tripletList[0].value()<<endl;
+		this->map.setFromTriplets(tripletList.begin(), tripletList.end());
 //		cout << "Loaded Capability Map (" << this->map.rows() << "x" << this->map.cols() << ")\n";
 
 		this->reachabilityIndex.resize(this->nVoxels);

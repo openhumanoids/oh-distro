@@ -220,7 +220,9 @@
       if ~isempty(obj.map)
         fwrite(file_id, obj.n_voxels, 'uint32');
         fwrite(file_id, obj.n_directions_per_voxel, 'uint32');
-        fwrite(file_id, obj.map, 'ubit8');
+        fwrite(file_id, nnz(obj.map), 'uint32');
+        [r, c] = find(obj.map);
+        fwrite(file_id, [r-1, c-1], 'uint32');
         fwrite(file_id, obj.reachability_index, 'double');
         fwrite(file_id, obj.vox_edge, 'double');
         fwrite(file_id, obj.ang_tolerance, 'double');
@@ -229,8 +231,14 @@
         fwrite(file_id, obj.map_ub, 'double');
       end
       fwrite(file_id, ~isempty(obj.occupancy_map), 'ubit8');
-      if ~isempty(obj.occupancy_map)
-      end
+%       if ~isempty(obj.occupancy_map)
+%         for i = 1:numel(obj.occupancy_map.left)
+%           fwrite(file_id, full(obj.occupancy_map.left{i}), 'ubit8');
+%         end
+%         for i = 1:numel(obj.occupancy_map.right)
+%           fwrite(file_id, full(obj.occupancy_map.right{i}), 'ubit8');
+%         end
+%       end
       fclose(file_id);
     end
     
