@@ -1,0 +1,12 @@
+package drc;
+
+// Output of a 
+
+struct single_contact_filter_estimate_t
+{
+  int64_t utime;
+  string body_name;
+  float contact_normal[3];
+  float contact_position[3];
+  float contact_force[3];
+}
