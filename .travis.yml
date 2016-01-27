@@ -14,5 +14,5 @@ services:
 install: true
 
 script:
-  - docker pull openhumanoids/oh-distro-base:1.0
-  - docker run openhumanoids/oh-distro-base "./build-oh-distro.sh"
+  - docker pull openhumanoids/oh-distro-base:latest
+  - docker run openhumanoids/oh-distro-base /bin/bash -c "git clone https://github.com/oh-dev/oh-distro.git && cd oh-distro && git checkout wolfgang-make-public-compilable && git config --global url.https://github.com/.insteadOf git@github.com: && echo '' >>  ~/.ssh/known_hosts && ssh-keyscan -H github.com >> ~/.ssh/known_hosts && ssh-keyscan -H bitbucket.org >> ~/.ssh/known_hosts && sed -i 's/git@github.com:/https:\/\/github.com\//g' .gitmodules && sed -i 's/git@github.com:/https:\/\/github.com\//g' catkin_ws/.gitmodules && sed -i 's/ssh:\/\/git@github.com\//https:\/\/github.com\//g' software/externals/cmake/externals.cmake && git config --global user.email "buildserver@example" && git config --global user.name "build server" && git commit -am "module changes" && git submodule deinit catkin_ws/src/exotica-dev && git rm catkin_ws/src/exotica-dev && git submodule update --init --recursive && cd software && source ~/oh-distro/software/config/drc_environment.sh && cd externals && mkdir pod-build && cd pod-build && cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF && cd .. && make -j8 && cd .. && make -j8"
