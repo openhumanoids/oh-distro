@@ -287,6 +287,13 @@ if(BUILD_PRIVATE_EXTERNALS)
 
 endif()
 
+if(NOT BUILD_PRIVATE_EXTERNALS)
+  # Turn compilation of atlas, flycapture, ptgrey off in drivers so that make can run through in software
+  exec_program("sed -i 's/atlas/#atlas/g' ../../drivers/tobuild.txt")
+  exec_program("sed -i 's/flycapture/#flycapture/g' ../../drivers/tobuild.txt")
+  exec_program("sed -i 's/ptgrey/#ptgrey/g' ../../drivers/tobuild.txt")
+endif()
+
 
 if(NOT APPLE)
 
@@ -304,6 +311,17 @@ if(NOT APPLE)
   list(INSERT externals ${fovis_index} kinect)
   list(APPEND fovis_depends kinect)
 
+endif()
+
+
+# Checks whether Matlab is installed, if not remove dependent packages
+find_program(matlab matlab)
+if (NOT matlab)
+  message(WARNING "Could not find matlab executable - not building spotless and also skipping control")
+  list(REMOVE_ITEM externals
+    spotless
+  )
+  exec_program("sed -i 's/control/#control/g' ../../tobuild.txt")
 endif()
 
 
