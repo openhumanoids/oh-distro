@@ -221,40 +221,43 @@ MeasurementUpdate ContactFilter::computeLikelihood(double t, const Eigen::Vector
 
 void ContactFilter::publishPointEstimate(const MeasurementUpdate &measurementUpdate, bool publishOnUniqueChannel){
 
-  drc::contact_filter_estimate_t msg;
-  msg.utime = static_cast<int64_t> (measurementUpdate.t*1e6);
-  msg.body_id = (int16_t) measurementUpdate.contactFilterPoint.body_id;
-  msg.body_name = this->drake_model.getBodyOrFrameName(measurementUpdate.contactFilterPoint.body_id);
-  msg.name = measurementUpdate.contactFilterPoint.name;
-  msg.velocity_names = this->velocity_names;
-  msg.likelihood = (float) measurementUpdate.likelihood;
-  msg.logLikelihood = (float) measurementUpdate.exponentVal;
-  msg.contact_force_magnitude = (float) measurementUpdate.forceInBodyFrame.norm();
 
-  for(int i=0; i < 3; i++){
-    msg.contact_position[i] = (float) measurementUpdate.contactFilterPoint.contactPoint(i);
-    msg.contact_normal[i] = (float) measurementUpdate.contactFilterPoint.contactNormal(i);
-    msg.contact_force[i] = (float) measurementUpdate.forceInBodyFrame(i);
-  }
 
-  msg.num_velocities = (int16_t) this->nv;
-  msg.implied_residual.resize(this->nv);
-  for(int j=0; j<this->nv; j++){
-    msg.implied_residual[j] = (float) measurementUpdate.estResidual(j);
-  }
+//  drc::contact_filter_estimate_t msg;
+//  msg.utime = static_cast<int64_t> (measurementUpdate.t*1e6);
+//  msg.body_id = (int16_t) measurementUpdate.contactFilterPoint.body_id;
+//  msg.body_name = this->drake_model.getBodyOrFrameName(measurementUpdate.contactFilterPoint.body_id);
+//  msg.name = measurementUpdate.contactFilterPoint.name;
+//  msg.velocity_names = this->velocity_names;
+//  msg.likelihood = (float) measurementUpdate.likelihood;
+//  msg.logLikelihood = (float) measurementUpdate.exponentVal;
+//  msg.contact_force_magnitude = (float) measurementUpdate.forceInBodyFrame.norm();
+//
+//  for(int i=0; i < 3; i++){
+//    msg.contact_position[i] = (float) measurementUpdate.contactFilterPoint.contactPoint(i);
+//    msg.contact_normal[i] = (float) measurementUpdate.contactFilterPoint.contactNormal(i);
+//    msg.contact_force[i] = (float) measurementUpdate.forceInBodyFrame(i);
+//  }
+//
+//  msg.num_velocities = (int16_t) this->nv;
+//  msg.implied_residual.resize(this->nv);
+//  for(int j=0; j<this->nv; j++){
+//    msg.implied_residual[j] = (float) measurementUpdate.estResidual(j);
+//  }
+//
+//  std::string channel = this->publishChannel;
+//
+//  if (publishOnUniqueChannel){
+//    if (measurementUpdate.contactFilterPoint.name.length() > 0){
+//      channel = channel + "_" + measurementUpdate.contactFilterPoint.name;
+//    }
+//    else{
+//      channel = channel + "_NO_NAME";
+//    }
+//  }
+//
+//  this->lcm.publish(channel, &msg);
 
-  std::string channel = this->publishChannel;
-
-  if (publishOnUniqueChannel){
-    if (measurementUpdate.contactFilterPoint.name.length() > 0){
-      channel = channel + "_" + measurementUpdate.contactFilterPoint.name;
-    }
-    else{
-      channel = channel + "_NO_NAME";
-    }
-  }
-
-  this->lcm.publish(channel, &msg);
 }
 
 
