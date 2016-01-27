@@ -13,3 +13,4 @@ motion_estimate
 control
 bdi_walking
 director/distro/pods/drc
+state_sync_atlas

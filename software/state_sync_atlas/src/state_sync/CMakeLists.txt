@@ -11,14 +11,6 @@ pods_use_pkg_config_packages(drc-state-sync eigen3
   lcmtypes_drc_lcmtypes)
 pods_install_executables(drc-state-sync )
 
-add_executable(drc-arm-sensor-dump arm_sensor_dump.cpp  )
-pods_use_pkg_config_packages(drc-arm-sensor-dump eigen3
-  lcmtypes_drc_lcmtypes atlas)
-pods_install_executables(drc-arm-sensor-dump )
-
-
-
-
 
 add_executable(drc-update-offsets update_offsets.cpp  )
 pods_use_pkg_config_packages(drc-update-offsets eigen3
