@@ -25,7 +25,7 @@ script:
   - source $TRAVIS_BUILD_DIR/software/config/drc_environment.sh
   - mkdir $TRAVIS_BUILD_DIR/software/externals/pod-build
   - cd $TRAVIS_BUILD_DIR/software/externals/pod-build
-  - cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF
+  - cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF -DUSE_SYSTEM_LCM:BOOL=OFF
   - cd $TRAVIS_BUILD_DIR/software/externals
   - make -j8
   - cd $TRAVIS_BUILD_DIR/software
