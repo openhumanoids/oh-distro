@@ -8,10 +8,10 @@ if (val_version == 1)
   S = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp.mat']);
 elseif (val_version == 2)
   urdf = fullfile(getDrakePath(),'..','models','val_description','model.urdf');
-  S = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp_june2015.mat']);
+  S = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp.mat']);
 else
   urdf = '/home/mfallon/otherprojects/val_description/robots/valkyrie_A.urdf';
-  S = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp_june2015.mat']);
+  S = load([getDrakePath(), '/../control/matlab/data/valkyrie_fp.mat']);
 end
   
 r = RigidBodyManipulator(urdf,options);

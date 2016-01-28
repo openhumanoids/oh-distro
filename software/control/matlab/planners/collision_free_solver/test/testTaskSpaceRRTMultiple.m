@@ -65,7 +65,7 @@ elseif strcmp(model,'val1')
   options.r_hand_link_name = 'RightPalm';  
 elseif strcmp(model,'val2')
   urdf = fullfile(getDrakePath(),'../../models/val_description/urdf/valkyrie_sim_drake.urdf');
-  S = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat']);
+  S = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp.mat']);
   options.l_foot_link_name = 'leftFoot';
   options.r_foot_link_name = 'rightFoot';
   options.l_hand_link_name = 'leftPalm';

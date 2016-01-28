@@ -41,7 +41,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     visWorld = visWorld.compile();
     visWorld.constructVisualizer();
     addpath(fullfile(getDrakePath(), '../../', 'ddapp/src/matlab') )
-    fixed_point_file = [getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat'];
+    fixed_point_file = [getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp.mat'];
     left_foot_link = 'LeftFoot';
     right_foot_link = 'RightFoot';
 %     runIKServer

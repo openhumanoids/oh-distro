@@ -219,7 +219,7 @@ classdef Scenes
         case 'val1'
           fp = load([getDrakePath(), '/../../control/matlab/data/valkyrie/valkyrie_fp.mat']);
         case 'val2'
-          fp = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat']);
+          fp = load([getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp.mat']);
         otherwise
           fp = load([getDrakePath(), sprintf('/../../control/matlab/data/%s.mat', model)]);
           %                 case 'lwr'
