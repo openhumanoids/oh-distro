@@ -9,6 +9,9 @@ dist: trusty
 #    - github.com
 #    - bitbucket.org
 
+virtualenv:
+  system_site_packages: true
+
 git:
   submodules: false
 
