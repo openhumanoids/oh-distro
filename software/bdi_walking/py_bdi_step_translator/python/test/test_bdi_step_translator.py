@@ -125,7 +125,7 @@ class TestStepTranslation(unittest.TestCase):
 
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
-            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            msg = atlas.behavior_step_params_t.decode(msg_data)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[0], 0.04)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[1], 0)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[2], 0)
@@ -157,7 +157,7 @@ class TestStepTranslation(unittest.TestCase):
 
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
-            msg = drc.atlas_behavior_walk_params_t.decode(msg_data)
+            msg = atlas.behavior_walk_params_t.decode(msg_data)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[0], 0.04)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[1], 0)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[2], 0)
@@ -185,7 +185,7 @@ class TestStepTranslation(unittest.TestCase):
         translator.handle_footstep_plan('COMMITTED_FOOTSTEP_PLAN', plan.encode())
 
         def handle_steps(channel, msg_data):
-            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            msg = atlas.behavior_step_params_t.decode(msg_data)
             self.assertEqual(msg.desired_step_spec.step_index, -1)
         lc = lcm.LCM()
         lc.subscribe('ATLAS_STEP_PARAMS', handle_steps)
@@ -195,7 +195,7 @@ class TestStepTranslation(unittest.TestCase):
     def test_stop_walking_no_queue(self):
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
-            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            msg = atlas.behavior_step_params_t.decode(msg_data)
             self.assertEqual(msg.desired_step_spec.step_index, -1)
         lc = lcm.LCM()
         lc.subscribe('ATLAS_STEP_PARAMS', handle_steps)
@@ -211,8 +211,8 @@ class TestStepTranslation(unittest.TestCase):
         translator.handle_footstep_plan('COMMITTED_FOOTSTEP_PLAN', plan.encode())
         self.assertEqual(translator.delivered_index, 1)
 
-        status = drc.atlas_status_t()
-        status.step_feedback = drc.atlas_step_feedback_t()
+        status = atlas.status_t()
+        status.step_feedback = atlas.step_feedback_t()
         status.step_feedback.next_step_index_needed = 2
         translator.executing = True
         translator.handle_atlas_status('ATLAS_STATUS', status)
@@ -224,7 +224,7 @@ class TestStepTranslation(unittest.TestCase):
         translator = BDIStepTranslator()
 
         def handle_steps(channel, msg_data):
-            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            msg = atlas.behavior_step_params_t.decode(msg_data)
             self.assertAlmostEqual(msg.desired_step_spec.action.lift_height, plan.footsteps[2].params.bdi_lift_height + plan.footsteps[2].terrain_height[1])
 
         lc = lcm.LCM()
@@ -239,7 +239,7 @@ class TestStepTranslation(unittest.TestCase):
 
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
-            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            msg = atlas.behavior_step_params_t.decode(msg_data)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[0], 0.04)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[1], 0)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[2], 0)
@@ -271,7 +271,7 @@ class TestStepTranslation(unittest.TestCase):
 
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
-            msg = drc.atlas_behavior_walk_params_t.decode(msg_data)
+            msg = atlas.behavior_walk_params_t.decode(msg_data)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[0], 0.04)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[1], 0)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[2], 0)

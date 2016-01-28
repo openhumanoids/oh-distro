@@ -1,0 +1,8 @@
+package atlas;
+
+// AtlasBehaviorStandParams in Atlas API
+
+struct behavior_stand_params_t
+{
+  int32_t placeholder;
+}

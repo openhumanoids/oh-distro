@@ -65,7 +65,7 @@ group "3.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync -b -a 4";
+        exec = "drc-state-sync-atlas -b -a 4";
         host = "atlas0";
     }
     cmd "fusion" {

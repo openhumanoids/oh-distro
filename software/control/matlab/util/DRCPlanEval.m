@@ -58,7 +58,7 @@ classdef DRCPlanEval < bipedControllers.BipedPlanEval
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('start_stand', 'START_MIT_STAND', @drc.utime_t, 0, @obj.handle_stand_default);
-      obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @drc.atlas_behavior_command_t, 0, @obj.handle_atlas_behavior_command);
+      obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @atlas.behavior_command_t, 0, @obj.handle_atlas_behavior_command);
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);

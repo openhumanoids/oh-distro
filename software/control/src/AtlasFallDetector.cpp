@@ -73,7 +73,7 @@ void AtlasFallDetector::findFootIDS() {
 
 void AtlasFallDetector::handleAtlasStatus(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
-                       const drc::atlas_status_t* msg) {
+                       const atlas::status_t* msg) {
   this->atlas_is_in_user = msg->behavior == msg->BEHAVIOR_USER;
 }
 

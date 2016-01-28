@@ -1,0 +1,18 @@
+package atlas;
+
+// The part of the Robot State
+// that origins from BDI's library
+
+struct state_t
+{
+  int64_t utime;
+
+  int16_t num_joints;
+  // Removed Oct 2013:
+  //string joint_name[num_joints];
+  float joint_position [num_joints];
+  float joint_velocity [num_joints];
+  float joint_effort[num_joints];
+
+  force_torque_t force_torque;
+}

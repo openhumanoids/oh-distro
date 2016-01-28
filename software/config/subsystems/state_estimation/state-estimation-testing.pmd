@@ -15,7 +15,7 @@ group "start" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync";
+        exec = "drc-state-sync-atlas";
         host = "localhost";
     }
 

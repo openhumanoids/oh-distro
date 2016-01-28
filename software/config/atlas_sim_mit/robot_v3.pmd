@@ -17,7 +17,7 @@ group "1.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync -b -a 3";
+        exec = "drc-state-sync-atlas -b -a 3";
         host = "base";
     }
 }

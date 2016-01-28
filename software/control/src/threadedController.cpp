@@ -7,7 +7,7 @@
 #include "drc/controller_status_t.hpp"
 #include "lcmtypes/drc/recovery_trigger_t.hpp"
 #include "drc/robot_state_t.hpp"
-#include "drc/atlas_behavior_command_t.hpp"
+#include "atlas/behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include "drake/systems/controllers/QPCommon.h"
 #include "RobotStateDriver.hpp"
@@ -56,7 +56,7 @@ public:
 
 SolveArgs solveArgs;
 
-drc::atlas_behavior_command_t atlas_behavior_msg;
+atlas::behavior_command_t atlas_behavior_msg;
 
 int infocount = 0;
 

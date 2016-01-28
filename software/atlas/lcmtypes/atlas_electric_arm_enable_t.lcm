@@ -1,0 +1,19 @@
+package atlas;
+
+// Enable and disable electric forearm joints on Atlas
+
+struct electric_arm_enable_t
+{
+  int64_t utime;
+  
+  int16_t num_electric_arm_joints;
+
+  // Electric joint ordering (from BDI API)
+  //  ELEC_MOTOR_L_ARM_UWY = 0
+  //  ELEC_MOTOR_L_ARM_MWX = 1
+  //  ELEC_MOTOR_L_ARM_LWY = 2
+  //  ELEC_MOTOR_R_ARM_UWY = 3
+  //  ELEC_MOTOR_R_ARM_MWX = 4
+  //  ELEC_MOTOR_R_ARM_LWY = 5
+  int16_t enable[num_electric_arm_joints];
+}

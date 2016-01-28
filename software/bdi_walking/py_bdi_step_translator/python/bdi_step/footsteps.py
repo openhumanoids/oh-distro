@@ -1,4 +1,5 @@
 import drc
+import atlas
 import pylab as pl
 import numpy as np
 # from collections import namedtuple
@@ -22,7 +23,7 @@ class FootGoal:
                  bdi_step_duration=0.0,
                  bdi_sway_duration=0.0,
                  bdi_lift_height=0.0,
-                 bdi_toe_off=drc.atlas_behavior_step_action_t.TOE_OFF_ENABLE,
+                 bdi_toe_off=atlas.behavior_step_action_t.TOE_OFF_ENABLE,
                  bdi_knee_nominal=0.0,
                  bdi_max_body_accel=0.0,
                  bdi_max_foot_vel=0.0,
@@ -62,7 +63,7 @@ class FootGoal:
             return self.to_walk_spec(step_index)
 
     def to_step_spec(self, step_index):
-        step_spec = drc.atlas_behavior_step_spec_t()
+        step_spec = atlas.behavior_step_spec_t()
         step_spec.step_index = step_index
         step_spec.foot_index = self.is_right_foot
         step_spec.foot = self.to_bdi_foot_data()
@@ -70,7 +71,7 @@ class FootGoal:
         return step_spec
 
     def to_walk_spec(self, step_index):
-        walk_spec = drc.atlas_behavior_walk_spec_t()
+        walk_spec = atlas.behavior_walk_spec_t()
         walk_spec.step_index = step_index
         walk_spec.foot_index = self.is_right_foot
         walk_spec.foot = self.to_bdi_foot_data()
@@ -78,7 +79,7 @@ class FootGoal:
         return walk_spec
 
     def to_bdi_foot_data(self):
-        foot_data = drc.atlas_behavior_foot_data_t()
+        foot_data = atlas.behavior_foot_data_t()
         # foot_data.position = self.to_atlas_frame(self.pos)[:3]
         foot_data.position = self.pos[:3]
         foot_data.yaw = self.pos[5]
@@ -86,7 +87,7 @@ class FootGoal:
         return foot_data
 
     def to_step_action(self):
-        action = drc.atlas_behavior_step_action_t()
+        action = atlas.behavior_step_action_t()
         action.swing_height = self.step_height
         action.step_duration = self.bdi_step_duration
         action.sway_duration = self.bdi_sway_duration
@@ -106,7 +107,7 @@ class FootGoal:
         return action
 
     def to_walk_action(self):
-        action = drc.atlas_behavior_walk_action_t()
+        action = atlas.behavior_walk_action_t()
         action.step_duration = self.bdi_step_duration
         action.swing_height = self.step_height
         return action

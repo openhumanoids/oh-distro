@@ -19,7 +19,7 @@ public class AtlasStateExtraCoder implements drake.util.LCMCoder
 
     public drake.util.CoordinateFrameData decode(byte[] data) {
       try {
-        drc.atlas_state_extra_t msg = new drc.atlas_state_extra_t(data);
+        atlas.state_extra_t msg = new atlas.state_extra_t(data);
         return decode(msg);
       } catch (IOException ex) {
         System.out.println("Exception: " + ex);
@@ -27,7 +27,7 @@ public class AtlasStateExtraCoder implements drake.util.LCMCoder
       return null;
     }
  
-    public drake.util.CoordinateFrameData decode(drc.atlas_state_extra_t msg) {
+    public drake.util.CoordinateFrameData decode(atlas.state_extra_t msg) {
       Integer j;
       int index;
 
@@ -44,7 +44,7 @@ public class AtlasStateExtraCoder implements drake.util.LCMCoder
     }
 
     public LCMEncodable encode(drake.util.CoordinateFrameData d) {
-      drc.atlas_state_extra_t msg = new drc.atlas_state_extra_t();
+      atlas.state_extra_t msg = new atlas.state_extra_t();
       msg.utime = (long)(d.t*1000000);
       msg.joint_position_out = new float[m_num_joints];
       msg.joint_velocity_out = new float[m_num_joints];

@@ -1,5 +1,6 @@
 import lcm
 import drc
+import atlas
 import bot_core
 import time
 import numpy as np
@@ -17,15 +18,15 @@ PLAN_UPDATE_TIMEOUT = 20 # maximum time allowed between a footstep plan and an '
 ATLAS_FRAME_OFFSET = np.array([0.0400, 0.000, -0.0850])
 
 def blank_step_spec():
-    msg = drc.atlas_behavior_step_spec_t()
-    msg.foot = drc.atlas_behavior_foot_data_t()
-    msg.action = drc.atlas_behavior_step_action_t()
+    msg = atlas.behavior_step_spec_t()
+    msg.foot = atlas.behavior_foot_data_t()
+    msg.action = atlas.behavior_step_action_t()
     return msg
 
 def blank_walk_spec():
-    msg = drc.atlas_behavior_walk_spec_t()
-    msg.foot = drc.atlas_behavior_foot_data_t()
-    msg.action = drc.atlas_behavior_walk_action_t()
+    msg = atlas.behavior_walk_spec_t()
+    msg.foot = atlas.behavior_foot_data_t()
+    msg.action = atlas.behavior_walk_action_t()
     return msg
 
 class Mode:
@@ -146,7 +147,7 @@ class IHMCStepTranslator(object):
         if (not self.executing) or self.mode != Mode.translating:
             return
         if isinstance(msg, str):
-            msg = drc.atlas_status_t.decode(msg)
+            msg = atlas.status_t.decode(msg)
         if self.behavior == Behavior.BDI_WALKING:
             index_needed = msg.walk_feedback.next_step_index_needed
             # if (self.delivered_index + 1) < index_needed <= len(self.bdi_step_queue_in) - 4:
@@ -183,10 +184,10 @@ class IHMCStepTranslator(object):
         """
         assert self.mode == Mode.translating, "Translator in Mode.plotting mode is not allowed to send step/walk params"
         if self.behavior == Behavior.BDI_WALKING:
-            walk_param_msg = drc.atlas_behavior_walk_params_t()
+            walk_param_msg = atlas.behavior_walk_params_t()
             walk_param_msg.num_required_walk_steps = NUM_REQUIRED_WALK_STEPS
             walk_param_msg.walk_spec_queue = self.bdi_step_queue_out[step_index-1:step_index+3]
-            walk_param_msg.step_queue = [drc.atlas_step_data_t() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
+            walk_param_msg.step_queue = [atlas.step_data_t() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
             walk_param_msg.use_spec = True
             walk_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
             walk_param_msg.use_demo_walk = 0
@@ -197,13 +198,13 @@ class IHMCStepTranslator(object):
             self.delivered_index = walk_param_msg.walk_spec_queue[0].step_index
             #print "Sent walk params for step indices {:d} through {:d}".format(walk_param_msg.walk_spec_queue[0].step_index, walk_param_msg.walk_spec_queue[-1].step_index)
         elif self.behavior == Behavior.BDI_STEPPING:
-            step_param_msg = drc.atlas_behavior_step_params_t()
-            step_param_msg.desired_step = drc.atlas_step_data_t()  # Unused
+            step_param_msg = atlas.behavior_step_params_t()
+            step_param_msg.desired_step = atlas.step_data_t()  # Unused
             step_param_msg.desired_step_spec = self.bdi_step_queue_out[step_index-1]
             step_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
             step_param_msg.use_demo_walk = 0
             step_param_msg.use_spec = True
-            step_param_msg.desired_step = drc.atlas_step_data_t()  # Unused
+            step_param_msg.desired_step = atlas.step_data_t()  # Unused
             step_param_msg.desired_step_spec = self.bdi_step_queue_out[step_index-1]
             if force_stop_walking:
                 step_param_msg.desired_step_spec.step_index = -1
@@ -220,7 +221,7 @@ class IHMCStepTranslator(object):
         self.lc.publish('NEXT_EXPECTED_DOUBLE_SUPPORT', encode_footstep_plan(self.bdi_step_queue_in[self.delivered_index:self.delivered_index+2], self.last_params).encode())
 
     def send_behavior(self):
-        command_msg = drc.atlas_behavior_command_t()
+        command_msg = atlas.behavior_command_t()
         command_msg.utime = now_utime()
         if self.behavior == Behavior.BDI_STEPPING:
             command_msg.command = "step"
@@ -297,3 +298,4 @@ class IHMCStepTranslator(object):
                        is_stepping=is_stepping,
                        lift_height=lift_height)
         self.gl.switch_buffer()
+
