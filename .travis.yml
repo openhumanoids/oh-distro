@@ -4,6 +4,11 @@ dist: trusty
 #services:
 #  - docker
 
+#addons:
+#  ssh_known_hosts:
+#    - github.com
+#    - bitbucket.org
+
 git:
   submodules: false
 
@@ -17,7 +22,8 @@ before_install:
   - git config --global user.name "Travis CI"
   - git submodule deinit -f catkin_ws/src/exotica-dev
   - rm -rf catkin_ws/src/exotica-dev
-  # - git rm --cached catkin_ws/src/exotica-dev
+  - git add .gitmodules catkin_ws/.gitmodules software/externals/cmake/externals.cmake
+  - git rm --cached -f catkin_ws/src/exotica-dev
   - git submodule update --init --recursive
 
 install: true
