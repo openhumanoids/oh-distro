@@ -287,6 +287,10 @@ if (USE_SYSTEM_PCL)
   list(REMOVE_ITEM externals
     pcl
   )
+
+  list(REMOVE_ITEM PointCloudLibraryPlugin_depends
+    pcl
+  )
 endif()
 
 
