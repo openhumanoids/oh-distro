@@ -13,6 +13,7 @@ endif()
 
 option(BUILD_PRIVATE_EXTERNALS "Build private externals (requires access to private repos)" ON)
 option(USE_SYSTEM_LCM "Use system LCM (otherwise build LCM will be built)" ON)
+option(USE_SYSTEM_PCL "Use system PCL 1.7 (otherwise PCL will be built)" OFF)
 
 include(ExternalProject)
 set_property(DIRECTORY PROPERTY EP_PREFIX ${Externals_BINARY_DIR})

@@ -283,6 +283,13 @@ if(BUILD_PRIVATE_EXTERNALS)
 endif()
 
 
+if (USE_SYSTEM_PCL)
+  list(REMOVE_ITEM externals
+    pcl
+  )
+endif()
+
+
 if(NOT APPLE)
 
   # These modules only compile on linux. Some have strict requirements on
