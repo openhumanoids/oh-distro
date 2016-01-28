@@ -283,13 +283,27 @@ if(BUILD_PRIVATE_EXTERNALS)
 endif()
 
 
+# Use PCL from jochen sprickerhof ppa
 if (USE_SYSTEM_PCL)
   list(REMOVE_ITEM externals
     pcl
   )
-
   list(REMOVE_ITEM PointCloudLibraryPlugin_depends
     pcl
+  )
+endif()
+
+
+# When using supplied deb with OpenCV-2.4.12.3
+if (USE_SYSTEM_OPENCV)
+  list(REMOVE_ITEM externals
+    opencv
+  )
+  list(REMOVE_ITEM occ-map_depends
+    opencv
+  )
+  list(REMOVE_ITEM libmultisense_depends
+    opencv
   )
 endif()
 
