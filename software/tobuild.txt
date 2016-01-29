@@ -10,6 +10,6 @@ drivers
 utils
 perception
 motion_estimate
-atlas-collection
 control
+atlas-collection
 director/distro/pods/drc

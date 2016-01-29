@@ -5,9 +5,9 @@
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
 #include "drc/controller_status_t.hpp"
-#include "lcmtypes/drc/recovery_trigger_t.hpp"
+#include "drc/recovery_trigger_t.hpp"
 #include "drc/robot_state_t.hpp"
-#include "atlas/behavior_command_t.hpp"
+#include "drc/behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include "drake/systems/controllers/QPCommon.h"
 #include "RobotStateDriver.hpp"
@@ -22,7 +22,7 @@ namespace {
 
 struct ThreadedControllerOptions {
   std::string atlas_command_channel;
-  std::string atlas_behavior_channel;
+  std::string robot_behavior_channel;
   int max_infocount; // If we see info < 0 more than max_infocount times, freeze Atlas. Set to -1 to disable freezing.
 };
 
@@ -56,7 +56,7 @@ public:
 
 SolveArgs solveArgs;
 
-atlas::behavior_command_t atlas_behavior_msg;
+drc::behavior_command_t robot_behavior_msg;
 
 int infocount = 0;
 
@@ -341,9 +341,9 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 
       if (!isOutputSafe(qp_output)) {
         // First priority is to halt unsafe behavior
-        atlas_behavior_msg.utime = 0;
-        atlas_behavior_msg.command = "freeze";
-        lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
+        robot_behavior_msg.utime = 0;
+        robot_behavior_msg.command = "freeze";
+        lcmHandler.LCMHandle->publish(ctrl_opts->robot_behavior_channel, &robot_behavior_msg);
       }
 
       if (info < 0 && ctrl_opts->max_infocount > 0) {
@@ -354,9 +354,9 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
             std::cout << "Infocount exceeded. Freezing Atlas!" << std::endl;
           }
           /*
-          atlas_behavior_msg.utime = 0;
-          atlas_behavior_msg.command = "freeze";
-          lcmHandler.LCMHandle->publish(ctrl_opts->atlas_behavior_channel, &atlas_behavior_msg);
+          robot_behavior_msg.utime = 0;
+          robot_behavior_msg.command = "freeze";
+          lcmHandler.LCMHandle->publish(ctrl_opts->robot_behavior_channel, &robot_behavior_msg);
           */
           // we've lost control and are probably falling. cross fingers...
           drc::recovery_trigger_t trigger_msg;
