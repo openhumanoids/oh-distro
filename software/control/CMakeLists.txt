@@ -4,9 +4,16 @@ cmake_minimum_required(VERSION 2.6.0)
 set(POD_NAME control)
 include(cmake/pods.cmake)
 
-# set up matlab build
-include(cmake/mex.cmake)
-mex_setup(REQUIRED)
+# check whether matlab is present, else skip the entire control directory
+find_program(matlab matlab)
+if (NOT matlab)
+  message(WARNING "Matlab not found, skipping control")
+else (matlab)
+  message(STATUS "Matlab found, setting up MEX build")
+  # set up matlab build
+  include(cmake/mex.cmake)
+  mex_setup(REQUIRED)
+endif()
 
 find_file(MODELS models PATHS $ENV{DRC_BASE}/software)
 if (NOT MODELS)
@@ -41,44 +48,48 @@ endif()
 
 include_directories(${INCLUDE_INSTALL_PATH})
 
+if (matlab)
+  add_subdirectory(src)
+  add_subdirectory(matlab/@QPReactiveRecoveryPlan)
+endif()
 
-add_subdirectory(src)
 add_subdirectory(contact_monitor)
 add_subdirectory(fall_detector)
 add_subdirectory(joint_monitor)
-add_subdirectory(matlab/@QPReactiveRecoveryPlan)
 
-message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab")
+if (matlab)
+  message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab")
 
-file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/addpath_control.m
-	   "function addpath_control()\n"
-     "  setenv('ROS_PACKAGE_PATH',[getenv('ROS_PACKAGE_PATH'),':${MODELS}:${COMMON_COMPONENTS}']);\n"
-     "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
-	   "  add_ctrl_path();\n"
-	   "  cd(wd);\n"
-    )
+  file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/addpath_control.m
+  	   "function addpath_control()\n"
+       "  setenv('ROS_PACKAGE_PATH',[getenv('ROS_PACKAGE_PATH'),':${MODELS}:${COMMON_COMPONENTS}']);\n"
+       "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
+  	   "  add_ctrl_path();\n"
+  	   "  cd(wd);\n"
+      )
 
-file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/rmpath_control.m
-	   "function rmpath_control()\n"
-	   "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
-	   "  rm_ctrl_path();\n"
-	   "  cd(wd);\n"
-    )
+  file(WRITE ${CMAKE_INSTALL_PREFIX}/matlab/rmpath_control.m
+  	   "function rmpath_control()\n"
+  	   "  wd = cd('${CMAKE_CURRENT_SOURCE_DIR}');\n"
+  	   "  rm_ctrl_path();\n"
+  	   "  cd(wd);\n"
+      )
 
-message(STATUS "Writing ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m")
+  message(STATUS "Writing ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m")
 
-file(WRITE ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m
-	   "function drc_control_setup()\n"
-	   "  addpath('${CMAKE_INSTALL_PREFIX}/matlab');\n"
-    )
+  file(WRITE ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m
+  	   "function drc_control_setup()\n"
+  	   "  addpath('${CMAKE_INSTALL_PREFIX}/matlab');\n"
+      )
 
-enable_testing()
-include(CTest)
+  enable_testing()
+  include(CTest)
 
-add_test(NAME testQPReactiveRecovery
-         COMMAND testQPReactiveRecovery)
-add_test(NAME testAtlasFallDetector
-         COMMAND testAtlasFallDetector)
+  add_test(NAME testQPReactiveRecovery
+           COMMAND testQPReactiveRecovery)
+  add_test(NAME testAtlasFallDetector
+           COMMAND testAtlasFallDetector)
+endif()
 
 #find_program(matlab matlab)
 #if (NOT matlab-NOTFOUND)
