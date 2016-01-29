@@ -3,8 +3,8 @@
 
 multisense
 ipwebcam
-flycapture
-ptgrey
+#flycapture
+#ptgrey
 robotiqhand
 irobothand
 openni
