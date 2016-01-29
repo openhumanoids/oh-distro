@@ -283,6 +283,16 @@ if(BUILD_PRIVATE_EXTERNALS)
 endif()
 
 
+# Checks whether Matlab is installed, else remove dependent packages
+find_program(matlab matlab)
+if (NOT matlab)
+  message(WARNING "Could not find matlab executable - not building spotless")
+  list(REMOVE_ITEM externals
+    spotless
+  )
+endif()
+
+
 # Use PCL from jochen sprickerhof ppa
 if (USE_SYSTEM_PCL)
   list(REMOVE_ITEM externals
