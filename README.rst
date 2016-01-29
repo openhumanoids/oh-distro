@@ -73,8 +73,8 @@ source code you may need to first install Git on your system:
 Getting Access
 --------------
 
-You may need permission to access the git repository hosted on Github. To
-do so, create a GitHub account at `Github.com <https://github.com>`_ if
+You may need permission to access the git repository hosted on GitHub. To
+do so, create a GitHub account at `GitHub.com <https://github.com>`_ if
 you don't already have one.
 
 Next, add your public SSH key to your GitHub account so that you can easily
@@ -90,14 +90,19 @@ Download the repository with the ``git clone`` command:
 
     git clone git@github.com:openhumanoids/oh-distro.git
 
+If you are **not** a not a member of the OpenHumanoids organization, please deinit one private submodule or else the following command will fail:
+
+::
+
+    cd oh-distro
+    git submodule deinit catkin_ws/src/exotica-dev && git rm catkin_ws/src/exotica-dev
+
 Initialize the submodules (Drake, director, pronto):
 
 ::
 
-    cd drc
+    cd oh-distro
     git submodule update --init --recursive
-
-Note: this may fail if you're not a member of the OpenHumanoids organization, since some submodules are private. 
 
 Add the *sandbox* remote. The *sandbox* is the location where branches can be shared.
 
@@ -127,7 +132,7 @@ installing packages on Ubuntu. Install with the following commands:
 LCM Dependency
 --------------
 
-LCM (v1.1.0) is a required dependency which must be installed from source. It can be retrived from http://lcm-proj.github.io/
+LCM (v1.1.0) is a required dependency which must be installed from source. It can be retrieved from http://lcm-proj.github.io/
 
 ::
 
@@ -149,8 +154,10 @@ cd into the resulting directory
 sudo ./install
 When prompted for how to install, choose "Log in with a MathWorks Account."
 
+Newer versions of Matlab are known to **not** play nicely with our code.
+
 Choose a "Typical" install and click next through the rest of the process. You will need to enter your Mathworks username and password during the install process, and you should see a single license that you can use for the install (this comes from a lookup of the activation key).
-You should have a functional MATLAB in /usr/local/MATLAB/R2014a/bin now. You can either add this directory to your PATH environment variable (e.g. in ~/.bashrc) or you can make a symlink in /usr/local/bin/ that points to the MATLAB binary - sudo ln -s /usr/local/MATLAB/R2014a/bin/matlab /usr/local/bin/matlab. If you put it in .bashrc, you'll need to source that file before matlab will be in your path (or, just start a new shell) 
+You should have a functional MATLAB in /usr/local/MATLAB/R2014a/bin now. You can either add this directory to your PATH environment variable (e.g. in ~/.bashrc) or you can make a symlink in /usr/local/bin/ that points to the MATLAB binary - sudo ln -s /usr/local/MATLAB/R2014a/bin/matlab /usr/local/bin/matlab. If you put it in .bashrc, you'll need to source that file before matlab will be in your path (or, just start a new shell)
 
 After installing MATLAB, two of the symlinks for libraries need to be changed:
 
@@ -159,7 +166,7 @@ After installing MATLAB, two of the symlinks for libraries need to be changed:
    cd /usr/local/MATLAB/R2014a/sys/os/glnxa64
    ls -l
 
-The sym links for libstdc++.so.6 and libgfortran.so.3 should point to versions in /usr/lib, not local ones.
+The symbolic links for libstdc++.so.6 and libgfortran.so.3 should point to versions in /usr/lib, not local ones.
 
 Before changing this libraries, first make sure g++ 4.4 is installed:
 
@@ -179,7 +186,7 @@ Now, modify the symlinks:
 Instructions for MOSEK
 ----------------------
 
-Mosek is a solver used in the footstep planner. Obtain an academic licence from 
+Mosek is a solver used in the footstep planner. Obtain an academic licence from
 http://license.mosek.com/academic
 Check your email and place your license in ~/mosek/mosek.lic
 The Mosek code is checked out as part of the project externasl
@@ -195,16 +202,16 @@ Environment Setup
 The behavior of certain build steps can be affected by environment
 variables, so you should setup your environment before starting the
 build. The environment is setup by sourcing the file
-*main-distro/software/config/drc\_environment.sh*. Typically, users will source
+*oh-distro/software/config/drc\_environment.sh*. Typically, users will source
 this file automatically in their ~/.bashrc file by adding this line to
 ~/.bashrc:
 
 ::
 
-    source /path-to/main-distro/software/config/drc_environment.sh
+    source /path-to/oh-distro/software/config/drc_environment.sh
 
 If you have already done this, make sure your ~/.bashrc contains the
-correct path to the drc\_environment.sh file in the drc source code
+correct path to the drc\_environment.sh file in the oh-distro source code
 directory that you just cloned with git.
 
 Matlab Environment Setup
@@ -228,24 +235,31 @@ automatically in ~/.bashrc, then do so now with the following command:
 
 ::
 
-    cd main-distro
+    cd oh-distro
     source software/config/drc_environment.sh
 
-Run make to build externals and then the main codebase:
+If you do not have access to private external submodules such as Gurobi, Snopt, or the Atlas drivers, you need to turn off BUILD_PRIVATE_EXTERNALS:
+
+::
+
+    cd oh-distro/software/externals
+    mkdir pod-build && cd pod-build
+    cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF
+    cd ..
+    make -j
+    cd ..
+    make -j
+
+Please make sure to install Gurobi and Snopt manually.
+
+If you are a member of the OpenHumanoids organization, run make to build externals and then the main codebase:
 
 ::
 
     cd software/externals
-    make
+    make -j
     cd ..
-    make
-
-**Nov 2015: One More Step Is currently Required**
-
-::
-
-    cd <path-to>/main-distro/software/build/lib/python2.7/dist-packages
-    ln -s lcmtypes/drake drake
+    make -j
 
 ** Compiling drake
 
@@ -254,7 +268,7 @@ But if you did it these are the steps for a clean build of drake:
 
 ::
 
-    cd <path-to>/main-distro/software
+    cd <path-to>/oh-distro/software
     rm drake
     cd externals
     rm pod-build/src/drake-cmake-* pod-build/tmp/drake-cmake-* -Rf
@@ -273,10 +287,10 @@ Gurobi is a solver used in our walking controller. Install its dependencies with
 
     apt-get install curl libwww-perl libterm-readkey-perl
 
-Then generate an academic licence: First make an account 
+Then generate an academic licence: First make an account
 http://www.gurobi.com/download/licenses/free-academic , then use the Gurobi
-key client (grbgetkey) to store the license on your machine. Place it in the suggested 
-location (~/gurobi.lic) 
+key client (grbgetkey) to store the license on your machine. Place it in the suggested
+location (~/gurobi.lic)
 
 The grbgetkey module is built as part of the externals.
 
@@ -286,7 +300,7 @@ to avoid needing to download it from Gurobi.
 ROS
 ===
 
-ROS is not required per se. If you would like to use this distribution in conjunction with SCS for the Valkyrie or to use EXOTica for planning and optimisation, please install ROS Indigo including MoveIt. Valkyrie uses ROS-Control for the Hardware API and our LCM2ROSControl translator package hence requires ROS Control
+ROS is not required per se. If you would like to use this distribution in conjunction with IHMC's SCS, your own controllers for Valkyrie, or to use EXOTica for planning and optimization, please install ROS Indigo including MoveIt and ROS-Control. Valkyrie uses ROS-Control for the Hardware API and our LCM2ROSControl translator package hence requires ROS Control.
 
 ::
 
@@ -298,10 +312,9 @@ Compile catkin workspace:
 
     cd $DRC_BASE/catkin_ws
     catkin_make -DCMAKE_BUILD_TYPE=RelWithDebInfo
- 
+
 Before you run any ROS code from the catkin workspace, source the setup script:
 
 ::
 
     source catkin_ws/devel/setup.bash
-
