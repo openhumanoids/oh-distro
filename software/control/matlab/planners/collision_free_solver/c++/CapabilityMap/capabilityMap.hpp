@@ -36,13 +36,13 @@ public:
 	void setNDirectionsPerVoxel(unsigned int nDir);
 	RowVector2d getCapabilityMapSize();
 private:
-	size_t nVoxels;
-	size_t nDirectionsPerVoxel;
+	unsigned int nVoxels;
+	unsigned int nDirectionsPerVoxel;
 	map_centre mapCentre;
 	ee_link endEffectorLink;
 	Vector3d endEffectorAxis;
 	string baseLink;
-	size_t nJoints;
+	unsigned int nJoints;
 	VectorXd nominalConfiguration;
 	SparseMatrix<bool> map;
 	VectorXd reachabilityIndex;
@@ -51,9 +51,10 @@ private:
 	double positionTolerance;
 	Vector3d mapLowerBound;
 	Vector3d mapUpperBound;
-	size_t nOccupancyVoxels;
-	size_t nOccupancyOrient;
-	OccupancyMap occupancyMap;
+	unsigned int nOccupancyVoxels;
+	unsigned int nOccupancyOrient;
+	OccupancyMap occupancyMapLeft;
+	OccupancyMap occupancyMapRight;
 	RigidBodyTree rigidBodyTree;
 };
 
