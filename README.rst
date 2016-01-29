@@ -84,24 +84,22 @@ article for instructions to generate and link an ssh key to your account.
 Download the source code
 ------------------------
 
-Download the repository with the ``git clone`` command:
+Download the repository with the ``git clone`` command and cd into the distro:
 
 ::
 
-    git clone git@github.com:openhumanoids/oh-distro.git
+    git clone git@github.com:openhumanoids/oh-distro.git && cd oh-distro
 
-If you are **not** a not a member of the OpenHumanoids organization, please deinit one private submodule or else the following command will fail:
+If you are **not** a member of the OpenHumanoids organization, please deinit one private submodule or else the following command will fail:
 
 ::
 
-    cd oh-distro
     git submodule deinit catkin_ws/src/exotica-dev && git rm catkin_ws/src/exotica-dev
 
 Initialize the submodules (Drake, director, pronto):
 
 ::
 
-    cd oh-distro
     git submodule update --init --recursive
 
 Add the *sandbox* remote. The *sandbox* is the location where branches can be shared.
