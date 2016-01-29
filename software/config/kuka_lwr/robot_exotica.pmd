@@ -5,12 +5,12 @@ group "0.params_and_model_pub" {
     }
 
     cmd "kuka_bridge" {
-        exec = "roslaunch drc_translators kuka_bridge.launch";
+        exec = "roslaunch oh_translators kuka_bridge.launch";
         host = "localhost";
     }
 
     cmd "exotica_bridge" {
-        exec = "roslaunch drc_translators exotica_bridge.launch";
+        exec = "roslaunch oh_translators exotica_bridge.launch";
         host = "localhost";
     }
 

@@ -48,7 +48,7 @@ group "3.rosbag" {
     }
 
     cmd "bridge" {
-        exec = "roslaunch drc_translators multisense_bridge.launch";
+        exec = "roslaunch oh_translators multisense_bridge.launch";
         host = "localhost";
     }
     cmd "rviz" {
