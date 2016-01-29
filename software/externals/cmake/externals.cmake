@@ -307,6 +307,16 @@ if(NOT APPLE)
 endif()
 
 
+# Checks whether Matlab is installed, else remove dependent packages
+find_program(matlab matlab)
+if (NOT matlab)
+  message(WARNING "Could not find matlab executable - not building spotless")
+  list(REMOVE_ITEM externals
+    spotless
+  )
+endif()
+
+
 macro(add_external proj)
 
   # depending on which variables are defined, the external project
