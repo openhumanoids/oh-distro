@@ -12,7 +12,7 @@ classdef AtlasBehaviorModePublisher
     end
     
 		function publish(obj, data)
-      msg = drc.atlas_behavior_command_t();
+      msg = drc.behavior_command_t();
       msg.utime = data.utime;
       msg.command = data.command;
       obj.lc.publish(obj.channel, msg);
