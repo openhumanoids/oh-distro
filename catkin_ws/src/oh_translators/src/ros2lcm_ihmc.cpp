@@ -3,7 +3,7 @@
 // Selective ros2lcm translator
 // two modes:
 // - passthrough: produces POSE_BODY and EST_ROBOT_STATE and CAMERA_LEFT
-// - state estimation: produces ATLAS_STATE and POSE_BDI
+// - state estimation: produces CORE_ROBOT_STATE and POSE_BDI
 //
 // both modes produce SCAN
 
@@ -38,22 +38,24 @@
 #include <ihmc_msgs/LastReceivedMessage.h>
 #include <ihmc_msgs/FootstepStatusMessage.h>
 
+// Core Bot Types
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/pronto/force_torque_t.hpp"
+
+// Core OH types
+#include "lcmtypes/drc/force_torque_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
-#include "lcmtypes/pronto/robot_state_t.hpp"
-// #include "lcmtypes/pronto/atlas_state_t.hpp" depreciated
-#include "lcmtypes/pronto/joint_state_t.hpp"
-#include "lcmtypes/pronto/utime_t.hpp"
-#include "lcmtypes/pronto/atlas_raw_imu_batch_t.hpp"
-#include "lcmtypes/pronto/atlas_behavior_t.hpp"
-#include "lcmtypes/pronto/multisense_state_t.hpp"
-#include "lcmtypes/pronto/plan_status_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/joint_state_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
+#include "lcmtypes/drc/kvh_raw_imu_batch_t.hpp"
+#include "lcmtypes/drc/behavior_t.hpp"
+#include "lcmtypes/drc/plan_status_t.hpp"
+#include "lcmtypes/drc/ins_t.hpp"
 
+// IHMC types
 #include "lcmtypes/ihmc/last_received_message_t.hpp"
 #include "lcmtypes/ihmc/footstep_status_t.hpp"
-#include "lcmtypes/mav/ins_t.hpp"
 
 #define MODE_PASSTHROUGH 0
 #define MODE_STATE_ESTIMATION 1
@@ -101,7 +103,7 @@ private:
   void lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg);
   void footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg);
 
-  void appendSensors(pronto::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+  void appendSensors(drc::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                          geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
   void appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                          geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
@@ -225,7 +227,7 @@ void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 
 void App::publishMultisenseState(int64_t utime, float position, float velocity)
 {
-  pronto::multisense_state_t msg_out;
+  drc::joint_state_t msg_out;
   msg_out.utime = utime;
   msg_out.joint_position.push_back(position);
   msg_out.joint_velocity.push_back(velocity);
@@ -290,27 +292,27 @@ void App::rightHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& ms
 
 void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
 {
-  // IHMC publish: 3 when standing or manipulating, 4 when walking (as atlas_behavior_t)
-  // BDI publishs: 3 stand, 4 walk, 5 step, 6 manip (as atlas_behavior_t)
+  // IHMC publish: 3 when standing or manipulating, 4 when walking (as behavior_t)
+  // BDI publishs: 3 stand, 4 walk, 5 step, 6 manip (as behavior_t)
   // MIT publish: 1 stand, 2 walk, 8 mani  (as plan_status_t)
   // We (i.e. the Direct) need either:
-  // - drc.atlas_behavior_t which comes from BDI typically) - and matches with IHMC output
-  // - drc.plan_status_t which comes from MIT controller typically) - typically atlas_behavior_t is 'user' than
+  // - drc.behavior_t which comes from BDI typically) - and matches with IHMC output
+  // - drc.plan_status_t which comes from MIT controller typically) - typically behavior_t is 'user' than
   // Director requires plan_status_t messages for autonomy. (pronto uses controller_status_t to contact ground points)
   bool behaviorMode = 0;
 
   if (behaviorMode == 0)
   {
-    pronto::atlas_behavior_t msg_out;
+    drc::behavior_t msg_out;
 
     msg_out.utime = lastJointStateUtime_;
     int temp = static_cast<int>(msg->data);
     msg_out.behavior = static_cast<int>(temp);
-    lcmPublish_.publish("ATLAS_BEHAVIOR", &msg_out);
+    lcmPublish_.publish("ROBOT_BEHAVIOR", &msg_out);
   }
   else
   {
-    pronto::plan_status_t msg_out;
+    drc::plan_status_t msg_out;
     msg_out.utime = lastJointStateUtime_;
     if (msg->data == 3)  // stand
     {
@@ -328,10 +330,10 @@ void App::behaviorCallback(const std_msgs::Int32ConstPtr& msg)
     }
     lcmPublish_.publish("PLAN_EXECUTION_STATUS", &msg_out);
 
-    pronto::atlas_behavior_t msg_out_beh;
+    drc::behavior_t msg_out_beh;
     msg_out_beh.utime = lastJointStateUtime_;
     msg_out_beh.behavior = 7;  // user
-    lcmPublish_.publish("ATLAS_BEHAVIOR", &msg_out);
+    lcmPublish_.publish("ROBOT_BEHAVIOR", &msg_out);
   }
 }
 
@@ -347,7 +349,7 @@ void App::lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstP
 
 void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
 {
-  pronto::atlas_raw_imu_batch_t imu;
+  drc::kvh_raw_imu_batch_t imu;
   imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
 
   if (verbose_)
@@ -362,7 +364,7 @@ void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
     //   << " | " <<  msg->data[i].dax << " " << msg->data[i].day << " " << msg->data[i].daz
     //   << " | " <<  msg->data[i].ddx << " " << msg->data[i].ddy << " " << msg->data[i].ddz << "\n";
 
-    pronto::atlas_raw_imu_t raw;
+    drc::kvh_raw_imu_t raw;
     raw.utime = msg->data[i].imu_timestamp;
     raw.packet_count = msg->data[i].packet_count;
     raw.delta_rotation[0] = msg->data[i].dax;
@@ -379,7 +381,7 @@ void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
 
 void App::imuSensorCallback(const sensor_msgs::ImuConstPtr& msg)
 {
-  mav::ins_t imu;
+  drc::ins_t imu;
   imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
   imu.device_time = imu.utime;
   imu.gyro[0] = msg->angular_velocity.x;
@@ -537,7 +539,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   joints.name = msg->name;
 
   drc::six_axis_force_torque_array_t six_axis_force_torque_array;
-  pronto::force_torque_t force_torque;
+  drc::force_torque_t force_torque;
   appendSensors(force_torque, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
   appendSensors(six_axis_force_torque_array, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
 
@@ -550,7 +552,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
       filterJointNames(joints.name);
       // joints = reorderJoints(joints);
     }
-    pronto::joint_state_t amsg;
+    drc::joint_state_t amsg;
     amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
     for (int i = 0; i < joints.position.size(); i++)
@@ -581,7 +583,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     {
     }
 
-    pronto::robot_state_t msg_out;
+    drc::robot_state_t msg_out;
     msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
     int n_joints = joints.position.size();
     msg_out.joint_position.assign(n_joints, 0);
@@ -606,7 +608,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     lcmPublish_.publish("EST_ROBOT_STATE", &msg_out);
   }
 
-  pronto::utime_t utime_msg;
+  drc::utime_t utime_msg;
   int64_t joint_utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   utime_msg.utime = joint_utime;
   lcmPublish_.publish("ROBOT_UTIME", &utime_msg);
@@ -614,7 +616,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   lastJointStateUtime_ = joint_utime;
 }
 
-void App::appendSensors(pronto::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+void App::appendSensors(drc::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                             geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor)
 {
   msg_out.l_foot_force_z = l_foot_sensor.wrench.force.z;

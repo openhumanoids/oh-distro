@@ -26,17 +26,12 @@
 #include <std_msgs/Int32.h>
 #include <sensor_msgs/LaserScan.h>
 
-// #include <trooper_mlc_msgs/CachedRawIMUData.h>
-// #include <trooper_mlc_msgs/RawIMUData.h>
-
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/pronto/force_torque_t.hpp"
-#include "lcmtypes/pronto/robot_state_t.hpp"
-#include "lcmtypes/pronto/atlas_state_t.hpp"
-#include "lcmtypes/pronto/utime_t.hpp"
-#include "lcmtypes/pronto/atlas_raw_imu_batch_t.hpp"
-#include "lcmtypes/pronto/atlas_behavior_t.hpp"
-#include "lcmtypes/pronto/multisense_state_t.hpp"
+#include "lcmtypes/drc/force_torque_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
+#include "lcmtypes/drc/kvh_raw_imu_batch_t.hpp"
+#include "lcmtypes/drc/behavior_t.hpp"
 
 #include <tf/transform_listener.h>
 
@@ -77,7 +72,6 @@ private:
   void headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
   void poseCallBack(const nav_msgs::OdometryConstPtr& msg);
   void laserScanCallback(const sensor_msgs::LaserScanConstPtr& msg);
-//  void imuBatchCallback(const trooper_mlc_msgs::CachedRawIMUDataConstPtr& msg);
   void leftFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg);
   void rightFootSensorCallback(const geometry_msgs::WrenchConstPtr& msg);
   void behaviorCallback(const std_msgs::Int32ConstPtr& msg);
@@ -129,13 +123,6 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   int64_t utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   std::cerr << "\t\t\t" << utime << "" << std::endl;
 }
-
-/*
- void App::imuBatchCallback(const trooper_mlc_msgs::CachedRawIMUDataConstPtr& msg){
- int64_t utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
- std::cerr << "\t\t\t\t\t\t" << utime << "" <<std::endl;
- }
- */
 
 void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
