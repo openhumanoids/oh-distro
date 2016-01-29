@@ -1,7 +1,7 @@
 classdef ValkyrieState < LCMCoordinateFrame & Singleton
   methods
     function obj = ValkyrieState(r)
-      typecheck(r,'Valkyrie');
+      typecheck(r,'OHValkyrie');
 
       obj = obj@LCMCoordinateFrame('drcFrames.ValkyrieState',r.getNumStates(),'x');
       obj = obj@Singleton();

@@ -25,15 +25,15 @@ pods_install_executables(drc-latency )
 
 
 
-add_executable(drc-latency-source latency-source.cpp  )
-pods_use_pkg_config_packages(drc-latency-source
-   lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
-pods_install_executables(drc-latency-source )
+#add_executable(drc-latency-source latency-source.cpp  )
+#pods_use_pkg_config_packages(drc-latency-source
+#   lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
+#pods_install_executables(drc-latency-source )
 
 
 
 
-add_executable(drc-latency-continuous latency-app-continuous-walking.cpp  )
-pods_use_pkg_config_packages(drc-latency-continuous latency
-   lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
-pods_install_executables(drc-latency-continuous )
+#add_executable(drc-latency-continuous latency-app-continuous-walking.cpp  )
+#pods_use_pkg_config_packages(drc-latency-continuous latency
+#   lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
+#pods_install_executables(drc-latency-continuous )

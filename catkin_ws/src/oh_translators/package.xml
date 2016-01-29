@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>oh_translators</name>
+  <version>0.0.0</version>
+  <description>Package providing translators between the MIT DRC, IHMC SCS, and ROS-based systems.</description>
+
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
+  <maintainer email="drc@todo.todo">TODO</maintainer>
+
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>TODO</license>
+
+  <url type="repository">https://github.com/openhumanoids/main-distro</url>
+  <url type="bugtracker">https://github.com/openhumanoids/main-distro/issues</url>
+
+  <author email="maurice.fallon@ed.ac.uk">Maurice Fallon</author>
+  <author email="v.ivan@ed.ac.uk">Vladimir Ivan</author>
+  <author email="wolfgang.merkt@ed.ac.uk">Wolfgang Merkt</author>
+  <author email="yiming.yang@ed.ac.uk">Yiming Yang</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roslint</build_depend>
+
+  <depend>geometry_msgs</depend>
+  <depend>ihmc_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>ipab_lwr_msgs</depend>
+  <depend>ipab_msgs</depend>
+  <depend>kdl_conversions</depend>
+  <depend>octomap_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>tf</depend>
+  <depend>val_hardware_msgs</depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export />
+</package>

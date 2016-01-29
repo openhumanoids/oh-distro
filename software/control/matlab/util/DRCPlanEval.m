@@ -1,4 +1,4 @@
-classdef DRCPlanEval < atlasControllers.AtlasPlanEval
+classdef DRCPlanEval < bipedControllers.BipedPlanEval
   % A standalone PlanEval (DRC-specific) extension 
   % that knows how to read plans from LCM, and offers
   % a blocking run() method to receive and publish
@@ -44,7 +44,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
   methods
     function obj = DRCPlanEval(r, mode, varargin)
       typecheck(r,'DRCAtlas');
-      obj = obj@atlasControllers.AtlasPlanEval(r, varargin{:});
+      obj = obj@bipedControllers.BipedPlanEval(r, varargin{:});
       obj.contact_force_detected = zeros(obj.robot.getNumBodies(), 1);
       assert(strcmp(obj.mode, 'sim') || strcmp(obj.mode, 'hardware'), 'bad mode: %s', mode);
       obj.mode = mode;
@@ -58,7 +58,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
       obj = obj.addLCMInterface('walking_plan', 'WALKING_CONTROLLER_PLAN_RESPONSE', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('manip_plan', 'CONFIGURATION_TRAJ', @drc.qp_locomotion_plan_t, 0, @obj.handle_locomotion_plan);
       obj = obj.addLCMInterface('start_stand', 'START_MIT_STAND', @drc.utime_t, 0, @obj.handle_stand_default);
-      obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @drc.atlas_behavior_command_t, 0, @obj.handle_atlas_behavior_command);
+      obj = obj.addLCMInterface('atlas_behavior', 'ATLAS_BEHAVIOR_COMMAND', @atlas.behavior_command_t, 0, @obj.handle_atlas_behavior_command);
       obj = obj.addLCMInterface('pause_manip', 'COMMITTED_PLAN_PAUSE', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('stop_walking', 'STOP_WALKING', @drc.plan_control_t, 0, @obj.handle_pause);
       obj = obj.addLCMInterface('state', 'EST_ROBOT_STATE', @drc.robot_state_t, -1, @obj.handle_state);
@@ -238,7 +238,7 @@ classdef DRCPlanEval < atlasControllers.AtlasPlanEval
     end
 
     function obj = switchToPlan(obj, new_plan)
-      obj = switchToPlan@atlasControllers.AtlasPlanEval(obj, new_plan);
+      obj = switchToPlan@bipedControllers.BipedPlanEval(obj, new_plan);
       obj.sendStatus();
     end
 

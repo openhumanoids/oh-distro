@@ -102,14 +102,14 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-planeval = atlasControllers.AtlasPlanEval(r, walking_ctrl_data);
+planeval = bipedControllers.BipedPlanEval(r, walking_ctrl_data);
 param_sets = atlasParams.getDefaults(r);
 if options.use_angular_momentum
   param_sets.standing = StandingAngularMomentum(r);
   param_sets.walking = WalkingAngularMomentum(r);
 end
-control = atlasControllers.InstantaneousQPController(r, []);
-plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
+control = bipedControllers.InstantaneousQPController(r, []);
+plancontroller = bipedControllers.BipedPlanEvalAndControlSystem(r, control, planeval);
 sys = feedback(r, plancontroller);
 output_select(1).system=1;
 output_select(1).output=1;
@@ -119,7 +119,7 @@ traj = simulate(sys, [0, walking_ctrl_data.settings.duration], walking_ctrl_data
 
 playback(v,traj,struct('slider',true));
 
-[com, rms_com] = atlasUtil.plotWalkingTraj(r, traj, walking_ctrl_data);
+[com, rms_com] = r.plotWalkingTraj(r, traj, walking_ctrl_data);
 
 if rms_com > length(footstep_plan.footsteps)*0.5
   error('drakeWalking unit test failed: error is too large');

@@ -1,0 +1,14 @@
+package atlas;
+
+// AtlasBehaviorStepParams in Atlas API
+
+struct behavior_step_params_t
+{
+  step_data_t desired_step;
+  behavior_step_spec_t desired_step_spec;
+
+  int32_t use_spec; // Use the desired_step_spec data, instead of desired_step
+
+  int32_t use_relative_step_height;
+  int32_t use_demo_walk;
+}

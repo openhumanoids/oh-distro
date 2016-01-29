@@ -1,0 +1,46 @@
+package atlas;
+
+// Contains status information for the electric forearms
+
+struct electric_arm_status_t
+{
+  int64_t utime;
+  
+  int16_t num_electric_arm_joints;
+
+  // \brief  Bit-wise array of AtlasBehaviorCalibrateFlags values
+	//        indicating Calibrate behavior status for calibration_type
+	//        AtlasBehaviorCalibrateParams::ELECTRIC_ARM calibrations.
+	//
+	//  See documentation for AtlasBehaviorCalibrateFeedback::
+	//  electric_arm_status_flags for information on how the flags
+	//  work and example code of how to use them.  Also see documentation
+	//  for AtlasControlDataToRobot bypass_em_calibration_requirement[].
+  int32_t electric_arm_status_flags;
+
+	// \brief  Reported enable status of the electric motor.
+	//
+  // Users can request the motor to be enabled or disabled, but a motor fault,
+	// such as an over-temperature condition, may result in the automatic
+	// disabling of a motor driver, which is done on the robot-side.  Users will
+	// be able to re-enable the motor drive, if desired, in such a case.
+
+  // Electric joint ordering (from BDI API)
+  //  ELEC_MOTOR_L_ARM_UWY = 0
+  //  ELEC_MOTOR_L_ARM_MWX = 1
+  //  ELEC_MOTOR_L_ARM_LWY = 2
+  //  ELEC_MOTOR_R_ARM_UWY = 3
+  //  ELEC_MOTOR_R_ARM_MWX = 4
+  //  ELEC_MOTOR_R_ARM_LWY = 5
+  int16_t enabled[num_electric_arm_joints];
+
+	// \brief  Measured motor temperature (C)
+	//	
+	// The minimum temperature that can be sensed is 
+	// approximately 60C. Over-temperature faults trigger at 100C 
+	// resulting in the motor drive being disabled.
+	float temperature[num_electric_arm_joints];
+
+	// Measured total current consumed by motor driver (Amps)
+	float drive_current[num_electric_arm_joints];
+}

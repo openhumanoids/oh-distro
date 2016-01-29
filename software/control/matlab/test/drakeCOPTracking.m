@@ -97,9 +97,9 @@ plan_settings.duration = zmptraj.tspan(end) - 0.001;
 plan_settings.gain_set = 'walking';
 plan = QPLocomotionPlanCPPWrapper(plan_settings);
 
-planeval = atlasControllers.AtlasPlanEval(r, plan);
-control = atlasControllers.InstantaneousQPController(r, []);
-plancontroller = atlasControllers.AtlasPlanEvalAndControlSystem(r, control, planeval);
+planeval = bipedControllers.BipedPlanEval(r, plan);
+control = bipedControllers.InstantaneousQPController(r, []);
+plancontroller = bipedControllers.BipedPlanEvalAndControlSystem(r, control, planeval);
 sys = feedback(r, plancontroller);
 
 v = r.constructVisualizer;

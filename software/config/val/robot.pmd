@@ -1,6 +1,6 @@
 group "0.ros_bridge" {
     cmd "ros_bridge_without_pronto" {
-        exec = "roslaunch drc_translators ihmc_bridge.launch";
+        exec = "roslaunch oh_translators ihmc_bridge.launch";
         host = "localhost";
     }
 }
@@ -81,7 +81,7 @@ group "5.maps" {
 group "6.exotica" {
 
     cmd "exotica_bridge" {
-        exec = "roslaunch drc_translators exotica_bridge.launch";
+        exec = "roslaunch oh_translators exotica_bridge.launch";
         host = "localhost";
     }
     cmd "exotica_json" {

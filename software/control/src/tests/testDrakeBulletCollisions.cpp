@@ -21,8 +21,8 @@
 
 #include "lcmtypes/bot_core.hpp"
 #include <ConciseArgs>
-#include <drake/RigidBodyManipulator.h>
-#include <drake/drakeGeometryUtil.h>
+#include <drake/systems/plants/RigidBodyTree.h>
+#include <drake/util/drakeGeometryUtil.h>
 
 using namespace std;
 using namespace Eigen;
@@ -43,7 +43,7 @@ class Pass{
     int which_;
     std::string urdf_file_;
     bot_lcmgl_t* lcmgl_;
-    RigidBodyManipulator drake_model_;
+    RigidBodyTree drake_model_;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, double collision_threshold_, std::string urdf_file_, int which_):
@@ -102,7 +102,7 @@ void Pass::DoCollisionCheck(){
   
   // 2. Extract the indices of the points in collision:
   VectorXd q = VectorXd::Zero(drake_model_.num_positions, 1);
-  KinematicsCache<double> cache = drake_model_.doKinematics(q, 0);
+  KinematicsCache<double> cache = drake_model_.doKinematics(q);
   vector<size_t> filtered_point_indices = drake_model_.collidingPoints(cache, points, collision_threshold_);
   ///////////////////////////////////////////////////////////////////////////
   

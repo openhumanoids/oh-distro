@@ -1,5 +1,5 @@
 #include <math.h>
-#include "control/QPReactiveRecoveryPlan.hpp"
+#include "../QPReactiveRecoveryPlan.hpp"
 
 using namespace Eigen;
 

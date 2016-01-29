@@ -19,7 +19,7 @@ group "01.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync -a5";
+        exec = "drc-state-sync-atlas -a5";
         host = "atlas2";
     }
     cmd "fusion" {

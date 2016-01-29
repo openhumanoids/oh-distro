@@ -1,6 +1,6 @@
 #include "mex.h"
-#include "control/QPReactiveRecoveryPlan.hpp"
-#include "drake/drakeMexUtil.h"
+#include "../../src/QPReactiveRecoveryPlan.hpp"
+#include "drake/util/drakeMexUtil.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if (nrhs != 1 || nlhs != 0) mexErrMsgTxt("usage: resetInitialization(obj)");

@@ -17,7 +17,7 @@ group "1.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync -b -a 5";
+        exec = "drc-state-sync-atlas -b -a 5";
         host = "base";
     }
     cmd "contact-passthrough" {

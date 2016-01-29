@@ -1,0 +1,15 @@
+package atlas;
+
+// contents of AtlasBehaviorManipulateFeedback
+
+struct manipulate_feedback_t
+{
+  int32_t status_flags;
+
+  behavior_pelvis_servo_params_t clamped;
+
+  behavior_pelvis_servo_params_t internal_desired;
+  behavior_pelvis_servo_params_t internal_sensed;
+
+  // TODO: add status enums  
+}

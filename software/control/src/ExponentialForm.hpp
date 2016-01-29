@@ -1,6 +1,6 @@
 #ifndef DRC_CONTROL_EXPONENTIAL_FORM_HPP_
 #define DRC_CONTROL_EXPONENTIAL_FORM_HPP_
-#include "drake/Polynomial.h"
+#include "drake/util/Polynomial.h"
 #include <Eigen/Dense>
 
 class ExponentialForm {

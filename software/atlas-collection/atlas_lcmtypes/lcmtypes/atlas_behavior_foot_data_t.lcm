@@ -1,0 +1,10 @@
+package atlas;
+
+// Contents of AtlasBehaviorFootData
+
+struct behavior_foot_data_t
+{
+	float position[3];
+	float yaw;
+	float normal[3];
+}

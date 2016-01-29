@@ -13,7 +13,7 @@ lcmtypes_build()
 
 
 add_subdirectory(src/joints2frames)
-add_subdirectory(src/state_sync)
+#add_subdirectory(src/state_sync)
 add_subdirectory(src/state_sync_kuka)
 add_subdirectory(src/utime_publisher)
 add_subdirectory(src/pseudo_pose_publisher)

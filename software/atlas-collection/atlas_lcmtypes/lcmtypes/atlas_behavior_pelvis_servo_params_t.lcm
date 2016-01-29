@@ -1,0 +1,35 @@
+package atlas;
+
+// AtlasBehaviorPelvisServoParams from Atlas API
+
+struct behavior_pelvis_servo_params_t
+{
+  //!  \brief  User desired height of the pelvis.
+  float pelvis_height;
+
+  //!  \brief  User desired yaw angle of the pelvis.
+  //!
+  //!    Centered about the average yaw of the feet.
+  float pelvis_yaw;
+
+  //!  \brief  User desired pitch angle of the pelvis.
+  float pelvis_pitch;
+
+  //!  \brief  User desired roll angle of the pelvis.
+  float pelvis_roll;
+
+  //!  \brief  User desired horizontal offset of the COM.
+  //!
+  //!    In the direction of the vector between the two feet, centered about
+  //!    the average position of the two feet.
+  float com_v0;
+
+  //!  \brief  User desired horizontal offset of the COM.
+  //!
+  //!    In the direction perpendicular to the vector between the two feet, centered about
+  //!    the average position of the two feet.
+  float com_v1;
+}
+
+
+

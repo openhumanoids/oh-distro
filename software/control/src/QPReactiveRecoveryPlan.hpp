@@ -1,8 +1,8 @@
-#include "drake/RigidBodyManipulator.h"
-#include "drake/Polynomial.h"
-#include "drake/PiecewisePolynomial.h"
-#include "control/ExponentialForm.hpp"
-#include "drake/QPCommon.h"
+#include "drake/systems/plants/RigidBodyTree.h"
+#include "drake/util/Polynomial.h"
+#include "drake/systems/trajectories/PiecewisePolynomial.h"
+#include "ExponentialForm.hpp"
+#include "drake/systems/controllers/QPCommon.h"
 #include "drake/lcmt_qp_controller_input.hpp"
 #include <lcm/lcm-cpp.hpp>
 
@@ -97,12 +97,12 @@ class QPReactiveRecoveryPlan {
     RobotPropertyCache robot_property_cache;
 
     void findFootSoleFrames();
-    FootStateMap getFootStates(KinematicsCache<double> cache, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);
+    FootStateMap getFootStates(const KinematicsCache<double>& cache, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);
     void getCaptureInput(double t_global, const FootStateMap &foot_states, const Eigen::Isometry3d &icp, drake::lcmt_qp_controller_input &qp_input);
     void getInterceptInput(double t_global, const FootStateMap &foot_states, drake::lcmt_qp_controller_input &qp_input);
     std::shared_ptr<lcm::LCM> LCMHandle;
     void initLCM();
-    void publishForVisualization(KinematicsCache<double> cache, double t_global, const Eigen::Isometry3d &icp);
+    void publishForVisualization(KinematicsCache<double>& cache, double t_global, const Eigen::Isometry3d &icp);
     void setupQPInputDefaults(double t_global, drake::lcmt_qp_controller_input &qp_input);
     void encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, drake::lcmt_support_data &support_data);
     void encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion);
@@ -111,7 +111,7 @@ class QPReactiveRecoveryPlan {
     Eigen::Matrix3Xd heelToeContacts(int body_id);
 
   public:
-    RigidBodyManipulator* robot;
+    RigidBodyTree* robot;
     double capture_max_flyfoot_height = 0.05;
     double capture_shrink_factor = 0.8;
     double desired_icp_offset = 0.1;
@@ -123,8 +123,8 @@ class QPReactiveRecoveryPlan {
     double pelvis_height_above_sole = 0.84;
     double swing_height_above_terrain = 0.03;
 
-    QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc);
-    QPReactiveRecoveryPlan(RigidBodyManipulator *robot, const RobotPropertyCache &rpc, BipedDescription biped);
+    QPReactiveRecoveryPlan(RigidBodyTree *robot, const RobotPropertyCache &rpc);
+    QPReactiveRecoveryPlan(RigidBodyTree *robot, const RobotPropertyCache &rpc, BipedDescription biped);
 
     static Eigen::VectorXd closestPointInConvexHull(const Eigen::Ref<const Eigen::VectorXd> &x, const Eigen::Ref<const Eigen::MatrixXd> &V);
 
@@ -163,13 +163,13 @@ class QPReactiveRecoveryPlan {
     drake::lcmt_qp_controller_input getQPControllerInput(double t_global, const Eigen::VectorXd &q, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);
     void publishQPControllerInput(double t_global, const Eigen::VectorXd &q, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);
 
-    Eigen::Vector2d getICP(KinematicsCache<double> cache, const Eigen::VectorXd &v);
+    Eigen::Vector2d getICP(KinematicsCache<double>& cache, const Eigen::VectorXd &v);
 
     void setS(const Eigen::MatrixXd &S) {
       this->S = S;
     }
 
-    void setRobot(RigidBodyManipulator *robot);
+    void setRobot(RigidBodyTree *robot);
 
     void setQDes(const Eigen::Ref<const Eigen::VectorXd> &q_des) {
       this->q_des = q_des;

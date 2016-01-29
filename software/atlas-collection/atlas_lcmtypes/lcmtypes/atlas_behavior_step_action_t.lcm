@@ -1,0 +1,78 @@
+package atlas;
+
+struct behavior_step_action_t
+{
+	//!
+	//! \brief duration of the single support phase (STEP_SUBSTATE_STEPPING)
+	//! 
+	float step_duration; // duration of single support phase
+
+	//!
+	//! \brief duration of the double support phase (STEP_SUBSTATE_SWAYING)
+	//! 
+	//! Ignored if it is less than 0.2
+	//!
+	float sway_duration;
+
+	//!
+	//! \brief step apex above the lift height while swinging the leg
+	//! 
+	//! This is the additional height above the lift height that the foot 
+	//! will reach while swinging to its final x,y position
+	//! 
+	//! Ignored if it is less than 0.1
+	//!
+	float swing_height;
+
+	//!
+	//! \brief height to lift vertically before moving the foot in x,y
+	//! 
+	//! This is computed to be above the maximum of the start 
+	//! and end locations of the foot.
+	//! 
+	//! Ignored if it is less than 0.1
+	//!
+	float lift_height;
+
+	//!
+	//! \brief specify whether toe-off is allowed or not during swaying
+	//! 
+	//! Should be set to TOE_OFF_DISABLE, TOE_OFF_ENABLE, or TOE_OFF_FORCE_ENABLE
+	//! For feedback, this will be set to TOE_OFF_DISABLE or TOE_OFF_ENABLE, based
+	//! on whether the step is using a toe-off or not.
+	//!
+	int32_t toe_off;
+	const int32_t TOE_OFF_DISABLE = 0;
+	const int32_t TOE_OFF_ENABLE = 1;
+	const int32_t TOE_OFF_FORCE_ENABLE = 2;
+
+	//!
+	//! \brief Nominal knee angle during the step.
+	//! 
+	//! Used to change the desired amount of knee flex while walking.
+	//! Useful to tweak when running into ankle limits on sloped terrain.
+	//! 
+	//! Ignored if less than 0.3
+	//! 
+	float knee_nominal;
+
+	// Maximum body acceleration to determine minimum sway duration.
+	// The minimum sway duration will be determined by this maximum allowable body acceleration. Increase this value to allow the robot to move faster, but doing so may cause instability.
+	// Ignored if zero
+	float max_body_accel;
+
+	// Maximum foot velocity to determine minimum step duration.
+	// The minimum step duration will be determined by this maximum foot velocity. Increase this value to allow the robot to move faster, but doing so may destabilize the robot.
+	// Ignored if zero
+	float max_foot_vel;
+
+	// Distance short of the foot to aim for at the end of sway (in meters)
+	// Tuning parameter for swaying. Increase this value if the robot falls to the outside at the end of a sway.
+	// Ignored if not less than +- 5cm
+	float sway_end_dist;
+
+	// Distance to lean into the step before the foot comes down (in meters)
+	// Tuning parameter for stepping. Increase this value if the foot touchdown tends push the robot over unstably.
+	// Ignored if not less than +- 5cm
+	float step_end_dist;
+}

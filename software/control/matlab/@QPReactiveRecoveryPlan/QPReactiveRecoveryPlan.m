@@ -13,7 +13,7 @@ classdef QPReactiveRecoveryPlan < QPControllerPlanMatlabImplementation
       qstar = S.xstar(1:robot.getNumPositions());
       [~, V, ~, ~] = robot.planZMPController([0;0], qstar);
 
-      rpc = atlasUtil.propertyCache(robot);
+      rpc = robot.getRobotPropertyCache();
       obj.mex_ptr = constructRecoveryMexPointer(robot.getMexModelPtr(), qstar, V.S, rpc); 
 
       % Make sure the mex files get loaded

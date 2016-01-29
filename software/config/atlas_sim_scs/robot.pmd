@@ -1,10 +1,10 @@
 group "0.ros_bridge" {
     cmd "ros_bridge_without_pronto" {
-        exec = "roslaunch drc_translators ihmc_bridge.launch robotName:=atlas";
+        exec = "roslaunch oh_translators ihmc_bridge.launch robotName:=atlas";
         host = "localhost";
     }
     cmd "ros_bridge_with_pronto" {
-        exec = "roslaunch drc_translators ihmc_bridge.launch robotName:=atlas mode:=state_estimation imuSensor:=pelvis_imu_sensor_at_imu_frame";
+        exec = "roslaunch oh_translators ihmc_bridge.launch robotName:=atlas mode:=state_estimation imuSensor:=pelvis_imu_sensor_at_imu_frame";
         host = "localhost";
     }
 }
@@ -33,7 +33,7 @@ group "2.state_without_pronto" {
 
 group "2.state_with_pronto" {
     cmd "state-sync" {
-        exec = "drc-state-sync -a 5";
+        exec = "drc-state-sync-atlas -a 5";
         host = "localhost";
     }
     cmd "joints2frames_with" {

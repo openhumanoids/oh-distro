@@ -1,8 +1,0 @@
-package drc;
-
-// AtlasBehaviorStandParams in Atlas API
-
-struct atlas_behavior_stand_params_t
-{
-  int32_t placeholder;
-}

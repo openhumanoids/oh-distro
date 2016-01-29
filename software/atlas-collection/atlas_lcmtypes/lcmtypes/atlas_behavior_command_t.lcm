@@ -1,0 +1,8 @@
+package atlas;
+
+struct behavior_command_t 
+{
+    int64_t utime;
+    string command;
+}
+

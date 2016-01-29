@@ -29,14 +29,27 @@ include_directories(
 )
 
 ######################################################
-add_library(SimpleController src/SimpleController.cpp)
-target_link_libraries(SimpleController ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(SimpleController lcm lcmtypes_pronto-lcmtypes)
-
 add_library(LCM2ROSControl src/LCM2ROSControl.cpp)
 target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(LCM2ROSControl lcm lcmtypes_pronto-lcmtypes)
+pods_use_pkg_config_packages(LCM2ROSControl lcm drc-lcmtypes)
 
-add_executable(joint_angle_publisher src/joint_angle_publisher.cpp)
-target_link_libraries(joint_angle_publisher ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(joint_angle_publisher lcm lcmtypes_pronto-lcmtypes)
+
+#############
+## Install ##
+#############
+
+install(TARGETS
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE
+)
+install(DIRECTORY config/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+  PATTERN ".svn" EXCLUDE
+)
+install(FILES LCM2ROSControl.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
