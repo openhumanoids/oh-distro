@@ -307,6 +307,19 @@ if(NOT APPLE)
 endif()
 
 
+if(USE_SYSTEM_OPENCV)
+  list(REMOVE_ITEM externals
+    opencv
+  )
+  list(REMOVE_ITEM occ-map_depends
+    opencv
+  )
+  list(REMOVE_ITEM libmultisense_depends
+    opencv
+  )
+endif()
+
+
 if(USE_SYSTEM_PCL)
   list(REMOVE_ITEM externals
     pcl
