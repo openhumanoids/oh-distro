@@ -124,7 +124,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${gurobi_distro_file})
 set(gurobi_depends gurobi-private)
 
 set(atlas-driver_url ssh://git@github.com/openhumanoids/atlas-drivers.git)
-set(atlas-driver_revision 507d4c1c3164cefe3ff3ab4c1f389d6f8e68c905)
+set(atlas-driver_revision 07d287ef2c86cc35989a9a8a09845ba38fe1dc9e)
 set(atlas-driver_depends)
 set(atlas-driver_external_args
   ${download_only_args}
