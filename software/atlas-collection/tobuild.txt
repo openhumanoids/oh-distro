@@ -1,10 +1,7 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
-multisense
-ipwebcam
-flycapture
-ptgrey
-robotiqhand
-irobothand
-openni
+atlas_lcmtypes
+atlas
+state_sync_atlas
+bdi_walking

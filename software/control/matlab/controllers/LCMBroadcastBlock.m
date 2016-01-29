@@ -528,7 +528,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % -- To channel "SCAN", publish populated lcm_laser_msg
       if (~isempty(laser_state))
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
-        multisense_state = multisense.joint_state_t();
+        multisense_state = drc.joint_state_t();
         multisense_state.joint_name = {'hokuyo_joint'};
         
         multisense_state.joint_position = [mod(laser_spindle_angle+pi, 2*pi)];
@@ -584,7 +584,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % This isn't perfectly accurate as the imu is offset from the
         % very core of the body frame by a small amount (BODY_TO_IMU
         % has nonzero translation).
-        imu_msg = microstrain.ins_t();
+        imu_msg = drc.ins_t();
         imu_msg.utime = t*1000*1000;
         imu_msg.device_time = t*1000*1000;
         imu_msg.gyro = gyro;
