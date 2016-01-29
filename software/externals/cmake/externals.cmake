@@ -128,7 +128,7 @@ set(atlas-driver_revision 507d4c1c3164cefe3ff3ab4c1f389d6f8e68c905)
 set(atlas-driver_depends)
 set(atlas-driver_external_args
   ${download_only_args}
-  SOURCE_DIR ${source_prefix}/../drivers/atlas
+  SOURCE_DIR ${source_prefix}/../atlas-collection/atlas
   )
 
 set(flycapture_url ssh://git@github.com/openhumanoids/flycapture-pod.git)

@@ -6,13 +6,10 @@ pronto
 drc_lcmtypes
 ihmc
 latency
-atlas
 drivers
 utils
 perception
 motion_estimate
-state_sync_atlas
-control
-bdi_walking
 atlas-collection
+control
 director/distro/pods/drc
