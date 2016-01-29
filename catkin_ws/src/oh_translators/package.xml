@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>drc_translators</name>
+  <name>oh_translators</name>
   <version>0.0.0</version>
   <description>Package providing translators between the MIT DRC, IHMC SCS, and ROS-based systems.</description>
 
