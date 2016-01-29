@@ -127,6 +127,7 @@ void CapabilityMap::loadFromFile(const string mapFile)
 		inputFile.read((char *) &containsOccupancyMap, sizeof(bool));
 		if (containsOccupancyMap)
 		{
+			cout << "Found occupancy map data" << endl;
 			inputFile.read((char *) &this->nOccupancyVoxels, sizeof(unsigned int));
 			cout << "Loaded nOccupancyVoxels: " << this->nOccupancyVoxels << endl;
 			inputFile.read((char *) &this->nOccupancyOrient, sizeof(unsigned int));
@@ -168,6 +169,30 @@ void CapabilityMap::loadFromFile(const string mapFile)
 			}
 			cout << "Right occupancy map loaded" << endl;
 
+			inputFile.read((char *) &this->occupancyMapResolution, sizeof(double));
+			cout << "Loaded occupancyMapResolution :" << this->occupancyMapResolution << endl;
+
+			inputFile.read((char *) this->occupancyMapDimensions.data(), sizeof(this->occupancyMapDimensions));
+			cout << "Loaded occupancyMapDimensions: " << this->occupancyMapDimensions[0] << ";"  << this->occupancyMapDimensions[1] << ";"  << this->occupancyMapDimensions[2] << '\n';
+
+			inputFile.read((char *) this->occupancyMapLowerBound.data(), sizeof(this->occupancyMapLowerBound));
+			cout << "Loaded occupancyMapLowerBound: " << this->occupancyMapLowerBound[0] << ";"  << this->occupancyMapLowerBound[1] << ";"  << this->occupancyMapLowerBound[2] << '\n';
+
+			inputFile.read((char *) this->occupancyMapUpperBound.data(), sizeof(this->occupancyMapUpperBound));
+			cout << "Loaded occupancyMapUpperBound: " << this->occupancyMapUpperBound[0] << ";"  << this->occupancyMapUpperBound[1] << ";"  << this->occupancyMapUpperBound[2] << '\n';
+
+			inputFile.read((char *) this->occupancyMapOrientSteps.roll.data(), sizeof(this->occupancyMapOrientSteps.roll));
+			cout << "Loaded occupancyMapOrientSteps.roll (" << this->occupancyMapOrientSteps.roll.rows() << ")";
+
+			inputFile.read((char *) this->occupancyMapOrientSteps.pitch.data(), sizeof(this->occupancyMapOrientSteps.pitch));
+			cout << "Loaded occupancyMapOrientSteps.pitch (" << this->occupancyMapOrientSteps.pitch.rows() << ")";
+
+			inputFile.read((char *) this->occupancyMapOrientSteps.yaw.data(), sizeof(this->occupancyMapOrientSteps.yaw));
+			cout << "Loaded occupancyMapOrientSteps.yaw (" << this->occupancyMapOrientSteps.yaw.rows() << ")";
+		}
+		else
+		{
+			cout << "No occupancy map data found" << endl;
 		}
 
 

@@ -21,6 +21,13 @@ struct ee_link
 	string right;
 };
 
+struct orient
+{
+	VectorXf roll;
+	VectorXf pitch;
+	VectorXf yaw;
+};
+
 typedef vector<SparseMatrix<bool>> OccupancyMap;
 
 class CapabilityMap
@@ -55,6 +62,11 @@ private:
 	unsigned int nOccupancyOrient;
 	OccupancyMap occupancyMapLeft;
 	OccupancyMap occupancyMapRight;
+	double occupancyMapResolution;
+	Vector3d occupancyMapLowerBound;
+	Vector3d occupancyMapUpperBound;
+	Vector3i occupancyMapDimensions;
+	orient occupancyMapOrientSteps;
 	RigidBodyTree rigidBodyTree;
 };
 
