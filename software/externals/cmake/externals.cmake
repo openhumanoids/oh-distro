@@ -307,6 +307,16 @@ if(NOT APPLE)
 endif()
 
 
+if(USE_SYSTEM_PCL)
+  list(REMOVE_ITEM externals
+    pcl
+  )
+  list(REMOVE_ITEM PointCloudLibraryPlugin_depends
+    pcl
+  )
+endif()
+
+
 macro(add_external proj)
 
   # depending on which variables are defined, the external project
