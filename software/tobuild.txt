@@ -4,9 +4,9 @@ drake/drake
 jpeg-utils
 pronto
 drc_lcmtypes
-atlas
 ihmc
 latency
+atlas
 drivers
 utils
 perception
@@ -14,4 +14,5 @@ motion_estimate
 state_sync_atlas
 control
 bdi_walking
+atlas-collection
 director/distro/pods/drc
