@@ -21,9 +21,8 @@ before_install:
   - sudo apt-get install -y libpcl-1.7-all libdc1394-22-dev
   - sudo pip install numpy
   - wget http://terminator.robots.inf.ed.ac.uk/public/opencv_2.4.12.2.deb
-  - sudo dpkg -i opencv_2.4.12.3-1_amd64.deb
+  - sudo dpkg -i opencv_2.4.12.2.deb
   - sudo ldconfig
-  - pkg-config --cflags --libs opencv
   - cd $TRAVIS_BUILD_DIR
   - sed -i 's/git@github.com:/https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/.gitmodules 
   - sed -i 's/git@github.com:/https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/catkin_ws/.gitmodules
