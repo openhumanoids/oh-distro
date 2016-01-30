@@ -23,9 +23,9 @@ struct ee_link
 
 struct orient
 {
-	VectorXf roll;
-	VectorXf pitch;
-	VectorXf yaw;
+	VectorXd roll;
+	VectorXd pitch;
+	VectorXd yaw;
 };
 
 typedef vector<SparseMatrix<bool>> OccupancyMap;
@@ -35,7 +35,7 @@ class CapabilityMap
 public:
 	CapabilityMap();
 	CapabilityMap(const string & urdf_filename);
-	void loadFromFile(const string mapFile);
+	void loadFromMatlabBinFile(const string mapFile);
 	void saveToFile(const string mapFile);
 	Vector2i getMapSize();
 	int getNVoxels();

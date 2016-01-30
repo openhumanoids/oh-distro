@@ -14,7 +14,7 @@ CapabilityMap::CapabilityMap(const string & urdf_filename)
 
 }
 
-void CapabilityMap::loadFromFile(const string mapFile)
+void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 {
 	MatrixX2i idx;
 	unsigned int nnz;
@@ -181,14 +181,23 @@ void CapabilityMap::loadFromFile(const string mapFile)
 			inputFile.read((char *) this->occupancyMapUpperBound.data(), sizeof(this->occupancyMapUpperBound));
 			cout << "Loaded occupancyMapUpperBound: " << this->occupancyMapUpperBound[0] << ";"  << this->occupancyMapUpperBound[1] << ";"  << this->occupancyMapUpperBound[2] << '\n';
 
-			inputFile.read((char *) this->occupancyMapOrientSteps.roll.data(), sizeof(this->occupancyMapOrientSteps.roll));
-			cout << "Loaded occupancyMapOrientSteps.roll (" << this->occupancyMapOrientSteps.roll.rows() << ")";
+			unsigned int nRollSteps;
+			inputFile.read((char *) &nRollSteps, sizeof(nRollSteps));
+			this->occupancyMapOrientSteps.roll.resize(nRollSteps);
+			inputFile.read((char *) this->occupancyMapOrientSteps.roll.data(), nRollSteps * sizeof(double));
+			cout << "Loaded occupancyMapOrientSteps.roll (" << this->occupancyMapOrientSteps.roll.rows() << ")\n";
 
-			inputFile.read((char *) this->occupancyMapOrientSteps.pitch.data(), sizeof(this->occupancyMapOrientSteps.pitch));
-			cout << "Loaded occupancyMapOrientSteps.pitch (" << this->occupancyMapOrientSteps.pitch.rows() << ")";
+			unsigned int nPitchSteps;
+			inputFile.read((char *) &nPitchSteps, sizeof(nPitchSteps));
+			this->occupancyMapOrientSteps.pitch.resize(nPitchSteps);
+			inputFile.read((char *) this->occupancyMapOrientSteps.pitch.data(), nPitchSteps * sizeof(double));
+			cout << "Loaded occupancyMapOrientSteps.pitch (" << this->occupancyMapOrientSteps.pitch.rows() << ")\n";
 
-			inputFile.read((char *) this->occupancyMapOrientSteps.yaw.data(), sizeof(this->occupancyMapOrientSteps.yaw));
-			cout << "Loaded occupancyMapOrientSteps.yaw (" << this->occupancyMapOrientSteps.yaw.rows() << ")";
+			unsigned int nYawSteps;
+			inputFile.read((char *) &nYawSteps, sizeof(nYawSteps));
+			this->occupancyMapOrientSteps.yaw.resize(nYawSteps);
+			inputFile.read((char *) this->occupancyMapOrientSteps.yaw.data(), nYawSteps * sizeof(double));
+			cout << "Loaded occupancyMapOrientSteps.yaw (" << this->occupancyMapOrientSteps.yaw.rows() << ")\n";
 		}
 		else
 		{
