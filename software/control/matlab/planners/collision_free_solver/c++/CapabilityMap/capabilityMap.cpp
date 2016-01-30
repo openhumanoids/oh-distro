@@ -1,15 +1,18 @@
 #include "capabilityMap.hpp"
+
 #include <fstream>
+#include <math.h>
+#include <stdio.h>
 
 using namespace std;
 using namespace Eigen;
 
-CapabilityMap::CapabilityMap()
+CapabilityMap::CapabilityMap():activeSide(Side::LEFT)
 {
 
 }
 
-CapabilityMap::CapabilityMap(const string & urdf_filename)
+CapabilityMap::CapabilityMap(const string & urdf_filename):activeSide(Side::LEFT)
 {
 
 }
@@ -32,9 +35,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 	else
 	{
 		cout << "Loading data from" << mapFile << '\n';
-
-	//	inputFile.read((char *) &urdfLength, sizeof(urdfLength));
-	//	inputFile.read((char *) this->urdf.c_str(), sizeof(char)*urdfLength);
 
 		inputFile.read((char *) this->mapCentre.left.data(), sizeof(this->mapCentre.left));
 		cout << "Loaded mapCentre.left: " << this->mapCentre.left[0] << ";"  << this->mapCentre.left[1] << ";"  << this->mapCentre.left[2] << '\n';
@@ -88,6 +88,8 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			cout << "Found capability map data" << endl;
 			inputFile.read((char *) &this->nVoxels, sizeof(unsigned int));
 			inputFile.read((char *) &this->nDirectionsPerVoxel, sizeof(unsigned int));
+			this->nVoxelsPerEdge = cbrt(this->nVoxels);
+
 			this->map.resize(this->nVoxels, this->nDirectionsPerVoxel);
 			inputFile.read((char *) &nnz, sizeof(unsigned int));
 			idx.resize(nnz, 2);
@@ -118,6 +120,8 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 
 			inputFile.read((char *) this->mapUpperBound.data(), sizeof(this->mapUpperBound));
 			cout << "Loaded mapUpperBound: " << this->mapUpperBound[0] << ";"  << this->mapUpperBound[1] << ";"  << this->mapUpperBound[2] << '\n';
+
+			this->computeVoxelCentres();
 		}
 		else
 		{
@@ -134,7 +138,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			cout << "Loaded nOccupancyOrient: " << this->nOccupancyOrient << endl;
 			this->occupancyMapLeft.resize(this->nOccupancyOrient);
 			this->occupancyMapRight.resize(this->nOccupancyOrient);
-
+/*
 			cout << "Loading left occupancy map ..." << endl;
 			for (auto map = this->occupancyMapLeft.begin(); map < this->occupancyMapLeft.end(); map++)
 			{
@@ -168,7 +172,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 				map->setFromTriplets(tripletList.begin(), tripletList.end());
 			}
 			cout << "Right occupancy map loaded" << endl;
-
+*/
 			inputFile.read((char *) &this->occupancyMapResolution, sizeof(double));
 			cout << "Loaded occupancyMapResolution :" << this->occupancyMapResolution << endl;
 
@@ -247,4 +251,25 @@ RowVector2d CapabilityMap::getCapabilityMapSize()
 	RowVector2d size;
 	size << this->map.rows(), this->map.cols();
 	return size;
+}
+
+void CapabilityMap::computeVoxelCentres()
+{
+	this->voxelCentres.resize(this->nVoxels, 3);
+	unsigned int nVoxelsPerSqEdge = pow(this->nVoxelsPerEdge, 2);
+	for (unsigned int vox = 0; vox < this->nVoxels; vox++)
+	{
+		this->voxelCentres(vox,0) = this->mapLowerBound(0) + (vox % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
+		this->voxelCentres(vox,1) = this->mapLowerBound(1) + (vox / this->nVoxelsPerEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
+		this->voxelCentres(vox,2) = this->mapLowerBound(2) + (vox / nVoxelsPerSqEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
+	}
+	cout << this->voxelCentres << endl;
+}
+
+void CapabilityMap::setActiveSide(Side side)
+{
+	if (this->activeSide != side)
+	{
+		this->activeSide = side;
+	}
 }

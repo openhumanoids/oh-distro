@@ -28,6 +28,12 @@ struct orient
 	VectorXd yaw;
 };
 
+enum Side
+{
+	RIGHT,
+	LEFT
+};
+
 typedef vector<SparseMatrix<bool>> OccupancyMap;
 
 class CapabilityMap
@@ -42,9 +48,11 @@ public:
 	void setNVoxels(unsigned int nVoxels);
 	void setNDirectionsPerVoxel(unsigned int nDir);
 	RowVector2d getCapabilityMapSize();
+	void setActiveSide(Side side);
 private:
 	unsigned int nVoxels;
 	unsigned int nDirectionsPerVoxel;
+	unsigned int nVoxelsPerEdge;
 	map_centre mapCentre;
 	ee_link endEffectorLink;
 	Vector3d endEffectorAxis;
@@ -68,6 +76,10 @@ private:
 	Vector3i occupancyMapDimensions;
 	orient occupancyMapOrientSteps;
 	RigidBodyTree rigidBodyTree;
+	Side activeSide;
+	MatrixX3d voxelCentres;
+
+	void computeVoxelCentres();
 };
 
 
