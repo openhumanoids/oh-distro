@@ -45,14 +45,17 @@ set(flann_external_args
     -DBUILD_EXAMPLES:BOOL=OFF
   )
 
-set(pcl_url http://github.com/pointcloudlibrary/pcl.git)
-#set(pcl_revision pcl-1.7.2) # this version introduces some missing openni pkg-config file bug
-set(pcl_revision pcl-1.7.1)
-set(pcl_depends flann Eigen_pod)
-set(pcl_external_args
-  CMAKE_CACHE_ARGS
-    ${default_cmake_args}
-  )
+if(NOT USE_SYSTEM_PCL)
+  set(pcl_proj pcl)
+  set(pcl_url http://github.com/pointcloudlibrary/pcl.git)
+  #set(pcl_revision pcl-1.7.2) # this version introduces some missing openni pkg-config file bug
+  set(pcl_revision pcl-1.7.1)
+  set(pcl_depends flann Eigen_pod)
+  set(pcl_external_args
+    CMAKE_CACHE_ARGS
+      ${default_cmake_args}
+    )
+endif()
 
 set(octomap_url https://github.com/OctoMap/octomap.git)
 set(octomap_revision 5ba840e58a35e2d14c40d0af807da879a1a2fd83)
@@ -239,7 +242,7 @@ set(QtPropertyBrowser_external_args
 
 set(PointCloudLibraryPlugin_url https://github.com/patmarion/PointCloudLibraryPlugin.git)
 set(PointCloudLibraryPlugin_revision cb119b0)
-set(PointCloudLibraryPlugin_depends pcl)
+set(PointCloudLibraryPlugin_depends ${pcl_proj})
 set(PointCloudLibraryPlugin_external_args
   CMAKE_CACHE_ARGS
     ${default_cmake_args}
@@ -255,7 +258,7 @@ set(externals
   libbot
   ${opencv_proj}
   flann
-  pcl
+  ${pcl_proj}
   octomap
   occ-map
   common_utils
@@ -309,15 +312,6 @@ if(NOT APPLE)
 
 endif()
 
-
-if(USE_SYSTEM_PCL)
-  list(REMOVE_ITEM externals
-    pcl
-  )
-  list(REMOVE_ITEM PointCloudLibraryPlugin_depends
-    pcl
-  )
-endif()
 
 # Checks whether Matlab is installed, else remove dependent packages
 find_program(matlab matlab)
