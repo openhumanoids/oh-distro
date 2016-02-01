@@ -6,15 +6,15 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core.hpp"
+
 #include "lcmtypes/drc/joint_state_t.hpp"
 #include "lcmtypes/drc/atlas_command_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/utime_two_t.hpp"
 #include "lcmtypes/drc/kvh_raw_imu_batch_t.hpp"
 #include "lcmtypes/drc/double_array_t.hpp"
-#include "lcmtypes/bot_core/pose_t.hpp"
 
-#include "lcmtypes/mav_estimator.hpp"
+#include "lcmtypes/pronto.hpp"
 
 #include <latency/latency.hpp>
 
@@ -35,8 +35,8 @@ public:
   void handlePoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg);
 
   // GPF:
-  void handleSES(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::filter_state_t * msg);
-  void handleGPF(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::indexed_measurement_t * msg);
+  void handleSES(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  pronto::filter_state_t * msg);
+  void handleGPF(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  pronto::indexed_measurement_t * msg);
   void handleLidar(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const bot_core::planar_lidar_t * msg);
 
   int period_;
@@ -161,10 +161,10 @@ void App::handlePoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& chan
 
 
 /// Measure GPF:
-void App::handleSES(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::filter_state_t * msg)  {
+void App::handleSES(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  pronto::filter_state_t * msg)  {
   lats_[4]->add_to(msg->utime, _timestamp_now(),  "GPFI" , lat_time_[4], lat_msgs_[4]);
 }
-void App::handleGPF(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::indexed_measurement_t * msg)  {
+void App::handleGPF(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  pronto::indexed_measurement_t * msg)  {
   // utime is paired with lidar i.e. SCAN
   // state_utime is paired with STATE_ESTIMATE_STATE
   lats_[5]->add_to(msg->state_utime, _timestamp_now(),  "GPFO" , lat_time_[5], lat_msgs_[5]);
