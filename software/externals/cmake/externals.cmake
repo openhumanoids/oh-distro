@@ -73,7 +73,7 @@ set(common_utils_url https://github.com/openhumanoids/common_utils.git)
 set(common_utils_revision bf0c9223e02a193a3cfef4034ef82a94219f116a)
 set(common_utils_depends Eigen_pod libbot occ-map octomap)
 
-set(frsm_url ssh://git@github.com/openhumanoids/frsm.git)
+set(frsm_url https://github.com/openhumanoids/frsm.git)
 set(frsm_revision 0fb51ac1580a7f6ce3b5f4d7afc302caa976246f)
 set(frsm_depends libbot)
 
@@ -89,7 +89,7 @@ set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
 set(bullet_revision 24b0a184e177c793a1b2f37f55d3544f2a7c33ae)
 set(bullet_depends)
 
-set(fovis_url ssh://git@github.com/fovis/fovis.git)
+set(fovis_url https://github.com/fovis/fovis.git)
 #set(fovis_revision 2862e080dee2519932585b46cc301a38d8cad1f4) # this is the newer version, but removes fovis-bot2
 set(fovis_revision ee2fe6593ed9e7e5ce2b2f6f1c64b627da119090)
 set(fovis_depends libbot)
@@ -106,7 +106,7 @@ set(apriltags_url https://github.com/psiorx/apriltags-pod.git)
 set(apriltags_revision ed2972f01e00d9b5a4afa2612b018374d889641f)
 set(apriltags_depends)
 
-set(spotless_url ssh://git@github.com/RobotLocomotion/spotless-pod.git)
+set(spotless_url https://github.com/RobotLocomotion/spotless-pod.git)
 set(spotless_revision 91e1e3970e62b8dd8d74bbc4446504b11990f598)
 set(spotless_depends)
 
@@ -119,7 +119,7 @@ set(gurobi-private_revision cfeea24766ea1a11d5fc6eeff193ab520c3e58d2)
 set(gurobi-private_depends)
 set(gurobi-private_external_args ${download_only_args})
 
-set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
+set(gurobi_url https://github.com/RobotLocomotion/gurobi.git)
 set(gurobi_revision b95a186b4d988db00ada55bd8efb08c651a83fe7)
 if(APPLE)
   set(gurobi_distro_file ${source_prefix}/gurobi-private/gurobi5.6.2_mac64.pkg)
@@ -145,7 +145,7 @@ set(flycapture_external_args
   SOURCE_DIR ${source_prefix}/../drivers/flycapture
   )
 
-set(swigmake_url ssh://git@github.com/rdeits/swigmake.git)
+set(swigmake_url https://github.com/rdeits/swigmake.git)
 set(swigmake_revision ab03741a0627e99589ecbc1c088a4db05755e3c2)
 set(swigmake_depends )
 
@@ -158,11 +158,11 @@ set(iris_external_args
     -DIRIS_WITH_EIGEN:BOOL=OFF
   )
 
-set(pypolyhedron_url ssh://git@github.com/rdeits/pypolyhedron.git)
+set(pypolyhedron_url https://github.com/rdeits/pypolyhedron.git)
 set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
 set(pypolyhedron_depends)
 
-set(kinematics-utils_url ssh://git@github.com/ipab-slmc/kinematics-utils.git)
+set(kinematics-utils_url https://github.com/ipab-slmc/kinematics-utils.git)
 set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
 set(kinematics-utils_depends Eigen_pod)
 
@@ -197,7 +197,7 @@ set(libpointmatcher_external_args
     ${eigen_args}
   )
 
-set(hokuyo_url ssh://git@github.com/openhumanoids/hokuyo.git)
+set(hokuyo_url https://github.com/openhumanoids/hokuyo.git)
 set(hokuyo_revision 6fc1b804d80838ae314d162929bb0a25a231ca35)
 set(hokuyo_depends libbot)
 
