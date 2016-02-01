@@ -124,7 +124,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${gurobi_distro_file})
 set(gurobi_depends gurobi-private)
 
 set(atlas-driver_url ssh://git@github.com/openhumanoids/atlas-drivers.git)
-set(atlas-driver_revision 507d4c1c3164cefe3ff3ab4c1f389d6f8e68c905)
+set(atlas-driver_revision 07d287ef2c86cc35989a9a8a09845ba38fe1dc9e)
 set(atlas-driver_depends)
 set(atlas-driver_external_args
   ${download_only_args}
@@ -326,6 +326,15 @@ if(USE_SYSTEM_PCL)
   )
   list(REMOVE_ITEM PointCloudLibraryPlugin_depends
     pcl
+  )
+endif()
+
+# Checks whether Matlab is installed, else remove dependent packages
+find_program(matlab matlab)
+if (NOT matlab)
+  message(WARNING "Could not find matlab executable - not building spotless")
+  list(REMOVE_ITEM externals
+    spotless
   )
 endif()
 

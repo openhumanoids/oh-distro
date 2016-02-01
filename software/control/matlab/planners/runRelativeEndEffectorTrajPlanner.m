@@ -16,7 +16,7 @@ function runRelativeEndEffectorTrajPlanner(channel,delim,options)
   robot_state_coder.subscribe('EST_ROBOT_STATE');
 
   % Create lcm monitor and publisher
-  msg_monitor = drake.util.MessageMonitor(drc.atlas_behavior_command_t(),'utime');
+  msg_monitor = drake.util.MessageMonitor(drc.behavior_command_t(),'utime');
   lc.subscribe(channel,msg_monitor);
   plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
   % Main loop
@@ -33,7 +33,7 @@ function runRelativeEndEffectorTrajPlanner(channel,delim,options)
       data = msg_monitor.getNextMessage(0);
       % Check if we got message. If so, we're done waiting
       if ~isempty(data)
-        msg = drc.atlas_behavior_command_t(data);
+        msg = drc._behavior_command_t(data);
         msg_str = char(msg.command);
         waiting = false;
       end

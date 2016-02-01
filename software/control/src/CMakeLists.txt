@@ -123,7 +123,7 @@ set(java_src_files
   PoseGroundMonitor.java
   RobotPlanPublisher.java
   RobotStateCoder.java
-  AtlasStateExtraCoder.java
+#  AtlasStateExtraCoder.java
   HandStateListener.java
   LCMGLLineBuffer.java
   ViconBodyPointCoder.java
