@@ -13,6 +13,8 @@ endif()
 
 option(BUILD_PRIVATE_EXTERNALS "Build private externals (requires access to private repos)" ON)
 option(USE_SYSTEM_LCM "Use system LCM (otherwise build LCM will be built)" ON)
+option(USE_SYSTEM_OPENCV "Use system OpenCV (~2.4.12) (otherwise OpenCV will be built from source)" OFF)
+option(USE_SYSTEM_PCL "Use system PCL 1.7 (otherwise PCL will be built from source)" OFF)
 
 include(ExternalProject)
 set_property(DIRECTORY PROPERTY EP_PREFIX ${Externals_BINARY_DIR})
