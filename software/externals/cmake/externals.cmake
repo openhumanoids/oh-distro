@@ -20,15 +20,18 @@ set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
 set(Eigen_pod_revision ceba39500b89a77a8649b3e8b421b10a3d74d42b)
 set(Eigen_pod_depends)
 
-set(opencv_url https://github.com/Itseez/opencv.git)
-set(opencv_revision 2.4.12.3)
-set(opencv_depends Eigen_pod)
-set(opencv_external_args
-  CMAKE_CACHE_ARGS
-    ${default_cmake_args}
-    ${python_args}
-    -DWITH_CUDA:BOOL=OFF
-  )
+if(NOT USE_SYSTEM_OPENCV)
+  set(opencv_proj opencv)
+  set(opencv_url https://github.com/Itseez/opencv.git)
+  set(opencv_revision 2.4.12.3)
+  set(opencv_depends Eigen_pod)
+  set(opencv_external_args
+    CMAKE_CACHE_ARGS
+      ${default_cmake_args}
+      ${python_args}
+      -DWITH_CUDA:BOOL=OFF
+    )
+endif()
 
 set(flann_url https://github.com/mariusmuja/flann.git)
 set(flann_revision 4969acc) # master from march 2015
@@ -61,7 +64,7 @@ set(octomap_external_args
 
 set(occ-map_url https://github.com/openhumanoids/occ-map.git)
 set(occ-map_revision 34ab71fa693216d2c0508f0f2680b9a68994f473)
-set(occ-map_depends libbot opencv)
+set(occ-map_depends libbot ${opencv_proj})
 
 set(common_utils_url https://github.com/openhumanoids/common_utils.git)
 set(common_utils_revision bf0c9223e02a193a3cfef4034ef82a94219f116a)
@@ -162,7 +165,7 @@ set(kinematics-utils_depends Eigen_pod)
 
 set(libmultisense_url https://bitbucket.org/crl/libmultisense)
 set(libmultisense_hg_tag a57026c)
-set(libmultisense_depends opencv)
+set(libmultisense_depends ${opencv_proj})
 set(libmultisense_external_args
   CMAKE_CACHE_ARGS
     ${default_cmake_args}
@@ -250,7 +253,7 @@ set(externals
   Eigen_pod
   ${lcm_proj}
   libbot
-  opencv
+  ${opencv_proj}
   flann
   pcl
   octomap
@@ -304,19 +307,6 @@ if(NOT APPLE)
   list(INSERT externals ${fovis_index} kinect)
   list(APPEND fovis_depends kinect)
 
-endif()
-
-
-if(USE_SYSTEM_OPENCV)
-  list(REMOVE_ITEM externals
-    opencv
-  )
-  list(REMOVE_ITEM occ-map_depends
-    opencv
-  )
-  list(REMOVE_ITEM libmultisense_depends
-    opencv
-  )
 endif()
 
 
