@@ -325,6 +325,7 @@ PCL (version 1.7.1) and OpenCV (~2.4.12.2) can also be system-installed instead 
 Add a PPA and install PCL:
 
 ::
+    
     sudo add-apt-repository -y ppa:v-launchpad-jochen-sprickerhof-de/pcl
     sudo apt-get update
     sudo apt-get install -y libpcl-1.7-all
@@ -332,12 +333,14 @@ Add a PPA and install PCL:
 Use e.g. our in-house packaged version of OpenCV 2.4.12.3 that matches the one being built from source as part of the externals build step:
 
 ::
+    
     wget http://terminator.robots.inf.ed.ac.uk/public/opencv_2.4.12.2.deb
     sudo dpkg -i opencv_2.4.12.2.deb
 
 These options are disabled by default on purpose. Then, to make use of the system-installed versions, configure the externals build with the corresponding flags:
 
 ::
+    
     cd software/externals
     mkdir pod-build && cd pod-build
     cmake .. -DUSE_SYSTEM_PCL:BOOL=ON -DUSE_SYSTEM_OPENCV:BOOL=ON
