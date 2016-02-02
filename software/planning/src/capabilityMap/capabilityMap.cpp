@@ -261,15 +261,16 @@ RowVector2d CapabilityMap::getCapabilityMapSize()
 
 void CapabilityMap::computeVoxelCentres()
 {
-	this->voxelCentres.resize(this->nVoxels, 3);
+	this->voxelCentres.reserve(this->nVoxels);
 	unsigned int nVoxelsPerSqEdge = pow(this->nVoxelsPerEdge, 2);
-	for (unsigned int vox = 0; vox < this->nVoxels; vox++)
+	for (int i = 0; i < this->nVoxels; i++)
 	{
-		this->voxelCentres(vox,0) = this->mapLowerBound(0) + (vox % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
-		this->voxelCentres(vox,1) = this->mapLowerBound(1) + (vox / this->nVoxelsPerEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
-		this->voxelCentres(vox,2) = this->mapLowerBound(2) + (vox / nVoxelsPerSqEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
+		Vector3d vox;
+		vox[0] = this->mapLowerBound(0) + (i % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
+		vox[1] = this->mapLowerBound(1) + (i / this->nVoxelsPerEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
+		vox[2] = this->mapLowerBound(2) + (i / nVoxelsPerSqEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
+		this->voxelCentres.push_back(vox);
 	}
-	std::cout << this->voxelCentres << endl;
 }
 
 void CapabilityMap::setActiveSide(Side side)
@@ -280,108 +281,16 @@ void CapabilityMap::setActiveSide(Side side)
 	}
 }
 
-void CapabilityMap::drawCapabilityMap()
+void CapabilityMap::drawCapabilityMap(bot_lcmgl_t* lcmgl)
 {
-/*
-//	bot_lcmgl_t* lcmgl;
-	lcm::LCM lcm;
-//	lcmgl->lcmgl.channel_name = "LCMGL";
-//	lcm_t* lcm;
-	lcm = lcm_create(NULL);
-	lcmgl *lcmgl_ = bot_lcmgl_init(lcm.getUnderlyingLCM() ,"Capability Map");
-//	lcmgl_->channel_name = "LCMGL";
-	bot_lcmgl_begin(lcmgl_, LCMGL_POINTS);
-	bot_lcmgl_vertex3d(lcmgl_, 0, 0, 0);
-	bot_lcmgl_end(lcmgl_);
-	bot_lcmgl_switch_buffer(lcmgl_);
-	lcm.subscribe("",)
-*/
-}
-
-/*
-void CapabilityMap::drawCapabilityMap()
-{
-	union doubleByte
+	bot_lcmgl_point_size(lcmgl, 3);
+	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
+	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+	for (Vector3d &vox : this->voxelCentres)
 	{
-	  float d;
-	  unsigned char b[sizeof(float)];
-	};
-	union intByte
-	{
-	  int i;
-	  unsigned char b[sizeof(int)];
-	};
-//	doubleByte d;
-	float f;
-	double d;
-	intByte i;
-	int32_t datalen = 0;
-	lcm::LCM lcm;
-	bot_lcmgl::data_t data;
-	data.name = "CapabilityMap";
-	data.scene = 0;
-	data.sequence = 0;
-	//point size
-	data.data.push_back((uint8_t) 10);
-	datalen++;
-	f = 5;
-	data.data.insert(data.data.end(), static_cast<char*>(static_cast<void*>(&f)), static_cast<char*>(static_cast<void*>(&f)) + sizeof(f));
-	datalen+=sizeof(f);
-	//color3f
-	data.data.push_back((uint8_t) 8);
-	datalen++;
-	f = 1;
-	data.data.insert(data.data.end(), static_cast<char*>(static_cast<void*>(&f)), static_cast<char*>(static_cast<void*>(&f)) + sizeof(f));
-	datalen+=sizeof(f);
-	f = 0;
-	data.data.insert(data.data.end(), static_cast<char*>(static_cast<void*>(&f)), static_cast<char*>(static_cast<void*>(&f)) + sizeof(f));
-	datalen+=sizeof(f);
-	f = 0;
-	data.data.insert(data.data.end(), static_cast<char*>(static_cast<void*>(&f)), static_cast<char*>(static_cast<void*>(&f)) + sizeof(f));
-	datalen+=sizeof(f);
-	//begin
-	data.data.push_back((uint8_t) 4);
-	datalen++;
-	//points
-	data.data.push_back((uint8_t) 0x0000);
-	datalen++;
-	//vertex3d
-	data.data.push_back((uint8_t) 6);
-	datalen++;
-
-	for (int i = 0; i < 3; i++)
-	{
-		f = 0;
-		data.data.insert(data.data.end(), static_cast<char*>(static_cast<void*>(&f)), static_cast<char*>(static_cast<void*>(&f)) + sizeof(f));
-		datalen+=sizeof(f);
+		bot_lcmgl_vertex3d(lcmgl, vox[0], vox[1], vox[2]);
+		cout << vox << endl << endl;
 	}
-
-	//end
-	data.data.push_back((uint8_t) 5);
-	datalen++;
-	/*
-	data.data.push_back(4); //begin
-	datalen++;
-	data.data.push_back(0x0000); //points
-	datalen++;
-	data.data.push_back(7); //vertex3d
-	datalen++;
-	for (int i = 0; i < 3; i++)
-	{
-		d = {0};
-		data.data.insert(data.data.end(), d.b[0], d.b[3]);
-	}
-	datalen+=4;
-	data.data.push_back(5); //end
-	datalen++;
-
-	data.datalen = datalen;
-	lcm.publish("LCMGL", &data);
-
+	bot_lcmgl_end(lcmgl);
+	bot_lcmgl_switch_buffer(lcmgl);
 }
-template <typename T>;
-void writeNumber(bot_lcmgl::data_t &data, T number)
-{
-
-}
-*/
