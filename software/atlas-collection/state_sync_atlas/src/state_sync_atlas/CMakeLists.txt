@@ -14,5 +14,5 @@ pods_install_executables(drc-state-sync-atlas )
 
 add_executable(drc-update-offsets update_offsets.cpp  )
 pods_use_pkg_config_packages(drc-update-offsets eigen3
-  bot2-param-client bot2-frames)
+  lcmtypes_drc_lcmtypes atlas bot2-param-client bot2-frames)
 pods_install_executables(drc-update-offsets )
