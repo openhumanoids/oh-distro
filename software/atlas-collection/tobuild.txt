@@ -5,3 +5,5 @@ atlas_lcmtypes
 atlas
 state_sync_atlas
 bdi_walking
+flycapture
+ptgrey
