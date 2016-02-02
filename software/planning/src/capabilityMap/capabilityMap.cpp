@@ -1,14 +1,7 @@
-#include <iostream>
+#include <fstream>
 
 #include "capabilityMap.hpp"
-//#include "lcmtypes/bot_core.hpp"
-#include "bot_lcmgl_client/lcmgl.h"
-//#include "lcmtypes/bot_lcmgl/data_t.hpp"
-#include "lcmtypes/bot_lcmgl_data_t.h"
-
-#include <fstream>
-#include <math.h>
-#include <lcm/lcm-cpp.hpp>
+#include "drawingUtil/drawingUtil.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -18,7 +11,7 @@ CapabilityMap::CapabilityMap()//:activeSide(Side::LEFT)
 
 }
 
-CapabilityMap::CapabilityMap(const string & urdf_filename):activeSide(Side::LEFT)
+CapabilityMap::CapabilityMap(const string &urdf_filename):activeSide(Side::LEFT)
 {
 
 }
@@ -281,16 +274,55 @@ void CapabilityMap::setActiveSide(Side side)
 	}
 }
 
-void CapabilityMap::drawCapabilityMap(bot_lcmgl_t* lcmgl)
+void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl)
 {
+	this->drawMap(lcmgl, this->voxelCentres);
 	bot_lcmgl_point_size(lcmgl, 3);
 	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
 	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
 	for (Vector3d &vox : this->voxelCentres)
 	{
 		bot_lcmgl_vertex3d(lcmgl, vox[0], vox[1], vox[2]);
-		cout << vox << endl << endl;
 	}
 	bot_lcmgl_end(lcmgl);
 	bot_lcmgl_switch_buffer(lcmgl);
+}
+
+void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector3d orient, Vector3d offset, bool drawCubes)
+{
+	if (drawCubes)
+	{
+		this->drawMapCubes(lcmgl, this->mapLowerBound, this->mapUpperBound, this->voxelEdge);
+	}
+}
+void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, double resolution, Vector3d centre, Vector3d orientation)
+{
+	Vector3d dim = (ub-lb)/resolution;
+	Vector3i dimensions = dim.cast<int>();
+	bot_lcmgl_color3f(lcmgl, .3, .3, .3);
+	bot_lcmgl_line_width(lcmgl, .1);
+	for (int z = 0; z <= dimensions(1); z++)
+	{
+		for (int x = 0; x <= dimensions(0); x++)
+		{
+			draw3dLine(lcmgl, lb(0) + resolution * x, lb(1), lb(2) + resolution * z,
+							  lb(0) + resolution * x, ub(1), lb(2) + resolution * z);
+		}
+	}
+	for (int z = 0; z <= dimensions(1); z++)
+	{
+		for (int y = 0; y <= dimensions(0); y++)
+		{
+			draw3dLine(lcmgl, lb(0), lb(1) + resolution * y, lb(2) + resolution * z,
+							  ub(0), lb(1) + resolution * y, lb(2) + resolution * z);
+		}
+	}
+	for (int x = 0; x <= dimensions(1); x++)
+	{
+		for (int y = 0; y <= dimensions(0); y++)
+		{
+			draw3dLine(lcmgl, lb(0) + resolution * x, lb(1) + resolution * y, lb(2),
+							  lb(0) + resolution * x, lb(1) + resolution * y, ub(2));
+		}
+	}
 }

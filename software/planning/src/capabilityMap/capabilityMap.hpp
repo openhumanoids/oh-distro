@@ -7,8 +7,6 @@
 #include <Eigen/SparseCore>
 #include <drake/systems/plants/RigidBodyTree.h>
 #include "drake/drakeShapes_export.h"
-#include <boost/shared_ptr.hpp>
-#include <lcm/lcm-cpp.hpp>
 #include "bot_lcmgl_client/lcmgl.h"
 
 struct map_centre
@@ -83,6 +81,10 @@ private:
 	std::vector<Eigen::Vector3d> voxelCentres;
 
 	void computeVoxelCentres();
+	void drawMap(bot_lcmgl_t *lcmgl, std::vector<Eigen::Vector3d> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),
+			Eigen::Vector3d offset = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
+	void drawMapCubes(bot_lcmgl_t *lcmgl, Eigen::Vector3d lb, Eigen::Vector3d ub, double resolution, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0),
+			Eigen::Vector3d orientation = Eigen::Vector3d(0, 0, 0));
 };
 
 

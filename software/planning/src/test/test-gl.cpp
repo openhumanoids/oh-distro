@@ -4,12 +4,8 @@
 
 #include "capabilityMap/capabilityMap.hpp"
 #include "bot_lcmgl_client/lcmgl.h"
-#include "lcmtypes/bot_lcmgl_data_t.h"
 
 using namespace std;
-
-void handler(const lcm::ReceiveBuffer* buf, const string& channel, const bot_lcmgl_data_t* msg)
-{};
 
 int main()
 {
