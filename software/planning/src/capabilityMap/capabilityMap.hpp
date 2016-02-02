@@ -5,8 +5,11 @@
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <drake/systems/plants/RigidBodyTree.h>
+#include "drake/drakeShapes_export.h"
+#include <boost/shared_ptr.hpp>
+#include <lcm/lcm-cpp.hpp>
 
-using namespace std;
+
 using namespace Eigen;
 
 struct map_centre
@@ -17,8 +20,8 @@ struct map_centre
 
 struct ee_link
 {
-	string left;
-	string right;
+	std::string left;
+	std::string right;
 };
 
 struct orient
@@ -34,21 +37,22 @@ enum Side
 	LEFT
 };
 
-typedef vector<SparseMatrix<bool>> OccupancyMap;
+typedef std::vector<SparseMatrix<bool>> OccupancyMap;
 
 class CapabilityMap
 {
 public:
 	CapabilityMap();
-	CapabilityMap(const string & urdf_filename);
-	void loadFromMatlabBinFile(const string mapFile);
-	void saveToFile(const string mapFile);
+	CapabilityMap(const std::string & urdf_filename);
+	void loadFromMatlabBinFile(const std::string mapFile);
+	void saveToFile(const std::string mapFile);
 	Vector2i getMapSize();
 	int getNVoxels();
 	void setNVoxels(unsigned int nVoxels);
 	void setNDirectionsPerVoxel(unsigned int nDir);
 	RowVector2d getCapabilityMapSize();
 	void setActiveSide(Side side);
+	void drawCapabilityMap();
 private:
 	unsigned int nVoxels;
 	unsigned int nDirectionsPerVoxel;
@@ -56,7 +60,7 @@ private:
 	map_centre mapCentre;
 	ee_link endEffectorLink;
 	Vector3d endEffectorAxis;
-	string baseLink;
+	std::string baseLink;
 	unsigned int nJoints;
 	VectorXd nominalConfiguration;
 	SparseMatrix<bool> map;
