@@ -4,6 +4,15 @@ set(POD_NAME atlas-collection)
 include(cmake/pods.cmake)
 include(ExternalProject)
 
+if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/atlas)
+  set(atlas_enabled_default ON)
+else()
+  set(atlas_enabled_default OFF)
+endif()
+
+option(BUILD_ATLAS_DRIVER "Build the Atlas driver" ${atlas_enabled_default})
+
+
 set(default_cmake_args
   -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
   -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
@@ -33,7 +42,7 @@ endmacro()
 
 
 # Only build if private modules atlas and flycapture have been checked out
-if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/atlas)
+if(BUILD_ATLAS_DRIVER)
   add_external_project(atlas_lcmtypes)
 
   set(atlas_depends atlas_lcmtypes)
@@ -53,6 +62,4 @@ if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/atlas)
   set(ptgrey_depends flycapture)
   add_external_project(ptgrey)
   checkbuild(ptgrey)
-else()
-  message(WARNING "Atlas does not exist - skip building atlas")
 endif()
