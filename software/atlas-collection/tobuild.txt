@@ -2,6 +2,5 @@
 # and lines starting with '#' are ignored
 
 atlas_lcmtypes
-atlas
 state_sync_atlas
 bdi_walking
