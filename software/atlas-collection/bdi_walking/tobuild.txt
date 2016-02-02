@@ -1,5 +1,0 @@
-# list of subdirectories to build, one one each line.  Empty lines
-# and lines starting with '#' are ignored
-
-py_bdi_step_translator
-py_drake_utils
