@@ -10,6 +10,18 @@ set(default_cmake_args
   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
 )
 
+# call this macro for each project without dependencies so that it will
+# re-check the build in case there are modified files.  In CMake 3.1, you
+# can use the BUILD_ALWAYS flag instead, but this is for support of older
+# version of cmake.
+macro(checkbuild proj)
+  ExternalProject_Add_Step(${proj} forceconfigure
+      COMMAND ${CMAKE_COMMAND} -E echo "Check build of ${proj}"
+      DEPENDEES configure
+      DEPENDERS build
+      ALWAYS 1)
+endmacro()
+
 # Macro to add external projects with dependencies
 macro(add_external_project proj)
   ExternalProject_Add(${proj}
@@ -26,16 +38,21 @@ if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/atlas)
 
   set(atlas_depends atlas_lcmtypes)
   add_external_project(atlas)
+  checkbuild(atlas)
 
   set(state_sync_atlas_depends atlas atlas_lcmtypes)
   add_external_project(state_sync_atlas)
+  checkbuild(state_sync_atlas)
 
   add_external_project(bdi_walking)
+  checkbuild(bdi_walking)
 
   add_external_project(flycapture)
+  checkbuild(flycapture)
 
   set(ptgrey_depends flycapture)
   add_external_project(ptgrey)
+  checkbuild(ptgrey)
 else()
   message(WARNING "Atlas does not exist - skip building atlas")
 endif()
