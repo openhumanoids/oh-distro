@@ -291,6 +291,12 @@ if(BUILD_PRIVATE_EXTERNALS)
     flycapture
     )
 
+  if(APPLE)
+    list(REMOVE_ITEM externals
+      atlas-driver
+    )
+  endif()
+
 endif()
 
 
