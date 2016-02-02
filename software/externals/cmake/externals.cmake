@@ -142,7 +142,7 @@ set(flycapture_revision be27acc7effd83b0cb5648742b915eb4a6181f49)
 set(flycapture_depends)
 set(flycapture_external_args
   ${download_only_args}
-  SOURCE_DIR ${source_prefix}/../drivers/flycapture
+  SOURCE_DIR ${source_prefix}/../atlas-collection/flycapture
   )
 
 set(swigmake_url https://github.com/rdeits/swigmake.git)
