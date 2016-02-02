@@ -1,4 +1,5 @@
 #include <fstream>
+#include <stdlib.h>
 
 #include "capabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
@@ -277,23 +278,46 @@ void CapabilityMap::setActiveSide(Side side)
 void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl)
 {
 	this->drawMap(lcmgl, this->voxelCentres);
-	bot_lcmgl_point_size(lcmgl, 3);
-	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
-	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-	for (Vector3d &vox : this->voxelCentres)
-	{
-		bot_lcmgl_vertex3d(lcmgl, vox[0], vox[1], vox[2]);
-	}
-	bot_lcmgl_end(lcmgl);
-	bot_lcmgl_switch_buffer(lcmgl);
 }
 
 void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector3d orient, Vector3d offset, bool drawCubes)
 {
+	int startIdx;
 	if (drawCubes)
 	{
 		this->drawMapCubes(lcmgl, this->mapLowerBound, this->mapUpperBound, this->voxelEdge);
+		startIdx = 0;
 	}
+	else
+	{
+		startIdx = 1;
+	}
+	for (int i = startIdx; i < this->nDirectionsPerVoxel; i++)
+	{
+		float h = (1 - ((float)i / this->nDirectionsPerVoxel * 2./3.)) * 360.;
+		float r, g, b;
+		HSVtoRGB(r, g, b, h, 1, 1);
+		bot_lcmgl_color3f(lcmgl, r, g, b);
+		if (i == 0)
+		{
+			bot_lcmgl_point_size(lcmgl, 1);
+			bot_lcmgl_color3f(lcmgl, 1, 0, 0);
+		}
+		else
+		{
+			bot_lcmgl_point_size(lcmgl, 10);
+		}
+		bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+		for (int vox = 0; vox < this->nVoxels; vox++)
+		{
+			if (abs((float)this->reachabilityIndex(vox) - (float)i / this->nDirectionsPerVoxel) < 1e-6)
+			{
+				bot_lcmgl_vertex3d(lcmgl, this->voxelCentres[vox](0), this->voxelCentres[vox](1), this->voxelCentres[vox](2));
+			}
+		}
+		bot_lcmgl_end(lcmgl);
+	}
+	bot_lcmgl_switch_buffer(lcmgl);
 }
 void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, double resolution, Vector3d centre, Vector3d orientation)
 {
