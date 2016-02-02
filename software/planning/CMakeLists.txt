@@ -6,3 +6,4 @@ include(cmake/pods.cmake)
 
 add_subdirectory(src/capabilityMap)
 add_subdirectory(src/test)
+add_subdirectory(src/util)
