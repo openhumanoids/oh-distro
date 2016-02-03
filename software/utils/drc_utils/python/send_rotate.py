@@ -4,11 +4,6 @@ import time
 import datetime
 import subprocess
 
-home_dir =os.getenv("HOME")
-#print home_dir
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
-
 import lcm
 import multisense as lcmmultisense
 
