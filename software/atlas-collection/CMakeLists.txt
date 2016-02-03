@@ -10,6 +10,11 @@ else()
   set(atlas_enabled_default OFF)
 endif()
 
+# Deactivate Atlas driver for Mac
+if(APPLE)
+  set(atlas_enabled_default OFF)
+endif()
+
 option(BUILD_ATLAS_DRIVER "Build the Atlas driver" ${atlas_enabled_default})
 
 
