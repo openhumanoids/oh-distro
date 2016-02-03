@@ -3,6 +3,7 @@
 
 #include "capabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
+#include "drake/util/drakeGeometryUtil.h"
 
 using namespace std;
 using namespace Eigen;
@@ -42,7 +43,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 		std::cout << "Loaded mapCentre.right: " << this->mapCentre.right[0] << ";" << this->mapCentre.right[1] << ";"  << this->mapCentre.right[2] << '\n';
 
 		inputFile.read((char *) &stringLength, sizeof(unsigned int));
-		std::cout << stringLength << endl;
 		char *eeLinkLeftstr = new char[stringLength];
 		inputFile.read(eeLinkLeftstr, stringLength);
 		this->endEffectorLink.left = eeLinkLeftstr;
@@ -50,7 +50,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 		eeLinkLeftstr = nullptr;
 		std::cout << "Loaded endEffectorLink.left: " << this->endEffectorLink.left.c_str() << endl;
 		inputFile.read((char *) &stringLength, sizeof(unsigned int ));
-		std::cout << stringLength << endl;
 		char *eeLinkRightstr = new char[stringLength];
 		inputFile.read(eeLinkRightstr, stringLength * sizeof(char));
 		this->endEffectorLink.right = eeLinkRightstr;
@@ -62,7 +61,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 		std::cout << "Loaded endEffectorAxis: " << this->endEffectorAxis[0] << ";"  << this->endEffectorAxis[1] << ";"  << this->endEffectorAxis[2] << '\n';
 
 		inputFile.read((char *) &stringLength, sizeof(unsigned int));
-		std::cout << stringLength << endl;
 		char *baseLinkStr = new char[stringLength];
 		inputFile.read(baseLinkStr, stringLength * sizeof(char));
 		this->baseLink = baseLinkStr;
@@ -277,7 +275,7 @@ void CapabilityMap::setActiveSide(Side side)
 
 void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl)
 {
-	this->drawMap(lcmgl, this->voxelCentres);
+	this->drawMap(lcmgl, this->voxelCentres, Vector3d(1, 1, 0));
 }
 
 void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector3d orient, Vector3d offset, bool drawCubes)
@@ -285,7 +283,7 @@ void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector
 	int startIdx;
 	if (drawCubes)
 	{
-		this->drawMapCubes(lcmgl, this->mapLowerBound, this->mapUpperBound, this->voxelEdge);
+		this->drawMapCubes(lcmgl, this->mapLowerBound, this->mapUpperBound, this->voxelEdge, Vector3d(0,0,0), orient);
 		startIdx = 0;
 	}
 	else
@@ -312,41 +310,48 @@ void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector
 		{
 			if (abs((float)this->reachabilityIndex(vox) - (float)i / this->nDirectionsPerVoxel) < 1e-6)
 			{
-				bot_lcmgl_vertex3d(lcmgl, this->voxelCentres[vox](0), this->voxelCentres[vox](1), this->voxelCentres[vox](2));
+				Vector3d voxel = rpy2rotmat(orient) * this->voxelCentres[vox];
+				bot_lcmgl_vertex3d(lcmgl, voxel(0), voxel(1), voxel(2));
 			}
 		}
 		bot_lcmgl_end(lcmgl);
 	}
 	bot_lcmgl_switch_buffer(lcmgl);
 }
-void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, double resolution, Vector3d centre, Vector3d orientation)
+void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, double resolution, Vector3d centre, Vector3d orient)
 {
 	Vector3d dim = (ub-lb)/resolution;
 	Vector3i dimensions = dim.cast<int>();
+
 	bot_lcmgl_color3f(lcmgl, .3, .3, .3);
 	bot_lcmgl_line_width(lcmgl, .1);
+
+	Vector3d start, end;
 	for (int z = 0; z <= dimensions(1); z++)
 	{
 		for (int x = 0; x <= dimensions(0); x++)
 		{
-			draw3dLine(lcmgl, lb(0) + resolution * x, lb(1), lb(2) + resolution * z,
-							  lb(0) + resolution * x, ub(1), lb(2) + resolution * z);
+			start = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, 0, resolution * z));
+			end = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, ub(1)-lb(1), resolution * z));
+			draw3dLine(lcmgl, start(0), start(1), start(2), end(0), end(1), end(2));
 		}
 	}
 	for (int z = 0; z <= dimensions(1); z++)
 	{
 		for (int y = 0; y <= dimensions(0); y++)
 		{
-			draw3dLine(lcmgl, lb(0), lb(1) + resolution * y, lb(2) + resolution * z,
-							  ub(0), lb(1) + resolution * y, lb(2) + resolution * z);
+			start = rpy2rotmat(orient) * (lb + Vector3d(0, resolution * y, resolution * z));
+			end = rpy2rotmat(orient) * (lb + Vector3d(ub(0)-lb(0), resolution * y, resolution * z));
+			draw3dLine(lcmgl, start(0), start(1), start(2), end(0), end(1), end(2));
 		}
 	}
 	for (int x = 0; x <= dimensions(1); x++)
 	{
 		for (int y = 0; y <= dimensions(0); y++)
 		{
-			draw3dLine(lcmgl, lb(0) + resolution * x, lb(1) + resolution * y, lb(2),
-							  lb(0) + resolution * x, lb(1) + resolution * y, ub(2));
+			start = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, resolution * y, 0));
+			end = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, resolution * y, ub(2)-lb(2)));
+			draw3dLine(lcmgl, start(0), start(1), start(2), end(0), end(1), end(2));
 		}
 	}
 }
