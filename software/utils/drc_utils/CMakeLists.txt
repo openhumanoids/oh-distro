@@ -50,4 +50,3 @@ file(COPY scripts/drc-atlas-rsync DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 pods_install_python_script(drc-send-robot-state python/send_robot_state.py)
 pods_install_python_script(drc-send-rotate-and-record python/send_rotate_and_record.py)
-pods_install_python_script(drc-send-rotate python/send_rotate.py)
