@@ -1,5 +1,10 @@
 #include <fstream>
 #include <stdlib.h>
+#include <algorithm>
+#include <boost/range/irange.hpp>
+#include <boost/range/algorithm_ext/push_back.hpp>
+#include <boost/range/adaptors.hpp>
+#include <boost/algorithm/cxx11/copy_if.hpp>
 
 #include "capabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
@@ -8,7 +13,7 @@
 using namespace std;
 using namespace Eigen;
 
-CapabilityMap::CapabilityMap()//:activeSide(Side::LEFT)
+CapabilityMap::CapabilityMap():activeSide(Side::LEFT)
 {
 
 }
@@ -88,6 +93,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			inputFile.read((char *) &this->nDirectionsPerVoxel, sizeof(unsigned int));
 			this->nVoxelsPerEdge = cbrt(this->nVoxels);
 
+			this->activeVoxels.resize(this->nVoxels);
 			this->map.resize(this->nVoxels, this->nDirectionsPerVoxel);
 			inputFile.read((char *) &nnz, sizeof(unsigned int));
 			idx.resize(nnz, 2);
@@ -119,6 +125,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			inputFile.read((char *) this->mapUpperBound.data(), sizeof(this->mapUpperBound));
 			std::cout << "Loaded mapUpperBound: " << this->mapUpperBound[0] << ";"  << this->mapUpperBound[1] << ";"  << this->mapUpperBound[2] << '\n';
 
+			this->resetActiveVoxels();
 			this->computeVoxelCentres();
 		}
 		else
@@ -251,6 +258,41 @@ RowVector2d CapabilityMap::getCapabilityMapSize()
 	return size;
 }
 
+void CapabilityMap::activateVoxels(vector<int> idx)
+{
+	for (int i : idx)
+	{
+		this->activeVoxels[i] = true;
+	}
+	this->nActiveVoxels = count(this->activeVoxels.begin(), this->activeVoxels.end(), true);
+}
+
+void CapabilityMap::deactivateVoxels(vector<int> idx)
+{
+	for (int i : idx)
+	{
+		this->activeVoxels[i] = false;
+	}
+	this->nActiveVoxels = count(this->activeVoxels.begin(), this->activeVoxels.end(), true);
+}
+
+void CapabilityMap::resetActiveVoxels(bool includeZeroReachability)
+{
+	std::vector<int> idx;
+	cout << "reset active" << endl;
+	cout << this->activeVoxels.size() << endl;
+	boost::push_back(idx, boost::irange(0, (int)this->nVoxels));
+	if (!includeZeroReachability)
+	{
+		this ->deactivateVoxels(idx);
+		idx.clear();
+		cout << idx.size() << endl;
+		boost::push_back(idx, boost::irange(0, (int)this->nVoxels) | boost::adaptors::filtered([this](int vox){return this->reachabilityIndex[vox] < 1e-6;}));
+	}
+	this->activateVoxels(idx);
+	cout << this->nActiveVoxels << endl;
+}
+
 void CapabilityMap::computeVoxelCentres()
 {
 	this->voxelCentres.reserve(this->nVoxels);
@@ -273,17 +315,22 @@ void CapabilityMap::setActiveSide(Side side)
 	}
 }
 
-void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl)
+void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, Vector3d orient, bool drawCubes)
 {
-	this->drawMap(lcmgl, this->voxelCentres, Vector3d(1, 1, 0));
+	this->drawMap(lcmgl, this->voxelCentres, orient, drawCubes);
 }
 
-void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector3d orient, Vector3d offset, bool drawCubes)
+void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, Vector3d orient, bool drawCubes)
+{
+
+}
+
+void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector3d orient, Vector3d centre, bool drawCubes)
 {
 	int startIdx;
 	if (drawCubes)
 	{
-		this->drawMapCubes(lcmgl, this->mapLowerBound, this->mapUpperBound, this->voxelEdge, Vector3d(0,0,0), orient);
+		this->drawMapCubes(lcmgl, this->mapLowerBound, this->mapUpperBound, this->voxelEdge, orient, centre);
 		startIdx = 0;
 	}
 	else
@@ -310,7 +357,7 @@ void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector
 		{
 			if (abs((float)this->reachabilityIndex(vox) - (float)i / this->nDirectionsPerVoxel) < 1e-6)
 			{
-				Vector3d voxel = rpy2rotmat(orient) * this->voxelCentres[vox];
+				Vector3d voxel = rpy2rotmat(orient) * this->voxelCentres[vox] + centre;
 				bot_lcmgl_vertex3d(lcmgl, voxel(0), voxel(1), voxel(2));
 			}
 		}
@@ -318,7 +365,7 @@ void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector
 	}
 	bot_lcmgl_switch_buffer(lcmgl);
 }
-void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, double resolution, Vector3d centre, Vector3d orient)
+void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, double resolution, Vector3d orient, Vector3d centre)
 {
 	Vector3d dim = (ub-lb)/resolution;
 	Vector3i dimensions = dim.cast<int>();
@@ -331,8 +378,8 @@ void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, d
 	{
 		for (int x = 0; x <= dimensions(0); x++)
 		{
-			start = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, 0, resolution * z));
-			end = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, ub(1)-lb(1), resolution * z));
+			start = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, 0, resolution * z)) + centre;
+			end = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, ub(1)-lb(1), resolution * z)) + centre;
 			draw3dLine(lcmgl, start(0), start(1), start(2), end(0), end(1), end(2));
 		}
 	}
@@ -340,8 +387,8 @@ void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, d
 	{
 		for (int y = 0; y <= dimensions(0); y++)
 		{
-			start = rpy2rotmat(orient) * (lb + Vector3d(0, resolution * y, resolution * z));
-			end = rpy2rotmat(orient) * (lb + Vector3d(ub(0)-lb(0), resolution * y, resolution * z));
+			start = rpy2rotmat(orient) * (lb + Vector3d(0, resolution * y, resolution * z)) + centre;
+			end = rpy2rotmat(orient) * (lb + Vector3d(ub(0)-lb(0), resolution * y, resolution * z)) + centre;
 			draw3dLine(lcmgl, start(0), start(1), start(2), end(0), end(1), end(2));
 		}
 	}
@@ -349,8 +396,8 @@ void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, d
 	{
 		for (int y = 0; y <= dimensions(0); y++)
 		{
-			start = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, resolution * y, 0));
-			end = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, resolution * y, ub(2)-lb(2)));
+			start = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, resolution * y, 0)) + centre;
+			end = rpy2rotmat(orient) * (lb + Vector3d(resolution * x, resolution * y, ub(2)-lb(2))) + centre;
 			draw3dLine(lcmgl, start(0), start(1), start(2), end(0), end(1), end(2));
 		}
 	}
