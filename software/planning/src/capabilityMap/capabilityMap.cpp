@@ -93,7 +93,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			inputFile.read((char *) &this->nDirectionsPerVoxel, sizeof(unsigned int));
 			this->nVoxelsPerEdge = cbrt(this->nVoxels);
 
-			this->activeVoxels.resize(this->nVoxels);
+			boost::push_back(this->activeVoxels, boost::irange(0, (int)this->nVoxels));
 			this->map.resize(this->nVoxels, this->nDirectionsPerVoxel);
 			inputFile.read((char *) &nnz, sizeof(unsigned int));
 			idx.resize(nnz, 2);
@@ -258,39 +258,51 @@ RowVector2d CapabilityMap::getCapabilityMapSize()
 	return size;
 }
 
+vector<Vector3d> CapabilityMap::getActiveVoxelCentres()
+{
+	vector<Vector3d> centres;
+	for (unsigned int i : this->activeVoxels)
+	{
+		centres.push_back(this->voxelCentres[i]);
+	}
+	return centres;
+}
+
 void CapabilityMap::activateVoxels(vector<int> idx)
 {
 	for (int i : idx)
 	{
-		this->activeVoxels[i] = true;
+		if (find(this->activeVoxels.begin(), this->activeVoxels.end(), i) == this->activeVoxels.end())
+		{
+			this->activeVoxels.push_back(i);
+		}
 	}
-	this->nActiveVoxels = count(this->activeVoxels.begin(), this->activeVoxels.end(), true);
 }
 
 void CapabilityMap::deactivateVoxels(vector<int> idx)
 {
 	for (int i : idx)
 	{
-		this->activeVoxels[i] = false;
+		vector<unsigned int>::iterator activeIdx = find(this->activeVoxels.begin(), this->activeVoxels.end(), i);
+		if (activeIdx != this->activeVoxels.end())
+		{
+			this->activeVoxels.erase(activeIdx);
+		}
 	}
-	this->nActiveVoxels = count(this->activeVoxels.begin(), this->activeVoxels.end(), true);
 }
 
 void CapabilityMap::resetActiveVoxels(bool includeZeroReachability)
 {
 	std::vector<int> idx;
-	cout << "reset active" << endl;
-	cout << this->activeVoxels.size() << endl;
 	boost::push_back(idx, boost::irange(0, (int)this->nVoxels));
 	if (!includeZeroReachability)
 	{
-		this ->deactivateVoxels(idx);
+		this->deactivateVoxels(idx);
 		idx.clear();
-		cout << idx.size() << endl;
-		boost::push_back(idx, boost::irange(0, (int)this->nVoxels) | boost::adaptors::filtered([this](int vox){return this->reachabilityIndex[vox] < 1e-6;}));
+		boost::push_back(idx, boost::irange(0, (int)this->nVoxels) | boost::adaptors::filtered([this](int vox){return this->reachabilityIndex[vox] > 1e-6;}));
 	}
 	this->activateVoxels(idx);
-	cout << this->nActiveVoxels << endl;
+	cout << this->activeVoxels.size() << endl;
 }
 
 void CapabilityMap::computeVoxelCentres()
@@ -315,17 +327,19 @@ void CapabilityMap::setActiveSide(Side side)
 	}
 }
 
-void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, Vector3d orient, bool drawCubes)
+void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, Vector3d orient, Vector3d centre, bool drawCubes)
 {
-	this->drawMap(lcmgl, this->voxelCentres, orient, drawCubes);
+	std::vector<unsigned int> idx;
+	boost::push_back(idx, boost::irange(0, (int)this->nVoxels));
+	this->drawMap(lcmgl, idx, orient, centre, drawCubes);
 }
 
-void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, Vector3d orient, bool drawCubes)
+void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, Vector3d orient, Vector3d centre, bool drawCubes)
 {
-
+	this->drawMap(lcmgl, this->activeVoxels, orient, centre, drawCubes);
 }
 
-void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector3d orient, Vector3d centre, bool drawCubes)
+void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<unsigned int> &voxels, Vector3d orient, Vector3d centre, bool drawCubes)
 {
 	int startIdx;
 	if (drawCubes)
@@ -353,7 +367,7 @@ void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<Vector3d> &voxels, Vector
 			bot_lcmgl_point_size(lcmgl, 10);
 		}
 		bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-		for (int vox = 0; vox < this->nVoxels; vox++)
+		for (auto vox : voxels)
 		{
 			if (abs((float)this->reachabilityIndex(vox) - (float)i / this->nDirectionsPerVoxel) < 1e-6)
 			{

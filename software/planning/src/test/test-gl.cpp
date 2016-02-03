@@ -18,6 +18,6 @@ int main()
 		std::cerr <<"ERROR: lcm is not good()" <<std::endl;
 	}
 	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
-	cm.drawCapabilityMap(lcmgl);
+	cm.drawActiveMap(lcmgl);
 	return 0;
 }

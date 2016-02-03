@@ -46,11 +46,12 @@ public:
 	Eigen::Vector2i getMapSize();
 	int getNVoxels();
 	void setNVoxels(unsigned int nVoxels);
+	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
 	void setNDirectionsPerVoxel(unsigned int nDir);
 	Eigen::RowVector2d getCapabilityMapSize();
 	void setActiveSide(Side side);
-	void drawCapabilityMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
-	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
+	void drawCapabilityMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
+	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 private:
 	unsigned int nVoxels;
 	unsigned int nDirectionsPerVoxel;
@@ -80,14 +81,13 @@ private:
 	RigidBodyTree rigidBodyTree;
 	Side activeSide;
 	std::vector<Eigen::Vector3d> voxelCentres;
-	std::vector<bool> activeVoxels;
-	unsigned int nActiveVoxels;
+	std::vector<unsigned int> activeVoxels;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
 	void resetActiveVoxels(bool includeZeroReachability = false);
 	void computeVoxelCentres();
-	void drawMap(bot_lcmgl_t *lcmgl, std::vector<Eigen::Vector3d> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),
+	void drawMap(bot_lcmgl_t *lcmgl, std::vector<unsigned int> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),
 			Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 	void drawMapCubes(bot_lcmgl_t *lcmgl, Eigen::Vector3d lb, Eigen::Vector3d ub, double resolution,
 			Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0));
