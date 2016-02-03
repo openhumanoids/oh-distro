@@ -44,6 +44,7 @@ endmacro()
 # Only build if private modules atlas and flycapture have been checked out
 if(BUILD_ATLAS_DRIVER)
   add_external_project(atlas_lcmtypes)
+  checkbuild(atlas_lcmtypes)
 
   set(atlas_depends atlas_lcmtypes)
   add_external_project(atlas)
