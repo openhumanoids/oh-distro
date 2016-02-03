@@ -9,3 +9,8 @@ pods_use_pkg_config_packages(testRegister2D eigen3
 pods_install_executables(testRegister2D)
 
 
+
+
+add_executable(color-octomap-server color-octomap-server.cpp)
+pods_use_pkg_config_packages(color-octomap-server octomap-util)
+pods_install_executables(color-octomap-server)
