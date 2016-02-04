@@ -52,7 +52,12 @@ cmd "4.drc-send-rotate-and-record" {
     host = "localhost";
 }
 
-cmd "5.drc-send-pose-body" {
+cmd "5.drc-spin-lidar" {
+    exec = "drc-spin-lidar";
+    host = "localhost";
+}
+
+cmd "6.drc-send-pose-body" {
     exec = "drc-send-pose-body";
     host = "localhost";
 }

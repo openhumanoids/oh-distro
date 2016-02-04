@@ -31,5 +31,6 @@
   ],
 
   "userConfig" : ["fixedBaseArm"],
+  "headLink" : "head",
   "disableComponents" : ["useFootsteps","usePlanning","useFootContactVis","useCOPMonitor"]
 }
