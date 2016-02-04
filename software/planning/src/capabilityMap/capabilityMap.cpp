@@ -302,7 +302,6 @@ void CapabilityMap::resetActiveVoxels(bool includeZeroReachability)
 		boost::push_back(idx, boost::irange(0, (int)this->nVoxels) | boost::adaptors::filtered([this](int vox){return this->reachabilityIndex[vox] > 1e-6;}));
 	}
 	this->activateVoxels(idx);
-	cout << this->activeVoxels.size() << endl;
 }
 
 void CapabilityMap::computeVoxelCentres()
