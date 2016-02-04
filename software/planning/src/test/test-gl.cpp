@@ -15,7 +15,6 @@ int main()
 	CapabilityMap cm;
 	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport.bin");
 
-
 	boost::shared_ptr<lcm::LCM> theLCM(new lcm::LCM);
 	if(!theLCM->good()){
 		std::cerr <<"ERROR: lcm is not good()" <<std::endl;

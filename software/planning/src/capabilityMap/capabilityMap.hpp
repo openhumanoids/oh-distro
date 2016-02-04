@@ -52,13 +52,15 @@ public:
 	void setActiveSide(Side side);
 	void drawCapabilityMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
+	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
 private:
 	unsigned int nVoxels;
 	unsigned int nDirectionsPerVoxel;
 	unsigned int nVoxelsPerEdge;
 	map_centre mapCentre;
-	ee_link endEffectorLink;
-	Eigen::Vector3d endEffectorAxis;
+	ee_link endeffectorLink;
+	Eigen::Vector3d endeffectorAxis;
+	Eigen::Matrix<double, 7, 1> endeffectorPose;
 	std::string baseLink;
 	unsigned int nJoints;
 	Eigen::VectorXd nominalConfiguration;

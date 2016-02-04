@@ -50,20 +50,20 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 		inputFile.read((char *) &stringLength, sizeof(unsigned int));
 		char *eeLinkLeftstr = new char[stringLength];
 		inputFile.read(eeLinkLeftstr, stringLength);
-		this->endEffectorLink.left = eeLinkLeftstr;
+		this->endeffectorLink.left = eeLinkLeftstr;
 		delete [] eeLinkLeftstr;
 		eeLinkLeftstr = nullptr;
-		std::cout << "Loaded endEffectorLink.left: " << this->endEffectorLink.left.c_str() << endl;
+		std::cout << "Loaded endeffectorLink.left: " << this->endeffectorLink.left.c_str() << endl;
 		inputFile.read((char *) &stringLength, sizeof(unsigned int ));
 		char *eeLinkRightstr = new char[stringLength];
 		inputFile.read(eeLinkRightstr, stringLength * sizeof(char));
-		this->endEffectorLink.right = eeLinkRightstr;
+		this->endeffectorLink.right = eeLinkRightstr;
 		delete [] eeLinkLeftstr;
 		eeLinkLeftstr = nullptr;
-		std::cout << "Loaded endEffectorLink.right: " << this->endEffectorLink.right.c_str() << endl;
+		std::cout << "Loaded endeffectorLink.right: " << this->endeffectorLink.right.c_str() << endl;
 
-		inputFile.read((char *) this->endEffectorAxis.data(), sizeof(this->endEffectorAxis));
-		std::cout << "Loaded endEffectorAxis: " << this->endEffectorAxis[0] << ";"  << this->endEffectorAxis[1] << ";"  << this->endEffectorAxis[2] << '\n';
+		inputFile.read((char *) this->endeffectorAxis.data(), sizeof(this->endeffectorAxis));
+		std::cout << "Loaded endeffectorAxis: " << this->endeffectorAxis[0] << ";"  << this->endeffectorAxis[1] << ";"  << this->endeffectorAxis[2] << '\n';
 
 		inputFile.read((char *) &stringLength, sizeof(unsigned int));
 		char *baseLinkStr = new char[stringLength];
@@ -324,6 +324,11 @@ void CapabilityMap::setActiveSide(Side side)
 	{
 		this->activeSide = side;
 	}
+}
+
+void CapabilityMap::setEndeffectorPose(Matrix<double, 7, 1> pose)
+{
+	this->endeffectorPose = pose;
 }
 
 void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, Vector3d orient, Vector3d centre, bool drawCubes)
