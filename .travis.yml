@@ -3,6 +3,9 @@ dist: trusty
 
 language:
   - generic
+
+cache:
+  - apt
 #services:
 #  - docker
 
@@ -17,9 +20,9 @@ before_install:
   - sudo apt-get update && sudo apt-get install -qq -y python-dev python-numpy
   - ls /usr/lib/python2.7
   - echo $PATH
-  - export PYTHONPATH=/usr/lib/python2.7/dist-packages:${PYTHONPATH}
+  #- export PYTHONPATH=/usr/lib/python2.7/dist-packages:${PYTHONPATH}
   # also try system-site-packages
-  - export PYTHONPATH=${INSTALL_PREFIX}/lib/python2.7/dist-packages:${PYTHONPATH}
+  #- export PYTHONPATH=${INSTALL_PREFIX}/lib/python2.7/dist-packages:${PYTHONPATH}
   - python -c 'import numpy' # to test whether we have access
 
 
