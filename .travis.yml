@@ -16,6 +16,7 @@ before_install:
   - sudo dpkg -i opencv_2.4.12.2.deb
   - sudo ldconfig
   - cd $TRAVIS_BUILD_DIR
+  - python -c 'import numpy' # to test whether we have access
   #- sed -i 's/git@github.com:/https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/.gitmodules 
   #- sed -i 's/git@github.com:/https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/catkin_ws/.gitmodules
   #- sed -i 's/ssh:\/\/git@github.com\//https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/software/externals/cmake/externals.cmake
