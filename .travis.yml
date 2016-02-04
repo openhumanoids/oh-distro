@@ -39,5 +39,3 @@ script:
   - make -j1
   - cd $TRAVIS_BUILD_DIR/software
   - make -j1
-  #- docker pull openhumanoids/oh-distro-base:latest
-  #- docker run -v $TRAVIS_BUILD_DIR:/home/test/oh-distro openhumanoids/oh-distro-base /bin/bash -c "sed -i 's/git@github.com:/https:\/\/github.com\//g' /home/test/oh-distro/.gitmodules && sed -i 's/git@github.com:/https:\/\/github.com\//g' /home/test/oh-distro/catkin_ws/.gitmodules && sed -i 's/ssh:\/\/git@github.com\//https:\/\/github.com\//g' /home/test/oh-distro/software/externals/cmake/externals.cmake  && cd /home/test/oh-distro && git submodule deinit catkin_ws/src/exotica-dev && rm -rf catkin_ws/src/exotica-dev && git submodule update --init --recursive && cd /home/test/oh-distro/software && source /home/test/oh-distro/software/config/drc_environment.sh &&  mkdir /home/test/oh-distro/software/externals/pod-build && cd /home/test/oh-distro/software/externals/pod-build && cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF && cd /home/test/oh-distro/software/externals && make -j8 && cd /home/test/oh-distro/software && make -j8"
