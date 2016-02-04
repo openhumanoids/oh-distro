@@ -5,6 +5,7 @@
 #include <boost/range/algorithm_ext/push_back.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "capabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
@@ -141,8 +142,35 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			std::cout << "Loaded nOccupancyVoxels: " << this->nOccupancyVoxels << endl;
 			inputFile.read((char *) &this->nOccupancyOrient, sizeof(unsigned int));
 			std::cout << "Loaded nOccupancyOrient: " << this->nOccupancyOrient << endl;
-			this->occupancyMapLeft.resize(this->nOccupancyOrient);
-			this->occupancyMapRight.resize(this->nOccupancyOrient);
+//			this->occupancyMapLeft.resize(this->nOccupancyOrient);
+//			this->occupancyMapRight.resize(this->nOccupancyOrient);
+
+			this->occupancyMap.resize(this->nOccupancyVoxels);
+			unsigned int nCollidingOrient;
+			unsigned int nCollidingVoxels;
+			unsigned int collidingOrient;
+			unsigned int collidingVoxel;
+			for (int vox = 0; vox < this->nOccupancyVoxels; vox++)
+			{
+				this->occupancyMap[vox].resize(this->nOccupancyOrient);
+				inputFile.read((char *) &nCollidingOrient, sizeof(nCollidingOrient));
+//				cout << "Loaded nCollidingOrient: " << nCollidingOrient << endl;
+				for (int orient = 0; orient < nCollidingOrient; orient++)
+				{
+					inputFile.read((char *) &nCollidingVoxels, sizeof(nCollidingVoxels));
+//					cout << "Loaded nCollidingVoxels: " << nCollidingVoxels << endl;
+					inputFile.read((char *) &collidingOrient, sizeof(collidingOrient));
+//					cout << "Loaded collidingOrient: " << collidingOrient << endl;
+					for (int cmVox = 0; cmVox < nCollidingVoxels; cmVox++)
+					{
+						inputFile.read((char *) &collidingVoxel, sizeof(collidingVoxel));
+//						cout << "Loaded collidingVoxel: " << collidingVoxel << endl;
+						this->occupancyMap[vox].resize(2);
+						this->occupancyMap[vox].push_back(collidingOrient);
+						this->occupancyMap[vox].push_back(collidingVoxel);
+					}
+				}
+			}
 /*
 			std::cout << "Loading left occupancy map ..." << endl;
 			for (auto map = this->occupancyMapLeft.begin(); map < this->occupancyMapLeft.end(); map++)
@@ -326,10 +354,30 @@ void CapabilityMap::setActiveSide(Side side)
 	}
 }
 
+void CapabilityMap::setActiveSide(string sideStr)
+{
+	Side side = this->activeSide;
+	if (boost::iequals(sideStr, "right"))
+	{
+		side = Side::LEFT;
+	}
+	else if (boost::iequals(sideStr, "left"))
+	{
+		side = Side::RIGHT;
+	}
+	else
+	{
+		cout << "ERROR: CapabilityMap::setActiveSide Side must be either \"left\" or \"right\"" << endl;
+	}
+	this->setActiveSide(side);
+}
+
 void CapabilityMap::setEndeffectorPose(Matrix<double, 7, 1> pose)
 {
 	this->endeffectorPose = pose;
 }
+
+
 
 void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, Vector3d orient, Vector3d centre, bool drawCubes)
 {

@@ -13,7 +13,7 @@ using namespace Eigen;
 int main()
 {
 	CapabilityMap cm;
-	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport.bin");
+	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport_occ.bin");
 
 	boost::shared_ptr<lcm::LCM> theLCM(new lcm::LCM);
 	if(!theLCM->good()){
@@ -41,5 +41,8 @@ int main()
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
 	fpp.findFinalPose(robot, "leftPalm", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, IKoptions(&robot));
+
+	cm.setActiveSide("left");
+
 	return 0;
 }

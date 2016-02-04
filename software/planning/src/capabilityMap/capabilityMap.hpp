@@ -28,17 +28,18 @@ struct orient
 	Eigen::VectorXd yaw;
 };
 
-enum Side
-{
-	RIGHT,
-	LEFT
-};
-
-typedef std::vector<Eigen::SparseMatrix<bool>> OccupancyMap;
+//typedef std::vector<Eigen::SparseMatrix<bool>> OccupancyMap;
 
 class CapabilityMap
 {
 public:
+
+	enum Side
+	{
+		RIGHT,
+		LEFT
+	};
+
 	CapabilityMap();
 	CapabilityMap(const std::string & urdf_filename);
 	void loadFromMatlabBinFile(const std::string mapFile);
@@ -50,6 +51,7 @@ public:
 	void setNDirectionsPerVoxel(unsigned int nDir);
 	Eigen::RowVector2d getCapabilityMapSize();
 	void setActiveSide(Side side);
+	void setActiveSide(std::string side);
 	void drawCapabilityMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
@@ -73,8 +75,9 @@ private:
 	Eigen::Vector3d mapUpperBound;
 	unsigned int nOccupancyVoxels;
 	unsigned int nOccupancyOrient;
-	OccupancyMap occupancyMapLeft;
-	OccupancyMap occupancyMapRight;
+//	OccupancyMap occupancyMapLeft;
+//	OccupancyMap occupancyMapRight;
+	std::vector<std::vector<unsigned int>> occupancyMap;
 	double occupancyMapResolution;
 	Eigen::Vector3d occupancyMapLowerBound;
 	Eigen::Vector3d occupancyMapUpperBound;
