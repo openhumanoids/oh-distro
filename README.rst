@@ -27,6 +27,9 @@ which are much better supported:
 OpenHumanoids
 =============
 
+.. image:: https://travis-ci.org/openhumanoids/oh-distro.svg?branch=master
+    :target: https://travis-ci.org/openhumanoids/oh-distro
+
 .. contents:: Table of Contents
 
 Introduction
