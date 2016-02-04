@@ -26,10 +26,21 @@ int main()
 	RigidBodyTree robot("/home/marco/oh-distro/software/models/val_description/urdf/valkyrie_sim_simple.urdf");
 	std::vector<RigidBodyConstraint> constraints;
 	FinalPosePlanner fpp;
+
 	VectorXd start_configuration;
 	start_configuration.resize(robot.num_positions);
 	start_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
-	fpp.findFinalPose(robot, "leftPalm", start_configuration, VectorXd(), constraints, VectorXd() , cm, IKoptions(&robot));
+
+	VectorXd endeffector_final_pose;
+	endeffector_final_pose.resize(7);
+	endeffector_final_pose << 0.8000, 0, 1.0625 ,0.7071 ,0 ,0 ,0.7071;
+
+	VectorXd nominal_configuration;
+	nominal_configuration.resize(robot.num_positions);
+	nominal_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
+			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
+
+	fpp.findFinalPose(robot, "leftPalm", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, IKoptions(&robot));
 	return 0;
 }
