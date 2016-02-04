@@ -7,8 +7,6 @@ then
   thisFile=${BASH_SOURCE[0]}
 fi
 
-set -e
-
 # This function sets the DRC_BASE environment variable to be the DRC
 # root directory.  The path to the root directory is computed using
 # the absolute path of this bash file.  Due to symlinks, this bash

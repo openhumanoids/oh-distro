@@ -294,41 +294,6 @@ if(BUILD_PRIVATE_EXTERNALS)
 endif()
 
 
-# Checks whether Matlab is installed, else remove dependent packages
-find_program(matlab matlab)
-if (NOT matlab)
-  message(WARNING "Could not find matlab executable - not building spotless")
-  list(REMOVE_ITEM externals
-    spotless
-  )
-endif()
-
-
-# Use PCL from jochen sprickerhof ppa
-if (USE_SYSTEM_PCL)
-  list(REMOVE_ITEM externals
-    pcl
-  )
-  list(REMOVE_ITEM PointCloudLibraryPlugin_depends
-    pcl
-  )
-endif()
-
-
-# When using supplied deb with OpenCV-2.4.12.3
-if (USE_SYSTEM_OPENCV)
-  list(REMOVE_ITEM externals
-    opencv
-  )
-  list(REMOVE_ITEM occ-map_depends
-    opencv
-  )
-  list(REMOVE_ITEM libmultisense_depends
-    opencv
-  )
-endif()
-
-
 if(NOT APPLE)
 
   # These modules only compile on linux. Some have strict requirements on
