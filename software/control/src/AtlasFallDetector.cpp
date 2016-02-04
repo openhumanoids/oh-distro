@@ -42,7 +42,7 @@ AtlasFallDetector::AtlasFallDetector(std::shared_ptr<RigidBodyTree> model, bool 
   this->lcm.subscribe("FOOT_CONTACT_ESTIMATE", &AtlasFallDetector::handleFootContact, this);
   this->lcm.subscribe("EST_ROBOT_STATE", &AtlasFallDetector::handleRobotState, this);
   this->lcm.subscribe("CONTROLLER_STATUS", &AtlasFallDetector::handleControllerStatus, this);
-  this->lcm.subscribe("ATLAS_STATUS", &AtlasFallDetector::handleAtlasStatus, this);
+  this->lcm.subscribe("ROBOT_BEHAVIOR", &AtlasFallDetector::handleAtlasStatus, this);
 }
 
 void AtlasFallDetector::resetState() {
@@ -73,7 +73,7 @@ void AtlasFallDetector::findFootIDS() {
 
 void AtlasFallDetector::handleAtlasStatus(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
-                       const atlas::status_t* msg) {
+                       const drc::behavior_t* msg) {
   this->atlas_is_in_user = msg->behavior == msg->BEHAVIOR_USER;
 }
 
