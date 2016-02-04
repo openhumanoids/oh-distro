@@ -35,8 +35,8 @@ script:
   - source $TRAVIS_BUILD_DIR/software/config/drc_environment.sh
   - mkdir $TRAVIS_BUILD_DIR/software/externals/pod-build
   - cd $TRAVIS_BUILD_DIR/software/externals/pod-build
-  - cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF -DUSE_SYSTEM_LCM:BOOL=OFF -DCMAKE_INSTALL_PREFIX:STRING=$TRAVIS_BUILD_DIR/software/build -DUSE_SYSTEM_PCL:BOOL=ON -DUSE_SYSTEM_OPENCV:BOOL=ON -Wno-dev -Wdeprecated-declarations
+  - cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF -DUSE_SYSTEM_LCM:BOOL=OFF -DCMAKE_INSTALL_PREFIX:STRING=$TRAVIS_BUILD_DIR/software/build -DUSE_SYSTEM_PCL:BOOL=ON -DUSE_SYSTEM_OPENCV:BOOL=ON
   - cd $TRAVIS_BUILD_DIR/software/externals
   - make -j4
   - cd $TRAVIS_BUILD_DIR/software
-  - make -j4 -Wno-dev -Wdeprecated-declarations
+  - make -j4
