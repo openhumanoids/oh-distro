@@ -19,8 +19,8 @@ int main()
 	if(!theLCM->good()){
 		std::cerr <<"ERROR: lcm is not good()" <<std::endl;
 	}
-	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
-	cm.drawActiveMap(lcmgl);
+//	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
+//	cm.drawActiveMap(lcmgl);
 
 	RigidBodyTree robot("/home/marco/oh-distro/software/models/val_description/urdf/valkyrie_sim_simple.urdf");
 	std::vector<RigidBodyConstraint> constraints;
@@ -45,7 +45,7 @@ int main()
 	cm.setActiveSide("left");
 
 	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
-	cm.drawOccupancyMap(lcmglOM, 1, 1);
+	cm.drawOccupancyMap(lcmglOM, 4999, 1);
 
 	return 0;
 }
