@@ -216,7 +216,7 @@ void App::imuSensorNasaCallback(const val_hardware_msgs::valImuSensorConstPtr& m
     imu.quat[0] = msg->orientation[i].w;
     imu.quat[1] = msg->orientation[i].x;
     imu.quat[2] = msg->orientation[i].y;
-    imu.quat[2] = msg->orientation[i].z;
+    imu.quat[3] = msg->orientation[i].z;
     imu.pressure = 0;
     imu.rel_alt = 0;
 
