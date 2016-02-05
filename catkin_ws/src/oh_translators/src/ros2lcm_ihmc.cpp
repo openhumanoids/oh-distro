@@ -396,7 +396,7 @@ void App::imuSensorCallback(const sensor_msgs::ImuConstPtr& msg)
   imu.quat[0] = msg->orientation.w;
   imu.quat[1] = msg->orientation.x;
   imu.quat[2] = msg->orientation.y;
-  imu.quat[2] = msg->orientation.z;
+  imu.quat[3] = msg->orientation.z;
   imu.pressure = 0;
   imu.rel_alt = 0;
 
