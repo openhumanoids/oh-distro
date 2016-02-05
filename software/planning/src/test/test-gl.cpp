@@ -44,5 +44,8 @@ int main()
 
 	cm.setActiveSide("left");
 
+	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
+	cm.drawOccupancyMap(lcmglOM, 1, 1);
+
 	return 0;
 }

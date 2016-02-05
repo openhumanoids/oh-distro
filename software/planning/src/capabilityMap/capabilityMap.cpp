@@ -127,7 +127,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			std::cout << "Loaded mapUpperBound: " << this->mapUpperBound[0] << ";"  << this->mapUpperBound[1] << ";"  << this->mapUpperBound[2] << '\n';
 
 			this->resetActiveVoxels();
-			this->computeVoxelCentres();
+			this->computeVoxelCentres(this->voxelCentres, this->mapLowerBound, this->mapUpperBound, this->voxelEdge);
 		}
 		else
 		{
@@ -144,12 +144,13 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			std::cout << "Loaded nOccupancyOrient: " << this->nOccupancyOrient << endl;
 //			this->occupancyMapLeft.resize(this->nOccupancyOrient);
 //			this->occupancyMapRight.resize(this->nOccupancyOrient);
-
 			this->occupancyMap.resize(this->nOccupancyVoxels);
 			unsigned int nCollidingOrient;
 			unsigned int nCollidingVoxels;
 			unsigned int collidingOrient;
 			unsigned int collidingVoxel;
+
+			std::cout << "Loading left occupancy map ..." << endl;
 			for (int vox = 0; vox < this->nOccupancyVoxels; vox++)
 			{
 				this->occupancyMap[vox].resize(this->nOccupancyOrient);
@@ -171,41 +172,8 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 					}
 				}
 			}
-/*
-			std::cout << "Loading left occupancy map ..." << endl;
-			for (auto map = this->occupancyMapLeft.begin(); map < this->occupancyMapLeft.end(); map++)
-			{
-				inputFile.read((char *) &nnz, sizeof(unsigned int));
-				idx.resize(nnz, 2);
-				inputFile.read((char *) idx.data(), nnz * 2 * sizeof(MatrixXi::Scalar));
-				tripletList.clear();
-				tripletList.reserve(nnz);
-				for (unsigned int i = 0; i < nnz; i++)
-				{
-					tripletList.push_back(Triplet<bool>(idx(i, 0), idx(i, 1), true));
-				}
-				map->resize(this->nOccupancyVoxels, this->nVoxels);
-				map->setFromTriplets(tripletList.begin(), tripletList.end());
-			}
 			std::cout << "Left occupancy map loaded" << endl;
 
-			std::cout << "Loading right occupancy map ..." << endl;
-			for (auto map = this->occupancyMapRight.begin(); map < this->occupancyMapRight.end(); map++)
-			{
-				inputFile.read((char *) &nnz, sizeof(unsigned int));
-				idx.resize(nnz, 2);
-				inputFile.read((char *) idx.data(), nnz * 2 * sizeof(MatrixXi::Scalar));
-				tripletList.clear();
-				tripletList.reserve(nnz);
-				for (unsigned int i = 0; i < nnz; i++)
-				{
-					tripletList.push_back(Triplet<bool>(idx(i, 0), idx(i, 1), true));
-				}
-				map->resize(this->nOccupancyVoxels, this->nVoxels);
-				map->setFromTriplets(tripletList.begin(), tripletList.end());
-			}
-			std::cout << "Right occupancy map loaded" << endl;
-*/
 			inputFile.read((char *) &this->occupancyMapResolution, sizeof(double));
 			std::cout << "Loaded occupancyMapResolution :" << this->occupancyMapResolution << endl;
 
@@ -235,6 +203,9 @@ void CapabilityMap::loadFromMatlabBinFile(const string mapFile)
 			this->occupancyMapOrientSteps.yaw.resize(nYawSteps);
 			inputFile.read((char *) this->occupancyMapOrientSteps.yaw.data(), nYawSteps * sizeof(double));
 			std::cout << "Loaded occupancyMapOrientSteps.yaw (" << this->occupancyMapOrientSteps.yaw.rows() << ")\n";
+
+			this->setOccupancyMapOrientations();
+			this->computeVoxelCentres(this->occupancyVoxelCentres, this->occupancyMapLowerBound, this->occupancyMapUpperBound, this->occupancyMapResolution);
 		}
 		else
 		{
@@ -332,18 +303,48 @@ void CapabilityMap::resetActiveVoxels(bool includeZeroReachability)
 	this->activateVoxels(idx);
 }
 
-void CapabilityMap::computeVoxelCentres()
+void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centreArray, Vector3d lowerBound, Vector3d upperBound, double resolution)
 {
-	this->voxelCentres.reserve(this->nVoxels);
-	unsigned int nVoxelsPerSqEdge = pow(this->nVoxelsPerEdge, 2);
-	for (int i = 0; i < this->nVoxels; i++)
+	Vector3d dimensionsDouble = (upperBound - lowerBound) / resolution;
+	transform(dimensionsDouble.data(), dimensionsDouble.data() + 3, dimensionsDouble.data(), ptr_fun((double(*)(double))round));
+	cout << dimensionsDouble << endl;
+	Vector3i dimensions = dimensionsDouble.cast<int>();
+
+	unsigned int nVoxels = dimensions.prod();
+	centreArray.reserve(nVoxels);
+	unsigned int nVoxelsPerFace = dimensions(0) * dimensions(1);
+	for (int i = 0; i < nVoxels; i++)
 	{
 		Vector3d vox;
-		vox[0] = this->mapLowerBound(0) + (i % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
-		vox[1] = this->mapLowerBound(1) + (i / this->nVoxelsPerEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
-		vox[2] = this->mapLowerBound(2) + (i / nVoxelsPerSqEdge % this->nVoxelsPerEdge + 0.5) * this->voxelEdge;
-		this->voxelCentres.push_back(vox);
+		vox[0] = lowerBound(0) + (i % dimensions(0) + 0.5) * resolution;
+		vox[1] = lowerBound(1) + (i / dimensions(0) % dimensions(1) + 0.5) * resolution;
+		vox[2] = lowerBound(2) + (i / nVoxelsPerFace % dimensions(2) + 0.5) * resolution;
+		centreArray.push_back(vox);
 	}
+}
+
+void CapabilityMap::setOccupancyMapOrientations()
+{
+	for (int yaw = 0; yaw < this->occupancyMapOrientSteps.yaw.rows(); yaw++)
+	{
+		for (int pitch = 0; pitch < this->occupancyMapOrientSteps.pitch.rows(); pitch++)
+		{
+			for (int roll = 0; roll < this->occupancyMapOrientSteps.roll.rows(); roll++)
+			{
+				this->occupancyMapOrientations.push_back(Vector3d(this->occupancyMapOrientSteps.roll[roll],
+																  this->occupancyMapOrientSteps.pitch[pitch],
+																  this->occupancyMapOrientSteps.yaw[yaw]));
+			}
+		}
+	}
+//	for (int i = 0; i < this->occupancyMapOrientations.size(); i++)
+//	{
+//		for (int j = 0; j<3; j++)
+//		{
+//			cout << this->occupancyMapOrientations[i](j) << "\t\t";
+//		}
+//		cout << endl;
+//	}
 }
 
 void CapabilityMap::setActiveSide(Side side)
@@ -391,6 +392,32 @@ void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, Vector3d orient, Vector3d 
 	this->drawMap(lcmgl, this->activeVoxels, orient, centre, drawCubes);
 }
 
+void CapabilityMap::drawOccupancyMap(bot_lcmgl_t *lcmgl, unsigned int CapabilityMapVoxel, unsigned int orient, Eigen::Vector3d centre, bool drawCubes)
+{
+//	Matrix<bool, 3, 1> nonzero = centre.unaryExpr([](double item){return item != 0;}).cast<bool>();
+//	vector<Vector3d> centres(this->nOccupancyVoxels);
+//	if (nonzero.sum() != 0)
+//	{
+//
+//	}
+	if (drawCubes)
+	{
+		cout << "drawCubes" << endl;
+		this->drawMapCubes(lcmgl, this->occupancyMapLowerBound, this->occupancyMapUpperBound, this->occupancyMapResolution, this->occupancyMapOrientations[orient], centre);
+	}
+	bot_lcmgl_point_size(lcmgl, 10);
+	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
+	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+	for (int vox = 0; vox < this->occupancyMap.size(); vox++)
+	{
+		if (this->occupancyMap[vox][0] == orient && find(this->occupancyMap[vox].begin() + 1, this->occupancyMap[vox].end(), CapabilityMapVoxel) != this->occupancyMap[vox].end())
+		{
+			bot_lcmgl_vertex3d(lcmgl, this->occupancyVoxelCentres[vox](0), this->occupancyVoxelCentres[vox](1), this->occupancyVoxelCentres[vox](2));
+		}
+	}
+	bot_lcmgl_switch_buffer(lcmgl);
+}
+
 void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<unsigned int> &voxels, Vector3d orient, Vector3d centre, bool drawCubes)
 {
 	int startIdx;
@@ -435,6 +462,8 @@ void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, d
 {
 	Vector3d dim = (ub-lb)/resolution;
 	Vector3i dimensions = dim.cast<int>();
+
+	cout << dimensions << endl;
 
 	bot_lcmgl_color3f(lcmgl, .3, .3, .3);
 	bot_lcmgl_line_width(lcmgl, .1);

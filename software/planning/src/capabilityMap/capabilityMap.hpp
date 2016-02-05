@@ -55,6 +55,7 @@ public:
 	void drawCapabilityMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
+	void drawOccupancyMap(bot_lcmgl_t* lcmgl, unsigned int CapabilityMapVoxel, unsigned int orient, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 private:
 	unsigned int nVoxels;
 	unsigned int nDirectionsPerVoxel;
@@ -87,11 +88,14 @@ private:
 	Side activeSide;
 	std::vector<Eigen::Vector3d> voxelCentres;
 	std::vector<unsigned int> activeVoxels;
+	std::vector<Eigen::Vector3d> occupancyVoxelCentres;
+	std::vector<Eigen::Vector3d> occupancyMapOrientations;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
 	void resetActiveVoxels(bool includeZeroReachability = false);
-	void computeVoxelCentres();
+	void computeVoxelCentres(std::vector<Eigen::Vector3d> &centreArray, Eigen::Vector3d lowerBound, Eigen::Vector3d upperBound, double resolution);
+	void setOccupancyMapOrientations();
 	void drawMap(bot_lcmgl_t *lcmgl, std::vector<unsigned int> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),
 			Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool drawCubes = true);
 	void drawMapCubes(bot_lcmgl_t *lcmgl, Eigen::Vector3d lb, Eigen::Vector3d ub, double resolution,
