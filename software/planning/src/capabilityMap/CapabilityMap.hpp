@@ -2,6 +2,7 @@
 #define SRC_CAPABILITYMAP_HPP_
 
 #include <string>
+#include <math.h>
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
@@ -40,6 +41,10 @@ public:
 		LEFT
 	};
 
+	template <typename T> int sign(T val) {
+	    return (T(0) < val) - (val < T(0));
+	}
+
 	CapabilityMap();
 	CapabilityMap(const std::string & urdf_filename);
 	void loadFromMatlabBinFile(const std::string map_file);
@@ -56,6 +61,9 @@ public:
 	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
 	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
 	void drawOccupancyMap(bot_lcmgl_t* lcmgl, unsigned int capability_map_voxel, unsigned int orient, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
+	void reduceActiveSet(bool reset_active, std::vector<Eigen::Vector3d> point_cloud, Eigen::Vector2d sagittal_range = Eigen::Vector2d(-M_PI/3, M_PI/3),
+			Eigen::Vector2d transverse_range =  Eigen::Vector2d(-M_PI/3, M_PI/3), Eigen::Vector2d height_range =  Eigen::Vector2d(0.6, 1.1),
+			double direction_threshold = M_PI/6);
 private:
 	unsigned int n_voxels;
 	unsigned int n_directions_per_voxel;
@@ -92,6 +100,7 @@ private:
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
 	void resetActiveVoxels(bool include_zero_reachability = false);
+	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active = false);
 	void computeVoxelCentres(std::vector<Eigen::Vector3d> &centre_array, Eigen::Vector3d lower_bound, Eigen::Vector3d upper_bound, double resolution);
 	void setOccupancyMapOrientations();
 	void drawMap(bot_lcmgl_t *lcmgl, std::vector<unsigned int> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),

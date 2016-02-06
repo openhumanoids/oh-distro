@@ -1,13 +1,14 @@
 #include <fstream>
 #include <stdlib.h>
 #include <algorithm>
+#include <math.h>
 #include <boost/range/irange.hpp>
 #include <boost/range/algorithm_ext/push_back.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "capabilityMap/capabilityMap.hpp"
+#include "capabilityMap/CapabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
 #include "drake/util/drakeGeometryUtil.h"
 
@@ -293,6 +294,36 @@ void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
 		boost::push_back(idx, boost::irange(0, (int)this->n_voxels) | boost::adaptors::filtered([this](int vox){return this->reachability_index[vox] > 1e-6;}));
 	}
 	this->activateVoxels(idx);
+}
+
+void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cloud, Vector2d sagittal_range, Vector2d transverse_range,
+		Vector2d height_range, double direction_threshold)
+{
+	this->deactivateVoxelsOutsideAngleRanges(sagittal_range, transverse_range, reset_active);
+}
+
+void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
+{
+	if (reset_active)
+	{
+		this->resetActiveVoxels();
+	}
+	vector<int> voxels_to_deactivate;
+	for (int vox : this->active_voxels)
+	{
+		double sagittal_angle = atan2(this->voxel_centres[vox](2), this->voxel_centres[vox](0));
+		double transverse_angle = atan2(this->voxel_centres[vox](1), this->voxel_centres[vox](0));
+		sagittal_angle = sagittal_angle - this->sign(sagittal_angle) * M_PI;
+		transverse_angle = transverse_angle - this->sign(transverse_angle) * M_PI;
+		if (sagittal_angle < sagittal_range(0) || sagittal_angle > sagittal_range(1) || transverse_angle < transverse_range(0) || transverse_angle > transverse_range(1))
+		{
+			voxels_to_deactivate.push_back(vox);
+		}
+	}
+	if (voxels_to_deactivate.size() > 0)
+	{
+		this->deactivateVoxels(voxels_to_deactivate);
+	}
 }
 
 void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, Vector3d lower_bound, Vector3d upper_bound, double resolution)

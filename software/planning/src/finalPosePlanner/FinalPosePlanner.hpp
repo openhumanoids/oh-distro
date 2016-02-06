@@ -6,7 +6,7 @@
 #include "drake/systems/plants/RigidBodyTree.h"
 #include "drake/systems/plants/constraint/RigidBodyConstraint.h"
 #include "drake/drakeShapes_export.h"
-#include "capabilityMap/capabilityMap.hpp"
+#include "capabilityMap/CapabilityMap.hpp"
 #include "drake/systems/plants/IKoptions.h"
 
 class FinalPosePlanner

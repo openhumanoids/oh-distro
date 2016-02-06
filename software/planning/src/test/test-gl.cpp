@@ -3,8 +3,8 @@
 #include <lcm/lcm-cpp.hpp>
 #include <Eigen/Dense>
 
-#include "capabilityMap/capabilityMap.hpp"
-#include "finalPosePlanner/finalPosePlanner.hpp"
+#include "capabilityMap/CapabilityMap.hpp"
+#include "finalPosePlanner/FinalPosePlanner.hpp"
 #include "bot_lcmgl_client/lcmgl.h"
 
 using namespace std;
@@ -19,8 +19,6 @@ int main()
 	if(!theLCM->good()){
 		std::cerr <<"ERROR: lcm is not good()" <<std::endl;
 	}
-//	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
-//	cm.drawActiveMap(lcmgl);
 
 	RigidBodyTree robot("/home/marco/oh-distro/software/models/val_description/urdf/valkyrie_sim_simple.urdf");
 	std::vector<RigidBodyConstraint> constraints;
@@ -41,11 +39,13 @@ int main()
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
 	fpp.findFinalPose(robot, "leftPalm", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, IKoptions(&robot));
+	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
+	cm.drawActiveMap(lcmgl);
 
 	cm.setActiveSide("left");
 
-	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
-	cm.drawOccupancyMap(lcmglOM, 4999, 1);
+//	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
+//	cm.drawOccupancyMap(lcmglOM, 4999, 1);
 
 	return 0;
 }

@@ -16,6 +16,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, V
 		vector<RigidBodyConstraint> &additional_constraints, VectorXd nominal_configuration, CapabilityMap &capability_map, IKoptions ik_options,
 		double min_distance, Vector3d endeffector_point)
 {
+//	INPUT CHECKS
 	auto end_effector_id = find_if(robot.bodies.begin(), robot.bodies.end(), [end_effector](shared_ptr<RigidBody>& body){return body->linkname == end_effector;});
 	if (end_effector_id == robot.bodies.end())
 	{
@@ -32,6 +33,11 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, V
 		return 12;
 	}
 	if (this->checkConfiguration(robot, nominal_configuration, "nominal_configuration") != 0) {return 12;};
+
+	vector<Vector3d> point_cloud;
+	point_cloud.push_back(Vector3d(0,0,0));
+	capability_map.reduceActiveSet(true, point_cloud);
+
 	return 0;
 }
 
