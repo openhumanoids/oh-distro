@@ -1,6 +1,7 @@
+#include "finalPosePlanner/FinalPosePlanner.hpp"
+
 #include <memory>
 
-#include "finalPosePlanner.hpp"
 #include "drake/util/drakeGeometryUtil.h"
 
 using namespace std;
