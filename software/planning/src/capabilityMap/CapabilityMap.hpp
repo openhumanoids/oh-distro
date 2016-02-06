@@ -1,0 +1,104 @@
+#ifndef SRC_CAPABILITYMAP_HPP_
+#define SRC_CAPABILITYMAP_HPP_
+
+#include <string>
+
+#include <Eigen/Dense>
+#include <Eigen/SparseCore>
+#include <drake/systems/plants/RigidBodyTree.h>
+#include "drake/drakeShapes_export.h"
+#include "bot_lcmgl_client/lcmgl.h"
+
+struct MapCentre
+{
+	Eigen::Vector3d left;
+	Eigen::Vector3d right;
+};
+
+struct EndEffectorLink
+{
+	std::string left;
+	std::string right;
+};
+
+struct Orient
+{
+	Eigen::VectorXd roll;
+	Eigen::VectorXd pitch;
+	Eigen::VectorXd yaw;
+};
+
+//typedef std::vector<Eigen::SparseMatrix<bool>> OccupancyMap;
+
+class CapabilityMap
+{
+public:
+
+	enum Side
+	{
+		RIGHT,
+		LEFT
+	};
+
+	CapabilityMap();
+	CapabilityMap(const std::string & urdf_filename);
+	void loadFromMatlabBinFile(const std::string map_file);
+	void saveToFile(const std::string map_file);
+	Eigen::Vector2i getMapSize();
+	int getNVoxels();
+	void setNVoxels(unsigned int n_voxels);
+	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
+	void setNDirectionsPerVoxel(unsigned int n_dir);
+	Eigen::RowVector2d getCapabilityMapSize();
+	void setActiveSide(Side side);
+	void setActiveSide(std::string side);
+	void drawCapabilityMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
+	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
+	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
+	void drawOccupancyMap(bot_lcmgl_t* lcmgl, unsigned int capability_map_voxel, unsigned int orient, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
+private:
+	unsigned int n_voxels;
+	unsigned int n_directions_per_voxel;
+	unsigned int n_voxels_per_edge;
+	MapCentre map_centre;
+	EndEffectorLink endeffector_link;
+	Eigen::Vector3d endeffector_axis;
+	Eigen::Matrix<double, 7, 1> endeffector_pose;
+	std::string base_link;
+	unsigned int n_joints;
+	Eigen::VectorXd nominal_configuration;
+	Eigen::SparseMatrix<bool> map;
+	Eigen::VectorXd reachability_index;
+	double voxel_edge;
+	double angular_tolerance;
+	double position_tolerance;
+	Eigen::Vector3d map_lower_bound;
+	Eigen::Vector3d map_upper_bound;
+	unsigned int n_occupancy_voxels;
+	unsigned int n_occupancy_orient;
+	std::vector<std::vector<std::vector<unsigned int>>> occupancy_map;
+	double occupancy_map_resolution;
+	Eigen::Vector3d occupancy_map_lower_bound;
+	Eigen::Vector3d occupancy_map_upper_bound;
+	Eigen::Vector3i occupancy_map_dimensions;
+	Orient occupancy_map_orient_steps;
+	RigidBodyTree rigid_body_tree;
+	Side active_side;
+	std::vector<Eigen::Vector3d> voxel_centres;
+	std::vector<unsigned int> active_voxels;
+	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
+	std::vector<Eigen::Vector3d> occupancy_map_orientations;
+
+	void activateVoxels(std::vector<int> idx);
+	void deactivateVoxels(std::vector<int> idx);
+	void resetActiveVoxels(bool include_zero_reachability = false);
+	void computeVoxelCentres(std::vector<Eigen::Vector3d> &centre_array, Eigen::Vector3d lower_bound, Eigen::Vector3d upper_bound, double resolution);
+	void setOccupancyMapOrientations();
+	void drawMap(bot_lcmgl_t *lcmgl, std::vector<unsigned int> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),
+			Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
+	void drawMapCubes(bot_lcmgl_t *lcmgl, Eigen::Vector3d lb, Eigen::Vector3d ub, double resolution,
+			Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0));
+};
+
+
+#endif
