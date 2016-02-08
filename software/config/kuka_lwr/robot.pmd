@@ -10,7 +10,7 @@ group "0.params_and_model_pub" {
     }
 
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/kuka_lwr.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/kuka_lwr/robot.cfg";
         host = "localhost";
     }
 }
@@ -65,7 +65,7 @@ group "4.mapping" {
 }
 
 cmd "director" {
-    exec = "director -lwr -c $DRC_BASE/software/config/kuka_lwr.cfg";
+    exec = "director -lwr -c $DRC_BASE/software/config/kuka_lwr/robot.cfg";
     host = "localhost";
 }
 
