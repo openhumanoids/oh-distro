@@ -15,7 +15,7 @@ public:
 	FinalPosePlanner();
 	int findFinalPose(RigidBodyTree &robot, std::string end_effector, std::string endeffector_side, Eigen::VectorXd start_configuration,
 			Eigen::VectorXd endeffector_final_pose, std::vector<RigidBodyConstraint> &additional_constraints, Eigen::VectorXd nominal_configuration,
-			CapabilityMap &capability_map, IKoptions ik_options, double min_distance = 0.005, Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0)); //todo: active collision options?
+			CapabilityMap &capability_map, std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, double min_distance = 0.005, Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0)); //todo: active collision options?
 	/*
 	 * findFinalPose finds a suitable final configuration for reaching a given end-effector pose.
 	 * @param robot   A RigidBodyTree. The manipulating robot.

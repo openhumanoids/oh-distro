@@ -1,6 +1,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <algorithm>
+#include <numeric>
 #include <math.h>
 #include <boost/range/irange.hpp>
 #include <boost/range/algorithm_ext/push_back.hpp>
@@ -312,10 +313,17 @@ void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cl
 {
 	this->deactivateVoxelsOutsideAngleRanges(sagittal_range, transverse_range, reset_active);
 	this->deactivateVoxelsOutsideBaseHeightRange(height_range);
+	Vector3d direction = quat2rotmat(this->endeffector_pose.block<4,1>(3,0)) * this->endeffector_axis;
+	this->deactivateVoxelsByDirection(direction, direction_threshold);
 }
 
 void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
 {
+	if (reset_active)
+	{
+		this->resetActiveVoxels();
+		this->resetActiveOrientations();
+	}
 	vector<int> voxels_to_deactivate;
 	for (int vox : this->active_voxels)
 	{
@@ -360,6 +368,98 @@ void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range
 			this->active_voxels.erase(remove(this->active_voxels.begin(), this->active_voxels.end(), vox), this->active_voxels.end());
 		}
 	}
+}
+
+void CapabilityMap::deactivateVoxelsByDirection(Vector3d direction, double direction_threshold, bool reset_active)
+{
+	if (reset_active)
+	{
+		this->resetActiveVoxels();
+		this->resetActiveOrientations();
+	}
+	vector<unsigned int> voxels_to_keep;
+	for (Vector3d orient : this->occupancy_map_orientations)
+	{
+		boost::push_back(voxels_to_keep, this->findVoxelsFromDirection(rpy2rotmat(orient).transpose()*direction, direction_threshold));
+	}
+	vector<int> voxels_to_deactivate;
+	for (unsigned int vox : this->active_voxels)
+	{
+		if (find(voxels_to_keep.begin(), voxels_to_keep.end(), vox) == voxels_to_keep.end())
+		{
+			voxels_to_deactivate.push_back(vox);
+		}
+	}
+	this->deactivateVoxels(voxels_to_deactivate);
+}
+
+vector<unsigned int> CapabilityMap::findVoxelsFromDirection(Vector3d direction, double threshold, bool active_set_only)
+{
+	vector<unsigned int> voxels;
+	vector<unsigned int> voxel_set;
+	vector<unsigned int> points = this->findPointsFromDirection(direction, threshold);
+	if (active_set_only)
+	{
+		voxel_set = this->active_voxels;
+	}
+	else
+	{
+		voxel_set.resize(this->n_voxels);
+		iota(voxel_set.begin(), voxel_set.end(), 0);
+	}
+	for (unsigned int vox : voxel_set)
+	{
+		for (unsigned int point : points)
+		{
+			if (this->map.coeffRef(vox, point))
+			{
+				voxels.push_back(vox);
+				break;
+			}
+		}
+	}
+	return voxels;
+}
+
+vector<unsigned int> CapabilityMap::findPointsFromDirection(Vector3d direction, double threshold)
+{
+	vector<Vector3d> sphere_points = this->distributePointsOnSphere();
+	direction = direction / direction.norm();
+	if (this->active_side == Side::RIGHT)
+	{
+		direction(1) = -direction(1);
+	}
+	vector<unsigned int> points;
+	for (int idx = 0; idx < this->n_directions_per_voxel; idx++)
+	{
+		if (acos(sphere_points[idx].dot(direction)) <= threshold)
+		{
+			points.push_back(idx);
+		}
+	}
+	return points;
+}
+
+vector<Vector3d> CapabilityMap::distributePointsOnSphere()
+{
+	vector<double> h, theta, phi;
+	vector<Vector3d> points;
+	for (int k = 1; k <= this->n_directions_per_voxel; k++)
+	{
+		h.push_back(-1 + 2.*(k-1)/(this->n_directions_per_voxel - 1));
+		theta.push_back(acos(h.back()));
+	}
+	phi.push_back(0);
+	for (int i = 1; i < this->n_directions_per_voxel-1; i++)
+	{
+		phi.push_back(fmod(phi[i-1] + 3.6/(sqrt(this->n_directions_per_voxel) * sqrt(1 - pow(h[i], 2))), 2*M_PI));
+	}
+	phi.push_back(0);
+	for (int i = 0; i < this->n_directions_per_voxel; i++)
+	{
+		points.push_back(Vector3d(cos(phi[i]) * sin(theta[i]), sin(phi[i]) * sin(theta[i]), cos(theta[i])));
+	}
+	return points;
 }
 
 void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, Vector3d lower_bound, Vector3d upper_bound, double resolution)

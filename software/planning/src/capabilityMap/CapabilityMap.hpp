@@ -106,6 +106,10 @@ private:
 	void resetActiveOrientations();
 	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active = false);
 	void deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active = false);
+	void deactivateVoxelsByDirection(Eigen::Vector3d direction, double direction_threshold, bool reset_active = false);
+	std::vector<unsigned int> findVoxelsFromDirection(Eigen::Vector3d direction, double threshold, bool active_set_only = true);
+	std::vector<unsigned int> findPointsFromDirection(Eigen::Vector3d direction, double threshold);
+	std::vector<Eigen::Vector3d> distributePointsOnSphere();
 	void computeVoxelCentres(std::vector<Eigen::Vector3d> &centre_array, Eigen::Vector3d lower_bound, Eigen::Vector3d upper_bound, double resolution);
 	void setOccupancyMapOrientations();
 	void drawMap(bot_lcmgl_t *lcmgl, std::vector<unsigned int> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),

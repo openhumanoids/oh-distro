@@ -14,7 +14,7 @@ FinalPosePlanner::FinalPosePlanner()
 
 int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, string endeffector_side, VectorXd start_configuration,
 		VectorXd endeffector_final_pose, vector<RigidBodyConstraint> &additional_constraints, VectorXd nominal_configuration,
-		CapabilityMap &capability_map, IKoptions ik_options, double min_distance, Vector3d endeffector_point)
+		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, double min_distance, Vector3d endeffector_point)
 {
 //	INPUT CHECKS
 	auto end_effector_id = find_if(robot.bodies.begin(), robot.bodies.end(), [end_effector](shared_ptr<RigidBody>& body){return body->linkname == end_effector;});
@@ -25,8 +25,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	}
 	if (this->checkConfiguration(robot, start_configuration, "start_configuration") != 0) {return 12;};
 	if (endeffector_final_pose.rows() == 6)
+	{
 		endeffector_final_pose.conservativeResize(7);
 		endeffector_final_pose.block(3,0,4,1) << rpy2quat(endeffector_final_pose.block<3,1>(3,0));
+	}
 	if (endeffector_final_pose.rows() != 7)
 	{
 		cout << "ERROR: FinalPosePlanner::endeffector_final_pose must be (6x1) or (7x1). Got (" << endeffector_final_pose.size() << "x1)" << endl;
@@ -36,8 +38,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
-	vector<Vector3d> point_cloud;
-	point_cloud.push_back(Vector3d(0,0,0));
 	capability_map.reduceActiveSet(true, point_cloud);
 
 	return 0;

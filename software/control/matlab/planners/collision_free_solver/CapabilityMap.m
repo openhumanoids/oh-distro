@@ -404,7 +404,7 @@
       obj = obj.deactivateVoxelsOutsideSagittalRange(sagittal_range);
       obj = obj.deactivateVoxelsOutsideBaseHeightRange(height_range);
       direction = quat2rotmat(obj.EE_pose(4:7)) * obj.end_effector_axis;
-      obj = obj.deactivateVoxelsByDirection(direction, direction_threshold, true);
+      obj = obj.deactivateVoxelsByDirection(direction, direction_threshold);
       
 %       collidingTimer = tic;
       obj = obj.deactivateCollidingVoxels(point_cloud);

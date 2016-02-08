@@ -31,18 +31,21 @@ int main()
 
 	VectorXd endeffector_final_pose;
 	endeffector_final_pose.resize(7);
-	endeffector_final_pose << 0.8000, 0, 1.0625 ,0.7071 ,0 ,0 ,0.7071;
+	endeffector_final_pose << 0.8000, 0, 1.0625 ,0.7071 ,0 ,0 ,-0.7071;
 
 	VectorXd nominal_configuration;
 	nominal_configuration.resize(robot.num_positions);
 	nominal_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
-	fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, IKoptions(&robot));
-	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
-	cm.drawActiveMap(lcmgl);
+	vector<Vector3d> point_cloud;
+	point_cloud.push_back(Vector3d(0,0,0));
 
 	cm.setActiveSide("left");
+
+	fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot));
+	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
+	cm.drawActiveMap(lcmgl, Vector3d(0,0,0), Vector3d(0,0,0), false);
 
 //	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
 //	cm.drawOccupancyMap(lcmglOM, 4999, 1);
