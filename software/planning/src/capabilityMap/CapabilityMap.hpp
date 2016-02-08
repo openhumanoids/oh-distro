@@ -68,7 +68,9 @@ private:
 	unsigned int n_voxels;
 	unsigned int n_directions_per_voxel;
 	unsigned int n_voxels_per_edge;
-	MapCentre map_centre;
+	Eigen::Vector3d map_centre;
+	Eigen::Vector3d map_centre_left;
+	Eigen::Vector3d map_centre_right;
 	EndEffectorLink endeffector_link;
 	Eigen::Vector3d endeffector_axis;
 	Eigen::Matrix<double, 7, 1> endeffector_pose;
@@ -94,13 +96,16 @@ private:
 	Side active_side;
 	std::vector<Eigen::Vector3d> voxel_centres;
 	std::vector<unsigned int> active_voxels;
+	std::vector<std::vector<unsigned int>> active_orientations;
 	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
 	void resetActiveVoxels(bool include_zero_reachability = false);
+	void resetActiveOrientations();
 	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active = false);
+	void deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active = false);
 	void computeVoxelCentres(std::vector<Eigen::Vector3d> &centre_array, Eigen::Vector3d lower_bound, Eigen::Vector3d upper_bound, double resolution);
 	void setOccupancyMapOrientations();
 	void drawMap(bot_lcmgl_t *lcmgl, std::vector<unsigned int> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),

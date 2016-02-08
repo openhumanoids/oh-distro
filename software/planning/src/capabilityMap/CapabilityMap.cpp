@@ -44,10 +44,10 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 	{
 		std::cout << "Loading data from" << map_file << '\n';
 
-		inputFile.read((char *) this->map_centre.left.data(), sizeof(this->map_centre.left));
-		std::cout << "Loaded map_centre.left: " << this->map_centre.left[0] << ";"  << this->map_centre.left[1] << ";"  << this->map_centre.left[2] << '\n';
-		inputFile.read((char *) this->map_centre.right.data(), sizeof(this->map_centre.right));
-		std::cout << "Loaded map_centre.right: " << this->map_centre.right[0] << ";" << this->map_centre.right[1] << ";"  << this->map_centre.right[2] << '\n';
+		inputFile.read((char *) this->map_centre_left.data(), sizeof(this->map_centre_left));
+		std::cout << "Loaded map_centre_left: " << this->map_centre_left[0] << ";"  << this->map_centre_left[1] << ";"  << this->map_centre_left[2] << '\n';
+		inputFile.read((char *) this->map_centre_right.data(), sizeof(this->map_centre_right));
+		std::cout << "Loaded map_centre_right: " << this->map_centre_right[0] << ";" << this->map_centre_right[1] << ";"  << this->map_centre_right[2] << '\n';
 
 		inputFile.read((char *) &string_length, sizeof(unsigned int));
 		char *ee_link_left_str = new char[string_length];
@@ -144,6 +144,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			inputFile.read((char *) &this->n_occupancy_orient, sizeof(unsigned int));
 			std::cout << "Loaded n_occupancy_orient: " << this->n_occupancy_orient << endl;
 			this->occupancy_map.resize(this->n_occupancy_voxels);
+			this->active_orientations.resize(this->n_voxels);
 			unsigned int n_colliding_orient;
 			unsigned int n_colliding_voxels;
 			unsigned int colliding_orient;
@@ -198,6 +199,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			std::cout << "Loaded occupancy_map_orient_steps.yaw (" << this->occupancy_map_orient_steps.yaw.rows() << ")\n";
 
 			this->setOccupancyMapOrientations();
+			this->resetActiveOrientations();
 			this->computeVoxelCentres(this->occupancy_voxel_centres, this->occupancy_map_lower_bound, this->occupancy_map_upper_bound, this->occupancy_map_resolution);
 		}
 		else
@@ -296,18 +298,24 @@ void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
 	this->activateVoxels(idx);
 }
 
+void CapabilityMap::resetActiveOrientations()
+{
+	for (int vox : this->active_voxels)
+	{
+		this->active_orientations[vox].clear();
+		boost::push_back(this->active_orientations[vox], boost::irange(0, (int)this->n_occupancy_orient));
+	}
+}
+
 void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cloud, Vector2d sagittal_range, Vector2d transverse_range,
 		Vector2d height_range, double direction_threshold)
 {
 	this->deactivateVoxelsOutsideAngleRanges(sagittal_range, transverse_range, reset_active);
+	this->deactivateVoxelsOutsideBaseHeightRange(height_range);
 }
 
 void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
 {
-	if (reset_active)
-	{
-		this->resetActiveVoxels();
-	}
 	vector<int> voxels_to_deactivate;
 	for (int vox : this->active_voxels)
 	{
@@ -323,6 +331,34 @@ void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_
 	if (voxels_to_deactivate.size() > 0)
 	{
 		this->deactivateVoxels(voxels_to_deactivate);
+	}
+}
+
+void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active)
+{
+	Vector3d position;
+	vector<unsigned int> active_voxels = this->active_voxels;
+	vector<unsigned int> active_orients;
+	if (reset_active)
+	{
+		this->resetActiveVoxels();
+		this->resetActiveOrientations();
+	}
+	for (int vox : active_voxels)
+	{
+		active_orients = this->active_orientations[vox];
+		for (int orient : active_orients)
+		{
+			position = rpy2rotmat(this->occupancy_map_orientations[orient]) * (this->voxel_centres[vox] + this->endeffector_pose.block<3,1>(0,0) - this->map_centre);
+			if (position(2) < range(0) || position(2) > range(1))
+			{
+				this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient), this->active_orientations[vox].end());
+			}
+		}
+		if (this->active_orientations[vox].size() == 0)
+		{
+			this->active_voxels.erase(remove(this->active_voxels.begin(), this->active_voxels.end(), vox), this->active_voxels.end());
+		}
 	}
 }
 
@@ -363,20 +399,25 @@ void CapabilityMap::setOccupancyMapOrientations()
 
 void CapabilityMap::setActiveSide(Side side)
 {
-	if (this->active_side != side)
+	this->active_side = side;
+	if (side == this->Side::LEFT)
 	{
-		this->active_side = side;
+		this->map_centre = this->map_centre_left;
+	}
+	else
+	{
+		this->map_centre = this->map_centre_right;
 	}
 }
 
 void CapabilityMap::setActiveSide(string side_str)
 {
 	Side side = this->active_side;
-	if (boost::iequals(side_str, "right"))
+	if (boost::iequals(side_str, "left"))
 	{
 		side = Side::LEFT;
 	}
-	else if (boost::iequals(side_str, "left"))
+	else if (boost::iequals(side_str, "right"))
 	{
 		side = Side::RIGHT;
 	}
