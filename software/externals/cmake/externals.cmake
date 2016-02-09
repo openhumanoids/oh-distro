@@ -57,8 +57,8 @@ if(NOT USE_SYSTEM_PCL)
     )
 endif()
 
-set(octomap_url https://github.com/OctoMap/octomap.git)
-set(octomap_revision 5ba840e58a35e2d14c40d0af807da879a1a2fd83)
+set(octomap_url https://github.com/patmarion/octomap.git)
+set(octomap_revision 57d2db5e5024fd2697f98177d6902f23dc27968e)
 set(octomap_depends)
 set(octomap_external_args
   CMAKE_CACHE_ARGS
