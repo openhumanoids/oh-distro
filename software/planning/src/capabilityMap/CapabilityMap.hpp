@@ -57,8 +57,8 @@ public:
 	Eigen::RowVector2d getCapabilityMapSize();
 	void setActiveSide(Side side);
 	void setActiveSide(std::string side);
-	void drawCapabilityMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
-	void drawActiveMap(bot_lcmgl_t* lcmgl, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
+	void drawCapabilityMap(bot_lcmgl_t* lcmgl, int orient = 0, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
+	void drawActiveMap(bot_lcmgl_t* lcmgl, int orient = 0, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
 	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
 	void drawOccupancyMap(bot_lcmgl_t* lcmgl, unsigned int capability_map_voxel, unsigned int orient, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
 	void reduceActiveSet(bool reset_active, std::vector<Eigen::Vector3d> point_cloud, Eigen::Vector2d sagittal_range = Eigen::Vector2d(-M_PI/3, M_PI/3),
@@ -86,7 +86,7 @@ private:
 	Eigen::Vector3d map_upper_bound;
 	unsigned int n_occupancy_voxels;
 	unsigned int n_occupancy_orient;
-	std::vector<std::vector<std::vector<unsigned int>>> occupancy_map;
+	std::vector<std::vector<std::vector<unsigned int>>> occupancy_map; // n_OM_voxels * n_orient * CM_voxels(variable)
 	double occupancy_map_resolution;
 	Eigen::Vector3d occupancy_map_lower_bound;
 	Eigen::Vector3d occupancy_map_upper_bound;
@@ -96,7 +96,7 @@ private:
 	Side active_side;
 	std::vector<Eigen::Vector3d> voxel_centres;
 	std::vector<unsigned int> active_voxels;
-	std::vector<std::vector<unsigned int>> active_orientations;
+	std::vector<std::vector<unsigned int>> active_orientations; // n_CM_voxels * n_active_orientations(variable)
 	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
 
@@ -107,6 +107,7 @@ private:
 	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active = false);
 	void deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active = false);
 	void deactivateVoxelsByDirection(Eigen::Vector3d direction, double direction_threshold, bool reset_active = false);
+	void deactivateCollidingVoxels(std::vector<Eigen::Vector3d> point_cloud, bool reset_active = false);
 	std::vector<unsigned int> findVoxelsFromDirection(Eigen::Vector3d direction, double threshold, bool active_set_only = true);
 	std::vector<unsigned int> findPointsFromDirection(Eigen::Vector3d direction, double threshold);
 	std::vector<Eigen::Vector3d> distributePointsOnSphere();

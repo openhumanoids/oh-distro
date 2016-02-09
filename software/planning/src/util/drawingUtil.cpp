@@ -1,3 +1,4 @@
+#include <iostream>
 #include "drawingUtil.hpp"
 
 using namespace Eigen;
@@ -69,4 +70,17 @@ void HSVtoRGB( float &r, float &g, float &b, float h, float s, float v )
 			break;
 	}
 
+}
+
+void drawPointCloud(bot_lcmgl_t *lcmgl, std::vector<Vector3d> point_cloud)
+{
+	bot_lcmgl_point_size(lcmgl, 5);
+	bot_lcmgl_color3f(lcmgl, .5, .5, .5);
+	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+	for (Vector3d point : point_cloud)
+	{
+		bot_lcmgl_vertex3d(lcmgl, point(0), point(1), point(2));
+	}
+	bot_lcmgl_end(lcmgl);
+	bot_lcmgl_switch_buffer(lcmgl);
 }

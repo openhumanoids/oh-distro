@@ -1,10 +1,12 @@
 #include <iostream>
+#include <fstream>
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <Eigen/Dense>
 
 #include "capabilityMap/CapabilityMap.hpp"
 #include "finalPosePlanner/FinalPosePlanner.hpp"
+#include "drawingUtil/drawingUtil.hpp"
 #include "bot_lcmgl_client/lcmgl.h"
 
 using namespace std;
@@ -38,17 +40,38 @@ int main()
 	nominal_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
-	vector<Vector3d> point_cloud;
-	point_cloud.push_back(Vector3d(0,0,0));
+	string point_cloud_file = "/home/marco/drc-testing-data/final_pose_planner/scene1.bin";
 
-	cm.setActiveSide("left");
+	ifstream inputFile(point_cloud_file.c_str(), ifstream::binary);
 
-	fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot));
-	bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
-	cm.drawActiveMap(lcmgl, Vector3d(0,0,0), Vector3d(0,0,0), false);
+	if (!inputFile.is_open())
+	{
+		std::cout << "Failed to open " << point_cloud_file.c_str() << '\n';
+	}
+	else
+	{
+		vector<Vector3d> point_cloud;
+		unsigned int n_points;
+		inputFile.read((char *) &n_points, sizeof(unsigned int));
+		point_cloud.resize(n_points);
+		for (int point = 0; point < n_points; point++)
+		{
+			inputFile.read((char *) point_cloud[point].data(), 3* sizeof(Vector3d::Scalar));
+		}
+		inputFile.close();
 
-//	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
-//	cm.drawOccupancyMap(lcmglOM, 4999, 1);
+		bot_lcmgl_t* lcmgl_pc = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Point Cloud");
+		drawPointCloud(lcmgl_pc, point_cloud);
+
+		cm.setActiveSide("left");
+
+		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot));
+		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
+		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
+	}
+
+	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
+	cm.drawOccupancyMap(lcmglOM, 16001, 52);
 
 	return 0;
 }
