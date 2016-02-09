@@ -33,7 +33,7 @@ group "2.state_without_pronto" {
 
 group "2.state_with_pronto" {
     cmd "state-sync" {
-        exec = "drc-state-sync-atlas -a 5";
+        exec = "se-state-sync-simple";
         host = "localhost";
     }
     cmd "joints2frames_with" {
