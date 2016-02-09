@@ -33,7 +33,7 @@ if sparsePlot:
 
 
 
-addPlot(timeWindow=30, yLimits=[-200, 800])
+addPlot(timeWindow=10, yLimits=[-50,50])
 # addSignals('RESIDUAL_OBSERVER_STATE', msg.utime, msg.residual, joints, keyLookup=names)
 # addSignals('RESIDUAL_OBSERVER_STATE_W_FOOT_FORCE', msg.utime, msg.residual, joints, keyLookup=names)
 addSignals('RESIDUAL_OBSERVER_STATE_W_FOOT_FT', msg.utime, msg.residual, joints, keyLookup=names)
@@ -42,16 +42,30 @@ addSignals('RESIDUAL_OBSERVER_STATE_W_FOOT_FT', msg.utime, msg.residual, joints,
 #     channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
 #     addSignals(channel, msg.utime, msg.implied_residual, joints_w_dot, keyLookup=vel_names)
 
-addPlot(timeWindow=30, yLimits=[-50,50])
-for ext in channel_extensions:
-    channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
-    addSignal(channel, msg.utime, msg.logLikelihood)
+
+addPlot(timeWindow=10, yLimits=[-2,10])
+addSignal('CONTACT_FILTER_POINT_ESTIMATE', msg.utime, msg.logLikelihood, label="squared error")
 
 
-addPlot(timeWindow=30, yLimits=[-10,100])
-for ext in channel_extensions:
-    channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
-    addSignal(channel, msg.utime, msg.contact_force_magnitude)
+
+
+
+addPlot(timeWindow=10, yLimits=[0, 4])
+addSignal('CONTACT_FILTER_POINT_ESTIMATE', msg.utime, msg.num_contact_points, label="num contact points")
+
+
+
+
+# addPlot(timeWindow=30, yLimits=[-50,50])
+# for ext in channel_extensions:
+#     channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
+#     addSignal(channel, msg.utime, msg.logLikelihood)
+
+
+# addPlot(timeWindow=30, yLimits=[-10,100])
+# for ext in channel_extensions:
+#     channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
+#     addSignal(channel, msg.utime, msg.contact_force_magnitude)
 
 # gravity vs. torque, should be equal, something is funky if they are not
 # addPlot(timeWindow=30, yLimits=[-50, 50])
