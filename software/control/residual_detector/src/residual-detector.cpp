@@ -1,7 +1,7 @@
 #include "residual-detector.hpp"
 #include <model-client/model-client.hpp>
 
-#define RESIDUAL_GAIN 10.0;
+#define RESIDUAL_GAIN 100.0;
 #define PUBLISH_CHANNEL "RESIDUAL_OBSERVER_STATE"
 using namespace Eigen;
 
@@ -676,8 +676,8 @@ int main( int argc, char* argv[]){
   bool runQPTest = false;
   bool isVerbose = false;
   bool runDetectorLoop = true;
-  bool runContactFilterLoop = true;
-  bool runContactFilterActiveLinkLoop = true;
+  bool runContactFilterLoop = false;
+  bool runContactFilterActiveLinkLoop = false;
   bool runCSVTest = false;
   std::string urdfFilename = "";
   std::string filename = "directorDense.csv";
