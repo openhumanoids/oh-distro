@@ -12,5 +12,5 @@
 	<node pkg="robot_state_publisher" type="robot_state_publisher" name="valkyrie_rob_st_pub" ></node>
 
 	<!-- rviz -->
-	<node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find drc_translators)/resources/valkyrie_rviz_tf.rviz" output="screen"></node>
+	<node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" args="-d $(find oh_translators)/resources/valkyrie_rviz_tf.rviz" output="screen"></node>
 </launch>
