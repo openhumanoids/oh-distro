@@ -338,21 +338,24 @@ ISSUE: make in externals failed:
 
 * REASON: A submodule has been updated
 * RESOLUTION:
+
   * retry (make -j 1) and see which module failed
   * remove the relevent module from pod build: pod-build/src/[module] and pod-build/tmp/[module]
   * continue making externals
 
 ISSUE: drc_lcmtypes fails to build showing something like:
-- .../oh-distro/software/drc_lcmtypes/lcmtypes/drc_robot_command_t.lcm: No such file or directory
-- make[3]: *** [CMakeFiles/lcmgen_c] Error 255
-- REASON: An LCM type has been removed or added.
-- RESOLUTION:
- - make clean in drc_lcmtypes and then continue
+
+* .../oh-distro/software/drc_lcmtypes/lcmtypes/drc_robot_command_t.lcm: No such file or directory
+* make[3]: *** [CMakeFiles/lcmgen_c] Error 255
+* REASON: An LCM type has been removed or added.
+* RESOLUTION:
+
+  * make clean in drc_lcmtypes and then continue
 
 ISSUE: drake won't build. 
-- REASON: Drake is specially configured to build with Open Humanoids 
-- never make in software/drake, always make in software/drake/drake/
-- RESOLUTION: Make a clean build of drake:
+* REASON: Drake is specially configured to build with Open Humanoids 
+* never make in software/drake, always make in software/drake/drake/
+* RESOLUTION: Make a clean build of drake:
 
 ::
 
