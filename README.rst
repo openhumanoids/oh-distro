@@ -335,6 +335,7 @@ These options are disabled by default on purpose. Then, to make use of the syste
 Build FAQ
 =========
 ISSUE: make in externals failed:
+
 * REASON: A submodule has been updated
 * RESOLUTION:
   * retry (make -j 1) and see which module failed
