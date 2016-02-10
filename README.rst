@@ -335,11 +335,11 @@ These options are disabled by default on purpose. Then, to make use of the syste
 Build FAQ
 =========
 ISSUE: make in externals failed:
-- REASON: A submodule has been updated
-- RESOLUTION:
- - retry (make -j 1) and see which module failed
- - remove the relevent module from pod build: pod-build/src/[module] and pod-build/tmp/[module]
- - continue making externals
+* REASON: A submodule has been updated
+* RESOLUTION:
+  * retry (make -j 1) and see which module failed
+  * remove the relevent module from pod build: pod-build/src/[module] and pod-build/tmp/[module]
+  * continue making externals
 
 ISSUE: drc_lcmtypes fails to build showing something like:
 - .../oh-distro/software/drc_lcmtypes/lcmtypes/drc_robot_command_t.lcm: No such file or directory
