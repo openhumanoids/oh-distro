@@ -262,22 +262,6 @@ If you are a member of the OpenHumanoids organization, run make to build externa
     cd ..
     make -j
 
-** Compiling drake
-
-Whenever making drake build it from software/drake/drake. NEVER do make in software/drake!!!
-But if you did it these are the steps for a clean build of drake:
-
-::
-
-    cd <path-to>/oh-distro/software
-    rm drake
-    cd externals
-    rm pod-build/src/drake-cmake-* pod-build/tmp/drake-cmake-* -Rf
-    git submodule update --init --recursive
-    cd externals
-    make -j 1
-    cd software/drake/drake
-    make -j
 
 Instructions for GUROBI
 -----------------------
@@ -347,3 +331,36 @@ These options are disabled by default on purpose. Then, to make use of the syste
     cd software/externals
     mkdir pod-build && cd pod-build
     cmake .. -DUSE_SYSTEM_PCL:BOOL=ON -DUSE_SYSTEM_OPENCV:BOOL=ON
+
+Build FAQ
+=========
+ISSUE: make in externals failed:
+- REASON: A submodule has been updated
+- RESOLUTION:
+ - retry (make -j 1) and see which module failed
+ - remove the relevent module from pod build: pod-build/src/[module] and pod-build/tmp/[module]
+ - continue making externals
+
+ISSUE: drc_lcmtypes fails to build showing something like:
+- .../oh-distro/software/drc_lcmtypes/lcmtypes/drc_robot_command_t.lcm: No such file or directory
+- make[3]: *** [CMakeFiles/lcmgen_c] Error 255
+- REASON: An LCM type has been removed or added.
+- RESOLUTION:
+ - make clean in drc_lcmtypes and then continue
+
+ISSUE: drake won't build. 
+- REASON: Drake is specially configured to build with Open Humanoids 
+- never make in software/drake, always make in software/drake/drake/
+- RESOLUTION: Make a clean build of drake:
+
+::
+
+    cd <path-to>/oh-distro/software
+    rm drake
+    cd externals
+    rm pod-build/src/drake-cmake-* pod-build/tmp/drake-cmake-* -Rf
+    git submodule update --init --recursive
+    cd externals
+    make -j 1
+    cd software/drake/drake
+    make -j
