@@ -332,15 +332,15 @@ These options are disabled by default on purpose. Then, to make use of the syste
     mkdir pod-build && cd pod-build
     cmake .. -DUSE_SYSTEM_PCL:BOOL=ON -DUSE_SYSTEM_OPENCV:BOOL=ON
 
-Build FAQ
-=========
+Build Issues FAQ
+================
 ISSUE: make in externals failed:
 
 * REASON: A submodule has been updated
 * RESOLUTION:
 
   * retry (make -j 1) and see which module failed
-  * remove the relevent module from pod build: pod-build/src/[module] and pod-build/tmp/[module]
+  * remove the relevent module from pod build: rm pod-build/src/[module] pod-build/tmp/[module]
   * continue making externals
 
 ISSUE: drc_lcmtypes fails to build showing something like:
@@ -353,6 +353,7 @@ ISSUE: drc_lcmtypes fails to build showing something like:
   * make clean in drc_lcmtypes and then continue
 
 ISSUE: drake won't build. 
+
 * REASON: Drake is specially configured to build with Open Humanoids 
 * never make in software/drake, always make in software/drake/drake/
 * RESOLUTION: Make a clean build of drake:
