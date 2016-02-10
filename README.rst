@@ -354,8 +354,7 @@ ISSUE: drc_lcmtypes fails to build showing something like:
 
 ISSUE: drake won't build. 
 
-* REASON: Drake is specially configured to build with Open Humanoids 
-* never make in software/drake, always make in software/drake/drake/
+* REASON: Drake is specially configured to build with Open Humanoids. Never make in software/drake, always make in software/drake/drake/
 * RESOLUTION: Make a clean build of drake:
 
 ::
