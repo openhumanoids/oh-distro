@@ -507,43 +507,51 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
   vel_msg.orientation[3] =  vr_x.z();  
   bot_core_pose_t_publish(publish_lcm, "POSE_VELOCITY", &vel_msg);  
   
-  vs_obj_collection_t objs_ps;
+  vs_object_collection_t objs_ps;
   objs_ps.id = 4002; 
   objs_ps.name = (char*)"Particles";
-  objs_ps.type = VS_OBJ_COLLECTION_T_AXIS3D ;//1; // a pose
+  objs_ps.type = VS_OBJECT_COLLECTION_T_AXIS3D ;//1; // a pose
   objs_ps.reset = true; // true will delete them from the viewer, false leaves nice trails
-  objs_ps.nobjs = N_p;
-  vs_obj_t poses_ps[objs_ps.nobjs];
+  objs_ps.nobjects = N_p;
+  vs_object_t poses_ps[objs_ps.nobjects];
   for (int i=0;i<N_p;i++){
     pf_state particle_state;
     particle_state =particleset[i].GetState();
     Eigen::Vector3d t(particle_state.pose.translation());
     Eigen::Quaterniond r(particle_state.pose.rotation());
-    quat_to_euler(r, poses_ps[i].roll, poses_ps[i].pitch, poses_ps[i].yaw) ;
+
+    poses_ps[i].qw = r.w();
+    poses_ps[i].qx = r.x();
+    poses_ps[i].qy = r.y();
+    poses_ps[i].qz = r.z();
+
     poses_ps[i].id = time_stamp + i;
     poses_ps[i].x = t[0];
     poses_ps[i].y = t[1];
     poses_ps[i].z = t[2];
   }
-  objs_ps.objs = poses_ps;
-  vs_obj_collection_t_publish(publish_lcm, "OBJ_COLLECTION", &objs_ps);   
+  objs_ps.objects = poses_ps;
+  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs_ps);   
   
-  vs_obj_collection_t objs;
+  vs_object_collection_t objs;
   objs.id = 4008; 
   objs.name = (char*)"Mean Estimate"; 
-  objs.type = VS_OBJ_COLLECTION_T_POSE3D; // a pose 3d
+  objs.type = VS_OBJECT_COLLECTION_T_POSE3D; // a pose 3d
   objs.reset = true; // true will delete them from the viewer
-  objs.nobjs = 1;
-  vs_obj_t poses[objs.nobjs];
+  objs.nobjects = 1;
+  vs_object_t poses[objs.nobjects];
   poses[0].id = time_stamp;
   Eigen::Vector3d t(mean_state.pose.translation());
   Eigen::Quaterniond r(mean_state.pose.rotation());
   poses[0].x = t[0];
   poses[0].y = t[1];
   poses[0].z = t[2];
-  quat_to_euler(r, poses[0].roll, poses[0].pitch, poses[0].yaw) ;
-  objs.objs = poses;
-  vs_obj_collection_t_publish(publish_lcm, "OBJ_COLLECTION", &objs);  
+  poses[0].qw = r.w();
+  poses[0].qx = r.x();
+  poses[0].qy = r.y();
+  poses[0].qz = r.z();
+  objs.objects = poses;
+  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs);  
   
   // Mean  with a temporary fix for the wrapping of the headding in 2D
   pf_state mean_state_wrap;
@@ -555,9 +563,12 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
   poses[0].x = tw[0];
   poses[0].y = tw[1];
   poses[0].z = tw[2];
-  quat_to_euler(rw, poses[0].roll, poses[0].pitch, poses[0].yaw) ;
-  objs.objs = poses;
-  vs_obj_collection_t_publish(publish_lcm, "OBJ_COLLECTION", &objs);    
+  poses[0].qw = rw.w();
+  poses[0].qx = rw.x();
+  poses[0].qy = rw.y();
+  poses[0].qz = rw.z();
+  objs.objects = poses;
+  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs);    
   
   particle_pf_cloud_t pc;
   pc.utime = time_stamp; 
@@ -583,22 +594,26 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
   // Highest Weight Particle:
   pf_state max_particle;
   max_particle = MaxWeight();
-  vs_obj_collection_t objs2;
+  vs_object_collection_t objs2;
   objs2.id = 4010; 
   objs2.name = (char*)"Best Estimate"; 
-  objs2.type =VS_OBJ_COLLECTION_T_POSE3D;//VS_OBJ_COLLECTION_T_AXIS3D; // a pose
+  objs2.type =VS_OBJECT_COLLECTION_T_POSE3D;//VS_OBJECT_COLLECTION_T_AXIS3D; // a pose
   objs2.reset = true; // true will delete them from the viewer
-  objs2.nobjs = 1;
-  vs_obj_t poses2[objs2.nobjs];
+  objs2.nobjects = 1;
+  vs_object_t poses2[objs2.nobjects];
   poses2[0].id = time_stamp;
   Eigen::Vector3d t2(max_particle.pose.translation());
   Eigen::Quaterniond r2(max_particle.pose.rotation());
   poses2[0].x = t2[0];
   poses2[0].y = t2[1];
   poses2[0].z = t2[2];
-  quat_to_euler(r2, poses2[0].roll, poses2[0].pitch, poses2[0].yaw) ;
-  objs2.objs = poses2;
-  vs_obj_collection_t_publish(publish_lcm, "OBJ_COLLECTION", &objs2);        
+  poses2[0].qw = r2.w();
+  poses2[0].qx = r2.x();
+  poses2[0].qy = r2.y();
+  poses2[0].qz = r2.z();
+
+  objs2.objects = poses2;
+  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs2);        
   
 
 //   for (int i=0;i<N_p;i++){
