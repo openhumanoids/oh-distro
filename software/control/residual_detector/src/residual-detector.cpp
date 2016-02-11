@@ -677,7 +677,7 @@ int main( int argc, char* argv[]){
   bool isVerbose = false;
   bool runDetectorLoop = true;
   bool runContactFilterLoop = false;
-  bool runContactFilterActiveLinkLoop = false;
+  bool runContactFilterActiveLinkLoop = true;
   bool runCSVTest = false;
   std::string urdfFilename = "";
   std::string filename = "directorDense.csv";
