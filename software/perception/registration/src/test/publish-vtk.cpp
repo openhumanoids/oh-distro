@@ -56,6 +56,8 @@ main (int argc, char** argv)
   reader->Update ();
   vtkSmartPointer<vtkPolyData> polydata = reader->GetOutput ();
 
+  pcl::PointCloud<pcl::PointXYZRGB> cloud;
+  vtkPolyDataToPointCloud(polydata, cloud);
 
   drc::pointcloud_t msg;
   msg.utime =0;
