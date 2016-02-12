@@ -1,4 +1,3 @@
-#include <pcl/io/pcd_io.h>
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl/console/print.h>
 #include <pcl/console/parse.h>
@@ -8,43 +7,31 @@
 #include <lcm/lcm-cpp.hpp>
 
 using namespace pcl;
-using namespace pcl::io;
 using namespace pcl::console;
 
 void
 printHelp (int, char **argv)
 {
-  print_error ("Syntax is: %s input.vtk output.pcd [options]\n", argv[0]);
-  print_info ("where options are: \n");
-  print_info ("     -copy_normals 0/1 : set to true (1) or false (0) if the output PointCloud should contain normals or not.\n");
-}
-
-template <typename T> void
-saveCloud (const std::string &filename, const pcl::PointCloud<T> &cloud)
-{
-  print_highlight ("Saving "); print_value ("%s ", filename.c_str ()); 
-  PCDWriter w;
-  w.writeBinaryCompressed (filename, cloud);
+  print_error ("Syntax is: %s input.vtk\n", argv[0]);
 }
 
 /* ---[ */
 int
 main (int argc, char** argv)
 {
-  print_info ("Convert a VTK file to PCD format. For more information, use: %s -h\n", argv[0]);
+  print_info ("Publish a VTK file as a drc::pointcloud_t to LCM channel POINTCLOUD. For more information, use: %s -h\n", argv[0]);
 
-  if (argc < 3)
+  if (argc < 2)
   {
     printHelp (argc, argv);
     return (-1);
   }
 
-  // Parse the command line arguments for .pcd and .vtk files
-  std::vector<int> pcd_file_indices = parse_file_extension_argument (argc, argv, ".pcd");
+  // Parse the command line arguments for .vtk files
   std::vector<int> vtk_file_indices = parse_file_extension_argument (argc, argv, ".vtk");
-  if (pcd_file_indices.size () != 1 || vtk_file_indices.size () != 1)
+  if (vtk_file_indices.size () != 1)
   {
-    print_error ("Need one input VTK file and one output PCD file.\n");
+    print_error ("Need one input VTK file.\n");
     return (-1);
   }
 
@@ -56,8 +43,8 @@ main (int argc, char** argv)
   reader->Update ();
   vtkSmartPointer<vtkPolyData> polydata = reader->GetOutput ();
 
-  pcl::PointCloud<pcl::PointXYZRGB> cloud;
-  vtkPolyDataToPointCloud(polydata, cloud);
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+  pcl::io::vtkPolyDataToPointCloud(polydata, cloud);
 
   drc::pointcloud_t msg;
   msg.utime =0;
@@ -68,14 +55,18 @@ main (int argc, char** argv)
   for (size_t i = 0; i < cloud.points.size(); i++) {
     std::vector<float> point = { cloud.points[i].x, cloud.points[i].y, cloud.points[i].z};
     msg.points.push_back(point);
-    std::vector<float> channels = { };
-    msg.channels.push_back(channels);
+    // std::vector<float> channels = { };
+    // msg.channels.push_back(channels);
   }
   msg.n_points = msg.points.size();
   msg.n_channels = 0;
 
   boost::shared_ptr<lcm::LCM> lcm_pub;
   lcm_pub = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
+  if(!lcm_pub->good()){
+    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
+  }
+
   lcm_pub->publish("POINTCLOUD",&msg);
 
   std::cout << "Writing to lcm" << std::endl;
