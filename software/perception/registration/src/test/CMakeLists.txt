@@ -23,3 +23,17 @@ target_link_libraries(convert-vtk-to-color-octree  ${VTK_LIBRARIES})
 target_link_libraries(convert-vtk-to-color-octree icp-registration lcm pronto_math  
                         boost_system boost_thread)
 pods_install_executables(convert-vtk-to-color-octree)
+
+
+
+###############
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations -Wreturn-type -Wuninitialized -Wunused-variable ")
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
+add_executable(publish-vtk publish-vtk.cpp)
+pods_use_pkg_config_packages(publish-vtk path-util pcl_io-1.7
+     eigen3  )
+target_link_libraries(publish-vtk  ${VTK_LIBRARIES})
+target_link_libraries(publish-vtk lcm 
+                        boost_system boost_thread)
+pods_install_executables(publish-vtk)
