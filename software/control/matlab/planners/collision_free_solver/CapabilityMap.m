@@ -305,6 +305,7 @@
       else
         obj.active_voxels(idx) = false;
       end
+      obj.occupancy_map_active_orient(idx, :) = false(nnz(idx), obj.occupancy_map_n_orient);
       obj.n_active_voxels = nnz(obj.active_voxels);
     end
     
@@ -388,9 +389,11 @@
       if reset_active
         obj = obj.resetActiveVoxels();
       end
+      voxels_to_keep = false(size(obj.active_voxels));
       for o = 1:obj.occupancy_map_n_orient
-        obj.deactivateVoxels(~obj.findVoxelsFromDirection(rpy2rotmat(obj.occupancy_map_orient(:,o))' * direction, threshold, true));
+        voxels_to_keep = any([voxels_to_keep; obj.findVoxelsFromDirection(rpy2rotmat(obj.occupancy_map_orient(:,o))' * direction, threshold, true)]);
       end
+      obj = obj.deactivateVoxels(~voxels_to_keep);
     end
 
     function obj = reduceActiveSet(obj, reset_active,...
