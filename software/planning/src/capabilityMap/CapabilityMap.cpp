@@ -309,9 +309,9 @@ void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cl
 {
 	this->deactivateVoxelsOutsideAngleRanges(sagittal_range, transverse_range, reset_active);
 	this->deactivateVoxelsOutsideBaseHeightRange(height_range);
-//	Vector3d direction = quat2rotmat(this->endeffector_pose.block<4,1>(3,0)) * this->endeffector_axis;
-//	this->deactivateVoxelsByDirection(direction, direction_threshold);
-//	this->deactivateCollidingVoxels(point_cloud);
+	Vector3d direction = quat2rotmat(this->endeffector_pose.block<4,1>(3,0)) * this->endeffector_axis;
+	this->deactivateVoxelsByDirection(direction, direction_threshold);
+	this->deactivateCollidingVoxels(point_cloud);
 }
 
 void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
@@ -375,13 +375,8 @@ void CapabilityMap::deactivateVoxelsByDirection(Vector3d direction, double direc
 		this->resetActiveOrientations();
 	}
 	vector<unsigned int> voxels_to_keep;
-	int y = 0;
 	for (Vector3d orient : this->occupancy_map_orientations)
 	{
-//		cout << "orient " << ++y;// << endl << endl;
-//		for (int i :this->findVoxelsFromDirection(rpy2rotmat(orient).transpose()*direction, direction_threshold))
-//			{cout << i << endl;}
-//		cout << " size " << (this->findVoxelsFromDirection(rpy2rotmat(orient).transpose()*direction, direction_threshold)).size() << endl << endl;
 		for (int idx : this->findVoxelsFromDirection(rpy2rotmat(orient).transpose()*direction, direction_threshold))
 		{
 			if (find(voxels_to_keep.begin(), voxels_to_keep.end(), idx) == voxels_to_keep.end())
@@ -390,9 +385,6 @@ void CapabilityMap::deactivateVoxelsByDirection(Vector3d direction, double direc
 			}
 		}
 	}
-	sort(voxels_to_keep.begin(), voxels_to_keep.end());
-	for (int v : voxels_to_keep){cout << v <<endl;}
-	cout << endl << voxels_to_keep.size() << endl;
 	vector<int> voxels_to_deactivate;
 	for (unsigned int vox : this->active_voxels)
 	{
@@ -433,9 +425,6 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 			}
 		}
 	}
-//	sort(om_voxels.begin(), om_voxels.end());
-//	for (int i : om_voxels){cout << i << endl;}
-//	cout << om_voxels.size()<<endl;
 	for(int om_vox : om_voxels)
 	{
 		for (int orient = 0; orient < this->n_occupancy_orient; orient++)
@@ -447,18 +436,11 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 					this->active_orientations[vox].end());
 				if (this->active_orientations[vox].size() == 0)
 				{
-		//			cout << vox << endl;
 					this->active_voxels.erase(remove(this->active_voxels.begin(), this->active_voxels.end(), vox), this->active_voxels.end());
 				}
 			}
-//			if(this->active_orientations[vox].size() > 0 && find(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), om_vox) != this->active_orientations[vox].end()){cout << "active orientation [" << vox << "] size: " << this->active_orientations[vox].size() << endl;}
-//			if(this->active_orientations[vox].size() > 0 && find(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), om_vox) != this->active_orientations[vox].end()){cout << "active orientation [" << vox << "] size: " << this->active_orientations[vox].size() << endl << endl;}
 		}
 	}
-//	sort(voxels.begin(), voxels.end());
-//	for(int vox : voxels){cout<<vox<<endl;}
-//	cout << voxels.size()<<endl;
-//	cout << this->reachability_index[16001] << endl;
 }
 
 vector<unsigned int> CapabilityMap::findVoxelsFromDirection(Vector3d direction, double threshold, bool active_set_only)
