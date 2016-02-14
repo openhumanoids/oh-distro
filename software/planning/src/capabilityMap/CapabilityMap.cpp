@@ -531,6 +531,26 @@ void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, V
 	}
 }
 
+void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d sigma)
+{
+	ofstream log_file("/home/marco/oh-distro/software/planning/capabilityMap.log");
+	Vector3d x;
+	Matrix3d sigma_inverse = (Vector3d(1, 1, 1).cwiseQuotient(sigma)).asDiagonal();
+	for (Vector3d vox : this->voxel_centres)
+	{
+		x = vox.cwiseQuotient(this->map_upper_bound);
+		this->position_probability.push_back(exp(-.5*(x - mu).transpose() * sigma_inverse * (x - mu)));
+	}
+	double p_sum = accumulate(this->position_probability.begin(), this->position_probability.end(), 0.);
+	cout << p_sum << endl;
+	for (double p : this->position_probability)
+	{
+		p /= p_sum;
+		log_file << p << endl;
+	}
+	log_file.close();
+}
+
 void CapabilityMap::setOccupancyMapOrientations()
 {
 	for (int yaw = 0; yaw < this->occupancy_map_orient_steps.yaw.rows(); yaw++)

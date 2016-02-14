@@ -39,6 +39,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
 	capability_map.reduceActiveSet(true, point_cloud);
+	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre().cwiseQuotient(capability_map.getMapUpperBound()));
 
 	return 0;
 }

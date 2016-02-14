@@ -51,6 +51,9 @@ public:
 	void saveToFile(const std::string map_file);
 	Eigen::Vector2i getMapSize();
 	int getNVoxels();
+	Eigen::Vector3d getMapCentre(){return map_centre;}
+	Eigen::Vector3d getMapUpperBound(){return map_upper_bound;}
+	Eigen::Vector3d getMapLowerBound(){return map_lower_bound;}
 	void setNVoxels(unsigned int n_voxels);
 	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
 	void setNDirectionsPerVoxel(unsigned int n_dir);
@@ -64,6 +67,7 @@ public:
 	void reduceActiveSet(bool reset_active, std::vector<Eigen::Vector3d> point_cloud, Eigen::Vector2d sagittal_range = Eigen::Vector2d(-M_PI/3, M_PI/3),
 			Eigen::Vector2d transverse_range =  Eigen::Vector2d(-M_PI/3, M_PI/3), Eigen::Vector2d height_range =  Eigen::Vector2d(0.6, 1.1),
 			double direction_threshold = M_PI/6);
+	void computePositionProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(1e10, 1e10, 0.01));
 private:
 	unsigned int n_voxels;
 	unsigned int n_directions_per_voxel;
@@ -99,6 +103,7 @@ private:
 	std::vector<std::vector<unsigned int>> active_orientations; // n_CM_voxels * n_active_orientations(variable)
 	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
+	std::vector<double> position_probability;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
