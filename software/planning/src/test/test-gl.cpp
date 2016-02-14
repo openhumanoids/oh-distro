@@ -14,7 +14,7 @@ using namespace Eigen;
 
 int main()
 {
-	CapabilityMap cm;
+	CapabilityMap cm("/home/marco/oh-distro/software/planning/capabilityMap.log");
 	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport_occ.bin");
 
 	boost::shared_ptr<lcm::LCM> theLCM(new lcm::LCM);

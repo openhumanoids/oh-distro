@@ -3,6 +3,7 @@
 
 #include <string>
 #include <math.h>
+#include <fstream>
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
@@ -45,8 +46,7 @@ public:
 	    return (T(0) < val) - (val < T(0));
 	}
 
-	CapabilityMap();
-	CapabilityMap(const std::string & urdf_filename);
+	CapabilityMap(const std::string & log_filename, const std::string & urdf_filename = "");
 	void loadFromMatlabBinFile(const std::string map_file);
 	void saveToFile(const std::string map_file);
 	Eigen::Vector2i getMapSize();
@@ -69,6 +69,7 @@ public:
 			double direction_threshold = M_PI/6);
 	void computePositionProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(1e10, 1e10, 0.01));
 private:
+	std::ofstream log;
 	unsigned int n_voxels;
 	unsigned int n_directions_per_voxel;
 	unsigned int n_voxels_per_edge;
