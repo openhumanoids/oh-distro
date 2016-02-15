@@ -126,9 +126,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 
 			inputFile.read((char *) this->map_upper_bound.data(), sizeof(this->map_upper_bound));
 			std::cout << "Loaded map_upper_bound: " << this->map_upper_bound[0] << ";"  << this->map_upper_bound[1] << ";"  << this->map_upper_bound[2] << '\n';
-
-			this->resetActiveVoxels();
-			this->computeVoxelCentres(this->voxel_centres, this->map_lower_bound, this->map_upper_bound, this->voxel_edge);
 		}
 		else
 		{
@@ -197,10 +194,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			this->occupancy_map_orient_steps.yaw.resize(n_yaw_steps);
 			inputFile.read((char *) this->occupancy_map_orient_steps.yaw.data(), n_yaw_steps * sizeof(double));
 			std::cout << "Loaded occupancy_map_orient_steps.yaw (" << this->occupancy_map_orient_steps.yaw.rows() << ")\n";
-
-			this->setOccupancyMapOrientations();
-			this->resetActiveOrientations();
-			this->computeVoxelCentres(this->occupancy_voxel_centres, this->occupancy_map_lower_bound, this->occupancy_map_upper_bound, this->occupancy_map_resolution);
 		}
 		else
 		{
@@ -209,6 +202,18 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 
 
 		inputFile.close();
+
+		if (contains_map)
+		{
+			this->resetActiveVoxels();
+			this->computeVoxelCentres(this->voxel_centres, this->map_lower_bound, this->map_upper_bound, this->voxel_edge);
+		}
+		if (contains_occupancy_map)
+		{
+			this->setOccupancyMapOrientations();
+			this->resetActiveOrientations();
+			this->computeVoxelCentres(this->occupancy_voxel_centres, this->occupancy_map_lower_bound, this->occupancy_map_upper_bound, this->occupancy_map_resolution);
+		}
 		std::cout << "Data successfully loaded\n";
 	}
 }
@@ -278,6 +283,7 @@ void CapabilityMap::deactivateVoxels(vector<int> idx)
 	for (int i : idx)
 	{
 		this->active_voxels.erase(remove(this->active_voxels.begin(), this->active_voxels.end(), i), this->active_voxels.end());
+		this->active_orientations[i].clear();
 	}
 }
 
@@ -540,18 +546,45 @@ void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vecto
 	this->computeProbabilityDistribution(this->occupancy_map_orientations, this->orientation_probability, mu, sigma);
 }
 
-void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, vector<double> &pdf, Vector3d mu, Vector3d sigma)
+void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, VectorXd &pdf, Vector3d mu, Vector3d sigma)
 {
 	Matrix3d sigma_inverse = (Vector3d(1, 1, 1).cwiseQuotient(sigma)).asDiagonal();
-	for (Vector3d vox : values)
+	pdf.resize(values.size());
+	for (int p = 0; p < pdf.size(); p++)
 	{
-		pdf.push_back(exp(-.5*(vox - mu).transpose() * sigma_inverse * (vox - mu)));
+		pdf(p) = (exp(-.5*(values[p] - mu).transpose() * sigma_inverse * (values[p] - mu)));
 	}
-	double p_sum = accumulate(pdf.begin(), pdf.end(), 0.);
-	for (double p : pdf)
+	double p_sum = pdf.sum();
+	for (int p = 0; p < pdf.size(); p++)
 	{
-		p /= p_sum;
+		pdf(p) /= p_sum;
 	}
+}
+
+void CapabilityMap::computeTotalProbabilityDistribution()
+{
+//	MatrixXd compound_probability = this->position_probability * this->orientation_probability.transpose();
+//	compound_probability = compound_probability.cwiseProduct(this)
+	this->total_probability.resize(this->n_voxels * this->n_occupancy_orient);
+//	cout << this->total_probability.rows() << "x" << this->total_probability.cols() << endl;
+//	for(auto i : this->active_voxels){cout << i << endl;}
+	for (int p = 0; p < this->active_orientations.size(); p++)
+	{
+//		this->log << p << endl;
+		for (int o : this->active_orientations[p])
+		{
+//			cout << "test" << endl;
+//			cout << this->active_orientations[p][o] << endl << endl;
+//			this->log << p*(o+1) << " " << this->position_probability(p) * this->orientation_probability(o) << endl;
+//			this->log << this->active_orientations[p][o];
+			this->total_probability(p*this->n_occupancy_orient+o) = this->position_probability(p) * this->orientation_probability(o);
+		}
+	}
+	for (int i = 0; i < this->total_probability.rows(); i++){
+		if (this->total_probability(i) > 0)
+			{this->log << i << " " << this->total_probability(i) << endl;}
+	}
+//	this->log << this->total_probability.segment(2000, 2000) << endl;
 }
 
 void CapabilityMap::setOccupancyMapOrientations()

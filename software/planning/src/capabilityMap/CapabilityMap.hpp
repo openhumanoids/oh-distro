@@ -81,6 +81,11 @@ public:
 	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
 	 */
 	void computeOrientationProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(5*pow(0.087266462599716, 2), .5*pow(0.174532925199433, 2), 10*pow(0.785398163397448, 2)));
+
+	/**
+	 * compute the orientation-position combined probability
+	 */
+	void computeTotalProbabilityDistribution();
 private:
 	std::ofstream log;
 	unsigned int n_voxels;
@@ -104,7 +109,7 @@ private:
 	Eigen::Vector3d map_upper_bound;
 	unsigned int n_occupancy_voxels;
 	unsigned int n_occupancy_orient;
-	std::vector<std::vector<std::vector<unsigned int>>> occupancy_map; // n_OM_voxels * n_orient * CM_voxels(variable)
+	std::vector<std::vector<std::vector<unsigned int>>> occupancy_map; /**< Dimensions:\n  n occupancy map voxels\n  n orientations\n  invalid capability map voxels for each orientation (variable) */
 	double occupancy_map_resolution;
 	Eigen::Vector3d occupancy_map_lower_bound;
 	Eigen::Vector3d occupancy_map_upper_bound;
@@ -114,11 +119,12 @@ private:
 	Side active_side;
 	std::vector<Eigen::Vector3d> voxel_centres;
 	std::vector<unsigned int> active_voxels;
-	std::vector<std::vector<unsigned int>> active_orientations; // n_CM_voxels * n_active_orientations(variable)
+	std::vector<std::vector<unsigned int>> active_orientations; /**< Dimensions:\n  n capability map voxels\n  n active orientations for each voxel (variable) */
 	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
-	std::vector<double> position_probability;
-	std::vector<double> orientation_probability;
+	Eigen::VectorXd position_probability;
+	Eigen::VectorXd orientation_probability;
+	Eigen::ArrayXd total_probability;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
@@ -144,7 +150,7 @@ private:
 	 * \param mu A 3D vector specifying the mean of the multivariate distribution
 	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
 	 */
-	void computeProbabilityDistribution(std::vector<Eigen::Vector3d> & values, std::vector<double> &pdf, Eigen::Vector3d mu, Eigen::Vector3d sigma);
+	void computeProbabilityDistribution(std::vector<Eigen::Vector3d> & values, Eigen::VectorXd &pdf, Eigen::Vector3d mu, Eigen::Vector3d sigma);
 };
 
 

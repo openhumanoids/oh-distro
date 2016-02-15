@@ -41,6 +41,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	capability_map.reduceActiveSet(true, point_cloud);
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
+	capability_map.computeTotalProbabilityDistribution();
 
 	return 0;
 }
