@@ -3,6 +3,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataReader.h>
+#include <vtkUnsignedIntArray.h>
 
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
@@ -41,30 +42,64 @@ main (int argc, char** argv)
   }
   msg.n_channels = 0;
 
+  vtkIdType numberOfPointArrays = polydata->GetPointData()->GetNumberOfArrays();
 
-
-  // Set the colors of the pcl::PointCloud (if the pcl::PointCloud supports colors and the input vtkPolyData has colors)
-  vtkUnsignedCharArray* colors = vtkUnsignedCharArray::SafeDownCast (polydata->GetPointData ()->GetScalars ());
-
-  if (colors)
-  {
-    for (size_t i = 0; i < polydata->GetNumberOfPoints (); ++i)
+  //http://www.vtk.org/doc/nightly/html/vtkType_8h_source.html
+  for(vtkIdType i = 0; i < numberOfPointArrays; i++)
     {
-      unsigned char color[3];
-      colors->GetTupleValue (i, color);
-      float c_float = packColor(color);
-      std::vector<float> channels = {c_float};
-      msg.channels.push_back(channels);
+    int dataTypeID = polydata->GetPointData()->GetArray(i)->GetDataType();
+    std::string atr_name = polydata->GetPointData()->GetArrayName(i);
 
+    if (dataTypeID == VTK_UNSIGNED_INT)
+    {
+      vtkUnsignedIntArray* arrayData = vtkUnsignedIntArray::SafeDownCast (polydata->GetPointData ()->GetScalars ( atr_name.c_str() ));
+      if (arrayData)
+      {
+        std::vector<float> arrayDataOutput;
+        for (size_t i = 0; i < polydata->GetNumberOfPoints (); ++i)
+          arrayDataOutput.push_back( (float) arrayData->GetValue (i));
+
+        msg.channels.push_back(arrayDataOutput);
+        msg.channel_names.push_back( atr_name.c_str() );
+        msg.n_channels++;
+      }
     }
-  msg.channel_names.push_back("rgb_colors");
-  msg.n_channels = 1;
-  }
+    else if (dataTypeID == VTK_FLOAT)
+    {
+      vtkFloatArray* arrayData = vtkFloatArray::SafeDownCast (polydata->GetPointData ()->GetScalars ( atr_name.c_str() ));
+      if (arrayData)
+      {
+        std::vector<float> arrayDataOutput;
+        for (size_t i = 0; i < polydata->GetNumberOfPoints (); ++i)
+          arrayDataOutput.push_back( arrayData->GetValue (i));
 
-//  int32_t n_channels;
-//  string channel_names [n_channels];
-//  float channels [n_points][n_channels];
-//}
+        msg.channels.push_back(arrayDataOutput);
+        msg.channel_names.push_back( atr_name.c_str() );
+        msg.n_channels++;
+      }
+    }
+    else if (dataTypeID == VTK_UNSIGNED_CHAR)
+    {
+      if (atr_name == "rgb_colors")
+      {
+        vtkUnsignedCharArray* arrayData = vtkUnsignedCharArray::SafeDownCast (polydata->GetPointData ()->GetArray ("rgb_colors"));
+        if (arrayData)
+        {
+          std::vector<float> arrayDataOutput;
+          for (size_t i = 0; i < polydata->GetNumberOfPoints (); ++i)
+          {
+            unsigned char color[3];
+            arrayData->GetTupleValue (i, color);
+            float colorPacked = packColor(color);
+            arrayDataOutput.push_back(colorPacked);
+          }
+          msg.channels.push_back(arrayDataOutput);
+          msg.channel_names.push_back("rgb_colors");
+          msg.n_channels++;
+        }
+      }
+    }
+  }
 
   boost::shared_ptr<lcm::LCM> lcm_pub;
   lcm_pub = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
