@@ -31,9 +31,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations 
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 add_executable(publish-vtk publish-vtk.cpp)
-pods_use_pkg_config_packages(publish-vtk path-util pcl_io-1.7
-     eigen3  )
-target_link_libraries(publish-vtk  ${VTK_LIBRARIES})
-target_link_libraries(publish-vtk lcm 
-                        boost_system boost_thread)
+pods_use_pkg_config_packages(publish-vtk path-util   eigen3  )
+target_link_libraries(publish-vtk lcm boost_system boost_thread ${VTK_LIBRARIES})
 pods_install_executables(publish-vtk)

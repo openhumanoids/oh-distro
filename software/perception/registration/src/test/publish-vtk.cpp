@@ -1,8 +1,19 @@
 #include <pcl/io/vtk_lib_io.h>
 
-#include <lcmtypes/drc/pointcloud_t.hpp>
+#include <vtkSmartPointer.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataReader.h>
+
+#include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <ConciseArgs>
+
+#include <lcmtypes/drc/pointcloud_t.hpp>
+
+
+float packColor(unsigned char* color) {
+    return color[0] + color[1] * 256.0 + color[2] * 256.0 * 256.0;
+}
 
 int
 main (int argc, char** argv)
@@ -29,6 +40,31 @@ main (int argc, char** argv)
     msg.points.push_back(point);
   }
   msg.n_channels = 0;
+
+
+
+  // Set the colors of the pcl::PointCloud (if the pcl::PointCloud supports colors and the input vtkPolyData has colors)
+  vtkUnsignedCharArray* colors = vtkUnsignedCharArray::SafeDownCast (polydata->GetPointData ()->GetScalars ());
+
+  if (colors)
+  {
+    for (size_t i = 0; i < polydata->GetNumberOfPoints (); ++i)
+    {
+      unsigned char color[3];
+      colors->GetTupleValue (i, color);
+      float c_float = packColor(color);
+      std::vector<float> channels = {c_float};
+      msg.channels.push_back(channels);
+
+    }
+  msg.channel_names.push_back("rgb_colors");
+  msg.n_channels = 1;
+  }
+
+//  int32_t n_channels;
+//  string channel_names [n_channels];
+//  float channels [n_points][n_channels];
+//}
 
   boost::shared_ptr<lcm::LCM> lcm_pub;
   lcm_pub = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
