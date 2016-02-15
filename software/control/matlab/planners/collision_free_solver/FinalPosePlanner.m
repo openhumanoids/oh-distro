@@ -136,13 +136,23 @@ classdef FinalPosePlanner
       base = obj.robot.findLinkId(obj.capability_map.base_link);
       map_centre = obj.capability_map.map_centre.(obj.grasping_hand);
       kinsol = obj.robot.doKinematics(obj.q_start);
-      init_torso_pose = obj.robot.forwardKin(kinsol, base, [0;0;0], obj.q_start);
       obj.capability_map = obj.capability_map.computePositionProbabilityDistribution([], bsxfun(@rdivide, map_centre, obj.capability_map.map_ub)');
       pos_prob = obj.capability_map.vox_centres_prob;
       
       tot_prob = pos_prob * orient_prob';
       tot_prob = tot_prob .* obj.capability_map.occupancy_map_active_orient;
+      f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
+%       fprintf(f_id, '%g\n', tot_prob);
+%       for i = 1:obj.capability_map.n_voxels
+%         fprintf(f_id, '%d\n', i -1);
+%         fprintf(f_id, '%d', find(obj.capability_map.occupancy_map_active_orient(i,:))-1);
+%         fprintf(f_id, '\n');
+%       end
       tot_prob = reshape(tot_prob, 1, []);
+      for i = find(tot_prob > 0)
+        fprintf(f_id, '%d %g\n', i-1, tot_prob(i));
+      end
+      fclose(f_id);
       iter = 0;
       qOpt = [];
       cost = [];

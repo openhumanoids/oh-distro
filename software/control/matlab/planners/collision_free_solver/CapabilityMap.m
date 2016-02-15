@@ -891,6 +891,9 @@
                                         max(abs(obj.occupancy_map_orient_steps.yaw))]);
       obj.occupancy_map_orient_prob = mvnpdf(x, mu, sigma);
       obj.occupancy_map_orient_prob = obj.occupancy_map_orient_prob / sum(obj.occupancy_map_orient_prob);
+      f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
+      fprintf(f_id, '%g\n', obj.occupancy_map_orient_prob);
+      fclose(f_id);
     end
     
     function obj = computePositionProbabilityDistribution(obj, sigma, mu)
@@ -899,6 +902,9 @@
       x = bsxfun(@rdivide, obj.vox_centres, obj.map_ub);
       obj.vox_centres_prob = mvnpdf(x', mu, sigma);
       obj.vox_centres_prob = obj.vox_centres_prob / sum(obj.vox_centres_prob);
+      f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'a');
+      fprintf(f_id, '%g\n', obj.vox_centres_prob);
+      fclose(f_id);
     end
     
     function obj = computeOccupancyMapOrientations(obj)
