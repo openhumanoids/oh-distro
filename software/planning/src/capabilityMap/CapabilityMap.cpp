@@ -532,15 +532,23 @@ void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, V
 
 void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
-	Vector3d x;
+	this->computeProbabilityDistribution(this->voxel_centres, this->position_probability, mu, sigma);
+}
+
+void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vector3d sigma)
+{
+	this->computeProbabilityDistribution(this->occupancy_map_orientations, this->orientation_probability, mu, sigma);
+}
+
+void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, vector<double> &pdf, Vector3d mu, Vector3d sigma)
+{
 	Matrix3d sigma_inverse = (Vector3d(1, 1, 1).cwiseQuotient(sigma)).asDiagonal();
-	for (Vector3d vox : this->voxel_centres)
+	for (Vector3d vox : values)
 	{
-		x = vox.cwiseQuotient(this->map_upper_bound);
-		this->position_probability.push_back(exp(-.5*(x - mu).transpose() * sigma_inverse * (x - mu)));
+		pdf.push_back(exp(-.5*(vox - mu).transpose() * sigma_inverse * (vox - mu)));
 	}
-	double p_sum = accumulate(this->position_probability.begin(), this->position_probability.end(), 0.);
-	for (double p : this->position_probability)
+	double p_sum = accumulate(pdf.begin(), pdf.end(), 0.);
+	for (double p : pdf)
 	{
 		p /= p_sum;
 	}
