@@ -15,5 +15,5 @@ struct pointcloud_t
 
   int32_t n_channels;
   string channel_names [n_channels];
-  float channels [n_points][n_channels];
+  float channels [n_channels][n_points];
 }
