@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <numeric>
 #include <math.h>
+#include <time.h>
 #include <boost/range/irange.hpp>
 #include <boost/range/algorithm_ext/push_back.hpp>
 #include <boost/range/adaptors.hpp>
@@ -578,6 +579,7 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 //			this->log << p*(o+1) << " " << this->position_probability(p) * this->orientation_probability(o) << endl;
 //			this->log << this->active_orientations[p][o];
 			this->total_probability(p*this->n_occupancy_orient+o) = this->position_probability(p) * this->orientation_probability(o);
+			this->
 		}
 	}
 	for (int i = 0; i < this->total_probability.rows(); i++){
@@ -585,6 +587,19 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 			{this->log << i << " " << this->total_probability(i) << endl;}
 	}
 //	this->log << this->total_probability.segment(2000, 2000) << endl;
+}
+
+void CapabilityMap::drawCapabilityMapSample()
+{
+	this->computeTotalProbabilityDistribution();
+	ArrayXd cumulative_probability(this->total_probability.size());
+	partial_sum(this->total_probability.data(), this->total_probability.data() + this->total_probability.size(), cumulative_probability.data());
+	cumulative_probability = cumulative_probability / this->total_probability.sum();
+	srand(time(NULL));
+	double rnd = rand() / (double)RAND_MAX;
+	Array<bool, Dynamic, 1> isGreater = cumulative_probability > rnd;
+	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data() - 1;
+	cout << cumulative_probability(idx - 1) << " " << cumulative_probability(idx) << " " << cumulative_probability(idx + 1) << " " << rnd << endl;
 }
 
 void CapabilityMap::setOccupancyMapOrientations()

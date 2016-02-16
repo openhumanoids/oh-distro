@@ -83,9 +83,9 @@ public:
 	void computeOrientationProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(5*pow(0.087266462599716, 2), .5*pow(0.174532925199433, 2), 10*pow(0.785398163397448, 2)));
 
 	/**
-	 * compute the orientation-position combined probability
+	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample
 	 */
-	void computeTotalProbabilityDistribution();
+	void drawCapabilityMapSample();
 private:
 	std::ofstream log;
 	unsigned int n_voxels;
@@ -125,6 +125,7 @@ private:
 	Eigen::VectorXd position_probability;
 	Eigen::VectorXd orientation_probability;
 	Eigen::ArrayXd total_probability;
+	Eigen::ArrayXi total_probability_idx;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
@@ -151,6 +152,11 @@ private:
 	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
 	 */
 	void computeProbabilityDistribution(std::vector<Eigen::Vector3d> & values, Eigen::VectorXd &pdf, Eigen::Vector3d mu, Eigen::Vector3d sigma);
+
+	/**
+	 * compute the orientation-position combined probability
+	 */
+	void computeTotalProbabilityDistribution();
 };
 
 
