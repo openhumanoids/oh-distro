@@ -20,7 +20,8 @@ public:
 
   void setMaxDistance(const float iDistance);
   void setCenterPoint(const Eigen::Vector3f& iPoint);
-  void setMaxIterations(const int iIterations);
+  void setMaxIterations(const int iIterations,
+                        const float iSkipFactor=1.0f);
   void setRefineUsingInliers(const bool iVal);
   void setNormalPrior(const Eigen::Vector3f& iNormal,
                       const float iMaxAngleDeviation);
@@ -35,6 +36,7 @@ protected:
   Eigen::Vector3f mCenterPoint;
   float mMaxDistance;
   int mMaxIterations;
+  float mSkippedIterationFactor;
   bool mRefineUsingInliers;
 
   Eigen::Vector3f mNormalPrior;

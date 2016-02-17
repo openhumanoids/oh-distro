@@ -20,6 +20,7 @@ public:
 public:
   RansacGeneric() {
     setMaximumIterations(5000);
+    setSkippedIterationFactor(1);
     setGoodSolutionProbability(1-1e-8);
     setRefineUsingInliers(false);
     setMaximumError(-1);
@@ -28,6 +29,9 @@ public:
   virtual ~RansacGeneric() {}
 
   void setMaximumIterations(const int iIters) { mMaximumIterations = iIters; }
+  void setSkippedIterationFactor(const double iFactor) {
+    mSkippedIterationFactor = iFactor;
+  }
   void setGoodSolutionProbability(const double iProb) {
     mGoodSolutionProbability = iProb;
   }
@@ -50,7 +54,7 @@ public:
     const double epsilon = 1e-10;
 
     // best results are currently invalid
-    double bestScore = -1;
+    int bestScore = 0;
     bool success = false;
 
     // start number of iterations as infinite, then reduce as we go
@@ -86,7 +90,8 @@ public:
       // require changing all existing usages to include that method
       if (errors2.size() == 0) {
         ++skippedSampleCount;
-        if (skippedSampleCount >= mMaximumIterations) break;
+        if (skippedSampleCount >=
+            mMaximumIterations*mSkippedIterationFactor) break;
         continue;
       }
       skippedSampleCount = 0;
@@ -111,7 +116,7 @@ public:
       }
 
       // if this is the best score, update solution and convergence criteria
-      double score = inliers.size();
+      int score = inliers.size();
       if (score > bestScore) {
         bestScore = score;
         result.mInliers = inliers;
@@ -148,6 +153,7 @@ public:
 protected:
   bool mRefineUsingInliers;
   int mMaximumIterations;
+  double mSkippedIterationFactor;
   double mGoodSolutionProbability;
   double mMaximumError;
 };
