@@ -13,7 +13,7 @@ classdef LCMInputFromExternalForceBlock < MIMODrakeSystem
     % shared_data_handle data is a struct with fields 'force_torque' and 'stopwatch'
     % 'force_torque' stores the FT data for each body,
     % 'stopwatch' stores the last time we geto a message with a force for that body
-    timeout = 1;
+    timeout = 2;
 
   end
   
