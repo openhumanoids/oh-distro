@@ -54,6 +54,9 @@ public:
 	Eigen::Vector3d getMapCentre(){return map_centre;}
 	Eigen::Vector3d getMapUpperBound(){return map_upper_bound;}
 	Eigen::Vector3d getMapLowerBound(){return map_lower_bound;}
+	std::string getBaseLink() {return base_link;}
+	Eigen::Vector3d getOrientation(int orient){return occupancy_map_orientations[orient];}
+	Eigen::Vector3d getVoxelCentre(int vox){return voxel_centres[vox];}
 	void setNVoxels(unsigned int n_voxels);
 	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
 	void setNDirectionsPerVoxel(unsigned int n_dir);

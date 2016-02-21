@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 
 #include "drake/systems/plants/RigidBodyTree.h"
+#include "drake/systems/plants/RigidBodyIK.h"
 #include "drake/systems/plants/constraint/RigidBodyConstraint.h"
 #include "drake/drakeShapes_export.h"
 #include "capabilityMap/CapabilityMap.hpp"
@@ -38,7 +39,7 @@ public:
 	 * 12  Error: Incorrect input.
 	 */
 	int findFinalPose(RigidBodyTree &robot, std::string end_effector, std::string endeffector_side, Eigen::VectorXd start_configuration,
-			Eigen::VectorXd endeffector_final_pose, std::vector<RigidBodyConstraint> &additional_constraints, Eigen::VectorXd nominal_configuration,
+			Eigen::VectorXd endeffector_final_pose, const std::vector<RigidBodyConstraint *> &additional_constraints, Eigen::VectorXd nominal_configuration,
 			CapabilityMap &capability_map, std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, double min_distance = 0.005, Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0)); //todo: active collision options?
 
 private:
@@ -51,7 +52,7 @@ private:
 	 */
 	int checkConfiguration(const RigidBodyTree &robot, const Eigen::VectorXd &configuration, std::string variable_name);
 
-	std::vector<RigidBodyConstraint *> generateEndeffectorConstraints(RigidBodyTree &robot, int endeffector_id,
+	void generateEndeffectorConstraints(RigidBodyTree &robot, std::vector<RigidBodyConstraint *> &constraint_vector, int endeffector_id,
 			Eigen::Matrix<double, 7, 1> endeffector_final_pose, Eigen::Vector3d endeffector_point,
 			Eigen::Vector3d position_tolerance = Eigen::Vector3d(0,0,0), double angular_tolerance = 1./180.*M_PI);
 };

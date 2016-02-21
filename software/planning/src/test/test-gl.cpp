@@ -23,7 +23,7 @@ int main()
 	}
 
 	RigidBodyTree robot("/home/marco/oh-distro/software/models/val_description/urdf/valkyrie_sim_simple.urdf");
-	std::vector<RigidBodyConstraint> constraints;
+	std::vector<RigidBodyConstraint *> constraints;
 	FinalPosePlanner fpp;
 
 	VectorXd start_configuration;
