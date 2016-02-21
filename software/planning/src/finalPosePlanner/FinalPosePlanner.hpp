@@ -5,6 +5,7 @@
 #ifndef FINALPOSEPLANNER_HPP_
 #define FINALPOSEPLANNER_HPP_
 
+#include <math.h>
 #include <Eigen/Dense>
 
 #include "drake/systems/plants/RigidBodyTree.h"
@@ -22,7 +23,7 @@ public:
 	FinalPosePlanner();
 
 	/**
-	 * \details findFinalPose finds a suitable final configuration for reaching a given end-effector pose.
+	 * Finds a suitable final configuration for reaching a given end-effector pose.
 	 * \param robot   A RigidBodyTree. The manipulating robot.
 	 * \param end_effector    A string containing the name of the end-effector to be used.
 	 * \param start_configuration     A robot.num_positions x 1 double vector. The starting robot configuration.
@@ -39,6 +40,7 @@ public:
 	int findFinalPose(RigidBodyTree &robot, std::string end_effector, std::string endeffector_side, Eigen::VectorXd start_configuration,
 			Eigen::VectorXd endeffector_final_pose, std::vector<RigidBodyConstraint> &additional_constraints, Eigen::VectorXd nominal_configuration,
 			CapabilityMap &capability_map, std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, double min_distance = 0.005, Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0)); //todo: active collision options?
+
 private:
 	/**
 	 * Checks that a configuration has the right number of elements and that all values are within joint limits.
@@ -47,7 +49,11 @@ private:
 	 * \param variable_name The name of the variable to check (only used for error messages)
 	 * \return 12 if the configuration is invalid 0 otherwise.
 	 */
-	int checkConfiguration(RigidBodyTree &robot, Eigen::VectorXd &configuration, std::string variable_name);
+	int checkConfiguration(const RigidBodyTree &robot, const Eigen::VectorXd &configuration, std::string variable_name);
+
+	std::vector<RigidBodyConstraint *> generateEndeffectorConstraints(RigidBodyTree &robot, int endeffector_id,
+			Eigen::Matrix<double, 7, 1> endeffector_final_pose, Eigen::Vector3d endeffector_point,
+			Eigen::Vector3d position_tolerance = Eigen::Vector3d(0,0,0), double angular_tolerance = 1./180.*M_PI);
 };
 
 

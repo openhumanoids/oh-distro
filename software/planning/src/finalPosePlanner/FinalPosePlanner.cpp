@@ -17,8 +17,12 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, double min_distance, Vector3d endeffector_point)
 {
 //	INPUT CHECKS
-	auto end_effector_id = find_if(robot.bodies.begin(), robot.bodies.end(), [end_effector](shared_ptr<RigidBody>& body){return body->linkname == end_effector;});
-	if (end_effector_id == robot.bodies.end())
+	int endeffector_id;
+	try
+	{
+		endeffector_id = robot.findLinkId(end_effector);
+	}
+	catch (const runtime_error &)
 	{
 		cout << "ERROR: FinalPosePlanner::Robot has no link named " << end_effector << endl;
 		return 12;
@@ -36,17 +40,27 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	}
 	if (this->checkConfiguration(robot, nominal_configuration, "nominal_configuration") != 0) {return 12;};
 
+//	CAPABILITY MAP PREPARATION
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
 	capability_map.reduceActiveSet(true, point_cloud);
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
-	capability_map.drawCapabilityMapSample();
 
-	return 0;
+//	FINAL POSE SEARCH
+	vector<RigidBodyConstraint *> endeffector_constraints = this->generateEndeffectorConstraints(robot, endeffector_id, endeffector_final_pose, endeffector_point);
+	VectorXd final_pose(robot.num_positions);
+	int info = 13;
+	while (info != 1)
+	{
+		capability_map.drawCapabilityMapSample();
+		info = 1;
+	}
+
+	return info;
 }
 
-int FinalPosePlanner::checkConfiguration(RigidBodyTree &robot, VectorXd &configuration, string variable_name)
+int FinalPosePlanner::checkConfiguration(const RigidBodyTree &robot, const VectorXd &configuration, string variable_name)
 {
 	if (configuration.rows() != robot.num_positions)
 	{
@@ -65,4 +79,16 @@ int FinalPosePlanner::checkConfiguration(RigidBodyTree &robot, VectorXd &configu
 		}
 	}
 	return 0;
+}
+
+vector<RigidBodyConstraint *> FinalPosePlanner::generateEndeffectorConstraints(RigidBodyTree &robot, int endeffector_id,
+		Matrix<double, 7, 1> endeffector_final_pose, Vector3d endeffector_point, Vector3d position_tolerance, double angular_tolerance)
+{
+	vector<RigidBodyConstraint *> constraints;
+	int world_id = robot.findLinkId("world");
+	Point2PointDistanceConstraint position_constraint(&robot, endeffector_id, world_id, endeffector_point, endeffector_final_pose.block<3,1>(0,0), -position_tolerance / 2, position_tolerance / 2);
+	WorldQuatConstraint quaternion_constraint(&robot, endeffector_id, endeffector_final_pose.block<4,1>(3,0), angular_tolerance);
+	constraints.push_back(&position_constraint);
+	constraints.push_back(&quaternion_constraint);
+	return constraints;
 }

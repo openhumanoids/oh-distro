@@ -85,7 +85,7 @@ public:
 	/**
 	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample
 	 */
-	void drawCapabilityMapSample();
+	std::vector<int> drawCapabilityMapSample();
 private:
 	std::ofstream log;
 	unsigned int n_voxels;
@@ -124,8 +124,9 @@ private:
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
 	Eigen::VectorXd position_probability;
 	Eigen::VectorXd orientation_probability;
-	Eigen::ArrayXd total_probability;
-	Eigen::ArrayXi total_probability_idx;
+	std::vector<double> total_probability;
+	std::vector<int> total_probability_orientations;
+	std::vector<int> total_probability_voxels;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
@@ -157,6 +158,7 @@ private:
 	 * compute the orientation-position combined probability
 	 */
 	void computeTotalProbabilityDistribution();
+	int getNActiveOrientations();
 };
 
 
