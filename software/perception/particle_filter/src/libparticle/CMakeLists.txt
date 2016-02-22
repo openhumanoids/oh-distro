@@ -26,7 +26,7 @@ pods_install_pkg_config_file(particle
  
  
 add_executable (particle-filter-example particle_filter_example.cpp )
-target_link_libraries(particle-filter-example particle)
+target_link_libraries(particle-filter-example particle boost_system)
 pods_use_pkg_config_packages(particle-filter-example   particle
   gsl  bot2-core lcmtypes_visualization  lcmtypes_bot2-core
   pronto_vis pronto_math)

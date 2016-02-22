@@ -10,37 +10,18 @@
 #include "rng.hpp"
 #include "particle.hpp"
 
-
+#include <pronto_utils/pronto_vis.hpp>
 
 ///////////////////////////////////////////////////////////////
 class ParticleFilter{
   public:
+    
     ParticleFilter(lcm_t* publish_lcm, long N_p,
           Eigen::Isometry3d init_pose,
           std::vector<double> initial_var,
           int rng_seed,
-          double resample_threshold_):
-		      publish_lcm(publish_lcm),N_p(N_p),resample_threshold_(resample_threshold_){
-      pRng = new rng(gsl_rng_default,rng_seed); // type, seed
+          double resample_threshold_);
 
-      for (int i=0;i<N_p;i++){
-        particleset.push_back(new Particle());
-      }
-
-      for (int i=0;i<N_p;i++){
-        particleset[i].InitializeState(pRng, log((double) 1/N_p), init_pose, initial_var);
-        //particleset[i].SetLogWeight(0); // added recently - set the weights at outset
-      }
-      
-      //Default:
-      dResampleThreshold = resample_threshold_ * N_p;      
-      
-      // Allocate (Specifically c arrays because of GSL)
-      dRSWeights = new double[N_p];    
-      uRSCount  = new unsigned[N_p];
-      uRSIndices = new unsigned[N_p];
-    }
-    
     ~ParticleFilter(){
       delete pRng;
       
@@ -115,6 +96,8 @@ class ParticleFilter{
   private:
     lcm_t* publish_lcm;
     long N_p; // number of particles
+
+    pronto_vis* pc_vis_;
 
     rng* pRng;
     boost::ptr_vector<Particle>    particleset;

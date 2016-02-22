@@ -22,6 +22,43 @@
 using namespace std;
 #define VERBOSE_TXT 0
 
+
+ParticleFilter::ParticleFilter(lcm_t* publish_lcm, long N_p,
+  Eigen::Isometry3d init_pose, std::vector<double> initial_var,
+  int rng_seed, double resample_threshold_):
+  publish_lcm(publish_lcm),N_p(N_p),resample_threshold_(resample_threshold_){
+  
+  pRng = new rng(gsl_rng_default,rng_seed); // type, seed
+
+  for (int i=0;i<N_p;i++){
+    particleset.push_back(new Particle());
+  }
+
+  for (int i=0;i<N_p;i++){
+    particleset[i].InitializeState(pRng, log((double) 1/N_p), init_pose, initial_var);
+  }
+      
+  //Default:
+  dResampleThreshold = resample_threshold_ * N_p;      
+      
+  // Allocate (Specifically c arrays because of GSL)
+  dRSWeights = new double[N_p];    
+  uRSCount  = new unsigned[N_p];
+  uRSIndices = new unsigned[N_p];
+
+  // Vis Config:
+  pc_vis_ = new pronto_vis(publish_lcm);
+  // obj: id name type reset
+  // pts: id name type reset objcoll usergb rgb
+  bool reset = true;
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4002,"Particles",1,reset) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4008,"Mean Estimate",1,reset) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4108,"Mean Estimate [Wrap]",1,reset) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(4010,"Best Estimate",1,reset) );
+
+}
+
+
 void ParticleFilter::ReinitializeFraction(Eigen::Isometry3d reinit_pose,
     std::vector<double> reinit_var, double fraction){
 
@@ -46,7 +83,7 @@ void ParticleFilter::ReinitializeFraction(Eigen::Isometry3d reinit_pose,
 
   
   vector<int> pleft( N_p,0); // four ints with value 100
-  for (size_t i=0;i < N_p;i++){
+  for (int i=0;i < N_p;i++){
     pleft[i] = (int) i;
   }
   int size_pleft = N_p;
@@ -89,7 +126,7 @@ void ParticleFilter::ReinitializeFraction(Eigen::Isometry3d reinit_pose,
     cout << "replaced " << chosen_particles.size() << " parts with weight " << new_weight << "\n";
 
     cout << "checking the particle state\n";
-    for (size_t i=0; i<N_p; i++) {
+    for (int i=0; i<N_p; i++) {
       pf_state particle_state;
       particle_state =GetParticleState(i);
       Eigen::Quaterniond r_temp(particle_state.velocity.rotation());
@@ -132,7 +169,7 @@ void ParticleFilter::MoveParticles(pf_state odom_diff, std::vector<double> move_
     }else if (mode==1){
       it->MoveParticleDrift(pRng,move_var,dtime);
     }else{
-      std:cerr << "invalid mode ("<< mode <<") given in ParticleFilter::MoveParticles\n";
+      cerr << "invalid mode ("<< mode <<") given in ParticleFilter::MoveParticles\n";
       exit(-1);
     }
   }
@@ -395,7 +432,6 @@ pf_state ParticleFilter::IntegrateWrapSafe(){
   bool wrapping = false;  
   for(int i =0; i < N_p; i++){
     pf_state state = particleset[i].GetState();
-    double w = expl(particleset[i].GetLogWeight());
     
     Eigen::Vector3d t(state.pose.translation());
     Eigen::Quaterniond r(state.pose.rotation());
@@ -473,103 +509,54 @@ pf_state ParticleFilter::MaxWeight(){
 }
 
 
+bot_core_pose_t getLCMPoseFromIsometry3d(Eigen::Isometry3d pose, int64_t time_stamp){
+  bot_core_pose_t pose_msg;
+  memset(&pose_msg, 0, sizeof(pose_msg));
+  pose_msg.utime =   time_stamp;// msg->timestamp;
+  pose_msg.pos[0] = pose.translation().x();
+  pose_msg.pos[1] = pose.translation().y();
+  pose_msg.pos[2] = pose.translation().z();  
+  Eigen::Quaterniond r_x(pose.rotation());
+  pose_msg.orientation[0] =  r_x.w();  
+  pose_msg.orientation[1] =  r_x.x();  
+  pose_msg.orientation[2] =  r_x.y();  
+  pose_msg.orientation[3] =  r_x.z();
+  return pose_msg;  
+}
+
+
 
 void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status){
+  // NB: these methods compile, but haven't been tested since changing recently
+
   pf_state mean_state;
   mean_state = Integrate();
   mean_state = IntegrateWrapSafe();
 
-  bot_core_pose_t pose_msg;
-  memset(&pose_msg, 0, sizeof(pose_msg));
-  pose_msg.utime =   time_stamp;// msg->timestamp;
-  pose_msg.pos[0] = mean_state.pose.translation().x();
-  pose_msg.pos[1] = mean_state.pose.translation().y();
-  pose_msg.pos[2] = mean_state.pose.translation().z();  
-  Eigen::Quaterniond r_x(mean_state.pose.rotation());
-  pose_msg.orientation[0] =  r_x.w();  
-  pose_msg.orientation[1] =  r_x.x();  
-  pose_msg.orientation[2] =  r_x.y();  
-  pose_msg.orientation[3] =  r_x.z();  
+  bot_core_pose_t pose_msg = getLCMPoseFromIsometry3d(mean_state.pose, time_stamp);
   bot_core_pose_t_publish(publish_lcm, "POSE", &pose_msg);
   
   pf_state mean_velocity;
   mean_velocity = IntegrateVelocity();
-  bot_core_pose_t vel_msg;
-  memset(&vel_msg, 0, sizeof(pose_msg));
-  vel_msg.utime =   time_stamp;// msg->timestamp;
-  vel_msg.pos[0] = mean_velocity.velocity.translation().x();
-  vel_msg.pos[1] = mean_velocity.velocity.translation().y();
-  vel_msg.pos[2] = mean_velocity.velocity.translation().z();  
-  Eigen::Quaterniond vr_x(mean_velocity.velocity.rotation());
-  vel_msg.orientation[0] =  vr_x.w();  
-  vel_msg.orientation[1] =  vr_x.x();  
-  vel_msg.orientation[2] =  vr_x.y();  
-  vel_msg.orientation[3] =  vr_x.z();  
-  bot_core_pose_t_publish(publish_lcm, "POSE_VELOCITY", &vel_msg);  
-  
-  vs_object_collection_t objs_ps;
-  objs_ps.id = 4002; 
-  objs_ps.name = (char*)"Particles";
-  objs_ps.type = VS_OBJECT_COLLECTION_T_AXIS3D ;//1; // a pose
-  objs_ps.reset = true; // true will delete them from the viewer, false leaves nice trails
-  objs_ps.nobjects = N_p;
-  vs_object_t poses_ps[objs_ps.nobjects];
+  bot_core_pose_t vel_msg = getLCMPoseFromIsometry3d(mean_velocity.velocity, time_stamp);
+  bot_core_pose_t_publish(publish_lcm, "POSE_VELOCITY", &vel_msg);
+
+  std::vector<Isometry3dTime> particle_poses;
   for (int i=0;i<N_p;i++){
-    pf_state particle_state;
-    particle_state =particleset[i].GetState();
-    Eigen::Vector3d t(particle_state.pose.translation());
-    Eigen::Quaterniond r(particle_state.pose.rotation());
-
-    poses_ps[i].qw = r.w();
-    poses_ps[i].qx = r.x();
-    poses_ps[i].qy = r.y();
-    poses_ps[i].qz = r.z();
-
-    poses_ps[i].id = time_stamp + i;
-    poses_ps[i].x = t[0];
-    poses_ps[i].y = t[1];
-    poses_ps[i].z = t[2];
+    pf_state particle_state = particleset[i].GetState();
+    Isometry3dTime particle_pose(time_stamp + i, particle_state.pose);
+    particle_poses.push_back(particle_pose);
   }
-  objs_ps.objects = poses_ps;
-  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs_ps);   
-  
-  vs_object_collection_t objs;
-  objs.id = 4008; 
-  objs.name = (char*)"Mean Estimate"; 
-  objs.type = VS_OBJECT_COLLECTION_T_POSE3D; // a pose 3d
-  objs.reset = true; // true will delete them from the viewer
-  objs.nobjects = 1;
-  vs_object_t poses[objs.nobjects];
-  poses[0].id = time_stamp;
-  Eigen::Vector3d t(mean_state.pose.translation());
-  Eigen::Quaterniond r(mean_state.pose.rotation());
-  poses[0].x = t[0];
-  poses[0].y = t[1];
-  poses[0].z = t[2];
-  poses[0].qw = r.w();
-  poses[0].qx = r.x();
-  poses[0].qy = r.y();
-  poses[0].qz = r.z();
-  objs.objects = poses;
-  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs);  
-  
-  // Mean  with a temporary fix for the wrapping of the headding in 2D
+  pc_vis_->pose_collection_to_lcm_from_list(4002, particle_poses);
+
+  Isometry3dTime poseT = Isometry3dTime(time_stamp, mean_state.pose);
+  pc_vis_->pose_to_lcm_from_list(4008, poseT);
+
   pf_state mean_state_wrap;
   mean_state_wrap = IntegrateWrapSafe();
-  objs.id = 4108; 
-  objs.name = (char*)"Mean Estimate [Wrap]"; 
-  Eigen::Vector3d tw(mean_state_wrap.pose.translation());
-  Eigen::Quaterniond rw(mean_state_wrap.pose.rotation());
-  poses[0].x = tw[0];
-  poses[0].y = tw[1];
-  poses[0].z = tw[2];
-  poses[0].qw = rw.w();
-  poses[0].qx = rw.x();
-  poses[0].qy = rw.y();
-  poses[0].qz = rw.z();
-  objs.objects = poses;
-  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs);    
-  
+  Isometry3dTime poseTwrap = Isometry3dTime(time_stamp, mean_state_wrap.pose);
+  pc_vis_->pose_to_lcm_from_list(4108, poseTwrap);
+
   particle_pf_cloud_t pc;
   pc.utime = time_stamp; 
   pc.nparticles = N_p;
@@ -594,100 +581,8 @@ void ParticleFilter::SendParticlesLCM(int64_t time_stamp,int vo_estimate_status)
   // Highest Weight Particle:
   pf_state max_particle;
   max_particle = MaxWeight();
-  vs_object_collection_t objs2;
-  objs2.id = 4010; 
-  objs2.name = (char*)"Best Estimate"; 
-  objs2.type =VS_OBJECT_COLLECTION_T_POSE3D;//VS_OBJECT_COLLECTION_T_AXIS3D; // a pose
-  objs2.reset = true; // true will delete them from the viewer
-  objs2.nobjects = 1;
-  vs_object_t poses2[objs2.nobjects];
-  poses2[0].id = time_stamp;
-  Eigen::Vector3d t2(max_particle.pose.translation());
-  Eigen::Quaterniond r2(max_particle.pose.rotation());
-  poses2[0].x = t2[0];
-  poses2[0].y = t2[1];
-  poses2[0].z = t2[2];
-  poses2[0].qw = r2.w();
-  poses2[0].qx = r2.x();
-  poses2[0].qy = r2.y();
-  poses2[0].qz = r2.z();
+  Isometry3dTime poseTmax = Isometry3dTime(time_stamp, max_particle.pose);
+  pc_vis_->pose_to_lcm_from_list(4010, poseTmax);
 
-  objs2.objects = poses2;
-  vs_object_collection_t_publish(publish_lcm, "OBJECT_COLLECTION", &objs2);        
-  
 
-//   for (int i=0;i<N_p;i++){
-//     std::cout<< i << ": " << particleset[i].GetLogWeight()  << ", "
-// 		<< particleset[i].GetWeight() << "\n";
-//     
-//   }
-
-  
-/*
-  
-  GetParticleLogWeight(i)
-  vector <double> lhoods;
-    for(int i =0; i < N_p; i++){
-      lhoods.push_back(
-    double w = expl(particleset[i].GetLogWeight());
-    if (w > w_max){
-      w_max = w;
-      i_max =i;
-    }
-  }
-  
-  
-  // 4.3.2. illustrate each particle's likelihood:
-  std::vector<double>::iterator result = std::max_element(lhoods_vector.begin(), lhoods_vector.end());
-  int max_element = std::distance(lhoods_vector.begin(), result); 
-  double max_likelihood = lhoods_vector[max_element];
-
-  result = std::min_element(lhoods_vector.begin(), lhoods_vector.end());
-  int min_element = std::distance(lhoods_vector.begin(), result); 
-  double min_likelihood = lhoods_vector[min_element];
-  pcl::PointCloud<pcl::PointXYZRGB> particle_cloud;
-  particle_cloud.width    = nparticles;
-  particle_cloud.height   = 1;
-  particle_cloud.is_dense = false;
-  particle_cloud.points.resize (nparticles);
-  for(int i=0;i <nparticles ;i++  ){
-    cv_state particle_state;
-    particle_state =Sampler.GetParticleValue(i);
-
-    // now:
-    Eigen::Vector3d t(particle_state.pose.translation());
-    particle_cloud.points[i].x = t[0];
-    particle_cloud.points[i].y = t[1];
-    particle_cloud.points[i].z = t[2];
-
-    float rgb_vector_float[3];
-    float jet_rgb_in  = (lhoods_vector[i] - min_likelihood)/(max_likelihood - min_likelihood);
-    jet_rgb( jet_rgb_in,rgb_vector_float);
-    unsigned char* rgba_ptr = (unsigned char*)&particle_cloud.points[i].rgba;
-    (*rgba_ptr) =  (int)    (rgb_vector_float[0]*255.0);
-    (*(rgba_ptr+1)) = (int) (rgb_vector_float[1]*255.0);
-    (*(rgba_ptr+2)) = (int) (rgb_vector_float[2]*255.0);
-    (*(rgba_ptr+3)) = 0;	        
-  }
-  
-  Ptcoll_cfg ptcoll_cfg2;
-  ptcoll_cfg2.collection = null_obj_collection;
-  ptcoll_cfg2.element_id = timestamp;
-  
-  if (verbose_pf_stats[1] >0){ // important
-    ptcoll_cfg2.id = 4003;
-    ptcoll_cfg2.reset=true;
-    ptcoll_cfg2.name ="particle cloud likelihoods";
-    ptcoll_cfg2.npoints =	 particle_cloud.points.size();
-    ptcoll_cfg2.rgba ={-1,-1,-1,-1};
-    ptcoll_cfg2.type =1;
-    pcdXYZRGB_to_lcm(publish_lcm,ptcoll_cfg2, particle_cloud);
-  }  
-  
-  
-  */
-  
-  
-  
-  
 }
