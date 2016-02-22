@@ -258,6 +258,7 @@ set(PointCloudLibraryPlugin_external_args
 set(externals
   Eigen_pod
   ${lcm_proj}
+  bot_core_lcmtypes
   libbot
   ${opencv_proj}
   flann
