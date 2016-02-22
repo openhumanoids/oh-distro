@@ -11,10 +11,13 @@ if(NOT USE_SYSTEM_LCM)
     )
 endif()
 
+set(bot_core_lcmtypes_url https://github.com/openhumanoids/bot_core_lcmtypes.git)
+set(bot_core_lcmtypes_revision d2617b85674fa83b371a5c57fabdbe468844f15e)
+set(bot_core_lcmtypes_depends ${lcm_proj})
+
 set(libbot_url https://github.com/openhumanoids/libbot.git)
-#set(libbot_revision 92cf3eaef17659990104da40866c5d466a453b17) # this revision needs a few more fixes
-set(libbot_revision eb61f9bed5df654ffb0ce47ce44ca3d379a6e6e8)
-set(libbot_depends ${lcm_proj})
+set(libbot_revision ed4a76423f2a21594436490341f907710d3f78dd)
+set(libbot_depends bot_core_lcmtypes ${lcm_proj})
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
 set(Eigen_pod_revision ceba39500b89a77a8649b3e8b421b10a3d74d42b)
