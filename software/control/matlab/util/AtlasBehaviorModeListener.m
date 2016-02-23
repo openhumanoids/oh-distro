@@ -12,7 +12,7 @@ classdef AtlasBehaviorModeListener
         channel = 'ATLAS_STATUS';
       end
       obj.channel = channel;
-		  obj.monitor = drake.util.MessageMonitor(drc.atlas_status_t,'utime');
+		  obj.monitor = drake.util.MessageMonitor(atlas.status_t,'utime');
       lc = lcm.lcm.LCM.getSingleton();
       lc.subscribe(channel,obj.monitor);
     end
@@ -24,7 +24,7 @@ classdef AtlasBehaviorModeListener
         t = -1;
       else
         t = obj.monitor.getLastTimestamp();
-        msg = drc.atlas_status_t(data);
+        msg = atlas.status_t(data);
         x = AtlasBehaviorModeListener.decode(msg);
 			end
     end
@@ -36,7 +36,7 @@ classdef AtlasBehaviorModeListener
         t = -1;
       else
         t = obj.monitor.getLastTimestamp();
-        msg = drc.atlas_status_t(data);
+        msg = atlas.status_t(data);
         x = AtlasBehaviorModeListener.decode(msg);
 			end
 		end
