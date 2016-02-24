@@ -1,5 +1,6 @@
 import lcm
 import drc as lcmdrc
+import atlas as lcmatlas
 import numpy as np
 import time
 
@@ -17,7 +18,7 @@ class AtlasPressureCommander(object):
 
     def publish_pump_command(self):
         print "Publishing new desired pump pressure: {:d} PSI".format(self.desired_psi)
-        msg = lcmdrc.atlas_pump_command_t()
+        msg = lcmatlas.pump_command_t()
         msg.desired_psi = self.desired_psi
         msg.desired_rpm = self.desired_rpm
         msg.cmd_max = 60.0
@@ -49,7 +50,7 @@ class AutoPressureCommander(AtlasPressureCommander):
 
 	def handle_atlas_state_extra(self, channel, msg):
 		if isinstance(msg, str):
-			msg = lcmdrc.atlas_state_extra_t.decode(msg)
+			msg = lcmatlas.state_extra_t.decode(msg)
 
 		max_joint_psi = max(np.max(msg.psi_pos),
 			                np.max(msg.psi_neg))
@@ -96,7 +97,7 @@ class PlanPressureCommander(AtlasPressureCommander):
 
     def handle_behavior(self, channel, msg):
         if isinstance(msg, str):
-            msg = lcmdrc.atlas_behavior_command_t.decode(msg)
+            msg = lcmdrc.behavior_command_t.decode(msg)
 
         s = msg.command.lower()
         if s in self.behavior_map:

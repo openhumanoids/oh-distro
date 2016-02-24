@@ -9,6 +9,7 @@
 #include "lcmtypes/drc/controller_status_t.hpp"
 #include "lcmtypes/drc/behavior_t.hpp"
 #include "drake/lcmt_qp_controller_input.hpp"
+#include "lcmtypes/atlas/status_t.hpp"
 #include "RobotStateDriver.hpp"
 
 enum FootID {RIGHT, LEFT};
@@ -135,5 +136,5 @@ private:
                          const drc::controller_status_t* msg);
   void handleAtlasStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
-                         const drc::behavior_t* msg);
+                         const atlas::status_t* msg);
 };
