@@ -324,6 +324,8 @@ Use e.g. our in-house packaged version of OpenCV 2.4.12.3 that matches the one b
     wget http://terminator.robots.inf.ed.ac.uk/public/opencv_2.4.12.2.deb
     sudo dpkg -i opencv_2.4.12.2.deb
 
+Note: Using the in-house packaged version of OpenCV requires ``libdc1394-22-dev`` to be installed (``sudo apt-get install libdc1394-22-dev``).
+
 These options are disabled by default on purpose. Then, to make use of the system-installed versions, configure the externals build with the corresponding flags:
 
 ::
