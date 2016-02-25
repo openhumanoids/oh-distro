@@ -334,6 +334,19 @@ These options are disabled by default on purpose. Then, to make use of the syste
     mkdir pod-build && cd pod-build
     cmake .. -DUSE_SYSTEM_PCL:BOOL=ON -DUSE_SYSTEM_OPENCV:BOOL=ON
 
+
+Using externally installed Gurobi
+=================================
+If installing your own version of Gurobi, please add the following to your .bashrc file before compiling oh-distro (and after sourcing drc_environment.sh since these variables will also be set when sourcing our drc_environment config):
+
+::
+
+    export GUROBI_HOME=[PATH_TO]/gurobi/gurobi562/linux64
+    export PATH=$PATH:$GUROBI_HOME/bin
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GUROBI_HOME/lib
+    export GRB_LICENSE_FILE=$HOME/gurobi.lic
+
+
 Build Issues FAQ
 ================
 ISSUE: make in externals failed:
