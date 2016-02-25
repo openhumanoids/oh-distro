@@ -4,7 +4,13 @@ cmake_minimum_required(VERSION 2.6.0)
 set(POD_NAME control)
 include(cmake/pods.cmake)
 
-# check whether matlab is present, else skip the entire control directory
+# check whether snopt is available, else skip the control/matlab directory
+pods_find_pkg_config(snopt_c)
+if (NOT snopt_c_FOUND)
+  message(WARNING "SNOPT not found, skipping control/matlab")
+endif()
+
+# check whether matlab is present, else skip the control/matlab directory
 find_program(matlab matlab)
 if (NOT matlab)
   message(WARNING "Matlab not found, skipping control")
@@ -48,7 +54,7 @@ endif()
 
 include_directories(${INCLUDE_INSTALL_PATH})
 
-if (matlab)
+if (matlab AND snopt_c_FOUND)
   add_subdirectory(src)
   add_subdirectory(matlab/@QPReactiveRecoveryPlan)
 endif()
@@ -91,7 +97,6 @@ if (matlab)
            COMMAND testAtlasFallDetector)
 endif()
 
-#find_program(matlab matlab)
 #if (NOT matlab-NOTFOUND)
 #   add_test(NAME MATLAB_Unit_Tests
 #   		 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
