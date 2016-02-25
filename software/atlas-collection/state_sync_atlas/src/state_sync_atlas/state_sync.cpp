@@ -273,22 +273,7 @@ void state_sync::enableEncoders(bool enable) {
 
 }
 
-
-// Quick check that the incoming and previous joint sets are the same size
-// TODO: perhaps make this more careful with more checks?
-void checkJointLengths(size_t previous_size , size_t incoming_size, std::string channel){
-  if ( incoming_size != previous_size ){
-    std::cout << "ERROR: Number of joints in " << channel << "[" << incoming_size 
-              << "] does not match previous [" << previous_size << "]\n"; 
-    exit(-1);
-  }  
-}
-
-
 void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
-  checkJointLengths( head_joints_.position.size(),  msg->joint_position.size(), channel);
-  
-  // std::cout << "got multisense\n";
   head_joints_.name = msg->joint_name;
   head_joints_.position = msg->joint_position;
   head_joints_.velocity = msg->joint_velocity;
@@ -302,9 +287,6 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 }
 
 void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
-  checkJointLengths( left_hand_joints_.position.size(),  msg->joint_position.size(), channel);
-  //std::cout << "got "<< channel <<"\n";
-  
   left_hand_joints_.name = msg->joint_name;
   left_hand_joints_.position = msg->joint_position;
   left_hand_joints_.velocity = msg->joint_velocity;
@@ -317,9 +299,6 @@ void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
 }
 
 void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
-  checkJointLengths( right_hand_joints_.position.size(),  msg->joint_position.size(), channel);
-  //std::cout << "got "<< channel <<"\n";
-  
   right_hand_joints_.name = msg->joint_name;
   right_hand_joints_.position = msg->joint_position;
   right_hand_joints_.velocity = msg->joint_velocity;
@@ -386,8 +365,6 @@ void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     std::cout << "FORCE_TORQUE not received yet, not publishing EST_ROBOT_STATE =========================\n";
     return;    
   }  
-
-  checkJointLengths( core_robot_joints_.position.size(),  msg->joint_position.size(), channel);
 
   std::vector <float> mod_positions;
   mod_positions = msg->joint_position;
