@@ -16,13 +16,6 @@ using namespace std;
 
 /////////////////////////////////////
 
-void assignJointsStruct( Joints &joints ){
-  joints.velocity.assign( joints.name.size(), 0);
-  joints.position.assign( joints.name.size(), 0);
-  joints.effort.assign( joints.name.size(), 0);  
-}
-
-
 void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
                      int64_t utime, void* user) {  
   state_sync& sync = *((state_sync*)user);
@@ -32,8 +25,7 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        boost::shared_ptr<CommandLineConfig> &cl_cfg_):
-                       lcm_(lcm_), cl_cfg_(cl_cfg_), 
-                       joint_utils_(cl_cfg_->atlas_version){
+                       lcm_(lcm_), cl_cfg_(cl_cfg_){
 
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
 
@@ -41,65 +33,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   bot_param_add_update_subscriber(botparam_,
                                   onParamChangeSync, this);
    
-  ////////////////////////////////////////////////////////////////////////////////////////
-  /// 1. Get the Joint names and determine the correct configuration:
-  std::vector<std::string> joint_names = model_->getJointNames();
-  
-  if(find(joint_names.begin(), joint_names.end(), "left_f0_j0" ) != joint_names.end()){
-    std::cout << "Robot fitted with left Sandia hand\n";
-    lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::leftHandHandler,this);  
-    left_hand_joints_.name = joint_utils_.sandia_l_joint_names;
-  }else if(find(joint_names.begin(), joint_names.end(), "left_finger[0]/joint_base" ) != joint_names.end()){
-    std::cout << "Robot fitted with left iRobot hand\n";
-    lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::leftHandHandler,this);  
-    left_hand_joints_.name = joint_utils_.irobot_l_joint_names;
-  }else if(find(joint_names.begin(), joint_names.end(), "left_finger_1_joint_1" ) != joint_names.end()){
-    std::cout << "Robot fitted with left Robotiq hand\n";
-    lcm_->subscribe("ROBOTIQ_LEFT_STATE",&state_sync::leftHandHandler,this);  
-    left_hand_joints_.name = joint_utils_.robotiq_l_joint_names;
-  }else{
-    std::cout << "Robot has no left hand\n"; 
-  }
-
-  if(find(joint_names.begin(), joint_names.end(), "right_f0_j0" ) != joint_names.end()){
-    std::cout << "Robot fitted with right Sandia hand\n";
-    lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::rightHandHandler,this);
-    right_hand_joints_.name = joint_utils_.sandia_r_joint_names;
-  }else if(find(joint_names.begin(), joint_names.end(), "right_finger[0]/joint_base" ) != joint_names.end()){
-    std::cout << "Robot fitted with right iRobot hand\n";
-    lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::rightHandHandler,this);
-    right_hand_joints_.name = joint_utils_.irobot_r_joint_names;
-  }else if(find(joint_names.begin(), joint_names.end(), "right_finger_1_joint_1" ) != joint_names.end()){
-    std::cout << "Robot fitted with right Robotiq hand\n";
-    lcm_->subscribe("ROBOTIQ_RIGHT_STATE",&state_sync::rightHandHandler,this);  
-    right_hand_joints_.name = joint_utils_.robotiq_r_joint_names;
-  }else{
-    std::cout << "Robot has no right hand\n"; 
-  }
-  
-  core_robot_joints_.name = joint_utils_.atlas_joint_names; 
-  
-  if(find(joint_names.begin(), joint_names.end(), "pre_spindle_cal_x_joint" ) != joint_names.end()){
-    std::cout << "Robot fitted with dummy head joints\n";
-    head_joints_.name = joint_utils_.head_joint_names;
-  }else{
-    std::cout << "Robot fitted with a single head joint\n";
-    head_joints_.name = joint_utils_.simple_head_joint_names;
-  }
-  
-  assignJointsStruct( core_robot_joints_ );
-  assignJointsStruct( head_joints_ );
-  assignJointsStruct( left_hand_joints_ );
-  assignJointsStruct( right_hand_joints_ );
-  
-  std::cout << "No. of Joints: "
-      << core_robot_joints_.position.size() << " atlas, "
-      << head_joints_.position.size() << " head, "
-      << left_hand_joints_.position.size() << " left, "
-      << right_hand_joints_.position.size() << " right\n";
-
-
-  /// 2. Subscribe to required signals
+  /// Subscribe to required signals
   //lcm::Subscription* sub0 = lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this); // depricated
   lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE",&state_sync::coreRobotHandler,this);
   lcm::Subscription* sub1 = lcm_->subscribe("FORCE_TORQUE",&state_sync::forceTorqueHandler,this);

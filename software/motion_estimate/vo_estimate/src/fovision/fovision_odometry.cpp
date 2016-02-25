@@ -27,7 +27,6 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
-#include <drc_utils/joint_utils.hpp>
 
 #include <opencv/cv.h> // for disparity 
 
@@ -94,10 +93,6 @@ class StereoOdom{
     // Kinematics
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
-    //drc::atlas_state_t last_atlas_state_msg_;
-    //void atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
-    //bool getBodyToHead(const drc::atlas_state_t* msg, Eigen::Isometry3d &body_to_head);
-    JointUtils joint_utils_;
 
     // IMU
     bool pose_initialized_; // initalized from VO
@@ -115,7 +110,7 @@ class StereoOdom{
 
 StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_) : 
        lcm_(lcm_), cl_cfg_(cl_cfg_), utime_cur_(0), utime_prev_(0), 
-       ref_utime_(0), changed_ref_frames_(false),joint_utils_(cl_cfg_.atlas_version){
+       ref_utime_(0), changed_ref_frames_(false){
 
   // Set up frames and config:
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -152,9 +147,6 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
   init_pose = Eigen::Isometry3d::Identity();
   init_pose.translation() = Eigen::Vector3d(0,0,1.65); // nominal head height
   estimator_->setHeadPose(init_pose);
-
-  //lcm_->subscribe("ATLAS_STATE",&StereoOdom::atlasStateHandler,this);
-
 
   // IMU:
   pose_initialized_=false;
@@ -550,42 +542,6 @@ Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
 }
 
 
-/*
-// Determing the body-to-head
-bool StereoOdom::getBodyToHead(const drc::atlas_state_t* msg, Eigen::Isometry3d &body_to_head){
-
-  // joint_utils_.atlas_joint_names;
-
-  map<string, double> jointpos_in;
-  // map<string, drc::transform_t > cartpos_out;
-  map<string, KDL::Frame > cartpos_out;
-  for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_in.insert(make_pair(joint_utils_.atlas_joint_names[i], msg->joint_position[i]));
-
-  // Calculate forward position kinematics
-  bool kinematics_status;
-  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
-  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_out,flatten_tree);
-  if(kinematics_status>=0){
-    // cout << "Success!" <<endl;
-  }else{
-    cerr << "Error: could not calculate forward kinematics!" <<endl;
-    return false;
-  }
-
-  // 2. Determine the head position:
-  for( map<string, KDL::Frame>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
-    std::string joint = (*ii).first;
-    if (   (*ii).first.compare( "head" ) == 0 ){
-      body_to_head = KDLToEigen((*ii).second);
-      return true;
-    }
-  }
-  return false;
-}
-*/
-
-
 
 int temp_counter = 0;
 void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -629,13 +585,6 @@ void StereoOdom::microstrainHandler(const lcm::ReceiveBuffer* rbuf,
   estimator_->publishPose(temp_utime, "POSE_IMU_RATES", Eigen::Isometry3d::Identity(), imu_velocity_linear_, imu_velocity_angular_);
   // estimator_->publishPose(temp_utime, "POSE_IMU_RATES", Eigen::Isometry3d::Identity(), imu_velocity_linear_, imu_velocity_angular_alpha_);
 }
-
-
-//void StereoOdom::atlasStateHandler(const lcm::ReceiveBuffer* rbuf,
-//     const std::string& channel, const  drc::atlas_state_t* msg){
-//  last_atlas_state_msg_ = *msg;
-//}
-
 
 
 int main(int argc, char **argv){
