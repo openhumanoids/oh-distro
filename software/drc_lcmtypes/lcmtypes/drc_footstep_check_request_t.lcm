@@ -4,7 +4,7 @@ struct footstep_check_request_t
 {
 	int64_t utime;
 
-	robot_state_t initial_state;
+	bot_core.robot_state_t initial_state;
 	footstep_plan_t footstep_plan;
 	boolean snap_to_terrain;
 	boolean compute_infeasibility;

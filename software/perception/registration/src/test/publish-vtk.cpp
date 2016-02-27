@@ -9,7 +9,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <ConciseArgs>
 
-#include <lcmtypes/drc/pointcloud_t.hpp>
+#include <lcmtypes/bot_core/pointcloud_t.hpp>
 
 
 float packColor(unsigned char* color) {
@@ -29,7 +29,7 @@ main (int argc, char** argv)
   reader->Update ();
   vtkSmartPointer<vtkPolyData> polydata = reader->GetOutput ();
 
-  drc::pointcloud_t msg;
+  bot_core::pointcloud_t msg;
   msg.utime =0;
   msg.seq =0;
   msg.frame_id = "world";

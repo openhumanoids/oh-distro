@@ -5,7 +5,7 @@ struct grasp_transition_state_t
 {
     int64_t utime;  
     int32_t affordance_uid;  
-    position_3d_t hand_pose; // world/body/affordance relative pose where grasp should activate.
+    bot_core.position_3d_t hand_pose; // world/body/affordance relative pose where grasp should activate.
     
     boolean grasp_on;
     int16_t grasp_type; // see constants below 

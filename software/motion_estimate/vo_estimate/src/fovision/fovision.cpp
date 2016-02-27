@@ -1,5 +1,5 @@
 #include "fovision.hpp"
-#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/bot_core/system_status_t.hpp"
 
 using namespace std;
 
@@ -63,11 +63,11 @@ void FoVision::doOdometry(uint8_t *left_buf,float *disparity_buf, int64_t utime)
 }
 
 void FoVision::send_status_msg(std::string text){
-  drc::system_status_t status_msg;
+  bot_core::system_status_t status_msg;
   status_msg.utime =  current_timestamp_;
-  status_msg.system = drc::system_status_t::MOTION_ESTIMATION;// use enums!!
-  status_msg.importance = drc::system_status_t::VERY_IMPORTANT;// use enums!!
-  status_msg.frequency = drc::system_status_t::MEDIUM_FREQUENCY;// use enums!!
+  status_msg.system = bot_core::system_status_t::MOTION_ESTIMATION;// use enums!!
+  status_msg.importance = bot_core::system_status_t::VERY_IMPORTANT;// use enums!!
+  status_msg.frequency = bot_core::system_status_t::MEDIUM_FREQUENCY;// use enums!!
   status_msg.value = text;
   lcm_->publish("SYSTEM_STATUS", &status_msg);
 }

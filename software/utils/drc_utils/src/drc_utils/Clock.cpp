@@ -3,8 +3,8 @@
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
 #include <bot_core/timestamp.h>
-#include <lcmtypes/drc/utime_t.hpp>
-#include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/bot_core/utime_t.hpp>
+#include <lcmtypes/bot_core/robot_state_t.hpp>
 
 using namespace drc;
 
@@ -72,7 +72,7 @@ struct Clock::Impl {
 
   void onTime(const lcm::ReceiveBuffer* iBuf,
               const std::string& iChannel,
-              const drc::utime_t* iMessage) {
+              const bot_core::utime_t* iMessage) {
     mCurrentTime = iMessage->utime;
     int64_t curRealTime = bot_timestamp_now();
     int64_t dt = curRealTime - mLastMessageReceivedTime;
@@ -87,7 +87,7 @@ struct Clock::Impl {
 
   void onState(const lcm::ReceiveBuffer* iBuf,
                const std::string& iChannel,
-               const drc::robot_state_t* iMessage) {
+               const bot_core::robot_state_t* iMessage) {
     mCurrentTime = iMessage->utime;
     int64_t curRealTime = bot_timestamp_now();
     int64_t dt = curRealTime - mLastMessageReceivedTime;

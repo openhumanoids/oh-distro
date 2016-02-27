@@ -12,7 +12,7 @@ public class ForceTorqueStateCoder implements drake.util.LCMCoder
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {
-        drc.robot_state_t msg = new drc.robot_state_t(data);
+        bot_core.robot_state_t msg = new bot_core.robot_state_t(data);
         return decode(msg);
       } catch (IOException ex) {
         System.out.println("Exception: " + ex);
@@ -24,7 +24,7 @@ public class ForceTorqueStateCoder implements drake.util.LCMCoder
       return 18;
     }
 
-    public drake.util.CoordinateFrameData decode(drc.robot_state_t msg)
+    public drake.util.CoordinateFrameData decode(bot_core.robot_state_t msg)
     {
       int index;
       int dim=18; // 3 per foot, 6 per hand
@@ -60,7 +60,7 @@ public class ForceTorqueStateCoder implements drake.util.LCMCoder
     public LCMEncodable encode(drake.util.CoordinateFrameData d)
     {
 //      System.out.println("ContactStateCoder: Encode not implemented yet");
-      return new drc.robot_state_t();
+      return new bot_core.robot_state_t();
     }
     
     public String timestampName()

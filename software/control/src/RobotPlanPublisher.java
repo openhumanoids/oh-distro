@@ -43,23 +43,23 @@ public class RobotPlanPublisher
     {
       msg.num_states = num_states;
 
-      msg.plan = new drc.robot_state_t[msg.num_states];
+      msg.plan = new bot_core.robot_state_t[msg.num_states];
       for (int i=0;i<msg.num_states;i++)
       {
-        msg.plan[i] = new drc.robot_state_t();
+        msg.plan[i] = new bot_core.robot_state_t();
         msg.plan[i].num_joints = (short) nonfloating_joint_name.length;
         msg.plan[i].joint_name = nonfloating_joint_name;
-        msg.plan[i].pose = new drc.position_3d_t();
-        msg.plan[i].pose.translation = new drc.vector_3d_t();
-        msg.plan[i].pose.rotation = new drc.quaternion_t();
+        msg.plan[i].pose = new bot_core.position_3d_t();
+        msg.plan[i].pose.translation = new bot_core.vector_3d_t();
+        msg.plan[i].pose.rotation = new bot_core.quaternion_t();
         msg.plan[i].pose.rotation.w = 1.0;
-        msg.plan[i].twist = new drc.twist_t();
-        msg.plan[i].twist.linear_velocity = new drc.vector_3d_t();
-        msg.plan[i].twist.angular_velocity = new drc.vector_3d_t();
+        msg.plan[i].twist = new bot_core.twist_t();
+        msg.plan[i].twist.linear_velocity = new bot_core.vector_3d_t();
+        msg.plan[i].twist.angular_velocity = new bot_core.vector_3d_t();
         msg.plan[i].joint_position = new float[msg.plan[i].num_joints];
         msg.plan[i].joint_velocity = new float[msg.plan[i].num_joints];
         msg.plan[i].joint_effort = new float[msg.plan[i].num_joints];
-        msg.plan[i].force_torque = new drc.force_torque_t();
+        msg.plan[i].force_torque = new bot_core.force_torque_t();
       }
       msg.plan_info = new int[num_states];
     }

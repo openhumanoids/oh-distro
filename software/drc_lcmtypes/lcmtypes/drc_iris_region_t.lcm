@@ -6,5 +6,5 @@ struct iris_region_t
 
 	lin_con_t lin_con;
 
-	position_3d_t seed_pose;
+	bot_core.position_3d_t seed_pose;
 }

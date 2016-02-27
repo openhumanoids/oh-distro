@@ -74,17 +74,17 @@ classdef RobotPlanPublisherWKeyFrames
             %javaArray('java.lang.Boolean', msg.num_states);
             is_breakpoint = logical(zeros(1,msg.num_states)==1);
             %javaArray('java.lang.Boolean', msg.num_states);
-            plan = javaArray('drc.robot_state_t', msg.num_states);
+            plan = javaArray('bot_core.robot_state_t', msg.num_states);
             float_offset = 0;
             for i=1:msg.num_states,        
                 is_keyframe(i) = (X(1,i)==1.0);
                 is_breakpoint(i) = (X(2,i)==1.0);
-                plan(i) = drc.robot_state_t();
+                plan(i) = bot_core.robot_state_t();
                 plan(i).utime = (T(i)*1000000);% use relative time //
                 if obj.floating
-                    plan(i).pose = drc.position_3d_t();
-                    plan(i).pose.translation = drc.vector_3d_t();
-                    plan(i).pose.rotation = drc.quaternion_t();
+                    plan(i).pose = bot_core.position_3d_t();
+                    plan(i).pose.translation = bot_core.vector_3d_t();
+                    plan(i).pose.rotation = bot_core.quaternion_t();
                     plan(i).pose.translation.x = X(3,i);
                     plan(i).pose.translation.y = X(4,i);
                     plan(i).pose.translation.z = X(5,i);
@@ -95,9 +95,9 @@ classdef RobotPlanPublisherWKeyFrames
                     plan(i).pose.rotation.y = q(3);
                     plan(i).pose.rotation.z = q(4);
                     
-                    plan(i).twist = drc.twist_t();
-                    plan(i).twist.linear_velocity = drc.vector_3d_t();
-                    plan(i).twist.angular_velocity = drc.vector_3d_t();   
+                    plan(i).twist = bot_core.twist_t();
+                    plan(i).twist.linear_velocity = bot_core.vector_3d_t();
+                    plan(i).twist.angular_velocity = bot_core.vector_3d_t();   
                     plan(i).twist.linear_velocity.x = X(offset+num_dofs+1,i);
                     plan(i).twist.linear_velocity.y = X(offset+num_dofs+2,i);
                     plan(i).twist.linear_velocity.z = X(offset+num_dofs+3,i);
@@ -118,7 +118,7 @@ classdef RobotPlanPublisherWKeyFrames
                     plan(i).joint_velocity(j-float_offset) = X(j+offset+num_dofs,i);
                 end
  
-                plan(i).force_torque = drc.force_torque_t();
+                plan(i).force_torque = bot_core.force_torque_t();
             end
             msg.is_keyframe = is_keyframe;
             msg.is_breakpoint = is_breakpoint;
@@ -140,9 +140,9 @@ classdef RobotPlanPublisherWKeyFrames
               grasp_transition_states(i).utime = (G(i).utime*1000000);% use relative time //+msg.utime
               %grasp_transition_states(i).affordance_uid = 0;%(Ignore this field for now.)
               grasp_transition_states(i).affordance_uid =G(i).affordance_uid; 
-              grasp_transition_states(i).hand_pose = drc.position_3d_t();
-              grasp_transition_states(i).hand_pose.translation = drc.vector_3d_t();
-              grasp_transition_states(i).hand_pose.rotation = drc.quaternion_t();
+              grasp_transition_states(i).hand_pose = bot_core.position_3d_t();
+              grasp_transition_states(i).hand_pose.translation = bot_core.vector_3d_t();
+              grasp_transition_states(i).hand_pose.rotation = bot_core.quaternion_t();
               grasp_transition_states(i).hand_pose.translation = G(i).hand_pose.translation;
               grasp_transition_states(i).hand_pose.rotation = G(i).hand_pose.rotation;
               grasp_transition_states(i).grasp_on = G(i).grasp_on;

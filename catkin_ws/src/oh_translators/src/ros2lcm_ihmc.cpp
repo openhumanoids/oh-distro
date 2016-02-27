@@ -42,16 +42,8 @@
 #include <lcmtypes/bot_core.hpp>
 
 // Core OH types
-#include "lcmtypes/drc/force_torque_t.hpp"
-#include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
-#include "lcmtypes/drc/six_axis_force_torque_t.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/drc/joint_state_t.hpp"
-#include "lcmtypes/drc/utime_t.hpp"
-#include "lcmtypes/drc/kvh_raw_imu_batch_t.hpp"
 #include "lcmtypes/drc/behavior_t.hpp"
 #include "lcmtypes/drc/plan_status_t.hpp"
-#include "lcmtypes/drc/ins_t.hpp"
 
 // IHMC types
 #include "lcmtypes/ihmc/last_received_message_t.hpp"
@@ -103,9 +95,9 @@ private:
   void lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg);
   void footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg);
 
-  void appendSensors(drc::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+  void appendSensors(bot_core::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                          geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
-  void appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+  void appendSensors(bot_core::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                          geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
 
   void publishLidar(const sensor_msgs::LaserScanConstPtr& msg, std::string channel);
@@ -227,7 +219,7 @@ void App::headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 
 void App::publishMultisenseState(int64_t utime, float position, float velocity)
 {
-  drc::joint_state_t msg_out;
+  bot_core::joint_state_t msg_out;
   msg_out.utime = utime;
   msg_out.joint_position.push_back(position);
   msg_out.joint_velocity.push_back(velocity);
@@ -349,7 +341,7 @@ void App::lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstP
 
 void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
 {
-  drc::kvh_raw_imu_batch_t imu;
+  bot_core::kvh_raw_imu_batch_t imu;
   imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
 
   if (verbose_)
@@ -364,7 +356,7 @@ void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
     //   << " | " <<  msg->data[i].dax << " " << msg->data[i].day << " " << msg->data[i].daz
     //   << " | " <<  msg->data[i].ddx << " " << msg->data[i].ddy << " " << msg->data[i].ddz << "\n";
 
-    drc::kvh_raw_imu_t raw;
+    bot_core::kvh_raw_imu_t raw;
     raw.utime = msg->data[i].imu_timestamp;
     raw.packet_count = msg->data[i].packet_count;
     raw.delta_rotation[0] = msg->data[i].dax;
@@ -381,7 +373,7 @@ void App::imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg)
 
 void App::imuSensorCallback(const sensor_msgs::ImuConstPtr& msg)
 {
-  drc::ins_t imu;
+  bot_core::ins_t imu;
   imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
   imu.device_time = imu.utime;
   imu.gyro[0] = msg->angular_velocity.x;
@@ -538,8 +530,8 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   joints.effort = msg->effort;
   joints.name = msg->name;
 
-  drc::six_axis_force_torque_array_t six_axis_force_torque_array;
-  drc::force_torque_t force_torque;
+  bot_core::six_axis_force_torque_array_t six_axis_force_torque_array;
+  bot_core::force_torque_t force_torque;
   appendSensors(force_torque, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
   appendSensors(six_axis_force_torque_array, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
 
@@ -552,7 +544,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
       filterJointNames(joints.name);
       // joints = reorderJoints(joints);
     }
-    drc::joint_state_t amsg;
+    bot_core::joint_state_t amsg;
     amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
     for (int i = 0; i < joints.position.size(); i++)
@@ -583,7 +575,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     {
     }
 
-    drc::robot_state_t msg_out;
+    bot_core::robot_state_t msg_out;
     msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
     int n_joints = joints.position.size();
     msg_out.joint_position.assign(n_joints, 0);
@@ -608,7 +600,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
     lcmPublish_.publish("EST_ROBOT_STATE", &msg_out);
   }
 
-  drc::utime_t utime_msg;
+  bot_core::utime_t utime_msg;
   int64_t joint_utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
   utime_msg.utime = joint_utime;
   lcmPublish_.publish("ROBOT_UTIME", &utime_msg);
@@ -616,7 +608,7 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   lastJointStateUtime_ = joint_utime;
 }
 
-void App::appendSensors(drc::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+void App::appendSensors(bot_core::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                             geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor)
 {
   msg_out.l_foot_force_z = l_foot_sensor.wrench.force.z;
@@ -640,7 +632,7 @@ void App::appendSensors(drc::force_torque_t& msg_out, geometry_msgs::WrenchStamp
   msg_out.r_hand_torque[2] = r_hand_sensor.wrench.torque.z;
 }
 
-void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+void App::appendSensors(bot_core::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                             geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor)
 {
   int num_sensors = 4;
@@ -656,11 +648,11 @@ void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_ms
 
   msg_out.names = names;
 
-  std::vector<drc::six_axis_force_torque_t> sensors;
-  drc::six_axis_force_torque_t l_foot;
-  drc::six_axis_force_torque_t r_foot;
-  drc::six_axis_force_torque_t l_hand; 
-  drc::six_axis_force_torque_t r_hand;
+  std::vector<bot_core::six_axis_force_torque_t> sensors;
+  bot_core::six_axis_force_torque_t l_foot;
+  bot_core::six_axis_force_torque_t r_foot;
+  bot_core::six_axis_force_torque_t l_hand; 
+  bot_core::six_axis_force_torque_t r_hand;
   
   l_foot.utime = (int64_t)l_foot_sensor.header.stamp.toNSec() / 1000;
   l_foot.force[0] = l_foot_sensor.wrench.force.x;

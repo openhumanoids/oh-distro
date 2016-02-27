@@ -9,13 +9,7 @@
 #include <model-client/model-client.hpp>
 
 #include "lcmtypes/bot_core.hpp"
-//#include "lcmtypes/drc/atlas_state_t.hpp"
 #include "lcmtypes/atlas/state_extra_t.hpp"
-#include "lcmtypes/drc/joint_state_t.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/drc/system_status_t.hpp"
-#include "lcmtypes/drc/utime_t.hpp"
-#include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
@@ -97,17 +91,16 @@ class state_sync{
     
     long utime_prev_;
     
-    //void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
-    void coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
-    void forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::six_axis_force_torque_array_t* msg);
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
-    void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
-    void rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg);
+    void coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
+    void forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::six_axis_force_torque_array_t* msg);
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
+    void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
+    void rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  atlas::state_extra_t* msg);
     
-    void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
+    void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::utime_t* msg);
     void enableEncoders(bool enable);
     
     Joints head_joints_;
@@ -140,13 +133,13 @@ class state_sync{
     std::vector<int> encoder_joint_indices_;
     std::vector<int> extra_offsettable_joint_indices_;
 
-    void publishRobotState(int64_t utime_in, const  drc::six_axis_force_torque_array_t& msg);
-    void appendJoints(drc::robot_state_t& msg_out, Joints joints);
+    void publishRobotState(int64_t utime_in, const  bot_core::six_axis_force_torque_array_t& msg);
+    void appendJoints(bot_core::robot_state_t& msg_out, Joints joints);
     
-    bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose);
+    bool insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT pose);
 
 
-    drc::six_axis_force_torque_array_t force_torque_; // More recent force torque messurement
+    bot_core::six_axis_force_torque_array_t force_torque_; // More recent force torque messurement
     bool force_torque_init_; // Have we received a force torque message?
 
 };    

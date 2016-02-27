@@ -8,7 +8,7 @@
 #include "boost/filesystem.hpp"
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/pronto/pointcloud2_t.hpp>
+#include <lcmtypes/bot_core/pointcloud2_t.hpp>
 #include <pronto_utils/conversions_lcm.hpp>
 
 #include <unistd.h>

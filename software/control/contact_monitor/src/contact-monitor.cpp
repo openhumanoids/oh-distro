@@ -3,7 +3,7 @@
 #include <ConciseArgs>
 #include <map>
 
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 
 
@@ -24,7 +24,7 @@ public:
 
   void handleState(const lcm::ReceiveBuffer* rbuf,
                    const std::string& chan,
-                   const drc::robot_state_t* msg) {
+                   const bot_core::robot_state_t* msg) {
     if (msg->utime - this->last_change_utime.at(RIGHT) > static_cast<int64_t>(this->debounce_time * 1e6)) {
       this->contact_state.at(RIGHT) = msg->force_torque.r_foot_force_z > this->fz_threshold;
       this->last_change_utime.at(RIGHT) = msg->utime;

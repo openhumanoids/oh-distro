@@ -4,7 +4,7 @@ struct footstep_t
 {
 	int64_t utime;
 
-	position_3d_t pos;
+	bot_core.position_3d_t pos;
 	int32_t id;
 	boolean is_right_foot;
 

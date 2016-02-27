@@ -9,8 +9,8 @@
 #include <drc_utils/LcmWrapper.hpp>
 
 #include <lcmtypes/bot_core/rigid_transform_t.hpp>
-#include <lcmtypes/drc/robot_state_t.hpp>
-#include <lcmtypes/drc/utime_t.hpp>
+#include <lcmtypes/bot_core/robot_state_t.hpp>
+#include <lcmtypes/bot_core/utime_t.hpp>
 
 struct Publisher {
   std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
@@ -28,7 +28,7 @@ struct Publisher {
   template<typename T>
   void handler(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
                const T* iMessage) {
-    drc::utime_t msg;
+    bot_core::utime_t msg;
     msg.utime = iMessage->utime;
     mLcmWrapper->get()->publish(mOutputChannel, &msg);
     mGotMessage = true;
@@ -55,7 +55,7 @@ struct Publisher {
     mLcmWrapper->startHandleThread(false);
 
     while (true) {
-      if (tryChannel<drc::robot_state_t>("ROBOT_STATE") ||
+      if (tryChannel<bot_core::robot_state_t>("ROBOT_STATE") ||
           tryChannel<bot_core::rigid_transform_t>("PRE_SPINDLE_TO_POST_SPINDLE")) {
         mLcmWrapper->startHandleThread(true);
         return;
@@ -71,7 +71,7 @@ struct Publisher {
 
   void operator()() {
     int publishPeriod = 1.0e6/mPublishFrequency;
-    drc::utime_t msg;
+    bot_core::utime_t msg;
     auto lcm = mLcmWrapper->get();
     int64_t currentTime, remainingTime;
 

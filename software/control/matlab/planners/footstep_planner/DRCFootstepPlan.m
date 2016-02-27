@@ -38,7 +38,7 @@ classdef DRCFootstepPlan < FootstepPlan
       msg.iris_region_assignments = region_order;
 
       % Publish a simple position sequence corresponding to the footsteps in this plan (e.g. for debugging state estimation)
-      position_msgs = javaArray('drc.position_3d_t', msg.num_steps);
+      position_msgs = javaArray('bot_core.position_3d_t', msg.num_steps);
       for j = 1:msg.num_steps
         position_msgs(j) = msg.footsteps(j).pos;
       end

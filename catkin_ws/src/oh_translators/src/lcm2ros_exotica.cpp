@@ -14,7 +14,7 @@
 #include "lcmtypes/drc/robot_plan_t.hpp"
 #include "lcmtypes/drc/plan_control_t.hpp"
 #include "lcmtypes/drc/affordance_collection_t.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/drc/exotica_planner_request_t.hpp"
 #include "lcmtypes/drc/map_octree_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>

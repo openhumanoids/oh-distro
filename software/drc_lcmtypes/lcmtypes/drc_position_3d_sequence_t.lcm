@@ -4,5 +4,5 @@ struct position_3d_sequence_t {
 	int64_t utime;
 
 	int32_t num_positions;
-	position_3d_t positions[num_positions];
+	bot_core.position_3d_t positions[num_positions];
 }

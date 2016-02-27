@@ -133,7 +133,7 @@ bool joints2frames::shouldPublish(int64_t utime, std::string channel){
   return false;
 }
 
-void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg){
   
   // 0. Extract World Pose of body:
   Eigen::Isometry3d world_to_body;

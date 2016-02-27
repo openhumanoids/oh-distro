@@ -3,7 +3,7 @@ package drc;
 struct terrain_raycast_request_t
 {
 	int64_t utime;
-	robot_urdf_t urdf;
+	bot_core.robot_urdf_t urdf;
 
 	double x_min;
 	double x_step;

@@ -5,7 +5,7 @@ struct robot_plan_t
   int64_t utime;
   string robot_name;  
   int32_t num_states;
-  robot_state_t plan[num_states]; // each individual state is also timed.
+  bot_core.robot_state_t plan[num_states]; // each individual state is also timed.
   int32_t plan_info[num_states];  // info about the plan state, typically snopt_info value
   
   // Decoupling hand states from robot state as atlas api deals with them separately.

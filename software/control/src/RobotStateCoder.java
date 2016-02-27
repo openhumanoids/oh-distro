@@ -11,7 +11,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
     int m_num_floating_joints;
     java.util.TreeMap<String,Integer> m_joint_map;
     java.util.TreeMap<String,Integer> m_floating_joint_map;
-    drc.robot_state_t msg;
+    bot_core.robot_state_t msg;
    
     boolean include_torques;
     
@@ -38,19 +38,19 @@ public class RobotStateCoder implements drake.util.LCMCoder
         }
       }     
       
-      msg = new drc.robot_state_t();
+      msg = new bot_core.robot_state_t();
       
-      msg.pose = new drc.position_3d_t();
-      msg.pose.translation = new drc.vector_3d_t();
-      msg.pose.rotation = new drc.quaternion_t();
+      msg.pose = new bot_core.position_3d_t();
+      msg.pose.translation = new bot_core.vector_3d_t();
+      msg.pose.rotation = new bot_core.quaternion_t();
       
       if (m_num_floating_joints == 0) {
         msg.pose.rotation.w = 1.0;
         msg.pose.translation.z = 0.927;
       }
-      msg.twist = new drc.twist_t();
-      msg.twist.linear_velocity = new drc.vector_3d_t();
-      msg.twist.angular_velocity = new drc.vector_3d_t();
+      msg.twist = new bot_core.twist_t();
+      msg.twist.linear_velocity = new bot_core.vector_3d_t();
+      msg.twist.angular_velocity = new bot_core.vector_3d_t();
 
       msg.num_joints = m_num_joints;
       msg.joint_name = new String[m_num_joints];
@@ -75,7 +75,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {
-        drc.robot_state_t msg = new drc.robot_state_t(data);
+        bot_core.robot_state_t msg = new bot_core.robot_state_t(data);
         return decode(msg);
       } catch (IOException ex) {
         System.out.println("Exception: " + ex);
@@ -83,7 +83,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
       return null;
     }
  
-    public drake.util.CoordinateFrameData decode(drc.robot_state_t msg)
+    public drake.util.CoordinateFrameData decode(bot_core.robot_state_t msg)
     {
       Integer j;
       int index;
@@ -225,7 +225,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
       	msg.twist.angular_velocity.z = (float) omega[2];
       }
       
-      msg.force_torque =  new  drc.force_torque_t();
+      msg.force_torque =  new  bot_core.force_torque_t();
       
       return msg;
     }

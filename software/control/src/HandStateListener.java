@@ -53,7 +53,7 @@ public class HandStateListener implements LCMSubscriber
   {
     try
     {
-      drc.robot_state_t msg = new drc.robot_state_t(dins);
+      bot_core.robot_state_t msg = new bot_core.robot_state_t(dins);
       if(!setMapFlag)
       {
         java.util.TreeMap<String,Integer> msg_joint_map = new java.util.TreeMap<String,Integer>();

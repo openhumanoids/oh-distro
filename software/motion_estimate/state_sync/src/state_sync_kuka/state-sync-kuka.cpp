@@ -12,8 +12,8 @@
 #include <Eigen/Dense>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/drc/joint_state_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
+#include "lcmtypes/bot_core/joint_state_t.hpp"
 
 using namespace std;
 
@@ -31,15 +31,15 @@ public:
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
 
-  void kukaStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::joint_state_t* msg);
-  void sdhStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::joint_state_t* msg);
+  void kukaStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::joint_state_t* msg);
+  void sdhStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::joint_state_t* msg);
   void broadcastRobotState();
 
   // Store most recent states of both the hand and the arm, and combine once a new one arrives for each
   boost::mutex mtx_;
 
-  drc::joint_state_t kukaState_;
-  drc::joint_state_t sdhState_;
+  bot_core::joint_state_t kukaState_;
+  bot_core::joint_state_t sdhState_;
 };
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_) : lcm_(lcm_) {
@@ -63,7 +63,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_) : lcm_(lcm_) {
 App::~App()  {
 }
 
-void App::kukaStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::joint_state_t* msg) {
+void App::kukaStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::joint_state_t* msg) {
   mtx_.lock();
   kukaState_ = *msg;
   mtx_.unlock();
@@ -72,7 +72,7 @@ void App::kukaStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& ch
   this->broadcastRobotState();
 }
 
-void App::sdhStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::joint_state_t* msg) {
+void App::sdhStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::joint_state_t* msg) {
   mtx_.lock();
   sdhState_ = *msg;
   mtx_.unlock();
@@ -83,7 +83,7 @@ void App::sdhStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& cha
 
 void App::broadcastRobotState() {
   // Set up message
-  drc::robot_state_t msg_out;
+  bot_core::robot_state_t msg_out;
   msg_out.utime =  bot_timestamp_now();
   msg_out.pose.translation.x = 0;  msg_out.pose.translation.y = 0;  msg_out.pose.translation.z = 0;
   msg_out.pose.rotation.w = 1;  msg_out.pose.rotation.x = 0;  msg_out.pose.rotation.y = 0;  msg_out.pose.rotation.z = 0;

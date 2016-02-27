@@ -14,7 +14,7 @@
 
 #include "lcmtypes/drc/robot_plan_t.hpp"
 #include "lcmtypes/drc/plan_control_t.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
 #include <trajectory_msgs/JointTrajectory.h>
 #include <ipab_msgs/PlannerRequest.h>
 #include <std_srvs/Empty.h>
@@ -59,7 +59,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 
   for (int i = 0; i < msg->num_states; i++)
   {
-    drc::robot_state_t state = msg->plan[i];
+    bot_core::robot_state_t state = msg->plan[i];
     trajectory_msgs::JointTrajectoryPoint point;
 
     point.positions = std::vector<double>(state.joint_position.begin(), state.joint_position.end());

@@ -5,7 +5,7 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/pronto/pointcloud2_t.hpp>
+#include <lcmtypes/bot_core/pointcloud2_t.hpp>
 
 #include <laser_utils/laser_util.h>
 #include <path_util/path_util.h>
@@ -59,7 +59,6 @@ class CloudAccumulate{
     int counter_; 
     int verbose_;
     
-    // pronto::PointCloud* combined_cloud_;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr combined_cloud_;
     
     bool finished_;
