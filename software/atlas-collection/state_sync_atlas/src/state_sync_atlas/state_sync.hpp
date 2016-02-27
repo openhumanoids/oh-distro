@@ -7,7 +7,6 @@
 
 #include <map>
 #include <model-client/model-client.hpp>
-#include <drc_utils/joint_utils.hpp>
 
 #include "lcmtypes/bot_core.hpp"
 //#include "lcmtypes/drc/atlas_state_t.hpp"
@@ -95,7 +94,6 @@ class state_sync{
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
     BotParam* botparam_;
-    JointUtils joint_utils_;
     
     long utime_prev_;
     
