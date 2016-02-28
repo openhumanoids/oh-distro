@@ -10,7 +10,7 @@ namespace pcl
 {
 
   template <typename PointT> void
-  fromLCMPointCloud2 (const drc::pointcloud2_t& msg, pcl::PointCloud<PointT>& cloud)
+  fromLCMPointCloud2 (const bot_core::pointcloud2_t& msg, pcl::PointCloud<PointT>& cloud)
   {
 
     pcl::PCLPointCloud2 msg_blob;
