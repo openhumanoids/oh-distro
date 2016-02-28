@@ -22,7 +22,7 @@
 // ### LCM
 #include <bot_core/timestamp.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc/joint_state_t.hpp"
+#include "lcmtypes/bot_core/joint_state_t.hpp"
 #include "lcmtypes/drc/boolean_t.hpp"
 
 class App
@@ -68,7 +68,7 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg)
   if (n_joints == 1)
     return;
 
-  drc::joint_state_t msg_out;
+  bot_core::joint_state_t msg_out;
   msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
   msg_out.joint_position.assign(n_joints + 1, 0);

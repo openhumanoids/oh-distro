@@ -5,7 +5,7 @@ struct iris_region_request_t
 	int64_t utime;
 
 	// Robot state to use for map fill
-	robot_state_t initial_state;
+	bot_core.robot_state_t initial_state;
 
 	// Method to use when filling map data
 	// See drc_footstep_plan_params_t for enum values
@@ -13,7 +13,7 @@ struct iris_region_request_t
 
 
 	int32_t num_seed_poses;
-	position_3d_t seed_poses[num_seed_poses];
+	bot_core.position_3d_t seed_poses[num_seed_poses];
 	lin_con_t xy_bounds[num_seed_poses];
 	// A unique ID number for keeping track of multiple regions
 	int32_t region_id[num_seed_poses];

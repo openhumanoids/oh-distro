@@ -6,7 +6,7 @@
 #include "drake/lcmt_qp_controller_input.hpp"
 #include "drc/controller_status_t.hpp"
 #include "drc/recovery_trigger_t.hpp"
-#include "drc/robot_state_t.hpp"
+#include "bot_core/robot_state_t.hpp"
 #include "drc/behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include "drake/systems/controllers/QPCommon.h"
@@ -211,7 +211,7 @@ public:
     newInputAvailable = true;
   }
 
-  void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_state_t* msg)
+  void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
   {
     //std::cout << "received robotstate on lcm thread " << std::this_thread::get_id() << std::endl;
 
@@ -229,7 +229,7 @@ public:
     pointerMutex.lock();
     solveArgs.robot_state = state;
 
-    const drc::force_torque_t& force_torque = msg->force_torque;
+    const bot_core::force_torque_t& force_torque = msg->force_torque;
 
     solveArgs.foot_force_torque_measurements[Side::LEFT].frame_idx = solveArgs.pdata->rpc.body_ids.l_foot; // TODO: make sure that this is right
     solveArgs.foot_force_torque_measurements[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;

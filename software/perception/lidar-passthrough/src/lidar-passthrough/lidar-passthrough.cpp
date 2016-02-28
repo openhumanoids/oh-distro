@@ -33,14 +33,14 @@
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <pronto_utils/pronto_lcm.hpp> // unpack lidar to xyz
 #include "lcmtypes/bot_core.hpp"
-#include "lcmtypes/drc/robot_urdf_t.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_urdf_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
 #include <ConciseArgs>
 #include <drake/systems/plants/RigidBodyTree.h>
 #include <drake/util/drakeGeometryUtil.h>
 
 using namespace std;
-using namespace drc;
+
 using namespace Eigen;
 //using namespace collision;
 using namespace boost::assign; // bring 'operator+()' into scope
@@ -90,9 +90,9 @@ class Pass{
     std::mutex data_mutex_;
     std::mutex robot_state_mutex_;
     
-    void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
+    void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_urdf_t* msg);
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
-    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
+    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg);   
 
     int n_collision_points_;
     
@@ -113,7 +113,7 @@ class Pass{
     bool urdf_subscription_on_;
     lcm::Subscription *urdf_subscription_; //valid as long as urdf_parsed_ == false
     // Last robot state: this is used as the collision robot
-    drc::robot_state_t last_rstate_;
+    bot_core::robot_state_t last_rstate_;
     bool init_rstate_;
 
     RigidBodyTree drake_model_;
@@ -170,7 +170,7 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-VectorXd robotStateToDrakePosition(const drc::robot_state_t& rstate,
+VectorXd robotStateToDrakePosition(const bot_core::robot_state_t& rstate,
                                    const map<string, int>& dofMap, 
                                    int num_positions)
 {
@@ -237,7 +237,7 @@ void Pass::DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_c
   #endif  
 
   // 0. copy robot state
-  drc::robot_state_t rstate;
+  bot_core::robot_state_t rstate;
   {
     std::unique_lock<std::mutex> lock(robot_state_mutex_);
     rstate = last_rstate_;
@@ -498,7 +498,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
 }
 
 
-void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg){
   std::unique_lock<std::mutex> lock(robot_state_mutex_);
   last_rstate_= *msg;  
   init_rstate_=true;

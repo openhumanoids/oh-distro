@@ -12,7 +12,7 @@ if(NOT USE_SYSTEM_LCM)
 endif()
 
 set(bot_core_lcmtypes_url https://github.com/openhumanoids/bot_core_lcmtypes.git)
-set(bot_core_lcmtypes_revision d2617b85674fa83b371a5c57fabdbe468844f15e)
+set(bot_core_lcmtypes_revision 02a41c0a0b017d09c410d87343652c7e2cadf4c6)
 set(bot_core_lcmtypes_depends ${lcm_proj})
 
 set(libbot_url https://github.com/openhumanoids/libbot.git)
@@ -133,7 +133,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${gurobi_distro_file})
 set(gurobi_depends gurobi-private)
 
 set(atlas-driver_url ssh://git@github.com/openhumanoids/atlas-drivers.git)
-set(atlas-driver_revision 07d287ef2c86cc35989a9a8a09845ba38fe1dc9e)
+set(atlas-driver_revision 04c805efae5913cc2dc9da0734dc4ec585e8d5d4)
 set(atlas-driver_depends)
 set(atlas-driver_external_args
   ${download_only_args}

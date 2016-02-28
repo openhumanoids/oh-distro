@@ -565,7 +565,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
   m.joint_names = output_joint_names_arm;
   for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
-    drc::robot_state_t state = msg->plan[i];
+    bot_core::robot_state_t state = msg->plan[i];
     trajectory_msgs::JointTrajectoryPoint point;
     int i1 = (i > 0) ? (i - 1) : 0;
     int i2 = i;
@@ -626,7 +626,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
   // m.joint_names = output_joint_names_arm;
   for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
-    drc::robot_state_t state = msg->plan[i];
+    bot_core::robot_state_t state = msg->plan[i];
     ihmc_msgs::JointTrajectoryPointMessage point;
     int i1 = (i > 0) ? (i - 1) : 0;
     int i2 = i;
@@ -666,7 +666,7 @@ bool LCM2ROS::getChestTrajectoryPlan(const drc::robot_plan_t* msg, std::vector<g
   for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     // 0. Extract World Pose of body:
-    drc::robot_state_t this_state = msg->plan[i];
+    bot_core::robot_state_t this_state = msg->plan[i];
     Eigen::Isometry3d world_to_body;
     world_to_body.setIdentity();
     world_to_body.translation()  << this_state.pose.translation.x, this_state.pose.translation.y, this_state.pose.translation.z;
@@ -763,7 +763,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   // 2. Insert Pelvis Pose
   for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
-    drc::robot_state_t state = msg->plan[i];
+    bot_core::robot_state_t state = msg->plan[i];
 
     geometry_msgs::Vector3 pelvis_world_position;
     pelvis_world_position.x = state.pose.translation.x;

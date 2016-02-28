@@ -26,9 +26,9 @@
 #include <val_hardware_msgs/valAtiSensor.h>
 
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
-#include "lcmtypes/drc/six_axis_force_torque_t.hpp"
-#include "lcmtypes/drc/joint_state_t.hpp"
+#include "lcmtypes/bot_core/six_axis_force_torque_array_t.hpp"
+#include "lcmtypes/bot_core/six_axis_force_torque_t.hpp"
+#include "lcmtypes/bot_core/joint_state_t.hpp"
 #include "lcmtypes/drc/plan_status_t.hpp"
 
 #include "lcmtypes/mav/ins_t.hpp"
@@ -52,7 +52,7 @@ private:
   ros::NodeHandle node_;
   bool verbose_;
 
-  void appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+  void appendSensors(bot_core::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                          geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
 
   geometry_msgs::WrenchStamped lastLeftFootSensorMsg_;
@@ -101,7 +101,7 @@ App::~App()
 
 
 
-void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
+void App::appendSensors(bot_core::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                             geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor)
 {
   int num_sensors = 4;
@@ -117,11 +117,11 @@ void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_ms
 
   msg_out.names = names;
 
-  std::vector<drc::six_axis_force_torque_t> sensors;
-  drc::six_axis_force_torque_t l_foot;
-  drc::six_axis_force_torque_t r_foot;
-  drc::six_axis_force_torque_t l_hand; 
-  drc::six_axis_force_torque_t r_hand;
+  std::vector<bot_core::six_axis_force_torque_t> sensors;
+  bot_core::six_axis_force_torque_t l_foot;
+  bot_core::six_axis_force_torque_t r_foot;
+  bot_core::six_axis_force_torque_t l_hand; 
+  bot_core::six_axis_force_torque_t r_hand;
   
   l_foot.utime = (int64_t)l_foot_sensor.header.stamp.toNSec() / 1000;
   l_foot.force[0] = l_foot_sensor.wrench.force.x;
@@ -167,7 +167,7 @@ void App::appendSensors(drc::six_axis_force_torque_array_t& msg_out, geometry_ms
 ////////////////////// NASA Originating Data ////////////////////////
 void App::jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
-    drc::joint_state_t amsg;
+    bot_core::joint_state_t amsg;
     amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
     for (int i = 0; i < msg->position.size(); i++)
@@ -183,7 +183,7 @@ void App::jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
 
 void App::jointCommandsNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
-    drc::joint_state_t amsg;
+    bot_core::joint_state_t amsg;
     amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
 
     for (int i = 0; i < msg->position.size(); i++)
@@ -234,7 +234,7 @@ void App::footSensorNasaCallback(const val_hardware_msgs::valAtiSensorConstPtr& 
   lastRightFootSensorMsg_.wrench = (msg->forceTorque[1]);
   lastRightFootSensorMsg_.header = msg->header;
 
-  drc::six_axis_force_torque_array_t six_axis_force_torque_array;
+  bot_core::six_axis_force_torque_array_t six_axis_force_torque_array;
   appendSensors(six_axis_force_torque_array, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
   lcmPublish_.publish("VAL_FORCE_TORQUE", &six_axis_force_torque_array);
 }

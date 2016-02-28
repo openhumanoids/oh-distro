@@ -1,9 +1,0 @@
-package drc;
-
-struct six_axis_force_torque_t
-{
-    int64_t  utime;
-    double   force[3];
-    double   moment[3];
-}
-

@@ -191,7 +191,7 @@ void state_sync::setEncodersFromParam() {
   std::string str = "State Sync: refreshing offsets (from param)";
   std::cout << str << std::endl;
   // display system status message in viewer
-  drc::system_status_t stat_msg;
+  bot_core::system_status_t stat_msg;
   stat_msg.utime = 0;
   stat_msg.system = stat_msg.MOTION_ESTIMATION;
   stat_msg.importance = stat_msg.VERY_IMPORTANT;
@@ -229,14 +229,14 @@ void state_sync::setEncodersFromParam() {
   std::cout << "Finished updating encoder offsets (from param)\n";  
 }
 
-void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
+void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::utime_t* msg) {
   enableEncoders(msg->utime > 0); // sneakily use utime as a flag
 }
 
 
 void state_sync::enableEncoders(bool enable) {
   // display system status message in viewer
-  drc::system_status_t stat_msg;
+  bot_core::system_status_t stat_msg;
   stat_msg.utime = 0;
   stat_msg.system = stat_msg.MOTION_ESTIMATION;
   stat_msg.importance = stat_msg.VERY_IMPORTANT;
@@ -273,39 +273,39 @@ void state_sync::enableEncoders(bool enable) {
 
 }
 
-void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
+void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
   head_joints_.name = msg->joint_name;
   head_joints_.position = msg->joint_position;
   head_joints_.velocity = msg->joint_velocity;
   head_joints_.effort = msg->joint_effort;
   
   if (cl_cfg_->standalone_head){
-    drc::six_axis_force_torque_array_t force_torque_msg;
+    bot_core::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }
   
 }
 
-void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
+void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
   left_hand_joints_.name = msg->joint_name;
   left_hand_joints_.position = msg->joint_position;
   left_hand_joints_.velocity = msg->joint_velocity;
   left_hand_joints_.effort = msg->joint_effort;
   
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
-    drc::six_axis_force_torque_array_t force_torque_msg;
+    bot_core::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }  
 }
 
-void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
+void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
   right_hand_joints_.name = msg->joint_name;
   right_hand_joints_.position = msg->joint_position;
   right_hand_joints_.velocity = msg->joint_velocity;
   right_hand_joints_.effort = msg->joint_effort;
   
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
-    drc::six_axis_force_torque_array_t force_torque_msg;
+    bot_core::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }    
 }
@@ -353,14 +353,13 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
 }
 
 
-void state_sync::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::six_axis_force_torque_array_t* msg){
+void state_sync::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::six_axis_force_torque_array_t* msg){
   force_torque_ = *msg;
   force_torque_init_ = true; 
 }
 
 
-//void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
-void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::joint_state_t* msg){
+void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
   if (!force_torque_init_){
     std::cout << "FORCE_TORQUE not received yet, not publishing EST_ROBOT_STATE =========================\n";
     return;    
@@ -400,7 +399,7 @@ void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::str
               utime_prev_ = msg->utime;
 
               // display system status message in viewer
-              drc::system_status_t stat_msg;
+              bot_core::system_status_t stat_msg;
               stat_msg.utime = msg->utime;
               stat_msg.system = stat_msg.MOTION_ESTIMATION;
               stat_msg.importance = stat_msg.VERY_IMPORTANT;
@@ -513,7 +512,7 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
 
 
 // Returns false if the pose is old or hasn't appeared yet
-bool state_sync::insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
+bool state_sync::insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT pose){
   // TODO: add comparison of Atlas State utime and Pose's utime
   //if (pose.utime ==0){
   //  std::cout << "haven't received pelvis pose, refusing to publish ERS\n";
@@ -588,9 +587,9 @@ bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
 }
 
 
-void state_sync::publishRobotState(int64_t utime_in,  const  drc::six_axis_force_torque_array_t& force_torque_msg){
+void state_sync::publishRobotState(int64_t utime_in,  const  bot_core::six_axis_force_torque_array_t& force_torque_msg){
   
-  drc::robot_state_t robot_state_msg;
+  bot_core::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
 
   // Pelvis Pose:
@@ -620,7 +619,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::six_axis_force
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
   
   // Limb Sensor states
-  drc::force_torque_t force_torque_convert;
+  bot_core::force_torque_t force_torque_convert;
   if (force_torque_msg.sensors.size() == 4) {
     force_torque_convert.l_foot_force_z = force_torque_msg.sensors[0].force[2];
     force_torque_convert.l_foot_torque_x = force_torque_msg.sensors[0].moment[0];
@@ -671,7 +670,7 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::six_axis_force
   }
 }
 
-void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
+void state_sync::appendJoints(bot_core::robot_state_t& msg_out, Joints joints){
   for (size_t i = 0; i < joints.position.size(); i++)  {
     msg_out.joint_name.push_back( joints.name[i] );
     msg_out.joint_position.push_back( joints.position[i] );

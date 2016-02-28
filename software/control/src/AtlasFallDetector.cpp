@@ -87,7 +87,7 @@ void AtlasFallDetector::handleFootContact(const lcm::ReceiveBuffer* rbuf,
 
 void AtlasFallDetector::handleRobotState(const lcm::ReceiveBuffer* rbuf,
                        const std::string& chan,
-                       const drc::robot_state_t* msg) {
+                       const bot_core::robot_state_t* msg) {
   // std::cout << "right: " << this->foot_contact.at(RIGHT) << " left: " << this->foot_contact.at(LEFT);
 
   // std::cout << " active: " << controller_is_active << " user: " << atlas_is_in_user << " contact valid: " << foot_contact_valid;

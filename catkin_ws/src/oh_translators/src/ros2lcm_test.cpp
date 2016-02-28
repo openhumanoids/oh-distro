@@ -27,10 +27,6 @@
 #include <sensor_msgs/LaserScan.h>
 
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/drc/force_torque_t.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/drc/utime_t.hpp"
-#include "lcmtypes/drc/kvh_raw_imu_batch_t.hpp"
 #include "lcmtypes/drc/behavior_t.hpp"
 
 #include <tf/transform_listener.h>

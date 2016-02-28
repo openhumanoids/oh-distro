@@ -20,7 +20,7 @@
 
 // ### LCM
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc/joint_state_t.hpp"
+#include "lcmtypes/bot_core/joint_state_t.hpp"
 #include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 
 // ### Other

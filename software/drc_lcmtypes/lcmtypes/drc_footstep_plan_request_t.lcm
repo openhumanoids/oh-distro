@@ -5,11 +5,11 @@ struct footstep_plan_request_t
 	int64_t utime;
 
 	// What state to plan from
-	robot_state_t initial_state;
+	bot_core.robot_state_t initial_state;
 
 	// What location to plan to
 	// We can plan either to a goal pose OR to one or more final step targets
-	position_3d_t goal_pos;
+	bot_core.position_3d_t goal_pos;
 	// If num_goal_steps > 0, we ignore goal_pos and plan to the final step targets
 	int32_t num_goal_steps;
 	footstep_t goal_steps[num_goal_steps];

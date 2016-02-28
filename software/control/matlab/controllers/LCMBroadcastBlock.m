@@ -394,16 +394,16 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (~obj.publish_truth)
         state_msg = drc.atlas_state_t();
       else
-        state_msg = drc.robot_state_t();
+        state_msg = bot_core.robot_state_t();
       end
       
       state_msg.utime = t*1000*1000;
       
       if (obj.publish_truth)
         % ATLAS_STATE has no global pose, but EST_ROBOT_STATE does
-        state_msg.pose = drc.position_3d_t();
-        state_msg.pose.translation = drc.vector_3d_t();
-        state_msg.pose.rotation = drc.quaternion_t();
+        state_msg.pose = bot_core.position_3d_t();
+        state_msg.pose.translation = bot_core.vector_3d_t();
+        state_msg.pose.rotation = bot_core.quaternion_t();
         state_msg.pose.translation.x = atlas_state(1);
         state_msg.pose.translation.y = atlas_state(2);
         state_msg.pose.translation.z = atlas_state(3);
@@ -419,9 +419,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.pose.rotation.y = q(3);
         state_msg.pose.rotation.z = q(4);
 
-        state_msg.twist = drc.twist_t();
-        state_msg.twist.linear_velocity = drc.vector_3d_t();
-        state_msg.twist.angular_velocity = drc.vector_3d_t();
+        state_msg.twist = bot_core.twist_t();
+        state_msg.twist.linear_velocity = bot_core.vector_3d_t();
+        state_msg.twist.angular_velocity = bot_core.vector_3d_t();
         state_msg.twist.linear_velocity.x = atlas_state(atlas_dofs+1);
         state_msg.twist.linear_velocity.y = atlas_state(atlas_dofs+2);
         state_msg.twist.linear_velocity.z = atlas_state(atlas_dofs+3);
@@ -456,7 +456,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.joint_position = [atlas_pos; right_hand_state(1:right_hand_dofs); left_hand_state(1:left_hand_dofs); laser_spindle_angle];
         state_msg.joint_velocity = [atlas_vel; right_hand_state(right_hand_dofs+1:end); left_hand_state(left_hand_dofs+1:end); 0];
       end
-      state_msg.force_torque = drc.force_torque_t();
+      state_msg.force_torque = bot_core.force_torque_t();
 
       % pack in any foot contact info that we have
       state_msg.force_torque.l_foot_force_z = left_ankle_ft_state(3);
@@ -501,7 +501,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       
       % state_sync expects separate message for the hand state
-      robotiq_state = drc.joint_state_t();
+      robotiq_state = bot_core.joint_state_t();
       if (~obj.publish_truth && ~isempty(right_hand_state))
         robotiq_state.utime = t*1000*1000;
         robotiq_state.num_joints = 11;
@@ -528,7 +528,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % -- To channel "SCAN", publish populated lcm_laser_msg
       if (~isempty(laser_state))
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
-        multisense_state = drc.joint_state_t();
+        multisense_state = bot_core.joint_state_t();
         multisense_state.joint_name = {'hokuyo_joint'};
         
         multisense_state.joint_position = [mod(laser_spindle_angle+pi, 2*pi)];
@@ -584,7 +584,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % This isn't perfectly accurate as the imu is offset from the
         % very core of the body frame by a small amount (BODY_TO_IMU
         % has nonzero translation).
-        imu_msg = drc.ins_t();
+        imu_msg = bot_core.ins_t();
         imu_msg.utime = t*1000*1000;
         imu_msg.device_time = t*1000*1000;
         imu_msg.gyro = gyro;

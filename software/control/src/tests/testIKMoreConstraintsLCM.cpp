@@ -11,7 +11,7 @@
 using namespace std;
 using namespace Eigen;
 
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 
@@ -40,7 +40,7 @@ class App{
     ~App(){
     }
 
-    void getRobotState(drc::robot_state_t& robot_state_msg, int64_t utime_in, Eigen::VectorXd q, std::vector<std::string> jointNames);
+    void getRobotState(bot_core::robot_state_t& robot_state_msg, int64_t utime_in, Eigen::VectorXd q, std::vector<std::string> jointNames);
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
@@ -91,7 +91,7 @@ void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& ya
   yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
 }
 
-void App::getRobotState(drc::robot_state_t& robot_state_msg, int64_t utime_in, Eigen::VectorXd q, std::vector<std::string> jointNames){
+void App::getRobotState(bot_core::robot_state_t& robot_state_msg, int64_t utime_in, Eigen::VectorXd q, std::vector<std::string> jointNames){
   robot_state_msg.utime = utime_in;
 
   // Pelvis Pose:
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
   Vector3d com = model.centerOfMass(cache);
   printf("%5.2f\n%5.2f\n%5.2f\n",com(0),com(1),com(2));
 
-  drc::robot_state_t robot_state_msg;
+  bot_core::robot_state_t robot_state_msg;
   std::vector<string> jointNames;
   for (int i=0 ; i <model.num_positions ; i++){
     // std::cout << model.getPositionName(i) << " " << i << "\n";

@@ -1,8 +1,8 @@
 #include "RobotState.hpp"
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc/robot_urdf_t.hpp>
-#include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/bot_core/robot_urdf_t.hpp>
+#include <lcmtypes/bot_core/robot_state_t.hpp>
 //#include <kinematics/kinematics_model_gfe.h>
 
 using namespace maps;
@@ -32,7 +32,7 @@ struct RobotState::Helper {
   }
 
   void onUrdf(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel, 
-              const drc::robot_urdf_t* iMessage) {
+              const bot_core::robot_urdf_t* iMessage) {
     if (mGotUrdf) return;
     mGotUrdf = true;
 //    mKinModel.reset(new kinematics::Kinematics_Model_GFE
@@ -45,7 +45,7 @@ struct RobotState::Helper {
   }
 
   void onState(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel, 
-               const drc::robot_state_t* iMessage) {
+               const bot_core::robot_state_t* iMessage) {
     if (!mGotUrdf) return;
 
 //     mKinModel->set(*iMessage);

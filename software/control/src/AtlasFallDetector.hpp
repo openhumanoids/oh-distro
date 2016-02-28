@@ -4,7 +4,7 @@
 
 #include "drake/systems/plants/RigidBodyTree.h"
 #include "lcmtypes/drc/fall_detector_status_t.hpp"
-#include "lcmtypes/drc/utime_t.hpp"
+#include "lcmtypes/bot_core/utime_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/controller_status_t.hpp"
 #include "lcmtypes/drc/behavior_t.hpp"
@@ -130,7 +130,7 @@ private:
                          const drc::foot_contact_estimate_t* msg);
   void handleRobotState(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
-                         const drc::robot_state_t* msg);
+                         const bot_core::robot_state_t* msg);
   void handleControllerStatus(const lcm::ReceiveBuffer* rbuf,
                          const std::string& chan,
                          const drc::controller_status_t* msg);

@@ -28,7 +28,7 @@ RobotStateDriver::RobotStateDriver(vector<string> state_coordinate_names) {
   }
 }
 
-void RobotStateDriver::decode(const drc::robot_state_t *msg, DrakeRobotState *state) {
+void RobotStateDriver::decode(const bot_core::robot_state_t *msg, DrakeRobotState *state) {
   state->t = ((double) msg->utime) / 1000000;
 
   for (int i=0; i < msg->num_joints; i++) {

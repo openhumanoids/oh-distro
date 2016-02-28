@@ -133,7 +133,7 @@ namespace valkyrie_translator
 
       // push out the joint states for all joints we see advertised
       // and also the commanded torques, for reference
-      drc::joint_state_t lcm_pose_msg;
+      bot_core::joint_state_t lcm_pose_msg;
       lcm_pose_msg.utime = utime;
       lcm_pose_msg.num_joints = effortJointHandles.size();
       lcm_pose_msg.joint_name.assign(effortJointHandles.size(), "");
@@ -141,7 +141,7 @@ namespace valkyrie_translator
       lcm_pose_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
       lcm_pose_msg.joint_effort.assign(effortJointHandles.size(), 0.);
 
-      drc::joint_state_t lcm_commanded_msg;
+      bot_core::joint_state_t lcm_commanded_msg;
       lcm_commanded_msg.utime = utime;
       lcm_commanded_msg.num_joints = effortJointHandles.size();
       lcm_commanded_msg.joint_name.assign(effortJointHandles.size(), "");
@@ -158,7 +158,7 @@ namespace valkyrie_translator
 
       // need to decide what message we're really using for state. for now,
       // assembling this to make director happy
-      drc::robot_state_t lcm_state_msg;
+      bot_core::robot_state_t lcm_state_msg;
       lcm_state_msg.utime = utime;
       lcm_state_msg.num_joints = effortJointHandles.size();
       lcm_state_msg.joint_name.assign(effortJointHandles.size(), "");
@@ -235,7 +235,7 @@ namespace valkyrie_translator
 
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
-        drc::ins_t lcm_imu_msg;
+        bot_core::ins_t lcm_imu_msg;
         //lcm_imu_msg.utime = utime;
         std::ostringstream imuchannel;
         imuchannel << "VAL_IMU_" << iter->first;
@@ -254,7 +254,7 @@ namespace valkyrie_translator
       }
 
       // push out the measurements for all ft's we see advertised
-      drc::six_axis_force_torque_array_t lcm_ft_array_msg;
+      bot_core::six_axis_force_torque_array_t lcm_ft_array_msg;
       lcm_ft_array_msg.utime = utime;
       lcm_ft_array_msg.num_sensors = forceTorqueHandles.size();
       lcm_ft_array_msg.names.resize(forceTorqueHandles.size());

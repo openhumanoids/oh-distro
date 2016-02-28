@@ -9,15 +9,15 @@
 #include <ros/node_handle.h>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc/joint_state_t.hpp"
-#include "lcmtypes/drc/joint_angles_t.hpp"
-#include "lcmtypes/drc/force_torque_t.hpp"
-#include "lcmtypes/drc/six_axis_force_torque_array_t.hpp"
-#include "lcmtypes/drc/six_axis_force_torque_t.hpp"
-#include "lcmtypes/drc/atlas_command_t.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/joint_state_t.hpp"
+#include "lcmtypes/bot_core/force_torque_t.hpp"
+#include "lcmtypes/bot_core/six_axis_force_torque_array_t.hpp"
+#include "lcmtypes/bot_core/six_axis_force_torque_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
+#include "lcmtypes/bot_core/ins_t.hpp"
 
-#include "lcmtypes/drc/ins_t.hpp"
+#include "lcmtypes/drc/joint_angles_t.hpp"
+#include "lcmtypes/drc/atlas_command_t.hpp"
 
 namespace valkyrie_translator
 {

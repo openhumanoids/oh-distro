@@ -27,7 +27,7 @@
 //#include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
 
-#include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/bot_core/robot_state_t.hpp>
 
 #include <sys/time.h>
 
@@ -108,7 +108,6 @@ private:
   int m_num_floating_joints;
   map<string,int> m_joint_map;
   map<string,int> m_floating_joint_map;
-  //  drc::robot_state_t msg; // kaess: doesn't seem to be needed
   
   int m_min_usec_between_msg; // us, min time between messages (useful for setting a maximum rate)
   atomic_long m_last_timestamp; // us
@@ -161,7 +160,7 @@ public:
 
   void handleMessage(const lcm::ReceiveBuffer* rbuf,
           const string& chan,
-          const drc::robot_state_t* msg)
+          const bot_core::robot_state_t* msg)
   {
     long systime = get_systime_ms();
 

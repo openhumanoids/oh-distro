@@ -1,7 +1,7 @@
 function msg = encodePosition3d(pose)
-	msg = drc.position_3d_t();
-  msg.translation = drc.vector_3d_t();
-  msg.rotation = drc.quaternion_t();
+	msg = bot_core.position_3d_t();
+  msg.translation = bot_core.vector_3d_t();
+  msg.rotation = bot_core.quaternion_t();
   msg.translation.x = pose(1);
   msg.translation.y = pose(2);
   msg.translation.z = pose(3);

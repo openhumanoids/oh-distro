@@ -40,14 +40,14 @@ public class GraspSeedOptCoder implements drake.util.LCMCoder
       pmsg.dims = new double[pmsg.num_dims];
       
       // initial hand pose
-      pmsg.l_hand_init_pose = new drc.position_3d_t();
-      pmsg.l_hand_init_pose.translation = new drc.vector_3d_t();
-      pmsg.l_hand_init_pose.rotation = new drc.quaternion_t();
+      pmsg.l_hand_init_pose = new bot_core.position_3d_t();
+      pmsg.l_hand_init_pose.translation = new bot_core.vector_3d_t();
+      pmsg.l_hand_init_pose.rotation = new bot_core.quaternion_t();
       pmsg.l_hand_init_pose.rotation.w = 1.0;
       
-      pmsg.r_hand_init_pose = new drc.position_3d_t();
-      pmsg.r_hand_init_pose.translation = new drc.vector_3d_t();
-      pmsg.r_hand_init_pose.rotation = new drc.quaternion_t();
+      pmsg.r_hand_init_pose = new bot_core.position_3d_t();
+      pmsg.r_hand_init_pose.translation = new bot_core.vector_3d_t();
+      pmsg.r_hand_init_pose.rotation = new bot_core.quaternion_t();
       pmsg.r_hand_init_pose.rotation.w = 1.0;
 
     }

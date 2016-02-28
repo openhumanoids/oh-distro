@@ -25,8 +25,8 @@
 #include <pronto_utils/pronto_vis.hpp>
 
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/drc/robot_urdf_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_urdf_t.hpp"
 
 struct FrequencyLimit {
   FrequencyLimit(){}
@@ -60,8 +60,8 @@ class joints2frames{
     bool standalone_head_;
     bool multisense_sim_;
 
-    void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
-    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+    void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_urdf_t* msg);
+    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg);
     
     void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
     void publishRigidTransform(Eigen::Isometry3d pose, int64_t utime, std::string channel);

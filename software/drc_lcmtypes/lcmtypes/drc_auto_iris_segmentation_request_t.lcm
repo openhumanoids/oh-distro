@@ -5,7 +5,7 @@ struct auto_iris_segmentation_request_t
 	int64_t utime;
 
 	// Robot state to use for map fill
-	robot_state_t initial_state;
+	bot_core.robot_state_t initial_state;
 
 	// Method to use when filling map data
 	// See drc_footstep_plan_params_t for enum values
@@ -14,7 +14,7 @@ struct auto_iris_segmentation_request_t
 	lin_con_t xy_bounds;
 
 	int32_t num_seed_poses;
-	position_3d_t seed_poses[num_seed_poses];
+	bot_core.position_3d_t seed_poses[num_seed_poses];
 
 	int8_t max_num_regions;
 	int32_t region_id[max_num_regions];

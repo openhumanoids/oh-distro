@@ -10,7 +10,7 @@
 #include <forward_kinematics/treefksolverposfull_recursive.hpp>
 #include <model-client/model-client.hpp>
 
-#include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/bot_core/robot_state_t.hpp>
 #include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/tag_detection_t.hpp>
@@ -259,7 +259,7 @@ struct State {
   }
 
   void onState(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
-               const drc::robot_state_t* iMessage) {
+               const bot_core::robot_state_t* iMessage) {
 
     // limit update rate
     int64_t timeDelta = std::abs(iMessage->utime-mLastStateUpdateTime);

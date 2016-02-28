@@ -71,7 +71,7 @@ classdef drivingPlanner
       
       % construct a listener for robot state
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
+      obj.state_monitor = drake.util.MessageMonitor(bot_core.robot_state_t, 'utime');
 
 
       obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
