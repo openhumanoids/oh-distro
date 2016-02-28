@@ -45,7 +45,7 @@ script:
   - make -j4 -Wno-dev > ~/build_log_externals.txt # turn off CMake policy warnings
   - cd $TRAVIS_BUILD_DIR/software
   - make -j4 -Wno-dev > ~/build_log_software.txt # turn off CMake policy warnings
-  - cd .. && ./.ci_testing.sh
+  #- cd .. && ./.ci_testing.sh
 
 after_failure:
   - echo "Dummy for uploading logs"
