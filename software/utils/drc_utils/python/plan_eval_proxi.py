@@ -9,7 +9,7 @@ sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
 
 from drc.robot_plan_t import robot_plan_t
 from drc.plan_status_t import plan_status_t
-from drc.robot_state_t import robot_state_t
+from bot_core.robot_state_t import robot_state_t
 from drc.walking_plan_request_t import walking_plan_request_t
 
 def timestamp_now (): return int (time.time () * 1000000)
