@@ -26,12 +26,7 @@
 #include <val_hardware_msgs/valAtiSensor.h>
 
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/bot_core/six_axis_force_torque_array_t.hpp"
-#include "lcmtypes/bot_core/six_axis_force_torque_t.hpp"
-#include "lcmtypes/bot_core/joint_state_t.hpp"
 #include "lcmtypes/drc/plan_status_t.hpp"
-
-#include "lcmtypes/mav/ins_t.hpp"
 
 struct Joints
 {
@@ -201,7 +196,7 @@ void App::imuSensorNasaCallback(const val_hardware_msgs::valImuSensorConstPtr& m
 {
 
   for (int i=0; i < msg->name.size(); i++){
-    mav::ins_t imu;
+    bot_core::ins_t imu;
     imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
     imu.device_time = imu.utime;
     imu.gyro[0] = msg->angularVelocity[i].x;
