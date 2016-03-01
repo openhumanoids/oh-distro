@@ -51,7 +51,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 //	FINAL POSE SEARCH
 	CandidateRobotPosePublisher publisher;
 	vector<RigidBodyConstraint *> constraints = additional_constraints;
-	this->generateEndeffectorConstraints(robot, constraints, endeffector_id, endeffector_final_pose, endeffector_point);
+	Point2PointDistanceConstraint position_constraint(&robot, endeffector_id, robot.findLinkId("world"), endeffector_point, endeffector_final_pose.block<3,1>(0,0), Vector3d(0,0,0), Vector3d(0,0,0));
+	WorldQuatConstraint quaternion_constraint(&robot, endeffector_id, endeffector_final_pose.block<4,1>(3,0), 1./180.*M_PI);
+	constraints.push_back(&position_constraint);
+	constraints.push_back(&quaternion_constraint);
 	constraints.resize(constraints.size() + 2);
 	VectorXd final_pose(robot.num_positions);
 	vector<string> infeasible_constraints;
@@ -66,14 +69,13 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		vector<int> sample = capability_map.drawCapabilityMapSample();
 		info = 1;
 //		GENERATE CONSTRAINTS
-		vector<RigidBodyConstraint *> base_constraints;
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
 		Vector3d orientation = capability_map.getOrientation(sample[1]);
 		Vector3d position = rpy2rotmat(orientation) * capability_map.getVoxelCentre(sample[0]) + endeffector_final_pose.block<3,1>(0,0);
 		WorldPositionConstraint base_position_constraint(&robot, base_id, capability_map.getMapCentre(), position, position);
 		WorldEulerConstraint base_euler_constraint(&robot, base_id, orientation, orientation);
-		constraints.end()[-2] = (&base_position_constraint);
-		constraints.end()[-1] = (&base_euler_constraint);
+		constraints.end()[-1] = (&base_position_constraint);
+		constraints.end()[-2] = (&base_euler_constraint);
 
 //		COMPUTE CONFIGURATION
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_pose, ik_info, infeasible_constraints, ik_options);
@@ -128,14 +130,4 @@ int FinalPosePlanner::checkConfiguration(const RigidBodyTree &robot, const Vecto
 		}
 	}
 	return 0;
-}
-
-void FinalPosePlanner::generateEndeffectorConstraints(RigidBodyTree &robot, vector<RigidBodyConstraint *> &constraint_vector, int endeffector_id,
-		Matrix<double, 7, 1> endeffector_final_pose, Vector3d endeffector_point, Vector3d position_tolerance, double angular_tolerance)
-{
-	int world_id = robot.findLinkId("world");
-	Point2PointDistanceConstraint position_constraint(&robot, endeffector_id, world_id, endeffector_point, endeffector_final_pose.block<3,1>(0,0), -position_tolerance / 2, position_tolerance / 2);
-	WorldQuatConstraint quaternion_constraint(&robot, endeffector_id, endeffector_final_pose.block<4,1>(3,0), angular_tolerance);
-	constraint_vector.push_back(&position_constraint);
-	constraint_vector.push_back(&quaternion_constraint);
 }

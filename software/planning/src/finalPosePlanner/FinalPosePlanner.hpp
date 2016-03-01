@@ -54,9 +54,9 @@ private:
 	 */
 	int checkConfiguration(const RigidBodyTree &robot, const Eigen::VectorXd &configuration, std::string variable_name);
 
-	void generateEndeffectorConstraints(RigidBodyTree &robot, std::vector<RigidBodyConstraint *> &constraint_vector, int endeffector_id,
-			Eigen::Matrix<double, 7, 1> endeffector_final_pose, Eigen::Vector3d endeffector_point,
-			Eigen::Vector3d position_tolerance = Eigen::Vector3d(0,0,0), double angular_tolerance = 1./180.*M_PI);
+//	void generateEndeffectorConstraints(RigidBodyTree &robot, std::vector<RigidBodyConstraint *> &constraint_vector, int endeffector_id,
+//			Eigen::Matrix<double, 7, 1> endeffector_final_pose, Eigen::Vector3d endeffector_point,
+//			Eigen::Vector3d position_tolerance = Eigen::Vector3d(0,0,0), double angular_tolerance = 1./180.*M_PI);
 };
 
 

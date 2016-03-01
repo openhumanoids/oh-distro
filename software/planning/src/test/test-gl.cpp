@@ -63,8 +63,9 @@ int main()
 		drawPointCloud(lcmgl_pc, point_cloud);
 
 		cm.setActiveSide("left");
+		Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
 
-		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM);
+		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
 		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
 		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
 	}
