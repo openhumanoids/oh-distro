@@ -5,12 +5,19 @@ group "start" {
     }
 
     cmd "logger" {
-        exec = "bash -c 'LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 $HOME/logs/video-logs/start_logger.sh'";
+        exec = "bash -c 'LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 $DRC_BASE/software/config/video_capture/start_logger_edi.sh'";
         host = "localhost";
     }
 
     cmd "server" {
         exec = "bash -c 'VIDEO_LCM_URL=\"udpm://239.255.74.52:7650?ttl=0\" python $DRC_BASE/software/director/src/python/scripts/videoLogServer.py $HOME/logs/video-logs'";
+        host = "localhost";
+    }
+}
+
+group "review" {
+    cmd "review_player" {
+        exec = "directorPython $DRC_BASE/software/director/src/python/scripts/videoPlayer.py";
         host = "localhost";
     }
 }
