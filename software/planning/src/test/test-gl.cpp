@@ -1,13 +1,12 @@
 #include <iostream>
 #include <fstream>
-#include <boost/shared_ptr.hpp>
-#include <lcm/lcm-cpp.hpp>
 #include <Eigen/Dense>
+
+#include "bot_lcmgl_client/lcmgl.h"
 
 #include "capabilityMap/CapabilityMap.hpp"
 #include "finalPosePlanner/FinalPosePlanner.hpp"
 #include "drawingUtil/drawingUtil.hpp"
-#include "bot_lcmgl_client/lcmgl.h"
 
 using namespace std;
 using namespace Eigen;
@@ -65,7 +64,7 @@ int main()
 
 		cm.setActiveSide("left");
 
-		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot));
+		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM);
 		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
 		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
 	}

@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "drake/util/drakeGeometryUtil.h"
+#include "drawingUtil/drawingUtil.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -14,7 +15,7 @@ FinalPosePlanner::FinalPosePlanner()
 
 int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, string endeffector_side, VectorXd start_configuration,
 		VectorXd endeffector_final_pose, const vector<RigidBodyConstraint *> &additional_constraints, VectorXd nominal_configuration,
-		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, double min_distance, Vector3d endeffector_point)
+		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, double min_distance, Vector3d endeffector_point)
 {
 //	INPUT CHECKS
 	int endeffector_id;
@@ -48,16 +49,22 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
 
 //	FINAL POSE SEARCH
+	CandidateRobotPosePublisher publisher;
 	vector<RigidBodyConstraint *> constraints = additional_constraints;
 	this->generateEndeffectorConstraints(robot, constraints, endeffector_id, endeffector_final_pose, endeffector_point);
 	constraints.resize(constraints.size() + 2);
 	VectorXd final_pose(robot.num_positions);
 	vector<string> infeasible_constraints;
+	KinematicsCache<double> cache();
+    VectorXd phi;
+    Matrix3Xd normal, xA, xB;
+    vector<int> bodyA_idx, bodyB_idx;
 	int info = 13;
+	int ik_info;
 	while (info != 1)
 	{
 		vector<int> sample = capability_map.drawCapabilityMapSample();
-
+		info = 1;
 //		GENERATE CONSTRAINTS
 		vector<RigidBodyConstraint *> base_constraints;
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
@@ -67,7 +74,36 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		WorldEulerConstraint base_euler_constraint(&robot, base_id, orientation, orientation);
 		constraints.end()[-2] = (&base_position_constraint);
 		constraints.end()[-1] = (&base_euler_constraint);
-		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_pose, info, infeasible_constraints, ik_options);
+
+//		COMPUTE CONFIGURATION
+		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_pose, ik_info, infeasible_constraints, ik_options);
+		publisher.publish(lcm, robot, final_pose);
+		if (ik_info < 10)
+		{
+			KinematicsCache<double> kinsol = robot.doKinematics(final_pose);
+			bool is_valid = robot.collidingPointsCheckOnly(kinsol, point_cloud, min_distance);
+			if (is_valid)
+			{
+				robot.collisionDetect(kinsol, phi, normal, xA, xB, bodyA_idx, bodyB_idx, false);
+//				cout << phi << endl << endl << min_distance << endl << endl;
+				if (((ArrayXd)phi > min_distance).all())
+				{
+					info = 1;
+				}
+				else
+				{
+					cout << "Robot is self-colliding" << endl;
+				}
+			}
+			else
+			{
+				cout << "Solution is in collision with the environment" << endl;
+			}
+		}
+		else
+		{
+			cout << "IK solution is invalid" << endl;
+		}
 	}
 
 	return info;

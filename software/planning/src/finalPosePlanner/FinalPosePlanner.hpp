@@ -7,6 +7,8 @@
 
 #include <math.h>
 #include <Eigen/Dense>
+#include <boost/shared_ptr.hpp>
+#include <lcm/lcm-cpp.hpp>
 
 #include "drake/systems/plants/RigidBodyTree.h"
 #include "drake/systems/plants/RigidBodyIK.h"
@@ -40,7 +42,7 @@ public:
 	 */
 	int findFinalPose(RigidBodyTree &robot, std::string end_effector, std::string endeffector_side, Eigen::VectorXd start_configuration,
 			Eigen::VectorXd endeffector_final_pose, const std::vector<RigidBodyConstraint *> &additional_constraints, Eigen::VectorXd nominal_configuration,
-			CapabilityMap &capability_map, std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, double min_distance = 0.005, Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0)); //todo: active collision options?
+			CapabilityMap &capability_map, std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, double min_distance = 0.005, Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0)); //todo: active collision options?
 
 private:
 	/**
