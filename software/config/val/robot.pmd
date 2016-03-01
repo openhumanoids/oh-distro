@@ -7,7 +7,7 @@ group "0.ros_bridge" {
 
 group "1.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/val/robot.cfg";
+        exec = "bot-param-server ${DRC_BASE}'/software/config/val/robot_'${VAL_UNIT}.cfg";
         host = "localhost";
     }
 
@@ -15,14 +15,12 @@ group "1.params_and_model_pub" {
         exec = "robot_model_publisher $DRC_BASE/software/models/val_description/urdf/valkyrie_sim.urdf";
         host = "localhost";
     }
-
-
 }
 
 
 group "2.drivers" {
     cmd "multisense" {
-        exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a 10.185.0.32 -m 1500";
+        exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a $VAL_MULTISENSE_IP -m 1500";
         host = "localhost";
     }
 }
@@ -92,12 +90,12 @@ group "6.exotica" {
 
 
 cmd "director" {
-    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2";
+    exec = "director -c $DRC_BASE/software/config/val/robot_${VAL_UNIT}.cfg -val2";
     host = "localhost";
 }
 
 cmd "director_exotica" {
-    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2 -exo";
+    exec = "director -c $DRC_BASE/software/config/val/robot_${VAL_UNIT}.cfg -val2 -exo";
     host = "localhost";
 }
 
@@ -107,7 +105,7 @@ cmd "pose-util" {
 }
 
 cmd "ros-multisense" {
-    exec = "roslaunch multisense_bringup multisense.launch ip_address:=10.185.0.32 mtu:=1500";
+    exec = "roslaunch multisense_bringup multisense.launch ip_address:=$VAL_MULTISENSE_IP mtu:=1500";
     host = "localhost";
 }
 

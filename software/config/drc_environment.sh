@@ -114,6 +114,31 @@ setup_robot_computers()
   fi
 }
 
+setup_valkyrie_for_host_sites()
+{
+  OUTSIDE_IP=`curl -s ifconfig.co` # gets our outside IP
+  OUTSIDE_HOSTNAME=`nslookup $OUTSIDE_IP`
+
+  EDINBURGH='.ed.ac.uk'
+  MIT='mit.edu'
+
+  if [[ "$OUTSIDE_HOSTNAME" =~ "$EDINBURGH" ]]; then
+    echo "Setting up Valkyrie Unit D for Edinburgh"
+    export VAL_LINK_IP=10.185.0.40
+    export VAL_ZELDA_IP=10.185.0.41
+    export VAL_MULTISENSE_IP=10.185.0.42
+    export VAL_UNIT=D
+  fi
+
+  if [[ "$OUTSIDE_HOSTNAME" =~ "$MIT" ]]; then
+    echo "Setting up Valkyrie Unit C for MIT"
+    export VAL_LINK_IP=10.185.0.30
+    export VAL_ZELDA_IP=10.185.0.31
+    export VAL_MULTISENSE_IP=10.185.0.32
+    export VAL_UNIT=C
+  fi
+}
+
 setup_network_sim()
 {
     export LCM_URL_DRC_ROBOT="udpm://239.255.76.68:7668?ttl=0"
@@ -160,6 +185,7 @@ setup_drc
 setup_network_sim
 setup_lcm_communities
 setup_robot_computers
+setup_valkyrie_for_host_sites
 
 # aliases
 alias cddrc='cd $DRC_BASE/software'
