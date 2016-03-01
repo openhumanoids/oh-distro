@@ -82,7 +82,7 @@ setup_drc()
   export ATLAS_ROBOT_INTERFACE=$DRC_BASE/software/atlas-collection/atlas/AtlasRobotInterface_3.3.0
 }
 
-setup_robot_computers()
+setup_atlas_computers()
 {
   # field computer
   if [ "paladin-12" = $(hostname) ]
@@ -114,7 +114,7 @@ setup_robot_computers()
   fi
 }
 
-setup_valkyrie_for_host_sites()
+setup_valkyrie_computers()
 {
   # Edinburgh operator workstations
   if [ "angmar" = $(hostname) ] || [ "gondolin" = $(hostname) ]; then
@@ -180,8 +180,8 @@ set_drc_base
 setup_drc
 setup_network_sim
 setup_lcm_communities
-setup_robot_computers
-setup_valkyrie_for_host_sites
+setup_atlas_computers
+setup_valkyrie_computers
 
 # aliases
 alias cddrc='cd $DRC_BASE/software'
