@@ -123,15 +123,19 @@ setup_valkyrie_for_host_sites()
   MIT='mit.edu'
 
   if [[ "$OUTSIDE_HOSTNAME" =~ "$EDINBURGH" ]]; then
-    echo "Setting up Valkyrie Unit D for Edinburgh"
+    if [ "angmar" = $(hostname) ]; then # Only print status msg on operator workstation
+      echo "Setting up Valkyrie Unit D for Edinburgh"
+    fi
+
     export VAL_LINK_IP=10.185.0.40
     export VAL_ZELDA_IP=10.185.0.41
     export VAL_MULTISENSE_IP=10.185.0.42
     export VAL_UNIT=D
-  fi
+  elif [[ "$OUTSIDE_HOSTNAME" =~ "$MIT" ]]; then
+    if [ "val0" = $(hostname) ]; then # Only print status msg on operator workstation, TODO: adjust hostname
+      echo "Setting up Valkyrie Unit C for MIT"
+    fi
 
-  if [[ "$OUTSIDE_HOSTNAME" =~ "$MIT" ]]; then
-    echo "Setting up Valkyrie Unit C for MIT"
     export VAL_LINK_IP=10.185.0.30
     export VAL_ZELDA_IP=10.185.0.31
     export VAL_MULTISENSE_IP=10.185.0.32
