@@ -142,8 +142,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
 
   // Hard Coded Parameters:
   // Conservative values for real Valkyrie, using defaults used by IHMC
-  default_transfer_time_ = 2.0;
-  default_swing_time_ = 1.5;
+  default_transfer_time_ = 1.0;
+  default_swing_time_ = 1.0;
   // Variable to set what part of a whole body plan gets passed through to Val:
   outputTrajectoryMode_ = TrajectoryMode::bothArm;
   ROS_ERROR("LCM2ROS Controller TrajectoryMode: %d", (int) TrajectoryMode::bothArm);
