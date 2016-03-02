@@ -55,6 +55,19 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	WorldQuatConstraint quaternion_constraint(&robot, endeffector_id, endeffector_final_pose.block<4,1>(3,0), 1./180.*M_PI);
 	constraints.push_back(&position_constraint);
 	constraints.push_back(&quaternion_constraint);
+
+	vector<string> str;
+	for(auto c : constraints)
+	{
+		((SingleTimeKinematicConstraint*)c)->name(0, str);
+		if (c->getType() == 11){
+			VectorXd ub, lb;
+			((SingleTimeKinematicConstraint*)c)->bounds(0, lb, ub);
+			cout << lb << endl << ub << endl;
+		}
+	}
+	for (auto s : str) {cout << s.c_str() << endl;}
+
 	constraints.resize(constraints.size() + 2);
 	VectorXd final_pose(robot.num_positions);
 	vector<string> infeasible_constraints;
@@ -67,7 +80,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	while (info != 1)
 	{
 		vector<int> sample = capability_map.drawCapabilityMapSample();
-		info = 1;
 //		GENERATE CONSTRAINTS
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
 		Vector3d orientation = capability_map.getOrientation(sample[1]);
@@ -78,10 +90,23 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		constraints.end()[-2] = (&base_euler_constraint);
 
 //		COMPUTE CONFIGURATION
+		infeasible_constraints.clear();
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_pose, ik_info, infeasible_constraints, ik_options);
-		publisher.publish(lcm, robot, final_pose);
 		if (ik_info < 10)
 		{
+			KinematicsCache<double> cache = robot.doKinematics(final_pose);
+			cout << "valid solution found. IK info: " << ik_info << endl;
+			int left_foot_id = robot.findLinkId("LeftFoot");
+			int right_foot_id = robot.findLinkId("RightFoot");
+			int world_id = robot.findLinkId("world");
+			Transform<double, 3, 1> left_foot_transform = robot.relativeTransform(cache, world_id, left_foot_id);
+			cout << left_foot_transform.translation() << endl;
+			Transform<double, 3, 1> right_foot_transform = robot.relativeTransform(cache, world_id, right_foot_id);
+			cout << right_foot_transform.translation() << endl;
+			cout << "final pose" << final_pose << endl;
+//			for(auto c : infeasible_constraints){cout << c << endl;}
+			info = 1;
+			publisher.publish(lcm, robot, final_pose);
 			KinematicsCache<double> kinsol = robot.doKinematics(final_pose);
 			bool is_valid = robot.collidingPointsCheckOnly(kinsol, point_cloud, min_distance);
 			if (is_valid)

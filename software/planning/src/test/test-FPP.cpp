@@ -30,6 +30,31 @@ int main()
 	start_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
+	KinematicsCache<double> cache = robot.doKinematics(start_configuration);
+
+//	FEET CONSTRAINTS
+	int left_foot_id = robot.findLinkId("LeftFoot");
+	int right_foot_id = robot.findLinkId("RightFoot");
+	int world_id = robot.findLinkId("world");
+	int pelvis_id = robot.findLinkId("Pelvis");
+	Transform<double, 3, 1> left_foot_transform = robot.relativeTransform(cache, world_id, left_foot_id);
+	Transform<double, 3, 1> right_foot_transform = robot.relativeTransform(cache, world_id, right_foot_id);
+	Transform<double, 3, 1> pelvis_transform = robot.relativeTransform(cache, world_id, pelvis_id);
+	Quaternion<double> left_quat(left_foot_transform.rotation());
+	Vector4d left_des_quat(left_quat.w(), left_quat.x(), left_quat.y(), left_quat.z());
+	cout << left_foot_transform.translation() << endl;
+	cout << right_foot_transform.translation() << endl;
+	Quaternion<double> right_quat(left_foot_transform.rotation());
+	Vector4d right_des_quat(right_quat.w(), right_quat.x(), right_quat.y(), right_quat.z());
+	WorldPositionConstraint left_foot_pos_constraint(&robot, left_foot_id, Vector3d(0,0,0), left_foot_transform.translation(), left_foot_transform.translation());
+	WorldPositionConstraint right_foot_pos_constraint(&robot, right_foot_id, Vector3d(0,0,0), right_foot_transform.translation(), right_foot_transform.translation());
+	WorldQuatConstraint left_foot_quat_constraint(&robot, left_foot_id, left_des_quat, 0.0);
+	WorldQuatConstraint right_foot_quat_constraint(&robot, right_foot_id, right_des_quat, 0.0);
+	constraints.push_back(&left_foot_pos_constraint);
+	constraints.push_back(&right_foot_pos_constraint);
+	constraints.push_back(&left_foot_quat_constraint);
+	constraints.push_back(&right_foot_quat_constraint);
+
 	VectorXd endeffector_final_pose;
 	endeffector_final_pose.resize(7);
 	endeffector_final_pose << 0.8000, 0, 1.0625 ,0.7071 ,0 ,0 ,-0.7071;
@@ -66,12 +91,12 @@ int main()
 		Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
 
 		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
-		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
-		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
+//		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
+//		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
 	}
 
-	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
-	cm.drawOccupancyMap(lcmglOM, 16001, 52);
+//	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
+//	cm.drawOccupancyMap(lcmglOM, 16001, 52);
 
 	return 0;
 }
