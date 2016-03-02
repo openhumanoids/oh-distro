@@ -7,7 +7,7 @@ group "0.ros_bridge" {
 
 group "1.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server ${DRC_BASE}/software/config/val/robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/val/robot.cfg";
         host = "localhost";
     }
 
