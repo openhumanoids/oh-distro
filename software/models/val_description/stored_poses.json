@@ -119,6 +119,28 @@
     },
     {
       "allow_mirror": true,
+      "description": "handsup left",
+      "joints": {
+        "leftElbowPitch": -1.866603970527649,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": 0.0,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightElbowPitch": 0.7853981852531433,
+        "rightForearmYaw": 1.5709999799728394,
+        "rightShoulderPitch": 0.3001966178417206,
+        "rightShoulderRoll": 1.25,
+        "rightShoulderYaw": 0.0,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0
+      },
+      "name": "handsup left",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
       "description": "safe nominal",
       "joints": {
         "base_pitch": 0.0,
