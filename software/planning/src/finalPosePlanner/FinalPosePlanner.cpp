@@ -94,28 +94,37 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_pose, ik_info, infeasible_constraints, ik_options);
 		if (ik_info < 10)
 		{
-			KinematicsCache<double> cache = robot.doKinematics(final_pose);
-			cout << "valid solution found. IK info: " << ik_info << endl;
-			int left_foot_id = robot.findLinkId("LeftFoot");
-			int right_foot_id = robot.findLinkId("RightFoot");
-			int world_id = robot.findLinkId("world");
-			Transform<double, 3, 1> left_foot_transform = robot.relativeTransform(cache, world_id, left_foot_id);
-			cout << left_foot_transform.translation() << endl;
-			Transform<double, 3, 1> right_foot_transform = robot.relativeTransform(cache, world_id, right_foot_id);
-			cout << right_foot_transform.translation() << endl;
-			cout << "final pose" << final_pose << endl;
-//			for(auto c : infeasible_constraints){cout << c << endl;}
-			info = 1;
-			publisher.publish(lcm, robot, final_pose);
 			KinematicsCache<double> kinsol = robot.doKinematics(final_pose);
-			bool is_valid = robot.collidingPointsCheckOnly(kinsol, point_cloud, min_distance);
+			bool is_valid = !robot.collidingPointsCheckOnly(kinsol, point_cloud, min_distance);
 			if (is_valid)
 			{
+				info = 1;
+				publisher.publish(lcm, robot, final_pose);
 				robot.collisionDetect(kinsol, phi, normal, xA, xB, bodyA_idx, bodyB_idx, false);
+				ArrayXd::Index row, col;
+				((ArrayXd)phi < min_distance).maxCoeff(&row, &col);
+
+				vector<Vector3d> colliding_points;
+				int world_id = robot.findLinkId("world");
+				Transform<double, 3, 1> bodyA_transform = robot.relativeTransform(kinsol, world_id, bodyA_idx[row]);
+				Transform<double, 3, 1> bodyB_transform = robot.relativeTransform(kinsol, world_id, bodyB_idx[row]);
+				Vector3d pointA = bodyA_transform * xA.col(row);
+				colliding_points.push_back(pointA);
+				Vector3d pointB = bodyB_transform * xB.col(row);
+				colliding_points.push_back(pointB);
+				colliding_points.push_back(bodyA_transform.translation());
+				colliding_points.push_back(bodyB_transform.translation());
+				bot_lcmgl_t* lcmgl_pc = bot_lcmgl_init(lcm->getUnderlyingLCM(), "colliding points");
+				drawPointCloud(lcmgl_pc, colliding_points);
+				cout << robot.bodies[bodyA_idx[row]]->linkname << " " << robot.bodies[bodyB_idx[row]]->linkname << endl;
+				cout << robot.bodies[bodyA_idx[row]]->collidesWith(robot.bodies[bodyB_idx[row]]) << endl;
 //				cout << phi << endl << endl << min_distance << endl << endl;
+				cout << final_pose << endl;
 				if (((ArrayXd)phi > min_distance).all())
 				{
 					info = 1;
+					publisher.publish(lcm, robot, final_pose);
+					cout << "Solution found!" << endl;
 				}
 				else
 				{
