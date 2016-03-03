@@ -17,15 +17,15 @@ RGB_tuples_dark = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_dark)
 
 # position plot
 addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
-addSignals('NASA_COMMAND', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples)
-addSignals('NASA_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
+addSignals('VAL_COMMAND_FEEDBACK', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples)
+addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
 
 # velocity plot
 addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
-addSignals('NASA_COMMAND', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples)
-addSignals('NASA_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_dark)
+addSignals('VAL_COMMAND_FEEDBACK', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples)
+addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_dark)
 
 # effort plot
 addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
-addSignals('NASA_COMMAND', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples)
-addSignals('NASA_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_dark)
+addSignals('VAL_COMMAND_FEEDBACK', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples)
+addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_dark)
