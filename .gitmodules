@@ -25,3 +25,6 @@
 [submodule "catkin_ws/src/ipab_msgs"]
 	path = catkin_ws/src/ipab_msgs
 	url = https://github.com/ipab-slmc/ipab_msgs.git
+[submodule "catkin_ws/src/valkyrie_translator"]
+	path = catkin_ws/src/valkyrie_translator
+	url = https://github.com/openhumanoids/valkyrie_translator.git
