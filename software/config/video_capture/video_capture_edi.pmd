@@ -16,6 +16,10 @@ group "start" {
 }
 
 group "review" {
+    cmd "live_player" {
+        exec = "LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 directorPython $DRC_BASE/software/director/src/python/scripts/videoPlayer.py";
+        host = "localhost";
+    }
     cmd "review_player" {
         exec = "directorPython $DRC_BASE/software/director/src/python/scripts/videoPlayer.py";
         host = "localhost";
