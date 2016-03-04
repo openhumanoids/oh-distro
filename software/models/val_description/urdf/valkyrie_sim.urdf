@@ -111,7 +111,7 @@
     <parent link="pelvis"/>
     <child link="torsoYawLink"/>
     <limit effort="190" lower="-1.329" upper="1.181" velocity="5.89"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="torsoYaw">
@@ -124,7 +124,7 @@
     <parent link="torsoYawLink"/>
     <child link="torsoPitchLink"/>
     <limit effort="150" lower="-0.13" upper="0.666" velocity="9"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="torsoPitch">
@@ -137,7 +137,7 @@
     <parent link="torsoPitchLink"/>
     <child link="torso"/>
     <limit effort="150" lower="-0.23" upper="0.255" velocity="9"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="torsoRoll">
@@ -207,7 +207,7 @@
     <parent link="torso"/>
     <child link="lowerNeckPitchLink"/>
     <limit effort="26" lower="0" upper="1.162" velocity="5"/>
-    <controller_gains Kd="0" Kp="20000"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="400"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="lowerNeckPitch">
@@ -220,7 +220,7 @@
     <parent link="lowerNeckPitchLink"/>
     <child link="neckYawLink"/>
     <limit effort="26" lower="-1.04719755" upper="1.04719755" velocity="5"/>
-    <controller_gains Kd="0" Kp="20000"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="400"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="neckYaw">
@@ -233,7 +233,7 @@
     <parent link="neckYawLink"/>
     <child link="upperNeckPitchLink"/>
     <limit effort="26" lower="-0.872" upper="0.0" velocity="5"/>
-    <controller_gains Kd="0" Kp="20000"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="400"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="upperNeckPitch">
@@ -243,7 +243,7 @@
   <link name="rightShoulderPitchLink">
     <inertial>
       <mass value="2.65"/>
-      <origin rpy="0 0 0" xyz="-0.012000 -0.251 0.000000"/>
+      <origin rpy="0 0 0" xyz="0.012 -0.251 0.000000"/>
       <inertia ixx="0.013718167" ixy="0.0" ixz="0.0" iyy="0.010502833" iyz="0.0" izz="0.014806433"/>
     </inertial>
     <visual>
@@ -262,8 +262,8 @@
   <link name="rightShoulderRollLink">
     <inertial>
       <mass value="3.97"/>
-      <origin rpy="0 0 0" xyz="-0.008513 -0.02068 0.001088"/>
-      <inertia ixx="0.009494119" ixy="-6.7294e-05" ixz="3.7177e-05" iyy="0.007680534" iyz="8.874e-06" izz="0.012454772"/>
+      <origin rpy="0 0 0" xyz="0.008513 -0.02068 -0.001088"/>
+      <inertia ixx="0.014598842" ixy="-0.00066764" ixz="3.629e-05" iyy="0.006452136" iyz="8.283e-05" izz="0.016848319"/>
     </inertial>
     <visual>
       <geometry>
@@ -322,7 +322,7 @@
     <parent link="torso"/>
     <child link="rightShoulderPitchLink"/>
     <limit effort="190" lower="-2.85" upper="2.0" velocity="5.89"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightShoulderPitch">
@@ -335,7 +335,7 @@
     <parent link="rightShoulderPitchLink"/>
     <child link="rightShoulderRollLink"/>
     <limit effort="190" lower="-1.266" upper="1.519" velocity="5.89"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightShoulderRoll">
@@ -348,7 +348,7 @@
     <parent link="rightShoulderRollLink"/>
     <child link="rightShoulderYawLink"/>
     <limit effort="65" lower="-3.1" upper="2.18" velocity="11.5"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightShoulderYaw">
@@ -361,7 +361,7 @@
     <parent link="rightShoulderYawLink"/>
     <child link="rightElbowPitchLink"/>
     <limit effort="65" lower="-0.12" upper="2.174" velocity="11.5"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightElbowPitch">
@@ -431,7 +431,7 @@
     <parent link="rightElbowPitchLink"/>
     <child link="rightForearmLink"/>
     <limit effort="26" lower="-2.019" upper="3.14" velocity="5"/>
-    <controller_gains Kd="0" Kp="20000"/>
+    <controller_gains Kd="0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightForearmYaw">
@@ -444,7 +444,7 @@
     <parent link="rightForearmLink"/>
     <child link="rightWristRollLink"/>
     <limit effort="14" lower="-0.625" upper="0.62" velocity="1"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightWristRoll">
@@ -457,7 +457,7 @@
     <parent link="rightWristRollLink"/>
     <child link="rightPalm"/>
     <limit effort="14" lower="-0.49" upper="0.36" velocity="1"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightWristPitch">
@@ -831,7 +831,7 @@
   <link name="leftShoulderPitchLink">
     <inertial>
       <mass value="2.65"/>
-      <origin rpy="0 0 0" xyz="-0.012000 0.251 0.000000"/>
+      <origin rpy="0 0 0" xyz="-0.012 0.251 0.000000"/>
       <inertia ixx="0.013718167" ixy="0.0" ixz="0.0" iyy="0.010502833" iyz="0.0" izz="0.014806433"/>
     </inertial>
     <visual>
@@ -851,7 +851,7 @@
     <inertial>
       <mass value="3.97"/>
       <origin rpy="0 0 0" xyz="-0.008513 0.02068 -0.001088"/>
-      <inertia ixx="0.009494119" ixy="6.7294e-05" ixz="-3.7177e-05" iyy="0.007680534" iyz="8.874e-06" izz="0.012454772"/>
+      <inertia ixx="0.014598842" ixy="-0.00066764" ixz="-3.629e-05" iyy="0.006452136" iyz="-8.283e-05" izz="0.016848319"/>
     </inertial>
     <visual>
       <geometry>
@@ -910,7 +910,7 @@
     <parent link="torso"/>
     <child link="leftShoulderPitchLink"/>
     <limit effort="190" lower="-2.85" upper="2.0" velocity="5.89"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftShoulderPitch">
@@ -923,7 +923,7 @@
     <parent link="leftShoulderPitchLink"/>
     <child link="leftShoulderRollLink"/>
     <limit effort="190" lower="-1.519" upper="1.266" velocity="5.89"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftShoulderRoll">
@@ -936,7 +936,7 @@
     <parent link="leftShoulderRollLink"/>
     <child link="leftShoulderYawLink"/>
     <limit effort="65" lower="-3.1" upper="2.18" velocity="11.5"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftShoulderYaw">
@@ -949,7 +949,7 @@
     <parent link="leftShoulderYawLink"/>
     <child link="leftElbowPitchLink"/>
     <limit effort="65" lower="-2.174" upper="0.12" velocity="11.5"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftElbowPitch">
@@ -1019,7 +1019,7 @@
     <parent link="leftElbowPitchLink"/>
     <child link="leftForearmLink"/>
     <limit effort="26" lower="-2.019" upper="3.14" velocity="5"/>
-    <controller_gains Kd="0" Kp="20000"/>
+    <controller_gains Kd="0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftForearmYaw">
@@ -1032,7 +1032,7 @@
     <parent link="leftForearmLink"/>
     <child link="leftWristRollLink"/>
     <limit effort="14" lower="-0.62" upper="0.625" velocity="1"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftWristRoll">
@@ -1045,7 +1045,7 @@
     <parent link="leftWristRollLink"/>
     <child link="leftPalm"/>
     <limit effort="14" lower="-0.36" upper="0.49" velocity="1"/>
-    <controller_gains Kd="400" Kp="20000"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftWristPitch">
@@ -1632,7 +1632,7 @@
     <parent link="pelvis"/>
     <child link="rightHipYawLink"/>
     <limit effort="190" lower="-1.1" upper="0.4141" velocity="5.89"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightHipYaw">
@@ -1645,7 +1645,7 @@
     <parent link="rightHipYawLink"/>
     <child link="rightHipRollLink"/>
     <limit effort="350" lower="-0.5515" upper="0.467" velocity="7"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightHipRoll">
@@ -1658,7 +1658,7 @@
     <parent link="rightHipRollLink"/>
     <child link="rightHipPitchLink"/>
     <limit effort="350" lower="-2.42" upper="1.619" velocity="6.11"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightHipPitch">
@@ -1671,7 +1671,7 @@
     <parent link="rightHipPitchLink"/>
     <child link="rightKneePitchLink"/>
     <limit effort="350" lower="-0.083" upper="2.057" velocity="6.11"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightKneePitch">
@@ -1684,7 +1684,7 @@
     <parent link="rightKneePitchLink"/>
     <child link="rightAnklePitchLink"/>
     <limit effort="205" lower="-0.8644" upper="0.875" velocity="11"/>
-    <controller_gains Kd="400" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="rightAnklePitch">
@@ -1697,7 +1697,7 @@
     <parent link="rightAnklePitchLink"/>
     <child link="rightFoot"/>
     <limit effort="205" lower="-0.349" upper="0.348" velocity="11"/>
-    <controller_gains Kd="400" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.3" friction="0.0"/>
   </joint>
   <gazebo reference="rightAnkleRoll">
@@ -1920,7 +1920,7 @@
     <parent link="pelvis"/>
     <child link="leftHipYawLink"/>
     <limit effort="190" lower="-0.4141" upper="1.1" velocity="5.89"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftHipYaw">
@@ -1933,7 +1933,7 @@
     <parent link="leftHipYawLink"/>
     <child link="leftHipRollLink"/>
     <limit effort="350" lower="-0.467" upper="0.5515" velocity="7"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftHipRoll">
@@ -1946,7 +1946,7 @@
     <parent link="leftHipRollLink"/>
     <child link="leftHipPitchLink"/>
     <limit effort="350" lower="-2.42" upper="1.619" velocity="6.11"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftHipPitch">
@@ -1959,7 +1959,7 @@
     <parent link="leftHipPitchLink"/>
     <child link="leftKneePitchLink"/>
     <limit effort="350" lower="-0.083" upper="2.057" velocity="6.11"/>
-    <controller_gains Kd="500" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftKneePitch">
@@ -1972,7 +1972,7 @@
     <parent link="leftKneePitchLink"/>
     <child link="leftAnklePitchLink"/>
     <limit effort="205" lower="-0.8644" upper="0.875" velocity="11"/>
-    <controller_gains Kd="400" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="leftAnklePitch">
@@ -1985,7 +1985,7 @@
     <parent link="leftAnklePitchLink"/>
     <child link="leftFoot"/>
     <limit effort="205" lower="-0.349" upper="0.348" velocity="11"/>
-    <controller_gains Kd="400" Kp="15000"/>
+    <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.3" friction="0.0"/>
   </joint>
   <gazebo reference="leftAnkleRoll">
@@ -2023,6 +2023,9 @@
     <sensor name="pelvisRearImu" type="imu">
       <always_on>true</always_on>
       <pose>0 0 0 0 0 0 </pose>
+      <node name="/sensors/rearPelvisIMU"/>
+      <api name="val_imu_gazebo_interface/ImuGazeboInterface"/>
+      <port name="none"/>
       <imu>
         <noise>
           <type>gaussian</type>
@@ -2051,7 +2054,7 @@
     </inertial>
   </link>
   <joint name="pelvisMiddleImu_Offset" type="fixed">
-    <origin rpy="3.14159 0.0 0.0" xyz="0.0 0.0 -0.108184035"/>
+    <origin rpy="3.14159 0.0 0.0" xyz="0.0 0.0 -0.10819638"/>
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
     <child link="pelvisMiddleImu_Frame"/>
@@ -2073,6 +2076,9 @@
     <sensor name="pelvisMiddleImu" type="imu">
       <always_on>true</always_on>
       <pose>0 0 0 0 0 0 </pose>
+      <node name="/sensors/middlePelvisIMU"/>
+      <api name="val_imu_gazebo_interface/ImuGazeboInterface"/>
+      <port name="none"/>
       <imu>
         <noise>
           <type>gaussian</type>
@@ -2137,7 +2143,7 @@
   <gazebo reference="multisense_head_root_joint">
     <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
-  <link name="leftTorsoIMU_Frame">
+  <link name="leftTorsoImu_Frame">
     <!-- Virtual Link -->
     <inertial>
       <mass value="1e-07"/>
@@ -2145,29 +2151,32 @@
       <inertia ixx="3.33333333333e-22" ixy="0.0" ixz="0.0" iyy="3.33333333333e-22" iyz="0.0" izz="5e-22"/>
     </inertial>
   </link>
-  <joint name="leftTorsoIMU_Offset" type="fixed">
-    <origin rpy="1.57 0 3.14" xyz="-0.046863 0.134239 0.3630676"/>
+  <joint name="leftTorsoImu_Offset" type="fixed">
+    <origin rpy="-1.5707 0.0 0.0" xyz="-0.0627634 0.134239 0.3630676"/>
     <axis xyz="0 0 1"/>
     <parent link="torso"/>
-    <child link="leftTorsoIMU_Frame"/>
+    <child link="leftTorsoImu_Frame"/>
   </joint>
-  <gazebo reference="leftTorsoIMU_Offset">
+  <gazebo reference="leftTorsoImu_Offset">
     <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <gazebo>
     <plugin filename="libgazebo_ros_imu.so" name="imu_plugin_ros">
       <alwaysOn>true</alwaysOn>
-      <bodyName>leftTorsoIMU_Frame</bodyName>
-      <topicName>leftTorsoIMU/imu</topicName>
-      <serviceName>leftTorsoIMU/imu_service</serviceName>
+      <bodyName>leftTorsoImu_Frame</bodyName>
+      <topicName>leftTorsoImu/imu</topicName>
+      <serviceName>leftTorsoImu/imu_service</serviceName>
       <gaussianNoise>0.0</gaussianNoise>
       <updateRate>1000.0</updateRate>
     </plugin>
   </gazebo>
-  <gazebo reference="leftTorsoIMU_Frame">
-    <sensor name="leftTorsoIMU" type="imu">
+  <gazebo reference="leftTorsoImu_Frame">
+    <sensor name="leftTorsoImu" type="imu">
       <always_on>true</always_on>
       <pose>0 0 0 0 0 0 </pose>
+      <node name="/sensors/leftTorsoIMU"/>
+      <api name="val_imu_gazebo_interface/ImuGazeboInterface"/>
+      <port name="none"/>
       <imu>
         <noise>
           <type>gaussian</type>
@@ -2263,7 +2272,7 @@
     <actuator name="torsoYaw">
       <node name="/pelvis/waist"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="torsoPitchTransmission">
@@ -2274,7 +2283,7 @@
     <actuator name="waistPitchActuator">
       <node name="/trunk/pitch_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="torsoRollTransmission">
@@ -2285,7 +2294,7 @@
     <actuator name="waistRollActuator">
       <node name="/trunk/roll_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftHipYawTransmission">
@@ -2296,7 +2305,7 @@
     <actuator name="leftHipYaw">
       <node name="/pelvis/left_leg_j1"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftHipRollTransmission">
@@ -2307,7 +2316,7 @@
     <actuator name="leftHipRoll">
       <node name="/left_leg/j2"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftHipPitchTransmission">
@@ -2318,7 +2327,7 @@
     <actuator name="leftHipPitch">
       <node name="/left_leg/j3"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftKneePitchTransmission">
@@ -2329,7 +2338,7 @@
     <actuator name="leftKneePitch">
       <node name="/left_leg/j4"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftAnklePitchTransmission">
@@ -2340,7 +2349,7 @@
     <actuator name="leftAnklePitchActuator">
       <node name="/left_leg/ankle/pitch_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftAnkleRollTransmission">
@@ -2351,7 +2360,7 @@
     <actuator name="leftAnkleRollActuator">
       <node name="/left_leg/ankle/roll_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightHipYawTransmission">
@@ -2362,7 +2371,7 @@
     <actuator name="rightHipYaw">
       <node name="/pelvis/right_leg_j1"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightHipRollTransmission">
@@ -2373,7 +2382,7 @@
     <actuator name="rightHipRoll">
       <node name="/right_leg/j2"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightHipPitchTransmission">
@@ -2384,7 +2393,7 @@
     <actuator name="rightHipPitch">
       <node name="/right_leg/j3"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightKneePitchTransmission">
@@ -2395,7 +2404,7 @@
     <actuator name="rightKneePitch">
       <node name="/right_leg/j4"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightAnklePitchTransmission">
@@ -2406,7 +2415,7 @@
     <actuator name="rightAnklePitchActuator">
       <node name="/right_leg/ankle/pitch_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightAnkleRollTransmission">
@@ -2417,7 +2426,7 @@
     <actuator name="rightAnkleRollActuator">
       <node name="/right_leg/ankle/roll_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftShoulderPitchTransmission">
@@ -2428,7 +2437,7 @@
     <actuator name="leftShoulderPitch">
       <node name="/trunk/left_arm_j1"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftShoulderRollTransmission">
@@ -2439,7 +2448,7 @@
     <actuator name="leftShoulderRoll">
       <node name="/left_arm/j2"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftShoulderYawTransmission">
@@ -2450,7 +2459,7 @@
     <actuator name="leftShoulderYaw">
       <node name="/left_arm/j3"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftElbowPitchTransmission">
@@ -2461,40 +2470,40 @@
     <actuator name="leftElbowPitch">
       <node name="/left_arm/j4"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftForearmYawTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="leftForearmYaw">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="leftForearmYaw">
       <node name="/left_arm/j5"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftWristRollTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="leftWristRoll">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="leftWristRollActuator">
       <node name="/left_arm/wrist/roll_actautor"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="leftWristPitchTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="leftWristPitch">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="leftWristPitchActuator">
       <node name="/left_arm/wrist/pitch_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightShoulderPitchTransmission">
@@ -2505,7 +2514,7 @@
     <actuator name="rightShoulderPitch">
       <node name="/trunk/right_arm_j1"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightShoulderRollTransmission">
@@ -2516,7 +2525,7 @@
     <actuator name="rightShoulderRoll">
       <node name="/right_arm/j2"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightShoulderYawTransmission">
@@ -2527,7 +2536,7 @@
     <actuator name="rightShoulderYaw">
       <node name="/right_arm/j3"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightElbowPitchTransmission">
@@ -2538,73 +2547,73 @@
     <actuator name="rightElbowPitch">
       <node name="/right_arm/j4"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightForearmYawTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="rightForearmYaw">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="rightForearmYaw">
       <node name="/right_arm/j5"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightWristRollTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="rightWristRoll">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="rightWristRollActuator">
       <node name="/right_arm/wrist/roll_actautor"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="rightWristPitchTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="rightWristPitch">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="rightWristPitchActuator">
       <node name="/right_arm/wrist/pitch_actuator"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="lowerNeckPitchTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="lowerNeckPitch">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="lowerNeckPitch">
       <node name="/neck/j1"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="neckYawTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="neckYaw">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="neckYaw">
       <node name="/neck/j2"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <transmission name="upperNeckPitchTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="upperNeckPitch">
-      <hardwareInterface>EffortJointInterface</hardwareInterface>
+      <hardwareInterface>PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name="upperNeckPitch">
       <node name="/neck/j3"/>
       <mechanicalReduction>1</mechanicalReduction>
-      <api name="robot_hardware_interface/TurbodriverSimAPI_DRCv4"/>
+      <api name="robot_hardware_interface/TurbodriverSimAPI"/>
     </actuator>
   </transmission>
   <!-- Head Link Simple Collision Meshes -->
