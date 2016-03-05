@@ -3072,6 +3072,7 @@
     <member link="neckYawLink"/>
     <member link="upperNeckPitchLink"/>
     <member link="head"/>
+    <member link="hokuyo_link"/>
     <ignored_collision_filter_group collision_filter_group="core"/>
   </collision_filter_group>
   <collision_filter_group name="ignore_core">
