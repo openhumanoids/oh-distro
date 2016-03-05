@@ -119,6 +119,28 @@
     },
     {
       "allow_mirror": true,
+      "description": "handsup left",
+      "joints": {
+        "leftElbowPitch": -1.866603970527649,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": 0.0,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightElbowPitch": 0.7853981852531433,
+        "rightForearmYaw": 1.5709999799728394,
+        "rightShoulderPitch": 0.3001966178417206,
+        "rightShoulderRoll": 1.25,
+        "rightShoulderYaw": 0.0,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0
+      },
+      "name": "handsup left",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
       "description": "safe nominal",
       "joints": {
         "base_pitch": 0.0,
@@ -203,6 +225,51 @@
         "leftWristRoll": 0.0
       },
       "name": "test pose C",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "hands up safely 1",
+      "joints": {
+        "leftElbowPitch": -2.052418,
+        "leftForearmYaw": 1.547876238822937,
+        "leftShoulderPitch": 0.7680999999999996,
+        "leftShoulderRoll": -1.249453067779541,
+        "leftShoulderYaw": 0.013141295872628689,
+        "leftWristPitch": 0.1226733848452568,
+        "leftWristRoll": 0.06879446655511856
+      },
+      "name": "hands up safely 1",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "hands up safely 2",
+      "joints": {
+        "leftElbowPitch": -1.8780739999999998,
+        "leftForearmYaw": 1.530392,
+        "leftShoulderPitch": 0.14244999999999974,
+        "leftShoulderRoll": -1.10682,
+        "leftShoulderYaw": 0.13135999999999992,
+        "leftWristPitch": 0.12267357856035233,
+        "leftWristRoll": 0.06879454106092453
+      },
+      "name": "hands up safely 2",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "hands up safely 3",
+      "joints": {
+        "leftElbowPitch": -1.203638,
+        "leftForearmYaw": 1.530392,
+        "leftShoulderPitch": -0.19704999999999995,
+        "leftShoulderRoll": -1.10682,
+        "leftShoulderYaw": -0.01648000000000005,
+        "leftWristPitch": 0.12267354130744934,
+        "leftWristRoll": 0.06879467517137527
+      },
+      "name": "hands up safely 3",
       "nominal_handedness": "left"
     }
   ]
