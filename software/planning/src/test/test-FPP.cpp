@@ -38,15 +38,22 @@ int main()
 	int world_id = robot.findLinkId("world");
 	Transform<double, 3, 1> left_foot_transform = robot.relativeTransform(cache, world_id, left_foot_id);
 	Transform<double, 3, 1> right_foot_transform = robot.relativeTransform(cache, world_id, right_foot_id);
-	Quaternion<double> left_quat(left_foot_transform.rotation());
-	Vector4d left_des_quat(left_quat.w(), left_quat.x(), left_quat.y(), left_quat.z());
-	Quaternion<double> right_quat(left_foot_transform.rotation());
-	Vector4d right_des_quat(right_quat.w(), right_quat.x(), right_quat.y(), right_quat.z());
+
+	Vector3d left_des_orient_lb = rotmat2rpy(left_foot_transform.rotation());
+	Vector3d left_des_orient_ub = rotmat2rpy(left_foot_transform.rotation());
+	left_des_orient_lb(2) = -numeric_limits<double>::infinity();
+	left_des_orient_ub(2) = numeric_limits<double>::infinity();
+	Vector3d right_des_orient_lb = rotmat2rpy(right_foot_transform.rotation());
+	Vector3d right_des_orient_ub = rotmat2rpy(right_foot_transform.rotation());
+	right_des_orient_lb(2) = -numeric_limits<double>::infinity();
+	right_des_orient_ub(2) = numeric_limits<double>::infinity();
+	WorldEulerConstraint left_foot_euler_constraint(&robot, left_foot_id, left_des_orient_lb, left_des_orient_ub);
+	WorldEulerConstraint right_foot_euler_constraint(&robot, right_foot_id, right_des_orient_lb, right_des_orient_ub);
+
 	Vector3d left_position_lb = left_foot_transform.translation();
 	Vector3d left_position_ub = left_foot_transform.translation();
 	Vector3d right_position_lb = right_foot_transform.translation();
 	Vector3d right_position_ub = right_foot_transform.translation();
-	//sliding feet
 	left_position_lb(0) = -numeric_limits<double>::infinity();
 	left_position_lb(1) = -numeric_limits<double>::infinity();
 	left_position_ub(0) = numeric_limits<double>::infinity();
@@ -57,16 +64,15 @@ int main()
 	right_position_ub(1) = numeric_limits<double>::infinity();
 	WorldPositionConstraint left_foot_pos_constraint(&robot, left_foot_id, Vector3d(0,0,0), left_position_lb, left_position_ub);
 	WorldPositionConstraint right_foot_pos_constraint(&robot, right_foot_id, Vector3d(0,0,0), right_position_lb, right_position_ub);
-	WorldQuatConstraint left_foot_quat_constraint(&robot, left_foot_id, left_des_quat, 0.0);
-	WorldQuatConstraint right_foot_quat_constraint(&robot, right_foot_id, right_des_quat, 0.0);
+
 	Vector3d relative_distance = left_foot_transform.translation() - right_foot_transform.translation();
 	VectorXd bTbp(7,1);
 	bTbp << 0,0,0,1,0,0,0;
 	RelativePositionConstraint relative_pos_constraint(&robot, Vector3d(0,0,0), relative_distance, relative_distance, left_foot_id, right_foot_id, bTbp, Vector2d(0,1));
 	constraints.push_back(&left_foot_pos_constraint);
 	constraints.push_back(&right_foot_pos_constraint);
-	constraints.push_back(&left_foot_quat_constraint);
-	constraints.push_back(&right_foot_quat_constraint);
+	constraints.push_back(&left_foot_euler_constraint);
+	constraints.push_back(&right_foot_euler_constraint);
 	constraints.push_back(&relative_pos_constraint);
 
 //	QUASI-STATIC CONSTRAINT
