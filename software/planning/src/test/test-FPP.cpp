@@ -59,10 +59,15 @@ int main()
 	WorldPositionConstraint right_foot_pos_constraint(&robot, right_foot_id, Vector3d(0,0,0), right_position_lb, right_position_ub);
 	WorldQuatConstraint left_foot_quat_constraint(&robot, left_foot_id, left_des_quat, 0.0);
 	WorldQuatConstraint right_foot_quat_constraint(&robot, right_foot_id, right_des_quat, 0.0);
+	Vector3d relative_distance = left_foot_transform.translation() - right_foot_transform.translation();
+	VectorXd bTbp(7,1);
+	bTbp << 0,0,0,1,0,0,0;
+	RelativePositionConstraint relative_pos_constraint(&robot, Vector3d(0,0,0), relative_distance, relative_distance, left_foot_id, right_foot_id, bTbp, Vector2d(0,1));
 	constraints.push_back(&left_foot_pos_constraint);
 	constraints.push_back(&right_foot_pos_constraint);
 	constraints.push_back(&left_foot_quat_constraint);
 	constraints.push_back(&right_foot_quat_constraint);
+	constraints.push_back(&relative_pos_constraint);
 
 //	QUASI-STATIC CONSTRAINT
 	Matrix3Xd left_contact_points;
@@ -75,7 +80,6 @@ int main()
 	quasi_static_constraint.addContact(1, &left_foot_id, &left_contact_points);
 	quasi_static_constraint.addContact(1, &right_foot_id, &right_contact_points);
 	constraints.push_back(&quasi_static_constraint);
-	cout << left_contact_points << endl << right_contact_points << endl;
 
 	VectorXd endeffector_final_pose;
 	endeffector_final_pose.resize(7);

@@ -78,9 +78,7 @@ void HSVtoRGB( float &r, float &g, float &b, float h, float s, float v )
 
 void drawPointCloud(bot_lcmgl_t *lcmgl, std::vector<Vector3d> point_cloud)
 {
-//	bot_lcmgl_point_size(lcmgl, 5);
-//	bot_lcmgl_color3f(lcmgl, .5, .5, .5);
-	bot_lcmgl_point_size(lcmgl, 15);
+	bot_lcmgl_point_size(lcmgl, 5);
 	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
 	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
 	for (Vector3d point : point_cloud)
