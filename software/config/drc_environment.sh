@@ -117,7 +117,7 @@ setup_atlas_computers()
 setup_valkyrie_computers()
 {
   # Edinburgh operator workstations
-  if [ "angmar" = $(hostname) ] || [ "gondolin" = $(hostname) ]; then
+  if [ "angmar" = $(hostname) ] || [ "gondolin" = $(hostname) ] || [ "vis04" = $(hostname) ]; then
     echo "Setting up Valkyrie Unit D for Edinburgh"
     export VAL_LINK_IP=10.185.0.40
     export VAL_ZELDA_IP=10.185.0.41
