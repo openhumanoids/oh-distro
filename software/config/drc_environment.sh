@@ -186,3 +186,4 @@ setup_valkyrie_computers
 # aliases
 alias cddrc='cd $DRC_BASE/software'
 alias rundrc='bot-procman-sheriff -l $DRC_BASE/software/config/atlas/robot.pmd'
+alias runval='bot-procman-sheriff -l $DRC_BASE/software/config/val/robot.pmd'
