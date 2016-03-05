@@ -121,7 +121,7 @@ while (true)
     end
     channel = event.channel;
     if (strcmp(channel,'BDI_UTIMES'))
-        obj = drc.atlas_behavior_command_t(event.data);
+        obj = drc.behavior_command_t(event.data);
         str = char(obj.command);
         substrs = textscan(str,'%s','Delimiter',',');
         substrs = substrs{1};

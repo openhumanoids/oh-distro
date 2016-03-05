@@ -78,7 +78,7 @@ class PlanPressureCommander(AtlasPressureCommander):
 
     def handle_behavior(self, channel, msg):
         if isinstance(msg, str):
-            msg = lcmdrc.atlas_behavior_command_t.decode(msg)
+            msg = lcmdrc.behavior_command_t.decode(msg)
 
         s = msg.command.lower()
         if s in self.behavior_map:

@@ -1,0 +1,31 @@
+group "start" {
+    cmd "capture_driver" {
+        exec = "bash -c 'LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 DecklinkCapture -d 0 -m 11 -p 2 -q 90 -l DECKLINK_VIDEO_CAPTURE'";
+        host = "localhost";
+    }
+
+    cmd "logger" {
+        exec = "bash -c 'LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 $DRC_BASE/software/config/video_capture/start_logger_edi.sh'";
+        host = "localhost";
+    }
+
+    cmd "server" {
+        exec = "bash -c 'VIDEO_LCM_URL=\"udpm://239.255.74.52:7650?ttl=0\" python $DRC_BASE/software/director/src/python/scripts/videoLogServer.py $HOME/logs/video-logs'";
+        host = "localhost";
+    }
+}
+
+group "review" {
+    cmd "live_player" {
+        exec = "LCM_DEFAULT_URL=udpm://239.255.76.50:7650?ttl=0 directorPython $DRC_BASE/software/director/src/python/scripts/videoPlayer.py";
+        host = "localhost";
+    }
+    cmd "review_player" {
+        exec = "directorPython $DRC_BASE/software/director/src/python/scripts/videoPlayer.py";
+        host = "localhost";
+    }
+}
+
+script "start" {
+    start group "start";
+}
