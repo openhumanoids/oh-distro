@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <Eigen/Dense>
+#include <chrono>
 
 #include "bot_lcmgl_client/lcmgl.h"
 
@@ -122,7 +123,11 @@ int main()
 		cm.setActiveSide("left");
 		Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
 
+	    chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
 		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
+		chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
+	    auto duration = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
+	    cout << "Solution found in " << duration/1.e6 << " s" << endl;
 //		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
 //		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
 	}
