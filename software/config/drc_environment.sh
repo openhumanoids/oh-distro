@@ -114,7 +114,7 @@ setup_atlas_computers()
   fi
 }
 
-setup_valkyrie_computers()
+setup_edinburgh_valkyrie_computers()
 {
   # Edinburgh operator workstations
   if [ "angmar" = $(hostname) ] || [ "gondolin" = $(hostname) ] || [ "vis04" = $(hostname) ]; then
@@ -125,14 +125,17 @@ setup_valkyrie_computers()
     export VAL_UNIT=D
     export LCM_DEFAULT_URL="udpm://239.255.76.76:7676?ttl=1"
   fi
+}
 
-  #elif [ "val0" = $(hostname) ]; then # TODO: MIT Valkyrie workstations
-  #  echo "Setting up Valkyrie Unit C for MIT"
-  #  export VAL_LINK_IP=10.185.0.30
-  #  export VAL_ZELDA_IP=10.185.0.31
-  #  export VAL_MULTISENSE_IP=10.185.0.32
-  #  export VAL_UNIT=C
-  #fi
+setup_mit_valkyrie_computers()
+{
+    if [ "vis03" = $(hostname) ]; then # TODO: MIT Valkyrie workstations
+      echo "Setting up Valkyrie Unit C for MIT"
+      export VAL_LINK_IP=10.185.0.30
+      export VAL_ZELDA_IP=10.185.0.31
+      export VAL_MULTISENSE_IP=10.185.0.32
+      export VAL_UNIT=C
+    fi
 }
 
 setup_network_sim()
@@ -181,7 +184,7 @@ setup_drc
 setup_network_sim
 setup_lcm_communities
 setup_atlas_computers
-setup_valkyrie_computers
+setup_edinburgh_valkyrie_computers
 
 # aliases
 alias cddrc='cd $DRC_BASE/software'
