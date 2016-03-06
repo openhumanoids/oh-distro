@@ -2,18 +2,29 @@
 #include <fstream>
 #include <Eigen/Dense>
 #include <chrono>
+#include <sstream>
+#include <iomanip>
+#include <time.h>
 
 #include "bot_lcmgl_client/lcmgl.h"
 
 #include "capabilityMap/CapabilityMap.hpp"
 #include "finalPosePlanner/FinalPosePlanner.hpp"
 #include "drawingUtil/drawingUtil.hpp"
+#include "drake/thirdParty/tinyxml2/tinyxml2.h"
 
 using namespace std;
 using namespace Eigen;
+using namespace tinyxml2;
 
-int main()
+int main(int argc, char* argv[])
 {
+	if (argc < 2)
+	{
+		cerr << "Usage: " << argv[0] << " n_iteration" << endl;
+		return 1;
+	}
+
 	CapabilityMap cm("/home/marco/oh-distro/software/planning/capabilityMap.log");
 	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport_occ.bin");
 
@@ -107,6 +118,35 @@ int main()
 	}
 	else
 	{
+//        INITIALIZE OUTPUT FILE
+		string output_file_name = "output.fpp";
+		XMLDocument xml_doc;
+		XMLElement *results_node = xml_doc.NewElement("results");
+		xml_doc.LinkEndChild(results_node);
+		XMLElement *details_node = xml_doc.NewElement("details");
+		results_node->LinkEndChild(details_node);
+		XMLElement *models_node = xml_doc.NewElement("models");
+		details_node->LinkEndChild(models_node);
+		models_node->SetText("val2");
+		XMLElement *n_iterations_node = xml_doc.NewElement("n_iterations");
+		details_node->LinkEndChild(n_iterations_node);
+		n_iterations_node->SetText(argv[1]);
+		XMLElement *scenes_node = xml_doc.NewElement("scenes");
+		details_node->LinkEndChild(scenes_node);
+		scenes_node->SetText("1");
+		XMLElement *grasping_hands_node = xml_doc.NewElement("grasping_hands");
+		details_node->LinkEndChild(grasping_hands_node);
+		grasping_hands_node->SetText("left");
+		time_t rawtime;
+		char buffer [80];
+		time (&rawtime);
+		struct tm *timeinfo = localtime (&rawtime);
+		strftime (buffer,80,"%d-%b-%Y %T",timeinfo);
+		XMLElement *time_node = xml_doc.NewElement("time");
+		details_node->LinkEndChild(time_node);
+		time_node->SetText(buffer);
+
+
 		vector<Vector3d> point_cloud;
 		unsigned int n_points;
 		inputFile.read((char *) &n_points, sizeof(unsigned int));
@@ -123,17 +163,22 @@ int main()
 		cm.setActiveSide("left");
 		Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
 
-	    chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
-		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
-		chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
-	    auto duration = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
-	    cout << "Solution found in " << duration/1.e6 << " s" << endl;
-//		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
-//		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
-	}
+		stringstream arg;
+		arg << argv[1];
+		int n_iter;
+		arg >> n_iter;
 
-//	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
-//	cm.drawOccupancyMap(lcmglOM, 16001, 52);
+		for (int i = 0; i < n_iter; i++)
+		{
+			cout << "Iteration " << i << endl;
+			chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
+			fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
+			chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
+			auto duration = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
+			cout << "\tSolution found in " << duration/1.e6 << " s" << endl;
+		}
+		xml_doc.SaveFile(output_file_name.c_str());
+	}
 
 	return 0;
 }
