@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <time.h>
+#include <boost/program_options.hpp>
 
 #include "bot_lcmgl_client/lcmgl.h"
 
@@ -16,14 +17,44 @@
 using namespace std;
 using namespace Eigen;
 using namespace tinyxml2;
+namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
 {
-	if (argc < 2)
+	int n_iter;
+	string scenes_str;
+	vector<string> scenes;
+
+	po::options_description desc("options");
+	desc.add_options()
+			("help,h", "Produce this message")
+			("n_iterations,i", po::value<int>(&n_iter)->default_value(10), "number of iterations")
+			("scenes,s", po::value<string>(&scenes_str), "scenes to compute")
+			;
+
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
+
+	if (vm.count("help"))
 	{
-		cerr << "Usage: " << argv[0] << " n_iteration" << endl;
+		cout << desc << endl;
 		return 1;
 	}
+
+	if (vm.count("scenes"))
+	{
+		istringstream ss(scenes_str);
+		scenes.clear();
+		string scene;
+		while (getline(ss, scene, ',')){scenes.push_back(scene);}
+	}
+	cout << "n iterations: " << n_iter << endl;
+	cout << "scenes: ";
+	for (auto s : scenes){cout << s << ",";}
+	cout << endl;
+
+	return 1;
 
 	CapabilityMap cm("/home/marco/oh-distro/software/planning/capabilityMap.log");
 	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport_occ.bin");
@@ -163,10 +194,6 @@ int main(int argc, char* argv[])
 		cm.setActiveSide("left");
 		Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
 
-		stringstream arg;
-		arg << argv[1];
-		int n_iter;
-		arg >> n_iter;
 
 		for (int i = 0; i < n_iter; i++)
 		{
