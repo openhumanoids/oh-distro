@@ -22,36 +22,76 @@ namespace po = boost::program_options;
 int main(int argc, char* argv[])
 {
 	int n_iter;
-	string scenes_str;
-	vector<string> scenes;
+	vector<int> scenes;
+	string grasping_hands_str;
+	vector<string> models(1, "val2");
+
+	po::options_description hidden("parameters");
+	hidden.add_options()
+		("scenes,s", po::value<vector<int>>(&scenes)->multitoken(), "space separated list of integers representing the scenes to compute")
+	    ;
+
+	po::positional_options_description p;
+	p.add("scenes", -1);
 
 	po::options_description desc("options");
 	desc.add_options()
 			("help,h", "Produce this message")
 			("n_iterations,i", po::value<int>(&n_iter)->default_value(10), "number of iterations")
-			("scenes,s", po::value<string>(&scenes_str), "scenes to compute")
+			("grasping_hands,g", po::value<string>(&grasping_hands_str)->default_value("left"), "hands to use in the computation. Can be \"left\", \"right\" or \"both\"")
+			("models,m", po::value<vector<string>>(&models)->multitoken(), "space separated list of models to include in the simulation (only val2 is currently supported)")
 			;
 
+	po::options_description all_options("all options");
+	all_options.add(hidden).add(desc);
+
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::store(po::command_line_parser(argc, argv).options(all_options).positional(p).run(), vm);
 	po::notify(vm);
 
-	if (vm.count("help"))
+	if (vm.count("help") || scenes.size() == 0)
 	{
+		cout << "Usage: " << endl << argv[0] << " <scenes> [OPTIONS]" << endl << endl;
+		cout << "scenes is a space separated list of integers representing the scenes to compute" << endl << endl;
 		cout << desc << endl;
 		return 1;
 	}
 
-	if (vm.count("scenes"))
+	vector<string> grasping_hands;
+	if (grasping_hands_str.compare("both") == 0)
 	{
-		istringstream ss(scenes_str);
-		scenes.clear();
-		string scene;
-		while (getline(ss, scene, ',')){scenes.push_back(scene);}
+		cout << grasping_hands_str << endl;
+		grasping_hands.push_back("left");
+		grasping_hands.push_back("right");
 	}
+	else if (grasping_hands_str.compare("left") == 0 || grasping_hands_str.compare("right") == 0)
+	{
+		grasping_hands.push_back(grasping_hands_str);
+	}
+	else
+	{
+		cout << "grasping hands can be \"left\", \"right\" or \"both\"" << endl;
+		return 1;
+	}
+
+	for (auto m : models)
+	{
+		if (m.compare("val2") != 0)
+		{
+			cout << "only val2 is currently supported. You don't need to specify the model option" << endl;
+			return 1;
+		}
+	}
+
 	cout << "n iterations: " << n_iter << endl;
 	cout << "scenes: ";
-	for (auto s : scenes){cout << s << ",";}
+	for (auto s : scenes){cout << s << ";";}
+	cout << endl;
+	cout << "grasping hands: ";
+	for (auto h : grasping_hands){cout << h << ";";}
+	cout << endl;
+	cout << "models: ";
+	for (auto m : models){cout << m << ";";}
 	cout << endl;
 
 	return 1;
