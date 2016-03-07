@@ -33,6 +33,11 @@ int main(int argc, char** argv) {
   lcm_img.row_stride = n_colors * width;
   lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
 
+  bot_core::images_t lcm_imgs;
+  lcm_imgs.image_types.push_back(0); // 0 = left
+  lcm_imgs.images.push_back(lcm_img);
+  lcm_imgs.n_images = lcm_imgs.images.size();
+
   if (!cap.open(0)) return 0;
 
   for (;;) {
@@ -40,14 +45,18 @@ int main(int argc, char** argv) {
     cap >> frame;
     if (frame.empty()) break;
 
-    cv::imshow("Webcam Video", frame);
+    // cv::imshow("Webcam Video", frame);
     lcm_img.utime = bot_timestamp_now();
 
     cv::imencode(".jpg", frame, lcm_img.data, params);
     lcm_img.size = lcm_img.data.size();
     lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
 
+    lcm_imgs.images[0] = lcm_img;
+    lcm_imgs.utime = bot_timestamp_now();
+
     lcm_handle.publish("CAMERA_LEFT", &lcm_img);
+    lcm_handle.publish("CAMERA", &lcm_imgs);
 
     if (cv::waitKey(1) == 27) break;  // press ESC to stop
   }
