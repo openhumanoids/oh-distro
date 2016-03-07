@@ -1,0 +1,56 @@
+#include <iostream>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#include <lcm/lcm-cpp.hpp>
+#include <bot_core/timestamp.h>
+#include "lcmtypes/bot_core.hpp"
+
+int64_t bot_timestamp_now() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
+int main(int argc, char** argv) {
+  lcm::LCM lcm_handle;
+
+  if (!lcm_handle.good()) std::cerr << "ERROR: lcm is not good()" << std::endl;
+
+  cv::VideoCapture cap;
+  uint width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  uint height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  std::vector<int> params;
+  params.push_back(cv::IMWRITE_JPEG_QUALITY);
+  params.push_back(90);
+
+  bot_core::image_t lcm_img;
+  lcm_img.width = width;
+  lcm_img.height = height;
+  lcm_img.nmetadata = 0;
+  int n_colors = 3;
+  lcm_img.row_stride = n_colors * width;
+  lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
+
+  if (!cap.open(0)) return 0;
+
+  for (;;) {
+    cv::Mat frame;
+    cap >> frame;
+    if (frame.empty()) break;
+
+    cv::imshow("Webcam Video", frame);
+    lcm_img.utime = bot_timestamp_now();
+
+    cv::imencode(".jpg", frame, lcm_img.data, params);
+    lcm_img.size = lcm_img.data.size();
+    lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+
+    lcm_handle.publish("CAMERA_LEFT", &lcm_img);
+
+    if (cv::waitKey(1) == 27) break;  // press ESC to stop
+  }
+
+  return 0;
+}
