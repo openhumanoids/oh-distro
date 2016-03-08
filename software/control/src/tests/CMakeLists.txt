@@ -30,5 +30,5 @@ pods_install_executables(drc-testDrakeBulletCollisions)
 # Demo application to do gaze tracking with the Valkyrie head and SCS control
 add_executable(drc-gaze-tracking-demo gazeTrackingDemo.cpp)
 target_link_libraries(drc-gaze-tracking-demo boost_thread boost_system boost_filesystem boost_signals)
-pods_use_pkg_config_packages(drc-gaze-tracking-demo drake-rbm drake-ik lcm eigen3)
+pods_use_pkg_config_packages(drc-gaze-tracking-demo drake-rbm drake-ik lcm bot2-frames eigen3)
 pods_install_executables(drc-gaze-tracking-demo )

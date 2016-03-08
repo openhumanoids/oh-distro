@@ -15,6 +15,9 @@ using namespace Eigen;
 #include "lcmtypes/bot_core/pose_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 
+#include <bot_frames/bot_frames.h>
+#include <bot_param/param_client.h>
+
 struct CommandLineConfig
 {
   std::string urdf_filename;
@@ -45,6 +48,8 @@ class App{
     bot_core::robot_state_t rstate_;
     std::map<std::string, int> dofMap_;
 
+    BotParam* botparam_;
+    BotFrames* botframes_;
 };
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_):
@@ -54,10 +59,26 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, Tr
   model_.compile();
   dofMap_ = model_.computePositionNameToIndexMap();
 
+  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+  botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
+
   lcm_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);
 
 }
 
+int App::get_trans_with_utime(std::string from_frame, std::string to_frame,
+                              int64_t utime, Eigen::Isometry3d& mat) {
+  int status;
+  double matx[16];
+  status = bot_frames_get_trans_mat_4x4_with_utime(
+      botframes_, from_frame.c_str(), to_frame.c_str(), utime, matx);
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      mat(i, j) = matx[i * 4 + j];
+    }
+  }
+  return status;
+}
 
 // Find the joint position indices corresponding to 'name'
 std::vector<int> getJointPositionVectorIndices(const RigidBodyTree &model, const std::string &name) {
