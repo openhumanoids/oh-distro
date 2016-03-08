@@ -23,6 +23,7 @@ struct FPPOutput
 	int n_valid_samples_used;
 	double cost;
 	double computation_time;
+	double IK_time;
 };
 
 class FinalPosePlanner

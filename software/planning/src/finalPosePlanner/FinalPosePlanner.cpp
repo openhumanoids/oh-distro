@@ -19,7 +19,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output, double min_distance, Vector3d endeffector_point)
 {
 
-    chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
+//	timing variables
+    chrono::high_resolution_clock::time_point before_FPP, after_FPP, before_IK, after_IK;
+    double IK_time;
+	before_FPP= chrono::high_resolution_clock::now();
 //	INPUT CHECKS
 	int endeffector_id;
 	try
@@ -80,7 +83,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		constraints.end()[-2] = (&base_euler_constraint);
 
 //		COMPUTE CONFIGURATION
+		before_IK = chrono::high_resolution_clock::now();
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_pose, ik_info, infeasible_constraints, ik_options);
+		after_IK = chrono::high_resolution_clock::now();
+	    IK_time += chrono::duration_cast<chrono::microseconds>(after_IK - before_IK).count();
 		if (ik_info < 10)
 		{
 			KinematicsCache<double> kinsol = robot.doKinematics(final_pose);
@@ -96,10 +102,11 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 			}
 		}
 	}
-	chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
-    cout << "Solution found in " << duration/1.e6 << " s" << endl;
-    output.computation_time = duration/1.e6;
+	after_FPP = chrono::high_resolution_clock::now();
+    auto computation_time = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
+    output.IK_time = IK_time/1.e6;
+    output.computation_time = computation_time/1.e6;
+    cout << "Solution found in " << computation_time/1.e6 << " s" << endl;
 	return info;
 }
 

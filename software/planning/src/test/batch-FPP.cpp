@@ -268,6 +268,9 @@ int main(int argc, char* argv[])
 					XMLElement *computation_time_node = xml_doc.NewElement("computation_time");
 					hand_node->LinkEndChild(computation_time_node);
 
+					XMLElement *IK_time_node = xml_doc.NewElement("IK_time");
+					hand_node->LinkEndChild(IK_time_node);
+
 					XMLElement *info_node = xml_doc.NewElement("info");
 					hand_node->LinkEndChild(info_node);
 
@@ -283,6 +286,7 @@ int main(int argc, char* argv[])
 						info = fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, 0.005, endeffector_point);
 						addTextToElement(info_node, info);
 						addTextToElement(computation_time_node, output.computation_time);
+						addTextToElement(IK_time_node, output.IK_time);
 					}
 				}
 			}
