@@ -427,15 +427,14 @@ void App::solveGazeProblem(){
   //exit(-1);
 }
 
-int counter = 0;
+int robotStateCounter = 0;
 void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
                             const std::string& channel,
                             const bot_core::robot_state_t* msg) {
   rstate_ = *msg;
-  if (counter % 400 == 0) {
-    solveGazeProblem();
-  }
-  counter++;
+  if (robotStateCounter % 400 == 0) solveGazeProblem();
+
+  robotStateCounter++;
 }
 
 void App::gazeGoalHandler(const lcm::ReceiveBuffer* rbuf,
@@ -461,19 +460,20 @@ void App::aprilTagTransformHandler(const lcm::ReceiveBuffer* rbuf,
     std::cout << "New gaze goal: " << cl_cfg_.gazeGoal.transpose() << std::endl;
   aprilTagCounter++;
 }
-int main(int argc, char *argv[])
-{
 
+int main(int argc, char* argv[]) {
   CommandLineConfig cl_cfg;
-  cl_cfg.gazeGoal = Eigen::Vector3d(2,1,1.2); // Position we would like the head to gaze at
+  cl_cfg.gazeGoal =
+      Eigen::Vector3d(2, 1, 1.2);  // Position we would like the head to gaze at
+
   TrackingControlMode mode;
   mode = TrackingControlMode::JOINT_POSITION_GOAL;
 
   ConciseArgs parser(argc, argv, "simple-fusion");
   parser.add(cl_cfg.urdf_filename, "u", "urdf", "urdf filename");
-  parser.add(cl_cfg.gazeGoal(0) , "x", "goal_x", "goal_x");
-  parser.add(cl_cfg.gazeGoal(1) , "y", "goal_y", "goal_y");
-  parser.add(cl_cfg.gazeGoal(2) , "z", "goal_z", "goal_z");
+  parser.add(cl_cfg.gazeGoal(0), "x", "goal_x", "goal_x");
+  parser.add(cl_cfg.gazeGoal(1), "y", "goal_y", "goal_y");
+  parser.add(cl_cfg.gazeGoal(2), "z", "goal_z", "goal_z");
   // parser.add(mode, "m", "mode", "mode, 0 for DESIRED_HEAD_ORIENTATION, 1 for
   // JOINT_POSITION_GOAL");
   parser.parse();
