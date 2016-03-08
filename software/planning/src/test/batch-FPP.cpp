@@ -201,30 +201,29 @@ int main(int argc, char* argv[])
 
 //        INITIALIZE OUTPUT FILE
 		string output_file_name = "output.fpp";
-		stringstream ss;
 		XMLDocument xml_doc;
 		XMLElement *results_node = xml_doc.NewElement("results");
 		xml_doc.LinkEndChild(results_node);
-		//details
+
 		XMLElement *details_node = xml_doc.NewElement("details");
 		results_node->LinkEndChild(details_node);
+
 		XMLElement *models_node = xml_doc.NewElement("models");
 		details_node->LinkEndChild(models_node);
-		for (auto m : models){ss << m << " ";}
-		models_node->SetText(ss.str().c_str());
+		for (auto m : models){addTextToElement(models_node, m);}
+
 		XMLElement *n_iterations_node = xml_doc.NewElement("n_iterations");
 		details_node->LinkEndChild(n_iterations_node);
 		n_iterations_node->SetText(n_iter);
+
 		XMLElement *scenes_node = xml_doc.NewElement("scenes");
 		details_node->LinkEndChild(scenes_node);
-		for (auto s : scenes){ss << s << " ";}
-		scenes_node->SetText(ss.str().c_str());
-		ss.str("");
+		for (auto s : scenes){addTextToElement(scenes_node, s);}
+
 		XMLElement *grasping_hands_node = xml_doc.NewElement("grasping_hands");
 		details_node->LinkEndChild(grasping_hands_node);
-		for (auto h : grasping_hands){ss << h << " ";}
-		grasping_hands_node->SetText(ss.str().c_str());
-		ss.str("");
+		for (auto h : grasping_hands){addTextToElement(grasping_hands_node, h);}
+
 		time_t rawtime;
 		char buffer [80];
 		time (&rawtime);
@@ -242,7 +241,7 @@ int main(int argc, char* argv[])
 			results_node->LinkEndChild(model_node);
 			for (auto s : scenes)
 			{
-				ss.str("");
+				stringstream ss;
 				ss << s;
 				XMLElement *scene_node = xml_doc.NewElement("scene");
 				scene_node->SetAttribute("name", ss.str().c_str());
