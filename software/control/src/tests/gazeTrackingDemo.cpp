@@ -9,7 +9,6 @@
 #include <boost/shared_ptr.hpp>
 #include <ConciseArgs>
 
-using namespace std;
 using namespace Eigen;
 
 #include "lcmtypes/bot_core/robot_state_t.hpp"
@@ -43,7 +42,7 @@ class App{
     RigidBodyTree model_;
 
     bot_core::robot_state_t rstate_;
-    map<string, int> dofMap_;
+    std::map<std::string, int> dofMap_;
 
 };
 
@@ -60,17 +59,17 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
 
 
 // Find the joint position indices corresponding to 'name'
-vector<int> getJointPositionVectorIndices(const RigidBodyTree &model, const std::string &name) {
-  shared_ptr<RigidBody> joint_parent_body = model.findJoint(name);
+std::vector<int> getJointPositionVectorIndices(const RigidBodyTree &model, const std::string &name) {
+  std::shared_ptr<RigidBody> joint_parent_body = model.findJoint(name);
   int num_positions = joint_parent_body->getJoint().getNumPositions();
-  vector<int> ret(static_cast<size_t>(num_positions));
+  std::vector<int> ret(static_cast<size_t>(num_positions));
 
   // fill with sequentially increasing values, starting at joint_parent_body->position_num_start:
   iota(ret.begin(), ret.end(), joint_parent_body->position_num_start);
   return ret;
 }
 
-void findJointAndInsert(const RigidBodyTree &model, const std::string &name, vector<int> &position_list) {
+void findJointAndInsert(const RigidBodyTree &model, const std::string &name, std::vector<int> &position_list) {
   auto position_indices = getJointPositionVectorIndices(model, name);
 
   position_list.insert(position_list.end(), position_indices.begin(), position_indices.end());
@@ -114,9 +113,8 @@ void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& ya
 }
 
 VectorXd robotStateToDrakePosition(const bot_core::robot_state_t& rstate,
-                                   const map<string, int>& dofMap, 
-                                   int num_positions)
-{
+                                   const std::map<std::string, int>& dofMap,
+                                   int num_positions) {
   VectorXd q = VectorXd::Zero(num_positions, 1);
   for (int i=0; i < rstate.num_joints; ++i) {
     auto iter = dofMap.find(rstate.joint_name.at(i));
@@ -126,7 +124,7 @@ VectorXd robotStateToDrakePosition(const bot_core::robot_state_t& rstate,
     }
   }
 
-  map<string,int>::const_iterator iter;
+  std::map<std::string,int>::const_iterator iter;
   iter = dofMap.find("base_x");
   if (iter!=dofMap.end()) {
     int index = iter->second;
@@ -267,7 +265,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   // Solve
   IKoptions ikoptions(&model_);
   int info;
-  vector<string> infeasible_constraint;
+  std::vector<std::string> infeasible_constraint;
   inverseKin(&model_, q_star, q_star, constraint_array.size(), constraint_array.data(), q_sol, info, infeasible_constraint, ikoptions);
   printf("INFO = %d\n", info);
   return info;
@@ -289,7 +287,6 @@ static inline bot_core::pose_t getPoseAsBotPose(Eigen::Isometry3d pose, int64_t 
 
 
 void App::solveGazeProblem(){
-
   // Publish the query for visualisation in Director
   bot_core::pose_t goalMsg;
   goalMsg.utime = rstate_.utime;  
@@ -334,7 +331,7 @@ void App::solveGazeProblem(){
     lcm_->publish("DESIRED_HEAD_ORIENTATION",&utorso_to_head_frame_pose_msg);// temp
   }else{ // publish neck pitch and yaw joints as orientation. this works ok when robot is facing 1,0,0,0
     // Fish out the two neck joints (in simulation) and send as a command:
-    std::vector<string> jointNames;
+    std::vector<std::string> jointNames;
     for (int i=0 ; i <model_.num_positions ; i++){
       // std::cout << model.getPositionName(i) << " " << i << "\n";
       jointNames.push_back( model_.getPositionName(i) ) ;
@@ -343,12 +340,12 @@ void App::solveGazeProblem(){
     getRobotState(robot_state_msg, 0*1E6, q_sol , jointNames);
     lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg);
 
-    std::vector<std::string>::iterator it1 = find(jointNames.begin(),
+    std::vector<std::string>::iterator it1 = std::find(jointNames.begin(),
         jointNames.end(), "lowerNeckPitch");
     int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
     float lowerNeckPitchAngle = q_sol[lowerNeckPitchIndex];
 
-    std::vector<std::string>::iterator it2 = find(jointNames.begin(),
+    std::vector<std::string>::iterator it2 = std::find(jointNames.begin(),
         jointNames.end(), "neckYaw");
     int neckYawIndex = std::distance(jointNames.begin(), it2);
     float neckYawAngle = q_sol[neckYawIndex];
@@ -397,11 +394,11 @@ int main(int argc, char *argv[])
   parser.parse();
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
-  if(!lcm->good()){
-    std::cerr <<"ERROR: lcm is not good()" <<std::endl;
-  }
+  if (!lcm->good()) std::cerr << "ERROR: lcm is not good()" << std::endl;
 
-  App app(lcm, cl_cfg);
-  cout << "Ready" << endl << "============================" << endl;
-  while(0 == lcm->handle());
+  App app(lcm, cl_cfg, mode);
+  std::cout << "Ready" << std::endl
+       << "============================" << std::endl;
+  while (0 == lcm->handle())
+    ;
 }
