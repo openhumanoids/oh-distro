@@ -31,6 +31,14 @@ inline double toRad(double deg) {
   return (deg * M_PI / 180);
 }
 
+inline double toDeg(double rad) {
+  return (rad * 180 / M_PI);
+}
+
+inline double clamp(double x, double lower, double upper) {
+  return x < lower ? lower : (x > upper ? upper : x);
+}
+
 class App{
   public:
     App(std::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_);
