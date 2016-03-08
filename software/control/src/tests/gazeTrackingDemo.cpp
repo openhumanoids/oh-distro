@@ -23,7 +23,7 @@ struct CommandLineConfig
 
 class App{
   public:
-    App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_);
+    App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_);
     
     ~App(){
     }
@@ -40,14 +40,15 @@ class App{
     boost::shared_ptr<lcm::LCM> lcm_;
     const CommandLineConfig cl_cfg_;    
     RigidBodyTree model_;
+    TrackingControlMode mode_;
 
     bot_core::robot_state_t rstate_;
     std::map<std::string, int> dofMap_;
 
 };
 
-App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
-                       lcm_(lcm_), cl_cfg_(cl_cfg_){
+App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_):
+                       lcm_(lcm_), cl_cfg_(cl_cfg_), mode_(mode_){
 
   model_.addRobotFromURDF(cl_cfg_.urdf_filename);
   model_.compile();
@@ -308,9 +309,7 @@ void App::solveGazeProblem(){
     return;
   }
 
-
-  bool mode = 0;
-  if (mode==0){ // publish utorso-to-head as orientation, not properly tracking but works with different orientations
+  if (mode_ == TrackingControlMode::DESIRED_HEAD_ORIENTATION) { // publish utorso-to-head as orientation, not properly tracking but works with different orientations
     // Get the utorso to head frame:
     int head_link = model_.findLinkId("head");
     int utorso_link = model_.findLinkId("torso");
@@ -329,7 +328,7 @@ void App::solveGazeProblem(){
     lcm_->publish("POSE_VICON",&world_to_head_frame_pose_msg);// for debug
     bot_core::pose_t utorso_to_head_frame_pose_msg =  getPoseAsBotPose(utorso_to_head, rstate_.utime);
     lcm_->publish("DESIRED_HEAD_ORIENTATION",&utorso_to_head_frame_pose_msg);// temp
-  }else{ // publish neck pitch and yaw joints as orientation. this works ok when robot is facing 1,0,0,0
+  } else if (mode_ == TrackingControlMode::JOINT_POSITION_GOAL) { // publish neck pitch and yaw joints as orientation. this works ok when robot is facing 1,0,0,0
     // Fish out the two neck joints (in simulation) and send as a command:
     std::vector<std::string> jointNames;
     for (int i=0 ; i <model_.num_positions ; i++){
@@ -365,6 +364,8 @@ void App::solveGazeProblem(){
     headOrientationMsg.orientation[3] = quat.z();
     lcm_->publish("DESIRED_HEAD_ORIENTATION",&headOrientationMsg);
     lcm_->publish("POSE_VICON",&headOrientationMsg); // for debug
+  } else {
+    std::cerr << "Mode not selected" << std::endl;
   }
 
   //std::cout << "Desired orientation sent, exiting\n";
@@ -386,11 +387,16 @@ int main(int argc, char *argv[])
 
   CommandLineConfig cl_cfg;
   cl_cfg.gazeGoal = Eigen::Vector3d(2,1,1.2); // Position we would like the head to gaze at
+  TrackingControlMode mode;
+  mode = TrackingControlMode::JOINT_POSITION_GOAL;
+
   ConciseArgs parser(argc, argv, "simple-fusion");
   parser.add(cl_cfg.urdf_filename, "u", "urdf", "urdf filename");
   parser.add(cl_cfg.gazeGoal(0) , "x", "goal_x", "goal_x");
   parser.add(cl_cfg.gazeGoal(1) , "y", "goal_y", "goal_y");
   parser.add(cl_cfg.gazeGoal(2) , "z", "goal_z", "goal_z");
+  // parser.add(mode, "m", "mode", "mode, 0 for DESIRED_HEAD_ORIENTATION, 1 for
+  // JOINT_POSITION_GOAL");
   parser.parse();
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
