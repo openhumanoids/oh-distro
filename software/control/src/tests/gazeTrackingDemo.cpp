@@ -45,11 +45,17 @@ class App{
 
     void solveGazeProblem();
 
-    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg);   
+    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg);
+
+    void gazeGoalHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::vector_3d_t* msg);
+
+    void aprilTagTransformHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);
+
+    int get_trans_with_utime(std::string from_frame, std::string to_frame, int64_t utime, Eigen::Isometry3d& mat);
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    const CommandLineConfig cl_cfg_;    
+    CommandLineConfig cl_cfg_;
     RigidBodyTree model_;
     TrackingControlMode mode_;
 
@@ -72,6 +78,9 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, Tr
 
   lcm_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);
 
+  lcm_->subscribe("GAZE_GOAL", &App::gazeGoalHandler, this);
+
+  lcm_->subscribe("APRIL_TAG_TO_CAMERA_LEFT", &App::aprilTagTransformHandler, this);
 }
 
 int App::get_trans_with_utime(std::string from_frame, std::string to_frame,
@@ -401,16 +410,40 @@ void App::solveGazeProblem(){
   //exit(-1);
 }
 
-int counter=0;
-void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg){
-  rstate_= *msg;
-  if (counter%400 == 0 ){
+int counter = 0;
+void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
+                            const std::string& channel,
+                            const bot_core::robot_state_t* msg) {
+  rstate_ = *msg;
+  if (counter % 400 == 0) {
     solveGazeProblem();
   }
   counter++;
 }
 
+void App::gazeGoalHandler(const lcm::ReceiveBuffer* rbuf,
+                          const std::string& channel,
+                          const bot_core::vector_3d_t* msg) {
+  cl_cfg_.gazeGoal(0) = msg->x;
+  cl_cfg_.gazeGoal(1) = msg->y;
+  cl_cfg_.gazeGoal(2) = msg->z;
+  std::cout << "Updated gaze goal to " << cl_cfg_.gazeGoal << std::endl;
+}
 
+int aprilTagCounter = 0;
+void App::aprilTagTransformHandler(const lcm::ReceiveBuffer* rbuf,
+                                   const std::string& channel,
+                                   const bot_core::rigid_transform_t* msg) {
+  Eigen::Isometry3d aprilTagLocation;
+  get_trans_with_utime("april_tag_car_beam", "local", msg->utime,
+                       aprilTagLocation);
+  cl_cfg_.gazeGoal(0) = aprilTagLocation.translation().x();
+  cl_cfg_.gazeGoal(1) = aprilTagLocation.translation().y();
+  cl_cfg_.gazeGoal(2) = aprilTagLocation.translation().z();
+  if (aprilTagCounter % 30 == 0)
+    std::cout << "New gaze goal: " << cl_cfg_.gazeGoal.transpose() << std::endl;
+  aprilTagCounter++;
+}
 int main(int argc, char *argv[])
 {
 
