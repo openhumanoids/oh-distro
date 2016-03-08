@@ -6,7 +6,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <limits>
-#include <boost/shared_ptr.hpp>
 #include <ConciseArgs>
 
 using namespace Eigen;
@@ -34,7 +33,7 @@ inline double toRad(double deg) {
 
 class App{
   public:
-    App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_);
+    App(std::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_);
     
     ~App(){
     }
@@ -54,7 +53,7 @@ class App{
     int get_trans_with_utime(std::string from_frame, std::string to_frame, int64_t utime, Eigen::Isometry3d& mat);
 
   private:
-    boost::shared_ptr<lcm::LCM> lcm_;
+    std::shared_ptr<lcm::LCM> lcm_;
     CommandLineConfig cl_cfg_;
     RigidBodyTree model_;
     TrackingControlMode mode_;
@@ -66,7 +65,7 @@ class App{
     BotFrames* botframes_;
 };
 
-App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_):
+App::App(std::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_):
                        lcm_(lcm_), cl_cfg_(cl_cfg_), mode_(mode_){
 
   model_.addRobotFromURDF(cl_cfg_.urdf_filename);
@@ -461,7 +460,7 @@ int main(int argc, char *argv[])
   // JOINT_POSITION_GOAL");
   parser.parse();
 
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
+  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if (!lcm->good()) std::cerr << "ERROR: lcm is not good()" << std::endl;
 
   App app(lcm, cl_cfg, mode);
