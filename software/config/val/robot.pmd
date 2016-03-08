@@ -3,6 +3,11 @@ group "0.ros_bridge" {
         exec = "roslaunch oh_translators ihmc_bridge.launch";
         host = "localhost";
     }
+
+    cmd "ros_bridge_with_pronto" {
+        exec = "roslaunch oh_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_pelvisMiddleImu";
+        host = "localhost";
+    }
 }
 
 group "1.params_and_model_pub" {
@@ -33,6 +38,21 @@ group "2.drivers" {
 group "3.state_without_pronto" {
     cmd "joints2frames_without" {
         exec = "drc-joints2frames -m";
+        host = "localhost";
+    }
+}
+
+group "2.state_with_pronto" {
+    cmd "state-sync" {
+        exec = "nasa-state-sync";
+        host = "localhost";
+    }
+    cmd "joints2frames_with" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+    cmd "se-fusion" {
+        exec = "se-fusion";
         host = "localhost";
     }
 }
@@ -141,7 +161,7 @@ script "start_ui_with_pronto" {
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.state_with_pronto";
-    start group "3.plan_and_control";
-    start group "4.maps";
+    start group "4.plan_and_control";
+    start group "5.maps";
     start cmd "director";
 }
