@@ -19,6 +19,15 @@ using namespace Eigen;
 using namespace tinyxml2;
 namespace po = boost::program_options;
 
+template <typename T>
+void addTextToElement(XMLElement *element, T value)
+{
+	stringstream ss;
+	if (element->GetText()){ss << element->GetText() << " ";}
+	ss << value;
+	element->SetText(ss.str().c_str());
+}
+
 int main(int argc, char* argv[])
 {
 	int n_iter;
@@ -259,23 +268,23 @@ int main(int argc, char* argv[])
 
 					XMLElement *computation_time_node = xml_doc.NewElement("computation_time");
 					hand_node->LinkEndChild(computation_time_node);
-					vector<double> computation_times(0, n_iter);
+
+					XMLElement *info_node = xml_doc.NewElement("info");
+					hand_node->LinkEndChild(info_node);
 
 					cm.setActiveSide("left");
 					Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
 
+					int info;
+
 					for (int i = 0; i < n_iter; i++)
 					{
+						FPPOutput output;
 						cout << "Model: " << m << " Scene: " << s << " Hand: " << h << " Iteration: " << i + 1 << endl;
-						chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
-						fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
-						chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
-						computation_times.push_back(chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count());
-						cout << "\tSolution found in " << computation_times.back()/1.e6 << " s" << endl;
+						info = fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, 0.005, endeffector_point);
+						addTextToElement(info_node, info);
+						addTextToElement(computation_time_node, output.computation_time);
 					}
-					ss.str("");
-					for (auto t : computation_times){ss << t/1.e6 << " ";}
-					computation_time_node->SetText(ss.str().c_str());
 				}
 			}
 		}

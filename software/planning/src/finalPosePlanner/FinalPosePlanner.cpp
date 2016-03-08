@@ -1,6 +1,7 @@
 #include "finalPosePlanner/FinalPosePlanner.hpp"
 
 #include <memory>
+#include <chrono>
 
 #include "drake/util/drakeGeometryUtil.h"
 #include "drawingUtil/drawingUtil.hpp"
@@ -15,8 +16,10 @@ FinalPosePlanner::FinalPosePlanner()
 
 int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, string endeffector_side, VectorXd start_configuration,
 		VectorXd endeffector_final_pose, const vector<RigidBodyConstraint *> &additional_constraints, VectorXd nominal_configuration,
-		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, double min_distance, Vector3d endeffector_point)
+		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output, double min_distance, Vector3d endeffector_point)
 {
+
+    chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
 //	INPUT CHECKS
 	int endeffector_id;
 	try
@@ -93,6 +96,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 			}
 		}
 	}
+	chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
+    cout << "Solution found in " << duration/1.e6 << " s" << endl;
+    output.computation_time = duration/1.e6;
 	return info;
 }
 
