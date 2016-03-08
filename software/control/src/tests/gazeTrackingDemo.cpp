@@ -282,14 +282,20 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   VectorXd back_ub = VectorXd::Zero(3);
   kc_posture_back.setJointLimits(3, back_idx.data(), back_lb, back_ub);
 
-  // 2 Upper Neck Constraint
+  // 2 Neck Safe Joint Limit Constraints
   PostureConstraint kc_posture_neck(&model_, tspan);
   std::vector<int> neck_idx;
+  findJointAndInsert(model_, "lowerNeckPitch", neck_idx);
+  findJointAndInsert(model_, "neckYaw", neck_idx);
   findJointAndInsert(model_, "upperNeckPitch", neck_idx);
-  VectorXd neck_lb = VectorXd::Zero(1);
-  neck_lb(0) = 0.0;
-  VectorXd neck_ub = VectorXd::Zero(1);
-  neck_ub(0) = 0.0;
+  VectorXd neck_lb = VectorXd::Zero(3);
+  neck_lb(0) = toRad(0.0);
+  neck_lb(1) = toRad(-15.0);
+  neck_lb(2) = toRad(-50.0);
+  VectorXd neck_ub = VectorXd::Zero(3);
+  neck_ub(0) = toRad(45.0);
+  neck_ub(1) = toRad(15.0);
+  neck_ub(2) = toRad(0.0);
   kc_posture_neck.setJointLimits(1, neck_idx.data(), neck_lb, neck_ub);
 
   // 3 Look At constraint:
@@ -306,7 +312,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   constraint_array.push_back(&kc_pelvis_quat);
   constraint_array.push_back(&kc_gaze);
   constraint_array.push_back(&kc_posture_back); // leave this out to also use the back
-  constraint_array.push_back(&kc_posture_neck); // upper neck pitch
+  constraint_array.push_back(&kc_posture_neck); // safe neck joint limits - does not adhere to yaw?
 
   // Solve
   IKoptions ikoptions(&model_);
