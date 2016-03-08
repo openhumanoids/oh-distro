@@ -11,6 +11,8 @@
 using namespace Eigen;
 
 #include "lcmtypes/bot_core/robot_state_t.hpp"
+#include "lcmtypes/bot_core/vector_3d_t.hpp"
+#include "lcmtypes/bot_core/rigid_transform_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 
@@ -39,7 +41,8 @@ inline double clamp(double x, double lower, double upper) {
   return x < lower ? lower : (x > upper ? upper : x);
 }
 
-class App{
+
+class App {
   public:
     App(std::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_, TrackingControlMode mode_);
     
@@ -302,7 +305,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   int head_link = model_.findLinkId("head");
   Eigen::Vector3d gaze_axis = Eigen::Vector3d(1,0,0);
   Eigen::Vector3d target = cl_cfg_.gazeGoal;
-  Eigen::Vector3d gaze_origin = Eigen::Vector3d(0,0, 0);//0.45);// inserting this offset almost achieves the required look-at
+  Eigen::Vector3d gaze_origin = Eigen::Vector3d(0, 0, 0);
   double conethreshold = 0;
   WorldGazeTargetConstraint kc_gaze(&model_, head_link, gaze_axis, target, gaze_origin, conethreshold, tspan);
 
@@ -384,47 +387,56 @@ void App::solveGazeProblem(){
     bot_core::pose_t utorso_to_head_frame_pose_msg =  getPoseAsBotPose(utorso_to_head, rstate_.utime);
     lcm_->publish("DESIRED_HEAD_ORIENTATION",&utorso_to_head_frame_pose_msg);// temp
   } else if (mode_ == TrackingControlMode::JOINT_POSITION_GOAL) { // publish neck pitch and yaw joints as orientation. this works ok when robot is facing 1,0,0,0
-    // Fish out the two neck joints (in simulation) and send as a command:
     std::vector<std::string> jointNames;
     for (int i=0 ; i <model_.num_positions ; i++){
-      // std::cout << model.getPositionName(i) << " " << i << "\n";
-      jointNames.push_back( model_.getPositionName(i) ) ;
+      // std::cout << model_.getPositionName(i) << " " << i << "\n";
+      jointNames.push_back(model_.getPositionName(i));
     }
-    bot_core::robot_state_t robot_state_msg;
-    getRobotState(robot_state_msg, 0*1E6, q_sol , jointNames);
-    lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg);
 
+    // Clamp neck joints in q_sol to safe values
     std::vector<std::string>::iterator it1 = std::find(jointNames.begin(),
         jointNames.end(), "lowerNeckPitch");
     int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
     float lowerNeckPitchAngle = q_sol[lowerNeckPitchIndex];
+    q_sol[lowerNeckPitchIndex] = clamp(lowerNeckPitchAngle, toRad(0.0), toRad(45.0));
 
     std::vector<std::string>::iterator it2 = std::find(jointNames.begin(),
         jointNames.end(), "neckYaw");
     int neckYawIndex = std::distance(jointNames.begin(), it2);
     float neckYawAngle = q_sol[neckYawIndex];
+    q_sol[neckYawIndex] = clamp(neckYawAngle, toRad(-15.0), toRad(15.0));
 
-    std::cout << lowerNeckPitchAngle << " (" << lowerNeckPitchAngle*180.0/M_PI << ") is lowerNeckPitchAngle\n";
-    std::cout << neckYawAngle << " (" << neckYawAngle*180.0/M_PI << ") is neckYawAngle\n";
+    std::vector<std::string>::iterator it3 = std::find(jointNames.begin(),
+        jointNames.end(), "upperNeckPitch");
+    int upperNeckPitchIndex = std::distance(jointNames.begin(), it3);
+    float upperNeckPitchAngle = q_sol[upperNeckPitchIndex];
+    q_sol[upperNeckPitchIndex] = clamp(upperNeckPitchAngle, toRad(-50.0), toRad(0.0));
 
-    bot_core::pose_t headOrientationMsg;
-    headOrientationMsg.utime = rstate_.utime;
-    headOrientationMsg.pos[0] = 0;
-    headOrientationMsg.pos[1] = 0;
-    headOrientationMsg.pos[2] = 0;
-    Eigen::Quaterniond quat = euler_to_quat(0, lowerNeckPitchAngle, neckYawAngle);
-    headOrientationMsg.orientation[0] = quat.w();
-    headOrientationMsg.orientation[1] = quat.x();
-    headOrientationMsg.orientation[2] = quat.y();
-    headOrientationMsg.orientation[3] = quat.z();
-    lcm_->publish("DESIRED_HEAD_ORIENTATION",&headOrientationMsg);
-    lcm_->publish("POSE_VICON",&headOrientationMsg); // for debug
+
+    bot_core::robot_state_t robot_state_msg;
+    getRobotState(robot_state_msg, 0*1E6, q_sol, jointNames);
+    lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg); // for debug
+
+    bot_core::robot_state_t joint_position_goal_msg = bot_core::robot_state_t();
+    std::vector<std::string> neckJointNames;
+    neckJointNames.push_back("lowerNeckPitch");
+    neckJointNames.push_back("neckYaw");
+    neckJointNames.push_back("upperNeckPitch");
+    getRobotState(joint_position_goal_msg, 0*1E6, q_sol, neckJointNames);
+    lcm_->publish("JOINT_POSITION_GOAL", &joint_position_goal_msg);
+
+    // std::cout << "Pre-Clamp " 
+    //           << toDeg(lowerNeckPitchAngle) << "*, "
+    //           << toDeg(neckYawAngle) << "*, "
+    //           << toDeg(upperNeckPitchAngle) << "*, " << std::endl;
+
+    // std::cout << "Clamped " 
+    //           << toDeg(q_sol[lowerNeckPitchIndex]) << "*, "
+    //           << toDeg(q_sol[neckYawIndex]) << "*, "
+    //           << toDeg(q_sol[upperNeckPitchIndex]) << "*" << std::endl;
   } else {
     std::cerr << "Mode not selected" << std::endl;
   }
-
-  //std::cout << "Desired orientation sent, exiting\n";
-  //exit(-1);
 }
 
 int robotStateCounter = 0;
