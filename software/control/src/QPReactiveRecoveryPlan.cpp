@@ -4,6 +4,7 @@
 #include "drake/util/drakeGeometryUtil.h"
 #include "drake/solvers/qpSpline/splineGeneration.h"
 #include "drake/util/lcmUtil.h"
+#include "drake/core/Gradient.h"
 #include "lcmtypes/drc/reactive_recovery_debug_t.hpp"
 extern "C" {
   #include "iris/solver.h"
@@ -537,16 +538,16 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::straightToG
   Quaterniond quat;
   xs.block(0, 0, 3, 1) = state.pose.translation();
   quat = Quaterniond(state.pose.rotation());
-  auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
-  xs.block(3, 0, 3, 1) = w.value();
+  auto w = quat2expmap(Drake::initializeAutoDiff(Vector4d(quat.w(), quat.x(), quat.y(), quat.z())));
+  xs.block(3, 0, 3, 1) = autoDiffToGradientMatrix(w);
 
   xs.block(0, 2, 3, 1) = intercept_plan.pose_next.translation();
   quat = Quaterniond(intercept_plan.pose_next.rotation());
-  xs.block(3, 2, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+  xs.block(3, 2, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()));
 
-  auto w_unwrap = closestExpmap(xs.block(3, 0, 3, 1), xs.block(3, 2, 3, 1), 1);
-  xs.block(3, 2, 3, 1) = w_unwrap.value();
-  xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
+  auto w_unwrap = closestExpmap(Drake::initializeAutoDiff(xs.block<3, 1>(3, 0)), Drake::initializeAutoDiff(xs.block<3, 1>(3, 2)));
+  xs.block(3, 2, 3, 1) = autoDiffToValueMatrix(w_unwrap);
+  xd0.tail<3>() = autoDiffToGradientMatrix(w_unwrap) * xd0.tail<3>();
 
   xs.block(0, 1, 6, 1) = (1 - fraction_first) * xs.block(0, 0, 6, 1) + fraction_first * xs.block(0, 2, 6, 1);
   xs(2, 1) = swing_height_first_in_world;
@@ -576,16 +577,16 @@ std::unique_ptr<PiecewisePolynomial<double>> QPReactiveRecoveryPlan::upOverAndDo
   Quaterniond quat;
   xs.block(0, 0, 3, 1) = state.pose.translation();
   quat = Quaterniond(state.pose.rotation());
-  auto w = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 1);
-  xs.block(3, 0, 3, 1) = w.value();
+  auto w = quat2expmap(Drake::initializeAutoDiff(Vector4d(quat.w(), quat.x(), quat.y(), quat.z())));
+  xs.block(3, 0, 3, 1) = autoDiffToGradientMatrix(w);
 
   xs.block(0, 3, 3, 1) = intercept_plan.pose_next.translation();
   quat = Quaterniond(intercept_plan.pose_next.rotation());
-  xs.block(3, 3, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+  xs.block(3, 3, 3, 1) = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()));
 
-  auto w_unwrap = closestExpmap(xs.block(3, 0, 3, 1), xs.block(3, 3, 3, 1), 1);
-  xs.block(3, 3, 3, 1) = w_unwrap.value();
-  xd0.tail<3>() = w_unwrap.gradient().value() * xd0.tail<3>();
+  auto w_unwrap = closestExpmap(Drake::initializeAutoDiff(xs.block<3, 1>(3, 0)), Drake::initializeAutoDiff(xs.block<3,1>(3, 3)));
+  xs.block(3, 3, 3, 1) = autoDiffToValueMatrix(w_unwrap);
+  xd0.tail<3>() = autoDiffToGradientMatrix(w_unwrap) * xd0.tail<3>();
 
   xs.block(0, 1, 2, 1) = (1 - fraction_first) * xs.block(0, 0, 2, 1) + fraction_first * xs.block(0, 3, 2, 1);
   xs(2, 1) = swing_height_first_in_world;
@@ -618,6 +619,7 @@ void QPReactiveRecoveryPlan::setRobot(RigidBodyTree *robot) {
   this->robot = robot;
   this->findFootSoleFrames();
   this->q_des.resize(robot->num_positions);
+  this->bodyOrFrameNameToIdMap = computeBodyOrFrameNameToIdMap(*robot);
 }
 
 QPReactiveRecoveryPlan::QPReactiveRecoveryPlan(RigidBodyTree *robot, const RobotPropertyCache &rpc) {
@@ -684,8 +686,12 @@ void QPReactiveRecoveryPlan::resetInitialization() {
 
 drake::lcmt_qp_controller_input QPReactiveRecoveryPlan::getQPControllerInput(double t_global, const VectorXd &q, const VectorXd &v, const std::vector<bool>& contact_force_detected) {
   if (!this->initialized) {
-    for (int i=0; i < this->robot_property_cache.position_indices.at("arm").size(); ++i) {
-      int j = this->robot_property_cache.position_indices.at("arm")(i);
+    for (int i=0; i < this->robot_property_cache.position_indices.arms[Side::LEFT].size(); ++i) {
+      int j = this->robot_property_cache.position_indices.arms[Side::LEFT][i];
+      this->q_des(j) = q(j);
+    }
+    for (int i=0; i < this->robot_property_cache.position_indices.arms[Side::RIGHT].size(); ++i) {
+      int j = this->robot_property_cache.position_indices.arms[Side::RIGHT][i];
       this->q_des(j) = q(j);
     }
     this->initialized = true;
@@ -793,18 +799,18 @@ void QPReactiveRecoveryPlan::setupQPInputDefaults(double t_global, drake::lcmt_q
   for (int i=0; i < this->robot->num_positions; ++i) {
     qp_input.whole_body_data.q_des[i] = this->q_des(i);
   }
-  for (int i=0; i < this->robot_property_cache.position_indices.at("arm").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("arm")[i] + 1);
+  for (int i=0; i < this->robot_property_cache.position_indices.arms[Side::LEFT].size(); i++) {
+    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.arms[Side::LEFT][i] + 1);
   }
-  for (int i=0; i < this->robot_property_cache.position_indices.at("neck").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("neck")[i] + 1);
+  for (int i=0; i < this->robot_property_cache.position_indices.arms[Side::RIGHT].size(); i++) {
+    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.arms[Side::RIGHT][i] + 1);
   }
-  for (int i=0; i < this->robot_property_cache.position_indices.at("back_bky").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bky")[i] + 1);
+  for (int i=0; i < this->robot_property_cache.position_indices.neck.size(); i++) {
+    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.neck[i] + 1);
   }
-  for (int i=0; i < this->robot_property_cache.position_indices.at("back_bkz").size(); i++) {
-    qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.at("back_bkz")[i] + 1);
-  }
+  qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.back_bky + 1);
+  qp_input.whole_body_data.constrained_dofs.push_back(this->robot_property_cache.position_indices.back_bkz + 1);
+
   qp_input.whole_body_data.num_constrained_dofs = qp_input.whole_body_data.constrained_dofs.size();
 
   qp_input.param_set_name = "recovery";
@@ -826,8 +832,9 @@ void QPReactiveRecoveryPlan::publishForVisualization(KinematicsCache<double>& ca
 
   this->LCMHandle->publish("REACTIVE_RECOVERY_DEBUG", msg.get());
 }
-
+/*
 Matrix3Xd QPReactiveRecoveryPlan::heelToeContacts(int body_id) {
+  // no longer works due to changes to robot property cache
   Matrix3Xd toe_contacts = this->robot_property_cache.contact_groups[body_id].at("toe");
   Matrix3Xd heel_contacts = this->robot_property_cache.contact_groups[body_id].at("heel");
   Matrix3Xd all_contacts(3, toe_contacts.cols() + heel_contacts.cols());
@@ -835,6 +842,7 @@ Matrix3Xd QPReactiveRecoveryPlan::heelToeContacts(int body_id) {
   all_contacts.block(0, toe_contacts.cols(), 3, heel_contacts.cols()) = heel_contacts;
   return all_contacts;
 }
+*/
 
 std::map<SupportLogicType, std::vector<bool>> createSupportLogicMaps() {
   std::map<SupportLogicType, std::vector<bool> > ret;
@@ -847,9 +855,9 @@ std::map<SupportLogicType, std::vector<bool>> createSupportLogicMaps() {
 
 void QPReactiveRecoveryPlan::encodeSupportData(const int body_id, const FootState &foot_state, const SupportLogicType &support_logic, drake::lcmt_support_data &support_data) {
   support_data.timestamp = 0;
-  support_data.body_id = body_id + 1;
+  support_data.body_name = this->robot->getBodyOrFrameName(body_id);
   support_data.contact_pts.resize(3);
-  Matrix3Xd all_contacts = this->heelToeContacts(body_id);
+  Matrix3Xd all_contacts = this->robot->bodies[body_id]->contact_pts;
   support_data.num_contact_pts = all_contacts.cols();
   for (int i=0; i < 3; i++) {
     support_data.contact_pts[i].resize(all_contacts.cols());
@@ -876,7 +884,7 @@ void QPReactiveRecoveryPlan::encodeSupportData(const int body_id, const FootStat
 
 void QPReactiveRecoveryPlan::encodeBodyMotionData(int body_or_frame_id, PiecewisePolynomial<double> spline, drake::lcmt_body_motion_data &body_motion) {
   body_motion.timestamp = 0;
-  body_motion.body_id = body_or_frame_id + 1;
+  body_motion.body_or_frame_name = this->robot->getBodyOrFrameName(body_or_frame_id);
   encodePiecewisePolynomial(spline, body_motion.spline);
   body_motion.in_floating_base_nullspace = false;
   body_motion.control_pose_when_in_contact = false;
@@ -928,7 +936,7 @@ PiecewisePolynomial<double> constantPoseCubicSpline(const Isometry3d &pose) {
   Vector6d xyzexp;
   xyzexp.head<3>() = pose.translation().head<3>();
   Quaterniond quat = Quaterniond(pose.rotation());
-  xyzexp.tail<3>() = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()), 0).value();
+  xyzexp.tail<3>() = quat2expmap(Vector4d(quat.w(), quat.x(), quat.y(), quat.z()));
   for (int i=0; i < 6; ++i) {
     poly_matrix[0](i) = Polynomial<double>(Vector4d(xyzexp(i), 0, 0, 0));
   }
@@ -981,7 +989,7 @@ void QPReactiveRecoveryPlan::getInterceptInput(double t_global, const FootStateM
                                 quat2rpy(Vector4d(lfoot_quat.w(), lfoot_quat.x(), lfoot_quat.y(), lfoot_quat.z()))(2));
   Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
   pelvis_pose.rotate(AngleAxis<double>(pelvis_yaw, Vector3d(0, 0, 1)));
-  this->encodeBodyMotionData(this->robot_property_cache.body_ids.pelvis,
+  this->encodeBodyMotionData(this->bodyOrFrameNameToIdMap["pelvis"],
                              constantPoseCubicSpline(pelvis_pose) - plan_shift,
                              body_motion);
   body_motion.weight_multiplier[3] = 0; // don't try to control x and y
@@ -1027,7 +1035,7 @@ void QPReactiveRecoveryPlan::getCaptureInput(double t_global, const FootStateMap
                                 quat2rpy(Vector4d(lfoot_quat.w(), lfoot_quat.x(), lfoot_quat.y(), lfoot_quat.z()))(2));
   Isometry3d pelvis_pose = Isometry3d(Translation<double, 3>(Vector3d(0, 0, pelvis_height)));
   pelvis_pose.rotate(AngleAxis<double>(pelvis_yaw, Vector3d(0, 0, 1)));
-  this->encodeBodyMotionData(this->robot_property_cache.body_ids.pelvis,
+  this->encodeBodyMotionData(this->bodyOrFrameNameToIdMap["pelvis"],
                              constantPoseCubicSpline(pelvis_pose),
                              body_motion);
   body_motion.weight_multiplier[3] = 0; // don't try to control x and y

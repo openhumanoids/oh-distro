@@ -40,7 +40,7 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
     cmd "InstQP" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'none', 'hand_left', 'none')); \"";
+        exec = "runDRCInstQP";
         host = "base";
         stop_signal = 15;
     }

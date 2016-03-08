@@ -20,7 +20,7 @@ set(libbot_revision ed4a76423f2a21594436490341f907710d3f78dd)
 set(libbot_depends bot_core_lcmtypes ${lcm_proj})
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
-set(Eigen_pod_revision ceba39500b89a77a8649b3e8b421b10a3d74d42b)
+set(Eigen_pod_revision 20a633e8f0a285edf9dcc5a06cc9e80774920a7f)
 set(Eigen_pod_depends)
 
 if(NOT USE_SYSTEM_OPENCV)
@@ -73,7 +73,7 @@ set(occ-map_revision 34ab71fa693216d2c0508f0f2680b9a68994f473)
 set(occ-map_depends libbot ${opencv_proj})
 
 set(common_utils_url https://github.com/openhumanoids/common_utils.git)
-set(common_utils_revision bf0c9223e02a193a3cfef4034ef82a94219f116a)
+set(common_utils_revision d887653f8e565f2b94ae96b7b411af134212ebfd)
 set(common_utils_depends Eigen_pod libbot occ-map octomap)
 
 set(frsm_url https://github.com/openhumanoids/frsm.git)
@@ -149,11 +149,11 @@ set(flycapture_external_args
   )
 
 set(swigmake_url https://github.com/rdeits/swigmake.git)
-set(swigmake_revision ab03741a0627e99589ecbc1c088a4db05755e3c2)
+set(swigmake_revision 7e4fcbeb46c5fc7b1efb651b4365ba8b777ef184)
 set(swigmake_depends )
 
 set(iris_url https://github.com/rdeits/iris-distro.git)
-set(iris_revision 7442fbca7a456f5564296902d8e2130a751bf3e3)
+set(iris_revision e3efbc67369e948080a9a1913188874fc31838f5)
 set(iris_depends Eigen_pod)
 set(iris_external_args
   CMAKE_CACHE_ARGS

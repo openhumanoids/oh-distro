@@ -44,9 +44,6 @@ struct qp_locomotion_plan_t
   int16_t num_untracked_joints;
   int32_t untracked_joint_inds[num_untracked_joints];
 
-  int32_t n_default_qp_input_bytes;
-  byte default_qp_input[n_default_qp_input_bytes];
-
   boolean is_quasistatic;
   boolean use_plan_shift;
   double D_control[2][2];
