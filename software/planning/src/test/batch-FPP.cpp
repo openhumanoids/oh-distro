@@ -94,7 +94,6 @@ int main(int argc, char* argv[])
 	for (auto m : models){cout << m << ";";}
 	cout << endl;
 
-	return 1;
 
 	CapabilityMap cm("/home/marco/oh-distro/software/planning/capabilityMap.log");
 	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport_occ.bin");
@@ -186,28 +185,37 @@ int main(int argc, char* argv[])
 	if (!inputFile.is_open())
 	{
 		std::cout << "Failed to open " << point_cloud_file.c_str() << '\n';
+		return 1;
 	}
 	else
 	{
+
 //        INITIALIZE OUTPUT FILE
 		string output_file_name = "output.fpp";
+		stringstream ss;
 		XMLDocument xml_doc;
 		XMLElement *results_node = xml_doc.NewElement("results");
 		xml_doc.LinkEndChild(results_node);
+		//details
 		XMLElement *details_node = xml_doc.NewElement("details");
 		results_node->LinkEndChild(details_node);
 		XMLElement *models_node = xml_doc.NewElement("models");
 		details_node->LinkEndChild(models_node);
-		models_node->SetText("val2");
+		for (auto m : models){ss << m << " ";}
+		models_node->SetText(ss.str().c_str());
 		XMLElement *n_iterations_node = xml_doc.NewElement("n_iterations");
 		details_node->LinkEndChild(n_iterations_node);
-		n_iterations_node->SetText(argv[1]);
+		n_iterations_node->SetText(n_iter);
 		XMLElement *scenes_node = xml_doc.NewElement("scenes");
 		details_node->LinkEndChild(scenes_node);
-		scenes_node->SetText("1");
+		for (auto s : scenes){ss << s << " ";}
+		scenes_node->SetText(ss.str().c_str());
+		ss.str("");
 		XMLElement *grasping_hands_node = xml_doc.NewElement("grasping_hands");
 		details_node->LinkEndChild(grasping_hands_node);
-		grasping_hands_node->SetText("left");
+		for (auto h : grasping_hands){ss << h << " ";}
+		grasping_hands_node->SetText(ss.str().c_str());
+		ss.str("");
 		time_t rawtime;
 		char buffer [80];
 		time (&rawtime);
@@ -217,35 +225,61 @@ int main(int argc, char* argv[])
 		details_node->LinkEndChild(time_node);
 		time_node->SetText(buffer);
 
-
-		vector<Vector3d> point_cloud;
-		unsigned int n_points;
-		inputFile.read((char *) &n_points, sizeof(unsigned int));
-		point_cloud.resize(n_points);
-		for (int point = 0; point < n_points; point++)
+		//results
+		for (auto m : models)
 		{
-			inputFile.read((char *) point_cloud[point].data(), 3* sizeof(Vector3d::Scalar));
-		}
-		inputFile.close();
+			XMLElement *model_node = xml_doc.NewElement("model");
+			model_node->SetAttribute("name", m.c_str());
+			results_node->LinkEndChild(model_node);
+			for (auto s : scenes)
+			{
+				ss.str("");
+				ss << s;
+				XMLElement *scene_node = xml_doc.NewElement("scene");
+				scene_node->SetAttribute("name", ss.str().c_str());
+				model_node->LinkEndChild(scene_node);
 
-		bot_lcmgl_t* lcmgl_pc = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Point Cloud");
-		drawPointCloud(lcmgl_pc, point_cloud);
+				vector<Vector3d> point_cloud;
+				unsigned int n_points;
+				inputFile.read((char *) &n_points, sizeof(unsigned int));
+				point_cloud.resize(n_points);
+				for (int point = 0; point < n_points; point++)
+				{
+					inputFile.read((char *) point_cloud[point].data(), 3* sizeof(Vector3d::Scalar));
+				}
+				inputFile.close();
+				bot_lcmgl_t* lcmgl_pc = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Point Cloud");
+				drawPointCloud(lcmgl_pc, point_cloud);
 
-		cm.setActiveSide("left");
-		Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
+				for (auto h : grasping_hands)
+				{
+					XMLElement *hand_node = xml_doc.NewElement("hand");
+					hand_node->SetAttribute("name", h.c_str());
+					scene_node->LinkEndChild(hand_node);
 
+					XMLElement *computation_time_node = xml_doc.NewElement("computation_time");
+					hand_node->LinkEndChild(computation_time_node);
+					vector<double> computation_times(0, n_iter);
 
-		for (int i = 0; i < n_iter; i++)
-		{
-			cout << "Iteration " << i << endl;
-			chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
-			fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
-			chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
-			auto duration = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
-			cout << "\tSolution found in " << duration/1.e6 << " s" << endl;
+					cm.setActiveSide("left");
+					Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
+
+					for (int i = 0; i < n_iter; i++)
+					{
+						cout << "Model: " << m << " Scene: " << s << " Hand: " << h << " Iteration: " << i + 1 << endl;
+						chrono::high_resolution_clock::time_point before_FPP = chrono::high_resolution_clock::now();
+						fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, 0.005, endeffector_point);
+						chrono::high_resolution_clock::time_point after_FPP = chrono::high_resolution_clock::now();
+						computation_times.push_back(chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count());
+						cout << "\tSolution found in " << computation_times.back()/1.e6 << " s" << endl;
+					}
+					ss.str("");
+					for (auto t : computation_times){ss << t/1.e6 << " ";}
+					computation_time_node->SetText(ss.str().c_str());
+				}
+			}
 		}
 		xml_doc.SaveFile(output_file_name.c_str());
 	}
-
 	return 0;
 }
