@@ -18,11 +18,19 @@ using namespace Eigen;
 #include <bot_frames/bot_frames.h>
 #include <bot_param/param_client.h>
 
-struct CommandLineConfig
-{
+struct CommandLineConfig {
   std::string urdf_filename;
   Eigen::Vector3d gazeGoal;
 };
+
+enum TrackingControlMode {
+  DESIRED_HEAD_ORIENTATION,
+  JOINT_POSITION_GOAL
+};
+
+inline double toRad(double deg) {
+  return (deg * M_PI / 180);
+}
 
 class App{
   public:
