@@ -320,6 +320,10 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol){
   std::vector<std::string> infeasible_constraint;
   inverseKin(&model_, q_star, q_star, constraint_array.size(), constraint_array.data(), q_sol, info, infeasible_constraint, ikoptions);
   printf("INFO = %d\n", info);
+  if (info != 1)
+    for (auto it = infeasible_constraint.begin(); it != infeasible_constraint.end(); it++)
+      std::cout << *it << std::endl;
+
   return info;
 }
 
