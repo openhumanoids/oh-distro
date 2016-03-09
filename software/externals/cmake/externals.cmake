@@ -263,6 +263,13 @@ set(isam_external_args
     ${eigen_args}
   )
 
+set(yaml_cpp_url https://github.com/jbeder/yaml-cpp.git)
+set(yaml_cpp_revision 57805dfd6a741e55477ea8d4d5b3b6f0272d1f0e)
+set(yaml_cpp_external_args
+  CMAKE_CACHE_ARGS
+    ${default_cmake_args}
+  )
+
 set(externals
   Eigen_pod
   ${lcm_proj}
@@ -292,6 +299,7 @@ set(externals
   QtPropertyBrowser
   PointCloudLibraryPlugin
   isam
+  yaml_cpp
   )
 
 if(BUILD_PRIVATE_EXTERNALS)
