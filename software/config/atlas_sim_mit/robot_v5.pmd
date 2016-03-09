@@ -39,14 +39,15 @@ group "2.plan_and_control" {
         host = "base";
         stop_signal = 15;
     }
+
     cmd "InstQP" {
-        exec = "runDRCInstQP";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/drake/drake/examples/Atlas/config/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND";
         host = "base";
         stop_signal = 15;
     }
 
     cmd "InstQPBothHands" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/drake/drake/examples/Atlas/config/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_robotiq_weight.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND";
         host = "base";
         stop_signal = 15;
     }
@@ -59,11 +60,6 @@ group "2.plan_and_control" {
 
     cmd "PlanEvalBothHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
-        host = "base";
-        stop_signal = 15;
-    }
-    cmd "InstQPRightHand" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCInstQP(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
         host = "base";
         stop_signal = 15;
     }
