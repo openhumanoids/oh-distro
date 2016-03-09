@@ -236,17 +236,8 @@ int main(int argc, char* argv[])
 		//results
 		for (auto m : models)
 		{
-			XMLElement *model_node = xml_doc.NewElement("model");
-			model_node->SetAttribute("name", m.c_str());
-			results_node->LinkEndChild(model_node);
 			for (auto s : scenes)
 			{
-				stringstream ss;
-				ss << s;
-				XMLElement *scene_node = xml_doc.NewElement("scene");
-				scene_node->SetAttribute("name", ss.str().c_str());
-				model_node->LinkEndChild(scene_node);
-
 				vector<Vector3d> point_cloud;
 				unsigned int n_points;
 				inputFile.read((char *) &n_points, sizeof(unsigned int));
@@ -261,33 +252,37 @@ int main(int argc, char* argv[])
 
 				for (auto h : grasping_hands)
 				{
-					XMLElement *hand_node = xml_doc.NewElement("hand");
-					hand_node->SetAttribute("name", h.c_str());
-					scene_node->LinkEndChild(hand_node);
+					XMLElement *iteration_set_node = xml_doc.NewElement("iteration_set");
+					iteration_set_node->SetAttribute("model", m.c_str());
+					stringstream ss;
+					ss << s;
+					iteration_set_node->SetAttribute("scene", ss.str().c_str());
+					iteration_set_node->SetAttribute("hand", h.c_str());
+					results_node->LinkEndChild(iteration_set_node);
 
 					XMLElement *computation_time_node = xml_doc.NewElement("computation_time");
-					hand_node->LinkEndChild(computation_time_node);
+					iteration_set_node->LinkEndChild(computation_time_node);
 
 					XMLElement *IK_time_node = xml_doc.NewElement("IK_time");
-					hand_node->LinkEndChild(IK_time_node);
+					iteration_set_node->LinkEndChild(IK_time_node);
 
 					XMLElement *CM_time_node = xml_doc.NewElement("capability_map_time");
-					hand_node->LinkEndChild(CM_time_node);
+					iteration_set_node->LinkEndChild(CM_time_node);
 
 					XMLElement *collision_time_node = xml_doc.NewElement("collision_time");
-					hand_node->LinkEndChild(collision_time_node);
+					iteration_set_node->LinkEndChild(collision_time_node);
 
 					XMLElement *constraints_time_node = xml_doc.NewElement("constraints_time");
-					hand_node->LinkEndChild(constraints_time_node);
+					iteration_set_node->LinkEndChild(constraints_time_node);
 
 					XMLElement *kin_time_node = xml_doc.NewElement("kin_time");
-					hand_node->LinkEndChild(kin_time_node);
+					iteration_set_node->LinkEndChild(kin_time_node);
 
 					XMLElement *sampling_time_node = xml_doc.NewElement("sampling_time");
-					hand_node->LinkEndChild(sampling_time_node);
+					iteration_set_node->LinkEndChild(sampling_time_node);
 
 					XMLElement *info_node = xml_doc.NewElement("info");
-					hand_node->LinkEndChild(info_node);
+					iteration_set_node->LinkEndChild(info_node);
 
 					cm.setActiveSide("left");
 					Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);

@@ -134,7 +134,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
     output.constraints_time = constraints_time/1.e6;
     output.kinematics_time = kin_time/1.e6;
     output.sampling_time = sampling_time/1.e6;
-    cout << (IK_time + capability_map_time + collision_time + constraints_time + kin_time + sampling_time)/1.e6 << endl;
     cout << "Solution found in " << computation_time/1.e6 << " s" << endl;
 	return info;
 }
