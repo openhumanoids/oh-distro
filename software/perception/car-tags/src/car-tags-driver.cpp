@@ -270,7 +270,8 @@ class CameraListener {
             img_with_matches.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
             cv::imencode(".jpg", image, img_with_matches.data, params);
             img_with_matches.size = img_with_matches.data.size();
-            mLcmWrapper->get()->publish("CAMERA_APRIL_TAG_MATCHES", &img_with_matches);
+            // mLcmWrapper->get()->publish("CAMERA_APRIL_TAG_MATCHES", &img_with_matches);
+            mLcmWrapper->get()->publish("KINECT_RGB", &img_with_matches);
         }
         
         image_u8_destroy(image_u8);
