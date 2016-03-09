@@ -52,12 +52,6 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
-    cmd "PlanEvalRightHand" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'none')); \"";
-        host = "base";
-        stop_signal = 15;
-    }
-
     cmd "PlanEvalBothHands" {
         exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(1, struct('atlas_version', 5, 'hand_right', 'robotiq_weight_only', 'hand_left', 'robotiq_weight_only')); \"";
         host = "base";
@@ -243,8 +237,8 @@ script "3.run_valve" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Valve Task";
-    start cmd "PlanEvalRightHand";
-    start cmd "InstQPRightHand";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }
 
@@ -264,8 +258,8 @@ script "4.run_door" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Door Task";
-    start cmd "PlanEvalRightHand";
-    start cmd "InstQPRightHand";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }
 
@@ -278,8 +272,8 @@ script "5.run_drill" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Drill Task";
-    start cmd "PlanEvalRightHand";
-    start cmd "InstQPRightHand";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }
 
@@ -306,8 +300,8 @@ script "7.run_plug" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Plug Task";
-    start cmd "PlanEvalRightHand";
-    start cmd "InstQPRightHand";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }
 
@@ -334,8 +328,8 @@ script "9.run_manip_ex" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Manip Example";
-    start cmd "PlanEvalRightHand";
-    start cmd "InstQPRightHand";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }
 
@@ -348,8 +342,8 @@ script "10.runningboard_test" {
     start cmd "CombinedPlanner";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Runningboard";
-    start cmd "PlanEvalRightHand";
-    start cmd "InstQPRightHand";
+    start cmd "PlanEvalBothHands";
+    start cmd "InstQPBothHands";
     start cmd "director";
 }
 
