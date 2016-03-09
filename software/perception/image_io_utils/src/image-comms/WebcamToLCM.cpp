@@ -13,14 +13,18 @@ int64_t bot_timestamp_now() {
 }
 
 int main(int argc, char** argv) {
+  bool compress_images = true;
+
   lcm::LCM lcm_handle;
 
   if (!lcm_handle.good()) std::cerr << "ERROR: lcm is not good()" << std::endl;
 
   cv::VideoCapture cap;
+  if (!cap.open(0)) return 0;
   uint width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
   uint height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
 
+  cv::Mat frame;
   std::vector<int> params;
   params.push_back(cv::IMWRITE_JPEG_QUALITY);
   params.push_back(90);
@@ -31,31 +35,36 @@ int main(int argc, char** argv) {
   lcm_img.nmetadata = 0;
   int n_colors = 3;
   lcm_img.row_stride = n_colors * width;
-  lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
 
   bot_core::images_t lcm_imgs;
   lcm_imgs.image_types.push_back(0); // 0 = left
   lcm_imgs.images.push_back(lcm_img);
   lcm_imgs.n_images = lcm_imgs.images.size();
 
-  if (!cap.open(0)) return 0;
+  std::cout << "Image resolution: " << width << "x" << height << std::endl;
 
   for (;;) {
-    cv::Mat frame;
     cap >> frame;
     if (frame.empty()) break;
 
     // cv::imshow("Webcam Video", frame);
     lcm_img.utime = bot_timestamp_now();
 
-    cv::imencode(".jpg", frame, lcm_img.data, params);
-    lcm_img.size = lcm_img.data.size();
-    lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+    if (!compress_images) {
+      lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
+      lcm_img.size = frame.step * frame.rows; //isize;
+      lcm_img.data.resize(frame.step * frame.rows);
+      std::copy(frame.data, frame.data + frame.step * frame.rows, lcm_img.data.begin());
+    } else {
+      cv::imencode(".jpg", frame, lcm_img.data, params);
+      lcm_img.size = lcm_img.data.size();
+      lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+    }
 
     lcm_imgs.images[0] = lcm_img;
-    lcm_imgs.utime = bot_timestamp_now();
+    lcm_imgs.utime = lcm_img.utime;
 
-    lcm_handle.publish("CAMERA_LEFT", &lcm_img);
+    // lcm_handle.publish("CAMERA_LEFT", &lcm_img);
     lcm_handle.publish("CAMERA", &lcm_imgs);
 
     if (cv::waitKey(1) == 27) break;  // press ESC to stop
