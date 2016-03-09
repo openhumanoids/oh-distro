@@ -3,56 +3,32 @@
 #include "drake/systems/controllers/controlUtil.h"
 #include "drake/systems/controllers/InstantaneousQPController.h"
 
+#include <ConciseArgs>
+
 int main(int argc, char** argv) {
   const char* drc_path = std::getenv("DRC_BASE");
   if (!drc_path) {
     throw std::runtime_error("environment variable DRC_BASE is not set");
   }
-  std::string urdf;
+  std::string urdf = std::string(drc_path) + "/software/models/atlas_v5/model_minimal_contact.urdf";
   std::string urdf_mods;
-  std::string command_channel;
-  std::string behavior_channel;
-  std::string control_config_filename;
-  int max_infocount;
-  if (argc > 1 && 0==strcmp(argv[1], "--help")){
-    printf("Usage:\n");
-    printf("\tdrc-inst-qp <urdf=model_min_contact> <urdf-modifications=none> <control_config_filename> <command_channel=<ATLAS_COMMAND> <robot_behavior_channel=ATLAS_BEHAVIOR_COMMAND> <max_infocount = -1>\n");
-    exit(0);
-  }
-  if (argc < 2){
-    urdf = std::string(drc_path) + "/software/models/atlas_v5/model_minimal_contact.urdf";
-  } else {
-    urdf = std::string(argv[1]);
-  }
-  if (argc < 3){
-    urdf_mods = std::string("none");
-  } else {
-    urdf_mods = std::string(argv[2]);
-  }
-  if (argc < 4){
-    control_config_filename = std::string(drc_path) + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
-  } else {
-    control_config_filename = std::string(argv[3]);
-  }
-  if (argc < 5){
-    command_channel = "ATLAS_COMMAND";
-  } else {
-    command_channel = std::string(argv[4]);
-  }
-  if (argc < 6){
-    behavior_channel = "ATLAS_BEHAVIOR_COMMAND";
-  } else {
-    behavior_channel = std::string(argv[5]);
-  }
-  if (argc < 7){
-    max_infocount = -1;
-  } else {
-    max_infocount = atoi(argv[6]);
-  }
+  std::string command_channel = "ATLAS_COMMAND"; 
+  std::string behavior_channel = "ATLAS_BEHAVIOR_COMMAND";
+  std::string control_config_filename = std::string(drc_path) + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
+  int max_infocount = -1;
+
+  ConciseArgs parser(argc, argv);
+  parser.add(urdf, "u", "urdf", "Robot URDF");
+  parser.add(urdf_mods, "um", "urdf-mods", "URDF modifications file");
+  parser.add(control_config_filename, "c", "control-config-filename", "Control config filename");
+  parser.add(command_channel, "lc", "lcm-command-channelname", "Command channel (LCM)");
+  parser.add(behavior_channel, "lb", "lcm-behavior-channelname", "Behavior channel (LCM)");
+  parser.add(max_infocount, "i", "max-infocount", "Max infocount before controller safing");
+  parser.parse();
 
   std::unique_ptr<RigidBodyTree> robot =
       std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf));
-  if (urdf_mods != "none"){
+  if (parser.wasParsed("urdf-mods")){
     applyURDFModifications(robot, urdf_mods);
   }
 
