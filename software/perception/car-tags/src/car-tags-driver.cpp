@@ -258,10 +258,12 @@ class CameraListener {
             cv::waitKey(1);
         }
         if (mPublishImageWithMatches) {
-            bot_core::image_t img_with_matches = bot_core::image_t();
+            bot_core::image_t img_with_matches;
             img_with_matches.utime = msg->utime;
             img_with_matches.width = image.size().width;
             img_with_matches.height = image.size().height;
+            img_with_matches.row_stride = 3 * img_with_matches.width;
+            img_with_matches.nmetadata = 0;
             std::vector<int> params;
             params.push_back(cv::IMWRITE_JPEG_QUALITY);
             params.push_back(90);
