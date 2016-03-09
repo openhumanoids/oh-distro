@@ -271,6 +271,21 @@ int main(int argc, char* argv[])
 					XMLElement *IK_time_node = xml_doc.NewElement("IK_time");
 					hand_node->LinkEndChild(IK_time_node);
 
+					XMLElement *CM_time_node = xml_doc.NewElement("capability_map_time");
+					hand_node->LinkEndChild(CM_time_node);
+
+					XMLElement *collision_time_node = xml_doc.NewElement("collision_time");
+					hand_node->LinkEndChild(collision_time_node);
+
+					XMLElement *constraints_time_node = xml_doc.NewElement("constraints_time");
+					hand_node->LinkEndChild(constraints_time_node);
+
+					XMLElement *kin_time_node = xml_doc.NewElement("kin_time");
+					hand_node->LinkEndChild(kin_time_node);
+
+					XMLElement *sampling_time_node = xml_doc.NewElement("sampling_time");
+					hand_node->LinkEndChild(sampling_time_node);
+
 					XMLElement *info_node = xml_doc.NewElement("info");
 					hand_node->LinkEndChild(info_node);
 
@@ -287,6 +302,11 @@ int main(int argc, char* argv[])
 						addTextToElement(info_node, info);
 						addTextToElement(computation_time_node, output.computation_time);
 						addTextToElement(IK_time_node, output.IK_time);
+						addTextToElement(CM_time_node, output.capability_map_time);
+						addTextToElement(collision_time_node, output.collision_time);
+						addTextToElement(constraints_time_node, output.constraints_time);
+						addTextToElement(kin_time_node, output.kinematics_time);
+						addTextToElement(sampling_time_node, output.sampling_time);
 					}
 				}
 			}

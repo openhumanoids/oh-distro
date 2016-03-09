@@ -24,6 +24,11 @@ struct FPPOutput
 	double cost;
 	double computation_time;
 	double IK_time;
+	double capability_map_time;
+	double collision_time;
+	double constraints_time;
+	double kinematics_time;
+	double sampling_time;
 };
 
 class FinalPosePlanner

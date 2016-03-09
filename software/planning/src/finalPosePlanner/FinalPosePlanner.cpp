@@ -20,8 +20,12 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 {
 
 //	timing variables
-    chrono::high_resolution_clock::time_point before_FPP, after_FPP, before_IK, after_IK;
-    double IK_time;
+    chrono::high_resolution_clock::time_point before_FPP, after_FPP, before_IK, after_IK, before_CM, after_CM, before_collision, after_collision, before_constraints, after_constraints, before_kin, after_kin, before_sampling, after_sampling;
+    double IK_time = 0.;
+    double collision_time = 0.;
+    double constraints_time = 0.;
+    double kin_time = 0.;
+    double sampling_time = 0.;
 	before_FPP= chrono::high_resolution_clock::now();
 //	INPUT CHECKS
 	int endeffector_id;
@@ -48,14 +52,18 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	if (this->checkConfiguration(robot, nominal_configuration, "nominal_configuration") != 0) {return 12;};
 
 //	CAPABILITY MAP PREPARATION
+	before_CM = chrono::high_resolution_clock::now();
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
 	capability_map.reduceActiveSet(true, point_cloud);
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
+	after_CM = chrono::high_resolution_clock::now();
+
 
 //	FINAL POSE SEARCH
 	CandidateRobotPosePublisher publisher;
+		before_constraints = chrono::high_resolution_clock::now();
 	vector<RigidBodyConstraint *> constraints = additional_constraints;
 	Point2PointDistanceConstraint position_constraint(&robot, endeffector_id, robot.findLinkId("world"), endeffector_point, endeffector_final_pose.block<3,1>(0,0), Vector3d(0,0,0), Vector3d(0,0,0));
 	WorldQuatConstraint quaternion_constraint(&robot, endeffector_id, endeffector_final_pose.block<4,1>(3,0), 1./180.*M_PI);
@@ -63,6 +71,8 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	constraints.push_back(&quaternion_constraint);
 
 	constraints.resize(constraints.size() + 2);
+	after_constraints = chrono::high_resolution_clock::now();
+	constraints_time += chrono::duration_cast<chrono::microseconds>(after_constraints - before_constraints).count();
 	VectorXd final_pose(robot.num_positions);
 	vector<string> infeasible_constraints;
     VectorXd phi;
@@ -72,8 +82,12 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	int ik_info;
 	while (info != 1)
 	{
+		before_sampling = chrono::high_resolution_clock::now();
 		vector<int> sample = capability_map.drawCapabilityMapSample();
+		after_sampling = chrono::high_resolution_clock::now();
+		sampling_time += chrono::duration_cast<chrono::microseconds>(after_sampling - before_sampling).count();
 //		GENERATE CONSTRAINTS
+		before_constraints = chrono::high_resolution_clock::now();
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
 		Vector3d orientation = capability_map.getOrientation(sample[1]);
 		Vector3d position = rpy2rotmat(orientation) * capability_map.getVoxelCentre(sample[0]) + endeffector_final_pose.block<3,1>(0,0);
@@ -81,6 +95,8 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		WorldEulerConstraint base_euler_constraint(&robot, base_id, orientation, orientation);
 		constraints.end()[-1] = (&base_position_constraint);
 		constraints.end()[-2] = (&base_euler_constraint);
+		after_constraints = chrono::high_resolution_clock::now();
+		constraints_time += chrono::duration_cast<chrono::microseconds>(after_constraints - before_constraints).count();
 
 //		COMPUTE CONFIGURATION
 		before_IK = chrono::high_resolution_clock::now();
@@ -89,11 +105,17 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	    IK_time += chrono::duration_cast<chrono::microseconds>(after_IK - before_IK).count();
 		if (ik_info < 10)
 		{
+			before_kin = chrono::high_resolution_clock::now();
 			KinematicsCache<double> kinsol = robot.doKinematics(final_pose);
+			after_kin = chrono::high_resolution_clock::now();
+			kin_time += chrono::duration_cast<chrono::microseconds>(after_kin - before_kin).count();
+			before_collision = chrono::high_resolution_clock::now();
 			bool is_valid = !robot.collidingPointsCheckOnly(kinsol, point_cloud, min_distance);
 			if (is_valid)
 			{
 				robot.collisionDetect(kinsol, phi, normal, xA, xB, bodyA_idx, bodyB_idx, false);
+				after_collision = chrono::high_resolution_clock::now();
+				collision_time += chrono::duration_cast<chrono::microseconds>(after_collision - before_collision).count();
 				if (((ArrayXd)phi > min_distance).all())
 				{
 					info = 1;
@@ -104,8 +126,15 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	}
 	after_FPP = chrono::high_resolution_clock::now();
     auto computation_time = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
+    auto capability_map_time = chrono::duration_cast<chrono::microseconds>(after_CM - before_CM).count();
     output.IK_time = IK_time/1.e6;
     output.computation_time = computation_time/1.e6;
+    output.capability_map_time = capability_map_time/1.e6;
+    output.collision_time = collision_time/1.e6;
+    output.constraints_time = constraints_time/1.e6;
+    output.kinematics_time = kin_time/1.e6;
+    output.sampling_time = sampling_time/1.e6;
+    cout << (IK_time + capability_map_time + collision_time + constraints_time + kin_time + sampling_time)/1.e6 << endl;
     cout << "Solution found in " << computation_time/1.e6 << " s" << endl;
 	return info;
 }
