@@ -268,6 +268,7 @@ set(yaml_cpp_revision 57805dfd6a741e55477ea8d4d5b3b6f0272d1f0e)
 set(yaml_cpp_external_args
   CMAKE_CACHE_ARGS
     ${default_cmake_args}
+    -DBUILD_SHARED_LIBS:BOOL=ON
   )
 
 set(externals
