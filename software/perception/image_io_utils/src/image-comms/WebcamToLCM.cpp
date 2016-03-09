@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     lcm_imgs.images[0] = lcm_img;
     lcm_imgs.utime = lcm_img.utime;
 
-    lcm_handle.publish("CAMERA_LEFT", &lcm_img);
+    // lcm_handle.publish("CAMERA_LEFT", &lcm_img);
     lcm_handle.publish("CAMERA", &lcm_imgs);
 
     if (cv::waitKey(1) == 27) break;  // press ESC to stop
