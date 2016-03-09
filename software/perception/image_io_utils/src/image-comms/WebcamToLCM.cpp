@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
   lcm_img.row_stride = n_colors * width;
 
   bot_core::images_t lcm_imgs;
-  lcm_imgs.image_types.push_back(0); // 0 = left
+  lcm_imgs.image_types.push_back(0);  // 0 = left
   lcm_imgs.images.push_back(lcm_img);
   lcm_imgs.n_images = lcm_imgs.images.size();
 
@@ -52,9 +52,10 @@ int main(int argc, char** argv) {
 
     if (!compress_images) {
       lcm_img.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;
-      lcm_img.size = frame.step * frame.rows; //isize;
+      lcm_img.size = frame.step * frame.rows;
       lcm_img.data.resize(frame.step * frame.rows);
-      std::copy(frame.data, frame.data + frame.step * frame.rows, lcm_img.data.begin());
+      std::copy(frame.data, frame.data + frame.step * frame.rows,
+                lcm_img.data.begin());
     } else {
       cv::imencode(".jpg", frame, lcm_img.data, params);
       lcm_img.size = lcm_img.data.size();
