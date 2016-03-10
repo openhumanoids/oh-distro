@@ -31,19 +31,19 @@ addPlot(timeWindow=15, yLimits=[-180, 180])
 #addSignalFunction('EST_ROBOT_STATE', pitchFunction)
 #addSignalFunction('EST_ROBOT_STATE', yawFunction)
 
-addSignalFunction('MICROSTRAIN_INS', rollFunctionSimple)
-addSignalFunction('MICROSTRAIN_INS', pitchFunctionSimple)
-addSignalFunction('MICROSTRAIN_INS', yawFunctionSimple)
+addSignalFunction('VAL_IMU_pelvisRearImu', rollFunctionSimple)
+addSignalFunction('VAL_IMU_pelvisRearImu', pitchFunctionSimple)
+addSignalFunction('VAL_IMU_pelvisRearImu', yawFunctionSimple)
 
 addPlot(timeWindow=15, yLimits=[-1, 1])
-addSignal('MICROSTRAIN_INS', msg.utime, msg.gyro[0])
-addSignal('MICROSTRAIN_INS', msg.utime, msg.gyro[1])
-addSignal('MICROSTRAIN_INS', msg.utime, msg.gyro[2])
+addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.gyro[0])
+addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.gyro[1])
+addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.gyro[2])
 
 addPlot(timeWindow=15, yLimits=[-1, 1])
-addSignal('MICROSTRAIN_INS', msg.utime, msg.accel[0])
-addSignal('MICROSTRAIN_INS', msg.utime, msg.accel[1])
-addSignal('MICROSTRAIN_INS', msg.utime, msg.accel[2])
+addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.accel[0])
+addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.accel[1])
+addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.accel[2])
 
 
 
