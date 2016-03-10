@@ -218,7 +218,13 @@ int main(int argc, char* argv[])
 
 		XMLElement *scenes_node = xml_doc.NewElement("scenes");
 		details_node->LinkEndChild(scenes_node);
-		for (auto s : scenes){addTextToElement(scenes_node, s);}
+		stringstream ss;
+		for (auto s : scenes)
+		{
+			ss.str("");
+			ss << "scene" << s;
+			addTextToElement(scenes_node, ss.str().c_str());
+		}
 
 		XMLElement *grasping_hands_node = xml_doc.NewElement("grasping_hands");
 		details_node->LinkEndChild(grasping_hands_node);
@@ -254,34 +260,42 @@ int main(int argc, char* argv[])
 				{
 					XMLElement *iteration_set_node = xml_doc.NewElement("iteration_set");
 					iteration_set_node->SetAttribute("model", m.c_str());
-					stringstream ss;
-					ss << s;
+					ss.str("");
+					ss << "scene" << s;
 					iteration_set_node->SetAttribute("scene", ss.str().c_str());
 					iteration_set_node->SetAttribute("hand", h.c_str());
 					results_node->LinkEndChild(iteration_set_node);
 
 					XMLElement *computation_time_node = xml_doc.NewElement("computation_time");
+					computation_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(computation_time_node);
 
 					XMLElement *IK_time_node = xml_doc.NewElement("IK_time");
+					IK_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(IK_time_node);
 
 					XMLElement *CM_time_node = xml_doc.NewElement("capability_map_time");
+					CM_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(CM_time_node);
 
 					XMLElement *collision_time_node = xml_doc.NewElement("collision_time");
+					collision_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(collision_time_node);
 
 					XMLElement *constraints_time_node = xml_doc.NewElement("constraints_time");
+					collision_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(constraints_time_node);
 
 					XMLElement *kin_time_node = xml_doc.NewElement("kin_time");
+					kin_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(kin_time_node);
 
 					XMLElement *sampling_time_node = xml_doc.NewElement("sampling_time");
+					sampling_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(sampling_time_node);
 
 					XMLElement *info_node = xml_doc.NewElement("info");
+					info_node->SetAttribute("format", "%d");
 					iteration_set_node->LinkEndChild(info_node);
 
 					cm.setActiveSide("left");
