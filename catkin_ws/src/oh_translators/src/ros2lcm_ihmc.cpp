@@ -146,6 +146,8 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
                                  &App::imuBatchCallback, this);
   imuSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_), queue_size,
                                   &App::imuSensorCallback, this);
+//  imuSensorSub_ = node_.subscribe(std::string("/imu/imu/"), queue_size,
+//                                  &App::imuSensorCallback, this);
 
   leftFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/left"), queue_size,
                                        &App::leftFootSensorCallback, this);

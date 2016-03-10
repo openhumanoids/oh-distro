@@ -52,7 +52,7 @@
 #define MIN_SWING_HEIGHT 0.05
 #define MAX_SWING_HEIGHT 0.3
 
-enum class TrajectoryMode {wholeBody, leftArm, rightArm};
+enum class TrajectoryMode {wholeBody, leftArm, rightArm, bothArm}; // 0,1,2,3
 
 class LCM2ROS
 {
@@ -145,7 +145,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   default_transfer_time_ = 2.0;
   default_swing_time_ = 1.5;
   // Variable to set what part of a whole body plan gets passed through to Val:
-  outputTrajectoryMode_ = TrajectoryMode::wholeBody;
+  outputTrajectoryMode_ = TrajectoryMode::bothArm;
+  ROS_ERROR("LCM2ROS Controller TrajectoryMode: %d", (int) TrajectoryMode::bothArm);
 
   ////////////////// Subscriptions and Adverts //////////////////////
   // If pronto is running never send plans like this:
@@ -802,11 +803,17 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   }
   else if (outputTrajectoryMode_ == TrajectoryMode::rightArm)
   {
-    // to send two arm traj, send one and then the other
-    // ROS_ERROR("Sleeping for 1 second");
-    // sleep(1); 
-    ROS_ERROR("LCM2ROS sent right arm");
     sendSingleArmPlan(msg, r_arm_strings, input_joint_names, true);
+    ROS_ERROR("LCM2ROS sent right arm");
+  }
+  else if (outputTrajectoryMode_ == TrajectoryMode::bothArm)
+  {
+    sendSingleArmPlan(msg, l_arm_strings, input_joint_names, false);
+    ROS_ERROR("LCM2ROS sent left arm");
+    sleep(1); 
+    ROS_ERROR("LCM2ROS sleep 1 second");
+    sendSingleArmPlan(msg, r_arm_strings, input_joint_names, true);
+    ROS_ERROR("LCM2ROS sent right arm");
   }
 
   if (1==0){
