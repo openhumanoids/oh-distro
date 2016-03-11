@@ -11,8 +11,8 @@ if(NOT USE_SYSTEM_LCM)
     )
 endif()
 
-set(bot_core_lcmtypes_url https://github.com/openhumanoids/bot_core_lcmtypes.git)
-set(bot_core_lcmtypes_revision 02a41c0a0b017d09c410d87343652c7e2cadf4c6)
+set(bot_core_lcmtypes_url https://github.com/iamwolf/bot_core_lcmtypes.git)
+set(bot_core_lcmtypes_revision 023387b1dc071155f898cca5730cad9b88ec6925)
 set(bot_core_lcmtypes_depends ${lcm_proj})
 
 set(libbot_url https://github.com/openhumanoids/libbot.git)
