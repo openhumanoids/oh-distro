@@ -11,13 +11,12 @@ AtlasCommandDriver::AtlasCommandDriver(const JointNames *input_joint_names, cons
     for (int j=0; j < input_joint_names->drake.size(); j++) {
       if (state_coordinate_names[i].compare(input_joint_names->drake[j]) == 0) {
         state_to_drake_input_map[i] = j;
-        cout << "state coordinate: " << state_coordinate_names[i] << " matches input name: " << input_joint_names->drake[j] << endl;
+        //cout << "state coordinate: " << state_coordinate_names[i] << " matches input name: " << input_joint_names->drake[j] << endl;
       }
     }
   }
 
   m_num_joints = input_joint_names->robot.size();
-  cout << "m num joints: " << m_num_joints << endl;
   
   msg.num_joints = m_num_joints;
   msg.joint_names.resize(msg.num_joints);
