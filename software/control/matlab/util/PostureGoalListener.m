@@ -17,7 +17,7 @@ classdef PostureGoalListener
             if isempty(msg_raw)
                 X = [];
             else
-                msg = drc.joint_angles_t(msg_raw.data);
+                msg = bot_core.joint_angles_t(msg_raw.data);
                 [X] = PostureGoalListener.decode(msg);
             end
         end
