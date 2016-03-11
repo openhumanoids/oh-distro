@@ -5,8 +5,8 @@
 #include "drc/controller_foot_contact_t.hpp"
 
 
-#define R_FOOT_ID 25
-#define L_FOOT_ID 12
+#define R_FOOT_NAME "r_foot"
+#define L_FOOT_NAME "l_foot"
 
 void copyContactPts(const drake::lcmt_support_data &supp, std::vector< std::vector< double > > &contact_pts) {
   contact_pts.resize(3);
@@ -32,10 +32,10 @@ class Handler {
       foot_contact_msg.num_right_foot_contacts = 0;
       foot_contact_msg.num_left_foot_contacts = 0;
       for (std::vector<drake::lcmt_support_data>::const_iterator supp = msg->support_data.begin(); supp != msg->support_data.end(); ++supp) {
-        if (supp->body_id == R_FOOT_ID) {
+        if (supp->body_name == R_FOOT_NAME) {
           foot_contact_msg.num_right_foot_contacts = supp->num_contact_pts;
           copyContactPts(*supp, foot_contact_msg.right_foot_contacts);
-        } else if (supp->body_id == L_FOOT_ID) {
+        } else if (supp->body_name == L_FOOT_NAME) {
           foot_contact_msg.num_left_foot_contacts = supp->num_contact_pts;
           copyContactPts(*supp, foot_contact_msg.left_foot_contacts);
         }

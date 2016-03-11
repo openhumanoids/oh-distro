@@ -17,7 +17,6 @@ classdef DRCQPLocomotionPlan
       obj.gain_set = char(msg.gain_set);
       obj.constrained_dofs = double(msg.constrained_dofs);
       obj.untracked_joint_inds = msg.untracked_joint_inds;
-      obj.default_qp_input = mxDeserialize(msg.default_qp_input);
       obj.is_quasistatic = logical(msg.is_quasistatic);
       obj.use_plan_shift = logical(msg.use_plan_shift);
       obj.D_control = double(msg.D_control);
@@ -59,9 +58,6 @@ classdef DRCQPLocomotionPlan
 
       msg.num_untracked_joints = length(obj.untracked_joint_inds);
       msg.untracked_joint_inds = obj.untracked_joint_inds;
-
-      msg.default_qp_input = mxSerialize(obj.default_qp_input);
-      msg.n_default_qp_input_bytes = length(msg.default_qp_input);
 
       msg.is_quasistatic = logical(obj.is_quasistatic);
       msg.use_plan_shift = logical(obj.use_plan_shift);
