@@ -770,6 +770,11 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   wbt_msg.num_joints_per_arm = l_arm_strings.size();
 
   // 2. Insert Pelvis Pose
+  // Seconds to offset the plan so that the controller
+  // can blend from the current desired joint position to the plan joint position
+  // this was added to avoid controller jerks when starting short plans.
+  double planDesiredOffset = 1.0;
+
   for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     bot_core::robot_state_t state = msg->plan[i];
@@ -786,7 +791,9 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     pelvis_world_orientation.y = state.pose.rotation.y;
     pelvis_world_orientation.z = state.pose.rotation.z;
     wbt_msg.pelvis_world_orientation.push_back(pelvis_world_orientation);
-    wbt_msg.time_at_waypoint.push_back(state.utime * 1E-6);
+    double time_at_waypoint = planDesiredOffset + (state.utime * 1E-6);
+    wbt_msg.time_at_waypoint.push_back(time_at_waypoint) ;
+    std::cout << i << ": " << time_at_waypoint << " " << (state.utime - msg->plan[i-1].utime) * 1E-6 << " is time and difference of the waypoints\n";
   }
   wbt_msg.num_waypoints = msg->num_states - 1;  // NB: skipping the first sample as it has time = 0
 
