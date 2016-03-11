@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc/atlas_command_t.hpp"
+#include "lcmtypes/bot_core/atlas_command_t.hpp"
 
 
 using namespace Eigen;
@@ -21,7 +21,7 @@ private:
   int m_num_joints; 
   
   vector<int> drake_to_atlas_joint_map;
-  drc::atlas_command_t msg;
+  bot_core::atlas_command_t msg;
 
 public:
   AtlasCommand(const vector<string>& joint_names, const int atlas_version_number, 

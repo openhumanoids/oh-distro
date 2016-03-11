@@ -43,10 +43,10 @@ classdef LCMInputFromIRB140AtlasCommandBlock < MIMODrakeSystem
       obj.r_control = r_control;
       
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.lcmonitor = drake.util.MessageMonitor(drc.atlas_command_t,'utime');
+      obj.lcmonitor = drake.util.MessageMonitor(bot_core.atlas_command_t,'utime');
       obj.lc.subscribe('ATLAS_COMMAND',obj.lcmonitor);
       
-      lcmtype = drc.atlas_command_t;
+      lcmtype = bot_core.atlas_command_t;
       lcmtype = lcmtype.getClass();
       names={};
       f = lcmtype.getFields;

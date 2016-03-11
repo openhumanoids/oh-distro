@@ -7,7 +7,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/drc/atlas_state_t.hpp"
-#include "lcmtypes/drc/atlas_command_t.hpp"
+#include "lcmtypes/bot_core/atlas_command_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/utime_two_t.hpp"
 #include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
@@ -34,7 +34,7 @@ private:
   std::string channel_from_, channel_to_;
   JointUtils joint_utils_;
   
-  drc::atlas_command_t cmd_msg_;
+  bot_core::atlas_command_t cmd_msg_;
   
   double sum_total_;
   int64_t tic_prev_;
@@ -56,7 +56,7 @@ App::App(boost::shared_ptr<lcm::LCM> &_lcm, std::string channel_from_, std::stri
   
   
   std::vector<std::string> atlas_joints_names = joint_utils_.atlas_joint_names; 
-  drc::atlas_command_t cmd_msg_here;
+  bot_core::atlas_command_t cmd_msg_here;
   cmd_msg_here.joint_names = atlas_joints_names;
   cmd_msg_here.position.assign ( atlas_joints_names.size()  ,0.);
   cmd_msg_here.velocity.assign ( atlas_joints_names.size()  ,0.);

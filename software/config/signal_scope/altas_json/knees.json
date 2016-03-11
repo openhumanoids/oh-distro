@@ -11,7 +11,7 @@
           ]
         }, 
         {
-          "messageType": "drc::atlas_command_t", 
+          "messageType": "bot_core::atlas_command_t", 
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
@@ -27,7 +27,7 @@
           ]
         }, 
         {
-          "messageType": "drc::atlas_command_t", 
+          "messageType": "bot_core::atlas_command_t", 
           "fieldName": "position", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
@@ -50,7 +50,7 @@
           ]
         },
         {
-          "messageType": "drc::atlas_command_t", 
+          "messageType": "bot_core::atlas_command_t", 
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
@@ -66,7 +66,7 @@
           ]
         },
         {
-          "messageType": "drc::atlas_command_t", 
+          "messageType": "bot_core::atlas_command_t", 
           "fieldName": "effort", 
           "channel": "ATLAS_COMMAND", 
           "arrayKeys": [
