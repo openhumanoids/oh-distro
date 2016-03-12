@@ -19,6 +19,7 @@
 #include "lcmtypes/drc/robot_plan_t.hpp"
 #include "lcmtypes/drc/neck_pitch_t.hpp"
 #include "lcmtypes/drc/scs_api_command_t.hpp"
+#include "lcmtypes/drc/int64_stamped_t.hpp"
 
 #include "lcmtypes/ihmc/com_height_packet_message_t.hpp"
 #include "lcmtypes/ihmc/pause_command_message_t.hpp"
@@ -52,7 +53,9 @@
 #define MIN_SWING_HEIGHT 0.05
 #define MAX_SWING_HEIGHT 0.3
 
-enum class TrajectoryMode {wholeBody, leftArm, rightArm, bothArm}; // 0,1,2,3
+enum class TrajectoryMode {wholeBody, leftArm, rightArm, bothArms}; // 0,1,2,3
+std::vector<std::string> TrajectoryNames = {"Whole Body", "Left Arm", "Right Arm", "Both Arms"};
+
 
 class LCM2ROS
 {
@@ -110,6 +113,9 @@ private:
                         ihmc_msgs::ArmJointTrajectoryPacketMessage &m);
   bool getChestTrajectoryPlan(const drc::robot_plan_t* msg, std::vector<geometry_msgs::Quaternion> &m);
 
+  void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::scs_api_command_t* msg);
+  ros::Publisher scs_api_pub_;
+
   void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg);
   void headOrientationHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
   ros::Publisher neck_orientation_pub_;
@@ -118,8 +124,7 @@ private:
   void rFootPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
   ros::Publisher rfoot_pose_pub_;
 
-  void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::scs_api_command_t* msg);
-  ros::Publisher scs_api_pub_;
+  void ihmcControlModeCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::int64_stamped_t* msg);
 };
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, std::string robotName_in):
@@ -145,8 +150,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   default_transfer_time_ = 1.0;
   default_swing_time_ = 1.0;
   // Variable to set what part of a whole body plan gets passed through to Val:
-  outputTrajectoryMode_ = TrajectoryMode::bothArm;
-  ROS_ERROR("LCM2ROS Controller TrajectoryMode: %d", (int) TrajectoryMode::bothArm);
+  outputTrajectoryMode_ = TrajectoryMode::wholeBody;
+  ROS_ERROR("LCM2ROS Controller TrajectoryMode: %s", TrajectoryNames.at( (int) outputTrajectoryMode_).c_str() );
 
   ////////////////// Subscriptions and Adverts //////////////////////
   // If pronto is running never send plans like this:
@@ -197,6 +202,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   // depreciated:
   // lcm_->subscribe("VAL_COMMAND_HAND_POSE",&LCM2ROS::handPoseHandler, this);
   // hand_pose_pub_ =  nh_.advertise<ihmc_msgs::HandPosePacketMessage>("/ihmc_ros/" + robotName_ + "/control/hand_pose",10);
+
+  // Subscriptions that handle local variables:
+  lcm_->subscribe("IHMC_CONTROL_MODE_COMMAND", &LCM2ROS::ihmcControlModeCommandHandler, this);
 
   node_ = new ros::NodeHandle();
 }
@@ -806,7 +814,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     sendSingleArmPlan(msg, r_arm_strings, input_joint_names, true);
     ROS_ERROR("LCM2ROS sent right arm");
   }
-  else if (outputTrajectoryMode_ == TrajectoryMode::bothArm)
+  else if (outputTrajectoryMode_ == TrajectoryMode::bothArms)
   {
     sendSingleArmPlan(msg, l_arm_strings, input_joint_names, false);
     ROS_ERROR("LCM2ROS sent left arm");
@@ -842,6 +850,14 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     }
   }
    
+}
+
+
+void LCM2ROS::ihmcControlModeCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::int64_stamped_t* msg)
+{
+  outputTrajectoryMode_ = TrajectoryMode( (int) msg->data);
+  ROS_ERROR("LCM2ROS Setting Controller TrajectoryMode: %s",
+      TrajectoryNames.at( (int) outputTrajectoryMode_).c_str() );
 }
 
 int main(int argc, char** argv)
