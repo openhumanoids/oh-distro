@@ -342,8 +342,8 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = default_transfer_time_;
-  mout.swing_time = default_swing_time_;
+  mout.transfer_time = msg->footstep_plan.footsteps[0].params.ihmc_transfer_time;
+  mout.swing_time = msg->footstep_plan.footsteps[0].params.ihmc_swing_time;
   for (int i = 2; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footstep_plan.footsteps[i]));
@@ -357,8 +357,8 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   ROS_ERROR("LCM2ROS got BDI_ADJUSTED_FOOTSTEP_PLAN or COMMITTED_FOOTSTEP_PLAN (pronto and bdi mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = default_transfer_time_;
-  mout.swing_time = default_swing_time_;
+  mout.transfer_time = msg->footsteps[0].params.ihmc_transfer_time;
+  mout.swing_time = msg->footsteps[0].params.ihmc_swing_time;
   for (int i = 2; i < msg->num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footsteps[i]));
