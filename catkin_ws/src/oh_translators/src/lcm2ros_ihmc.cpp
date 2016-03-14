@@ -74,8 +74,14 @@ private:
   boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
   std::string chestLinkName_;
 
+  // Parameters and Variables:
   double default_transfer_time_;
   double default_swing_time_;
+  // Seconds to offset the plan so that the controller
+  // can blend from the current desired joint position to the plan joint position
+  // this was added to avoid controller jerks when starting short plans.
+  double planDesiredOffset_;
+
 
   TrajectoryMode outputTrajectoryMode_;
 
@@ -102,12 +108,11 @@ private:
   ros::Publisher hand_pose_pub_;
 
   void robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::robot_plan_t* msg);
-  ros::Publisher arm_joint_traj_pub_, arm_joint_traj2_pub_, whole_body_trajectory_pub_;
+  ros::Publisher arm_joint_traj2_pub_, whole_body_trajectory_pub_;
 
+  double getPlanTimeAtWaypoint(int64_t planUtime);
   void sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
                          std::vector<std::string> input_joint_names, bool is_right);
-  bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
-                        std::vector<std::string> input_joint_names, bool is_right, trajectory_msgs::JointTrajectory &m);
   bool getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
                         std::vector<std::string> input_joint_names, bool is_right,
                         ihmc_msgs::ArmJointTrajectoryPacketMessage &m);
@@ -149,6 +154,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   // Conservative values for real Valkyrie, using defaults used by IHMC
   default_transfer_time_ = 1.0;
   default_swing_time_ = 1.0;
+  planDesiredOffset_ = 1.0;
   // Variable to set what part of a whole body plan gets passed through to Val:
   outputTrajectoryMode_ = TrajectoryMode::wholeBody;
   ROS_ERROR("LCM2ROS Controller TrajectoryMode: %s", TrajectoryNames.at( (int) outputTrajectoryMode_).c_str() );
@@ -176,8 +182,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
 
   // robot plan messages now used, untested
   lcm_->subscribe("COMMITTED_ROBOT_PLAN", &LCM2ROS::robotPlanHandler, this);
-  arm_joint_traj_pub_ = nh_.advertise<trajectory_msgs::JointTrajectory>(
-      "/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory2", 10);
   arm_joint_traj2_pub_ = nh_.advertise<ihmc_msgs::ArmJointTrajectoryPacketMessage>(
       "/ihmc_ros/" + robotName_ + "/control/arm_joint_trajectory", 10);
   whole_body_trajectory_pub_ = nh_.advertise<ihmc_msgs::WholeBodyTrajectoryPacketMessage>(
@@ -533,69 +537,24 @@ void filterJointNamesToIHMC(std::vector<std::string> &joint_name)
 void LCM2ROS::sendSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
                                 std::vector<std::string> input_joint_names, bool is_right)
 {
-  // trajectory_msgs::JointTrajectory m;
-  // bool status = getSingleArmPlan(msg, output_joint_names_arm, input_joint_names, m);
-  // if (status)
-  //   arm_joint_traj_pub_.publish(m);
-
   ihmc_msgs::ArmJointTrajectoryPacketMessage m;
   bool status = getSingleArmPlan(msg, output_joint_names_arm, input_joint_names, is_right, m);
   if (status)
     arm_joint_traj2_pub_.publish(m);
 }
 
-bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
-                               std::vector<std::string> input_joint_names, bool is_right,
-                               trajectory_msgs::JointTrajectory &m)
+
+double LCM2ROS::getPlanTimeAtWaypoint(int64_t planUtime)
 {
-  // Find the indices of the arm joints which we want to extract
-  std::vector<int> arm_indices;
-  for (size_t i = 0; i < output_joint_names_arm.size(); i++)
-  {
-    std::string name = output_joint_names_arm[i];
-    std::vector<std::string>::iterator it;
-    it = find(input_joint_names.begin(), input_joint_names.end(), name);
-    int index = std::distance(input_joint_names.begin(), it);
-    if (index < input_joint_names.size())
-    {
-      // std::cout << name << " found in input_joint_names at " << index << '\n';
-      arm_indices.push_back(index);
-    }
-    else
-    {
-      ROS_ERROR("%s not found in input_joint_names, not sending plan", name.c_str());
-      std::cout << name << " not found in input_joint_names, not sending plan\n";
-      return false;
-    }
-  }
-
-  // Fish out the arm indices:
-  m.header.stamp = ros::Time().fromSec(msg->utime * 1E-6);
-  m.joint_names = output_joint_names_arm;
-  for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
-  {
-    bot_core::robot_state_t state = msg->plan[i];
-    trajectory_msgs::JointTrajectoryPoint point;
-    int i1 = (i > 0) ? (i - 1) : 0;
-    int i2 = i;
-    int i3 = (i < msg->num_states - 1) ? (i + 1) : (msg->num_states - 1);
-
-    for (int j = 0; j < arm_indices.size(); j++)
-    {
-      point.positions.push_back(state.joint_position[arm_indices[j]]);
-      double dt1 = (msg->plan[i2].utime - msg->plan[i1].utime) * 1e-6;
-      double dt2 = (msg->plan[i3].utime - msg->plan[i2].utime) * 1e-6;
-      double dq1 = msg->plan[i2].joint_position[arm_indices[j]] - msg->plan[i1].joint_position[arm_indices[j]];
-      double dq2 = msg->plan[i3].joint_position[arm_indices[j]] - msg->plan[i2].joint_position[arm_indices[j]];
-      point.velocities.push_back((dt1 * dt2 != 0) ? (dq1 / dt1 * 0.5 + dq2 / dt2 * 0.5) : 0.0);
-      point.accelerations.push_back(0);
-      point.effort.push_back(state.joint_effort[arm_indices[j]]);
-      point.time_from_start = ros::Duration().fromSec(state.utime * 1E-6);
-    }
-    m.points.push_back(point);
-  }
-  return true;
+  // Convert the input plan timestamp (int64_t into a safe output (double, seconds)
+  // including adjusting by a fixed offset which is required to do the difference
+  // between the current joint positions (from where the plan begins) and the
+  // controller's current desired position references. Used for both arm and pelvis timestamps
+  double time_at_waypoint = (double) planDesiredOffset_ + (planUtime * 1E-6);
+  return time_at_waypoint;
 }
+
+
 
 bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::string> output_joint_names_arm,
                                std::vector<std::string> input_joint_names, bool is_right,
@@ -651,7 +610,12 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
       point.velocities.push_back((dt1 * dt2 != 0) ? (dq1 / dt1 * 0.5 + dq2 / dt2 * 0.5) : 0.0);
       // point.accelerations.push_back( 0  );
       // point.effort.push_back( state.joint_effort[ arm_indices[j] ] );
-      point.time = static_cast<double>(state.utime) * 1E-6;
+
+      point.time = getPlanTimeAtWaypoint( state.utime );
+      std::cout << i << ": " << getPlanTimeAtWaypoint(state.utime) << " " << (state.utime - msg->plan[i-1].utime) * 1E-6
+                << " is time and difference of the arm waypoints [Right: " << is_right << "]\n";
+
+
     }
     m.trajectory_points.push_back(point);
   }
@@ -764,6 +728,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   if (!status_left || !status_right)
   {
     ROS_ERROR("LCM2ROS: problem with arm plan, not sending");
+    return;
   }
   wbt_msg.left_arm_trajectory = left_arm_trajectory;
   wbt_msg.right_arm_trajectory = right_arm_trajectory;
@@ -786,7 +751,9 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     pelvis_world_orientation.y = state.pose.rotation.y;
     pelvis_world_orientation.z = state.pose.rotation.z;
     wbt_msg.pelvis_world_orientation.push_back(pelvis_world_orientation);
-    wbt_msg.time_at_waypoint.push_back(state.utime * 1E-6);
+    wbt_msg.time_at_waypoint.push_back( getPlanTimeAtWaypoint(state.utime) ) ;
+    std::cout << i << ": " << getPlanTimeAtWaypoint(state.utime) << " " << (state.utime - msg->plan[i-1].utime) * 1E-6 << " is time and difference of the pelvis waypoints\n";
+
   }
   wbt_msg.num_waypoints = msg->num_states - 1;  // NB: skipping the first sample as it has time = 0
 
@@ -796,6 +763,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   if (!status_chest)
   {
     ROS_ERROR("LCM2ROS: problem with chest plan, not sending");
+    return;
   }
   wbt_msg.chest_world_orientation = chest_trajectory;
 
