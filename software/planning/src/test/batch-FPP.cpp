@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <time.h>
 #include <boost/program_options.hpp>
+#include <map>
 
 #include "bot_lcmgl_client/lcmgl.h"
 
@@ -30,6 +31,27 @@ void addTextToElement(XMLElement *element, T value)
 
 int main(int argc, char* argv[])
 {
+	typedef Matrix<double, 7, 1> endeffector_pose;
+	map<string, map<int, map<string, endeffector_pose>>> endeffector_poses;
+	endeffector_poses["val2"][1]["left"] << 0.8, 0, 1.0625, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][1]["right"] << 0.8, 0, 1.0625, 0.707106781186548, 0, 0, 0.707106781186547;
+	endeffector_poses["val2"][2]["left"] << 0.8, 0, 1.0625, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][2]["right"] << 0.8, 0, 1.0625, 0.707106781186548, 0, 0, 0.707106781186547;
+	endeffector_poses["val2"][3]["left"] << 0.7, 0, 0.6, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][3]["right"] << 0.7, 0, 0.6, 0.707106781186548, 0, 0, 0.707106781186547;
+	endeffector_poses["val2"][4]["left"] << 0.5, 0, 1.0625, 0.382683432365090, 0, 0, -0.923879532511287;
+	endeffector_poses["val2"][4]["right"] << 0.5, 0, 1.0625, 0.382683432365090, 0, 0, 0.923879532511287;
+	endeffector_poses["val2"][5]["left"] << 0.65, 0, 1.1, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][5]["right"] << 0.65, 0, 1.1, 0.707106781186548, 0, 0, 0.707106781186547;
+	endeffector_poses["val2"][6]["left"] << .5, -.2, .96, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][6]["right"] << .5, -.2, .96, 0.707106781186548, 0, 0, 0.707106781186547;
+	endeffector_poses["val2"][7]["left"] << .7, -.1, .96, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][7]["right"] << .7, -.1, .96, 0.923879532511287, 0, 0, 0.382683432365090;
+	endeffector_poses["val2"][8]["left"] << .7, .1, .975, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][8]["right"] << .7, .1, .975, 0.707106781186548, 0, 0, 0.707106781186547;
+	endeffector_poses["val2"][9]["left"] << .5, .3, .97, 0.707106781186548, 0, 0, -0.707106781186547;
+	endeffector_poses["val2"][9]["right"] << .5, .3, .97, 0.707106781186548, 0, 0, 0.707106781186547;
+
 	int n_iter;
 	vector<int> scenes;
 	string grasping_hands_str;
@@ -178,71 +200,75 @@ int main(int argc, char* argv[])
 	quasi_static_constraint.addContact(1, &right_foot_id, &right_contact_points);
 	constraints.push_back(&quasi_static_constraint);
 
-	VectorXd endeffector_final_pose;
-	endeffector_final_pose.resize(7);
-	endeffector_final_pose << 0.8000, 0, 1.0625 ,0.7071 ,0 ,0 ,-0.7071;
-
 	VectorXd nominal_configuration;
 	nominal_configuration.resize(robot.num_positions);
 	nominal_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
-	string point_cloud_file = "/home/marco/drc-testing-data/final_pose_planner/scene1.bin";
+//  INITIALIZE OUTPUT FILE
+	string output_file_name = "output.fpp";
+	XMLDocument xml_doc;
+	XMLElement *results_node = xml_doc.NewElement("results");
+	xml_doc.LinkEndChild(results_node);
 
-	ifstream inputFile(point_cloud_file.c_str(), ifstream::binary);
+	XMLElement *details_node = xml_doc.NewElement("details");
+	results_node->LinkEndChild(details_node);
 
-	if (!inputFile.is_open())
+	XMLElement *models_node = xml_doc.NewElement("models");
+	details_node->LinkEndChild(models_node);
+	for (auto m : models){addTextToElement(models_node, m);}
+
+	XMLElement *n_iterations_node = xml_doc.NewElement("n_iterations");
+	details_node->LinkEndChild(n_iterations_node);
+	n_iterations_node->SetText(n_iter);
+
+	XMLElement *scenes_node = xml_doc.NewElement("scenes");
+	details_node->LinkEndChild(scenes_node);
+	stringstream ss;
+	for (auto s : scenes)
 	{
-		std::cout << "Failed to open " << point_cloud_file.c_str() << '\n';
-		return 1;
+		ss.str("");
+		ss << "scene" << s;
+		addTextToElement(scenes_node, ss.str().c_str());
 	}
-	else
+
+	XMLElement *grasping_hands_node = xml_doc.NewElement("grasping_hands");
+	details_node->LinkEndChild(grasping_hands_node);
+	for (auto h : grasping_hands){addTextToElement(grasping_hands_node, h);}
+
+	time_t rawtime;
+	char buffer [80];
+	time (&rawtime);
+	struct tm *timeinfo = localtime (&rawtime);
+	strftime (buffer,80,"%d-%b-%Y %T",timeinfo);
+	XMLElement *time_node = xml_doc.NewElement("time");
+	details_node->LinkEndChild(time_node);
+	time_node->SetText(buffer);
+
+	//results
+	for (auto m : models)
 	{
-
-//        INITIALIZE OUTPUT FILE
-		string output_file_name = "output.fpp";
-		XMLDocument xml_doc;
-		XMLElement *results_node = xml_doc.NewElement("results");
-		xml_doc.LinkEndChild(results_node);
-
-		XMLElement *details_node = xml_doc.NewElement("details");
-		results_node->LinkEndChild(details_node);
-
-		XMLElement *models_node = xml_doc.NewElement("models");
-		details_node->LinkEndChild(models_node);
-		for (auto m : models){addTextToElement(models_node, m);}
-
-		XMLElement *n_iterations_node = xml_doc.NewElement("n_iterations");
-		details_node->LinkEndChild(n_iterations_node);
-		n_iterations_node->SetText(n_iter);
-
-		XMLElement *scenes_node = xml_doc.NewElement("scenes");
-		details_node->LinkEndChild(scenes_node);
-		stringstream ss;
 		for (auto s : scenes)
 		{
 			ss.str("");
-			ss << "scene" << s;
-			addTextToElement(scenes_node, ss.str().c_str());
-		}
+			if(s < 6)
+			{
+				ss << getenv("DRC_BASE") << "/../drc-testing-data/final_pose_planner/scene" << s << ".bin";
+			}
+			else
+			{
+				ss << getenv("DRC_BASE") << "/../drc-testing-data/final_pose_planner/scene6.bin";
+			}
+			string point_cloud_file = ss.str();
 
-		XMLElement *grasping_hands_node = xml_doc.NewElement("grasping_hands");
-		details_node->LinkEndChild(grasping_hands_node);
-		for (auto h : grasping_hands){addTextToElement(grasping_hands_node, h);}
+			ifstream inputFile(point_cloud_file.c_str(), ifstream::binary);
 
-		time_t rawtime;
-		char buffer [80];
-		time (&rawtime);
-		struct tm *timeinfo = localtime (&rawtime);
-		strftime (buffer,80,"%d-%b-%Y %T",timeinfo);
-		XMLElement *time_node = xml_doc.NewElement("time");
-		details_node->LinkEndChild(time_node);
-		time_node->SetText(buffer);
-
-		//results
-		for (auto m : models)
-		{
-			for (auto s : scenes)
+			if (!inputFile.is_open())
+			{
+				std::cout << "Failed to open " << point_cloud_file.c_str() << '\n';
+				return 1;
+			}
+			else
 			{
 				vector<Vector3d> point_cloud;
 				unsigned int n_points;
@@ -253,8 +279,10 @@ int main(int argc, char* argv[])
 					inputFile.read((char *) point_cloud[point].data(), 3* sizeof(Vector3d::Scalar));
 				}
 				inputFile.close();
+
 				bot_lcmgl_t* lcmgl_pc = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Point Cloud");
 				drawPointCloud(lcmgl_pc, point_cloud);
+
 
 				for (auto h : grasping_hands)
 				{
@@ -300,6 +328,7 @@ int main(int argc, char* argv[])
 
 					cm.setActiveSide("left");
 					Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
+					VectorXd endeffector_final_pose = endeffector_poses[m][s][h];
 
 					int info;
 

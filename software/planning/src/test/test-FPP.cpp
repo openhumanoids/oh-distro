@@ -96,7 +96,8 @@ int main()
 	nominal_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
-	string point_cloud_file = "/home/marco/drc-testing-data/final_pose_planner/scene1.bin";
+	string point_cloud_file = getenv("DRC_BASE");
+	point_cloud_file += "/../drc-testing-data/final_pose_planner/scene1.bin";
 
 	ifstream inputFile(point_cloud_file.c_str(), ifstream::binary);
 
