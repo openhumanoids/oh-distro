@@ -1,5 +1,6 @@
 from numpy import *
 import lcm, os, sys, drc, time
+import bot_core as lcmbotcore
 
 """
 Simple process that publishes joint positions and forces scaled to [-1,1] using 
@@ -89,7 +90,7 @@ class JointMonitor:
         return [jmin, jmax]
 
     def cmd_handle(self, channel, data):
-        msg = drc.atlas_command_t.decode(data)
+        msg = lcmbotcore.atlas_command_t.decode(data)
 
     def state_handle(self, channel, data):
         msg = drc.robot_state_t.decode(data)

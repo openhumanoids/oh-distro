@@ -7,7 +7,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core.hpp"
 
-#include "lcmtypes/drc/atlas_command_t.hpp"
+#include "lcmtypes/bot_core/atlas_command_t.hpp"
 #include "lcmtypes/drc/utime_two_t.hpp"
 #include "lcmtypes/drc/double_array_t.hpp"
 
@@ -26,7 +26,7 @@ public:
   boost::shared_ptr<lcm::LCM> _lcm;
   void handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const bot_core::joint_state_t * msg);
   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const bot_core::robot_state_t * msg);
-  void handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg);
+  void handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::atlas_command_t * msg);
 
   void handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::kvh_raw_imu_batch_t * msg);
   void handlePoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg);
@@ -143,7 +143,7 @@ void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string&
   }
 }
 
-void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg)  {
+void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::atlas_command_t * msg)  {
   lats_[2]->add_to(msg->utime, _timestamp_now(), "CTRL", lat_time_[2], lat_msgs_[2] );
   lats_[3]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[3], lat_msgs_[3] );
 }

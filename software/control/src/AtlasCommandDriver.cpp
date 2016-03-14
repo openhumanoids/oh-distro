@@ -88,7 +88,7 @@ void AtlasCommandDriver::updateGains(AtlasHardwareGains *gains) {
   }
 }
 
-drc::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params) {
+bot_core::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params) {
   // Copy data from the given qp_output into the stored LCM message object. 
 
   msg.utime = (long)(t*1000000);

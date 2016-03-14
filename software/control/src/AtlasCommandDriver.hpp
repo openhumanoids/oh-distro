@@ -1,5 +1,5 @@
 #include <string>
-#include "lcmtypes/drc/atlas_command_t.hpp"
+#include "lcmtypes/bot_core/atlas_command_t.hpp"
 #include "drake/systems/controllers/QPCommon.h"
 
 class AtlasCommandDriver {
@@ -7,7 +7,7 @@ class AtlasCommandDriver {
     int m_num_joints; 
     RobotJointIndexMap input_index_map;
     Eigen::VectorXi state_to_drake_input_map;
-    drc::atlas_command_t msg;
+    bot_core::atlas_command_t msg;
 
   public:
     AtlasCommandDriver(JointNames *input_joint_names, std::vector<std::string> &state_coordinate_names);
@@ -16,5 +16,5 @@ class AtlasCommandDriver {
     }
     void updateGains(AtlasHardwareGains *gains);
 
-    drc::atlas_command_t* encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params);
+    bot_core::atlas_command_t* encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params);
 };

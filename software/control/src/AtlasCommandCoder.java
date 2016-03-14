@@ -10,7 +10,7 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
   final int m_num_joints; // should match Atlas::NUM_JOINTS in BDI API
   int[] drake_to_atlas_joint_map;
   
-  drc.atlas_command_t msg;
+  bot_core.atlas_command_t msg;
   
   public AtlasCommandCoder(String[] joint_names, int atlas_version_number, double[] k_q_p, double[] k_q_i,
     double[] k_qd_p, double[] k_f_p, double[] ff_qd, double[] ff_qd_d, double[] ff_f_d,
@@ -144,7 +144,7 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
         break;
     }
 
-    msg = new drc.atlas_command_t();
+    msg = new bot_core.atlas_command_t();
     msg.num_joints = m_num_joints;
 
     msg.joint_names = new String[msg.num_joints];
@@ -230,7 +230,7 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
 
   public drake.util.CoordinateFrameData decode(byte[] data) {
     try {
-      drc.atlas_command_t msg = new drc.atlas_command_t(data);
+      bot_core.atlas_command_t msg = new bot_core.atlas_command_t(data);
       return decode(msg);
     } catch (IOException ex) {
       System.out.println("Exception: " + ex);
@@ -238,7 +238,7 @@ public class AtlasCommandCoder implements drake.util.LCMCoder
     return null;
   }
   
-  public drake.util.CoordinateFrameData decode(drc.atlas_command_t msg) { 
+  public drake.util.CoordinateFrameData decode(bot_core.atlas_command_t msg) {
     drake.util.CoordinateFrameData fdata = new drake.util.CoordinateFrameData();
 
     fdata.val = new double[3*m_num_joints];
