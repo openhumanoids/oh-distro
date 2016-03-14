@@ -27,10 +27,6 @@ struct footstep_params_t
 	float bdi_sway_end_dist;
 	float bdi_step_end_dist;
 
-    // IHMC-specific parameters
-	float ihmc_transfer_time;
-	float ihmc_swing_time;
-
 	float mu;
 
 	// Distance to shift ZMP trajectory inward toward the instep from the center of the foot (m)
