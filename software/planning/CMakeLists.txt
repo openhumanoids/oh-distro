@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.6.0)
 set(POD_NAME planning)
 include(cmake/pods.cmake)
 
+add_subdirectory(src/util)
 add_subdirectory(src/capabilityMap)
 add_subdirectory(src/test)
-add_subdirectory(src/util)
 add_subdirectory(src/finalPosePlanner)
