@@ -75,8 +75,6 @@ private:
   std::string chestLinkName_;
 
   // Parameters and Variables:
-  double default_transfer_time_;
-  double default_swing_time_;
   // Seconds to offset the plan so that the controller
   // can blend from the current desired joint position to the plan joint position
   // this was added to avoid controller jerks when starting short plans.
@@ -152,8 +150,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
 
   // Hard Coded Parameters:
   // Conservative values for real Valkyrie, using defaults used by IHMC
-  default_transfer_time_ = 1.0;
-  default_swing_time_ = 1.0;
   planDesiredOffset_ = 1.0;
   // Variable to set what part of a whole body plan gets passed through to Val:
   outputTrajectoryMode_ = TrajectoryMode::wholeBody;
