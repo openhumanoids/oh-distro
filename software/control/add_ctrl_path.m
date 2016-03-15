@@ -17,6 +17,7 @@ end
 % setup javaclasspath
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_drc_lcmtypes.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_bot2-core.jar']);
+javaaddpath([pods_get_base_path,'/share/java/lcmtypes_bot2_core.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_bot2-param.jar']);
 javaaddpath([pods_get_base_path,'/share/java/drc_control.jar']);
 javaaddpath([pods_get_base_path,'/share/java/lcmtypes_visualization.jar']);
