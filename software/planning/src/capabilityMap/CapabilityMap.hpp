@@ -88,7 +88,7 @@ public:
 	/**
 	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample
 	 */
-	std::vector<int> drawCapabilityMapSample();
+	int drawCapabilityMapSample(std::vector<int> &sample);
 private:
 	std::ofstream log;
 	unsigned int n_voxels;
@@ -112,7 +112,8 @@ private:
 	Eigen::Vector3d map_upper_bound;
 	unsigned int n_occupancy_voxels;
 	unsigned int n_occupancy_orient;
-	std::vector<std::vector<std::vector<unsigned int>>> occupancy_map; /**< Dimensions:\n  n occupancy map voxels\n  n orientations\n  invalid capability map voxels for each orientation (variable) */
+	typedef std::vector<std::vector<std::vector<unsigned int>>> occupancy_map; /**< Dimensions:\n  n occupancy map voxels\n  n orientations\n  invalid capability map voxels for each orientation (variable) */
+	std::map<Side, occupancy_map> occupancy_maps;
 	double occupancy_map_resolution;
 	Eigen::Vector3d occupancy_map_lower_bound;
 	Eigen::Vector3d occupancy_map_upper_bound;

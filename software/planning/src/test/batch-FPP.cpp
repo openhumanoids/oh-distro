@@ -52,10 +52,19 @@ int main(int argc, char* argv[])
 	endeffector_poses["val2"][9]["left"] << .5, .3, .97, 0.707106781186548, 0, 0, -0.707106781186547;
 	endeffector_poses["val2"][9]["right"] << .5, .3, .97, 0.707106781186548, 0, 0, 0.707106781186547;
 
+	map<string, map<string, Vector3d>> endeffector_points;
+	endeffector_points["val2"]["left"] << 0.08, 0.07, 0;
+	endeffector_points["val2"]["right"] << 0.08, -0.07, 0;
+
+	map<string, map<string, string>> endeffector_names;
+	endeffector_names["val2"]["left"] = "leftPalm";
+	endeffector_names["val2"]["right"] = "rightPalm";
+
 	int n_iter;
 	vector<int> scenes;
 	string grasping_hands_str;
 	vector<string> models(1, "val2");
+	stringstream ss;
 
 	po::options_description hidden("parameters");
 	hidden.add_options()
@@ -127,7 +136,7 @@ int main(int argc, char* argv[])
 
 
 	CapabilityMap cm("/home/marco/oh-distro/software/planning/capabilityMap.log");
-	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport_occ.bin");
+	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/CapabilityMapMatlab.bin");
 
 	boost::shared_ptr<lcm::LCM> theLCM(new lcm::LCM);
 	if(!theLCM->good()){
@@ -224,7 +233,6 @@ int main(int argc, char* argv[])
 
 	XMLElement *scenes_node = xml_doc.NewElement("scenes");
 	details_node->LinkEndChild(scenes_node);
-	stringstream ss;
 	for (auto s : scenes)
 	{
 		ss.str("");
@@ -326,8 +334,8 @@ int main(int argc, char* argv[])
 					info_node->SetAttribute("format", "%d");
 					iteration_set_node->LinkEndChild(info_node);
 
-					cm.setActiveSide("left");
-					Vector3d endeffector_point = Vector3d(0.08, 0.07, 0);
+					cm.setActiveSide(h);
+					Vector3d endeffector_point = endeffector_points[m][h];
 					VectorXd endeffector_final_pose = endeffector_poses[m][s][h];
 
 					int info;
@@ -336,7 +344,7 @@ int main(int argc, char* argv[])
 					{
 						FPPOutput output;
 						cout << "Model: " << m << " Scene: " << s << " Hand: " << h << " Iteration: " << i + 1 << endl;
-						info = fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, 0.005, endeffector_point);
+						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, 0.005, endeffector_point);
 						addTextToElement(info_node, info);
 						addTextToElement(computation_time_node, output.computation_time);
 						addTextToElement(IK_time_node, output.IK_time);

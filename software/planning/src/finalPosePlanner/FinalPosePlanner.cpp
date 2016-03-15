@@ -78,12 +78,15 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
     VectorXd phi;
     Matrix3Xd normal, xA, xB;
     vector<int> bodyA_idx, bodyB_idx;
-	int info = 13;
+	int info = 0;
 	int ik_info;
+	int sample_info;
+	vector<int> sample(2);
 	while (info != 1)
 	{
 		before_sampling = chrono::high_resolution_clock::now();
-		vector<int> sample = capability_map.drawCapabilityMapSample();
+		sample_info = capability_map.drawCapabilityMapSample(sample);
+		if (sample_info != 1){return sample_info;}
 		after_sampling = chrono::high_resolution_clock::now();
 		sampling_time += chrono::duration_cast<chrono::microseconds>(after_sampling - before_sampling).count();
 //		GENERATE CONSTRAINTS

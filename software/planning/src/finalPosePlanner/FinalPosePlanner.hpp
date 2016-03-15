@@ -53,6 +53,8 @@ public:
 	 * \return An integer\n
 	 * 1   Final pose has been found.\n
 	 * 12  Error: Incorrect input.
+	 * 13  Error: no solution found using all samples.
+	 * 14  Error: Iteration limit reached.
 	 */
 	int findFinalPose(RigidBodyTree &robot, std::string end_effector, std::string endeffector_side, Eigen::VectorXd start_configuration,
 			Eigen::VectorXd endeffector_final_pose, const std::vector<RigidBodyConstraint *> &additional_constraints, Eigen::VectorXd nominal_configuration,

@@ -141,30 +141,77 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			std::cout << "Loaded n_occupancy_voxels: " << this->n_occupancy_voxels << endl;
 			inputFile.read((char *) &this->n_occupancy_orient, sizeof(unsigned int));
 			std::cout << "Loaded n_occupancy_orient: " << this->n_occupancy_orient << endl;
-			this->occupancy_map.resize(this->n_occupancy_voxels);
+			this->occupancy_maps[this->Side::LEFT].resize(this->n_occupancy_voxels);
+			this->occupancy_maps[this->Side::RIGHT].resize(this->n_occupancy_voxels);
 			this->active_orientations.resize(this->n_voxels);
 			unsigned int n_colliding_orient;
 			unsigned int n_colliding_voxels;
 			unsigned int colliding_orient;
 			unsigned int colliding_voxel;
 
-			std::cout << "Loading left occupancy map ..." << endl;
-			for (int vox = 0; vox < this->n_occupancy_voxels; vox++)
+			vector<Side> sides;
+			sides.push_back(Side::LEFT);
+			sides.push_back(Side::RIGHT);
+			for (auto s : sides)
 			{
-				this->occupancy_map[vox].resize(this->n_occupancy_orient);
-				inputFile.read((char *) &n_colliding_orient, sizeof(n_colliding_orient));
-				for (int orient = 0; orient < n_colliding_orient; orient++)
+				switch(s)
 				{
-					inputFile.read((char *) &n_colliding_voxels, sizeof(n_colliding_voxels));
-					inputFile.read((char *) &colliding_orient, sizeof(colliding_orient));
-					for (int cmVox = 0; cmVox < n_colliding_voxels; cmVox++)
+					case Side::LEFT:
+						std::cout << "Loading left occupancy map ..." << endl;
+						break;
+					case Side::RIGHT:
+						std::cout << "Loading right occupancy map ..." << endl;
+						break;
+				}
+				for (int vox = 0; vox < this->n_occupancy_voxels; vox++)
+				{
+					this->occupancy_maps[s][vox].resize(this->n_occupancy_orient);
+					inputFile.read((char *) &n_colliding_orient, sizeof(n_colliding_orient));
+//					this->log << "voxel" << vox << ": " << n_colliding_orient;
+					for (int orient = 0; orient < n_colliding_orient; orient++)
 					{
-						inputFile.read((char *) &colliding_voxel, sizeof(colliding_voxel));
-						this->occupancy_map[vox][colliding_orient - 1].push_back(colliding_voxel - 1);
+						inputFile.read((char *) &n_colliding_voxels, sizeof(n_colliding_voxels));
+						inputFile.read((char *) &colliding_orient, sizeof(colliding_orient));
+//						this->log << " " << n_colliding_voxels << " " << colliding_orient << "[";
+						for (int cmVox = 0; cmVox < n_colliding_voxels; cmVox++)
+						{
+							inputFile.read((char *) &colliding_voxel, sizeof(colliding_voxel));
+//							this->log << colliding_voxel << " ";
+							this->occupancy_maps[s][vox][colliding_orient - 1].push_back(colliding_voxel - 1);
+						}
+//						this->log << "]";
 					}
+//					this->log << endl;
+				}
+				switch(s)
+				{
+					case Side::LEFT:
+						std::cout << "Left occupancy map loaded" << endl;
+						break;
+					case Side::RIGHT:
+						std::cout << "Right occupancy map loaded" << endl;
+						break;
 				}
 			}
-			std::cout << "Left occupancy map loaded" << endl;
+
+//			std::cout << "Loading right occupancy map ..." << endl;
+//			for (int vox = 0; vox < this->n_occupancy_voxels; vox++)
+//			{
+//				this->occupancy_maps[this->Side::RIGHT][vox].resize(this->n_occupancy_orient);
+//				inputFile.read((char *) &n_colliding_orient, sizeof(n_colliding_orient));
+//				cout << n_colliding_orient << endl;
+//				for (int orient = 0; orient < n_colliding_orient; orient++)
+//				{
+//					inputFile.read((char *) &n_colliding_voxels, sizeof(n_colliding_voxels));
+//					inputFile.read((char *) &colliding_orient, sizeof(colliding_orient));
+//					for (int cmVox = 0; cmVox < n_colliding_voxels; cmVox++)
+//					{
+//						inputFile.read((char *) &colliding_voxel, sizeof(colliding_voxel));
+//						this->occupancy_maps[this->Side::RIGHT][vox][colliding_orient - 1].push_back(colliding_voxel - 1);
+//					}
+//				}
+//			}
+//			std::cout << "Left occupancy map loaded" << endl;
 
 			inputFile.read((char *) &this->occupancy_map_resolution, sizeof(double));
 			std::cout << "Loaded occupancy_map_resolution :" << this->occupancy_map_resolution << endl;
@@ -445,7 +492,7 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 	{
 		for (int orient = 0; orient < this->n_occupancy_orient; orient++)
 		{
-			for (int vox : this->occupancy_map[om_vox][orient])
+			for (int vox : this->occupancy_maps[this->active_side][om_vox][orient])
 			{
 				if (find(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient) != this->active_orientations[vox].end() && orient == 52){voxels.push_back(vox);}
 				this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient),
@@ -595,7 +642,7 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 	}
 }
 
-vector<int> CapabilityMap::drawCapabilityMapSample()
+int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 {
 	if (this->total_probability.size() == 0)
 	{
@@ -608,13 +655,12 @@ vector<int> CapabilityMap::drawCapabilityMapSample()
 	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
 	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;
 	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data();
-	vector<int> sample(2);
 	sample[0] = this->total_probability_voxels[idx];
 	sample[1] = this->total_probability_orientations[idx];
 	this->total_probability.erase(this->total_probability.begin() + idx);
 	this->total_probability_voxels.erase(this->total_probability_voxels.begin() + idx);
 	this->total_probability_orientations.erase(this->total_probability_orientations.begin() + idx);
-	return sample;
+	return 1;
 }
 
 void CapabilityMap::setOccupancyMapOrientations()
@@ -700,11 +746,11 @@ void CapabilityMap::drawOccupancyMap(bot_lcmgl_t *lcmgl, unsigned int capability
 	bot_lcmgl_point_size(lcmgl, 10);
 	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
 	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-	for (int vox = 0; vox < this->occupancy_map.size(); vox++)
+	for (int vox = 0; vox < this->occupancy_maps[this->active_side].size(); vox++)
 	{
-		for(int i = 0; i < this->occupancy_map[vox].size(); i++)
+		for(int i = 0; i < this->occupancy_maps[this->active_side][vox].size(); i++)
 		{
-			if (this->occupancy_map[vox][orient].size() > 0 && find(this->occupancy_map[vox][orient].begin(), this->occupancy_map[vox][orient].end(), capability_map_voxel) !=this->occupancy_map[vox][orient].end())
+			if (this->occupancy_maps[this->active_side][vox][orient].size() > 0 && find(this->occupancy_maps[this->active_side][vox][orient].begin(), this->occupancy_maps[this->active_side][vox][orient].end(), capability_map_voxel) !=this->occupancy_maps[this->active_side][vox][orient].end())
 			{
 				Vector3d point = rpy2rotmat(this->occupancy_map_orientations[orient]) * this->occupancy_voxel_centres[vox] + centre;
 				bot_lcmgl_vertex3d(lcmgl, point(0), point(1), point(2));

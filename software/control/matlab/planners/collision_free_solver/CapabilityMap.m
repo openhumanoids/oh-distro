@@ -237,21 +237,23 @@
         collmap = zeros(obj.occupancy_map_n_voxels,105, 100);
         activeVoxels = obj.reachability_index > 0;
         activeVoxelsIdx = find(obj.reachability_index > 0);
-        for v = 1:obj.occupancy_map_n_voxels
-          for i = 1:numel(obj.occupancy_map.left)
-            coll = activeVoxelsIdx(obj.occupancy_map.left{i}(v,activeVoxels));
-            ncoll = length(coll);
-            collmap(v, i, 1:ncoll) = coll;
+        for h = {'left', 'right'}
+          for v = 1:obj.occupancy_map_n_voxels
+            for i = 1:obj.occupancy_map_n_orient
+              coll = activeVoxelsIdx(obj.occupancy_map.(h{1}){i}(v,activeVoxels));
+              ncoll = length(coll);
+              collmap(v, i, 1:ncoll) = coll;
+            end
           end
-        end
-        for i = 1:size(collmap, 1)
-          fwrite(file_id, nnz(sum(squeeze(collmap(i,:,:))~=0,2)), 'uint32');
-          for j = 1:size(collmap, 2)
-            ncoll = nnz(collmap(i,j,:));
-            if ncoll > 0
-              fwrite(file_id, ncoll, 'uint32');
-              fwrite(file_id, j, 'uint32');
-              fwrite(file_id, collmap(i,j,1:ncoll), 'uint32');
+          for i = 1:size(collmap, 1)
+            fwrite(file_id, nnz(sum(squeeze(collmap(i,:,:))~=0,2)), 'uint32');
+            for j = 1:size(collmap, 2)
+              ncoll = nnz(collmap(i,j,:));
+              if ncoll > 0
+                fwrite(file_id, ncoll, 'uint32');
+                fwrite(file_id, j, 'uint32');
+                fwrite(file_id, collmap(i,j,1:ncoll), 'uint32');
+              end
             end
           end
         end
