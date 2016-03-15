@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
 					{
 						FPPOutput output;
 						cout << "Model: " << m << " Scene: " << s << " Hand: " << h << " Iteration: " << i + 1 << endl;
-						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, 0.005, endeffector_point);
+						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, endeffector_point);
 						addTextToElement(info_node, info);
 						addTextToElement(computation_time_node, output.computation_time);
 						addTextToElement(IK_time_node, output.IK_time);

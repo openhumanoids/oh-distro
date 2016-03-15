@@ -53,13 +53,13 @@ public:
 	 * \return An integer\n
 	 * 1   Final pose has been found.\n
 	 * 12  Error: Incorrect input.
-	 * 13  Error: no solution found using all samples.
+	 * 13  Error: no more sample to use.
 	 * 14  Error: Iteration limit reached.
 	 */
 	int findFinalPose(RigidBodyTree &robot, std::string end_effector, std::string endeffector_side, Eigen::VectorXd start_configuration,
 			Eigen::VectorXd endeffector_final_pose, const std::vector<RigidBodyConstraint *> &additional_constraints, Eigen::VectorXd nominal_configuration,
 			CapabilityMap &capability_map, std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output,
-			double min_distance = 0.005, Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0)); //todo: active collision options?
+			Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0), int max_iterations = 1000, double min_distance = 0.005); //todo: active collision options?
 
 private:
 	/**

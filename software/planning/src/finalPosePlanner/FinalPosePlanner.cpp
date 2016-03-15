@@ -16,8 +16,7 @@ FinalPosePlanner::FinalPosePlanner()
 
 int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, string endeffector_side, VectorXd start_configuration,
 		VectorXd endeffector_final_pose, const vector<RigidBodyConstraint *> &additional_constraints, VectorXd nominal_configuration,
-		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output, double min_distance, Vector3d endeffector_point)
-{
+		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output, Vector3d endeffector_point, int max_iterations,  double min_distance){
 
 //	timing variables
     chrono::high_resolution_clock::time_point before_FPP, after_FPP, before_IK, after_IK, before_CM, after_CM, before_collision, after_collision, before_constraints, after_constraints, before_kin, after_kin, before_sampling, after_sampling;
@@ -78,15 +77,21 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
     VectorXd phi;
     Matrix3Xd normal, xA, xB;
     vector<int> bodyA_idx, bodyB_idx;
-	int info = 0;
+	int info = 14;
 	int ik_info;
 	int sample_info;
+	int n_iter = 0;
 	vector<int> sample(2);
-	while (info != 1)
+	while (info != 1 && n_iter <= max_iterations)
 	{
+		n_iter++;
 		before_sampling = chrono::high_resolution_clock::now();
 		sample_info = capability_map.drawCapabilityMapSample(sample);
-		if (sample_info != 1){return sample_info;}
+		if (sample_info != 1)
+		{
+			cout << "Error: FinalPosePlanner::No more sample to use" << endl;
+			return sample_info;
+		}
 		after_sampling = chrono::high_resolution_clock::now();
 		sampling_time += chrono::duration_cast<chrono::microseconds>(after_sampling - before_sampling).count();
 //		GENERATE CONSTRAINTS
@@ -137,7 +142,14 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
     output.constraints_time = constraints_time/1.e6;
     output.kinematics_time = kin_time/1.e6;
     output.sampling_time = sampling_time/1.e6;
-    cout << "Solution found in " << computation_time/1.e6 << " s" << endl;
+    if(info == 1)
+    {
+    	cout << "Solution found in " << computation_time/1.e6 << " s" << endl;
+    }
+    else
+    {
+		cout << "Error: FinalPosePlanner::Iteration limit reached" << endl;
+    }
 	return info;
 }
 

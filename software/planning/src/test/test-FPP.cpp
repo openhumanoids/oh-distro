@@ -125,7 +125,7 @@ int main()
 
 		FPPOutput output;
 
-		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, 0.005, endeffector_point);
+		fpp.findFinalPose(robot, "leftPalm", "left", start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, endeffector_point);
 //		bot_lcmgl_t* lcmgl = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Capability map");
 //		cm.drawActiveMap(lcmgl, 52, Vector3d(0,0,0), false);
 	}
