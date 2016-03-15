@@ -135,7 +135,6 @@ classdef FinalPosePlanner
       
       base = obj.robot.findLinkId(obj.capability_map.base_link);
       map_centre = obj.capability_map.map_centre.(obj.grasping_hand);
-      kinsol = obj.robot.doKinematics(obj.q_start);
       obj.capability_map = obj.capability_map.computePositionProbabilityDistribution([], bsxfun(@rdivide, map_centre, obj.capability_map.map_ub)');
       pos_prob = obj.capability_map.vox_centres_prob;
       
@@ -181,7 +180,7 @@ classdef FinalPosePlanner
         constraints = [{torsoPosConstraint, torsoEulerConstraint}, obj.goal_constraints, obj.additional_constraints];
         [q, info, infeasible_constraints] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
         valid = (info < 10);
-        kinSol = obj.robot.doKinematics(q, ones(obj.robot.num_positions, 1), options);
+        kinSol = obj.robot.doKinematics(q);
         if valid
           valid = ~obj.robot.collidingPointsCheckOnly(kinSol, point_cloud, obj.min_distance);
           if valid
