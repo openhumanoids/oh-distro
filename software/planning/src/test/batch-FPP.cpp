@@ -217,6 +217,8 @@ int main(int argc, char* argv[])
 //  INITIALIZE OUTPUT FILE
 	string output_file_name = "output.fpp";
 	XMLDocument xml_doc;
+	XMLDeclaration *declaration_node = xml_doc.NewDeclaration();
+	xml_doc.LinkEndChild(declaration_node);
 	XMLElement *results_node = xml_doc.NewElement("results");
 	xml_doc.LinkEndChild(results_node);
 
