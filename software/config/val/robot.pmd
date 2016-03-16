@@ -23,6 +23,10 @@ group "2.drivers" {
         exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a $VAL_MULTISENSE_IP -m 1500";
         host = "localhost";
     }
+    cmd "spin-lidar" {
+        exec = "drc-spin-lidar";
+        host = "localhost";
+    }
 }
 
 
