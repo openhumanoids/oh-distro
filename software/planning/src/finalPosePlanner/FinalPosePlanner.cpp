@@ -55,6 +55,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
 	capability_map.reduceActiveSet(true, point_cloud);
+	output.n_valid_samples = capability_map.getNActiveVoxels();
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
 	after_CM = chrono::high_resolution_clock::now();
@@ -72,7 +73,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	constraints.resize(constraints.size() + 2);
 	after_constraints = chrono::high_resolution_clock::now();
 	constraints_time += chrono::duration_cast<chrono::microseconds>(after_constraints - before_constraints).count();
-	VectorXd final_pose(robot.num_positions);
+	VectorXd final_configuration(robot.num_positions);
 	vector<string> infeasible_constraints;
     VectorXd phi;
     Matrix3Xd normal, xA, xB;
@@ -108,13 +109,13 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 
 //		COMPUTE CONFIGURATION
 		before_IK = chrono::high_resolution_clock::now();
-		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_pose, ik_info, infeasible_constraints, ik_options);
+		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_configuration, ik_info, infeasible_constraints, ik_options);
 		after_IK = chrono::high_resolution_clock::now();
 	    IK_time += chrono::duration_cast<chrono::microseconds>(after_IK - before_IK).count();
 		if (ik_info < 10)
 		{
 			before_kin = chrono::high_resolution_clock::now();
-			KinematicsCache<double> kinsol = robot.doKinematics(final_pose);
+			KinematicsCache<double> kinsol = robot.doKinematics(final_configuration);
 			after_kin = chrono::high_resolution_clock::now();
 			kin_time += chrono::duration_cast<chrono::microseconds>(after_kin - before_kin).count();
 			before_collision = chrono::high_resolution_clock::now();
@@ -127,7 +128,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 				if (((ArrayXd)phi > min_distance).all())
 				{
 					info = 1;
-					publisher.publish(lcm, robot, final_pose);
+					publisher.publish(lcm, robot, final_configuration);
 				}
 			}
 		}
@@ -135,6 +136,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	after_FPP = chrono::high_resolution_clock::now();
     auto computation_time = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();
     auto capability_map_time = chrono::duration_cast<chrono::microseconds>(after_CM - before_CM).count();
+    output.n_valid_samples_used = n_iter;
     output.IK_time = IK_time/1.e6;
     output.computation_time = computation_time/1.e6;
     output.capability_map_time = capability_map_time/1.e6;
@@ -145,10 +147,14 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
     if(info == 1)
     {
     	cout << "Solution found in " << computation_time/1.e6 << " s" << endl;
+    	MatrixXd cost_matrix;
+    	ik_options.getQ(cost_matrix);
+    	output.cost = (nominal_configuration - final_configuration).transpose() * cost_matrix * (nominal_configuration - final_configuration);
     }
     else
     {
 		cout << "Error: FinalPosePlanner::Iteration limit reached" << endl;
+		output.cost = numeric_limits<double>::infinity();
     }
 	return info;
 }

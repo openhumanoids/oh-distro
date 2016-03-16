@@ -336,6 +336,18 @@ int main(int argc, char* argv[])
 					info_node->SetAttribute("format", "%d");
 					iteration_set_node->LinkEndChild(info_node);
 
+					XMLElement *n_samples_node = xml_doc.NewElement("n_valid_samples");
+					n_samples_node->SetAttribute("format", "%d");
+					iteration_set_node->LinkEndChild(n_samples_node);
+
+					XMLElement *n_used_samples_node = xml_doc.NewElement("n_valid_samples_used");
+					n_used_samples_node->SetAttribute("format", "%d");
+					iteration_set_node->LinkEndChild(n_used_samples_node);
+
+					XMLElement *cost_node = xml_doc.NewElement("cost");
+					cost_node->SetAttribute("format", "%g");
+					iteration_set_node->LinkEndChild(cost_node);
+
 					cm.setActiveSide(h);
 					Vector3d endeffector_point = endeffector_points[m][h];
 					VectorXd endeffector_final_pose = endeffector_poses[m][s][h];
@@ -355,6 +367,9 @@ int main(int argc, char* argv[])
 						addTextToElement(constraints_time_node, output.constraints_time);
 						addTextToElement(kin_time_node, output.kinematics_time);
 						addTextToElement(sampling_time_node, output.sampling_time);
+						addTextToElement(n_samples_node, output.n_valid_samples);
+						addTextToElement(n_used_samples_node, output.n_valid_samples_used);
+						addTextToElement(cost_node, output.cost);
 					}
 				}
 			}

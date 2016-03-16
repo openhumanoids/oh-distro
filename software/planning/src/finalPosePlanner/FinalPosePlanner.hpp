@@ -19,9 +19,11 @@
 
 struct FPPOutput
 {
+	int final_orient;
 	int n_valid_samples;
 	int n_valid_samples_used;
 	double cost;
+	int info;
 	double computation_time;
 	double IK_time;
 	double capability_map_time;

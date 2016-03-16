@@ -283,11 +283,6 @@ Vector2i CapabilityMap::getMapSize()
 	return size;
 }
 
-int CapabilityMap::getNVoxels()
-{
-	return this->n_voxels;
-}
-
 void CapabilityMap::setNVoxels(unsigned int n_voxels)
 {
 	this->n_voxels = n_voxels;

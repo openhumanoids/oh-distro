@@ -50,7 +50,8 @@ public:
 	void loadFromMatlabBinFile(const std::string map_file);
 	void saveToFile(const std::string map_file);
 	Eigen::Vector2i getMapSize();
-	int getNVoxels();
+	int getNVoxels(){return n_voxels;}
+	int getNActiveVoxels(){return active_voxels.size();}
 	Eigen::Vector3d getMapCentre(){return map_centre;}
 	Eigen::Vector3d getMapUpperBound(){return map_upper_bound;}
 	Eigen::Vector3d getMapLowerBound(){return map_lower_bound;}
