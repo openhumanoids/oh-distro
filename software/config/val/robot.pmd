@@ -94,7 +94,7 @@ group "6.exotica" {
 
 
 cmd "director" {
-    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2";
+    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2 --startup $DRC_BASE/software/modules/ohdirector/runstartup.py";
     host = "localhost";
 }
 
