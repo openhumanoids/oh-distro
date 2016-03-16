@@ -40,7 +40,7 @@ group "4.plan_and_control" {
         host = "localhost";
     }
     cmd "contact_monitor" {
-        exec = "drc-contact-monitor";
+        exec = "drc-contact-monitor -n";
         host = "localhost";
     }
 
