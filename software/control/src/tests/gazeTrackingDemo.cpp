@@ -393,47 +393,63 @@ void App::solveGazeProblem(){
       jointNames.push_back(model_.getPositionName(i));
     }
 
-    // Clamp neck joints in q_sol to safe values
-    std::vector<std::string>::iterator it1 = std::find(jointNames.begin(),
-        jointNames.end(), "lowerNeckPitch");
-    int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
-    float lowerNeckPitchAngle = q_sol[lowerNeckPitchIndex];
-    q_sol[lowerNeckPitchIndex] = clamp(lowerNeckPitchAngle, toRad(0.0), toRad(45.0));
-
-    std::vector<std::string>::iterator it2 = std::find(jointNames.begin(),
-        jointNames.end(), "neckYaw");
-    int neckYawIndex = std::distance(jointNames.begin(), it2);
-    float neckYawAngle = q_sol[neckYawIndex];
-    q_sol[neckYawIndex] = clamp(neckYawAngle, toRad(-15.0), toRad(15.0));
-
-    std::vector<std::string>::iterator it3 = std::find(jointNames.begin(),
-        jointNames.end(), "upperNeckPitch");
-    int upperNeckPitchIndex = std::distance(jointNames.begin(), it3);
-    float upperNeckPitchAngle = q_sol[upperNeckPitchIndex];
-    q_sol[upperNeckPitchIndex] = clamp(upperNeckPitchAngle, toRad(-50.0), toRad(0.0));
-
-
     bot_core::robot_state_t robot_state_msg;
     getRobotState(robot_state_msg, 0*1E6, q_sol, jointNames);
-    lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg); // for debug
+    // lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg); // for debug
+
 
     bot_core::robot_state_t joint_position_goal_msg = bot_core::robot_state_t();
     std::vector<std::string> neckJointNames;
     neckJointNames.push_back("lowerNeckPitch");
     neckJointNames.push_back("neckYaw");
     neckJointNames.push_back("upperNeckPitch");
-    getRobotState(joint_position_goal_msg, 0*1E6, q_sol, neckJointNames);
+    // getRobotState(joint_position_goal_msg, 0*1E6, q_sol, neckJointNames);
+    joint_position_goal_msg.utime = 0*1E6;  // TODO: current timestamp 
+    joint_position_goal_msg.num_joints = 3;
+    joint_position_goal_msg.joint_name.assign(3, "");
+    joint_position_goal_msg.joint_position.assign(3, (const float &) 0.);
+    joint_position_goal_msg.joint_velocity.assign(3, (const float &) 0.);
+    joint_position_goal_msg.joint_effort.assign(3, (const float &) 0.);
+    joint_position_goal_msg.pose.translation.x = 0.0;
+    joint_position_goal_msg.pose.translation.y = 0.0;
+    joint_position_goal_msg.pose.translation.z = 0.0;
+    joint_position_goal_msg.pose.rotation.w = 1.0;
+    joint_position_goal_msg.pose.rotation.x = 0.0;
+    joint_position_goal_msg.pose.rotation.y = 0.0;
+    joint_position_goal_msg.pose.rotation.z = 0.0;
+    joint_position_goal_msg.twist.linear_velocity.x = 0.0;
+    joint_position_goal_msg.twist.linear_velocity.y = 0.0;
+    joint_position_goal_msg.twist.linear_velocity.z = 0.0;
+    joint_position_goal_msg.twist.angular_velocity.x = 0.0;
+    joint_position_goal_msg.twist.angular_velocity.y = 0.0;
+    joint_position_goal_msg.twist.angular_velocity.z = 0.0;
+    
+    // Clamp neck joints in q_sol to safe values
+    std::vector<std::string>::iterator it1 = std::find(jointNames.begin(),
+        jointNames.end(), "lowerNeckPitch");
+    int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
+
+    std::vector<std::string>::iterator it2 = std::find(jointNames.begin(),
+        jointNames.end(), "neckYaw");
+    int neckYawIndex = std::distance(jointNames.begin(), it2);
+
+    std::vector<std::string>::iterator it3 = std::find(jointNames.begin(),
+        jointNames.end(), "upperNeckPitch");
+    int upperNeckPitchIndex = std::distance(jointNames.begin(), it3);
+
+    joint_position_goal_msg.joint_name[0] = "lowerNeckPitch";
+    joint_position_goal_msg.joint_position[0] = q_sol[lowerNeckPitchIndex];
+    joint_position_goal_msg.joint_name[1] = "neckYaw";
+    joint_position_goal_msg.joint_position[1] = q_sol[neckYawIndex];
+    joint_position_goal_msg.joint_name[2] = "upperNeckPitch";
+    joint_position_goal_msg.joint_position[2] = q_sol[upperNeckPitchIndex];
+
     lcm_->publish("JOINT_POSITION_GOAL", &joint_position_goal_msg);
 
-    // std::cout << "Pre-Clamp " 
-    //           << toDeg(lowerNeckPitchAngle) << "*, "
-    //           << toDeg(neckYawAngle) << "*, "
-    //           << toDeg(upperNeckPitchAngle) << "*, " << std::endl;
-
-    // std::cout << "Clamped " 
-    //           << toDeg(q_sol[lowerNeckPitchIndex]) << "*, "
-    //           << toDeg(q_sol[neckYawIndex]) << "*, "
-    //           << toDeg(q_sol[upperNeckPitchIndex]) << "*" << std::endl;
+    std::cout << "JOINT_POSTION_GOAL " 
+              << (q_sol[lowerNeckPitchIndex]) << "*, "
+              << (q_sol[neckYawIndex]) << "*, "
+              << (q_sol[upperNeckPitchIndex]) << "*" << std::endl;
   } else {
     std::cerr << "Mode not selected" << std::endl;
   }
