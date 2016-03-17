@@ -310,6 +310,16 @@ RowVector2d CapabilityMap::getCapabilityMapSize()
 	return size;
 }
 
+int CapabilityMap::getNActiveSamples()
+{
+	int size = 0;
+	for(auto i : this->active_orientations)
+	{
+		size += i.size();
+	}
+	return size;
+}
+
 vector<Vector3d> CapabilityMap::getActiveVoxelCentres()
 {
 	vector<Vector3d> centres;

@@ -52,6 +52,7 @@ public:
 	Eigen::Vector2i getMapSize();
 	int getNVoxels(){return n_voxels;}
 	int getNActiveVoxels(){return active_voxels.size();}
+	int getNActiveSamples();
 	Eigen::Vector3d getMapCentre(){return map_centre;}
 	Eigen::Vector3d getMapUpperBound(){return map_upper_bound;}
 	Eigen::Vector3d getMapLowerBound(){return map_lower_bound;}

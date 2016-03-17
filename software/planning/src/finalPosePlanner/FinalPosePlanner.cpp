@@ -55,7 +55,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
 	capability_map.reduceActiveSet(true, point_cloud);
-	output.n_valid_samples = capability_map.getNActiveVoxels();
+	output.n_valid_samples = capability_map.getNActiveSamples();
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
 	after_CM = chrono::high_resolution_clock::now();
