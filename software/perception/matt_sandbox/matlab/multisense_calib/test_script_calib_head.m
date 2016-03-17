@@ -6,7 +6,8 @@
 %logfile1 = '/home/antone/data/2014-03-28_multisense-02-calib/lcmlog-2014-03-28.03';
 %logfile1 = '/home/antone/data/2014-07-09_multisense-05-calib/lcmlog-2014-07-09.02';
 %logfile1 = '/home/antone/data/2015-01-29_multisense-47-calib/lcmlog-2015-01-29.01';
-logfile1 = '/mnt/hgfs/host-data/Projects/DRC/data/2015-02-11_multisense-02-calib/lcmlog-2015-02-11.00.stripped';
+%logfile1 = '/mnt/hgfs/host-data/Projects/DRC/data/2015-02-11_multisense-02-calib/lcmlog-2015-02-11.00.stripped';
+logfile1 = '/home/mfallon/logs/multisense-calibration-mit-atlas/lcmlog-2015-02-11.00.stripped';
 sensor_id = 2;
 addpath('../common');
 setup_lcm;
@@ -282,7 +283,7 @@ for iter = 1:max_iters
 end
 result3 = res;
 
-return
+%return
 
 %% get pixel data
 %res = result3;
@@ -296,14 +297,14 @@ figure, myplot3(all_pts(:,1:3),'r.'); axis equal; view3d
 %% output as pcl cloud
 rgb = impixel(img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
-savepcd('/tmp/xyzrgb_orig.pcd',xyzrgb');
+%savepcd('/tmp/xyzrgb_orig.pcd',xyzrgb');
 
 %% output camera + lidar as cloud
 rgb = impixel(img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
 all_pts2 = accum_scans(scans,res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,[1,10],[-1000,1000],30);
 xyzrgb = [all_pts2(:,1:3), ones(size(all_pts2,1),3);xyzrgb];
-savepcd('/tmp/xyzrgb_all.pcd',xyzrgb');
+%savepcd('/tmp/xyzrgb_all.pcd',xyzrgb');
 
 %% show all lidar points superimposed on image
 plot_points_on_image(all_pts(:,1:3),K,img);
