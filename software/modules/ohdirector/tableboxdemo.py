@@ -319,16 +319,17 @@ class TableboxDemo(object):
     def spawnBlockAffordance(self):
         boxSize = 0.3
 
-        #boxFrame = self.footstepPlanner.getFeetMidPoint(self.robotStateModel)
-        #boxFrame.PreMultiply()
-        #boxFrame.Translate()
+        boxFrame = self.footstepPlanner.getFeetMidPoint(self.robotStateModel)
+        boxFrame.PreMultiply()
+        boxFrame.Translate([0.49, 0.0, 1.02])
         #vis.updateFrame(boxFrame, 'boxFrame')
-        #segmentation.createBlockAffordance(boxFrame, 1.0, 1, 1, boxSize, boxSize, boxSize, 'box', parent='affordances')
 
-        segmentation.createBlockAffordance([0.49, 0.0, 1.02], [1.0,0,0], [0,1.0,0], [0,0,1.0], boxSize, boxSize, boxSize, 'box', parent='affordances')
+        xAxis,yAxis, zAxis = transformUtils.getAxesFromTransform(boxFrame)
+        segmentation.createBlockAffordance(boxFrame.GetPosition(), xAxis,yAxis, zAxis, boxSize, boxSize, boxSize, 'box', parent='affordances')
 
 
     def planSimpleBoxGrasp(self):
+        ikplanner.getIkOptions().setProperty('Use pointwise', False)
 
         deliveryAffordance = om.findObjectByName('box')
         boxFrame = deliveryAffordance.getChildFrame().transform
@@ -356,9 +357,24 @@ class TableboxDemo(object):
         plan = self.constraintSet.runIkTraj()
         self.addPlan(plan)
 
+        ikplanner.getIkOptions().setProperty('Use pointwise', True)
+
+
     def planWalkToTable(self):
         self.planWalkToStance(om.findObjectByName('table stance frame').transform)
 
+
+    def planArmsSpread(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'Table Box Pick', 'spread hands')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)
+
+    def planArmsRaise(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'Table Box Pick', 'hands goalie')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)
 
 '''
 Tableboxdemo Image Fit for live-stream of webcam
@@ -400,9 +416,9 @@ class TableboxTaskPanel(TaskUserPanel):
         p1 = np.array([-2.44357705, -0.67163253, 0.7661112 ])
         p2 = np.array([-2.00631523, -0.35343912, 0.75367129])
         self.addManualButton('User Table', functools.partial(self.tableboxDemo.onSegmentTable, p1, p2) )        
-
-        #functools.partial(self.planDropPostureLower, side)
         self.addManualButton('Move to Stance',self.tableboxDemo.moveRobotToTableStanceFrame)
+        self.addManualButton('Spread Arms',self.tableboxDemo.planArmsSpread)
+
 
     def addDefaultProperties(self):
         self.params.addProperty('Base', 1,
@@ -449,13 +465,16 @@ class TableboxTaskPanel(TaskUserPanel):
     def addTasks(self):
 
         # some helpers
+        self.folder = None
         def addTask(task, parent=None):
+            parent = parent or self.folder
             self.taskTree.onAddTask(task, copy=False, parent=parent)
-
-        def addFunc(func, name, parent=None, confirm=False):
+        def addFunc(name, func, parent=None):
             addTask(rt.CallbackTask(callback=func, name=name), parent=parent)
-            if confirm:
-                addTask(rt.UserPromptTask(name='Confirm execution has finished', message='Continue when plan finishes.'), parent=parent)
+        def addFolder(name, parent=None):
+            self.folder = self.taskTree.addGroup(name, parent=parent)
+            return self.folder
+
 
         def addManipulation(func, name, parent=None, confirm=False):
             group = self.taskTree.addGroup(name, parent=parent)
@@ -463,29 +482,48 @@ class TableboxTaskPanel(TaskUserPanel):
             addTask(rt.CheckPlanInfo(name='check manip plan info'), parent=group)
             addFunc(v.commitManipPlan, name='execute manip plan', parent=group)
 
+        def addManipTask(name, planFunc, userPrompt=False):
+
+            prevFolder = self.folder
+            addFolder(name, prevFolder)
+            addFunc('plan motion', planFunc)
+            if not userPrompt:
+                addTask(rt.CheckPlanInfo(name='check manip plan info'))
+            else:
+                addTask(rt.UserPromptTask(name='approve manip plan', message='Please approve manipulation plan.'))
+            addFunc('execute manip plan', self.tableboxDemo.commitManipPlan)
+            addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'))
+            self.folder = prevFolder
+
         v = self.tableboxDemo
 
         self.taskTree.removeAllTasks()
 
 
         ###############
-        # add the tasks
+        # find the table
+        addFolder('Approach')
+        addFunc('fit table', self.tableboxDemo.userFitTable)
+        addFunc('populate stance', v.populateTableStanceFrame)
 
-        prep = self.taskTree.addGroup('Preparation')
-        #- segment table
-        addFunc(v.userFitTable, 'userFitTable', parent=prep)
-        #- find stance frame
-        addFunc(v.populateTableStanceFrame, 'populateTableStanceFrame', parent=prep)
-        #- walk to table
-        addFunc(v.planWalkToTable, 'planWalkToTable', parent=prep)
-        #- pitch head down
-        #- fit box
+        # walk to table
+        addFolder('Walk')
+        addTask(rt.RequestFootstepPlan(name='plan walk to table', stanceFrameName='table stance frame'))
+        addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
+        addTask(rt.SetNeckPitch(name='set neck position', angle=35))
+        addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
+
         #- raise arms
+        addFolder('Prep')
+        addManipTask('Spread Arms', v.planArmsSpread, userPrompt=True)
+        addManipTask('Raise Arms', v.planArmsRaise, userPrompt=True)
+
+        #- fit box
         #- grasp box
-        addFunc(v.spawnBlockAffordance, 'spawnBlockAffordance', parent=prep)
-        addFunc(v.planSimpleBoxGrasp, 'planSimpleBoxGrasp', parent=prep)
+        addFolder('Grasp')
+        addFunc('spawnBlockAffordance', v.spawnBlockAffordance)
+        addManipTask('Box Grasp', v.planSimpleBoxGrasp, userPrompt=True)
 
         #- lift box
         #- walk backwards
-
-
