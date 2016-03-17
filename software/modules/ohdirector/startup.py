@@ -5,7 +5,11 @@ import exampletaskpanel
 from director import tasklaunchpanel
 from director import applogic
 
+import manualwalkingdemo
+
+
 def startup(robotSystem, globalsDict=None):
+    rs = robotSystem
 
     valkyrieDriver = valkyriedriver.ValkyrieDriver()
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
@@ -21,3 +25,8 @@ def startup(robotSystem, globalsDict=None):
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
+
+    manualwalkingDemo = manualwalkingdemo.ManualWalkingDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
+    manualWalkingTaskPanel = manualwalkingdemo.ManualWalkingTaskPanel(manualwalkingDemo)
+
+    tasklaunchpanel.panel.addTaskPanel('Manual Walking', manualWalkingTaskPanel.widget)
