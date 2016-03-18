@@ -20,12 +20,6 @@ class Footstep():
         self.is_right_foot = is_right_foot
 
 class ManualWalkingDemo(object):
-    FOOTSIZE_REDUCTION = 0.04
-    FOOT_LENGTH = 0.25 - FOOTSIZE_REDUCTION
-    FOOT_WIDTH = 0.15 - FOOTSIZE_REDUCTION
-    FULL_FOOT_CONTACT_POINTS = np.array([[-0.5*FOOT_LENGTH, -0.5*FOOT_LENGTH, 0.5*FOOT_LENGTH, 0.5*FOOT_LENGTH],
-                                  [0.5*FOOT_WIDTH, -0.5*FOOT_WIDTH, 0.5*FOOT_WIDTH, -0.5*FOOT_WIDTH]])
-
     def __init__(self, robotStateModel, footstepsDriver, robotStateJointController, ikPlanner):
         self.footstepsDriver = footstepsDriver
         self.robotStateModel = robotStateModel
@@ -33,24 +27,14 @@ class ManualWalkingDemo(object):
         self.ikPlanner = ikPlanner
 
         # live operation flags
-        self.chosenTerrain = 'simple'
         self.leadingFootByUser = 'Left'
 
         # Manual footsteps placement options
-        self.nb_steps_ = 3
-        self.forward_step_ = 0.30
-        self.forward_balance_ = 0.05
-        self.step_width_ = 0.27
-        self.lateral_shift_ = 0.0
-
-
-    def loadSDFFile(self):
-        from director import sceneloader
-
-        if self.chosenTerrain == 'simple':
-            filename= os.environ['DRC_BASE'] + '/software/models/worlds/terrain_simple.sdf'
-            sc=sceneloader.SceneLoader()
-            sc.loadSDF(filename)
+        self.nbSteps = 3
+        self.forwardStep = 0.35
+        self.forwardBalance = 0.05
+        self.stepWidth = 0.25
+        self.lateralShift = 0.0
 
     def testManualWalking(self, leadFoot=None):
         if (leadFoot is None):
@@ -59,12 +43,13 @@ class ManualWalkingDemo(object):
             else:
                 leadFoot=self.ikPlanner.leftFootLink #'l_foot'
 
+        feetMidPoint = self.footstepsDriver.getFeetMidPoint(self.robotStateModel)
         startPose = self.robotStateJointController.getPose('EST_ROBOT_STATE')
 
-        self.manualFootstepsPlacement(leadFoot, removeFirstLeftStep = False, nextDoubleSupportPose = startPose)
+        self.manualFootstepsPlacement(leadFoot, removeFirstLeftStep = False, startFeetMidPoint = feetMidPoint, nextDoubleSupportPose = startPose)
 
 
-    def manualFootstepsPlacement(self, standingFootName, removeFirstLeftStep = True, nextDoubleSupportPose = None):
+    def manualFootstepsPlacement(self, standingFootName, removeFirstLeftStep = True, startFeetMidPoint = None, nextDoubleSupportPose = None):
         polyData = segmentation.getCurrentRevolutionData()
 
         obj = om.getOrCreateContainer('continuous')
@@ -76,46 +61,89 @@ class ManualWalkingDemo(object):
         vis.updateFrame(standingFootFrame, standingFootName, parent='cont debug', visible=False)
 
         # Step 1: Footsteps placement
-        footsteps = self.placeStepsManually(removeFirstLeftStep, nextDoubleSupportPose)
+        footsteps = self.placeStepsManually(removeFirstLeftStep, startFeetMidPoint)
 
         if not len(footsteps):
             print 'ERROR: No footsteps placed.'
             return
 
-        # Step 2: Publish footsteps
-        self.sendPlanningRequest(footsteps, nextDoubleSupportPose)
+        # Step 2: Send request to planner. It replies with complete footsteps plan message.
+        self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)
 
 
-    def placeStepsManually(self, removeFirstLeftStep = True, nextDoubleSupportPose = None):
+    def placeStepsManually(self, removeFirstLeftStep = True, startFeetMidPoint = None):
         
         # Place footsteps an the ground manually (no planning)
         # The number of footsteps, width and forward distance between steps are given by user.
         footsteps = []
 
-        current_x_left = nextDoubleSupportPose[0]
-        current_x_right = nextDoubleSupportPose[0]
-        current_y_left = nextDoubleSupportPose[1]+((self.step_width_)/2)
-        current_y_right = nextDoubleSupportPose[1]-((self.step_width_)/2)
+        startFeetMidPointOri = startFeetMidPoint.GetOrientation()
+        startFeetMidPointPos = startFeetMidPoint.GetPosition()
 
-        for i in range(self.nb_steps_):
-            current_y_right = current_y_right + self.lateral_shift_
-            current_y_left = current_y_left + self.lateral_shift_
+        contact_pts_left, contact_pts_right = self.footstepsDriver.getContactPts()
+        contact_pts_mid_left = np.mean(contact_pts_left, axis=0) # mid point on foot relative to foot frame
+        contact_pts_mid_right = np.mean(contact_pts_right, axis=0) # mid point on foot relative to foot frame
+ 
+        # robot 2D pose in world frame
+        x1 = startFeetMidPointPos[0]
+        y1 = startFeetMidPointPos[1]
+        z1 = startFeetMidPointPos[2]
+        theta = startFeetMidPointOri[2] * np.pi / 180.
+
+        # transformation from robot to world frame
+        T = np.matrix([[np.cos(theta), -np.sin(theta), x1],
+                       [np.sin(theta),  np.cos(theta), y1],
+                       [0, 0, 1]])
+
+        for i in range(self.nbSteps):
 
             if self.leadingFootByUser == 'Right':
-                current_x_right = current_x_right + self.forward_step_
-                current_x_left = current_x_right + self.forward_balance_
+                # right foot 2D pose in robot frame
+                fRight = self.forwardStep*(i+1) - contact_pts_mid_right[0]
+                wRight = -self.stepWidth/2 + self.lateralShift*(i+1)
+                pRightInRobot = np.matrix([[fRight],
+                                           [wRight],
+                                           [1]])
 
-                nextLeftTransform = transformUtils.frameFromPositionAndRPY([current_x_left,current_y_left,0.08], [0,0,0])
-                nextRightTransform = transformUtils.frameFromPositionAndRPY([current_x_right,current_y_right,0.08], [0,0,0])
+                # right foot 2D pose in world frame
+                pRightInWorld = T * pRightInRobot
+                nextRightTransform = transformUtils.frameFromPositionAndRPY([pRightInWorld[0],pRightInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
+
+                # left foot 2D pose in robot frame
+                fLeft = self.forwardStep*(i+1) - contact_pts_mid_left[0] + self.forwardBalance
+                wLeft = self.stepWidth/2 + self.lateralShift*(i+1)
+                pLeftInRobot = np.matrix([[fLeft],
+                                           [wLeft],
+                                           [1]])
+
+                # left foot 2D pose in world frame
+                pLeftInWorld = T * pLeftInRobot
+                nextLeftTransform = transformUtils.frameFromPositionAndRPY([pLeftInWorld[0],pLeftInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
 
                 footsteps.append(Footstep(nextRightTransform,True))
                 footsteps.append(Footstep(nextLeftTransform,False))
             else:
-                current_x_left = current_x_left + self.forward_step_
-                current_x_right = current_x_left + self.forward_balance_
+                # right foot 2D pose in robot frame
+                fRight = self.forwardStep*(i+1) - contact_pts_mid_right[0] + self.forwardBalance
+                wRight = -self.stepWidth/2 + self.lateralShift*(i+1)
+                pRightInRobot = np.matrix([[fRight],
+                                           [wRight],
+                                           [1]])
 
-                nextLeftTransform = transformUtils.frameFromPositionAndRPY([current_x_left,current_y_left,0.08], [0,0,0])
-                nextRightTransform = transformUtils.frameFromPositionAndRPY([current_x_right,current_y_right,0.08], [0,0,0])
+                # right foot 2D pose in world frame
+                pRightInWorld = T * pRightInRobot
+                nextRightTransform = transformUtils.frameFromPositionAndRPY([pRightInWorld[0],pRightInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
+
+                # left foot 2D pose in robot frame
+                fLeft = self.forwardStep*(i+1) - contact_pts_mid_left[0]
+                wLeft = self.stepWidth/2 + self.lateralShift*(i+1)
+                pLeftInRobot = np.matrix([[fLeft],
+                                           [wLeft],
+                                           [1]])
+
+                # left foot 2D pose in world frame
+                pLeftInWorld = T * pLeftInRobot
+                nextLeftTransform = transformUtils.frameFromPositionAndRPY([pLeftInWorld[0],pLeftInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
 
                 footsteps.append(Footstep(nextLeftTransform,False))
                 footsteps.append(Footstep(nextRightTransform,True))
@@ -128,8 +156,7 @@ class ManualWalkingDemo(object):
         return footsteps
 
 
-    def sendPlanningRequest(self, footsteps, nextDoubleSupportPose):
-
+    def sendFootstepPlanRequest(self, footsteps, nextDoubleSupportPose):
         goalSteps = []
 
         for i, footstep in enumerate(footsteps):
@@ -140,11 +167,8 @@ class ManualWalkingDemo(object):
             step.is_right_foot =  footstep.is_right_foot # flist[i,6] # is_right_foot
             step.params = self.footstepsDriver.getDefaultStepParams()
 
-            # Visualization via triads
-            #vis.updateFrame(step_t, str(i), parent="navigation")
             goalSteps.append(step)
 
-        #nextDoubleSupportPose = self.robotStateJointController.q
         request = self.footstepsDriver.constructFootstepPlanRequest(nextDoubleSupportPose)
         request.num_goal_steps = len(goalSteps)
         request.goal_steps = goalSteps
@@ -156,7 +180,6 @@ class ManualWalkingDemo(object):
         request.params.map_mode = 1 #  2 footplane, 0 h+n, 1 h+zup, 3 hori
         request.params.max_num_steps = len(goalSteps)
         request.params.min_num_steps = len(goalSteps)
-        #request.default_step_params.support_contact_groups = self.FULL_FOOT_CONTACT_POINTS
 
         lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', request)
 
@@ -181,13 +204,12 @@ class ManualWalkingTaskPanel(TaskUserPanel):
         self.addManualButton('EXECUTE Plan', self.manualWalkingDemo.executePlan)
 
     def addDefaultProperties(self):
-        self.params.addProperty('Terrain Type', 0, attributes=om.PropertyAttributes(enumNames=['Ground','Simple']))
         self.params.addProperty('Leading Foot', 0, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
-        self.params.addProperty('Steps Number', 3, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
-        self.params.addProperty('Forward Step', 0.30, attributes=om.PropertyAttributes(decimals=2, minimum=-0.5, maximum=0.5, singleStep=0.01))
-        self.params.addProperty('Forward Balance Step', 0.05, attributes=om.PropertyAttributes(decimals=2, minimum=-0.5, maximum=0.5, singleStep=0.01))
-        self.params.addProperty('Step Width', 0.27, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.01))
-        self.params.addProperty('Lateral Shift', 0.0, attributes=om.PropertyAttributes(decimals=2, minimum=-0.5, maximum=0.5, singleStep=0.01))
+        self.params.addProperty('Num Steps', 3, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
+        self.params.addProperty('Forward Step', 0.35, attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('Forward Balance Step', 0.05, attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.3, singleStep=0.01))
+        self.params.addProperty('Lateral Shift', 0.0, attributes=om.PropertyAttributes(decimals=2, minimum=-0.4, maximum=0.4, singleStep=0.01))
         self._syncProperties()
 
     def onPropertyChanged(self, propertySet, propertyName):
@@ -195,21 +217,16 @@ class ManualWalkingTaskPanel(TaskUserPanel):
         self.manualWalkingDemo.testManualWalking()
 
     def _syncProperties(self):
-        if self.params.getPropertyEnumValue('Terrain Type') == 'Simple':
-            self.manualWalkingDemo.chosenTerrain = 'simple'
-        else:
-            self.manualWalkingDemo.chosenTerrain = 'ground'        
-
         if self.params.getPropertyEnumValue('Leading Foot') == 'Left':
             self.manualWalkingDemo.leadingFootByUser = 'Left'
         else:
             self.manualWalkingDemo.leadingFootByUser = 'Right'
     
-        self.manualWalkingDemo.nb_steps_ = self.params.getProperty('Steps Number')
-        self.manualWalkingDemo.forward_step_ = self.params.getProperty('Forward Step')
-        self.manualWalkingDemo.forward_balance_ = self.params.getProperty('Forward Balance Step')
-        self.manualWalkingDemo.step_width_ = self.params.getProperty('Step Width')
-        self.manualWalkingDemo.lateral_shift_ = self.params.getProperty('Lateral Shift')
+        self.manualWalkingDemo.nbSteps = self.params.getProperty('Num Steps')
+        self.manualWalkingDemo.forwardStep = self.params.getProperty('Forward Step')
+        self.manualWalkingDemo.forwardBalance = self.params.getProperty('Forward Balance Step')
+        self.manualWalkingDemo.stepWidth = self.params.getProperty('Step Width')
+        self.manualWalkingDemo.lateralShift = self.params.getProperty('Lateral Shift')
 
     def addTasks(self):
 
@@ -224,10 +241,6 @@ class ManualWalkingTaskPanel(TaskUserPanel):
 
         ###############
         # add the tasks
-
-        # load
-        load = self.taskTree.addGroup('Loading')
-        addFunc(functools.partial(mw.loadSDFFile), 'load scenario', parent=load)
 
         # plan walking
         load = self.taskTree.addGroup('Placing Footsteps')
