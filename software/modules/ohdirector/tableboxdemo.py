@@ -131,6 +131,8 @@ class TableboxDemo(object):
         tableBox = vis.showPolyData(tableData.box, 'table box', parent=aff, color=[0,1,0], visible=False)
         tableBox.actor.SetUserTransform(tableData.frame)
 
+        relativeStance = transformUtils.frameFromPositionAndRPY([-0.6, 0, 0],[0,0,0])
+        self.computeTableStanceFrame(relativeStance)
 
     def computeTableStanceFrame(self, relativeStance):
         tableTransform = om.findObjectByName('table').getChildFrame().transform
@@ -142,11 +144,6 @@ class TableboxDemo(object):
         t.Translate(relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight)
         t.Concatenate(tableTransform)
         vis.showFrame(t, 'table stance frame', parent=om.findObjectByName('table'), scale=0.2)
-
-
-    def populateTableStanceFrame(self):
-        relativeStance = transformUtils.frameFromPositionAndRPY([-0.6, 0, 0],[0,0,0])
-        self.computeTableStanceFrame(relativeStance)
 
 
     # TODO: deprecate this function: (to end of section):
@@ -376,6 +373,13 @@ class TableboxDemo(object):
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
 
+    def planArmsDown(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'handsdown incl back')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)
+
+
 '''
 Tableboxdemo Image Fit for live-stream of webcam
 '''
@@ -502,12 +506,12 @@ class TableboxTaskPanel(TaskUserPanel):
 
         ###############
         # find the table
-        addFolder('Approach')
+        addFolder('approach')
+        addManipTask('move hands down', v.planArmsDown, userPrompt=True)
         addFunc('fit table', self.tableboxDemo.userFitTable)
-        addFunc('populate stance', v.populateTableStanceFrame)
 
         # walk to table
-        addFolder('Walk')
+        addFolder('walk')
         addTask(rt.RequestFootstepPlan(name='plan walk to table', stanceFrameName='table stance frame'))
         addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
         addTask(rt.SetNeckPitch(name='set neck position', angle=35))
@@ -515,15 +519,15 @@ class TableboxTaskPanel(TaskUserPanel):
         addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
         #- raise arms
-        addFolder('Prep')
-        addManipTask('Spread Arms', v.planArmsSpread, userPrompt=True)
-        addManipTask('Raise Arms', v.planArmsRaise, userPrompt=True)
+        addFolder('prep')
+        addManipTask('spread arms', v.planArmsSpread, userPrompt=True)
+        addManipTask('raise arms', v.planArmsRaise, userPrompt=True)
 
         #- fit box
         #- grasp box
-        addFolder('Grasp')
-        addFunc('spawnBlockAffordance', v.spawnBlockAffordance)
-        addManipTask('Box Grasp', v.planSimpleBoxGrasp, userPrompt=True)
+        addFolder('grasp')
+        addFunc('spawn block affordance', v.spawnBlockAffordance)
+        addManipTask('Box grasp', v.planSimpleBoxGrasp, userPrompt=True)
 
         #- lift box
         #- walk backwards
