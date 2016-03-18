@@ -153,7 +153,7 @@ class ManualWalkingTaskPanel(TaskUserPanel):
         self.addManualButton('EXECUTE Plan', self.manualWalkingDemo.executePlan)
 
     def addDefaultProperties(self):
-        self.params.addProperty('Leading Foot', 1, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
+        self.params.addProperty('Leading Foot', 0, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
         self.params.addProperty('Num Steps', 4, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
         self.params.addProperty('Forward Step', 0.35, attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
         self.params.addProperty('Forward Balance Step', 0.05, attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
