@@ -30,7 +30,7 @@ class ManualWalkingDemo(object):
         self.leadingFootByUser = 'Left'
 
         # Manual footsteps placement options
-        self.nbSteps = 3
+        self.numSteps = 3
         self.forwardStep = 0.35
         self.forwardBalance = 0.05
         self.stepWidth = 0.25
@@ -50,22 +50,10 @@ class ManualWalkingDemo(object):
 
 
     def manualFootstepsPlacement(self, standingFootName, removeFirstLeftStep = True, startFeetMidPoint = None, nextDoubleSupportPose = None):
-        polyData = segmentation.getCurrentRevolutionData()
-
-        obj = om.getOrCreateContainer('continuous')
-        om.getOrCreateContainer('cont debug', obj)
-
-        vis.updatePolyData( polyData, 'walking snapshot', parent='cont debug', visible=False)
-
-        standingFootFrame = self.robotStateModel.getLinkFrame(standingFootName)
-        vis.updateFrame(standingFootFrame, standingFootName, parent='cont debug', visible=False)
-
         # Step 1: Footsteps placement
         footsteps = self.placeStepsManually(removeFirstLeftStep, startFeetMidPoint)
 
-        if not len(footsteps):
-            print 'ERROR: No footsteps placed.'
-            return
+        assert len(footsteps) > 0
 
         # Step 2: Send request to planner. It replies with complete footsteps plan message.
         self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)
@@ -83,7 +71,7 @@ class ManualWalkingDemo(object):
         contact_pts_mid_left = np.mean(contact_pts_left, axis=0) # mid point on foot relative to foot frame
         contact_pts_mid_right = np.mean(contact_pts_right, axis=0) # mid point on foot relative to foot frame
 
-        for i in range(self.nbSteps):
+        for i in range(self.numSteps):
             fRight = self.forwardStep*(i+1) - contact_pts_mid_right[0] + self.forwardBalance
             wRight = -self.stepWidth/2 + self.lateralShift*(i+1)
             fLeft = self.forwardStep*(i+1) - contact_pts_mid_right[0]
@@ -134,9 +122,8 @@ class ManualWalkingDemo(object):
 
         # force correct planning parameters:
         request.params.leading_foot = goalSteps[0].is_right_foot
-        request.params.planning_mode = 1
-        request.params.nom_forward_step = 0.38
-        request.params.map_mode = 1 #  2 footplane, 0 h+n, 1 h+zup, 3 hori
+        request.params.planning_mode = lcmdrc.footstep_plan_params_t.MODE_SPLINE
+        request.params.map_mode = lcmdrc.footstep_plan_params_t.TERRAIN_HEIGHTS_Z_NORMALS
         request.params.max_num_steps = len(goalSteps)
         request.params.min_num_steps = len(goalSteps)
 
@@ -181,7 +168,7 @@ class ManualWalkingTaskPanel(TaskUserPanel):
         else:
             self.manualWalkingDemo.leadingFootByUser = 'Right'
     
-        self.manualWalkingDemo.nbSteps = self.params.getProperty('Num Steps')
+        self.manualWalkingDemo.numSteps = self.params.getProperty('Num Steps')
         self.manualWalkingDemo.forwardStep = self.params.getProperty('Forward Step')
         self.manualWalkingDemo.forwardBalance = self.params.getProperty('Forward Balance Step')
         self.manualWalkingDemo.stepWidth = self.params.getProperty('Step Width')
