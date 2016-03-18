@@ -77,74 +77,33 @@ class ManualWalkingDemo(object):
         # The number of footsteps, width and forward distance between steps are given by user.
         footsteps = []
 
-        startFeetMidPointOri = startFeetMidPoint.GetOrientation()
         startFeetMidPointPos = startFeetMidPoint.GetPosition()
 
         contact_pts_left, contact_pts_right = self.footstepsDriver.getContactPts()
         contact_pts_mid_left = np.mean(contact_pts_left, axis=0) # mid point on foot relative to foot frame
         contact_pts_mid_right = np.mean(contact_pts_right, axis=0) # mid point on foot relative to foot frame
- 
-        # robot 2D pose in world frame
-        x1 = startFeetMidPointPos[0]
-        y1 = startFeetMidPointPos[1]
-        z1 = startFeetMidPointPos[2]
-        theta = startFeetMidPointOri[2] * np.pi / 180.
-
-        # transformation from robot to world frame
-        T = np.matrix([[np.cos(theta), -np.sin(theta), x1],
-                       [np.sin(theta),  np.cos(theta), y1],
-                       [0, 0, 1]])
 
         for i in range(self.nbSteps):
+            fRight = self.forwardStep*(i+1) - contact_pts_mid_right[0] + self.forwardBalance
+            wRight = -self.stepWidth/2 + self.lateralShift*(i+1)
+            fLeft = self.forwardStep*(i+1) - contact_pts_mid_right[0]
+            wLeft = self.stepWidth/2 + self.lateralShift*(i+1)
+
+            stepPoseRight = transformUtils.frameFromPositionAndRPY([fRight,wRight,startFeetMidPointPos[2]], [0,0,0])
+            stepPoseLeft = transformUtils.frameFromPositionAndRPY([fLeft,wLeft,startFeetMidPointPos[2]], [0,0,0])
+
+            nextRightTransform = transformUtils.copyFrame(startFeetMidPoint)
+            nextRightTransform.PreMultiply()
+            nextRightTransform.Concatenate(stepPoseRight)
+
+            nextLeftTransform = transformUtils.copyFrame(startFeetMidPoint)
+            nextLeftTransform.PreMultiply()
+            nextLeftTransform.Concatenate(stepPoseLeft)
 
             if self.leadingFootByUser == 'Right':
-                # right foot 2D pose in robot frame
-                fRight = self.forwardStep*(i+1) - contact_pts_mid_right[0]
-                wRight = -self.stepWidth/2 + self.lateralShift*(i+1)
-                pRightInRobot = np.matrix([[fRight],
-                                           [wRight],
-                                           [1]])
-
-                # right foot 2D pose in world frame
-                pRightInWorld = T * pRightInRobot
-                nextRightTransform = transformUtils.frameFromPositionAndRPY([pRightInWorld[0],pRightInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
-
-                # left foot 2D pose in robot frame
-                fLeft = self.forwardStep*(i+1) - contact_pts_mid_left[0] + self.forwardBalance
-                wLeft = self.stepWidth/2 + self.lateralShift*(i+1)
-                pLeftInRobot = np.matrix([[fLeft],
-                                           [wLeft],
-                                           [1]])
-
-                # left foot 2D pose in world frame
-                pLeftInWorld = T * pLeftInRobot
-                nextLeftTransform = transformUtils.frameFromPositionAndRPY([pLeftInWorld[0],pLeftInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
-
                 footsteps.append(Footstep(nextRightTransform,True))
                 footsteps.append(Footstep(nextLeftTransform,False))
             else:
-                # right foot 2D pose in robot frame
-                fRight = self.forwardStep*(i+1) - contact_pts_mid_right[0] + self.forwardBalance
-                wRight = -self.stepWidth/2 + self.lateralShift*(i+1)
-                pRightInRobot = np.matrix([[fRight],
-                                           [wRight],
-                                           [1]])
-
-                # right foot 2D pose in world frame
-                pRightInWorld = T * pRightInRobot
-                nextRightTransform = transformUtils.frameFromPositionAndRPY([pRightInWorld[0],pRightInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
-
-                # left foot 2D pose in robot frame
-                fLeft = self.forwardStep*(i+1) - contact_pts_mid_left[0]
-                wLeft = self.stepWidth/2 + self.lateralShift*(i+1)
-                pLeftInRobot = np.matrix([[fLeft],
-                                           [wLeft],
-                                           [1]])
-
-                # left foot 2D pose in world frame
-                pLeftInWorld = T * pLeftInRobot
-                nextLeftTransform = transformUtils.frameFromPositionAndRPY([pLeftInWorld[0],pLeftInWorld[1],z1], [0,0,startFeetMidPointOri[2]])
-
                 footsteps.append(Footstep(nextLeftTransform,False))
                 footsteps.append(Footstep(nextRightTransform,True))
 
