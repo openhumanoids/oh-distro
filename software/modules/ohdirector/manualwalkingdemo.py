@@ -33,7 +33,6 @@ class ManualWalkingDemo(object):
         self.numSteps = 4
         self.forwardStep = 0.35
         self.stepWidth = 0.25
-        self.lateralShift = 0.0
         # IHMC params
         self.ihmcTransferTime = 1.0
         self.ihmcSwingTime = 1.0
@@ -84,9 +83,9 @@ class ManualWalkingDemo(object):
 
             isLeadingFootLeft = not(self.isLeadingFootRight)
             if (i % 2 == 0 and isLeadingFootLeft) or (i % 2 != 0 and self.isLeadingFootRight):
-                width = self.stepWidth / 2 + self.lateralShift * (i + 1)
+                width = self.stepWidth / 2
             else:
-                width = -self.stepWidth / 2 + self.lateralShift * (i + 1)
+                width = -self.stepWidth / 2
 
             stepPose = transformUtils.frameFromPositionAndRPY([forward, width, startFeetMidPointPos[2]], [0,0,0])
 
@@ -157,7 +156,6 @@ class ManualWalkingTaskPanel(TaskUserPanel):
         self.params.addProperty('Num Steps', 6, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
         self.params.addProperty('Forward Step', 0.35, attributes=om.PropertyAttributes(decimals=2, minimum=-0.5, maximum=0.5, singleStep=0.01))
         self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('Lateral Shift', 0.0, attributes=om.PropertyAttributes(decimals=2, minimum=-0.4, maximum=0.4, singleStep=0.01))
         self.params.addProperty('IHMC Transfer Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
         self.params.addProperty('IHMC Swing Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
         self._syncProperties()
@@ -175,7 +173,6 @@ class ManualWalkingTaskPanel(TaskUserPanel):
         self.manualWalkingDemo.numSteps = self.params.getProperty('Num Steps')
         self.manualWalkingDemo.forwardStep = self.params.getProperty('Forward Step')
         self.manualWalkingDemo.stepWidth = self.params.getProperty('Step Width')
-        self.manualWalkingDemo.lateralShift = self.params.getProperty('Lateral Shift')
         self.manualWalkingDemo.ihmcTransferTime = self.params.getProperty('IHMC Transfer Time')
         self.manualWalkingDemo.ihmcSwingTime = self.params.getProperty('IHMC Swing Time')
 
