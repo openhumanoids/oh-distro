@@ -155,7 +155,7 @@ class ManualWalkingTaskPanel(TaskUserPanel):
             leadingFoot = 1
         self.params.addProperty('Leading Foot', leadingFoot, attributes=om.PropertyAttributes(enumNames=['Right','Left']))
         self.params.addProperty('Num Steps', self.manualWalkingDemo.numSteps, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
-        self.params.addProperty('Forward Step', self.manualWalkingDemo.forwardStep, attributes=om.PropertyAttributes(decimals=2, minimum=-0.5, maximum=0.5, singleStep=0.01))
+        self.params.addProperty('Forward Step', self.manualWalkingDemo.forwardStep, attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
         self.params.addProperty('Step Width', self.manualWalkingDemo.stepWidth, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
         self.params.addProperty('IHMC Transfer Time', self.manualWalkingDemo.ihmcTransferTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
         self.params.addProperty('IHMC Swing Time', self.manualWalkingDemo.ihmcSwingTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
