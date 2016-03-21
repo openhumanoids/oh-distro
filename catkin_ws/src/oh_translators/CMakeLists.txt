@@ -153,5 +153,9 @@ install(DIRECTORY resources/
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources
         PATTERN ".svn" EXCLUDE
         )
-set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-runtime/references") # filter out linelength warnings
+
+#############
+## Linting ##
+#############
+set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-runtime/references,-runtime/indentation_namespace,-whitespace/braces,-readability/todo")
 roslint_cpp()
