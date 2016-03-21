@@ -119,7 +119,7 @@ pods_use_pkg_config_packages(ros2lcm_sdh lcm bot2-core eigen3)
 add_executable(lcm2ros_sdh src/lcm2ros_sdh.cpp)
 target_link_libraries(lcm2ros_sdh ${catkin_LIBRARIES})
 add_dependencies(lcm2ros_sdh ipab_msgs_generate_messages_cpp)
-pods_use_pkg_config_packages(lcm2ros_sdh lcm bot2-core std_srvs)
+pods_use_pkg_config_packages(lcm2ros_sdh lcm bot2-core lcmtypes_robotiqhand  std_srvs)
 
 set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-runtime/references") # filter out linelength warnings
 roslint_cpp()
