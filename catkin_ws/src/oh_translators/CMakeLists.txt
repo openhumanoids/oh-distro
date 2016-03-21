@@ -27,8 +27,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES beginner_tutorials
   CATKIN_DEPENDS roscpp std_msgs ipab_msgs ihmc_msgs tf trajectory_msgs sensor_msgs image_transport geometry_msgs kdl_conversions
   DEPENDS system_lib
 )
@@ -37,8 +35,24 @@ catkin_package(
 ## Build ##
 ###########
 
+set(TARGETS
+    ros2lcm_nasa
+    lcm2ros_valkyrie_hands
+    ros2lcm_ihmc
+    lcm2ros_ihmc
+    ros2lcm_camera
+    ros2lcm_stereo
+    ros2lcm_kinect
+    lcm2ros_kuka
+    ros2lcm_kuka
+    ros2lcm_exotica
+    lcm2ros_exotica
+    ros2lcm_sdh
+    lcm2ros_sdh
+)
+
 include_directories(
-  ${catkin_INCLUDE_DIRS} include
+  ${catkin_INCLUDE_DIRS}
 )
 
 ######################################################
@@ -121,5 +135,23 @@ target_link_libraries(lcm2ros_sdh ${catkin_LIBRARIES})
 add_dependencies(lcm2ros_sdh ipab_msgs_generate_messages_cpp)
 pods_use_pkg_config_packages(lcm2ros_sdh lcm bot2-core lcmtypes_robotiqhand  std_srvs)
 
+
+#############
+## Install ##
+#############
+
+install(TARGETS ${TARGETS}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        )
+install(DIRECTORY launch/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+        PATTERN ".svn" EXCLUDE
+        )
+install(DIRECTORY resources/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources
+        PATTERN ".svn" EXCLUDE
+        )
 set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-runtime/references") # filter out linelength warnings
 roslint_cpp()
