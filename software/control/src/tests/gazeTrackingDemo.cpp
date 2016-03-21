@@ -6,6 +6,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <limits>
+#include <map>
+#include <string>
+#include <vector>
 #include <ConciseArgs>
 
 #include "lcmtypes/bot_core/robot_state_t.hpp"
@@ -33,7 +36,7 @@ inline double toRad(double deg) {
 
 class App {
 public:
-    App(std::shared_ptr <lcm::LCM> &lcm_, const CommandLineConfig &cl_cfg_, TrackingControlMode mode_);
+    App(std::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig &cl_cfg_, TrackingControlMode mode_);
 
     ~App() {
     }
@@ -119,6 +122,7 @@ void findJointAndInsert(const RigidBodyTree &model, const std::string &name, std
     position_list.insert(position_list.end(), position_indices.begin(), position_indices.end());
 }
 
+// TODO: move to Eigen conversions
 Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
     // This conversion function introduces a NaN in Eigen Rotations when:
     // roll == pi , pitch,yaw =0    ... or other combinations.
@@ -258,7 +262,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
     WorldPositionConstraint kc_pelvis_pos(&model_, pelvis_link, pelvis_pt, pelvis_pos_lb, pelvis_pos_ub, tspan);
     Eigen::Vector4d pelvis_quat_des(rstate_.pose.rotation.w, rstate_.pose.rotation.x, rstate_.pose.rotation.y,
                                     rstate_.pose.rotation.z);
-    double pelvis_tol = 0;//0.0017453292519943296;
+    double pelvis_tol = 0;
     WorldQuatConstraint kc_pelvis_quat(&model_, pelvis_link, pelvis_quat_des, pelvis_tol, tspan);
 
     // 1 Back Posture Constraint
@@ -300,8 +304,8 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
     constraint_array.push_back(&kc_pelvis_pos);
     constraint_array.push_back(&kc_pelvis_quat);
     constraint_array.push_back(&kc_gaze);
-    constraint_array.push_back(&kc_posture_back); // leave this out to also use the back
-    constraint_array.push_back(&kc_posture_neck); // safe neck joint limits - does not adhere to yaw?
+    constraint_array.push_back(&kc_posture_back);  // leave this out to also use the back
+    constraint_array.push_back(&kc_posture_neck);  // safe neck joint limits - does not adhere to yaw?
 
     // Solve
     IKoptions ikoptions(&model_);
@@ -310,9 +314,10 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
     inverseKin(&model_, q_star, q_star, constraint_array.size(), constraint_array.data(), q_sol, info,
                infeasible_constraint, ikoptions);
     printf("INFO = %d\n", info);
-    if (info != 1)
+    if (info != 1) {
         for (auto it = infeasible_constraint.begin(); it != infeasible_constraint.end(); it++)
             std::cout << *it << std::endl;
+    }
 
     return info;
 }
@@ -502,5 +507,6 @@ int main(int argc, char *argv[]) {
     App app(lcm, cl_cfg, mode);
     std::cout << "Ready" << std::endl
     << "============================" << std::endl;
-    while (0 == lcm->handle());
+
+    while (0 == lcm->handle()) {}
 }
