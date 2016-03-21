@@ -1,5 +1,13 @@
 // Copyright 2016 Wolfgang Merkt
 
+/**
+ * Translates robotiqhand::command_t LCM messages to the DESIRED_HAND_ANGLES message expected by the
+ * JointPositionGoalController for the hand.
+ *
+ * Currently supports only:
+ *   - emergency_release
+ *   - position mode (0-100% closed)
+ */
 #include <cstdlib>
 #include <sys/time.h>
 #include <iostream>
@@ -13,16 +21,6 @@
 
 #include "lcmtypes/robotiqhand/command_t.hpp"
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
-
-/**
- * Translates robotiqhand::command_t LCM messages to the DESIRED_HAND_ANGLES message expected by the
- * JointPositionGoalController for the hand.
- *
- * Currently supports only:
- *   - emergency_release (WIP)
- *   -
- */
-
 
 int64_t bot_timestamp_now() {
     struct timeval tv;
@@ -99,96 +97,45 @@ void LCM2ROSControl::handCommandHandler(Side side, const robotiqhand::command_t 
         hand_control_msg = getHandControlMessage(Side::LEFT, pose);
 
         std::cerr << "Emergency release activated" << std::endl;
-    } else if (msg->activate == 1 && msg->do_move == 1) {  // Between 0-100% position, velocity, effort
-        HandPose &pose = preset_hand_poses_[PresetHandPose::CLOSED];
 
-        double percentage_closed = get_position_percentage_from_command_range(msg->position);
-        for (unsigned int i = 0; i < pose.size(); i++)
-            pose[i] = pose[i] * percentage_closed;
-
-        hand_control_msg = getHandControlMessage(Side::LEFT, pose);
-    } else  // Other, currently unsupported movement modes
+        lcm_->publish("DESIRED_HAND_ANGLES", &hand_control_msg);
         return;
+    }
 
-    hand_control_msg.utime = msg->utime;
+    // Hand Control Modes
+    //
+    // -1 - ignore (use previous mode)
+    //  0 - basic (normal)
+    //  1 - pinch
+    //  2 - wide
+    //  3 - scissor
+    if (msg->do_move == 1) {
+        if (msg->mode == 0) {  // Basic Position Mode (between 0 and 100% closed)
+            HandPose &pose = preset_hand_poses_[PresetHandPose::CLOSED];
 
-    // m.ifc = static_cast<bool>(msg->ifc);
-    // m.positionA = msg->positionA;
-    // m.positionB = msg->positionB;
-    // m.positionC = msg->positionC;
+            double percentage_closed = get_position_percentage_from_command_range(msg->position);
+            for (unsigned int i = 0; i < pose.size(); i++)
+                pose[i] = pose[i] * percentage_closed;
 
-    // m.isc = static_cast<bool>(msg->isc);
-    // m.positionS = msg->positionS;
+            hand_control_msg = getHandControlMessage(Side::LEFT, pose);
+        } else {
+            std::cerr << "Mode " << msg->mode << " not implemented yet" << std::endl;
+        }
+    }
 
-    // // TODO(wxm): Implement direct call of driver services
-    // if (msg->do_move) {
-    //   // Command position, force, and velocity (TODO(wxm): only position
-    //   // implemented right now)
 
-    //   // TODO(wxm): implement different modes
-    //   switch (msg->mode) {
-    //     // -1 - ignore (use previous mode)
-    //     //  0 - basic (normal)
-    //     //  1 - pinch
-    //     //  2 - wide
-    //     //  3 - scissor
-    //     case 0:                    // Basic Position Mode
-    //       if (msg->position == 0)  // Open
-    //       {
-    //         std_srvs::Trigger tactile_open_trigger;
-    //         if (rosserviceclient_Tactile_Open_.call(tactile_open_trigger)) {
-    //           ROS_INFO("Tactile opening commanded");  // TODO(wxm): use returned
-    //                                                   // information whether
-    //                                                   // successful
-    //         } else {
-    //           ROS_ERROR("Tactile opening FAILED");
-    //         }
-    //         return;
-    //       } else if (msg->position == 254)  // Close
-    //       {
-    //         std_srvs::Trigger tactile_close_trigger;
-    //         if (rosserviceclient_Tactile_Close_.call(tactile_close_trigger)) {
-    //           ROS_INFO("Tactile closing commanded");  // TODO(wxm): use returned
-    //                                                   // information whether
-    //                                                   // successful
-    //         } else {
-    //           ROS_ERROR("Tactile closing FAILED");
-    //         }
-    //         return;
-    //       }
-    //       break;
-    //   }
+    // Individual finger control only allows 3 positions at the moment
+    // static_cast<bool>(msg->ifc);
+    // msg->positionA;
+    // msg->positionB;
+    // msg->positionC;
 
-    //   // TODO(wxm): individual finger control and individual scissor control not
-    //   // yet implemented
-    //   // Individual finger control
-    //   // 1 - active
-    //   // 0 - inactive
-    //   // int8_t ifc;
-    //   // int16_t positionA;
-    //   // int16_t positionB;
-    //   // int16_t positionC;
-
-    //   // Individual scissor control
-    //   // 1 - active
-    //   // 0 - inactive
-    //   // int8_t isc;
-    //   // int16_t positionS;
-    // }
-    // // else if (!msg->do_move && msg->activate) {
-    // // // Reset / calibrate
-    // // std_srvs::Trigger recover_trigger;
-    // // if (rosserviceclient_Recover_.call(recover_trigger)) {
-    // // ROS_INFO("Reset hand from emergency stop");
-    // // } else {
-    // // ROS_ERROR("Could not recover");
-    // // }
-    // // return;
-    // // } else {
-    // // ROS_WARN("Setting modes not supported - only basic mode supported!");
-    // // }
+    // Individual scissor control
+    // static_cast<bool>(msg->isc);
+    // msg->positionS;
 
     // Publish to JointPositionGoalController
+    hand_control_msg.utime = msg->utime;
     lcm_->publish("DESIRED_HAND_ANGLES", &hand_control_msg);
 }
 
