@@ -26,11 +26,9 @@ class ManualWalkingDemo(object):
         self.robotStateJointController = robotStateJointController
         self.ikPlanner = ikPlanner
 
-        # live operation flags
-        self.isLeadingFootRight = False
-
         # Manual footsteps placement options
-        self.numSteps = 4
+        self.isLeadingFootRight = True
+        self.numSteps = 6
         self.forwardStep = 0.35
         self.stepWidth = 0.25
         # IHMC params
@@ -81,13 +79,12 @@ class ManualWalkingDemo(object):
             if i < (self.numSteps-1):
                 forward = forward + (self.forwardStep / 2) - correctionFootToMidContact
 
-            isLeadingFootLeft = not(self.isLeadingFootRight)
-            if (i % 2 == 0 and isLeadingFootLeft) or (i % 2 != 0 and self.isLeadingFootRight):
+            if (i % 2 == 0 and not self.isLeadingFootRight) or (i % 2 != 0 and self.isLeadingFootRight):
                 width = self.stepWidth / 2
             else:
                 width = -self.stepWidth / 2
 
-            stepPose = transformUtils.frameFromPositionAndRPY([forward, width, startFeetMidPointPos[2]], [0,0,0])
+            stepPose = transformUtils.frameFromPositionAndRPY([forward, width, 0], [0,0,0])
 
             nextTransform = transformUtils.copyFrame(startFeetMidPoint)
             nextTransform.PreMultiply()
@@ -96,7 +93,7 @@ class ManualWalkingDemo(object):
             if i % 2 == 0:
                 footsteps.append(Footstep(nextTransform,self.isLeadingFootRight))
             else:
-                footsteps.append(Footstep(nextTransform,isLeadingFootLeft))
+                footsteps.append(Footstep(nextTransform,not(self.isLeadingFootRight)))
 
         return footsteps
 
@@ -152,12 +149,16 @@ class ManualWalkingTaskPanel(TaskUserPanel):
         self.addManualButton('EXECUTE Plan', self.manualWalkingDemo.executePlan)
 
     def addDefaultProperties(self):
-        self.params.addProperty('Leading Foot', 1, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
-        self.params.addProperty('Num Steps', 6, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
-        self.params.addProperty('Forward Step', 0.35, attributes=om.PropertyAttributes(decimals=2, minimum=-0.5, maximum=0.5, singleStep=0.01))
-        self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('IHMC Transfer Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
-        self.params.addProperty('IHMC Swing Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
+        if self.manualWalkingDemo.isLeadingFootRight:
+            leadingFoot = 0
+        else:
+            leadingFoot = 1
+        self.params.addProperty('Leading Foot', leadingFoot, attributes=om.PropertyAttributes(enumNames=['Right','Left']))
+        self.params.addProperty('Num Steps', self.manualWalkingDemo.numSteps, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
+        self.params.addProperty('Forward Step', self.manualWalkingDemo.forwardStep, attributes=om.PropertyAttributes(decimals=2, minimum=-0.5, maximum=0.5, singleStep=0.01))
+        self.params.addProperty('Step Width', self.manualWalkingDemo.stepWidth, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('IHMC Transfer Time', self.manualWalkingDemo.ihmcTransferTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
+        self.params.addProperty('IHMC Swing Time', self.manualWalkingDemo.ihmcSwingTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
         self._syncProperties()
 
     def onPropertyChanged(self, propertySet, propertyName):
