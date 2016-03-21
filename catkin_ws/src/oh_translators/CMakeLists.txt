@@ -47,6 +47,10 @@ target_link_libraries(ros2lcm_nasa ${catkin_LIBRARIES} )
 pods_use_pkg_config_packages(ros2lcm_nasa lcm bot2-core eigen3)
 #add_dependencies(ros2lcm_nasa)# ipab_msgs_generate_messages_cpp)# ihmc_msgs_generate_messages_cpp)
 
+add_executable(lcm2ros_valkyrie_hands src/lcm2ros_valkyrie_hands.cpp)
+target_link_libraries(lcm2ros_valkyrie_hands )
+pods_use_pkg_config_packages(lcm2ros_valkyrie_hands lcm lcmtypes_robotiqhand lcmtypes_bot2-core)
+
 ######################################################
 add_executable(ros2lcm_ihmc src/ros2lcm_ihmc.cpp)
 target_link_libraries(ros2lcm_ihmc ${catkin_LIBRARIES} )
