@@ -27,6 +27,10 @@ group "2.drivers" {
         exec = "drc-spin-lidar";
         host = "localhost";
     }
+    cmd "hands_translator" {
+        exec = "roslaunch oh_translators valkyrie_hands_bridge.launch";
+        host = "localhost";
+    }
 }
 
 
