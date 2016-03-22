@@ -7,7 +7,6 @@
 
 #include <map>
 #include <model-client/model-client.hpp>
-#include <drc_utils/joint_utils.hpp>
 
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/bot_core/joint_state_t.hpp"
