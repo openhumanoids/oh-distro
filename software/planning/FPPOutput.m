@@ -70,9 +70,17 @@ classdef FPPOutput
         end
       end
       for i = 1:numel(cell_data)
-        sub = cell(1,n_dimensions - 1);
+        sub = cell(1,ndims(cell_data));
         [sub{:}] = ind2sub(dimensions, i);
-        output(sub{:},:) = cell_data{sub{:}};
+        if ~isempty(cell_data{sub{:}})
+          output(sub{:},:) = cell_data{sub{:}};
+        else
+          str = '';
+          for j = 1:numel(sub)
+            str = [str, sprintf(' %s = %s', variables{j}, opt.(variables{j}){sub{j}})];
+          end
+          warning('No results found for %s', str);
+        end
       end
       output = squeeze(output);
     end
