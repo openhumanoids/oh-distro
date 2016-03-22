@@ -11,7 +11,6 @@
 #include <algorithm>
 
 
-
 using namespace std;
 #define DO_TIMING_PROFILE FALSE
 
@@ -48,8 +47,14 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
    
   assignJointsStruct( core_robot_joints_ );
   
+  // The number of joints is expected to be 33; 32 robot joints (i.e. without the hands) plus the Hokuyo joint
   std::cout << "No. of Joints: "
       << core_robot_joints_.position.size() << " valkyrie\n";
+
+  // Output list of all joints
+  for (unsigned int i = 0; i < core_robot_joints_.position.size(); i++) {
+    std::cout << core_robot_joints_.name[i] << " is joint no. " << i << std::endl;
+  }
 
   /// 2. Subscribe to required signals
   lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE",&state_sync_nasa::coreRobotHandler,this);
@@ -58,6 +63,7 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub2 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver:
   lcm::Subscription* sub3 = lcm_->subscribe("POSE_BODY",&state_sync_nasa::poseProntoHandler,this);  // Always provided the state estimator:
+  lcm::Subscription* sub4 = lcm_->subscribe("NECK_STATE",&state_sync_nasa::neckStateHandler,this);  // Provided when NeckController is running
 
   
   bool use_short_queue = true;
@@ -66,6 +72,7 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
     sub1->setQueueCapacity(1);
     sub2->setQueueCapacity(1);
     sub3->setQueueCapacity(1);
+    sub4->setQueueCapacity(1);
   }
 
   setPoseToZero(pose_IHMC_);
@@ -163,6 +170,18 @@ bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d p
   tf.quat[3] = quat.z();
   return tf;
 
+}
+
+// Handle message published by JointPositionGoalController (Neck Controller)
+void state_sync_nasa::neckStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg) {
+  for (int i=0; i < msg->num_joints; i++) {
+    auto it = std::find(core_robot_joints_.name.begin(), core_robot_joints_.name.end(), msg->joint_name[i]);
+    int joint_index = std::distance(core_robot_joints_.name.begin(), it);
+
+    core_robot_joints_.position[joint_index] = msg->joint_position[i];
+    core_robot_joints_.velocity[joint_index] = 0;
+    core_robot_joints_.effort[joint_index] = 0;
+  }
 }
 
 Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
