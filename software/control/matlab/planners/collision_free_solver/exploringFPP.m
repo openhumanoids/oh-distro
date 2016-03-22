@@ -8,7 +8,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   warning('off', 'Drake:RigidBodyManipulator:UnsupportedContactPoints')
   warning('off', 'Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 2; end;
+  if ~isfield(options,'scene'), options.scene = 1; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'left'; end;
@@ -16,7 +16,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   if ~isfield(options,'back_constraint'), options.back_constraint = 'free'; end
   if ~isfield(options,'base_constraint'), options.base_constraint = 'free'; end
   if ~isfield(options,'feet_constraint'), options.feet_constraint = 'sliding'; end
-  if ~isfield(options,'verbose'), options.verbose = true; end
+  if ~isfield(options,'verbose'), options.verbose = false; end
   
   options.floating = true;
   
@@ -68,10 +68,11 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   
   %Set start pose constraints and compute starting configuration
   startPoseConstraints = [Scenes.generateFeetConstraints(options, r, q_nom),...
-                         {Scenes.generateQuasiStaticConstraint(options, r),...
-                          Scenes.generateBackConstraint(options, r, q_nom), ...
-                          Scenes.generateBaseConstraint(options, r, q_nom), ...
-                          Scenes.nonGraspingHandDistanceConstraint(options, r, 0.4)}];
+                         {Scenes.generateQuasiStaticConstraint(options, r)...
+%                           Scenes.generateBackConstraint(options, r, q_nom), ...
+%                           Scenes.generateBaseConstraint(options, r, q_nom), ...
+%                           Scenes.nonGraspingHandDistanceConstraint(options, r, 0.4)...
+                          }];
   q_start = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
   
   if options.visualize

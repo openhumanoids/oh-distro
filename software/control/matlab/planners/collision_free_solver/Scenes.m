@@ -380,18 +380,22 @@ classdef Scenes
       l_foot = Scenes.getLeftFoot(options, robot);
       r_foot = Scenes.getRightFoot(options, robot);
       kinsol = robot.doKinematics(state);
-      l_pose = robot.forwardKin(kinsol,l_foot, [0; 0; 0], 2);
-      r_pose = robot.forwardKin(kinsol,r_foot, [0; 0; 0], 2);
+      l_pose = robot.forwardKin(kinsol,l_foot, [0; 0; 0],1);
+      r_pose = robot.forwardKin(kinsol,r_foot, [0; 0; 0], 1);
       lb.fixed = [0; 0; 0];
       lb.sliding = [-inf; -inf; 0];
       ub.fixed = [0; 0; 0];
       ub.sliding = [inf; inf; 0];
+      orient_lb.fixed = [0; 0; 0];
+      orient_lb.sliding = [0; 0; -inf];
+      orient_ub.fixed = [0; 0; 0];
+      orient_ub.sliding = [0; 0; inf];
       l_pos_const = WorldPositionConstraint(robot, l_foot, [0; 0; 0], l_pose(1:3) + lb.(options.feet_constraint), l_pose(1:3) + ub.(options.feet_constraint));
-      l_quat_const = WorldQuatConstraint(robot, l_foot, l_pose(4:7), 0.0);
+      l_euler_const = WorldEulerConstraint(robot, l_foot, orient_lb.(options.feet_constraint) + l_pose(4:6), orient_ub.(options.feet_constraint) + l_pose(4:6));
       r_pos_const = WorldPositionConstraint(robot, r_foot, [0; 0; 0], r_pose(1:3) + lb.(options.feet_constraint), r_pose(1:3) + ub.(options.feet_constraint));
-      r_quat_const = WorldQuatConstraint(robot, r_foot, r_pose(4:7), 0.0);
+      r_euler_const = WorldEulerConstraint(robot, r_foot, orient_lb.(options.feet_constraint) + r_pose(4:6), orient_ub.(options.feet_constraint) + l_pose(4:6));
       rel_const = RelativePositionConstraint(robot, [0;0;0], l_pose(1:3) - r_pose(1:3), l_pose(1:3) - r_pose(1:3), l_foot, r_foot);
-      constraints = {l_pos_const, l_quat_const, r_pos_const, r_quat_const, rel_const};
+      constraints = {l_pos_const, l_euler_const, r_pos_const, r_euler_const, rel_const};
     end
     
     function constraint = graspingForearmAlignConstraint(options, robot)
