@@ -89,6 +89,29 @@ void drawPointCloud(bot_lcmgl_t *lcmgl, std::vector<Vector3d> point_cloud)
 	bot_lcmgl_switch_buffer(lcmgl);
 }
 
+void drawPositionProbabilityDistribution(bot_lcmgl_t *lcmgl, std::vector<Vector3d> points, Eigen::VectorXd probability)
+{
+	bot_lcmgl_point_size(lcmgl, 5);
+	double p_min = probability.minCoeff();
+	double p_max = probability.maxCoeff();
+	double delta = (p_max - p_min)/100;
+	for (double p = p_min; p < p_max; p += delta)
+	{
+		bot_lcmgl_color3f(lcmgl, p / (p_max - p_min), p / (p_max - p_min), p / (p_max - p_min));
+		bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
+		for (int point = 0; point < points.size(); point++)
+		{
+			if (probability(point) > p && probability(point) < p + delta)
+			{
+//				cout << point << endl;
+				bot_lcmgl_vertex3d(lcmgl, points[point](0), points[point](1), points[point](2));
+			}
+		}
+		bot_lcmgl_end(lcmgl);
+	}
+	bot_lcmgl_switch_buffer(lcmgl);
+}
+
 CandidateRobotPosePublisher::CandidateRobotPosePublisher()
 {
 
