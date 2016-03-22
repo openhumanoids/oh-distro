@@ -153,6 +153,15 @@ int main(int argc, char* argv[])
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
 
 	KinematicsCache<double> cache = robot.doKinematics(start_configuration);
+	IKoptions ik_options(&robot);
+	VectorXd cost(robot.num_positions, 1);
+	MatrixXd Q;
+	cost << 10,10,10,10,10,10,20,19,18,3,2,1,3.50000000000000,3,2.50000000000000,2,1.50000000000000,1,0.500000000000000,3.50000000000000,3,2.50000000000000,2,1.50000000000000,1,0.500000000000000,6,5,4,3,2,1,6,5,4,3,2,1;
+	ik_options.setQ(cost.asDiagonal());
+	ik_options.getQ(Q);
+	ik_options.setMajorIterationsLimit(100);
+	ik_options.setMajorOptimalityTolerance(1e-3);
+
 
 //	FEET CONSTRAINTS
 	int left_foot_id = robot.findLinkId("LeftFoot");
