@@ -114,6 +114,7 @@ classdef FinalPosePlanner
     
     function [qOpt, debug_vars] = searchFinalPose(obj, point_cloud, debug_vars)
       
+%       pose_publisher = CandidateRobotPosePublisher('EST_ROBOT_STATE', true, obj.robot.getPositionFrame.getCoordinateNames);
       options.rotation_type = 2;
       options.compute_gradients = true;
       options.rotation_type = 1;
@@ -131,15 +132,26 @@ classdef FinalPosePlanner
       n_valid_samples = nnz(valid_voxels);
       if obj.verbose, fprintf('n valid samples: %d\n', n_valid_samples); end
       orient_prob = obj.capability_map.occupancy_map_orient_prob;
+      f_id = fopen('capabilityMapMatlab.log', 'w');
+      fprintf(f_id, '%10g\n', orient_prob');
+      fprintf(f_id, '\n\n');
       
       base = obj.robot.findLinkId(obj.capability_map.base_link);
       map_centre = obj.capability_map.map_centre.(obj.grasping_hand);
       obj.capability_map = obj.capability_map.computePositionProbabilityDistribution([], bsxfun(@rdivide, map_centre, obj.capability_map.map_ub)');
       pos_prob = obj.capability_map.vox_centres_prob;
+      fprintf(f_id, '%11g\n', pos_prob);
+      fprintf(f_id, '\n\n');
       
       tot_prob = pos_prob * orient_prob';
       tot_prob = tot_prob .* obj.capability_map.occupancy_map_active_orient;
+%       for i = 1:size(obj.capability_map.occupancy_map_active_orient)
+%         fprintf(f_id, '%11g %11g %11g %11g %11g %11g %11g\n', obj.capability_map.vox_centres(1, i),...
+%                                                               obj.capability_map.vox_centres(2, i),...
+%                                                               obj.capability_map.vox_centres(3, i),...);
+%       end
       tot_prob = reshape(tot_prob, 1, []);
+      fclose(f_id)
       if obj.debug || obj.verbose
         CM_time = toc(CM_timer);
         if obj.verbose, fprintf('CM Time: %.4f s\n', CM_time); end
@@ -152,15 +164,27 @@ classdef FinalPosePlanner
       kin_time = 0;
       collision_time = 0;
       
+%       f_id = fopen('random_sequence');
+%       samples = fscanf(f_id, '%g', [6, 1000]);
+      
+      RandStream.setGlobalStream( RandStream.create('mt19937ar','seed',100) );
       for vox = 1:min([n_valid_samples, 1000])
         if obj.debug || obj.verbose
           sampling_timer = tic();
         end
+%         rpy = samples(1:3, vox);
+%         pos = rpy2rotmat(rpy) * samples(4:6, vox);
+        
         cum_prob = cumsum(tot_prob) / sum(tot_prob);
-        [voxel_idx, orient_idx] = ind2sub([obj.capability_map.n_voxels, obj.capability_map.occupancy_map_n_orient],  find(rand() < cum_prob, 1));
+        rnd = rand();
+        disp(rnd);
+        [voxel_idx, orient_idx] = ind2sub([obj.capability_map.n_voxels, obj.capability_map.occupancy_map_n_orient],  find(rnd < cum_prob, 1));
         rpy = obj.capability_map.occupancy_map_orient(:, orient_idx);
         pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:, voxel_idx);
+        disp(pos);
+        disp(rpy);
         tot_prob(voxel_idx + orient_idx * obj.capability_map.n_voxels) = 0;
+        
         iter = iter + 1;
         if obj.debug || obj.verbose
           sampling_time = toc(sampling_timer);
@@ -174,6 +198,9 @@ classdef FinalPosePlanner
         if obj.debug, constraint_time = constraint_time + toc(constraint_timer); end
         if obj.debug, ik_timer = tic(); end
         [q, info, infeasible_constraints] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
+%         [rpy' pos']
+%         obj.q_nom'
+%         pose_publisher.publish([q; zeros(size(q))], get_timestamp_now())
         valid = (info < 10);
         if obj.debug, ik_time = ik_time + toc(ik_timer); end
         if obj.debug, kin_timer = tic(); end
@@ -225,7 +252,7 @@ classdef FinalPosePlanner
           debug_vars.cost = NaN;
         end
         debug_vars.n_valid_samples_used = iter;
-        debug_vars.final_orient = orient_idx;
+%         debug_vars.final_orient = orient_idx;
         debug_vars.IK_time = ik_time;
         debug_vars.capability_map_time = CM_time;
         debug_vars.collision_time = collision_time;

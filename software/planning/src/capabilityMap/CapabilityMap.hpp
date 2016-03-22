@@ -59,6 +59,8 @@ public:
 	std::string getBaseLink() {return base_link;}
 	Eigen::Vector3d getOrientation(int orient){return occupancy_map_orientations[orient];}
 	Eigen::Vector3d getVoxelCentre(int vox){return voxel_centres[vox];}
+	std::vector<Eigen::Vector3d> getVoxelCentres(){return voxel_centres;}
+	Eigen::VectorXd getPositionProbability(){return position_probability;}
 	void setNVoxels(unsigned int n_voxels);
 	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
 	void setNDirectionsPerVoxel(unsigned int n_dir);
@@ -133,6 +135,7 @@ private:
 	std::vector<double> total_probability;
 	std::vector<int> total_probability_orientations;
 	std::vector<int> total_probability_voxels;
+	std::vector<double> random_sequence;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);

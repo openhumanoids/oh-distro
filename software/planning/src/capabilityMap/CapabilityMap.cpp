@@ -14,6 +14,10 @@
 #include "drawingUtil/drawingUtil.hpp"
 #include "drake/util/drakeGeometryUtil.h"
 
+extern "C" {
+double *mt19937ar();
+}
+
 using namespace std;
 using namespace Eigen;
 
@@ -24,6 +28,8 @@ CapabilityMap::CapabilityMap(const string & log_filename, const string &urdf_fil
 	{
 		cout << "Failed to open " << log_filename.c_str() << '\n';
 	}
+	double* random_sequence_array = mt19937ar();
+	this->random_sequence.assign(random_sequence_array, random_sequence_array+1000);
 }
 
 void CapabilityMap::loadFromMatlabBinFile(const string map_file)
@@ -602,11 +608,13 @@ void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, V
 void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->voxel_centres, this->position_probability, mu, sigma);
+	this->log << this->position_probability << endl << endl << endl;
 }
 
 void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->occupancy_map_orientations, this->orientation_probability, mu, sigma);
+	this->log << this->orientation_probability << endl << endl << endl;
 }
 
 void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, VectorXd &pdf, Vector3d mu, Vector3d sigma)
@@ -643,7 +651,9 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 	}
 	for (int i = 0; i < this->total_probability.size(); i++){
 		if (this->total_probability[i] > 0)
-			{this->log << i << " " << this->total_probability[i] << endl;}
+		{
+		}
+			{this->log << this->total_probability[i] << endl;}
 	}
 }
 
@@ -656,7 +666,11 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 	std::vector<double> cumulative_probability(this->total_probability.size());
 	partial_sum(this->total_probability.begin(), this->total_probability.end(), cumulative_probability.data());
 	srand(time(NULL));
-	double rnd = rand() / (double)RAND_MAX * cumulative_probability.back();
+//	double rnd = rand() / (double)RAND_MAX * cumulative_probability.back();
+	double rnd = this->random_sequence[0];
+	this->random_sequence.erase(this->random_sequence.begin());
+	cout << "random number: " << rnd << endl;
+	rnd *= cumulative_probability.back();
 	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
 	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;
 	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data();

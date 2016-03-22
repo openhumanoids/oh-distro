@@ -7,7 +7,7 @@ pods_install_libraries(capabilityMap)
 pods_install_headers( CapabilityMap.hpp
               DESTINATION capabilityMap)
 pods_install_pkg_config_file(capabilityMap
-  LIBS 
+  LIBS mt19937ar
   REQUIRES eigen3
   VERSION 0.0.1)
 

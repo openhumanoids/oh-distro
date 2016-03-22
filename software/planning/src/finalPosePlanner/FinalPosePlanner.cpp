@@ -5,6 +5,7 @@
 
 #include "drake/util/drakeGeometryUtil.h"
 #include "drawingUtil/drawingUtil.hpp"
+#include "bot_lcmgl_client/lcmgl.h"
 
 using namespace std;
 using namespace Eigen;
@@ -58,6 +59,8 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	output.n_valid_samples = capability_map.getNActiveSamples();
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
+	bot_lcmgl_t* lcmgl = bot_lcmgl_init(lcm->getUnderlyingLCM(), "Probability distribution");
+	drawPositionProbabilityDistribution(lcmgl, capability_map.getVoxelCentres(), capability_map.getPositionProbability());
 	after_CM = chrono::high_resolution_clock::now();
 
 
@@ -83,6 +86,19 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	int sample_info;
 	int n_iter = 0;
 	vector<int> sample(2);
+//	ifstream random_sequence_file;
+//	random_sequence_file.open("/home/marco/Documents/MATLAB/matlab_dev_code/random_sequence");
+//	if (!random_sequence_file.is_open())
+//	{
+//		cout << "Failed to open file\n";
+//	}
+//	MatrixXd samples(6, 1000);
+//	float num;
+//	for (int i = 0; i < 6000; i++)
+//	{
+//		random_sequence_file >> num;
+//		samples(i%6, i/6) = num;
+//	}
 	while (info != 1 && n_iter <= max_iterations)
 	{
 		n_iter++;
@@ -100,6 +116,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
 		Vector3d orientation = capability_map.getOrientation(sample[1]);
 		Vector3d position = rpy2rotmat(orientation) * capability_map.getVoxelCentre(sample[0]) + endeffector_final_pose.block<3,1>(0,0);
+		cout << position << endl << orientation << endl;
+//		Vector3d orientation = samples.block(0, n_iter-1, 3, 1);
+//		Vector3d position = rpy2rotmat(orientation) * samples.block(3, n_iter-1, 3, 1) + endeffector_final_pose.block<3,1>(0,0);
+//		cout << orientation.transpose() << endl << samples.block(3, n_iter-1, 3, 1).transpose() << endl;
 		WorldPositionConstraint base_position_constraint(&robot, base_id, capability_map.getMapCentre(), position, position);
 		WorldEulerConstraint base_euler_constraint(&robot, base_id, orientation, orientation);
 		constraints.end()[-1] = (&base_position_constraint);
@@ -110,6 +130,37 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 //		COMPUTE CONFIGURATION
 		before_IK = chrono::high_resolution_clock::now();
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_configuration, ik_info, infeasible_constraints, ik_options);
+		publisher.publish(lcm, robot, final_configuration);
+//		cout << nominal_configuration.transpose() << endl;
+		vector<string> name;
+		VectorXd lb;
+		VectorXd ub;
+		double time = 0.;
+//		for (auto constraint : constraints)
+//		{
+//			if(constraint->getCategory() == constraint->SingleTimeKinematicConstraintCategory)
+//			{
+//				name.clear();
+//				((SingleTimeKinematicConstraint*)constraint)->name(&time, name);
+//				((SingleTimeKinematicConstraint*)constraint)->bounds(&time, lb, ub);
+//
+//				for (auto n : name)
+//				{
+//					cout << n << endl;
+//				}
+//				cout << lb << endl << ub << endl;
+//			}
+//			else if(constraint->getCategory() == constraint->QuasiStaticConstraintCategory)
+//			{
+//				name.clear();
+//				((QuasiStaticConstraint*)constraint)->name(&time, name);
+//
+//				for (auto n : name)
+//				{
+//					cout << n << endl;
+//				}
+//			}
+//		}
 		after_IK = chrono::high_resolution_clock::now();
 	    IK_time += chrono::duration_cast<chrono::microseconds>(after_IK - before_IK).count();
 		if (ik_info < 10)
@@ -130,8 +181,25 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 					info = 1;
 					publisher.publish(lcm, robot, final_configuration);
 				}
+//				else
+//				{
+//					cout<< "solution is in collision with itself" << endl;
+//				}
 			}
+//			else
+//			{
+//				cout<< "solution is in collision with the environment" << endl;
+//			}
 		}
+//		else
+//		{
+//			cout<< "ik solution is not valid" << endl;
+//			for (auto constraint : infeasible_constraints)
+//			{
+//				cout << constraint << endl;
+//			}
+//		}
+//		getchar();
 	}
 	after_FPP = chrono::high_resolution_clock::now();
     auto computation_time = chrono::duration_cast<chrono::microseconds>(after_FPP - before_FPP).count();

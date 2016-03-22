@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <Eigen/Dense>
+#include <random>
+#include <stdio.h>
+#include <cstdio>
 
 #include "bot_lcmgl_client/lcmgl.h"
 
@@ -8,11 +11,25 @@
 #include "finalPosePlanner/FinalPosePlanner.hpp"
 #include "drawingUtil/drawingUtil.hpp"
 
+extern "C" {
+double *mt19937ar();
+}
+
 using namespace std;
 using namespace Eigen;
 
 int main()
 {
+//	typedef mersenne_twister_engine< uint32_t, 32, 625, 397, 31, 0x9908b0df, 11, 0xffffffff, 7, 0x9d2c5680, 15, 0xefc60000, 18, 1812433253 > mt;
+//	mt g(11);
+//	cout << g.max() << endl;
+	double* random_sequence = mt19937ar();
+	for (int i = 0; i < 10; i++)
+	{
+//		cout << g() << endl;
+		cout << random_sequence[i] << endl;
+	}
+	/*
 	CapabilityMap cm("/home/marco/oh-distro/software/planning/capabilityMap.log");
 	cm.loadFromMatlabBinFile("/home/marco/drc-testing-data/final_pose_planner/val_description/eigenexport_occ.bin");
 
@@ -132,6 +149,8 @@ int main()
 
 //	bot_lcmgl_t* lcmglOM = bot_lcmgl_init(theLCM->getUnderlyingLCM(), "Occupancy map");
 //	cm.drawOccupancyMap(lcmglOM, 16001, 52);
+ *
+ */
 
 	return 0;
 }
