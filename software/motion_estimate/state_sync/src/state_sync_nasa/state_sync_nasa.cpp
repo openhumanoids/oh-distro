@@ -57,8 +57,8 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
   }
 
   /// 2. Subscribe to required signals
-  lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE",&state_sync_nasa::coreRobotHandler,this);
-  lcm::Subscription* sub1 = lcm_->subscribe("FORCE_TORQUE",&state_sync_nasa::forceTorqueHandler,this);
+  lcm::Subscription* sub0 = lcm_->subscribe("VAL_CORE_ROBOT_STATE",&state_sync_nasa::coreRobotHandler,this);
+  lcm::Subscription* sub1 = lcm_->subscribe("VAL_FORCE_TORQUE",&state_sync_nasa::forceTorqueHandler,this);
   force_torque_init_ = false;
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub2 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver:
