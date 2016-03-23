@@ -2,7 +2,7 @@
 
 using namespace std;
 
-AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names, vector<string> &state_coordinate_names) {
+AtlasCommandDriver::AtlasCommandDriver(const JointNames *input_joint_names, const vector<string> &state_coordinate_names) {
   getRobotJointIndexMap(input_joint_names, &input_index_map);
 
   state_to_drake_input_map = Eigen::VectorXi::Zero(state_coordinate_names.size());
@@ -11,13 +11,13 @@ AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names, vector<str
     for (int j=0; j < input_joint_names->drake.size(); j++) {
       if (state_coordinate_names[i].compare(input_joint_names->drake[j]) == 0) {
         state_to_drake_input_map[i] = j;
-        // cout << "state coordinate: " << state_coordinate_names[i] << " matches input name: " << input_joint_names->drake[j] << endl;
+        //cout << "state coordinate: " << state_coordinate_names[i] << " matches input name: " << input_joint_names->drake[j] << endl;
       }
     }
   }
 
   m_num_joints = input_joint_names->robot.size();
-
+  
   msg.num_joints = m_num_joints;
   msg.joint_names.resize(msg.num_joints);
 
@@ -57,7 +57,7 @@ AtlasCommandDriver::AtlasCommandDriver(JointNames *input_joint_names, vector<str
   }
 }
 
-void AtlasCommandDriver::updateGains(AtlasHardwareGains *gains) {
+void AtlasCommandDriver::updateGains(const HardwareGains *gains) {
 
   if (gains->k_q_p.size() != m_num_joints)
     throw std::runtime_error("Length of k_q_p must be equal to m_num_joints");
@@ -87,8 +87,8 @@ void AtlasCommandDriver::updateGains(AtlasHardwareGains *gains) {
     msg.ff_const[input_index_map.drake_to_robot[i]] = gains->ff_const[i];
   }
 }
-
-bot_core::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params) {
+    
+bot_core::atlas_command_t* AtlasCommandDriver::encode(double t, QPControllerOutput *qp_output, const HardwareParams &params) {
   // Copy data from the given qp_output into the stored LCM message object. 
 
   msg.utime = (long)(t*1000000);
