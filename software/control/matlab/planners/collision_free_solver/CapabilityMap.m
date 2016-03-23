@@ -398,21 +398,29 @@
       obj = obj.deactivateVoxels(~voxels_to_keep);
     end
 
-    function obj = reduceActiveSet(obj, reset_active,...
+    function [obj, timing_vars] = reduceActiveSet(obj, reset_active,...
         point_cloud, sagittal_range, transverse_range, height_range, direction_threshold)
       if nargin < 5 || isempty(sagittal_range), sagittal_range = [-pi/3, pi/3]; end
       if nargin < 6 || isempty(transverse_range), transverse_range = [-pi/3, pi/3]; end
       if nargin < 7 || isempty(height_range), height_range = [0.6, 1.1]; end
       if nargin < 8, direction_threshold = pi/6; end
       
+      cm_angle_timer = tic();
       obj = obj.deactivateVoxelsOutsideTransverseRange(transverse_range, reset_active);
       obj = obj.deactivateVoxelsOutsideSagittalRange(sagittal_range);
+      timing_vars.cm_angle_time = toc(cm_angle_timer);
+      cm_base_hight_timer = tic();
       obj = obj.deactivateVoxelsOutsideBaseHeightRange(height_range);
+      timing_vars.cm_base_hight_time = toc(cm_base_hight_timer);
+      cm_direction_timer = tic();
       direction = quat2rotmat(obj.EE_pose(4:7)) * obj.end_effector_axis;
       obj = obj.deactivateVoxelsByDirection(direction, direction_threshold);
+      timing_vars.cm_direction_time = toc(cm_direction_timer);
+      cm_collision_timer = tic();
       
 %       collidingTimer = tic;
       obj = obj.deactivateCollidingVoxels(point_cloud);
+      timing_vars.cm_collision_time = toc(cm_collision_timer);
 %       fprintf('Colliding Time: %.2f s\n', toc(collidingTimer))
       
 %       if obj.n_active_voxels > des_vox_num
@@ -893,9 +901,11 @@
                                         max(abs(obj.occupancy_map_orient_steps.yaw))]);
       obj.occupancy_map_orient_prob = mvnpdf(x, mu, sigma);
       obj.occupancy_map_orient_prob = obj.occupancy_map_orient_prob / sum(obj.occupancy_map_orient_prob);
-      f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
-      fprintf(f_id, '%g\n', obj.occupancy_map_orient_prob);
-      fclose(f_id);
+%       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
+%       for i = 1:obj.occupancy_map_n_orient
+%         fprintf(f_id, '%10g %10g %10g %10g\n', obj.occupancy_map_orient(1,i), obj.occupancy_map_orient(2,i), obj.occupancy_map_orient(3,i), obj.occupancy_map_orient_prob(i));
+%       end
+%       fclose(f_id);
     end
     
     function obj = computePositionProbabilityDistribution(obj, sigma, mu)
@@ -904,9 +914,11 @@
       x = bsxfun(@rdivide, obj.vox_centres, obj.map_ub);
       obj.vox_centres_prob = mvnpdf(x', mu, sigma);
       obj.vox_centres_prob = obj.vox_centres_prob / sum(obj.vox_centres_prob);
-      f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'a');
-      fprintf(f_id, '%g\n', obj.vox_centres_prob);
-      fclose(f_id);
+%       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'a');
+%       for i = 1:obj.n_voxels
+%         fprintf(f_id, '%10g %10g %10g %10g\n', obj.vox_centres(1,i), obj.vox_centres(2,i), obj.vox_centres(3,i), obj.vox_centres_prob(i));
+%       end
+%       fclose(f_id);
     end
     
     function obj = computeOccupancyMapOrientations(obj)

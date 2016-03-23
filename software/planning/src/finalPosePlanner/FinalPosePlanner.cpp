@@ -55,7 +55,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	before_CM = chrono::high_resolution_clock::now();
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
-	capability_map.reduceActiveSet(true, point_cloud);
+	capability_map.reduceActiveSet(true, point_cloud, output);
 	output.n_valid_samples = capability_map.getNActiveSamples();
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
@@ -68,7 +68,8 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	CandidateRobotPosePublisher publisher;
 		before_constraints = chrono::high_resolution_clock::now();
 	vector<RigidBodyConstraint *> constraints = additional_constraints;
-	Point2PointDistanceConstraint position_constraint(&robot, endeffector_id, robot.findLinkId("world"), endeffector_point, endeffector_final_pose.block<3,1>(0,0), Vector3d(0,0,0), Vector3d(0,0,0));
+	Vector3d bound(1e-3, 1e-3, 1e-3);
+	WorldPositionConstraint position_constraint(&robot, endeffector_id, endeffector_point, endeffector_final_pose.block<3,1>(0,0)-bound, endeffector_final_pose.block<3,1>(0,0) + bound);
 	WorldQuatConstraint quaternion_constraint(&robot, endeffector_id, endeffector_final_pose.block<4,1>(3,0), 1./180.*M_PI);
 	constraints.push_back(&position_constraint);
 	constraints.push_back(&quaternion_constraint);
@@ -104,6 +105,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		n_iter++;
 		before_sampling = chrono::high_resolution_clock::now();
 		sample_info = capability_map.drawCapabilityMapSample(sample);
+		cout << "orient: " << sample[1] << endl << "voxel: " << sample[0] << endl;
 		if (sample_info != 1)
 		{
 			cout << "Error: FinalPosePlanner::No more sample to use" << endl;
@@ -130,12 +132,14 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 //		COMPUTE CONFIGURATION
 		before_IK = chrono::high_resolution_clock::now();
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_configuration, ik_info, infeasible_constraints, ik_options);
+		after_IK = chrono::high_resolution_clock::now();
+	    IK_time += chrono::duration_cast<chrono::microseconds>(after_IK - before_IK).count();
 		publisher.publish(lcm, robot, final_configuration);
 //		cout << nominal_configuration.transpose() << endl;
 		vector<string> name;
 		VectorXd lb;
 		VectorXd ub;
-		double time = 0.;
+//		double time = 0.;
 //		for (auto constraint : constraints)
 //		{
 //			if(constraint->getCategory() == constraint->SingleTimeKinematicConstraintCategory)
@@ -161,8 +165,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 //				}
 //			}
 //		}
-		after_IK = chrono::high_resolution_clock::now();
-	    IK_time += chrono::duration_cast<chrono::microseconds>(after_IK - before_IK).count();
 		if (ik_info < 10)
 		{
 			before_kin = chrono::high_resolution_clock::now();

@@ -45,7 +45,7 @@ classdef FPPOutput
       
       [opt, n_dimensions, dimensions, variables] = obj.parseInput(varargin{:});
       
-      cell_data = cell(dimensions(1:end-1));
+      cell_data = cell([dimensions(1:end-1) 1]);
       for v = 1:numel(opt.vars)
         for i = 1:obj.n_iteration_sets
           idx = [];

@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 					iteration_set_node->LinkEndChild(collision_time_node);
 
 					XMLElement *constraints_time_node = xml_doc.NewElement("constraints_time");
-					collision_time_node->SetAttribute("format", "%g");
+					constraints_time_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(constraints_time_node);
 
 					XMLElement *kin_time_node = xml_doc.NewElement("kin_time");
@@ -357,6 +357,22 @@ int main(int argc, char* argv[])
 					cost_node->SetAttribute("format", "%g");
 					iteration_set_node->LinkEndChild(cost_node);
 
+					XMLElement *cm_angle_time_node = xml_doc.NewElement("cm_angle_time");
+					cm_angle_time_node->SetAttribute("format", "%g");
+					iteration_set_node->LinkEndChild(cm_angle_time_node);
+
+					XMLElement *cm_base_hight_time_node = xml_doc.NewElement("cm_base_hight_time");
+					cm_base_hight_time_node->SetAttribute("format", "%g");
+					iteration_set_node->LinkEndChild(cm_base_hight_time_node);
+
+					XMLElement *cm_direction_time_node = xml_doc.NewElement("cm_direction_time");
+					cm_direction_time_node->SetAttribute("format", "%g");
+					iteration_set_node->LinkEndChild(cm_direction_time_node);
+
+					XMLElement *cm_collision_time_node = xml_doc.NewElement("cm_collision_time");
+					cm_collision_time_node->SetAttribute("format", "%g");
+					iteration_set_node->LinkEndChild(cm_collision_time_node);
+
 					cm.setActiveSide(h);
 					Vector3d endeffector_point = endeffector_points[m][h];
 					VectorXd endeffector_final_pose = endeffector_poses[m][s][h];
@@ -379,6 +395,10 @@ int main(int argc, char* argv[])
 						addTextToElement(n_samples_node, output.n_valid_samples);
 						addTextToElement(n_used_samples_node, output.n_valid_samples_used);
 						addTextToElement(cost_node, output.cost);
+						addTextToElement(cm_angle_time_node, output.cm_angle_time);
+						addTextToElement(cm_base_hight_time_node, output.cm_base_hight_time);
+						addTextToElement(cm_direction_time_node, output.cm_direction_time);
+						addTextToElement(cm_collision_time_node, output.cm_collision_time);
 					}
 				}
 			}

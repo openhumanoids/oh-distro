@@ -10,6 +10,7 @@
 #include <drake/systems/plants/RigidBodyTree.h>
 #include "drake/drakeShapes_export.h"
 #include "bot_lcmgl_client/lcmgl.h"
+#include "finalPosePlanner/FPPOutput.hpp"
 
 struct MapCentre
 {
@@ -71,7 +72,7 @@ public:
 	void drawActiveMap(bot_lcmgl_t* lcmgl, int orient = 0, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
 	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
 	void drawOccupancyMap(bot_lcmgl_t* lcmgl, unsigned int capability_map_voxel, unsigned int orient, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
-	void reduceActiveSet(bool reset_active, std::vector<Eigen::Vector3d> point_cloud, Eigen::Vector2d sagittal_range = Eigen::Vector2d(-M_PI/3, M_PI/3),
+	void reduceActiveSet(bool reset_active, std::vector<Eigen::Vector3d> point_cloud, FPPOutput &output, Eigen::Vector2d sagittal_range = Eigen::Vector2d(-M_PI/3, M_PI/3),
 			Eigen::Vector2d transverse_range =  Eigen::Vector2d(-M_PI/3, M_PI/3), Eigen::Vector2d height_range =  Eigen::Vector2d(0.6, 1.1),
 			double direction_threshold = M_PI/6);
 

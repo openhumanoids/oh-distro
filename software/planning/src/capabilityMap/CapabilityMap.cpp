@@ -9,6 +9,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/algorithm/string.hpp>
+#include <chrono>
 
 #include "capabilityMap/CapabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
@@ -378,14 +379,27 @@ void CapabilityMap::resetActiveOrientations()
 	}
 }
 
-void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cloud, Vector2d sagittal_range, Vector2d transverse_range,
+void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cloud, FPPOutput &output, Vector2d sagittal_range, Vector2d transverse_range,
 		Vector2d height_range, double direction_threshold)
 {
+	chrono::high_resolution_clock::time_point before_angle, after_angle, before_height, after_height, before_direction, after_direction, before_collision, after_collision;
+	before_angle = chrono::high_resolution_clock::now();
 	this->deactivateVoxelsOutsideAngleRanges(sagittal_range, transverse_range, reset_active);
+	after_angle = chrono::high_resolution_clock::now();
+	before_height = chrono::high_resolution_clock::now();
 	this->deactivateVoxelsOutsideBaseHeightRange(height_range);
+	after_height = chrono::high_resolution_clock::now();
+	before_direction = chrono::high_resolution_clock::now();
 	Vector3d direction = quat2rotmat(this->endeffector_pose.block<4,1>(3,0)) * this->endeffector_axis;
 	this->deactivateVoxelsByDirection(direction, direction_threshold);
+	after_direction = chrono::high_resolution_clock::now();
+	before_collision = chrono::high_resolution_clock::now();
 	this->deactivateCollidingVoxels(point_cloud);
+	after_collision = chrono::high_resolution_clock::now();
+	output.cm_angle_time = chrono::duration_cast<chrono::microseconds>(after_angle - before_angle).count()/1.e6;
+	output.cm_base_hight_time = chrono::duration_cast<chrono::microseconds>(after_height - before_height).count()/1.e6;
+	output.cm_direction_time = chrono::duration_cast<chrono::microseconds>(after_direction - before_direction).count()/1.e6;
+	output.cm_collision_time = chrono::duration_cast<chrono::microseconds>(after_collision - before_collision).count()/1.e6;
 }
 
 void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
@@ -602,19 +616,43 @@ void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, V
 		vox[1] = lower_bound(1) + (i / dimensions(0) % dimensions(1) + 0.5) * resolution;
 		vox[2] = lower_bound(2) + (i / n_voxels_per_face % dimensions(2) + 0.5) * resolution;
 		centre_array.push_back(vox);
+//		this->log << vox.transpose() << endl;
 	}
 }
 
 void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->voxel_centres, this->position_probability, mu, sigma);
-	this->log << this->position_probability << endl << endl << endl;
+//	int w = 10;
+//	for (int i = 0; i < this->position_probability.rows(); i++)
+//	{
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(0) << " ";
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(1) << " ";
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(2) << " ";
+//		this->log.width(w);
+//		this->log << right << this->position_probability[i] << endl;
+//	}
+//	this->log << this->position_probability << endl << endl << endl;
 }
 
 void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->occupancy_map_orientations, this->orientation_probability, mu, sigma);
-	this->log << this->orientation_probability << endl << endl << endl;
+//	int w = 10;
+//	for (int i = 0; i < this->orientation_probability.rows(); i++)
+//	{
+//		this->log.width(w);
+//		this->log << right << this->occupancy_map_orientations[i](0) << " ";
+//		this->log.width(w);
+//		this->log << right << this->occupancy_map_orientations[i](1) << " ";
+//		this->log.width(w);
+//		this->log << right << this->occupancy_map_orientations[i](2) << " ";
+//		this->log.width(w);
+//		this->log << right << this->orientation_probability[i] << endl;
+//	}
 }
 
 void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, VectorXd &pdf, Vector3d mu, Vector3d sigma)
@@ -639,6 +677,8 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 	this->total_probability_orientations.resize(n_orient);
 	this->total_probability_voxels.resize(n_orient);
 	int idx = 0;
+	int w = 10;
+//	std::vector<double> cumulative_probability(this->total_probability.size());
 	for (int v = 0; v < this->active_orientations.size(); v++)
 	{
 		for (int o : this->active_orientations[v])
@@ -646,6 +686,41 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 			this->total_probability[idx] = this->position_probability(v) * this->orientation_probability(o);
 			this->total_probability_orientations[idx] = o;
 			this->total_probability_voxels[idx] = v;
+//			if (idx != 0)
+//			{
+//				cumulative_probability[idx] = cumulative_probability[idx-1] + this->total_probability[idx];
+//			}
+//			else
+//			{
+//				cumulative_probability[idx] = this->total_probability[idx];
+//			}
+//			this->log.width(w);
+//			this->log << right << this->getVoxelCentre(v)(0) << " ";
+//			this->log.width(w);
+//			this->log << right << this->getVoxelCentre(v)(1) << " ";
+//			this->log.width(w);
+//			this->log << right << this->getVoxelCentre(v)(2) << " ";
+//			this->log.width(w);
+//			this->log << right << this->occupancy_map_orientations[o](0) << " ";
+//			this->log.width(w);
+//			this->log << right << this->occupancy_map_orientations[o](1) << " ";
+//			this->log.width(w);
+//			this->log << right << this->occupancy_map_orientations[o](2) << " ";
+//			this->log.width(w);
+//			this->log << right << idx << " ";
+
+//			this->log.width(w);
+//			this->log << right << o+1 << " ";
+//			this->log.width(w);
+//			this->log << right << v+1 << " ";
+//			this->log.width(w);
+//			this->log << right << this->orientation_probability(o) << " ";
+//			this->log.width(w);
+//			this->log << right << this->position_probability(v) << " ";
+//			this->log.width(w);
+//			this->log << right << this->total_probability[idx] << " ";
+//			this->log.width(w);
+//			this->log << right << cumulative_probability[idx] << endl;
 			idx++;
 		}
 	}
@@ -653,7 +728,7 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 		if (this->total_probability[i] > 0)
 		{
 		}
-			{this->log << this->total_probability[i] << endl;}
+//			{this->log << this->total_probability[i] << endl;}
 	}
 }
 
@@ -669,11 +744,12 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 //	double rnd = rand() / (double)RAND_MAX * cumulative_probability.back();
 	double rnd = this->random_sequence[0];
 	this->random_sequence.erase(this->random_sequence.begin());
-	cout << "random number: " << rnd << endl;
 	rnd *= cumulative_probability.back();
+	cout << "random number: " << rnd << endl;
 	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
 	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;
 	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data();
+	cout << idx << endl;
 	sample[0] = this->total_probability_voxels[idx];
 	sample[1] = this->total_probability_orientations[idx];
 	this->total_probability.erase(this->total_probability.begin() + idx);

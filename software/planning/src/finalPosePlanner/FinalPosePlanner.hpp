@@ -16,22 +16,7 @@
 #include "drake/drakeShapes_export.h"
 #include "capabilityMap/CapabilityMap.hpp"
 #include "drake/systems/plants/IKoptions.h"
-
-struct FPPOutput
-{
-	int final_orient;
-	int n_valid_samples;
-	int n_valid_samples_used;
-	double cost;
-	int info;
-	double computation_time;
-	double IK_time;
-	double capability_map_time;
-	double collision_time;
-	double constraints_time;
-	double kinematics_time;
-	double sampling_time;
-};
+#include "finalPosePlanner/FPPOutput.hpp"
 
 class FinalPosePlanner
 {
