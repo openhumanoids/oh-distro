@@ -539,32 +539,18 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 						if (find(om_occupied_voxels.begin(), om_occupied_voxels.end(), om_vox) != om_occupied_voxels.end())
 						{
 							this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient), this->active_orientations[vox].end());
-							if (this->active_orientations[vox].size() == 0)
-							{
-								this->deactivateVoxels({vox});
-								break;
-							}
+							break;
 						}
+					}
+					if (this->active_orientations[vox].size() == 0)
+					{
+						this->deactivateVoxels({vox});
+						break;
 					}
 				}
 			}
 		}
 	}
-//	for(int om_vox : om_voxels)
-//	{
-//		for (int orient = 0; orient < this->n_occupancy_orient; orient++)
-//		{
-//			for (int vox : this->occupancy_maps[this->active_side][om_vox][orient])
-//			{
-//				this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient),
-//					this->active_orientations[vox].end());
-//				if (this->active_orientations[vox].size() == 0)
-//				{
-//					this->active_voxels.erase(remove(this->active_voxels.begin(), this->active_voxels.end(), vox), this->active_voxels.end());
-//				}
-//			}
-//		}
-//	}
 	after_delete = chrono::high_resolution_clock::now();
 	cout << chrono::duration_cast<chrono::microseconds>(after_find - before_find).count()/1.e6 << endl << chrono::duration_cast<chrono::microseconds>(after_delete - before_delete).count()/1.e6 << endl;
 }
