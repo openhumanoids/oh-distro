@@ -201,7 +201,7 @@
       save(file, vars{:}, '-v7.3');
     end
     
-    function eigenExport(obj, file)
+    function exportAsBinFile(obj, file)
       file_id = fopen(file, 'w');
 %       fwrite(file_id, length(obj.urdf), 'uint32');
 %       fwrite(file_id, obj.urdf, 'char*1');
@@ -234,29 +234,36 @@
       if ~isempty(obj.occupancy_map)
         fwrite(file_id, obj.occupancy_map_n_voxels, 'uint32');
         fwrite(file_id, obj.occupancy_map_n_orient, 'uint32');
-        collmap = zeros(obj.occupancy_map_n_voxels,105, 100);
-        activeVoxels = obj.reachability_index > 0;
-        activeVoxelsIdx = find(obj.reachability_index > 0);
         for h = {'left', 'right'}
-          for v = 1:obj.occupancy_map_n_voxels
-            for i = 1:obj.occupancy_map_n_orient
-              coll = activeVoxelsIdx(obj.occupancy_map.(h{1}){i}(v,activeVoxels));
-              ncoll = length(coll);
-              collmap(v, i, 1:ncoll) = coll;
-            end
-          end
-          for i = 1:size(collmap, 1)
-            fwrite(file_id, nnz(sum(squeeze(collmap(i,:,:))~=0,2)), 'uint32');
-            for j = 1:size(collmap, 2)
-              ncoll = nnz(collmap(i,j,:));
-              if ncoll > 0
-                fwrite(file_id, ncoll, 'uint32');
-                fwrite(file_id, j, 'uint32');
-                fwrite(file_id, collmap(i,j,1:ncoll), 'uint32');
-              end
+          fullmap = [obj.occupancy_map.(h{1}){:}];
+          for v = 1:obj.n_voxels
+            for o = 1:obj.occupancy_map_n_orient
+              colliding_voxels =  find(fullmap(:, v + obj.n_voxels * (o-1)));
+              fwrite(file_id, numel(colliding_voxels), 'uint32');
+              fwrite(file_id, colliding_voxels, 'uint32');
             end
           end
         end
+%         for h = {'left', 'right'}
+%           for v = 1:obj.occupancy_map_n_voxels
+%             for i = 1:obj.occupancy_map_n_orient
+%               coll = activeVoxelsIdx(obj.occupancy_map.(h{1}){i}(v,activeVoxels));
+%               ncoll = length(coll);
+%               collmap(v, i, 1:ncoll) = coll;
+%             end
+%           end
+%           for i = 1:size(collmap, 1)
+%             fwrite(file_id, nnz(sum(squeeze(collmap(i,:,:))~=0,2)), 'uint32');
+%             for j = 1:size(collmap, 2)
+%               ncoll = nnz(collmap(i,j,:));
+%               if ncoll > 0
+%                 fwrite(file_id, ncoll, 'uint32');
+%                 fwrite(file_id, j, 'uint32');
+%                 fwrite(file_id, collmap(i,j,1:ncoll), 'uint32');
+%               end
+%             end
+%           end
+%         end
         
 %         for i = 1:numel(obj.occupancy_map.left)
 %           fwrite(file_id, nnz(obj.occupancy_map.left{i}), 'uint32');

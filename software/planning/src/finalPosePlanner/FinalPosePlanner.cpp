@@ -59,8 +59,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	output.n_valid_samples = capability_map.getNActiveSamples();
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
-	bot_lcmgl_t* lcmgl = bot_lcmgl_init(lcm->getUnderlyingLCM(), "Probability distribution");
-	drawPositionProbabilityDistribution(lcmgl, capability_map.getVoxelCentres(), capability_map.getPositionProbability());
 	after_CM = chrono::high_resolution_clock::now();
 
 

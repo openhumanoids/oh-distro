@@ -117,7 +117,7 @@ private:
 	Eigen::Vector3d map_upper_bound;
 	unsigned int n_occupancy_voxels;
 	unsigned int n_occupancy_orient;
-	typedef std::vector<std::vector<std::vector<unsigned int>>> occupancy_map; /**< Dimensions:\n  n occupancy map voxels\n  n orientations\n  invalid capability map voxels for each orientation (variable) */
+	typedef std::vector<std::vector<std::vector<unsigned int>>> occupancy_map; /**< Dimensions:\n  n capability map voxels\n  n orientations\n  occupied occupancy map voxels for each orientation (variable) */
 	std::map<Side, occupancy_map> occupancy_maps;
 	double occupancy_map_resolution;
 	Eigen::Vector3d occupancy_map_lower_bound;
@@ -140,6 +140,8 @@ private:
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
+	bool isActiveVoxel(unsigned int voxel);
+	bool isActiveOrient(unsigned int voxel, unsigned int orient);
 	void resetActiveVoxels(bool include_zero_reachability = false);
 	void resetActiveOrientations();
 	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active = false);
