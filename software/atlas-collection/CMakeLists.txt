@@ -46,10 +46,14 @@ macro(add_external_project proj)
 endmacro()
 
 
+add_external_project(atlas_lcmtypes)
+checkbuild(atlas_lcmtypes)
+
+add_external_project(bdi_walking)
+checkbuild(bdi_walking)
+
 # Only build if private modules atlas and flycapture have been checked out
 if(BUILD_ATLAS_DRIVER)
-  add_external_project(atlas_lcmtypes)
-  checkbuild(atlas_lcmtypes)
 
   set(atlas_depends atlas_lcmtypes)
   add_external_project(atlas)
@@ -58,9 +62,6 @@ if(BUILD_ATLAS_DRIVER)
   set(state_sync_atlas_depends atlas atlas_lcmtypes)
   add_external_project(state_sync_atlas)
   checkbuild(state_sync_atlas)
-
-  add_external_project(bdi_walking)
-  checkbuild(bdi_walking)
 
   add_external_project(flycapture)
   checkbuild(flycapture)
