@@ -213,3 +213,19 @@ void CandidateRobotPosePublisher::publish(boost::shared_ptr<lcm::LCM> lcm, Rigid
 
 	lcm->publish("CANDIDATE_ROBOT_ENDPOSE", &pose_msg);
 }
+
+FPPTimer::FPPTimer():before_time(chrono::high_resolution_clock::now()), after_time(chrono::high_resolution_clock::now()), duration(0)
+{
+
+}
+
+void FPPTimer::start()
+{
+	this->before_time = chrono::high_resolution_clock::now() - this->duration;
+}
+
+void FPPTimer::stop()
+{
+	this->after_time = chrono::high_resolution_clock::now();
+	this->duration = std::chrono::duration_cast<std::chrono::microseconds>(this->after_time - this->before_time);
+}

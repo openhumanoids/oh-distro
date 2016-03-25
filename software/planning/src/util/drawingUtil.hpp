@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
+#include <chrono>
 
 #include "bot_lcmgl_client/lcmgl.h"
 #include "drake/systems/plants/RigidBodyTree.h"
@@ -21,6 +22,20 @@ public:
 	CandidateRobotPosePublisher();
 	int64_t timestamp_now();
 	void publish(boost::shared_ptr<lcm::LCM> lcm, RigidBodyTree &robot, Eigen::VectorXd &pose);
+};
+
+class FPPTimer
+{
+public:
+	FPPTimer();
+	void start();
+	void stop();
+	void reset();
+	double getDuration(){return duration.count()/1.e6;}
+private:
+	std::chrono::high_resolution_clock::time_point before_time;
+	std::chrono::high_resolution_clock::time_point after_time;
+	std::chrono::microseconds duration;
 };
 
 #endif
