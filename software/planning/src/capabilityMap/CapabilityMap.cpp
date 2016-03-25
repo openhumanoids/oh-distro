@@ -150,7 +150,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			std::cout << "Loaded n_occupancy_orient: " << this->n_occupancy_orient << endl;
 			this->occupancy_maps[this->Side::LEFT].resize(this->n_voxels);
 			this->occupancy_maps[this->Side::RIGHT].resize(this->n_voxels);
-			this->active_orientations.resize(this->n_voxels);
+			this->active_orientations.resize(this->n_voxels, this->n_occupancy_orient);
 			unsigned int n_colliding_om_voxels;
 			unsigned int colliding_voxel;
 
@@ -292,15 +292,15 @@ void CapabilityMap::setNVoxels(unsigned int n_voxels)
 	this->n_voxels = n_voxels;
 }
 
-int CapabilityMap::getNActiveOrientations()
-{
-	int n_orient = 0;
-	for (std::vector<unsigned int> vox : this->active_orientations)
-	{
-		n_orient += vox.size();
-	}
-	return n_orient;
-}
+//int CapabilityMap::getNActiveOrientations()
+//{
+//	int n_orient = 0;
+//	for (std::vector<unsigned int> vox : this->active_orientations)
+//	{
+//		n_orient += vox.size();
+//	}
+//	return n_orient;
+//}
 
 void CapabilityMap::setNDirectionsPerVoxel(unsigned int n_dir)
 {
@@ -311,16 +311,6 @@ RowVector2d CapabilityMap::getCapabilityMapSize()
 {
 	RowVector2d size;
 	size << this->map.rows(), this->map.cols();
-	return size;
-}
-
-int CapabilityMap::getNActiveSamples()
-{
-	int size = 0;
-	for(auto i : this->active_orientations)
-	{
-		size += i.size();
-	}
 	return size;
 }
 
@@ -350,14 +340,14 @@ void CapabilityMap::deactivateVoxels(vector<int> idx)
 	for (int i : idx)
 	{
 		this->active_voxels[i] = false;
-		this->active_orientations[i].clear();
+		this->active_orientations.row(i).setZero();
 	}
 }
 
-bool CapabilityMap::isActiveOrient(unsigned int voxel, unsigned int orient)
-{
-	return find(this->active_orientations[voxel].begin(), this->active_orientations[voxel].end(), orient) != this->active_orientations[voxel].end();
-}
+//bool CapabilityMap::isActiveOrient(unsigned int voxel, unsigned int orient)
+//{
+//	return find(this->active_orientations[voxel].begin(), this->active_orientations[voxel].end(), orient) != this->active_orientations[voxel].end();
+//}
 
 void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
 {
@@ -374,34 +364,40 @@ void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
 
 void CapabilityMap::resetActiveOrientations()
 {
-	vector<unsigned int> orientations(this->n_occupancy_orient);
-	iota(orientations.begin(), orientations.end(), 0);
+	this->active_orientations = Matrix<bool, Dynamic, Dynamic>::Ones(this->n_voxels, this->n_occupancy_orient);
 	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		if (this->active_voxels[vox])
+		if (!this->active_voxels[vox])
 		{
-			this->active_orientations[vox] = orientations;
+			this->active_orientations.row(vox).setZero();
 		}
 	}
+	cout <<this->getNActiveVoxels() << endl;
+	cout <<this->getNActiveOrientations() << endl;
 }
 
 void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cloud, FPPOutput &output, Vector2d sagittal_range, Vector2d transverse_range,
 		Vector2d height_range, double direction_threshold)
 {
 	chrono::high_resolution_clock::time_point before_angle, after_angle, before_height, after_height, before_direction, after_direction, before_collision, after_collision;
+
 	before_angle = chrono::high_resolution_clock::now();
 	this->deactivateVoxelsOutsideAngleRanges(sagittal_range, transverse_range, reset_active);
 	after_angle = chrono::high_resolution_clock::now();
+
 	before_height = chrono::high_resolution_clock::now();
 	this->deactivateVoxelsOutsideBaseHeightRange(height_range);
 	after_height = chrono::high_resolution_clock::now();
+
 	before_direction = chrono::high_resolution_clock::now();
 	Vector3d direction = quat2rotmat(this->endeffector_pose.block<4,1>(3,0)) * this->endeffector_axis;
 	this->deactivateVoxelsByDirection(direction, direction_threshold);
 	after_direction = chrono::high_resolution_clock::now();
+
 	before_collision = chrono::high_resolution_clock::now();
 	this->deactivateCollidingVoxels(point_cloud);
 	after_collision = chrono::high_resolution_clock::now();
+
 	output.cm_angle_time = chrono::duration_cast<chrono::microseconds>(after_angle - before_angle).count()/1.e6;
 	output.cm_base_hight_time = chrono::duration_cast<chrono::microseconds>(after_height - before_height).count()/1.e6;
 	output.cm_direction_time = chrono::duration_cast<chrono::microseconds>(after_direction - before_direction).count()/1.e6;
@@ -410,16 +406,10 @@ void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cl
 
 void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
 {
-	FPPTimer timer1;
-	FPPTimer timer2;
 	if (reset_active)
 	{
-		timer1.start();
 		this->resetActiveVoxels();
-		timer1.stop();
-		timer2.start();
 		this->resetActiveOrientations();
-		timer2.stop();
 	}
 	vector<int> voxels_to_deactivate;
 //	cout << sagittal_range * 180./M_PI << endl;
@@ -454,8 +444,6 @@ void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_
 	{
 		this->deactivateVoxels(voxels_to_deactivate);
 	}
-	cout << "total1 " << timer1.getDuration() << endl;
-	cout << "total2 " << timer2.getDuration() << endl;
 //	cout << this->active_voxels.size() << endl;
 //	for ( auto a : this->active_voxels){cout << a << endl;}
 }
@@ -473,16 +461,18 @@ void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range
 	{
 		if (this->active_voxels[vox])
 		{
-			active_orients = this->active_orientations[vox];
-			for (int orient : active_orients)
+			for (int orient = 0; orient < this->n_occupancy_orient; orient++)
 			{
-				position = rpy2rotmat(this->occupancy_map_orientations[orient]) * (this->voxel_centres[vox] + this->endeffector_pose.block<3,1>(0,0) - this->map_centre);
-				if (position(2) < range(0) || position(2) > range(1))
+				if (this->active_orientations(vox, orient))
 				{
-					this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient), this->active_orientations[vox].end());
+					position = rpy2rotmat(this->occupancy_map_orientations[orient]) * (this->voxel_centres[vox] + this->endeffector_pose.block<3,1>(0,0) - this->map_centre);
+					if (position(2) < range(0) || position(2) > range(1))
+					{
+						this->active_orientations(vox, orient) = false;
+					}
 				}
 			}
-			if (this->active_orientations[vox].size() == 0)
+			if (!this->active_orientations.row(vox).any())
 			{
 				this->deactivateVoxels({vox});
 			}
@@ -542,8 +532,7 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 		if (((Array3d)point_cloud[point] > (Array3d)lower_bound).all() &&
 			((Array3d)point_cloud[point] < (Array3d)upper_bound).all())
 		{
-			sub_d = ((point_cloud[point] - lower_bound) /
-					this->occupancy_map_resolution);
+			sub_d = ((point_cloud[point] - lower_bound) / this->occupancy_map_resolution);
 			transform(sub_d.data(), sub_d.data() + 3, sub_d.data(), ptr_fun((double(*)(double))floor));
 			sub = sub_d.cast<int>();
 			idx = sub(2) * this->occupancy_map_dimensions(1) * this->occupancy_map_dimensions(0) + sub(1) * this->occupancy_map_dimensions(0) + sub(0);
@@ -565,11 +554,11 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 					{
 						if (find(om_occupied_voxels.begin(), om_occupied_voxels.end(), om_vox) != om_occupied_voxels.end())
 						{
-							this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient), this->active_orientations[vox].end());
+							this->active_orientations(vox, orient) = false;
 							break;
 						}
 					}
-					if (this->active_orientations[vox].size() == 0)
+					if (!this->active_orientations.row(vox).any())
 					{
 						this->deactivateVoxels({vox});
 						break;
@@ -722,49 +711,52 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 	int idx = 0;
 	int w = 10;
 //	std::vector<double> cumulative_probability(this->total_probability.size());
-	for (int v = 0; v < this->active_orientations.size(); v++)
+	for (int vox = 0; vox < this->active_orientations.rows(); vox++)
 	{
-		for (int o : this->active_orientations[v])
+		for (int orient = 0; orient < this->active_orientations.cols(); orient++)
 		{
-			this->total_probability[idx] = this->position_probability(v) * this->orientation_probability(o);
-			this->total_probability_orientations[idx] = o;
-			this->total_probability_voxels[idx] = v;
-//			if (idx != 0)
-//			{
-//				cumulative_probability[idx] = cumulative_probability[idx-1] + this->total_probability[idx];
-//			}
-//			else
-//			{
-//				cumulative_probability[idx] = this->total_probability[idx];
-//			}
-//			this->log.width(w);
-//			this->log << right << this->getVoxelCentre(v)(0) << " ";
-//			this->log.width(w);
-//			this->log << right << this->getVoxelCentre(v)(1) << " ";
-//			this->log.width(w);
-//			this->log << right << this->getVoxelCentre(v)(2) << " ";
-//			this->log.width(w);
-//			this->log << right << this->occupancy_map_orientations[o](0) << " ";
-//			this->log.width(w);
-//			this->log << right << this->occupancy_map_orientations[o](1) << " ";
-//			this->log.width(w);
-//			this->log << right << this->occupancy_map_orientations[o](2) << " ";
-//			this->log.width(w);
-//			this->log << right << idx << " ";
+			if (this->active_orientations(vox, orient))
+			{
+				this->total_probability[idx] = this->position_probability(vox) * this->orientation_probability(orient);
+				this->total_probability_orientations[idx] = orient;
+				this->total_probability_voxels[idx] = vox;
+	//			if (idx != 0)
+	//			{
+	//				cumulative_probability[idx] = cumulative_probability[idx-1] + this->total_probability[idx];
+	//			}
+	//			else
+	//			{
+	//				cumulative_probability[idx] = this->total_probability[idx];
+	//			}
+	//			this->log.width(w);
+	//			this->log << right << this->getVoxelCentre(v)(0) << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->getVoxelCentre(v)(1) << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->getVoxelCentre(v)(2) << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->occupancy_map_orientations[o](0) << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->occupancy_map_orientations[o](1) << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->occupancy_map_orientations[o](2) << " ";
+	//			this->log.width(w);
+	//			this->log << right << idx << " ";
 
-//			this->log.width(w);
-//			this->log << right << o+1 << " ";
-//			this->log.width(w);
-//			this->log << right << v+1 << " ";
-//			this->log.width(w);
-//			this->log << right << this->orientation_probability(o) << " ";
-//			this->log.width(w);
-//			this->log << right << this->position_probability(v) << " ";
-//			this->log.width(w);
-//			this->log << right << this->total_probability[idx] << " ";
-//			this->log.width(w);
-//			this->log << right << cumulative_probability[idx] << endl;
-			idx++;
+	//			this->log.width(w);
+	//			this->log << right << o+1 << " ";
+	//			this->log.width(w);
+	//			this->log << right << v+1 << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->orientation_probability(o) << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->position_probability(v) << " ";
+	//			this->log.width(w);
+	//			this->log << right << this->total_probability[idx] << " ";
+	//			this->log.width(w);
+	//			this->log << right << cumulative_probability[idx] << endl;
+				idx++;
+			}
 		}
 	}
 	for (int i = 0; i < this->total_probability.size(); i++){
@@ -868,7 +860,7 @@ void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, int orient, Vector3d centr
 	std::vector<unsigned int> idx;
 	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		if (this->active_voxels[vox] && find(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient) != this->active_orientations[vox].end())
+		if (this->isActiveOrient(vox, orient))
 		{
 			idx.push_back(vox);
 		}

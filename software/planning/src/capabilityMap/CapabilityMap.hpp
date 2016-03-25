@@ -53,7 +53,7 @@ public:
 	Eigen::Vector2i getMapSize();
 	int getNVoxels(){return n_voxels;}
 	int getNActiveVoxels(){return count(active_voxels.begin(), active_voxels.end(), 1);}
-	int getNActiveSamples();
+	int getNActiveOrientations(){return this->active_orientations.count();}
 	Eigen::Vector3d getMapCentre(){return map_centre;}
 	Eigen::Vector3d getMapUpperBound(){return map_upper_bound;}
 	Eigen::Vector3d getMapLowerBound(){return map_lower_bound;}
@@ -128,7 +128,7 @@ private:
 	Side active_side;
 	std::vector<Eigen::Vector3d> voxel_centres;
 	std::vector<bool> active_voxels;
-	std::vector<std::vector<unsigned int>> active_orientations; /**< Dimensions:\n  n capability map voxels\n  n active orientations for each voxel (variable) */
+	Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> active_orientations; /**< Dimensions:\n  n capability map voxels\n  n orientations */
 	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
 	Eigen::VectorXd position_probability;
@@ -141,7 +141,7 @@ private:
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
 	bool isActiveVoxel(unsigned int voxel){return active_voxels[voxel];}
-	bool isActiveOrient(unsigned int voxel, unsigned int orient);
+	bool isActiveOrient(unsigned int voxel, unsigned int orient){return active_orientations(voxel, orient);}
 	void resetActiveVoxels(bool include_zero_reachability = false);
 	void resetActiveOrientations();
 	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active = false);
@@ -170,7 +170,6 @@ private:
 	 * compute the orientation-position combined probability
 	 */
 	void computeTotalProbabilityDistribution();
-	int getNActiveOrientations();
 };
 
 
