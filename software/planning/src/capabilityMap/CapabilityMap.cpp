@@ -9,7 +9,6 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/algorithm/string.hpp>
-#include <chrono>
 
 #include "capabilityMap/CapabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
@@ -50,12 +49,12 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 	}
 	else
 	{
-		std::cout << "Loading data from" << map_file << '\n';
+		this->log << "Loading data from" << map_file << '\n';
 
 		inputFile.read((char *) this->map_centre_left.data(), sizeof(this->map_centre_left));
-		std::cout << "Loaded map_centre_left: " << this->map_centre_left[0] << ";"  << this->map_centre_left[1] << ";"  << this->map_centre_left[2] << '\n';
+		this->log << "Loaded map_centre_left: " << this->map_centre_left[0] << ";"  << this->map_centre_left[1] << ";"  << this->map_centre_left[2] << '\n';
 		inputFile.read((char *) this->map_centre_right.data(), sizeof(this->map_centre_right));
-		std::cout << "Loaded map_centre_right: " << this->map_centre_right[0] << ";" << this->map_centre_right[1] << ";"  << this->map_centre_right[2] << '\n';
+		this->log << "Loaded map_centre_right: " << this->map_centre_right[0] << ";" << this->map_centre_right[1] << ";"  << this->map_centre_right[2] << '\n';
 
 		inputFile.read((char *) &string_length, sizeof(unsigned int));
 		char *ee_link_left_str = new char[string_length];
@@ -63,17 +62,17 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 		this->endeffector_link.left = ee_link_left_str;
 		delete [] ee_link_left_str;
 		ee_link_left_str = nullptr;
-		std::cout << "Loaded endeffector_link.left: " << this->endeffector_link.left.c_str() << endl;
+		this->log << "Loaded endeffector_link.left: " << this->endeffector_link.left.c_str() << endl;
 		inputFile.read((char *) &string_length, sizeof(unsigned int ));
 		char *ee_link_right_str = new char[string_length];
 		inputFile.read(ee_link_right_str, string_length * sizeof(char));
 		this->endeffector_link.right = ee_link_right_str;
 		delete [] ee_link_right_str;
 		ee_link_right_str = nullptr;
-		std::cout << "Loaded endeffector_link.right: " << this->endeffector_link.right.c_str() << endl;
+		this->log << "Loaded endeffector_link.right: " << this->endeffector_link.right.c_str() << endl;
 
 		inputFile.read((char *) this->endeffector_axis.data(), sizeof(this->endeffector_axis));
-		std::cout << "Loaded endeffector_axis: " << this->endeffector_axis[0] << ";"  << this->endeffector_axis[1] << ";"  << this->endeffector_axis[2] << '\n';
+		this->log << "Loaded endeffector_axis: " << this->endeffector_axis[0] << ";"  << this->endeffector_axis[1] << ";"  << this->endeffector_axis[2] << '\n';
 
 		inputFile.read((char *) &string_length, sizeof(unsigned int));
 		char *base_link_str = new char[string_length];
@@ -81,24 +80,24 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 		this->base_link = base_link_str;
 		delete [] base_link_str;
 		base_link_str = nullptr;
-		std::cout << "Loaded base_link: " << this->base_link.c_str() << endl;
+		this->log << "Loaded base_link: " << this->base_link.c_str() << endl;
 
 		inputFile.read((char *) &this->n_joints, sizeof(unsigned int));
-		std::cout << "Loaded n_joints: "<< this->n_joints << endl;
+		this->log << "Loaded n_joints: "<< this->n_joints << endl;
 
 		this->nominal_configuration.resize(this->n_joints);
 		inputFile.read((char *) this->nominal_configuration.data(), this->n_joints * sizeof(VectorXd::Scalar));
-		std::cout << "Loaded nominal_configuration: ";
+		this->log << "Loaded nominal_configuration: ";
 		for (unsigned int j = 0; j < this->n_joints; j++)
 		{
-			std::cout << this->nominal_configuration[j] << ";";
+			this->log << this->nominal_configuration[j] << ";";
 		}
-		std::cout << '\n';
+		this->log << '\n';
 
 		inputFile.read((char *) &contains_map, sizeof(bool));
 		if (contains_map)
 		{
-			std::cout << "Found capability map data" << endl;
+			this->log << "Found capability map data" << endl;
 			inputFile.read((char *) &this->n_voxels, sizeof(unsigned int));
 			inputFile.read((char *) &this->n_directions_per_voxel, sizeof(unsigned int));
 			this->n_voxels_per_edge = cbrt(this->n_voxels);
@@ -114,40 +113,40 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 				triplet_list.push_back(Triplet<bool>(idx(i, 0), idx(i, 1), true));
 			}
 			this->map.setFromTriplets(triplet_list.begin(), triplet_list.end());
-			std::cout << "Loaded Capability Map (" << this->map.rows() << "x" << this->map.cols() << ")\n";
+			this->log << "Loaded Capability Map (" << this->map.rows() << "x" << this->map.cols() << ")\n";
 
 			this->reachability_index.resize(this->n_voxels);
 			inputFile.read((char *) this->reachability_index.data(), this->n_voxels * sizeof(VectorXd::Scalar));
-			std::cout << "Loaded Reachability_index (" << this->reachability_index.rows() << ")\n";
+			this->log << "Loaded Reachability_index (" << this->reachability_index.rows() << ")\n";
 
 			inputFile.read((char *) &this->voxel_edge, sizeof(double));
-			std::cout << "Loaded voxel_edge :" << this->voxel_edge << endl;
+			this->log << "Loaded voxel_edge :" << this->voxel_edge << endl;
 
 			inputFile.read((char *) &this->angular_tolerance, sizeof(double));
-			std::cout << "Loaded angular_tolerance :" << this->angular_tolerance << endl;
+			this->log << "Loaded angular_tolerance :" << this->angular_tolerance << endl;
 
 			inputFile.read((char *) &this->position_tolerance, sizeof(double));
-			std::cout << "Loaded position_tolerance :" << this->position_tolerance << endl;
+			this->log << "Loaded position_tolerance :" << this->position_tolerance << endl;
 
 			inputFile.read((char *) this->map_lower_bound.data(), sizeof(this->map_lower_bound));
-			std::cout << "Loaded map_lower_bound: " << this->map_lower_bound[0] << ";"  << this->map_lower_bound[1] << ";"  << this->map_lower_bound[2] << '\n';
+			this->log << "Loaded map_lower_bound: " << this->map_lower_bound[0] << ";"  << this->map_lower_bound[1] << ";"  << this->map_lower_bound[2] << '\n';
 
 			inputFile.read((char *) this->map_upper_bound.data(), sizeof(this->map_upper_bound));
-			std::cout << "Loaded map_upper_bound: " << this->map_upper_bound[0] << ";"  << this->map_upper_bound[1] << ";"  << this->map_upper_bound[2] << '\n';
+			this->log << "Loaded map_upper_bound: " << this->map_upper_bound[0] << ";"  << this->map_upper_bound[1] << ";"  << this->map_upper_bound[2] << '\n';
 		}
 		else
 		{
-			std::cout << "No capability map data found" << endl;
+			this->log << "No capability map data found" << endl;
 		}
 
 		inputFile.read((char *) &contains_occupancy_map, sizeof(bool));
 		if (contains_occupancy_map)
 		{
-			std::cout << "Found occupancy map data" << endl;
+			this->log << "Found occupancy map data" << endl;
 			inputFile.read((char *) &this->n_occupancy_voxels, sizeof(unsigned int));
-			std::cout << "Loaded n_occupancy_voxels: " << this->n_occupancy_voxels << endl;
+			this->log << "Loaded n_occupancy_voxels: " << this->n_occupancy_voxels << endl;
 			inputFile.read((char *) &this->n_occupancy_orient, sizeof(unsigned int));
-			std::cout << "Loaded n_occupancy_orient: " << this->n_occupancy_orient << endl;
+			this->log << "Loaded n_occupancy_orient: " << this->n_occupancy_orient << endl;
 			this->occupancy_maps[this->Side::LEFT].resize(this->n_voxels);
 			this->occupancy_maps[this->Side::RIGHT].resize(this->n_voxels);
 			this->active_orientations.resize(this->n_voxels, this->n_occupancy_orient);
@@ -162,16 +161,15 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 				switch(s)
 				{
 					case Side::LEFT:
-						std::cout << "Loading left occupancy map ..." << endl;
+						this->log << "Loading left occupancy map ..." << endl;
 						break;
 					case Side::RIGHT:
-						std::cout << "Loading right occupancy map ..." << endl;
+						this->log << "Loading right occupancy map ..." << endl;
 						break;
 				}
 				for (int vox = 0; vox < this->n_voxels; vox++)
 				{
 					this->occupancy_maps[s][vox].resize(this->n_occupancy_orient);
-//					this->log << "voxel" << vox << ": " << n_colliding_orient;
 					for (int orient = 0; orient < this->n_occupancy_orient; orient++)
 					{
 						inputFile.read((char *) &n_colliding_om_voxels, sizeof(n_colliding_om_voxels));
@@ -185,71 +183,51 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 							}
 						}
 					}
-//					this->log << endl;
 				}
 				switch(s)
 				{
 					case Side::LEFT:
-						std::cout << "Left occupancy map loaded" << endl;
+						this->log << "Left occupancy map loaded" << endl;
 						break;
 					case Side::RIGHT:
-						std::cout << "Right occupancy map loaded" << endl;
+						this->log << "Right occupancy map loaded" << endl;
 						break;
 				}
 			}
 
-//			std::cout << "Loading right occupancy map ..." << endl;
-//			for (int vox = 0; vox < this->n_occupancy_voxels; vox++)
-//			{
-//				this->occupancy_maps[this->Side::RIGHT][vox].resize(this->n_occupancy_orient);
-//				inputFile.read((char *) &n_colliding_orient, sizeof(n_colliding_orient));
-//				cout << n_colliding_orient << endl;
-//				for (int orient = 0; orient < n_colliding_orient; orient++)
-//				{
-//					inputFile.read((char *) &n_colliding_voxels, sizeof(n_colliding_voxels));
-//					inputFile.read((char *) &colliding_orient, sizeof(colliding_orient));
-//					for (int cmVox = 0; cmVox < n_colliding_voxels; cmVox++)
-//					{
-//						inputFile.read((char *) &colliding_voxel, sizeof(colliding_voxel));
-//						this->occupancy_maps[this->Side::RIGHT][vox][colliding_orient - 1].push_back(colliding_voxel - 1);
-//					}
-//				}
-//			}
-//			std::cout << "Left occupancy map loaded" << endl;
-
 			inputFile.read((char *) &this->occupancy_map_resolution, sizeof(double));
-			std::cout << "Loaded occupancy_map_resolution :" << this->occupancy_map_resolution << endl;
+			this->log << "Loaded occupancy_map_resolution :" << this->occupancy_map_resolution << endl;
 
 			inputFile.read((char *) this->occupancy_map_dimensions.data(), sizeof(this->occupancy_map_dimensions));
-			std::cout << "Loaded occupancy_map_dimensions: " << this->occupancy_map_dimensions[0] << ";"  << this->occupancy_map_dimensions[1] << ";"  << this->occupancy_map_dimensions[2] << '\n';
+			this->log << "Loaded occupancy_map_dimensions: " << this->occupancy_map_dimensions[0] << ";"  << this->occupancy_map_dimensions[1] << ";"  << this->occupancy_map_dimensions[2] << '\n';
 
 			inputFile.read((char *) this->occupancy_map_lower_bound.data(), sizeof(this->occupancy_map_lower_bound));
-			std::cout << "Loaded occupancy_map_lower_bound: " << this->occupancy_map_lower_bound[0] << ";"  << this->occupancy_map_lower_bound[1] << ";"  << this->occupancy_map_lower_bound[2] << '\n';
+			this->log << "Loaded occupancy_map_lower_bound: " << this->occupancy_map_lower_bound[0] << ";"  << this->occupancy_map_lower_bound[1] << ";"  << this->occupancy_map_lower_bound[2] << '\n';
 
 			inputFile.read((char *) this->occupancy_map_upper_bound.data(), sizeof(this->occupancy_map_upper_bound));
-			std::cout << "Loaded occupancy_map_upper_bound: " << this->occupancy_map_upper_bound[0] << ";"  << this->occupancy_map_upper_bound[1] << ";"  << this->occupancy_map_upper_bound[2] << '\n';
+			this->log << "Loaded occupancy_map_upper_bound: " << this->occupancy_map_upper_bound[0] << ";"  << this->occupancy_map_upper_bound[1] << ";"  << this->occupancy_map_upper_bound[2] << '\n';
 
 			unsigned int n_roll_steps;
 			inputFile.read((char *) &n_roll_steps, sizeof(n_roll_steps));
 			this->occupancy_map_orient_steps.roll.resize(n_roll_steps);
 			inputFile.read((char *) this->occupancy_map_orient_steps.roll.data(), n_roll_steps * sizeof(double));
-			std::cout << "Loaded occupancy_map_orient_steps.roll (" << this->occupancy_map_orient_steps.roll.rows() << ")\n";
+			this->log << "Loaded occupancy_map_orient_steps.roll (" << this->occupancy_map_orient_steps.roll.rows() << ")\n";
 
 			unsigned int n_pitch_steps;
 			inputFile.read((char *) &n_pitch_steps, sizeof(n_pitch_steps));
 			this->occupancy_map_orient_steps.pitch.resize(n_pitch_steps);
 			inputFile.read((char *) this->occupancy_map_orient_steps.pitch.data(), n_pitch_steps * sizeof(double));
-			std::cout << "Loaded occupancy_map_orient_steps.pitch (" << this->occupancy_map_orient_steps.pitch.rows() << ")\n";
+			this->log << "Loaded occupancy_map_orient_steps.pitch (" << this->occupancy_map_orient_steps.pitch.rows() << ")\n";
 
 			unsigned int n_yaw_steps;
 			inputFile.read((char *) &n_yaw_steps, sizeof(n_yaw_steps));
 			this->occupancy_map_orient_steps.yaw.resize(n_yaw_steps);
 			inputFile.read((char *) this->occupancy_map_orient_steps.yaw.data(), n_yaw_steps * sizeof(double));
-			std::cout << "Loaded occupancy_map_orient_steps.yaw (" << this->occupancy_map_orient_steps.yaw.rows() << ")\n";
+			this->log << "Loaded occupancy_map_orient_steps.yaw (" << this->occupancy_map_orient_steps.yaw.rows() << ")\n";
 		}
 		else
 		{
-			std::cout << "No occupancy map data found" << endl;
+			this->log << "No occupancy map data found" << endl;
 		}
 
 
@@ -266,19 +244,19 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			this->resetActiveOrientations();
 			this->computeVoxelCentres(this->occupancy_voxel_centres, this->occupancy_map_lower_bound, this->occupancy_map_upper_bound, this->occupancy_map_resolution);
 		}
-		std::cout << "Data successfully loaded\n";
+		this->log << "Data successfully loaded\n";
 	}
 }
 
-void CapabilityMap::saveToFile(const string map_file)
-{
-	std::cout << "Saving capability map...\n";
-	ofstream outputFile(map_file.c_str(), ofstream::binary);
-	outputFile.write((char *) &this->n_voxels, sizeof(this->n_voxels));
-	outputFile.write((char *) &this->n_directions_per_voxel, sizeof(this->n_directions_per_voxel));
-	std::cout << "Capability map saved in " << map_file << '\n';
-	outputFile.close();
-}
+//void CapabilityMap::saveToFile(const string map_file)
+//{
+//	std::cout << "Saving capability map...\n";
+//	ofstream outputFile(map_file.c_str(), ofstream::binary);
+//	outputFile.write((char *) &this->n_voxels, sizeof(this->n_voxels));
+//	outputFile.write((char *) &this->n_directions_per_voxel, sizeof(this->n_directions_per_voxel));
+//	std::cout << "Capability map saved in " << map_file << '\n';
+//	outputFile.close();
+//}
 
 Vector2i CapabilityMap::getMapSize()
 {
@@ -291,16 +269,6 @@ void CapabilityMap::setNVoxels(unsigned int n_voxels)
 {
 	this->n_voxels = n_voxels;
 }
-
-//int CapabilityMap::getNActiveOrientations()
-//{
-//	int n_orient = 0;
-//	for (std::vector<unsigned int> vox : this->active_orientations)
-//	{
-//		n_orient += vox.size();
-//	}
-//	return n_orient;
-//}
 
 void CapabilityMap::setNDirectionsPerVoxel(unsigned int n_dir)
 {
@@ -344,11 +312,6 @@ void CapabilityMap::deactivateVoxels(vector<int> idx)
 	}
 }
 
-//bool CapabilityMap::isActiveOrient(unsigned int voxel, unsigned int orient)
-//{
-//	return find(this->active_orientations[voxel].begin(), this->active_orientations[voxel].end(), orient) != this->active_orientations[voxel].end();
-//}
-
 void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
 {
 	std::vector<int> idx(this->n_voxels);
@@ -372,36 +335,34 @@ void CapabilityMap::resetActiveOrientations()
 			this->active_orientations.row(vox).setZero();
 		}
 	}
-	cout <<this->getNActiveVoxels() << endl;
-	cout <<this->getNActiveOrientations() << endl;
 }
 
 void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cloud, FPPOutput &output, Vector2d sagittal_range, Vector2d transverse_range,
 		Vector2d height_range, double direction_threshold)
 {
-	chrono::high_resolution_clock::time_point before_angle, after_angle, before_height, after_height, before_direction, after_direction, before_collision, after_collision;
+	FPPTimer angle_timer, height_timer, direction_timer, collision_timer;
 
-	before_angle = chrono::high_resolution_clock::now();
+	angle_timer.start();
 	this->deactivateVoxelsOutsideAngleRanges(sagittal_range, transverse_range, reset_active);
-	after_angle = chrono::high_resolution_clock::now();
+	angle_timer.stop();
 
-	before_height = chrono::high_resolution_clock::now();
+	height_timer.start();
 	this->deactivateVoxelsOutsideBaseHeightRange(height_range);
-	after_height = chrono::high_resolution_clock::now();
+	height_timer.stop();
 
-	before_direction = chrono::high_resolution_clock::now();
+	direction_timer.start();
 	Vector3d direction = quat2rotmat(this->endeffector_pose.block<4,1>(3,0)) * this->endeffector_axis;
 	this->deactivateVoxelsByDirection(direction, direction_threshold);
-	after_direction = chrono::high_resolution_clock::now();
+	direction_timer.stop();
 
-	before_collision = chrono::high_resolution_clock::now();
+	collision_timer.start();
 	this->deactivateCollidingVoxels(point_cloud);
-	after_collision = chrono::high_resolution_clock::now();
+	collision_timer.stop();
 
-	output.cm_angle_time = chrono::duration_cast<chrono::microseconds>(after_angle - before_angle).count()/1.e6;
-	output.cm_base_hight_time = chrono::duration_cast<chrono::microseconds>(after_height - before_height).count()/1.e6;
-	output.cm_direction_time = chrono::duration_cast<chrono::microseconds>(after_direction - before_direction).count()/1.e6;
-	output.cm_collision_time = chrono::duration_cast<chrono::microseconds>(after_collision - before_collision).count()/1.e6;
+	output.cm_angle_time = angle_timer.getDuration();
+	output.cm_base_hight_time = height_timer.getDuration();
+	output.cm_direction_time = direction_timer.getDuration();
+	output.cm_collision_time = collision_timer.getDuration();
 }
 
 void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
@@ -412,40 +373,29 @@ void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_
 		this->resetActiveOrientations();
 	}
 	vector<int> voxels_to_deactivate;
-//	cout << sagittal_range * 180./M_PI << endl;
-//	cout << sagittal_range(1) * 180./M_PI << "-" << this->sign(sagittal_range(1))* 180./M_PI << "*" << 180 << "=" <<  (sagittal_range(1) - this->sign(sagittal_range(1)) * M_PI) * 180./M_PI << endl;
 	sagittal_range(1) = sagittal_range(1) - this->sign(sagittal_range(1)) * M_PI;
 	sagittal_range(0) = sagittal_range(0) - this->sign(sagittal_range(0)) * M_PI;
 	sagittal_range = sagittal_range.reverse();
 	transverse_range(1) = transverse_range(1) - this->sign(transverse_range(1)) * M_PI;
 	transverse_range(0) = transverse_range(0) - this->sign(transverse_range(0)) * M_PI;
 	transverse_range = transverse_range.reverse();
-//	cout << sagittal_range * 180./M_PI << endl;
-//	cout << this->sign(sagittal_range(1)) << endl;
 	double sagittal_angle, transverse_angle;
 	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
 		if (this->active_voxels[vox])
 		{
-	//		tan_timer.start();
 			sagittal_angle = atan2(this->voxel_centres[vox](2), this->voxel_centres[vox](0));
 			transverse_angle = atan2(this->voxel_centres[vox](1), this->voxel_centres[vox](0));
-	//		tan_timer.stop();
-	//		cout<<tan_timer.getDuration() << endl;
-	//		deactivate_timer.start();
 			if (sagittal_angle > sagittal_range(0) && sagittal_angle < sagittal_range(1) || transverse_angle > transverse_range(0) && transverse_angle < transverse_range(1))
 			{
 				voxels_to_deactivate.push_back(vox);
 			}
-	//		deactivate_timer.stop();
 		}
 	}
 	if (voxels_to_deactivate.size() > 0)
 	{
 		this->deactivateVoxels(voxels_to_deactivate);
 	}
-//	cout << this->active_voxels.size() << endl;
-//	for ( auto a : this->active_voxels){cout << a << endl;}
 }
 
 void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active)
@@ -648,43 +598,17 @@ void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, V
 		vox[1] = lower_bound(1) + (i / dimensions(0) % dimensions(1) + 0.5) * resolution;
 		vox[2] = lower_bound(2) + (i / n_voxels_per_face % dimensions(2) + 0.5) * resolution;
 		centre_array.push_back(vox);
-//		this->log << vox.transpose() << endl;
 	}
 }
 
 void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->voxel_centres, this->position_probability, mu, sigma);
-//	int w = 10;
-//	for (int i = 0; i < this->position_probability.rows(); i++)
-//	{
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(0) << " ";
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(1) << " ";
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(2) << " ";
-//		this->log.width(w);
-//		this->log << right << this->position_probability[i] << endl;
-//	}
-//	this->log << this->position_probability << endl << endl << endl;
 }
 
 void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->occupancy_map_orientations, this->orientation_probability, mu, sigma);
-//	int w = 10;
-//	for (int i = 0; i < this->orientation_probability.rows(); i++)
-//	{
-//		this->log.width(w);
-//		this->log << right << this->occupancy_map_orientations[i](0) << " ";
-//		this->log.width(w);
-//		this->log << right << this->occupancy_map_orientations[i](1) << " ";
-//		this->log.width(w);
-//		this->log << right << this->occupancy_map_orientations[i](2) << " ";
-//		this->log.width(w);
-//		this->log << right << this->orientation_probability[i] << endl;
-//	}
 }
 
 void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, VectorXd &pdf, Vector3d mu, Vector3d sigma)
@@ -709,8 +633,6 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 	this->total_probability_orientations.resize(n_orient);
 	this->total_probability_voxels.resize(n_orient);
 	int idx = 0;
-	int w = 10;
-//	std::vector<double> cumulative_probability(this->total_probability.size());
 	for (int vox = 0; vox < this->active_orientations.rows(); vox++)
 	{
 		for (int orient = 0; orient < this->active_orientations.cols(); orient++)
@@ -720,50 +642,9 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 				this->total_probability[idx] = this->position_probability(vox) * this->orientation_probability(orient);
 				this->total_probability_orientations[idx] = orient;
 				this->total_probability_voxels[idx] = vox;
-	//			if (idx != 0)
-	//			{
-	//				cumulative_probability[idx] = cumulative_probability[idx-1] + this->total_probability[idx];
-	//			}
-	//			else
-	//			{
-	//				cumulative_probability[idx] = this->total_probability[idx];
-	//			}
-	//			this->log.width(w);
-	//			this->log << right << this->getVoxelCentre(v)(0) << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->getVoxelCentre(v)(1) << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->getVoxelCentre(v)(2) << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->occupancy_map_orientations[o](0) << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->occupancy_map_orientations[o](1) << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->occupancy_map_orientations[o](2) << " ";
-	//			this->log.width(w);
-	//			this->log << right << idx << " ";
-
-	//			this->log.width(w);
-	//			this->log << right << o+1 << " ";
-	//			this->log.width(w);
-	//			this->log << right << v+1 << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->orientation_probability(o) << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->position_probability(v) << " ";
-	//			this->log.width(w);
-	//			this->log << right << this->total_probability[idx] << " ";
-	//			this->log.width(w);
-	//			this->log << right << cumulative_probability[idx] << endl;
 				idx++;
 			}
 		}
-	}
-	for (int i = 0; i < this->total_probability.size(); i++){
-		if (this->total_probability[i] > 0)
-		{
-		}
-//			{this->log << this->total_probability[i] << endl;}
 	}
 }
 
@@ -780,7 +661,6 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 	double rnd = this->random_sequence[0];
 	this->random_sequence.erase(this->random_sequence.begin());
 	rnd *= cumulative_probability.back();
-	cout << "end cm"  << endl;
 	cout << "random number: " << rnd << endl;
 	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
 	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;
