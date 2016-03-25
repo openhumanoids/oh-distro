@@ -103,7 +103,7 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			inputFile.read((char *) &this->n_directions_per_voxel, sizeof(unsigned int));
 			this->n_voxels_per_edge = cbrt(this->n_voxels);
 
-			boost::push_back(this->active_voxels, boost::irange(0, (int)this->n_voxels));
+			this->active_voxels.resize(this->n_voxels);
 			this->map.resize(this->n_voxels, this->n_directions_per_voxel);
 			inputFile.read((char *) &nnz, sizeof(unsigned int));
 			idx.resize(nnz, 2);
@@ -327,9 +327,12 @@ int CapabilityMap::getNActiveSamples()
 vector<Vector3d> CapabilityMap::getActiveVoxelCentres()
 {
 	vector<Vector3d> centres;
-	for (unsigned int i : this->active_voxels)
+	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		centres.push_back(this->voxel_centres[i]);
+		if (this->active_voxels[vox])
+		{
+			centres.push_back(this->voxel_centres[vox]);
+		}
 	}
 	return centres;
 }
@@ -338,10 +341,7 @@ void CapabilityMap::activateVoxels(vector<int> idx)
 {
 	for (int i : idx)
 	{
-		if (find(this->active_voxels.begin(), this->active_voxels.end(), i) == this->active_voxels.end())
-		{
-			this->active_voxels.push_back(i);
-		}
+		this->active_voxels[i] = true;
 	}
 }
 
@@ -349,14 +349,9 @@ void CapabilityMap::deactivateVoxels(vector<int> idx)
 {
 	for (int i : idx)
 	{
-		this->active_voxels.erase(remove(this->active_voxels.begin(), this->active_voxels.end(), i), this->active_voxels.end());
+		this->active_voxels[i] = false;
 		this->active_orientations[i].clear();
 	}
-}
-
-bool CapabilityMap::isActiveVoxel(unsigned int voxel)
-{
-	return find(this->active_voxels.begin(), this->active_voxels.end(), voxel) != this->active_voxels.end();
 }
 
 bool CapabilityMap::isActiveOrient(unsigned int voxel, unsigned int orient)
@@ -366,8 +361,8 @@ bool CapabilityMap::isActiveOrient(unsigned int voxel, unsigned int orient)
 
 void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
 {
-	std::vector<int> idx;
-	boost::push_back(idx, boost::irange(0, (int)this->n_voxels));
+	std::vector<int> idx(this->n_voxels);
+	iota(idx.begin(), idx.end(), 0);
 	if (!include_zero_reachability)
 	{
 		this->deactivateVoxels(idx);
@@ -379,10 +374,14 @@ void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
 
 void CapabilityMap::resetActiveOrientations()
 {
-	for (int vox : this->active_voxels)
+	vector<unsigned int> orientations(this->n_occupancy_orient);
+	iota(orientations.begin(), orientations.end(), 0);
+	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		this->active_orientations[vox].clear();
-		boost::push_back(this->active_orientations[vox], boost::irange(0, (int)this->n_occupancy_orient));
+		if (this->active_voxels[vox])
+		{
+			this->active_orientations[vox] = orientations;
+		}
 	}
 }
 
@@ -411,53 +410,82 @@ void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cl
 
 void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
 {
+	FPPTimer timer1;
+	FPPTimer timer2;
 	if (reset_active)
 	{
+		timer1.start();
 		this->resetActiveVoxels();
+		timer1.stop();
+		timer2.start();
 		this->resetActiveOrientations();
+		timer2.stop();
 	}
 	vector<int> voxels_to_deactivate;
-	for (int vox : this->active_voxels)
+//	cout << sagittal_range * 180./M_PI << endl;
+//	cout << sagittal_range(1) * 180./M_PI << "-" << this->sign(sagittal_range(1))* 180./M_PI << "*" << 180 << "=" <<  (sagittal_range(1) - this->sign(sagittal_range(1)) * M_PI) * 180./M_PI << endl;
+	sagittal_range(1) = sagittal_range(1) - this->sign(sagittal_range(1)) * M_PI;
+	sagittal_range(0) = sagittal_range(0) - this->sign(sagittal_range(0)) * M_PI;
+	sagittal_range = sagittal_range.reverse();
+	transverse_range(1) = transverse_range(1) - this->sign(transverse_range(1)) * M_PI;
+	transverse_range(0) = transverse_range(0) - this->sign(transverse_range(0)) * M_PI;
+	transverse_range = transverse_range.reverse();
+//	cout << sagittal_range * 180./M_PI << endl;
+//	cout << this->sign(sagittal_range(1)) << endl;
+	double sagittal_angle, transverse_angle;
+	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		double sagittal_angle = atan2(this->voxel_centres[vox](2), this->voxel_centres[vox](0));
-		double transverse_angle = atan2(this->voxel_centres[vox](1), this->voxel_centres[vox](0));
-		sagittal_angle = sagittal_angle - this->sign(sagittal_angle) * M_PI;
-		transverse_angle = transverse_angle - this->sign(transverse_angle) * M_PI;
-		if (sagittal_angle < sagittal_range(0) || sagittal_angle > sagittal_range(1) || transverse_angle < transverse_range(0) || transverse_angle > transverse_range(1))
+		if (this->active_voxels[vox])
 		{
-			voxels_to_deactivate.push_back(vox);
+	//		tan_timer.start();
+			sagittal_angle = atan2(this->voxel_centres[vox](2), this->voxel_centres[vox](0));
+			transverse_angle = atan2(this->voxel_centres[vox](1), this->voxel_centres[vox](0));
+	//		tan_timer.stop();
+	//		cout<<tan_timer.getDuration() << endl;
+	//		deactivate_timer.start();
+			if (sagittal_angle > sagittal_range(0) && sagittal_angle < sagittal_range(1) || transverse_angle > transverse_range(0) && transverse_angle < transverse_range(1))
+			{
+				voxels_to_deactivate.push_back(vox);
+			}
+	//		deactivate_timer.stop();
 		}
 	}
 	if (voxels_to_deactivate.size() > 0)
 	{
 		this->deactivateVoxels(voxels_to_deactivate);
 	}
+	cout << "total1 " << timer1.getDuration() << endl;
+	cout << "total2 " << timer2.getDuration() << endl;
+//	cout << this->active_voxels.size() << endl;
+//	for ( auto a : this->active_voxels){cout << a << endl;}
 }
 
 void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active)
 {
 	Vector3d position;
-	vector<unsigned int> active_voxels = this->active_voxels;
 	vector<unsigned int> active_orients;
 	if (reset_active)
 	{
 		this->resetActiveVoxels();
 		this->resetActiveOrientations();
 	}
-	for (int vox : active_voxels)
+	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		active_orients = this->active_orientations[vox];
-		for (int orient : active_orients)
+		if (this->active_voxels[vox])
 		{
-			position = rpy2rotmat(this->occupancy_map_orientations[orient]) * (this->voxel_centres[vox] + this->endeffector_pose.block<3,1>(0,0) - this->map_centre);
-			if (position(2) < range(0) || position(2) > range(1))
+			active_orients = this->active_orientations[vox];
+			for (int orient : active_orients)
 			{
-				this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient), this->active_orientations[vox].end());
+				position = rpy2rotmat(this->occupancy_map_orientations[orient]) * (this->voxel_centres[vox] + this->endeffector_pose.block<3,1>(0,0) - this->map_centre);
+				if (position(2) < range(0) || position(2) > range(1))
+				{
+					this->active_orientations[vox].erase(remove(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient), this->active_orientations[vox].end());
+				}
 			}
-		}
-		if (this->active_orientations[vox].size() == 0)
-		{
-			this->active_voxels.erase(remove(this->active_voxels.begin(), this->active_voxels.end(), vox), this->active_voxels.end());
+			if (this->active_orientations[vox].size() == 0)
+			{
+				this->deactivateVoxels({vox});
+			}
 		}
 	}
 }
@@ -481,11 +509,14 @@ void CapabilityMap::deactivateVoxelsByDirection(Vector3d direction, double direc
 		}
 	}
 	vector<int> voxels_to_deactivate;
-	for (unsigned int vox : this->active_voxels)
+	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		if (find(voxels_to_keep.begin(), voxels_to_keep.end(), vox) == voxels_to_keep.end())
+		if (this->active_voxels[vox])
 		{
-			voxels_to_deactivate.push_back(vox);
+			if (find(voxels_to_keep.begin(), voxels_to_keep.end(), vox) == voxels_to_keep.end())
+			{
+				voxels_to_deactivate.push_back(vox);
+			}
 		}
 	}
 	this->deactivateVoxels(voxels_to_deactivate);
@@ -506,8 +537,6 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 	int idx;
 	vector<int> om_occupied_voxels;
 	vector<int> voxels;
-	chrono::high_resolution_clock::time_point before_find, after_find, before_delete, after_delete;
-	before_find = chrono::high_resolution_clock::now();
 	for (int point = 0; point < point_cloud.size(); point++)
 	{
 		if (((Array3d)point_cloud[point] > (Array3d)lower_bound).all() &&
@@ -524,8 +553,6 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 			}
 		}
 	}
-	after_find = chrono::high_resolution_clock::now();
-	before_delete = chrono::high_resolution_clock::now();
 	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
 		if (this->isActiveVoxel(vox))
@@ -551,8 +578,6 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 			}
 		}
 	}
-	after_delete = chrono::high_resolution_clock::now();
-	cout << chrono::duration_cast<chrono::microseconds>(after_find - before_find).count()/1.e6 << endl << chrono::duration_cast<chrono::microseconds>(after_delete - before_delete).count()/1.e6 << endl;
 }
 
 vector<unsigned int> CapabilityMap::findVoxelsFromDirection(Vector3d direction, double threshold, bool active_set_only)
@@ -560,23 +585,17 @@ vector<unsigned int> CapabilityMap::findVoxelsFromDirection(Vector3d direction, 
 	vector<unsigned int> voxels;
 	vector<unsigned int> voxel_set;
 	vector<unsigned int> points = this->findPointsFromDirection(direction, threshold);
-	if (active_set_only)
+	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		voxel_set = this->active_voxels;
-	}
-	else
-	{
-		voxel_set.resize(this->n_voxels);
-		iota(voxel_set.begin(), voxel_set.end(), 0);
-	}
-	for (unsigned int vox : voxel_set)
-	{
-		for (unsigned int point : points)
+		if (active_set_only && this->active_voxels[vox] || !active_set_only)
 		{
-			if (this->map.coeffRef(vox, point))
+			for (unsigned int point : points)
 			{
-				voxels.push_back(vox);
-				break;
+				if (this->map.coeffRef(vox, point))
+				{
+					voxels.push_back(vox);
+					break;
+				}
 			}
 		}
 	}
@@ -769,6 +788,7 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 	double rnd = this->random_sequence[0];
 	this->random_sequence.erase(this->random_sequence.begin());
 	rnd *= cumulative_probability.back();
+	cout << "end cm"  << endl;
 	cout << "random number: " << rnd << endl;
 	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
 	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;
@@ -846,9 +866,9 @@ void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, int orient, Vector3d c
 void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, int orient, Vector3d centre, bool draw_cubes)
 {
 	std::vector<unsigned int> idx;
-	for (int vox : this->active_voxels)
+	for (int vox = 0; vox < this->n_voxels; vox++)
 	{
-		if (find(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient) != this->active_orientations[vox].end())
+		if (this->active_voxels[vox] && find(this->active_orientations[vox].begin(), this->active_orientations[vox].end(), orient) != this->active_orientations[vox].end())
 		{
 			idx.push_back(vox);
 		}

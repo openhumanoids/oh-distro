@@ -52,7 +52,7 @@ public:
 	void saveToFile(const std::string map_file);
 	Eigen::Vector2i getMapSize();
 	int getNVoxels(){return n_voxels;}
-	int getNActiveVoxels(){return active_voxels.size();}
+	int getNActiveVoxels(){return count(active_voxels.begin(), active_voxels.end(), 1);}
 	int getNActiveSamples();
 	Eigen::Vector3d getMapCentre(){return map_centre;}
 	Eigen::Vector3d getMapUpperBound(){return map_upper_bound;}
@@ -127,7 +127,7 @@ private:
 	RigidBodyTree rigid_body_tree;
 	Side active_side;
 	std::vector<Eigen::Vector3d> voxel_centres;
-	std::vector<unsigned int> active_voxels;
+	std::vector<bool> active_voxels;
 	std::vector<std::vector<unsigned int>> active_orientations; /**< Dimensions:\n  n capability map voxels\n  n active orientations for each voxel (variable) */
 	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
@@ -140,7 +140,7 @@ private:
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);
-	bool isActiveVoxel(unsigned int voxel);
+	bool isActiveVoxel(unsigned int voxel){return active_voxels[voxel];}
 	bool isActiveOrient(unsigned int voxel, unsigned int orient);
 	void resetActiveVoxels(bool include_zero_reachability = false);
 	void resetActiveOrientations();
