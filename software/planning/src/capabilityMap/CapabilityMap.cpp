@@ -15,7 +15,7 @@
 #include "drake/util/drakeGeometryUtil.h"
 
 extern "C" {
-double *mt19937ar();
+double *mt19937ar(uint32_t seed);
 }
 
 using namespace std;
@@ -23,13 +23,23 @@ using namespace Eigen;
 
 CapabilityMap::CapabilityMap(const string & log_filename, const string &urdf_filename):active_side(Side::LEFT)
 {
+	if (urdf_filename != "")
+	{
+		this->loadFromMatlabBinFile(urdf_filename);
+	}
 	this->log.open(log_filename.c_str());
 	if (!this->log.is_open())
 	{
 		cout << "Failed to open " << log_filename.c_str() << '\n';
 	}
-	double* random_sequence_array = mt19937ar();
+}
+
+void CapabilityMap::generateRandomSequence(uint32_t seed)
+{
+	double* random_sequence_array = mt19937ar(seed);
+//	cout << seed << endl;
 	this->random_sequence.assign(random_sequence_array, random_sequence_array+1000);
+//	for (auto i : this->random_sequence){cout << i << endl;}
 }
 
 void CapabilityMap::loadFromMatlabBinFile(const string map_file)
@@ -661,6 +671,7 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 	double rnd = this->random_sequence[0];
 	this->random_sequence.erase(this->random_sequence.begin());
 	rnd *= cumulative_probability.back();
+	this->log << rnd << endl;
 	cout << "random number: " << rnd << endl;
 	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
 	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;

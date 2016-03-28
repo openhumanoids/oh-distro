@@ -172,9 +172,8 @@ double genrand_res53(void)
 }
 /* These real versions are due to Isaku Wada, 2002/01/09 added */
 
-double* mt19937ar()
+double* mt19937ar(uint32_t seed)
 {
-	uint32_t seed = 100;
 	int i;
 	init_genrand(seed);
 	static double random_sequence[1000];

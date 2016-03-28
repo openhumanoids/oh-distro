@@ -95,6 +95,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
 		Vector3d orientation = capability_map.getOrientation(sample[1]);
 		Vector3d position = rpy2rotmat(orientation) * capability_map.getVoxelCentre(sample[0]) + endeffector_final_pose.block<3,1>(0,0);
+		cout << capability_map.getMapCentre() << endl << orientation << endl;
 		WorldPositionConstraint base_position_constraint(&robot, base_id, capability_map.getMapCentre(), position, position);
 		WorldEulerConstraint base_euler_constraint(&robot, base_id, orientation, orientation);
 		constraints.end()[-1] = (&base_position_constraint);
@@ -109,6 +110,32 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		vector<string> name;
 		VectorXd lb;
 		VectorXd ub;
+//		double time = 0.;
+//		for (auto constraint : constraints)
+//		{
+//			if(constraint->getCategory() == constraint->SingleTimeKinematicConstraintCategory)
+//			{
+//				name.clear();
+//				((SingleTimeKinematicConstraint*)constraint)->name(&time, name);
+//				((SingleTimeKinematicConstraint*)constraint)->bounds(&time, lb, ub);
+//
+//				for (auto n : name)
+//				{
+//					cout << n << endl;
+//				}
+//				cout << lb << endl << ub << endl;
+//			}
+//			else if(constraint->getCategory() == constraint->QuasiStaticConstraintCategory)
+//			{
+//				name.clear();
+//				((QuasiStaticConstraint*)constraint)->name(&time, name);
+//
+//				for (auto n : name)
+//				{
+//					cout << n << endl;
+//				}
+//			}
+//		}
 		if (ik_info < 10)
 		{
 			kin_timer.start();
@@ -123,6 +150,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 				if (((ArrayXd)phi > min_distance).all())
 				{
 					info = 1;
+//					capability_map.log << final_configuration << endl;
 					publisher.publish(lcm, robot, final_configuration);
 				}
 			}

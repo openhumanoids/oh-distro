@@ -16,6 +16,7 @@ classdef FinalPosePlanner
     active_collision_options
     debug
     verbose
+    seed
   end
   
   properties (Constant)
@@ -34,6 +35,7 @@ classdef FinalPosePlanner
       opt.endeffectorpoint = [0; 0; 0];
       opt.debug = false;
       opt.verbose = false;
+      opt.seed = 100;
       
       optNames = fieldnames(opt);
       nArgs = length(varargin);
@@ -63,6 +65,7 @@ classdef FinalPosePlanner
       obj.active_collision_options = opt.activecollisionoptions;
       obj.debug = opt.debug;
       obj.verbose = opt.verbose;
+      obj.seed = opt.seed;
 
     end
 
@@ -114,7 +117,7 @@ classdef FinalPosePlanner
     
     function [qOpt, debug_vars] = searchFinalPose(obj, point_cloud, debug_vars)
       
-%       pose_publisher = CandidateRobotPosePublisher('EST_ROBOT_STATE', true, obj.robot.getPositionFrame.getCoordinateNames);
+      pose_publisher = CandidateRobotPosePublisher('EST_ROBOT_STATE', true, obj.robot.getPositionFrame.getCoordinateNames);
       options.rotation_type = 2;
       options.compute_gradients = true;
       options.rotation_type = 1;
@@ -186,8 +189,8 @@ classdef FinalPosePlanner
       
 %       f_id = fopen('random_sequence');
 %       samples = fscanf(f_id, '%g', [6, 1000]);
-      
-      RandStream.setGlobalStream( RandStream.create('mt19937ar','seed',100) );
+      f_id = fopen('matlabCapabilityMap.log','a');
+      RandStream.setGlobalStream( RandStream.create('mt19937ar','seed',obj.seed));
       for vox = 1:min([n_valid_samples, 1000])
         if obj.debug || obj.verbose
           sampling_timer = tic();
@@ -196,7 +199,9 @@ classdef FinalPosePlanner
 %         pos = rpy2rotmat(rpy) * samples(4:6, vox);
         
         cum_prob = cumsum(tot_prob);% / sum(tot_prob);
-        rnd = rand() * cum_prob(end);
+        rnd = rand();
+        rnd = rnd * cum_prob(end);
+        fprintf(f_id, '%g\n', rnd);
         idx = find(rnd < cum_prob, 1);
         disp(rnd);
         disp(idx)
@@ -220,6 +225,7 @@ classdef FinalPosePlanner
         if obj.debug, constraint_time = constraint_time + toc(constraint_timer); end
         if obj.debug, ik_timer = tic(); end
         [q, info, infeasible_constraints] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
+        pose_publisher.publish(q);
 %         [rpy' pos']
 %         obj.q_nom'
 %         pose_publisher.publish([q; zeros(size(q))], get_timestamp_now())
@@ -286,6 +292,7 @@ classdef FinalPosePlanner
         debug_vars.sampling_time = sampling_time;
       end
       
+      fclose(f_id);
     end
     
     function constraints = generateGoalConstraints(obj)

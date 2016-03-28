@@ -69,6 +69,8 @@ function output = batchFPP(n, scenes, file_name, options)
   time_node.appendChild(document.createTextNode(datestr(now)));
   details_node.appendChild(time_node);
   
+  f_id = fopen('matlabCapabilityMap.log','w');
+  fclose(f_id);
   for model_idx = 1:numel(models)
     opt.model = models{model_idx};
     opt.convex_hull = true;
@@ -80,9 +82,10 @@ function output = batchFPP(n, scenes, file_name, options)
       opt.scene = scene;
       for hand_idx = 1:numel(grasping_hands)
         opt.graspingHand = grasping_hands{hand_idx};
-        parfor i = 1:n
+        for i = 1:n
             fprintf('Computing iteration %d of scene %d with %s model and %s hand\n', ...
                     i, scene, models{model_idx}, grasping_hands{hand_idx})
+            opt.seed = 99+i;
             [~, debug_vars] = exploringFPP(opt);
             debug_vars_array(i) = debug_vars;
         end

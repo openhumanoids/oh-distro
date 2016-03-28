@@ -17,6 +17,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   if ~isfield(options,'base_constraint'), options.base_constraint = 'free'; end
   if ~isfield(options,'feet_constraint'), options.feet_constraint = 'sliding'; end
   if ~isfield(options,'verbose'), options.verbose = false; end
+  if ~isfield(options,'seed'), options.seed = 100; end
   
   options.floating = true;
   
@@ -90,7 +91,8 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     'graspinghand', options.graspingHand, ...
     'endeffectorpoint', point_in_link_frame, ...
     'debug', true, ...
-    'verbose', options.verbose);
+    'verbose', options.verbose,...
+    'seed', options.seed);
 
   [xGoalFull, info, debug_vars] = finalPose.findFinalPose(Scenes.getOctomap(options));
   q_end = xGoalFull(8:end);

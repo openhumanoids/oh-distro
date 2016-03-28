@@ -94,6 +94,8 @@ public:
 	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample
 	 */
 	int drawCapabilityMapSample(std::vector<int> &sample);
+	void generateRandomSequence(uint32_t seed);
+
 private:
 	std::ofstream log;
 	unsigned int n_voxels;
