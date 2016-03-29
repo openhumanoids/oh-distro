@@ -316,7 +316,9 @@ class TableboxDemo(object):
 
 
     def spawnBlockAffordance(self):
-        boxSize = 0.3
+        boxLength = 0.3
+        boxWidth = 0.25
+        boxHeight = 0.3
 
         boxFrame = self.footstepPlanner.getFeetMidPoint(self.robotStateModel)
         boxFrame.PreMultiply()
@@ -324,7 +326,7 @@ class TableboxDemo(object):
         #vis.updateFrame(boxFrame, 'boxFrame')
 
         xAxis,yAxis, zAxis = transformUtils.getAxesFromTransform(boxFrame)
-        segmentation.createBlockAffordance(boxFrame.GetPosition(), xAxis,yAxis, zAxis, boxSize, boxSize, boxSize, 'box', parent='affordances')
+        segmentation.createBlockAffordance(boxFrame.GetPosition(), xAxis,yAxis, zAxis, boxLength, boxWidth, boxHeight, 'box', parent='affordances')
 
 
     def planSimpleBoxGrasp(self):
