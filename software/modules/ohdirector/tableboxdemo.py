@@ -304,7 +304,7 @@ class TableboxDemo(object):
 
     #################################
     def loadTestPointCloud(self):
-        filename =  '/home/edbot/logs/20150317_box_pick/cloud1.vtp'
+        filename = os.environ['DRC_BASE'] +  '/../drc-testing-data/tabletop/table-box-uoe.vtp'
         polyData = ioUtils.readPolyData( filename )
         vis.showPolyData(polyData,'scene')
 
@@ -417,8 +417,9 @@ class TableboxTaskPanel(TaskUserPanel):
         self.addManualButton('Load Test Cloud', self.tableboxDemo.loadTestPointCloud)
         self.addManualSpacer()        
 
-        p1 = np.array([-2.44357705, -0.67163253, 0.7661112 ])
-        p2 = np.array([-2.00631523, -0.35343912, 0.75367129])
+        p1 = np.array([-0.58354658, -0.98459125, 0.75729603])
+        p2 = np.array([-0.40979841, -0.76145965,  0.73299527])
+
         self.addManualButton('User Table', functools.partial(self.tableboxDemo.onSegmentTable, p1, p2) )        
         self.addManualButton('Move to Stance',self.tableboxDemo.moveRobotToTableStanceFrame)
         self.addManualButton('Spread Arms',self.tableboxDemo.planArmsSpread)
@@ -508,7 +509,8 @@ class TableboxTaskPanel(TaskUserPanel):
         # find the table
         addFolder('approach')
         addManipTask('move hands down', v.planArmsDown, userPrompt=True)
-        addFunc('fit table', self.tableboxDemo.userFitTable)
+        addFunc('activate table fit', self.tableboxDemo.userFitTable)
+        addTask(rt.UserPromptTask(name='approve table fit', message='Please approve the table fit.'))
 
         # walk to table
         addFolder('walk')
