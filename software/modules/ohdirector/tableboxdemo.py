@@ -131,7 +131,9 @@ class TableboxDemo(object):
         tableBox = vis.showPolyData(tableData.box, 'table box', parent=aff, color=[0,1,0], visible=False)
         tableBox.actor.SetUserTransform(tableData.frame)
 
-        relativeStance = transformUtils.frameFromPositionAndRPY([-0.6, 0, 0],[0,0,0])
+        # how far back to stand - from the middle of the table
+        # -0.6 is too far. reduced 0.5 was too low. now trying -0.55
+        relativeStance = transformUtils.frameFromPositionAndRPY([-0.55, 0, 0],[0,0,0])
         self.computeTableStanceFrame(relativeStance)
 
     def computeTableStanceFrame(self, relativeStance):

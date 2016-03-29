@@ -175,7 +175,7 @@
   "mirrorJointSignFlips" : ["WaistRotator", "leftShoulderRoll", "rightShoulderRoll", "leftElbowPitch", "rightElbowPitch"],
 
   "pelvisLink" : "pelvis",
-  "headLink" : "head",
+  "headLink" : "upperNeckPitchLink",
   "leftFootLink" : "leftFoot",
   "rightFootLink" : "rightFoot",
   "elbowLinks" : ["leftElbowPitchLink", "rightElbowPitchLink"],
