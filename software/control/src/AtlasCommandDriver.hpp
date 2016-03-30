@@ -10,11 +10,11 @@ class AtlasCommandDriver {
     bot_core::atlas_command_t msg;
 
   public:
-    AtlasCommandDriver(JointNames *input_joint_names, std::vector<std::string> &state_coordinate_names);
+    AtlasCommandDriver(const JointNames *input_joint_names, const std::vector<std::string> &state_coordinate_names);
     int dim(void) {
       return 3*m_num_joints;
     }
-    void updateGains(AtlasHardwareGains *gains);
+    void updateGains(const HardwareGains *gains);
 
-    bot_core::atlas_command_t* encode(double t, QPControllerOutput *qp_output, AtlasHardwareParams &params);
+    bot_core::atlas_command_t* encode(double t, QPControllerOutput *qp_output, const HardwareParams &params);
 };
