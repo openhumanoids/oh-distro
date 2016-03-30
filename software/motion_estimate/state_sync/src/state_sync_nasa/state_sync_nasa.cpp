@@ -62,7 +62,7 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
   force_torque_init_ = false;
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub2 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver:
-  lcm::Subscription* sub3 = lcm_->subscribe("POSE_BODY",&state_sync_nasa::poseProntoHandler,this);  // Always provided the state estimator:
+  lcm::Subscription* sub3 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseProntoHandler,this);  // Always provided the state estimator:
   lcm::Subscription* sub4 = lcm_->subscribe("NECK_STATE",&state_sync_nasa::neckStateHandler,this);  // Provided when NeckController is running
 
   

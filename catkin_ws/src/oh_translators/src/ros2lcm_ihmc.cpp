@@ -258,6 +258,8 @@ void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
   lcm_pose_msg.orientation[2] = lastPoseMsg_.pose.pose.orientation.y;
   lcm_pose_msg.orientation[3] = lastPoseMsg_.pose.pose.orientation.z;
   lcmPublish_.publish("POSE_BDI", &lcm_pose_msg);
+  lcmPublish_.publish("POSE_BODY", &lcm_pose_msg);
+
   if (mode_ == MODE_PASSTHROUGH)
   {
     lcmPublish_.publish("POSE_BODY", &lcm_pose_msg);

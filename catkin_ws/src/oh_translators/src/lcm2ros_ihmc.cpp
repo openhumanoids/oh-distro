@@ -51,7 +51,7 @@
 #define LEFT 0
 #define RIGHT 1
 #define MIN_SWING_HEIGHT 0.05
-#define MAX_SWING_HEIGHT 0.3
+#define MAX_SWING_HEIGHT 0.1
 
 enum class TrajectoryMode {wholeBody, leftArm, rightArm, bothArms}; // 0,1,2,3
 std::vector<std::string> TrajectoryNames = {"Whole Body", "Left Arm", "Right Arm", "Both Arms"};
