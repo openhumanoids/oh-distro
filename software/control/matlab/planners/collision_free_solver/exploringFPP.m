@@ -1,4 +1,4 @@
-function [info, debug_vars] = exploringFPP(options, rng_seed)
+function [info, debug_vars] = exploringFPP(options, seed, rng_seed)
   
   if nargin < 1 || isempty(options), options = struct(); end
   
@@ -17,7 +17,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
   if ~isfield(options,'base_constraint'), options.base_constraint = 'free'; end
   if ~isfield(options,'feet_constraint'), options.feet_constraint = 'sliding'; end
   if ~isfield(options,'verbose'), options.verbose = false; end
-  if ~isfield(options,'seed'), options.seed = 100; end
+  if nargin > 1, options.seed = seed; else options.seed = 100; end
   
   options.floating = true;
   
@@ -32,7 +32,7 @@ function [info, debug_vars] = exploringFPP(options, rng_seed)
     Scenes.visualizeOctomap(options);
   end
   
-  if nargin > 1
+  if nargin > 2
     rng(rng_seed);
   end
   rndSeed = rng;

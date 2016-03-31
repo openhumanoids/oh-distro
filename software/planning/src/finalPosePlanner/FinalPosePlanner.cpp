@@ -58,7 +58,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 
 
 //	FINAL POSE SEARCH
-	CandidateRobotPosePublisher publisher;
+//	CandidateRobotPosePublisher publisher;
 	constraints_timer.start();
 	vector<RigidBodyConstraint *> constraints = additional_constraints;
 	Vector3d bound(1e-3, 1e-3, 1e-3);
@@ -79,8 +79,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	int sample_info;
 	int n_iter = 0;
 	vector<int> sample(2);
+	IOFormat fmt(40);
 	while (info != 1 && n_iter <= max_iterations)
 	{
+		sample[0] = n_iter;
 		n_iter++;
 		sampling_timer.start();
 		sample_info = capability_map.drawCapabilityMapSample(sample);
@@ -95,7 +97,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
 		Vector3d orientation = capability_map.getOrientation(sample[1]);
 		Vector3d position = rpy2rotmat(orientation) * capability_map.getVoxelCentre(sample[0]) + endeffector_final_pose.block<3,1>(0,0);
-		cout << capability_map.getMapCentre() << endl << orientation << endl;
+//		cout << position.format(fmt) << endl << orientation.format(fmt) << endl;
 		WorldPositionConstraint base_position_constraint(&robot, base_id, capability_map.getMapCentre(), position, position);
 		WorldEulerConstraint base_euler_constraint(&robot, base_id, orientation, orientation);
 		constraints.end()[-1] = (&base_position_constraint);
@@ -106,11 +108,11 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		IK_timer.start();
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_configuration, ik_info, infeasible_constraints, ik_options);
 		IK_timer.stop();
-		publisher.publish(lcm, robot, final_configuration);
+//		publisher.publish(lcm, robot, final_configuration);
 		vector<string> name;
 		VectorXd lb;
 		VectorXd ub;
-//		double time = 0.;
+		double time = 0.;
 //		for (auto constraint : constraints)
 //		{
 //			if(constraint->getCategory() == constraint->SingleTimeKinematicConstraintCategory)
@@ -136,6 +138,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 //				}
 //			}
 //		}
+		getchar();
 		if (ik_info < 10)
 		{
 			kin_timer.start();
@@ -151,7 +154,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 				{
 					info = 1;
 //					capability_map.log << final_configuration << endl;
-					publisher.publish(lcm, robot, final_configuration);
+//					publisher.publish(lcm, robot, final_configuration);
 				}
 			}
 		}

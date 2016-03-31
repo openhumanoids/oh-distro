@@ -82,11 +82,10 @@ function output = batchFPP(n, scenes, file_name, options)
       opt.scene = scene;
       for hand_idx = 1:numel(grasping_hands)
         opt.graspingHand = grasping_hands{hand_idx};
-        for i = 1:n
+        parfor i = 1:n
             fprintf('Computing iteration %d of scene %d with %s model and %s hand\n', ...
                     i, scene, models{model_idx}, grasping_hands{hand_idx})
-            opt.seed = 99+i;
-            [~, debug_vars] = exploringFPP(opt);
+            [~, debug_vars] = exploringFPP(opt, i);
             debug_vars_array(i) = debug_vars;
         end
         output.(models{model_idx}).(sprintf('scene%d', scene)).(grasping_hands{hand_idx}) = debug_vars_array;

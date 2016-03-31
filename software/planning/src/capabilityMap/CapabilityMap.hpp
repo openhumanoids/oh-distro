@@ -81,23 +81,25 @@ public:
 	 * \param mu A 3D vector specifying the mean of the multivariate distribution
 	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
 	 */
-	void computePositionProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(1e10, 1e10, 0.01)*pow(.65, 2));
+	void computePositionProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(1e10, 1e10, 0.01)*pow(.65, 2));//magic numbers to match matlab distribution
 
 	/**
 	 * compute a multivariate Gaussian distribution to draw capability map voxels based on their position relative to the map centre.
 	 * \param mu A 3D vector specifying the mean of the multivariate distribution
 	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
 	 */
-	void computeOrientationProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(5*pow(0.087266462599716, 2), .5*pow(0.174532925199433, 2), 10*pow(0.785398163397448, 2)));
+	void computeOrientationProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(5*pow(0.08726646259971647390241145103573217056692, 2),
+																																		 .5*pow(0.1745329251994329478048229020714643411338, 2),
+																																		 10*pow(0.7853981633974482789994908671360462903976, 2)));//magic numbers to match matlab distribution
 
 	/**
 	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample
 	 */
 	int drawCapabilityMapSample(std::vector<int> &sample);
-	void generateRandomSequence(uint32_t seed);
+	void generateRandomSequence(int seed);
+	std::ofstream log;
 
 private:
-	std::ofstream log;
 	unsigned int n_voxels;
 	unsigned int n_directions_per_voxel;
 	unsigned int n_voxels_per_edge;
@@ -138,7 +140,7 @@ private:
 	std::vector<double> total_probability;
 	std::vector<int> total_probability_orientations;
 	std::vector<int> total_probability_voxels;
-	std::vector<double> random_sequence;
+	Eigen::VectorXd random_sequence;
 
 	void activateVoxels(std::vector<int> idx);
 	void deactivateVoxels(std::vector<int> idx);

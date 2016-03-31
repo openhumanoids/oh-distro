@@ -903,29 +903,26 @@
     function obj = computeOrientationProbabilityDistribution(obj, sigma, mu)
       if nargin < 3, mu = [0 0 0]; end
       if nargin < 2 || isempty(sigma), sigma = [5 0.5 10]; end
+%       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
       x = bsxfun(@rdivide, obj.occupancy_map_orient', [max(abs(obj.occupancy_map_orient_steps.roll)),...
                                         max(abs(obj.occupancy_map_orient_steps.pitch)),...
                                         max(abs(obj.occupancy_map_orient_steps.yaw))]);
       obj.occupancy_map_orient_prob = mvnpdf(x, mu, sigma);
-      obj.occupancy_map_orient_prob = obj.occupancy_map_orient_prob / sum(obj.occupancy_map_orient_prob);
-%       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
-%       for i = 1:obj.occupancy_map_n_orient
-%         fprintf(f_id, '%10g %10g %10g %10g\n', obj.occupancy_map_orient(1,i), obj.occupancy_map_orient(2,i), obj.occupancy_map_orient(3,i), obj.occupancy_map_orient_prob(i));
-%       end
+%       fprintf(f_id, '%.30g\n', obj.occupancy_map_orient_prob);
 %       fclose(f_id);
+      obj.occupancy_map_orient_prob = obj.occupancy_map_orient_prob / sum(obj.occupancy_map_orient_prob);
     end
     
     function obj = computePositionProbabilityDistribution(obj, sigma, mu)
       if nargin < 3, mu = [0 0 0]; end
       if nargin < 2 || isempty(sigma), sigma = [1e10 1e10 0.01]; end
+%       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'a');
+      fprintf(f_id, '\n\n');
       x = bsxfun(@rdivide, obj.vox_centres, obj.map_ub);
       obj.vox_centres_prob = mvnpdf(x', mu, sigma);
-      obj.vox_centres_prob = obj.vox_centres_prob / sum(obj.vox_centres_prob);
-%       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'a');
-%       for i = 1:obj.n_voxels
-%         fprintf(f_id, '%10g %10g %10g %10g\n', obj.vox_centres(1,i), obj.vox_centres(2,i), obj.vox_centres(3,i), obj.vox_centres_prob(i));
-%       end
+%       fprintf(f_id, '%.30g\n', obj.vox_centres_prob);
 %       fclose(f_id);
+      obj.vox_centres_prob = obj.vox_centres_prob / sum(obj.vox_centres_prob);
     end
     
     function obj = computeOccupancyMapOrientations(obj)

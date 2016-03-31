@@ -199,7 +199,8 @@ int main(int argc, char* argv[])
 	Vector3d relative_distance = left_foot_transform.translation() - right_foot_transform.translation();
 	VectorXd bTbp(7,1);
 	bTbp << 0,0,0,1,0,0,0;
-	RelativePositionConstraint relative_pos_constraint(&robot, Vector3d(0,0,0), relative_distance, relative_distance, left_foot_id, right_foot_id, bTbp, Vector2d(0,1));
+	Vector3d bound(1e-3, 1e-3, 1e-3);
+	RelativePositionConstraint relative_pos_constraint(&robot, Vector3d(0,0,0), relative_distance-bound, relative_distance+bound, left_foot_id, right_foot_id, bTbp, Vector2d(0,1));
 	constraints.push_back(&left_foot_pos_constraint);
 	constraints.push_back(&right_foot_pos_constraint);
 	constraints.push_back(&left_foot_euler_constraint);
@@ -381,10 +382,10 @@ int main(int argc, char* argv[])
 
 					for (int i = 0; i < n_iter; i++)
 					{
-						cm.generateRandomSequence(100 + i);
+						cm.generateRandomSequence(i);
 						FPPOutput output;
 						cout << "Model: " << m << " Scene: " << s << " Hand: " << h << " Iteration: " << i + 1 << endl;
-						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, IKoptions(&robot), theLCM, output, endeffector_point);
+						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, ik_options, theLCM, output, endeffector_point);
 						addTextToElement(info_node, info);
 						addTextToElement(computation_time_node, output.computation_time);
 						addTextToElement(IK_time_node, output.IK_time);

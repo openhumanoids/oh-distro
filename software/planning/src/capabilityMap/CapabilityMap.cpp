@@ -34,12 +34,16 @@ CapabilityMap::CapabilityMap(const string & log_filename, const string &urdf_fil
 	}
 }
 
-void CapabilityMap::generateRandomSequence(uint32_t seed)
+void CapabilityMap::generateRandomSequence(int seed)
 {
-	double* random_sequence_array = mt19937ar(seed);
-//	cout << seed << endl;
-	this->random_sequence.assign(random_sequence_array, random_sequence_array+1000);
-//	for (auto i : this->random_sequence){cout << i << endl;}
+//	double* random_sequence_array = mt19937ar(seed);
+////	cout << seed << endl;
+//	this->random_sequence.assign(random_sequence_array, random_sequence_array+1000);
+////	for (auto i : this->random_sequence){cout << i << endl;}
+	ifstream random_file("/home/marco/drc-testing-data/final_pose_planner/val_description/random_sequence");
+	MatrixXd matrix(1000,100);
+	random_file.read((char *) matrix.data(), sizeof(MatrixXd::Scalar)*100000);
+	this->random_sequence = matrix.col(seed);
 }
 
 void CapabilityMap::loadFromMatlabBinFile(const string map_file)
@@ -222,6 +226,8 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			this->occupancy_map_orient_steps.roll.resize(n_roll_steps);
 			inputFile.read((char *) this->occupancy_map_orient_steps.roll.data(), n_roll_steps * sizeof(double));
 			this->log << "Loaded occupancy_map_orient_steps.roll (" << this->occupancy_map_orient_steps.roll.rows() << ")\n";
+			IOFormat fmt(30);
+			cout << this->occupancy_map_orient_steps.roll.format(fmt) << endl;
 
 			unsigned int n_pitch_steps;
 			inputFile.read((char *) &n_pitch_steps, sizeof(n_pitch_steps));
@@ -614,11 +620,39 @@ void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, V
 void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->voxel_centres, this->position_probability, mu, sigma);
+	IOFormat fmt(30);
+//	int w = 10;
+//	for (int i = 0; i < this->position_probability.rows(); i++)
+//	{
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(0) << " ";
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(1) << " ";
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(2) << " ";
+//		this->log.width(w);
+//		this->log << right << this->position_probability[i].format(fmt) << endl;
+//	}
+//	this->log << this->position_probability.format(fmt) << endl << endl << endl;
 }
 
 void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vector3d sigma)
 {
 	this->computeProbabilityDistribution(this->occupancy_map_orientations, this->orientation_probability, mu, sigma);
+	IOFormat fmt(30);
+//	int w = 10;
+//	for (int i = 0; i < this->orientation_probability.rows(); i++)
+//	{
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(0) << " ";
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(1) << " ";
+//		this->log.width(w);
+//		this->log << right << this->getVoxelCentre(i)(2) << " ";
+//		this->log.width(w);
+//		this->log << right << this->orientation_probability[i].format(fmt) << endl;
+//	}
+//	this->log << this->orientation_probability.format(fmt) << endl << endl << endl;
 }
 
 void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, VectorXd &pdf, Vector3d mu, Vector3d sigma)
@@ -668,15 +702,16 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 	partial_sum(this->total_probability.begin(), this->total_probability.end(), cumulative_probability.data());
 	srand(time(NULL));
 //	double rnd = rand() / (double)RAND_MAX * cumulative_probability.back();
-	double rnd = this->random_sequence[0];
-	this->random_sequence.erase(this->random_sequence.begin());
+	double rnd = this->random_sequence(sample[0]);
+//	this->random_sequence.erase(this->random_sequence.begin());
 	rnd *= cumulative_probability.back();
-	this->log << rnd << endl;
-	cout << "random number: " << rnd << endl;
+//	cout <<  cumulative_probability.back() << endl;
+//	this->log << rnd << endl;
+//	cout << "random number: " << rnd << endl;
 	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
 	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;
 	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data();
-	cout << idx << endl;
+//	cout << idx << endl;
 	sample[0] = this->total_probability_voxels[idx];
 	sample[1] = this->total_probability_orientations[idx];
 	this->total_probability.erase(this->total_probability.begin() + idx);
