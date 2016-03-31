@@ -117,11 +117,6 @@ group "6.exotica" {
 }
 
 group "7.control" {
-    cmd "lcm-tunnel_to_link" {
-        exec = "bot-lcm-tunnel ${VAL_LINK_IP}";
-        host = "localhost";
-    }
-
     cmd "LCM2ROSControl" {
         exec = "roslaunch valkyrie_translator LCM2ROSControl.launch";
         host = "link";
