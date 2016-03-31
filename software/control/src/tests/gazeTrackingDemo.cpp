@@ -76,8 +76,8 @@ App::App(std::shared_ptr <lcm::LCM> &lcm_, const CommandLineConfig &cl_cfg_, Tra
     botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
     botframes_ = bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
-    // TODO: load URDF from botparam
-    model_.addRobotFromURDF(cl_cfg_.urdf_filename);
+    std::shared_ptr<ModelClient> model_client = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+    model_.addRobotFromURDFString(model_client->getURDFString());
     model_.compile();
     dofMap_ = model_.computePositionNameToIndexMap();
 
@@ -493,7 +493,6 @@ int main(int argc, char *argv[]) {
     mode = TrackingControlMode::JOINT_POSITION_GOAL;
 
     ConciseArgs parser(argc, argv, "simple-fusion");
-    parser.add(cl_cfg.urdf_filename, "u", "urdf", "urdf filename");
     parser.add(cl_cfg.gazeGoal(0), "x", "goal_x", "goal_x");
     parser.add(cl_cfg.gazeGoal(1), "y", "goal_y", "goal_y");
     parser.add(cl_cfg.gazeGoal(2), "z", "goal_z", "goal_z");
