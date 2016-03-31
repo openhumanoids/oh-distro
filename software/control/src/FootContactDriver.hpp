@@ -3,9 +3,10 @@
 
 class FootContactDriver {
   private:
-    BodyIdsCache m_body_ids;
+    int r_foot_id;
+    int l_foot_id;
 
   public:
-    FootContactDriver(BodyIdsCache body_ids);
+    FootContactDriver(RobotPropertyCache rpc);
     void decode(const drc::foot_contact_estimate_t *msg, Eigen::Matrix<bool, Eigen::Dynamic, 1> &contact_force_detected);
 };

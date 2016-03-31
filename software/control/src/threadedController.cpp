@@ -15,6 +15,7 @@
 #include "FootContactDriver.hpp"
 #include "drake/systems/plants/ForceTorqueMeasurement.h"
 #include "drake/systems/robotInterfaces/Side.h"
+#include "drake/systems/controllers/InstantaneousQPController.h"
 
 using namespace Eigen;
 
@@ -41,7 +42,7 @@ Matrix<bool, Dynamic, 1> b_contact_force;
 class SolveArgs {
 public:
 
-  NewQPControllerData *pdata;
+  InstantaneousQPController *pdata;
 
   std::shared_ptr<DrakeRobotState> robot_state;
   std::shared_ptr<drake::lcmt_qp_controller_input> qp_input;
@@ -217,8 +218,8 @@ public:
 
     std::shared_ptr<DrakeRobotState> state(new DrakeRobotState);
 
-    int nq = solveArgs.pdata->r->num_positions;
-    int nv = solveArgs.pdata->r->num_velocities;
+    int nq = solveArgs.pdata->getRobot().num_positions;
+    int nv = solveArgs.pdata->getRobot().num_velocities;
     state->q = VectorXd::Zero(nq);
     state->qd = VectorXd::Zero(nv);
 
@@ -231,10 +232,10 @@ public:
 
     const bot_core::force_torque_t& force_torque = msg->force_torque;
 
-    solveArgs.foot_force_torque_measurements[Side::LEFT].frame_idx = solveArgs.pdata->rpc.body_ids.l_foot; // TODO: make sure that this is right
+    solveArgs.foot_force_torque_measurements[Side::LEFT].frame_idx = solveArgs.pdata->getRPC().foot_ids.at(Side::LEFT); // TODO: make sure that this is right
     solveArgs.foot_force_torque_measurements[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
 
-    solveArgs.foot_force_torque_measurements[Side::RIGHT].frame_idx = solveArgs.pdata->rpc.body_ids.r_foot; // TODO: make sure that this is right
+    solveArgs.foot_force_torque_measurements[Side::RIGHT].frame_idx = solveArgs.pdata->getRPC().foot_ids.at(Side::RIGHT); // TODO: make sure that this is right
     solveArgs.foot_force_torque_measurements[Side::RIGHT].wrench << force_torque.r_foot_torque_x, force_torque.r_foot_torque_y, 0.0, 0.0, 0.0, force_torque.r_foot_force_z;
 
     pointerMutex.unlock();
@@ -243,7 +244,7 @@ public:
 
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg)
   {
-    Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->r->bodies.size());
+    Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->getRobot().bodies.size());
 
     foot_contact_driver->decode(msg, b_contact_force);
 
@@ -332,12 +333,18 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 
     if (qp_input->be_silent) {
       // Act as a dummy controller, produce no ATLAS_COMMAND, and reset all integrator states
-      solveArgs.pdata->state.t_prev = robot_state->t;
-      solveArgs.pdata->state.vref_integrator_state = VectorXd::Zero(solveArgs.pdata->state.vref_integrator_state.size());
-      solveArgs.pdata->state.q_integrator_state = VectorXd::Zero(solveArgs.pdata->state.q_integrator_state.size());
+      solveArgs.pdata->resetControllerState(robot_state->t);
       infocount = 0;
     } else {
-      int info = setupAndSolveQP(solveArgs.pdata, qp_input, *robot_state, b_contact_force, foot_force_torque_measurements, &qp_output, solveArgs.debug);
+/*
+      onst drake::lcmt_qp_controller_input& qp_input,
+    const DrakeRobotState& robot_state,
+    const Ref<const Matrix<bool, Dynamic, 1>>& contact_detected,
+    const std::map<Side, ForceTorqueMeasurement>&
+        foot_force_torque_measurements,
+    QPControllerOutput& qp_output, QPControllerDebugData* debug
+*/
+      int info = solveArgs.pdata->setupAndSolveQP(*qp_input, *robot_state, b_contact_force, foot_force_torque_measurements, qp_output, &(*(solveArgs.debug)));
 
       if (!isOutputSafe(qp_output)) {
         // First priority is to halt unsafe behavior
@@ -373,21 +380,10 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
       // std::cout << "qd: " << qp_output.qd_ref << std::endl;
       // std::cout << "qdd: " << qp_output.qdd << std::endl;
 
-      QPControllerParams *params;
-      std::map<string,QPControllerParams>::iterator it;
-      it = solveArgs.pdata->param_sets.find(qp_input->param_set_name);
-      if (it == solveArgs.pdata->param_sets.end()) {
-        mexWarnMsgTxt("Got a param set I don't recognize! Using standing params instead");
-        it = solveArgs.pdata->param_sets.find("standing");
-        if (it == solveArgs.pdata->param_sets.end()) {
-          params = nullptr;
-          mexErrMsgTxt("Could not fall back to standing parameters either. I have to give up here.");
-        }
-      }
-      params = &(it->second);
+      const QPControllerParams params = solveArgs.pdata->getParamSet(qp_input->param_set_name);
 
       // publish ATLAS_COMMAND
-      bot_core::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params->hardware);
+      bot_core::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params.hardware);
       lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg);
     }
 
@@ -400,19 +396,21 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 
 }
 
-
-
-
-void controllerLoop(NewQPControllerData *pdata, std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
+void controllerLoop(InstantaneousQPController *pdata, std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
 {
-  state_driver.reset(new RobotStateDriver(pdata->state_coordinate_names));
-  command_driver.reset(new AtlasCommandDriver(&pdata->input_joint_names, pdata->state_coordinate_names));
-  foot_contact_driver.reset(new FootContactDriver(pdata->rpc.body_ids));
+  int num_states = pdata->getRobot().num_positions + pdata->getRobot().num_velocities;
+  std::vector<string> state_coordinate_names(num_states);
+  for (int i=0; i<num_states; i++){
+    state_coordinate_names[i] = pdata->getRobot().getStateName(i);
+  }
+  state_driver.reset(new RobotStateDriver(state_coordinate_names));
+  command_driver.reset(new AtlasCommandDriver(&(pdata->getJointNames()), state_coordinate_names));
+  foot_contact_driver.reset(new FootContactDriver(pdata->getRPC()));
 
   solveArgs.pdata = pdata;
-  solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->r->bodies.size());
+  solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->getRobot().bodies.size());
 
-  // std::cout << "pdata num bodies: " << pdata->r->bodies.size() << std::endl;
+  // std::cout << "pdata num bodies: " << pdata->getRobot().bodies.size() << std::endl;
 
   lcmHandler.Start();
   controlReceiver.InitSubscriptions();

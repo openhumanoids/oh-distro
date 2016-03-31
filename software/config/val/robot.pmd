@@ -3,6 +3,11 @@ group "0.ros_bridge" {
         exec = "roslaunch oh_translators ihmc_bridge.launch";
         host = "localhost";
     }
+
+    cmd "ros_bridge_with_pronto" {
+        exec = "roslaunch oh_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_pelvisMiddleImu";
+        host = "localhost";
+    }
 }
 
 group "1.params_and_model_pub" {
@@ -23,12 +28,35 @@ group "2.drivers" {
         exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a $VAL_MULTISENSE_IP -m 1500";
         host = "localhost";
     }
+    cmd "spin-lidar" {
+        exec = "drc-spin-lidar";
+        host = "localhost";
+    }
+    cmd "hands_translator" {
+        exec = "roslaunch oh_translators valkyrie_hands_bridge.launch";
+        host = "localhost";
+    }
 }
 
 
 group "3.state_without_pronto" {
     cmd "joints2frames_without" {
-        exec = "drc-joints2frames -m";
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+}
+
+group "2.state_with_pronto" {
+    cmd "state-sync" {
+        exec = "nasa-state-sync";
+        host = "localhost";
+    }
+    cmd "joints2frames_with" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+    cmd "se-fusion" {
+        exec = "se-fusion";
         host = "localhost";
     }
 }
@@ -40,7 +68,7 @@ group "4.plan_and_control" {
         host = "localhost";
     }
     cmd "contact_monitor" {
-        exec = "drc-contact-monitor";
+        exec = "drc-contact-monitor -n";
         host = "localhost";
     }
 
@@ -88,9 +116,30 @@ group "6.exotica" {
     }
 }
 
+group "7.control" {
+    cmd "lcm-tunnel_to_link" {
+        exec = "bot-lcm-tunnel ${VAL_LINK_IP}";
+        host = "localhost";
+    }
+
+    cmd "LCM2ROSControl" {
+        exec = "roslaunch valkyrie_translator LCM2ROSControl.launch";
+        host = "link";
+    }
+
+    cmd "NeckControl" {
+        exec = "roslaunch valkyrie_translator NeckControl.launch";
+        host = "link";
+    }
+
+    cmd "HandControl" {
+        exec = "roslaunch valkyrie_translator HandControl.launch";
+        host = "link";
+    }
+}
 
 cmd "director" {
-    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2";
+    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2 --startup $DRC_BASE/software/modules/ohdirector/runstartup.py";
     host = "localhost";
 }
 
@@ -137,7 +186,7 @@ script "start_ui_with_pronto" {
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.state_with_pronto";
-    start group "3.plan_and_control";
-    start group "4.maps";
+    start group "4.plan_and_control";
+    start group "5.maps";
     start cmd "director";
 }

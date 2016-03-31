@@ -12,12 +12,12 @@
 #include <model-client/model-client.hpp>
 
 #include "lcmtypes/bot_core/pose_t.hpp"
+#include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/drc/walking_plan_t.hpp"
 #include "lcmtypes/drc/walking_plan_request_t.hpp"
 #include "lcmtypes/drc/footstep_plan_t.hpp"
 #include "lcmtypes/drc/plan_control_t.hpp"
 #include "lcmtypes/drc/robot_plan_t.hpp"
-#include "lcmtypes/drc/neck_pitch_t.hpp"
 #include "lcmtypes/drc/scs_api_command_t.hpp"
 #include "lcmtypes/drc/int64_stamped_t.hpp"
 
@@ -51,7 +51,7 @@
 #define LEFT 0
 #define RIGHT 1
 #define MIN_SWING_HEIGHT 0.05
-#define MAX_SWING_HEIGHT 0.3
+#define MAX_SWING_HEIGHT 0.1
 
 enum class TrajectoryMode {wholeBody, leftArm, rightArm, bothArms}; // 0,1,2,3
 std::vector<std::string> TrajectoryNames = {"Whole Body", "Left Arm", "Right Arm", "Both Arms"};
@@ -75,8 +75,6 @@ private:
   std::string chestLinkName_;
 
   // Parameters and Variables:
-  double default_transfer_time_;
-  double default_swing_time_;
   // Seconds to offset the plan so that the controller
   // can blend from the current desired joint position to the plan joint position
   // this was added to avoid controller jerks when starting short plans.
@@ -121,7 +119,7 @@ private:
   void scsAPIHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::scs_api_command_t* msg);
   ros::Publisher scs_api_pub_;
 
-  void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg);
+  void neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::joint_angles_t* msg);
   void headOrientationHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
   ros::Publisher neck_orientation_pub_;
   void lFootPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::pose_t* msg);
@@ -152,8 +150,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
 
   // Hard Coded Parameters:
   // Conservative values for real Valkyrie, using defaults used by IHMC
-  default_transfer_time_ = 1.0;
-  default_swing_time_ = 1.0;
   planDesiredOffset_ = 1.0;
   // Variable to set what part of a whole body plan gets passed through to Val:
   outputTrajectoryMode_ = TrajectoryMode::wholeBody;
@@ -190,7 +186,7 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
   lcm_->subscribe("SCS_API_CONTROL", &LCM2ROS::scsAPIHandler, this);
   scs_api_pub_ = nh_.advertise<std_msgs::String>("/ihmc_ros/" + robotName_ + "/api_command", 10);
 
-  lcm_->subscribe("DESIRED_NECK_PITCH", &LCM2ROS::neckPitchHandler, this);
+  lcm_->subscribe("DESIRED_NECK_ANGLES", &LCM2ROS::neckPitchHandler, this);
   lcm_->subscribe("DESIRED_HEAD_ORIENTATION", &LCM2ROS::headOrientationHandler, this);
   neck_orientation_pub_ = nh_.advertise<ihmc_msgs::HeadOrientationPacketMessage>(
       "/ihmc_ros/" + robotName_ + "/control/head_orientation", 10);
@@ -342,8 +338,8 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = default_transfer_time_;
-  mout.swing_time = default_swing_time_;
+  mout.transfer_time = msg->footstep_plan.footsteps[0].params.ihmc_transfer_time;
+  mout.swing_time = msg->footstep_plan.footsteps[0].params.ihmc_swing_time;
   for (int i = 2; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footstep_plan.footsteps[i]));
@@ -357,8 +353,8 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   ROS_ERROR("LCM2ROS got BDI_ADJUSTED_FOOTSTEP_PLAN or COMMITTED_FOOTSTEP_PLAN (pronto and bdi mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = default_transfer_time_;
-  mout.swing_time = default_swing_time_;
+  mout.transfer_time = msg->footsteps[0].params.ihmc_transfer_time;
+  mout.swing_time = msg->footsteps[0].params.ihmc_swing_time;
   for (int i = 2; i < msg->num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footsteps[i]));
@@ -413,11 +409,25 @@ void LCM2ROS::handPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string 
   hand_pose_pub_.publish(mout);
 }
 
-void LCM2ROS::neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::neck_pitch_t* msg)
+void LCM2ROS::neckPitchHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const bot_core::joint_angles_t* msg)
 {
   ROS_ERROR("LCM2ROS got desired neck pitch");
+
+  int lower_neck_pitch_id = -1;
+  for (int i = 0; i < msg->num_joints; i++) {
+    if (msg->joint_name[i] == "lowerNeckPitch") {
+      lower_neck_pitch_id = i;
+      break;
+    }
+  }
+
+  if (lower_neck_pitch_id == -1) {
+    ROS_WARN("lowerNeckPitch not in DESIRED_NECK_ANGLES message, ignoring");
+    return;
+  }
+
   ihmc_msgs::HeadOrientationPacketMessage mout;
-  Eigen::Quaterniond quat = euler_to_quat(0, msg->pitch, 0);
+  Eigen::Quaterniond quat = euler_to_quat(0, msg->joint_position[lower_neck_pitch_id], 0);
   mout.trajectory_time = 1;
   mout.orientation.w = quat.w();
   mout.orientation.x = quat.x();
@@ -834,8 +844,14 @@ int main(int argc, char** argv)
 
   if (argc >= 2)
   {
-    ROS_ERROR("Robot Name: %s", argv[1]);
     robotName = argv[1];
+
+    if (!((robotName == "atlas") || robotName == "valkyrie")) {
+      ROS_ERROR("Robot name needs to be either atlas or valkyrie");
+      return 1;
+    }
+
+    ROS_ERROR("Robot Name: %s", argv[1]);
   }
   else
   {

@@ -5,7 +5,7 @@ planes = repmat(struct,[3,1]);
 for i = 1:3
     res = ransac_plane(pts_cur,max_dist);
     planes(i).pts = pts_cur(res.inliers,:);
-    planes(i).plane = res.sol;
+    planes(i).plane = res.plane;
     pts_cur = pts_cur(~res.inliers,:);
 end
 
