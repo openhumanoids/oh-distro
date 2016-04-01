@@ -39,6 +39,6 @@ pods_install_executables(drc-video-decode)
 
 # transmit webcam to lcm
 add_executable(drc-webcam-to-lcm WebcamToLCM.cpp)
-pods_use_pkg_config_packages(drc-webcam-to-lcm opencv lcm)
+pods_use_pkg_config_packages(drc-webcam-to-lcm opencv lcm lcmtypes_bot2-core)
 target_link_libraries(drc-webcam-to-lcm)
 pods_install_executables(drc-webcam-to-lcm)
