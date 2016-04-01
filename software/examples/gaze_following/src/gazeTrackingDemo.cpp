@@ -1,5 +1,6 @@
 // Copyright 2015-16 Maurice Fallon, Wolfgang Merkt
 
+#include <bot_core/timestamp.h>
 #include <bot_frames/bot_frames.h>
 #include <bot_param/param_client.h>
 
@@ -132,7 +133,7 @@ void findJointAndInsert(const RigidBodyTree &model, const std::string &name,
                         position_indices.end());
 }
 
-// TODO: move to Eigen conversions
+// TODO(tbd): move to Eigen conversions
 Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
   // This conversion function introduces a NaN in Eigen Rotations when:
   // roll == pi , pitch,yaw =0    ... or other combinations.
@@ -429,7 +430,7 @@ void App::solveGazeProblem() {
     neckJointNames.push_back("neckYaw");
     neckJointNames.push_back("upperNeckPitch");
     // getRobotState(joint_position_goal_msg, 0*1E6, q_sol, neckJointNames);
-    joint_position_goal_msg.utime = 0 * 1E6;  // TODO: current timestamp
+    joint_position_goal_msg.utime = bot_timestamp_now();
     joint_position_goal_msg.num_joints = 3;
     joint_position_goal_msg.joint_name.assign(3, "");
     joint_position_goal_msg.joint_position.assign(3, (const float &)0.);
