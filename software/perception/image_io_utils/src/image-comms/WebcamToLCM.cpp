@@ -26,7 +26,10 @@ int main(int argc, char **argv) {
   if (!lcm_handle.good()) std::cerr << "ERROR: lcm is not good()" << std::endl;
 
   cv::VideoCapture cap;
-  if (!cap.open(0)) return 0;
+  if (!cap.open(0)) {
+    std::cerr << "Could not open webcam, exiting" << std::endl;
+    return 1;
+  }
   uint width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
   uint height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
 
