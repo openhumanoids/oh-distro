@@ -1,24 +1,27 @@
+// Copyright 2015-16 Maurice Fallon, Wolfgang Merkt
+
+#include <bot_frames/bot_frames.h>
+#include <bot_param/param_client.h>
+
 #include <drake/systems/plants/RigidBodyIK.h>
 #include <drake/systems/plants/RigidBodyTree.h>
 #include <drake/systems/plants/constraint/RigidBodyConstraint.h>
-
 #include <drake/systems/plants/IKoptions.h>
-#include <iostream>
+#include <ConciseArgs>
+#include <lcm/lcm-cpp.hpp>
+#include <model-client/model-client.hpp>
+
 #include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <string>
 #include <vector>
-#include <ConciseArgs>
 
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/bot_core/vector_3d_t.hpp"
 #include "lcmtypes/bot_core/rigid_transform_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
-#include <lcm/lcm-cpp.hpp>
-
-#include <bot_frames/bot_frames.h>
-#include <bot_param/param_client.h>
 
 struct CommandLineConfig {
     std::string urdf_filename;
@@ -36,7 +39,7 @@ inline double toRad(double deg) {
 
 class App {
 public:
-    App(std::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig &cl_cfg_, TrackingControlMode mode_);
+    App(std::shared_ptr<lcm::LCM> lcm_in, const CommandLineConfig &cl_cfg_in, TrackingControlMode mode_in);
 
     ~App() {
     }
@@ -71,8 +74,8 @@ private:
     BotFrames *botframes_;
 };
 
-App::App(std::shared_ptr <lcm::LCM> &lcm_, const CommandLineConfig &cl_cfg_, TrackingControlMode mode_) :
-        lcm_(lcm_), cl_cfg_(cl_cfg_), mode_(mode_) {
+App::App(std::shared_ptr <lcm::LCM> lcm_in, const CommandLineConfig &cl_cfg_in, TrackingControlMode mode_in) :
+        lcm_(lcm_in), cl_cfg_(cl_cfg_in), mode_(mode_in) {
     botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
     botframes_ = bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
@@ -116,10 +119,10 @@ std::vector<int> getJointPositionVectorIndices(const RigidBodyTree &model, const
     return ret;
 }
 
-void findJointAndInsert(const RigidBodyTree &model, const std::string &name, std::vector<int> &position_list) {
+void findJointAndInsert(const RigidBodyTree &model, const std::string &name, std::vector<int>* position_list) {
     auto position_indices = getJointPositionVectorIndices(model, name);
 
-    position_list.insert(position_list.end(), position_indices.begin(), position_indices.end());
+    position_list->insert(position_list->end(), position_indices.begin(), position_indices.end());
 }
 
 // TODO: move to Eigen conversions
@@ -150,8 +153,8 @@ Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
 }
 
 Eigen::VectorXd robotStateToDrakePosition(const bot_core::robot_state_t &rstate,
-                                   const std::map<std::string, int> &dofMap,
-                                   int num_positions) {
+                                          const std::map<std::string, int> &dofMap,
+                                          int num_positions) {
     Eigen::VectorXd q = Eigen::VectorXd::Zero(num_positions, 1);
     for (int i = 0; i < rstate.num_joints; ++i) {
         auto iter = dofMap.find(rstate.joint_name.at(i));
@@ -268,9 +271,9 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
     // 1 Back Posture Constraint
     PostureConstraint kc_posture_back(&model_, tspan);
     std::vector<int> back_idx;
-    findJointAndInsert(model_, "torsoYaw", back_idx);
-    findJointAndInsert(model_, "torsoPitch", back_idx);
-    findJointAndInsert(model_, "torsoRoll", back_idx);
+    findJointAndInsert(model_, "torsoYaw", &back_idx);
+    findJointAndInsert(model_, "torsoPitch", &back_idx);
+    findJointAndInsert(model_, "torsoRoll", &back_idx);
     Eigen::VectorXd back_lb = Eigen::VectorXd::Zero(3);
     Eigen::VectorXd back_ub = Eigen::VectorXd::Zero(3);
     kc_posture_back.setJointLimits(3, back_idx.data(), back_lb, back_ub);
@@ -278,9 +281,9 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
     // 2 Neck Safe Joint Limit Constraints
     PostureConstraint kc_posture_neck(&model_, tspan);
     std::vector<int> neck_idx;
-    findJointAndInsert(model_, "lowerNeckPitch", neck_idx);
-    findJointAndInsert(model_, "neckYaw", neck_idx);
-    findJointAndInsert(model_, "upperNeckPitch", neck_idx);
+    findJointAndInsert(model_, "lowerNeckPitch", &neck_idx);
+    findJointAndInsert(model_, "neckYaw", &neck_idx);
+    findJointAndInsert(model_, "upperNeckPitch", &neck_idx);
     Eigen::VectorXd neck_lb = Eigen::VectorXd::Zero(3);
     neck_lb(0) = toRad(0.0);
     neck_lb(1) = toRad(-15.0);
@@ -300,7 +303,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
     WorldGazeTargetConstraint kc_gaze(&model_, head_link, gaze_axis, target, gaze_origin, conethreshold, tspan);
 
     // Assemble Constraint Set
-    std::vector<RigidBodyConstraint*> constraint_array;
+    std::vector<RigidBodyConstraint * > constraint_array;
     constraint_array.push_back(&kc_pelvis_pos);
     constraint_array.push_back(&kc_pelvis_quat);
     constraint_array.push_back(&kc_gaze);
@@ -439,7 +442,7 @@ void App::solveGazeProblem() {
 
         lcm_->publish("JOINT_POSITION_GOAL", &joint_position_goal_msg);
 
-        std::cout << "JOINT_POSTION_GOAL "
+        std::cout << "JOINT_POSITION_GOAL "
         << (q_sol[lowerNeckPitchIndex]) << "*, "
         << (q_sol[neckYawIndex]) << "*, "
         << (q_sol[upperNeckPitchIndex]) << "*" << std::endl;
@@ -507,5 +510,5 @@ int main(int argc, char *argv[]) {
     std::cout << "Ready" << std::endl
     << "============================" << std::endl;
 
-    while (0 == lcm->handle()) {}
+    while (0 == lcm->handle()) { }
 }
