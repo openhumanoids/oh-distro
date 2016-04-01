@@ -1,0 +1,20 @@
+group "99.gaze_following_demo" {
+    cmd "april_tags" {
+        exec = "drc-car-tags -p -q";
+        host = "localhost";
+    }
+
+    cmd "gaze_following_planner" {
+        exec = "oh-gaze-following-demo";
+        host = "localhost";
+    }
+}
+
+cmd "debug_webcam_to_lcm" {
+    exec = "drc-webcam-to-lcm";
+    host = "localhost";
+}
+
+script "start" {
+    start group "99.gaze_following_demo";
+}
