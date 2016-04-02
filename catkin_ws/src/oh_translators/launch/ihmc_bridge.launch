@@ -11,6 +11,6 @@
   	<param name="flip_rgb" type="bool" value="false" />
   </node>
 
-  <node name="ros2lcm_nasa" type="ros2lcm_nasa" pkg="oh_translators" output="screen"/>
-  <node name="lcm2ros_nasa" type="lcm2ros_nasa" pkg="oh_translators" output="screen"/>
+  <!-- Alternatively use JointStatePublisher -->
+  <!--<node name="ros2lcm_nasa" type="ros2lcm_nasa" pkg="oh_translators" output="screen"/>-->
 </launch>
