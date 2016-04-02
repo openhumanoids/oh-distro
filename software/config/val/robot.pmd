@@ -71,6 +71,7 @@ group "4.plan_and_control" {
         exec = "drc-ihmc-step-translator";
         host = "localhost";
     }
+
     cmd "contact_monitor" {
         exec = "drc-contact-monitor -n";
         host = "localhost";
@@ -123,6 +124,9 @@ group "7.control" {
     #    host = "localhost";
     #}
 
+    cmd "JointStatePublisher" {
+        exec = "roslaunch valkyrie_translator JointStatePublisher.launch";
+        host = "link";
     }
 
     cmd "LCM2ROSControl" {
