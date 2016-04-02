@@ -2,13 +2,12 @@ import valkyriedriver
 import valkyriedriverpanel
 import exampletaskpanel
 import tableboxdemo
+import manualwalkingdemo
+import stairsdemo
 
 from director import tasklaunchpanel
 from director import applogic
 from director import teleoppanel
-
-import manualwalkingdemo
-
 
 def startup(robotSystem, globalsDict=None):
     rs = robotSystem
@@ -40,6 +39,11 @@ def startup(robotSystem, globalsDict=None):
         globalsDict['tableboxDemo'] = tableboxDemo
         globalsDict['manualWalkingDemo'] = manualWalkingDemo
         globalsDict['manualWalkingTaskPanel'] = manualWalkingTaskPanel
+        globalsDict['stairsDemo'] = stairsDemo
+        globalsDict['stairsTaskPanel'] = stairsTaskPanel
 
 
+    stairsDemo = stairsdemo.StairsDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
+    stairsTaskPanel = stairsdemo.StairsTaskPanel(stairsDemo)
 
+    tasklaunchpanel.panel.addTaskPanel('Stairs', stairsTaskPanel.widget)
