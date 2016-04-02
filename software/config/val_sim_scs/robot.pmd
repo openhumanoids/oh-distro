@@ -1,6 +1,6 @@
 group "0.ros_bridge" {
     cmd "ros_bridge_without_pronto" {
-        exec = "roslaunch oh_translators ihmc_bridge.launch";
+        exec = "roslaunch oh_translators ihmc_bridge.launch mode:=passthrough";
         host = "localhost";
     }
     cmd "ros_bridge_with_pronto" {
