@@ -146,11 +146,6 @@ cmd "director" {
     host = "localhost";
 }
 
-cmd "director_exotica" {
-    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2 -exo";
-    host = "localhost";
-}
-
 cmd "pose-util" {
     exec = "drc-robot-pose-util";
     host = "localhost";
@@ -170,7 +165,7 @@ script "start_ui_exotica" {
     start group "4.plan_and_control";
     start group "5.maps";
     start group "6.exotica";
-    start cmd "director_exotica";
+    start cmd "director";
 }
 
 script "start_ui" {
