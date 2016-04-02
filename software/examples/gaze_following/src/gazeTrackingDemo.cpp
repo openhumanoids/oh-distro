@@ -469,9 +469,9 @@ void App::solveGazeProblem() {
     joint_position_goal_msg.joint_name[2] = "upperNeckPitch";
     joint_position_goal_msg.joint_position[2] = q_sol[upperNeckPitchIndex];
 
-    lcm_->publish("JOINT_POSITION_GOAL", &joint_position_goal_msg);
+    lcm_->publish("DESIRED_NECK_ANGLES", &joint_position_goal_msg);
 
-    std::cout << "JOINT_POSITION_GOAL " << (q_sol[lowerNeckPitchIndex]) << "*, "
+    std::cout << "DESIRED_NECK_ANGLES " << (q_sol[lowerNeckPitchIndex]) << "*, "
               << (q_sol[neckYawIndex]) << "*, " << (q_sol[upperNeckPitchIndex])
               << "*" << std::endl;
   } else {
