@@ -207,7 +207,7 @@
     <parent link="torso"/>
     <child link="lowerNeckPitchLink"/>
     <limit effort="26" lower="0" upper="1.162" velocity="5"/>
-    <controller_gains Kd="400" Ki="0.0" Kp="400"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="lowerNeckPitch">
@@ -220,7 +220,7 @@
     <parent link="lowerNeckPitchLink"/>
     <child link="neckYawLink"/>
     <limit effort="26" lower="-1.04719755" upper="1.04719755" velocity="5"/>
-    <controller_gains Kd="400" Ki="0.0" Kp="400"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="neckYaw">
@@ -233,7 +233,7 @@
     <parent link="neckYawLink"/>
     <child link="upperNeckPitchLink"/>
     <limit effort="26" lower="-0.872" upper="0.0" velocity="5"/>
-    <controller_gains Kd="400" Ki="0.0" Kp="400"/>
+    <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
   <gazebo reference="upperNeckPitch">
