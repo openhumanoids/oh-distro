@@ -28,7 +28,7 @@
     </model>
 
     <model name='Box02'>
-      <pose>0.8 0.0 0.0675 0 0 0</pose>
+      <pose>0.9 0.0 0.0675 0 0 0</pose>
       <link name='Box02'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>
@@ -51,7 +51,7 @@
 
 
     <model name='Box03'>
-      <pose>1.1 0.0 0.1125 0 0 0</pose>
+      <pose>1.3 0.0 0.1125 0 0 0</pose>
       <link name='Box03'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='collision'>

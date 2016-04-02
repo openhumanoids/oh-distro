@@ -1,5 +1,7 @@
 import os
+import operator
 import functools
+import vtkNumpy
 import numpy as np
 
 from director.tasks.taskuserpanel import TaskUserPanel
@@ -11,9 +13,39 @@ from director import segmentation
 from director import transformUtils
 from director import footstepsdriver
 from director import sceneloader
+from director.debugVis import DebugData
 from director.lcmframe import positionMessageFromFrame
 
 import drc as lcmdrc
+
+class BlockTop():
+    def __init__(self, cornerTransform, rectDepth, rectWidth, rectArea):
+        self.cornerTransform = cornerTransform # location of far right corner
+        self.rectDepth = rectDepth # length of face away from robot
+        self.rectWidth = rectWidth # length of face perpendicular to robot's toes
+        self.rectArea = rectArea
+
+    def getCorners(self):
+        '''
+        Return a 4x3 numpy array representing the world xyz positions of the
+        four corners of the block top.  Corners are listed clockwise from far right.
+        '''
+        width = self.rectWidth
+        depth = self.rectDepth
+
+        width = max(width, 0.39)
+        #depth = max(depth, 0.38)
+
+        xaxis, yaxis, zaxis = transformUtils.getAxesFromTransform(self.cornerTransform)
+        xedge = np.array(xaxis)*depth
+        yedge = np.array(yaxis)*width
+
+        c1 = np.array(self.cornerTransform.GetPosition()) + (np.array(yaxis)*self.rectWidth*0.5) - yedge*0.5
+        c2 = c1 - xedge
+        c3 = c1 - xedge + yedge
+        c4 = c1 + yedge
+
+        return np.array([c3, c4, c1, c2])
 
 class Footstep():
     def __init__(self, transform, is_right_foot):
@@ -30,13 +62,20 @@ class StairsDemo(object):
 
         # live operation flags:
         self.planFromCurrentRobotState = True
+        self.onSync = False
 
         self.plans = []
+        self.blocks_list = []
+        self.ground = None
+
+        # clusters and blocks
+        self.ground_width_thresh = 1.00
+        self.ground_depth_thresh = 1.80
 
         # Manual footsteps placement options
         self.isLeadingFootRight = True
-        self.numSteps = 6
-        self.forwardStep = 0.35
+        self.forwardStepRight = 0.13
+        self.forwardStepLeft = 0.16
         self.stepWidth = 0.25
         # IHMC params
         self.ihmcTransferTime = 1.0
@@ -49,71 +88,146 @@ class StairsDemo(object):
             else:
                 leadFoot=self.ikPlanner.leftFootLink #'l_foot'
 
+        polyData = segmentation.getCurrentRevolutionData()
         feetMidPoint = self.footstepsDriver.getFeetMidPoint(self.robotStateModel)
         startPose = self.getEstimatedRobotStatePose()
 
-        self.footstepsPlacement(leadFoot, startFeetMidPoint = feetMidPoint, nextDoubleSupportPose = startPose)
+        self.footstepsPlacement(polyData, leadFoot, startFeetMidPoint = feetMidPoint, nextDoubleSupportPose = startPose)
 
 
-    def footstepsPlacement(self, standingFootName, startFeetMidPoint = None, nextDoubleSupportPose = None):
-        # Step 1: filter the data down to a box in front of the robot:
-        polyData = self.getRecedingTerrainRegion(polyData, footstepsdriver.FootstepsDriver.getFeetMidPoint(self.robotStateModel))
+    def footstepsPlacement(self, polyData, standingFootName, startFeetMidPoint = None, nextDoubleSupportPose = None):
+        standingFootFrame = self.robotStateModel.getLinkFrame(standingFootName)
+        vis.updateFrame(standingFootFrame, standingFootName, parent='cont debug', visible=False)
 
-        # Step 2: find all the surfaces in front of the robot (about 0.75sec)
-        clusters = segmentation.findHorizontalSurfaces(polyData, removeGroundFirst=False, normalEstimationSearchRadius=0.05,
-                                                       clusterTolerance=0.025, distanceToPlaneThreshold=0.0025, normalsDotUpRange=[0.95, 1.0])
-        if clusters is None:
-            print "No cluster found, stop walking now!"
-            return
+        if not self.onSync:
+            # Step 1: filter the data down to a box in front of the robot:
+            polyData = self.getRecedingTerrainRegion(polyData, footstepsdriver.FootstepsDriver.getFeetMidPoint(self.robotStateModel))
 
-        # Step 1: Footsteps placement
-        '''footsteps = self.placeStepsManually(startFeetMidPoint)
+            # Step 2: find all the surfaces in front of the robot (about 0.75sec)
+            clusters = segmentation.findHorizontalSurfaces(polyData, removeGroundFirst=False, normalEstimationSearchRadius=0.05,
+                                                           clusterTolerance=0.045, distanceToPlaneThreshold=0.0025, normalsDotUpRange=[0.95, 1.0])
+            if clusters is None:
+                print "No cluster found, stop walking now!"
+                return
+
+            # Step 3: find the corners of the minimum bounding rectangles
+            blocks,groundPlane = self.extractBlocksFromSurfaces(clusters, standingFootFrame)
+
+            self.blocks_list = blocks
+            self.ground = groundPlane
+        else:
+            self.onSync = False
+
+        # Step 4: Footsteps placement
+        footsteps = self.placeStepsOnBlocks(self.blocks_list, self.ground, standingFootName, standingFootFrame)
 
         assert len(footsteps) > 0
 
-        # Step 2: Send request to planner. It replies with complete footsteps plan message.
-        self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)'''
+        print 'got %d footsteps' % len(footsteps)
 
+        # Step 5: Send request to planner. It replies with complete footsteps plan message.
+        self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)
 
-    def placeStepsManually(self, startFeetMidPoint = None):
-        
-        # Place footsteps on the ground manually (no planning)
-        # The number of footsteps, width and forward distance between steps are given by user.
+    def placeStepsOnBlocks(self, blocks, groundPlane, standingFootName, standingFootFrame):
+
         footsteps = []
+        for i, block in enumerate(blocks):
+            blockBegin = transformUtils.frameFromPositionAndRPY([-block.rectDepth,block.rectWidth/2,0.0], [0,0,0])
+            blockBegin.Concatenate(block.cornerTransform)
+            vis.updateFrame(blockBegin, 'block begin %d' % i , parent='block begins', scale=0.2, visible=True)
 
-        startFeetMidPointPos = startFeetMidPoint.GetPosition()
+            nextLeftTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepLeft,self.stepWidth/2,0.0], [0,0,0])
+            nextRightTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepRight,-self.stepWidth/2,0.0], [0,0,0])
+            vis.updateFrame(nextLeftTransform, 'nextLeftTransform %d' % i , parent='nextLeftTransform', scale=0.2, visible=True)
 
-        contactPtsLeft, contactPtsRight = self.footstepsDriver.getContactPts()
-        contactPtsMid = np.mean(contactPtsRight, axis=0) # mid point on foot relative to foot frame
+            nextLeftTransform.Concatenate(blockBegin)
+            footsteps.append(Footstep(nextLeftTransform,False))
 
-        forward = 0
-        for i in range(self.numSteps):
-            if i == 0:
-                correctionFootToMidContact = contactPtsMid[0]
-            else:
-                correctionFootToMidContact = 0
-
-            if i < (self.numSteps-1):
-                forward = forward + (self.forwardStep / 2) - correctionFootToMidContact
-
-            if (i % 2 == 0 and not self.isLeadingFootRight) or (i % 2 != 0 and self.isLeadingFootRight):
-                width = self.stepWidth / 2
-            else:
-                width = -self.stepWidth / 2
-
-            stepPose = transformUtils.frameFromPositionAndRPY([forward, width, 0], [0,0,0])
-
-            nextTransform = transformUtils.copyFrame(startFeetMidPoint)
-            nextTransform.PreMultiply()
-            nextTransform.Concatenate(stepPose)
-
-            if i % 2 == 0:
-                footsteps.append(Footstep(nextTransform,self.isLeadingFootRight))
-            else:
-                footsteps.append(Footstep(nextTransform,not(self.isLeadingFootRight)))
+            nextRightTransform.Concatenate(blockBegin)
+            footsteps.append(Footstep(nextRightTransform,True))
 
         return footsteps
 
+    def getRecedingTerrainRegion(self, polyData, linkFrame):
+        ''' Find the point cloud in front of the foot frame'''
+        points = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
+
+        viewOrigin = linkFrame.TransformPoint([0.0, 0.0, 0.0])
+        viewX = linkFrame.TransformVector([1.0, 0.0, 0.0])
+        viewY = linkFrame.TransformVector([0.0, 1.0, 0.0])
+        viewZ = linkFrame.TransformVector([0.0, 0.0, 1.0])
+        polyData = segmentation.labelPointDistanceAlongAxis(polyData, viewX, origin=viewOrigin, resultArrayName='distance_along_foot_x')
+        polyData = segmentation.labelPointDistanceAlongAxis(polyData, viewY, origin=viewOrigin, resultArrayName='distance_along_foot_y')
+        polyData = segmentation.labelPointDistanceAlongAxis(polyData, viewZ, origin=viewOrigin, resultArrayName='distance_along_foot_z')
+
+        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_x', [0.12, self.ground_depth_thresh])
+        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_y', [-(self.ground_width_thresh/2), self.ground_width_thresh/2])
+        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_z', [-(self.ground_width_thresh/2), self.ground_width_thresh/2])
+
+        vis.updatePolyData( polyData, 'walking snapshot trimmed', parent='cont debug', visible=True)
+        return polyData
+
+    def extractBlocksFromSurfaces(self, clusters, linkFrame):
+        ''' find the corners of the minimum bounding rectangles '''
+        om.removeFromObjectModel(om.findObjectByName('block corners'))
+        om.getOrCreateContainer('block corners',om.getOrCreateContainer('stairs'))
+
+        print 'got %d clusters' % len(clusters)
+
+        # get the rectangles from the clusters:
+        blocks = []
+        for i, cluster in enumerate(clusters):
+                cornerTransform, rectDepth, rectWidth, rectArea = segmentation.findMinimumBoundingRectangle( cluster, linkFrame )
+                #print 'min bounding rect:', rectDepth, rectWidth, rectArea, cornerTransform.GetPosition()
+
+                block = BlockTop(cornerTransform, rectDepth, rectWidth, rectArea)
+                blocks.append(block)
+
+        # filter out blocks that are too big or small
+        blocksGood = []
+        groundPlane = None
+
+        step_width_thresh = 0.65
+        step_depth_thresh = 0.65
+
+        for i, block in enumerate(blocks):
+            if ((block.rectWidth<step_width_thresh) and (block.rectDepth<step_depth_thresh)):
+                blocksGood.append(block)
+            else:
+                groundPlane = block
+        blocks = blocksGood
+
+        # order by distance from robot's foot
+        for i, block in enumerate(blocks):
+            block.distToRobot = np.linalg.norm(np.array(linkFrame.GetPosition()) - np.array(block.cornerTransform.GetPosition()))
+        blocks.sort(key=operator.attrgetter('distToRobot'))
+
+        # draw blocks including the ground plane:
+        om.removeFromObjectModel(om.findObjectByName('blocks'))
+        blocksFolder=om.getOrCreateContainer('blocks',om.getOrCreateContainer('stairs'))
+        for i, block in enumerate(blocks):
+            vis.updateFrame(block.cornerTransform, 'block corners %d' % i , parent='block corners', scale=0.2, visible=True)
+
+            blockCenter = transformUtils.frameFromPositionAndRPY([-block.rectDepth/2,block.rectWidth/2,0.0], [0,0,0])
+            blockCenter.Concatenate(block.cornerTransform)
+
+            d = DebugData()
+            d.addCube([ block.rectDepth, block.rectWidth,0.005],[0,0,0])
+            obj = vis.showPolyData(d.getPolyData(),'block %d' % i, color=[1,0,1],parent=blocksFolder)
+            obj.actor.SetUserTransform(blockCenter)
+
+        if (groundPlane is not None):
+            vis.updateFrame(groundPlane.cornerTransform, 'ground plane', parent='block corners', scale=0.2, visible=True)
+
+            blockCenter = transformUtils.frameFromPositionAndRPY([-groundPlane.rectDepth/2,groundPlane.rectWidth/2,0.0], [0,0,0])
+            blockCenter.Concatenate(groundPlane.cornerTransform)
+
+            d = DebugData()
+            d.addCube([ groundPlane.rectDepth, groundPlane.rectWidth,0.005],[0,0,0])
+            obj = vis.showPolyData(d.getPolyData(),'ground plane', color=[1,1,0],alpha=0.1, parent=blocksFolder)
+            obj.actor.SetUserTransform(blockCenter)
+
+        return blocks,groundPlane
 
     def sendFootstepPlanRequest(self, footsteps, nextDoubleSupportPose):
         goalSteps = []
@@ -200,13 +314,8 @@ class StairsTaskPanel(TaskUserPanel):
         self.addManualButton('EXECUTE Plan', self.stairsDemo.executePlan)
 
     def addDefaultProperties(self):
-        if self.stairsDemo.isLeadingFootRight:
-            leadingFoot = 0
-        else:
-            leadingFoot = 1
-        self.params.addProperty('Leading Foot', leadingFoot, attributes=om.PropertyAttributes(enumNames=['Right','Left']))
-        self.params.addProperty('Num Steps', self.stairsDemo.numSteps, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
-        self.params.addProperty('Forward Step', self.stairsDemo.forwardStep, attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('Forward Step Right', self.stairsDemo.forwardStepRight, attributes=om.PropertyAttributes(decimals=2, minimum=0.10, maximum=0.2, singleStep=0.01))
+        self.params.addProperty('Forward Step Left', self.stairsDemo.forwardStepLeft, attributes=om.PropertyAttributes(decimals=2, minimum=0.10, maximum=0.2, singleStep=0.01))
         self.params.addProperty('Step Width', self.stairsDemo.stepWidth, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
         self.params.addProperty('IHMC Transfer Time', self.stairsDemo.ihmcTransferTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
         self.params.addProperty('IHMC Swing Time', self.stairsDemo.ihmcSwingTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
@@ -214,16 +323,12 @@ class StairsTaskPanel(TaskUserPanel):
 
     def onPropertyChanged(self, propertySet, propertyName):
         self._syncProperties()
+        self.stairsDemo.onSync = True
         self.stairsDemo.testStairs()
 
     def _syncProperties(self):
-        if self.params.getPropertyEnumValue('Leading Foot') == 'Left':
-            self.stairsDemo.isLeadingFootRight = False
-        else:
-            self.stairsDemo.isLeadingFootRight = True
-    
-        self.stairsDemo.numSteps = self.params.getProperty('Num Steps')
-        self.stairsDemo.forwardStep = self.params.getProperty('Forward Step')
+        self.stairsDemo.forwardStepRight = self.params.getProperty('Forward Step Right')
+        self.stairsDemo.forwardStepLeft = self.params.getProperty('Forward Step Left')
         self.stairsDemo.stepWidth = self.params.getProperty('Step Width')
         self.stairsDemo.ihmcTransferTime = self.params.getProperty('IHMC Transfer Time')
         self.stairsDemo.ihmcSwingTime = self.params.getProperty('IHMC Swing Time')
