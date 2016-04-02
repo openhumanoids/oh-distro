@@ -90,7 +90,6 @@ group "4.plan_and_control" {
 }
 
 group "5.maps" {
-
     cmd "data-request-server" {
         exec = "data-request-server";
         host = "localhost";
@@ -105,11 +104,9 @@ group "5.maps" {
         exec = "bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} drc-lidar-passthrough -c 0.06 -s'";
         host = "localhost";
     }
-
 }
 
 group "6.exotica" {
-
     cmd "exotica_bridge" {
         exec = "roslaunch oh_translators exotica_bridge.launch";
         host = "localhost";
@@ -121,9 +118,11 @@ group "6.exotica" {
 }
 
 group "7.control" {
-    cmd "lcm-tunnel_to_link" {
-        exec = "bot-lcm-tunnel ${VAL_LINK_IP}";
-        host = "localhost";
+    #cmd "lcm-tunnel_to_link" {
+    #    exec = "bot-lcm-tunnel ${VAL_LINK_IP}";
+    #    host = "localhost";
+    #}
+
     }
 
     cmd "LCM2ROSControl" {
