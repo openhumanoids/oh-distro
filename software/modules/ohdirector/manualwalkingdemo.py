@@ -26,29 +26,17 @@ class ManualWalkingDemo(object):
         self.robotStateJointController = robotStateJointController
         self.ikPlanner = ikPlanner
 
-        self.setStraightDefaults()
-
-    def testManualWalking(self, leadFoot=None):
-        if (leadFoot is None):
-            if self.isLeadingFootRight:
-                leadFoot=self.ikPlanner.rightFootLink #'r_foot'
-            else:
-                leadFoot=self.ikPlanner.leftFootLink #'l_foot'
-
+    def testManualWalking(self):
         feetMidPoint = self.footstepsDriver.getFeetMidPoint(self.robotStateModel)
         startPose = self.robotStateJointController.getPose('EST_ROBOT_STATE')
 
-        self.manualFootstepsPlacement(leadFoot, startFeetMidPoint = feetMidPoint, nextDoubleSupportPose = startPose)
-
-
-    def manualFootstepsPlacement(self, standingFootName, startFeetMidPoint = None, nextDoubleSupportPose = None):
         # Step 1: Footsteps placement
-        footsteps = self.placeStepsManually(startFeetMidPoint)
+        footsteps = self.placeStepsManually(feetMidPoint)
 
         assert len(footsteps) > 0
 
         # Step 2: Send request to planner. It replies with complete footstep plan message.
-        self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)
+        self.sendFootstepPlanRequest(footsteps, startPose)
 
     def getSimpleFootstepsFolder(self):
         obj = om.findObjectByName('simple footsteps')
@@ -88,12 +76,12 @@ class ManualWalkingDemo(object):
                 leftRightShift = -self.stepWidth / 2
 
             if i < (self.numSteps-1):
-                turnAngle = self.turnAngle
+                nextTurnAngle = self.turnAngle
             else:
-                turnAngle = 0
+                nextTurnAngle = 0
 
             # Determine the forward motion of a frame along the center line between the feet:
-            forwardMotionTransform = transformUtils.frameFromPositionAndRPY([forwardDistance, 0, 0], [0,0, turnAngle])
+            forwardMotionTransform = transformUtils.frameFromPositionAndRPY([forwardDistance, 0, 0], [0,0, nextTurnAngle])
             midLineFrame.PreMultiply()
             midLineFrame.Concatenate(forwardMotionTransform)
             #vis.showFrame(transformUtils.copyFrame(midLineFrame), "midLineFrame")
@@ -147,27 +135,8 @@ class ManualWalkingDemo(object):
     def executePlan(self):
         self.footstepsDriver.commitFootstepPlan(self.footstepsDriver.lastFootstepPlan)
 
-    def setStraightDefaults(self):
-        # Manual footsteps placement options
-        self.isLeadingFootRight = True
-        self.numSteps = 6
-        self.forwardStep = 0.35
-        self.turnAngle = 0 # degrees
-        self.stepWidth = 0.25
-        # IHMC params
-        self.ihmcTransferTime = 1.0
-        self.ihmcSwingTime = 1.0
 
-    def setTurningDefaults(self):
-        # Manual footsteps placement options
-        self.isLeadingFootRight = True
-        self.numSteps = 7
-        self.forwardStep = 0.0
-        self.turnAngle = 15.0 # degrees
-        self.stepWidth = 0.25
-        # IHMC params
-        self.ihmcTransferTime = 1.0
-        self.ihmcSwingTime = 1.0
+
 
 
 class ManualWalkingTaskPanel(TaskUserPanel):
@@ -180,33 +149,68 @@ class ManualWalkingTaskPanel(TaskUserPanel):
 
         self.addDefaultProperties()
         self.addButtons()
-
+        self.autoQuery = True
 
     def addButtons(self):
         self.addManualButton('Plan Footsteps', self.manualWalkingDemo.testManualWalking)
         self.addManualButton('Execute Plan', self.manualWalkingDemo.executePlan)
 
         self.addManualSpacer()
-        self.addManualButton('Set Straight Defaults', self.manualWalkingDemo.setStraightDefaults)
-        self.addManualButton('Set Turning Defaults', self.manualWalkingDemo.setTurningDefaults)
+        self.addManualButton('Set Straight Defaults', self.setStraightDefaults)
+        self.addManualButton('Set Turning Defaults', self.setTurningDefaults)
+
+    def setStraightDefaults(self, makeQuery = True):
+        self.autoQuery = False
+
+        # Manual footsteps placement options
+        self.params.setProperty('Leading Foot', 1) # Right
+        self.params.setProperty('Num Steps', 6)
+        self.params.setProperty('Forward Step', 0.35)
+        self.params.setProperty('Turn Angle', 0.0) # degrees
+        self.params.setProperty('Step Width', 0.25)
+        # IHMC params
+        self.params.setProperty('IHMC Transfer Time', 1.0)
+        self.params.setProperty('IHMC Swing Time', 1.0)
+
+        self._syncProperties()
+        if (makeQuery):
+            self.manualWalkingDemo.testManualWalking()
+        self.autoQuery = True
+
+    def setTurningDefaults(self):
+        self.autoQuery = False
+
+        # Manual footsteps placement options
+        self.params.setProperty('Leading Foot', 1) # Right
+        self.params.setProperty('Num Steps', 7)
+        self.params.setProperty('Forward Step', 0.0)
+        self.params.setProperty('Turn Angle', 15.0)
+        self.params.setProperty('Step Width', 0.25)
+        # IHMC params
+        self.params.setProperty('IHMC Transfer Time', 1.0)
+        self.params.setProperty('IHMC Swing Time', 1.0)
+
+        self._syncProperties()
+        self.manualWalkingDemo.testManualWalking()
+        self.autoQuery = True
 
     def addDefaultProperties(self):
-        if self.manualWalkingDemo.isLeadingFootRight:
-            leadingFoot = 0
-        else:
-            leadingFoot = 1
-        self.params.addProperty('Leading Foot', leadingFoot, attributes=om.PropertyAttributes(enumNames=['Right','Left']))
-        self.params.addProperty('Num Steps', self.manualWalkingDemo.numSteps, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
-        self.params.addProperty('Forward Step', self.manualWalkingDemo.forwardStep, attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('Turn Angle', self.manualWalkingDemo.turnAngle, attributes=om.PropertyAttributes(decimals=2, minimum=-20, maximum=20, singleStep=1))
-        self.params.addProperty('Step Width', self.manualWalkingDemo.stepWidth, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('IHMC Transfer Time', self.manualWalkingDemo.ihmcTransferTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
-        self.params.addProperty('IHMC Swing Time', self.manualWalkingDemo.ihmcSwingTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
+        self.params.addProperty('Leading Foot', 1, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
+        self.params.addProperty('Num Steps',  6, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
+        self.params.addProperty('Forward Step', 0.35 , attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('Turn Angle', 0.0, attributes=om.PropertyAttributes(decimals=2, minimum=-40, maximum=40, singleStep=1))
+        self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('IHMC Transfer Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
+        self.params.addProperty('IHMC Swing Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
+
+        self.setStraightDefaults(False)
         self._syncProperties()
 
     def onPropertyChanged(self, propertySet, propertyName):
         self._syncProperties()
-        self.manualWalkingDemo.testManualWalking()
+
+        if (self.autoQuery):
+            self.manualWalkingDemo.testManualWalking()
 
     def _syncProperties(self):
         if self.params.getPropertyEnumValue('Leading Foot') == 'Left':

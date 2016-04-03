@@ -39,6 +39,7 @@ def startup(robotSystem, globalsDict=None):
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
         globalsDict['tableboxDemo'] = tableboxDemo
         globalsDict['manualWalkingDemo'] = manualWalkingDemo
+        globalsDict['manualWalkingTaskPanel'] = manualWalkingTaskPanel
 
 
 
