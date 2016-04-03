@@ -1,7 +1,12 @@
 import PythonQt
 from PythonQt import QtCore, QtGui, QtUiTools
 from director import applogic as app
+from director.utime import getUtime
+from director import transformUtils
+from director import lcmUtils
+
 import os
+import bot_core as lcmbotcore
 
 def addWidgetsToDict(widgets, d):
 
@@ -37,6 +42,13 @@ class ValkyrieDriverPanel(object):
         self.ui.modeBox.connect('currentIndexChanged(const QString&)', self.onModeBox)
         self.wholeBodyMode='Whole Body'
 
+        self.ui.lFootUpButton.connect('clicked()', self.moveLeftFootUpButtonClicked)
+        self.ui.lFootDownButton.connect('clicked()', self.moveLeftFootDownButtonClicked)
+        self.ui.rFootUpButton.connect('clicked()', self.moveRightFootUpButtonClicked)
+        self.ui.rFootDownButton.connect('clicked()', self.moveRightFootDownButtonClicked)
+
+
+
     def getModeInt(self, inputStr):
         if inputStr == 'Whole Body':
             return 0
@@ -57,6 +69,35 @@ class ValkyrieDriverPanel(object):
     def onModeBox(self):
         self.wholeBodyMode = self.getComboText(self.ui.modeBox)
 
+
+    def moveLeftFootUpButtonClicked(self):
+        self.moveFoot([0,0,0.05], 'left')
+
+    def moveLeftFootDownButtonClicked(self):
+        self.moveFoot([0,0,-0.05], 'left')
+
+    def moveRightFootUpButtonClicked(self):
+        self.moveFoot([0,0,0.05], 'right')
+
+    def moveRightFootDownButtonClicked(self):
+        self.moveFoot([0,0,-0.05], 'right')
+
+    def moveFoot(self, offset, side):
+        msg = lcmbotcore.pose_t()
+        msg.utime = getUtime();
+        foot_link = self.driver.ikPlanner.leftFootLink if side == 'left' else self.driver.ikPlanner.rightFootLink
+
+        footTransform = self.driver.ikPlanner.robotModel.getLinkFrame(foot_link)
+        footOffsetTransform = transformUtils.frameFromPositionAndRPY(offset, [0., 0., 0.])
+        footTransform.PreMultiply()
+        footTransform.Concatenate(footOffsetTransform)
+
+        [msg.pos, msg.orientation] = transformUtils.poseFromTransform(footTransform)
+
+        if side == 'left':
+            lcmUtils.publish("DESIRED_LEFT_FOOT_POSE", msg)
+        else:
+            lcmUtils.publish("DESIRED_RIGHT_FOOT_POSE", msg)
 
 def _getAction():
 

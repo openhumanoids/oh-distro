@@ -15,7 +15,7 @@ import tablemapping
 def startup(robotSystem, globalsDict=None):
     rs = robotSystem
 
-    valkyrieDriver = valkyriedriver.ValkyrieDriver()
+    valkyrieDriver = valkyriedriver.ValkyrieDriver(rs.ikPlanner)
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
 
     atlasPanelAction = applogic.getToolBarActions()['ActionAtlasDriverPanel']
