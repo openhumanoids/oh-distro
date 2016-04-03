@@ -29,11 +29,16 @@ def startup(robotSystem, globalsDict=None):
     tableboxTaskPanel = tableboxdemo.TableboxTaskPanel(tableboxDemo)
     tasklaunchpanel.panel.addTaskPanel('Tablebox', tableboxTaskPanel.widget)
 
+    manualWalkingDemo = manualwalkingdemo.ManualWalkingDemo(rs.robotStateModel,
+                    rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
+    manualWalkingTaskPanel = manualwalkingdemo.ManualWalkingTaskPanel(manualWalkingDemo)
+    tasklaunchpanel.panel.addTaskPanel('Manual Walking', manualWalkingTaskPanel.widget)
+
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
+        globalsDict['tableboxDemo'] = tableboxDemo
+        globalsDict['manualWalkingDemo'] = manualWalkingDemo
 
-    manualwalkingDemo = manualwalkingdemo.ManualWalkingDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
-    manualWalkingTaskPanel = manualwalkingdemo.ManualWalkingTaskPanel(manualwalkingDemo)
 
-    tasklaunchpanel.panel.addTaskPanel('Manual Walking', manualWalkingTaskPanel.widget)
+
