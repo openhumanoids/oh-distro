@@ -1,7 +1,7 @@
 #include "residual-detector.hpp"
 #include <model-client/model-client.hpp>
 
-#define RESIDUAL_GAIN 100.0;
+#define RESIDUAL_GAIN 20.0;
 #define PUBLISH_CHANNEL "RESIDUAL_OBSERVER_STATE"
 using namespace Eigen;
 
@@ -13,6 +13,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 
 
   if (urdfFilename=="none"){
+    std::cout << "using default urdf" << std::endl;
     std::string drcBase = std::string(std::getenv("DRC_BASE"));
     urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
     drake_model.addRobotFromURDF(urdfFilename);
