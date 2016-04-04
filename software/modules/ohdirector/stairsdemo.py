@@ -72,14 +72,9 @@ class StairsDemo(object):
         self.ground_width_thresh = 1.00
         self.ground_depth_thresh = 1.80
 
-        # Manual footsteps placement options
+        # Footsteps placement options
         self.isLeadingFootRight = True
-        self.forwardStepRight = 0.13
-        self.forwardStepLeft = 0.16
-        self.stepWidth = 0.25
-        # IHMC params
-        self.ihmcTransferTime = 1.0
-        self.ihmcSwingTime = 1.0
+
 
     def testStairs(self, leadFoot=None):
         if (leadFoot is None):
@@ -145,6 +140,12 @@ class StairsDemo(object):
 
             nextRightTransform.Concatenate(blockBegin)
             footsteps.append(Footstep(nextRightTransform,True))
+
+        '''removeFirstLeftStep = True
+        removeFirstRightStep = True
+        if (removeFirstLeftStep is True and removeFirstRightStep is True):
+            if (standingFootName is self.ikPlanner.rightFootLink ):
+                footsteps = footsteps[1:]'''
 
         return footsteps
 
@@ -253,8 +254,7 @@ class StairsDemo(object):
         # force correct planning parameters:
         request.params.leading_foot = goalSteps[0].is_right_foot
         request.params.planning_mode = lcmdrc.footstep_plan_params_t.MODE_SPLINE
-        request.params.map_mode = lcmdrc.footstep_plan_params_t.TERRAIN_HEIGHTS_Z_NORMALS
-        request.params.max_num_steps = len(goalSteps)
+        request.params.map_mode = lcmdrc.footstep_plan_params_t.FOOT_PLANE
         request.params.min_num_steps = len(goalSteps)
         request.default_step_params = default_step_params
 
@@ -308,23 +308,43 @@ class StairsTaskPanel(TaskUserPanel):
         self.addButtons()
         self.addTasks()
 
+        self.autoQuery = True
+
     def addButtons(self):
         self.addManualButton('Load Scenario', self.stairsDemo.loadSDFFileAndRunSim)
         self.addManualButton('Footsteps Plan', self.stairsDemo.testStairs)
         self.addManualButton('EXECUTE Plan', self.stairsDemo.executePlan)
 
-    def addDefaultProperties(self):
-        self.params.addProperty('Forward Step Right', self.stairsDemo.forwardStepRight, attributes=om.PropertyAttributes(decimals=2, minimum=0.10, maximum=0.2, singleStep=0.01))
-        self.params.addProperty('Forward Step Left', self.stairsDemo.forwardStepLeft, attributes=om.PropertyAttributes(decimals=2, minimum=0.10, maximum=0.2, singleStep=0.01))
-        self.params.addProperty('Step Width', self.stairsDemo.stepWidth, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('IHMC Transfer Time', self.stairsDemo.ihmcTransferTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
-        self.params.addProperty('IHMC Swing Time', self.stairsDemo.ihmcSwingTime, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
+    def setDefaults(self, makeQuery = True):
+        self.autoQuery = False
+        # Footsteps placement options (in ui)
+        self.params.setProperty('Forward Step Right', 0.10)
+        self.params.setProperty('Forward Step Left', 0.18)
+        self.params.setProperty('Step Width', 0.25)
+        # IHMC params
+        self.params.setProperty('IHMC Transfer Time', 1.0)
+        self.params.setProperty('IHMC Swing Time', 1.0)
+
         self._syncProperties()
+        if (makeQuery):
+            self.stairsDemo.testStairs()
+        self.autoQuery = True
+
+    def addDefaultProperties(self):
+        self.params.addProperty('Forward Step Right', 0.10, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
+        self.params.addProperty('Forward Step Left', 0.18, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
+        self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('IHMC Transfer Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
+        self.params.addProperty('IHMC Swing Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
+
+        # Set the dafault values in ui
+        self.setDefaults(False)
 
     def onPropertyChanged(self, propertySet, propertyName):
         self._syncProperties()
-        self.stairsDemo.onSync = True
-        self.stairsDemo.testStairs()
+        if (self.autoQuery):
+            self.stairsDemo.onSync = True
+            self.stairsDemo.testStairs()
 
     def _syncProperties(self):
         self.stairsDemo.forwardStepRight = self.params.getProperty('Forward Step Right')
@@ -354,7 +374,6 @@ class StairsTaskPanel(TaskUserPanel):
             else:
                 addTask(rt.UserPromptTask(name='approve manip plan', message='Please approve manipulation plan.'))
             addFunc('execute manip plan', self.stairsDemo.commitManipPlan)
-            addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'))
             self.folder = prevFolder
 
         sd = self.stairsDemo
@@ -365,6 +384,6 @@ class StairsTaskPanel(TaskUserPanel):
 
         # prep
         addFolder('prep')
-        addManipTask('move hands down', sd.planArmsDown, userPrompt=True)
         addTask(rt.SetNeckPitch(name='set neck position', angle=50))
+        addManipTask('move hands down', sd.planArmsDown, userPrompt=True)
 
