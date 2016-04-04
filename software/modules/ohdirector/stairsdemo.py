@@ -25,32 +25,12 @@ class BlockTop():
         self.rectWidth = rectWidth # length of face perpendicular to robot's toes
         self.rectArea = rectArea
 
-    def getCorners(self):
-        '''
-        Return a 4x3 numpy array representing the world xyz positions of the
-        four corners of the block top.  Corners are listed clockwise from far right.
-        '''
-        width = self.rectWidth
-        depth = self.rectDepth
-
-        width = max(width, 0.39)
-        #depth = max(depth, 0.38)
-
-        xaxis, yaxis, zaxis = transformUtils.getAxesFromTransform(self.cornerTransform)
-        xedge = np.array(xaxis)*depth
-        yedge = np.array(yaxis)*width
-
-        c1 = np.array(self.cornerTransform.GetPosition()) + (np.array(yaxis)*self.rectWidth*0.5) - yedge*0.5
-        c2 = c1 - xedge
-        c3 = c1 - xedge + yedge
-        c4 = c1 + yedge
-
-        return np.array([c3, c4, c1, c2])
 
 class Footstep():
     def __init__(self, transform, is_right_foot):
         self.transform = transform
         self.is_right_foot = is_right_foot
+
 
 class StairsDemo(object):
     def __init__(self, robotStateModel, footstepsDriver, robotStateJointController, ikPlanner, manipPlanner):
@@ -71,6 +51,7 @@ class StairsDemo(object):
         # clusters and blocks
         self.ground_width_thresh = 1.00
         self.ground_depth_thresh = 1.80
+        #self.ground_depth_thresh = 1.10
 
         # Footsteps placement options
         self.isLeadingFootRight = True
@@ -124,28 +105,30 @@ class StairsDemo(object):
         self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)
 
     def placeStepsOnBlocks(self, blocks, groundPlane, standingFootName, standingFootFrame):
+        contact_pts_left, contact_pts_right = self.footstepsDriver.getContactPts()
 
         footsteps = []
+        print 'got %d blocks' % len(blocks)
         for i, block in enumerate(blocks):
             blockBegin = transformUtils.frameFromPositionAndRPY([-block.rectDepth,block.rectWidth/2,0.0], [0,0,0])
             blockBegin.Concatenate(block.cornerTransform)
             vis.updateFrame(blockBegin, 'block begin %d' % i , parent='block begins', scale=0.2, visible=True)
 
-            nextLeftTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepLeft,self.stepWidth/2,0.0], [0,0,0])
-            nextRightTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepRight,-self.stepWidth/2,0.0], [0,0,0])
+            # TO_DO find a better way to get the vertical translation of footsteps reference frame
+            nextLeftTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepLeft,self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
+            nextRightTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepRight,-self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
             vis.updateFrame(nextLeftTransform, 'nextLeftTransform %d' % i , parent='nextLeftTransform', scale=0.2, visible=True)
 
-            nextLeftTransform.Concatenate(blockBegin)
-            footsteps.append(Footstep(nextLeftTransform,False))
-
-            nextRightTransform.Concatenate(blockBegin)
-            footsteps.append(Footstep(nextRightTransform,True))
-
-        '''removeFirstLeftStep = True
-        removeFirstRightStep = True
-        if (removeFirstLeftStep is True and removeFirstRightStep is True):
-            if (standingFootName is self.ikPlanner.rightFootLink ):
-                footsteps = footsteps[1:]'''
+            if self.isLeadingFootRight:
+                nextRightTransform.Concatenate(blockBegin)
+                footsteps.append(Footstep(nextRightTransform,True))
+                nextLeftTransform.Concatenate(blockBegin)
+                footsteps.append(Footstep(nextLeftTransform,False))
+            else:
+                nextLeftTransform.Concatenate(blockBegin)
+                footsteps.append(Footstep(nextLeftTransform,False))
+                nextRightTransform.Concatenate(blockBegin)
+                footsteps.append(Footstep(nextRightTransform,True))
 
         return footsteps
 
@@ -173,7 +156,7 @@ class StairsDemo(object):
         om.removeFromObjectModel(om.findObjectByName('block corners'))
         om.getOrCreateContainer('block corners',om.getOrCreateContainer('stairs'))
 
-        print 'got %d clusters' % len(clusters)
+        #print 'got %d clusters' % len(clusters)
 
         # get the rectangles from the clusters:
         blocks = []
@@ -188,11 +171,14 @@ class StairsDemo(object):
         blocksGood = []
         groundPlane = None
 
-        step_width_thresh = 0.65
-        step_depth_thresh = 0.65
+        step_width_max_thresh = 0.65
+        step_depth_max_thresh = 0.65
+        step_width_min_thresh = 0.35
+        step_depth_min_thresh = 0.30
 
         for i, block in enumerate(blocks):
-            if ((block.rectWidth<step_width_thresh) and (block.rectDepth<step_depth_thresh)):
+            if ((block.rectWidth<step_width_max_thresh) and (block.rectDepth<step_depth_max_thresh) 
+                and (block.rectWidth>step_width_min_thresh) and (block.rectDepth>step_depth_min_thresh)):
                 blocksGood.append(block)
             else:
                 groundPlane = block
@@ -238,7 +224,9 @@ class StairsDemo(object):
 
             step = lcmdrc.footstep_t()
             step.pos = positionMessageFromFrame(step_t)
-            step.is_right_foot =  footstep.is_right_foot
+            step.is_right_foot = footstep.is_right_foot
+            step.fixed_z = True
+            step.is_in_contact = True
             # Set ihmc parameters
             default_step_params = self.footstepsDriver.getDefaultStepParams()
             default_step_params.ihmc_transfer_time = self.ihmcTransferTime
@@ -253,12 +241,15 @@ class StairsDemo(object):
 
         # force correct planning parameters:
         request.params.leading_foot = goalSteps[0].is_right_foot
-        request.params.planning_mode = lcmdrc.footstep_plan_params_t.MODE_SPLINE
+        request.params.planning_mode = lcmdrc.footstep_plan_params_t.MODE_AUTO
+        #request.params.behavior = lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING
         request.params.map_mode = lcmdrc.footstep_plan_params_t.FOOT_PLANE
+        request.params.max_num_steps = len(goalSteps)
         request.params.min_num_steps = len(goalSteps)
         request.default_step_params = default_step_params
 
-        lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', request)
+        #lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', request)
+        plan = self.footstepsDriver.sendFootstepPlanRequest(request, waitForResponse=True)
 
     def loadSDFFileAndRunSim(self):
         filename= os.environ['DRC_BASE'] + '/software/models/worlds/terrain_simple_flagstones.sdf'  
@@ -318,6 +309,7 @@ class StairsTaskPanel(TaskUserPanel):
     def setDefaults(self, makeQuery = True):
         self.autoQuery = False
         # Footsteps placement options (in ui)
+        self.params.setProperty('Leading Foot', 1) # Right
         self.params.setProperty('Forward Step Right', 0.10)
         self.params.setProperty('Forward Step Left', 0.18)
         self.params.setProperty('Step Width', 0.25)
@@ -331,6 +323,7 @@ class StairsTaskPanel(TaskUserPanel):
         self.autoQuery = True
 
     def addDefaultProperties(self):
+        self.params.addProperty('Leading Foot', 1, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
         self.params.addProperty('Forward Step Right', 0.10, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
         self.params.addProperty('Forward Step Left', 0.18, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
         self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
@@ -347,6 +340,11 @@ class StairsTaskPanel(TaskUserPanel):
             self.stairsDemo.testStairs()
 
     def _syncProperties(self):
+        if self.params.getPropertyEnumValue('Leading Foot') == 'Left':
+            self.stairsDemo.isLeadingFootRight = False
+        else:
+            self.stairsDemo.isLeadingFootRight = True
+
         self.stairsDemo.forwardStepRight = self.params.getProperty('Forward Step Right')
         self.stairsDemo.forwardStepLeft = self.params.getProperty('Forward Step Left')
         self.stairsDemo.stepWidth = self.params.getProperty('Step Width')
