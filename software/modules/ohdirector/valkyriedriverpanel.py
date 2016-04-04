@@ -83,7 +83,7 @@ class ValkyrieDriverPanel(object):
         self.moveFoot([0,0,-0.05], 'right')
 
     def moveFoot(self, offset, side):
-        msg = lcmbotcore.pose_t()
+        msg = lcmihmc.foot_pose_packet_message_t()
         msg.utime = getUtime();
         foot_link = self.driver.ikPlanner.leftFootLink if side == 'left' else self.driver.ikPlanner.rightFootLink
 
@@ -92,11 +92,14 @@ class ValkyrieDriverPanel(object):
         footTransform.PreMultiply()
         footTransform.Concatenate(footOffsetTransform)
 
-        [msg.pos, msg.orientation] = transformUtils.poseFromTransform(footTransform)
+        [msg.position, msg.orientation] = transformUtils.poseFromTransform(footTransform)
 
+        msg.trajectory_time = 2.0
         if side == 'left':
+            msg.robot_side = 0
             lcmUtils.publish("DESIRED_LEFT_FOOT_POSE", msg)
         else:
+            msg.robot_side = 1
             lcmUtils.publish("DESIRED_RIGHT_FOOT_POSE", msg)
 
 def _getAction():
