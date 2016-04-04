@@ -8,6 +8,11 @@ group "0.ros_bridge" {
         exec = "roslaunch oh_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_pelvisMiddleImu";
         host = "localhost";
     }
+
+    cmd "ihmc_ros_network_processor" {
+        exec = "bash -c 'cd /home/val/valkyrie && ./runROSNetworkProcessor.sh'";
+        host = "zelda";
+    }
 }
 
 group "1.params_and_model_pub" {
@@ -117,11 +122,6 @@ group "6.exotica" {
 }
 
 group "7.control" {
-    cmd "lcm-tunnel_to_link" {
-        exec = "bot-lcm-tunnel ${VAL_LINK_IP}";
-        host = "localhost";
-    }
-
     cmd "LCM2ROSControl" {
         exec = "roslaunch valkyrie_translator LCM2ROSControl.launch";
         host = "link";
