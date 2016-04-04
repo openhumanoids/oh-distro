@@ -15,3 +15,4 @@ scottk = Scott Kuindersma <kuindersma@gmail.com>
 tkoolen = Twan Koolen <tkoolen@csail.mit.edu>
 manuelli = Lucas Manuelli <lucas.t.manuelli@gmail.com>
 wxm = Wolfgang Merkt <w.merkt@gmail.com>
+simalpha = Simona Nobili <nobili.simona@gmail.com>
