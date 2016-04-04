@@ -117,7 +117,7 @@ classdef FinalPosePlanner
     
     function [qOpt, debug_vars] = searchFinalPose(obj, point_cloud, debug_vars)
       
-%       est_pose_publisher = CandidateRobotPosePublisher('EST_ROBOT_STATE', true, obj.robot.getPositionFrame.getCoordinateNames);
+      est_pose_publisher = CandidateRobotPosePublisher('EST_ROBOT_STATE', true, obj.robot.getPositionFrame.getCoordinateNames);
       options.rotation_type = 2;
       options.compute_gradients = true;
       options.rotation_type = 1;
@@ -189,6 +189,7 @@ classdef FinalPosePlanner
       
       f_id = fopen('/home/marco/drc-testing-data/final_pose_planner/val_description/random_sequence');
       samples = fread(f_id, [1000, 100], 'double');
+      fclose(f_id);
       f_id = fopen('matlabCapabilityMap.log','a');
       samples = samples(:,obj.seed);
       for vox = 1:min([n_valid_samples, 1000])
@@ -201,16 +202,18 @@ classdef FinalPosePlanner
         cum_prob = cumsum(tot_prob);% / sum(tot_prob);
 %         rnd = rand();
         rnd = samples(vox);
+        disp(rnd)
+        disp(cum_prob(end))
         rnd = rnd * cum_prob(end);
 %         fprintf(f_id, '%g\n', rnd);
         idx = find(rnd < cum_prob, 1);
-%         disp(rnd);
-%         disp(idx)
+        disp(rnd);
+        disp(idx)
 %         [orient_idx, voxel_idx] = ind2sub([obj.capability_map.occupancy_map_n_orient, obj.capability_map.n_voxels],  find(rnd < cum_prob, 1));
         rpy = obj.capability_map.occupancy_map_orient(:,tot_prob_orient(idx));
         pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:,tot_prob_vox(idx));
-%         disp(pos + obj.x_goal(1:3));
-%         disp(rpy);
+        disp(pos + obj.x_goal(1:3));
+        disp(rpy);
         tot_prob(idx) = 0;
         
         iter = iter + 1;
@@ -226,7 +229,7 @@ classdef FinalPosePlanner
         if obj.debug, constraint_time = constraint_time + toc(constraint_timer); end
         if obj.debug, ik_timer = tic(); end
         [q, info, infeasible_constraints] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
-%         est_pose_publisher.publish([q; zeros(size(q))], get_timestamp_now());
+        est_pose_publisher.publish([q; zeros(size(q))], get_timestamp_now());
 %         [rpy' pos']
 %         obj.q_nom'
 %         pose_publisher.publish([q; zeros(size(q))], get_timestamp_now())

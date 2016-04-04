@@ -12,12 +12,6 @@
 #include "bot_lcmgl_client/lcmgl.h"
 #include "finalPosePlanner/FPPOutput.hpp"
 
-struct MapCentre
-{
-	Eigen::Vector3d left;
-	Eigen::Vector3d right;
-};
-
 struct EndEffectorLink
 {
 	std::string left;
@@ -88,9 +82,9 @@ public:
 	 * \param mu A 3D vector specifying the mean of the multivariate distribution
 	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
 	 */
-	void computeOrientationProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(5*pow(0.08726646259971647390241145103573217056692, 2),
-																																		 .5*pow(0.1745329251994329478048229020714643411338, 2),
-																																		 10*pow(0.7853981633974482789994908671360462903976, 2)));//magic numbers to match matlab distribution
+	void computeOrientationProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(5,//*pow(0.08726646259971647390241145103573217056692, 2),
+																																		 .5,//*pow(0.1745329251994329478048229020714643411338, 2),
+																																		 10));//*pow(0.7853981633974482789994908671360462903976, 2)));//magic numbers to match matlab distribution
 
 	/**
 	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample

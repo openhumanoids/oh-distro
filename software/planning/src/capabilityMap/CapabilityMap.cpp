@@ -9,6 +9,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/algorithm/string.hpp>
+#include <iomanip>
 
 #include "capabilityMap/CapabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
@@ -633,7 +634,7 @@ void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d
 //		this->log.width(w);
 //		this->log << right << this->position_probability[i].format(fmt) << endl;
 //	}
-//	this->log << this->position_probability.format(fmt) << endl << endl << endl;
+	this->log << this->position_probability.format(fmt) << endl << endl << endl;
 }
 
 void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vector3d sigma)
@@ -652,17 +653,19 @@ void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vecto
 //		this->log.width(w);
 //		this->log << right << this->orientation_probability[i].format(fmt) << endl;
 //	}
-//	this->log << this->orientation_probability.format(fmt) << endl << endl << endl;
+	this->log << this->orientation_probability.format(fmt) << endl << endl << endl;
 }
 
 void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, VectorXd &pdf, Vector3d mu, Vector3d sigma)
 {
 	Matrix3d sigma_inverse = (Vector3d(1, 1, 1).cwiseQuotient(sigma)).asDiagonal();
 	pdf.resize(values.size());
+	IOFormat fmt(30);
 	for (int p = 0; p < pdf.size(); p++)
 	{
-		pdf(p) = (exp(-.5*(values[p] - mu).transpose() * sigma_inverse * (values[p] - mu)));
+		pdf(p) = pow(pow(2*M_PI, 3)*sigma.prod(), -.5)*(exp(-.5*(values[p] - mu).transpose() * sigma_inverse * (values[p] - mu)));
 	}
+	cout << setprecision(30) << mu << endl << sigma << endl << pdf(0) << endl;
 	double p_sum = pdf.sum();
 	for (int p = 0; p < pdf.size(); p++)
 	{
@@ -704,6 +707,7 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 //	double rnd = rand() / (double)RAND_MAX * cumulative_probability.back();
 	double rnd = this->random_sequence(sample[0]);
 //	this->random_sequence.erase(this->random_sequence.begin());
+//	cout << "random number: " << rnd << endl;
 	rnd *= cumulative_probability.back();
 //	cout <<  cumulative_probability.back() << endl;
 //	this->log << rnd << endl;
@@ -738,14 +742,24 @@ void CapabilityMap::setOccupancyMapOrientations()
 
 void CapabilityMap::setActiveSide(Side side)
 {
-	this->active_side = side;
-	if (side == this->Side::LEFT)
+	if (this->active_side == this->Side::LEFT && side == this->Side::RIGHT || this->active_side == this->Side::RIGHT && side == this->Side::LEFT)
 	{
-		this->map_centre = this->map_centre_left;
-	}
-	else
-	{
-		this->map_centre = this->map_centre_right;
+		this->active_side = side;
+		cout << "mirror cm" << endl;
+		for (auto vox : this->voxel_centres)
+		{
+			vox(1) *= -1;
+		}
+		if (side == this->Side::LEFT)
+		{
+			this->map_centre = this->map_centre_left;
+		}
+		else
+		{
+			this->map_centre = this->map_centre_right;
+		}
+		this->resetActiveVoxels();
+		this->resetActiveOrientations();
 	}
 }
 

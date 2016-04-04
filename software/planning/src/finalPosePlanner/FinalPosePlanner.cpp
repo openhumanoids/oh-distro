@@ -51,6 +51,8 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	capability_map.setEndeffectorPose(endeffector_final_pose);
 	capability_map.setActiveSide(endeffector_side);
 	capability_map.reduceActiveSet(true, point_cloud, output);
+	bot_lcmgl_t* lcmgl_pc = bot_lcmgl_init(lcm->getUnderlyingLCM(), "Capability_map");
+	capability_map.drawActiveMap(lcmgl_pc, 53, capability_map.getMapCentre());
 	output.n_valid_samples = capability_map.getNActiveOrientations();
 	capability_map.computeOrientationProbabilityDistribution();
 	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
@@ -58,7 +60,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 
 
 //	FINAL POSE SEARCH
-//	CandidateRobotPosePublisher publisher;
+	CandidateRobotPosePublisher publisher;
 	constraints_timer.start();
 	vector<RigidBodyConstraint *> constraints = additional_constraints;
 	Vector3d bound(1e-3, 1e-3, 1e-3);
@@ -108,7 +110,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		IK_timer.start();
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_configuration, ik_info, infeasible_constraints, ik_options);
 		IK_timer.stop();
-//		publisher.publish(lcm, robot, final_configuration);
+		publisher.publish(lcm, robot, final_configuration);
 		vector<string> name;
 		VectorXd lb;
 		VectorXd ub;
@@ -154,7 +156,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 				{
 					info = 1;
 //					capability_map.log << final_configuration << endl;
-//					publisher.publish(lcm, robot, final_configuration);
+					publisher.publish(lcm, robot, final_configuration);
 				}
 			}
 		}
