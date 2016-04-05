@@ -151,16 +151,16 @@ classdef FinalPosePlanner
       kin_time = 0;
       collision_time = 0;
       
-%       f_id = fopen('/home/marco/drc-testing-data/final_pose_planner/val_description/random_sequence');
-%       samples = fread(f_id, [1000, 100], 'double');
-%       fclose(f_id);
+      f_id = fopen('/home/marco/drc-testing-data/final_pose_planner/val_description/random_sequence');
+      samples = fread(f_id, [1000, 100], 'double');
+      fclose(f_id);
 %       f_id = fopen('matlabCapabilityMap.log','a');
-%       samples = samples(:,obj.seed);
+      samples = samples(:,obj.seed);
       for vox = 1:min([n_valid_samples, 1000])
         if obj.debug || obj.verbose
           sampling_timer = tic();
         end
-        [v, o, obj.capability_map] = obj.capability_map.drawCapabilityMapSample();
+        [v, o, obj.capability_map] = obj.capability_map.drawCapabilityMapSample(samples(vox));
         rpy = obj.capability_map.occupancy_map_orient(:,o);
         pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:,v);
 %         disp(v)

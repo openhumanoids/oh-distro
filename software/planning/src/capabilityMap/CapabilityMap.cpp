@@ -648,16 +648,16 @@ void CapabilityMap::computeProbabilityDistribution(const VectorXd mu, const Vect
 //		this->voxel_probability[i] /= prob_sum;
 //	}
 	this->voxel_probability = this->voxel_probability / this->voxel_probability.sum();
-	for (int p = 0; p < this->voxel_probability.size(); p++)
-	{
-		this->log  << setprecision(15) << this->voxel_centres[this->probability_voxels[p]](0) << " " <<
-				this->voxel_centres[this->probability_voxels[p]](1) << " " <<
-				this->voxel_centres[this->probability_voxels[p]](2) << " " <<
-				this->occupancy_map_orientations[this->probability_orientations[p]](0) << " " <<
-				this->occupancy_map_orientations[this->probability_orientations[p]](1) << " " <<
-				this->occupancy_map_orientations[this->probability_orientations[p]](2) << " " <<
-				this->voxel_probability(p) << endl;
-	}
+//	for (int p = 0; p < this->voxel_probability.size(); p++)
+//	{
+//		this->log  << setprecision(15) << this->voxel_centres[this->probability_voxels[p]](0) << " " <<
+//				this->voxel_centres[this->probability_voxels[p]](1) << " " <<
+//				this->voxel_centres[this->probability_voxels[p]](2) << " " <<
+//				this->occupancy_map_orientations[this->probability_orientations[p]](0) << " " <<
+//				this->occupancy_map_orientations[this->probability_orientations[p]](1) << " " <<
+//				this->occupancy_map_orientations[this->probability_orientations[p]](2) << " " <<
+//				this->voxel_probability(p) << endl;
+//	}
 }
 
 int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
@@ -665,9 +665,16 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 	if (this->voxel_probability.size() < 1){return 13;}
 	ArrayXd cumulative_probability(this->voxel_probability.size());
 	partial_sum(this->voxel_probability.data(), this->voxel_probability.data() + this->voxel_probability.size(), cumulative_probability.data());
-	double rnd = rand() / (double)RAND_MAX;
+//	for (int p = 0; p < this->voxel_probability.size(); p++)
+//	{
+//		this->log  << setprecision(15) << cumulative_probability(p) << endl;
+//	}
+//	double rnd = rand() / (double)RAND_MAX;
+	double rnd = this->random_sequence(sample[0]);
+//	cout << rnd << endl;
 	Array<bool, Dynamic, 1> isGreater = cumulative_probability > rnd;
 	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data();
+//	cout << idx << endl;
 	sample[0] = this->probability_voxels[idx];
 	sample[1] = this->probability_orientations[idx];
 	if (idx < this->voxel_probability.rows() - 1)
@@ -675,6 +682,7 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 		this->voxel_probability.block(idx,0,this->voxel_probability.rows() - 1 - idx, 1) = this->voxel_probability.block(idx + 1, 0, this->voxel_probability.rows() -1 - idx, 1);
 	}
 	this->voxel_probability.conservativeResize(this->voxel_probability.rows() - 1);
+	this->voxel_probability = this->voxel_probability / this->voxel_probability.sum();
 	this->probability_voxels.erase(this->probability_voxels.begin() + idx);
 	this->probability_orientations.erase(this->probability_orientations.begin() + idx);
 	return 1;

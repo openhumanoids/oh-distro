@@ -907,17 +907,17 @@
     function obj = computeProbabilityDistribution(obj, mu, sigma)
       if nargin < 3, sigma = [1e10 1e10 0.01 0.01 0.05 100]; end
       if nargin < 2 || isempty(mu), mu = [0 0 0 0 0 0]; end
-      [obj.probability_voxels, obj.probability_orientations] = find(obj.occupancy_map_active_orient);
+      [obj.probability_orientations, obj.probability_voxels] = find(obj.occupancy_map_active_orient');
       obj.voxel_probability = mvnpdf([obj.vox_centres(:,obj.probability_voxels)' obj.occupancy_map_orient(:, obj.probability_orientations)'], mu, diag(sigma));
       obj.voxel_probability = obj.voxel_probability / sum(obj.voxel_probability);      
-      f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
-      fprintf(f_id, '%.15g %.15g %.15g %.15g %.15g %.15g %.15g\n', [obj.vox_centres(:,obj.probability_voxels);...
-        obj.occupancy_map_orient(:,obj.probability_orientations); obj.voxel_probability']);
-      fclose(f_id);
     end
     
-    function [vox, orient, obj] = drawCapabilityMapSample(obj)
-      idx = find(rand() < cumsum(obj.voxel_probability), 1);
+    function [vox, orient, obj] = drawCapabilityMapSample(obj, rnd)
+%       idx = find(rand() < cumsum(obj.voxel_probability), 1);
+%       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
+%       fprintf(f_id, '%.15g\n', cumsum(obj.voxel_probability));
+%       fclose(f_id);
+      idx = find(rnd < cumsum(obj.voxel_probability), 1);
       vox = obj.probability_voxels(idx);
       orient = obj.probability_orientations(idx);
       obj.voxel_probability(idx) = [];
