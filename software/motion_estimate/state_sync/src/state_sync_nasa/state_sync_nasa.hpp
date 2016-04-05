@@ -38,7 +38,6 @@ class CommandLineConfig{
     CommandLineConfig(){
       // Read from command line:
       output_channel = "EST_ROBOT_STATE";
-      operation_mode = "ihmc";  // ihmc = use IHMC provided CORE_ROBOT_STATE, jointstatepublisher =  use ROS Control Joint State Publisher
 
       // Defaults - not read from command line:
       use_torque_adjustment = false;
@@ -46,7 +45,6 @@ class CommandLineConfig{
     ~CommandLineConfig(){};
 
     std::string output_channel;
-    std::string operation_mode;
 
     bool use_torque_adjustment;
 };
@@ -70,8 +68,7 @@ class state_sync_nasa{
     BotParam* botparam_;
     boost::shared_ptr<ModelClient> model_;
         
-    void coreJointStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
-    void coreRobotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg);
+    void coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
     void forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::six_axis_force_torque_array_t* msg);
     void poseIHMCHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void poseProntoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);

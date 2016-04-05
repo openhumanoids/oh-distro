@@ -57,12 +57,7 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
   }
 
   /// 2. Subscribe to required signals
-  lcm::Subscription* sub0;
-  if (cl_cfg_->operation_mode == "joint_state_publisher")  // use ROS-Control JointStatePublisher
-     sub0 = lcm_->subscribe("VAL_ROBOT_STATE_WITHOUT_POSE", &state_sync_nasa::coreRobotStateHandler, this);
-  else  // default: ihmc
-    sub0 = lcm_->subscribe("VAL_CORE_ROBOT_STATE", &state_sync_nasa::coreJointStateHandler, this);
-
+  lcm::Subscription* sub0 = lcm_->subscribe("VAL_CORE_ROBOT_STATE",&state_sync_nasa::coreRobotHandler,this);
   lcm::Subscription* sub1 = lcm_->subscribe("VAL_FORCE_TORQUE",&state_sync_nasa::forceTorqueHandler,this);
   force_torque_init_ = false;
   ///////////////////////////////////////////////////////////////
@@ -128,7 +123,7 @@ void state_sync_nasa::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const s
   force_torque_init_ = true; 
 }
 
-void state_sync_nasa::coreJointStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
+void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
   if (!force_torque_init_){
     std::cout << "FORCE_TORQUE not received yet, not publishing EST_ROBOT_STATE =========================\n";
     return;    
@@ -160,14 +155,6 @@ void state_sync_nasa::coreJointStateHandler(const lcm::ReceiveBuffer* rbuf, cons
 
   // TODO: check forque_
   publishRobotState(msg->utime, force_torque_);
-}
-
-// JointStatePublisher publishes a core robot state as a robot_state_t message named VAL_ROBOT_STATE_WITHOUT_POSE
-void state_sync_nasa::coreRobotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg) {
-  bot_core::robot_state_t robot_state_msg = bot_core::robot_state_t(*msg);
-  
-  if (insertPoseInRobotState(robot_state_msg, pose_Pronto_))
-    lcm_->publish(cl_cfg_->output_channel, &robot_state_msg);
 }
 
 bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d pose, int64_t utime){
@@ -346,10 +333,7 @@ main(int argc, char ** argv){
   boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );  
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");  
-  opt.add(cl_cfg->operation_mode, "m", "operation_mode","Operation mode: ihmc or joint_state_publisher");  
   opt.parse();
-
-  std::cout << "Starting in " << cl_cfg->operation_mode << " mode" << std::endl << std::endl;
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
