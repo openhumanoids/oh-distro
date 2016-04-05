@@ -1,19 +1,9 @@
-#include <iostream>
-#include <fstream>
-#include <Eigen/Dense>
-#include <chrono>
-#include <sstream>
-#include <iomanip>
-#include <time.h>
 #include <boost/program_options.hpp>
-#include <map>
 
-#include "bot_lcmgl_client/lcmgl.h"
+#include "drake/thirdParty/tinyxml2/tinyxml2.h"
 
-#include "capabilityMap/CapabilityMap.hpp"
 #include "finalPosePlanner/FinalPosePlanner.hpp"
 #include "drawingUtil/drawingUtil.hpp"
-#include "drake/thirdParty/tinyxml2/tinyxml2.h"
 
 using namespace std;
 using namespace Eigen;

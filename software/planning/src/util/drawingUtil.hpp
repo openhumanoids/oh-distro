@@ -1,7 +1,6 @@
 #ifndef SRC_DRAWINGUTIL_HPP_
 #define SRC_DRAWINGUTIL_HPP_
 
-#include <Eigen/Dense>
 #include <sys/time.h>
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>

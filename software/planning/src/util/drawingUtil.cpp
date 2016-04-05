@@ -1,8 +1,6 @@
-#include <iostream>
 #include "drawingUtil.hpp"
 
 #include "lcmtypes/drc/robot_state_t.hpp"
-#include "drake/util/drakeGeometryUtil.h"
 
 using namespace std;
 using namespace Eigen;
