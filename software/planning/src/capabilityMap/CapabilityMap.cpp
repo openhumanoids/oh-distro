@@ -48,17 +48,17 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 		inputFile.read((char *) &string_length, sizeof(unsigned int));
 		char *ee_link_left_str = new char[string_length];
 		inputFile.read(ee_link_left_str, string_length);
-		this->endeffector_link.left = ee_link_left_str;
+		this->endeffector_link["left"] = ee_link_left_str;
 		delete [] ee_link_left_str;
 		ee_link_left_str = nullptr;
-		this->log << "Loaded endeffector_link.left: " << this->endeffector_link.left.c_str() << endl;
+		this->log << "Loaded endeffector_link left: " << this->endeffector_link["left"].c_str() << endl;
 		inputFile.read((char *) &string_length, sizeof(unsigned int ));
 		char *ee_link_right_str = new char[string_length];
 		inputFile.read(ee_link_right_str, string_length * sizeof(char));
-		this->endeffector_link.right = ee_link_right_str;
+		this->endeffector_link["right"] = ee_link_right_str;
 		delete [] ee_link_right_str;
 		ee_link_right_str = nullptr;
-		this->log << "Loaded endeffector_link.right: " << this->endeffector_link.right.c_str() << endl;
+		this->log << "Loaded endeffector_link right: " << this->endeffector_link["right"].c_str() << endl;
 
 		inputFile.read((char *) this->endeffector_axis.data(), sizeof(this->endeffector_axis));
 		this->log << "Loaded endeffector_axis: " << this->endeffector_axis[0] << ";"  << this->endeffector_axis[1] << ";"  << this->endeffector_axis[2] << '\n';
@@ -198,21 +198,21 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 
 			unsigned int n_roll_steps;
 			inputFile.read((char *) &n_roll_steps, sizeof(n_roll_steps));
-			this->occupancy_map_orient_steps.roll.resize(n_roll_steps);
-			inputFile.read((char *) this->occupancy_map_orient_steps.roll.data(), n_roll_steps * sizeof(double));
-			this->log << "Loaded occupancy_map_orient_steps.roll (" << this->occupancy_map_orient_steps.roll.rows() << ")\n";
+			this->occupancy_map_orient_steps["roll"].resize(n_roll_steps);
+			inputFile.read((char *) this->occupancy_map_orient_steps["roll"].data(), n_roll_steps * sizeof(double));
+			this->log << "Loaded occupancy_map_orient_steps.roll (" << this->occupancy_map_orient_steps["roll"].rows() << ")\n";
 
 			unsigned int n_pitch_steps;
 			inputFile.read((char *) &n_pitch_steps, sizeof(n_pitch_steps));
-			this->occupancy_map_orient_steps.pitch.resize(n_pitch_steps);
-			inputFile.read((char *) this->occupancy_map_orient_steps.pitch.data(), n_pitch_steps * sizeof(double));
-			this->log << "Loaded occupancy_map_orient_steps.pitch (" << this->occupancy_map_orient_steps.pitch.rows() << ")\n";
+			this->occupancy_map_orient_steps["pitch"].resize(n_pitch_steps);
+			inputFile.read((char *) this->occupancy_map_orient_steps["pitch"].data(), n_pitch_steps * sizeof(double));
+			this->log << "Loaded occupancy_map_orient_steps.pitch (" << this->occupancy_map_orient_steps["pitch"].rows() << ")\n";
 
 			unsigned int n_yaw_steps;
 			inputFile.read((char *) &n_yaw_steps, sizeof(n_yaw_steps));
-			this->occupancy_map_orient_steps.yaw.resize(n_yaw_steps);
-			inputFile.read((char *) this->occupancy_map_orient_steps.yaw.data(), n_yaw_steps * sizeof(double));
-			this->log << "Loaded occupancy_map_orient_steps.yaw (" << this->occupancy_map_orient_steps.yaw.rows() << ")\n";
+			this->occupancy_map_orient_steps["yaw"].resize(n_yaw_steps);
+			inputFile.read((char *) this->occupancy_map_orient_steps["yaw"].data(), n_yaw_steps * sizeof(double));
+			this->log << "Loaded occupancy_map_orient_steps.yaw (" << this->occupancy_map_orient_steps["yaw"].rows() << ")\n";
 		}
 		else
 		{
@@ -274,17 +274,17 @@ vector<Vector3d> CapabilityMap::getActiveVoxelCentres()
 	return centres;
 }
 
-void CapabilityMap::activateVoxels(const vector<int> idx)
+void CapabilityMap::activateVoxels(const vector<int> &idx)
 {
-	for (int i : idx)
+	for (const int &i : idx)
 	{
 		this->active_voxels[i] = true;
 	}
 }
 
-void CapabilityMap::deactivateVoxels(const vector<int> idx)
+void CapabilityMap::deactivateVoxels(const vector<int> &idx)
 {
-	for (int i : idx)
+	for (const int &i : idx)
 	{
 		this->active_voxels[i] = false;
 		this->active_orientations.row(i).setZero();
@@ -417,9 +417,9 @@ void CapabilityMap::deactivateVoxelsByDirection(const Vector3d direction, const 
 		this->resetActiveOrientations();
 	}
 	vector<unsigned int> voxels_to_keep;
-	for (Vector3d orient : this->occupancy_map_orientations)
+	for (const Vector3d &orient : this->occupancy_map_orientations)
 	{
-		for (int idx : this->findVoxelsFromDirection(rpy2rotmat(orient).transpose()*direction, direction_threshold))
+		for (const int &idx : this->findVoxelsFromDirection(rpy2rotmat(orient).transpose()*direction, direction_threshold))
 		{
 			if (find(voxels_to_keep.begin(), voxels_to_keep.end(), idx) == voxels_to_keep.end())
 			{
@@ -479,7 +479,7 @@ void CapabilityMap::deactivateCollidingVoxels(const vector<Vector3d> point_cloud
 			{
 				if (this->isActiveOrient(vox, orient))
 				{
-					for (auto om_vox : this->occupancy_maps[this->active_side][vox][orient])
+					for (const auto &om_vox : this->occupancy_maps[this->active_side][vox][orient])
 					{
 						if (find(om_occupied_voxels.begin(), om_occupied_voxels.end(), om_vox) != om_occupied_voxels.end())
 						{
@@ -507,7 +507,7 @@ vector<unsigned int> CapabilityMap::findVoxelsFromDirection(const Vector3d direc
 	{
 		if (active_set_only && this->active_voxels[vox] || !active_set_only)
 		{
-			for (unsigned int point : points)
+			for (const unsigned int &point : points)
 			{
 				if (this->map.coeffRef(vox, point))
 				{
@@ -630,15 +630,15 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 
 void CapabilityMap::setOccupancyMapOrientations()
 {
-	for (int yaw = 0; yaw < this->occupancy_map_orient_steps.yaw.rows(); yaw++)
+	for (int yaw = 0; yaw < this->occupancy_map_orient_steps["yaw"].rows(); yaw++)
 	{
-		for (int pitch = 0; pitch < this->occupancy_map_orient_steps.pitch.rows(); pitch++)
+		for (int pitch = 0; pitch < this->occupancy_map_orient_steps["pitch"].rows(); pitch++)
 		{
-			for (int roll = 0; roll < this->occupancy_map_orient_steps.roll.rows(); roll++)
+			for (int roll = 0; roll < this->occupancy_map_orient_steps["roll"].rows(); roll++)
 			{
-				this->occupancy_map_orientations.push_back(Vector3d(this->occupancy_map_orient_steps.roll[roll],
-																  this->occupancy_map_orient_steps.pitch[pitch],
-																  this->occupancy_map_orient_steps.yaw[yaw]));
+				this->occupancy_map_orientations.push_back(Vector3d(this->occupancy_map_orient_steps["roll"][roll],
+																  this->occupancy_map_orient_steps["pitch"][pitch],
+																  this->occupancy_map_orient_steps["yaw"][yaw]));
 			}
 		}
 	}
@@ -720,7 +720,7 @@ void CapabilityMap::drawOccupancyMap(bot_lcmgl_t *lcmgl, const unsigned int capa
 	bot_lcmgl_point_size(lcmgl, 10);
 	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
 	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-	for(auto vox : this->occupancy_maps[this->active_side][capability_map_voxel][orient])
+	for(const auto &vox : this->occupancy_maps[this->active_side][capability_map_voxel][orient])
 	{
 		cout << vox << endl;
 		Vector3d point = rpy2rotmat(this->occupancy_map_orientations[orient]) * this->occupancy_voxel_centres[vox] + centre;
@@ -758,7 +758,7 @@ void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, const vector<unsigned int> &voxe
 			bot_lcmgl_point_size(lcmgl, 10);
 		}
 		bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-		for (auto vox : voxels)
+		for (const auto &vox : voxels)
 		{
 			if (abs((float)this->reachability_index(vox) - (float)i / this->n_directions_per_voxel) < 1e-6)
 			{

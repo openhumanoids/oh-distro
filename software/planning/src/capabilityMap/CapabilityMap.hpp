@@ -8,19 +8,6 @@
 #include "bot_lcmgl_client/lcmgl.h"
 #include "finalPosePlanner/FPPOutput.hpp"
 
-struct EndEffectorLink
-{
-	std::string left;
-	std::string right;
-};
-
-struct Orient
-{
-	Eigen::VectorXd roll;
-	Eigen::VectorXd pitch;
-	Eigen::VectorXd yaw;
-};
-
 class CapabilityMap
 {
 public:
@@ -49,9 +36,9 @@ public:
 	Eigen::Vector3d getOrientation(int orient){return occupancy_map_orientations[orient];}
 	Eigen::Vector3d getVoxelCentre(int vox){return voxel_centres[vox];}
 	std::vector<Eigen::Vector3d> getVoxelCentres(){return voxel_centres;}
-	void setNVoxels(unsigned int n_voxels);
+	void setNVoxels(const unsigned int n_voxels);
 	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
-	void setNDirectionsPerVoxel(unsigned int n_dir);
+	void setNDirectionsPerVoxel(const unsigned int n_dir);
 	Eigen::RowVector2d getCapabilityMapSize();
 	void setActiveSide(const Side side);
 	void setActiveSide(const std::string side);
@@ -83,7 +70,7 @@ private:
 	Eigen::Vector3d map_centre;
 	Eigen::Vector3d map_centre_left;
 	Eigen::Vector3d map_centre_right;
-	EndEffectorLink endeffector_link;
+	std::map<std::string, std::string> endeffector_link;
 	Eigen::Vector3d endeffector_axis;
 	Eigen::Matrix<double, 7, 1> endeffector_pose;
 	std::string base_link;
@@ -104,7 +91,7 @@ private:
 	Eigen::Vector3d occupancy_map_lower_bound;
 	Eigen::Vector3d occupancy_map_upper_bound;
 	Eigen::Vector3i occupancy_map_dimensions;
-	Orient occupancy_map_orient_steps;
+	std::map<std::string, Eigen::VectorXd> occupancy_map_orient_steps;
 	RigidBodyTree rigid_body_tree;
 	Side active_side;
 	std::vector<Eigen::Vector3d> voxel_centres;
@@ -117,8 +104,8 @@ private:
 	std::vector<int> probability_voxels;
 	Eigen::VectorXd random_sequence;
 
-	void activateVoxels(const std::vector<int> idx);
-	void deactivateVoxels(const std::vector<int> idx);
+	void activateVoxels(const std::vector<int> &idx);
+	void deactivateVoxels(const std::vector<int> &idx);
 	bool isActiveVoxel(const unsigned int voxel){return active_voxels[voxel];}
 	bool isActiveOrient(const unsigned int voxel, const unsigned int orient){return active_orientations(voxel, orient);}
 	void resetActiveVoxels(const bool include_zero_reachability = false);

@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	for (auto m : models)
+	for (const auto &m : models)
 	{
 		if (m.compare("val2") != 0)
 		{
@@ -115,13 +115,13 @@ int main(int argc, char* argv[])
 
 	cout << "n iterations: " << n_iter << endl;
 	cout << "scenes: ";
-	for (auto s : scenes){cout << s << ";";}
+	for (const auto &s : scenes){cout << s << ";";}
 	cout << endl;
 	cout << "grasping hands: ";
-	for (auto h : grasping_hands){cout << h << ";";}
+	for (const auto &h : grasping_hands){cout << h << ";";}
 	cout << endl;
 	cout << "models: ";
-	for (auto m : models){cout << m << ";";}
+	for (const auto &m : models){cout << m << ";";}
 	cout << endl;
 
 
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
 
 	XMLElement *models_node = xml_doc.NewElement("models");
 	details_node->LinkEndChild(models_node);
-	for (auto m : models){addTextToElement(models_node, m);}
+	for (const auto &m : models){addTextToElement(models_node, m);}
 
 	XMLElement *n_iterations_node = xml_doc.NewElement("n_iterations");
 	details_node->LinkEndChild(n_iterations_node);
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
 
 	XMLElement *scenes_node = xml_doc.NewElement("scenes");
 	details_node->LinkEndChild(scenes_node);
-	for (auto s : scenes)
+	for (const auto &s : scenes)
 	{
 		ss.str("");
 		ss << "scene" << s;
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
 
 	XMLElement *grasping_hands_node = xml_doc.NewElement("grasping_hands");
 	details_node->LinkEndChild(grasping_hands_node);
-	for (auto h : grasping_hands){addTextToElement(grasping_hands_node, h);}
+	for (const auto &h : grasping_hands){addTextToElement(grasping_hands_node, h);}
 
 	time_t rawtime;
 	char buffer [80];
@@ -256,9 +256,9 @@ int main(int argc, char* argv[])
 	time_node->SetText(buffer);
 
 	//results
-	for (auto m : models)
+	for (const auto &m : models)
 	{
-		for (auto s : scenes)
+		for (const auto &s : scenes)
 		{
 			ss.str("");
 			if(s < 6)
@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
 				drawPointCloud(lcmgl_pc, point_cloud);
 
 
-				for (auto h : grasping_hands)
+				for (const auto &h : grasping_hands)
 				{
 					XMLElement *iteration_set_node = xml_doc.NewElement("iteration_set");
 					iteration_set_node->SetAttribute("model", m.c_str());

@@ -79,7 +79,7 @@ void drawPointCloud(bot_lcmgl_t *lcmgl, const std::vector<Vector3d> point_cloud)
 	bot_lcmgl_point_size(lcmgl, 5);
 	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
 	bot_lcmgl_begin(lcmgl, LCMGL_POINTS);
-	for (Vector3d point : point_cloud)
+	for (const Vector3d &point : point_cloud)
 	{
 		bot_lcmgl_vertex3d(lcmgl, point(0), point(1), point(2));
 	}
