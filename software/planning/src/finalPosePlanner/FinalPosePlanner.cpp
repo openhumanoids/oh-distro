@@ -1,11 +1,6 @@
 #include "finalPosePlanner/FinalPosePlanner.hpp"
 
-#include <memory>
-#include <chrono>
-
-#include "drake/util/drakeGeometryUtil.h"
 #include "drawingUtil/drawingUtil.hpp"
-#include "bot_lcmgl_client/lcmgl.h"
 
 using namespace std;
 using namespace Eigen;

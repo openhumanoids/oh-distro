@@ -5,18 +5,11 @@
 #ifndef FINALPOSEPLANNER_HPP_
 #define FINALPOSEPLANNER_HPP_
 
-#include <math.h>
-#include <Eigen/Dense>
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 
-#include "drake/systems/plants/RigidBodyTree.h"
 #include "drake/systems/plants/RigidBodyIK.h"
-#include "drake/systems/plants/constraint/RigidBodyConstraint.h"
-#include "drake/drakeShapes_export.h"
 #include "capabilityMap/CapabilityMap.hpp"
-#include "drake/systems/plants/IKoptions.h"
-#include "finalPosePlanner/FPPOutput.hpp"
 
 class FinalPosePlanner
 {
