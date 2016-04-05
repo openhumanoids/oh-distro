@@ -42,16 +42,14 @@ class StairsDemo(object):
 
         # live operation flags:
         self.planFromCurrentRobotState = True
-        self.onSync = False
+        self.onSyncProperties = False
 
         self.plans = []
         self.blocks_list = []
-        self.ground = None
 
         # clusters and blocks
         self.ground_width_thresh = 1.00
-        self.ground_depth_thresh = 1.80
-        #self.ground_depth_thresh = 1.10
+        self.ground_depth_thresh = 1.10
 
         # Footsteps placement options
         self.isLeadingFootRight = True
@@ -65,17 +63,17 @@ class StairsDemo(object):
                 leadFoot=self.ikPlanner.leftFootLink #'l_foot'
 
         polyData = segmentation.getCurrentRevolutionData()
-        feetMidPoint = self.footstepsDriver.getFeetMidPoint(self.robotStateModel)
         startPose = self.getEstimatedRobotStatePose()
 
-        self.footstepsPlacement(polyData, leadFoot, startFeetMidPoint = feetMidPoint, nextDoubleSupportPose = startPose)
+        self.footstepsPlacement(polyData, leadFoot, nextDoubleSupportPose = startPose)
 
 
-    def footstepsPlacement(self, polyData, standingFootName, startFeetMidPoint = None, nextDoubleSupportPose = None):
+    def footstepsPlacement(self, polyData, standingFootName, nextDoubleSupportPose = None):
         standingFootFrame = self.robotStateModel.getLinkFrame(standingFootName)
         vis.updateFrame(standingFootFrame, standingFootName, parent='cont debug', visible=False)
 
-        if not self.onSync:
+        # Prevent segmentation at each property update
+        if not self.onSyncProperties:
             # Step 1: filter the data down to a box in front of the robot:
             polyData = self.getRecedingTerrainRegion(polyData, footstepsdriver.FootstepsDriver.getFeetMidPoint(self.robotStateModel))
 
@@ -87,15 +85,14 @@ class StairsDemo(object):
                 return
 
             # Step 3: find the corners of the minimum bounding rectangles
-            blocks,groundPlane = self.extractBlocksFromSurfaces(clusters, standingFootFrame)
+            blocks = self.extractBlocksFromSurfaces(clusters, standingFootFrame)
 
             self.blocks_list = blocks
-            self.ground = groundPlane
         else:
-            self.onSync = False
+            self.onSyncProperties = False
 
         # Step 4: Footsteps placement
-        footsteps = self.placeStepsOnBlocks(self.blocks_list, self.ground, standingFootName, standingFootFrame)
+        footsteps = self.placeStepsOnBlocks(self.blocks_list, standingFootName, standingFootFrame)
 
         assert len(footsteps) > 0
 
@@ -104,7 +101,7 @@ class StairsDemo(object):
         # Step 5: Send request to planner. It replies with complete footsteps plan message.
         self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)
 
-    def placeStepsOnBlocks(self, blocks, groundPlane, standingFootName, standingFootFrame):
+    def placeStepsOnBlocks(self, blocks, standingFootName, standingFootFrame):
         contact_pts_left, contact_pts_right = self.footstepsDriver.getContactPts()
 
         footsteps = []
@@ -117,7 +114,6 @@ class StairsDemo(object):
             # TO_DO find a better way to get the vertical translation of footsteps reference frame
             nextLeftTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepLeft,self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
             nextRightTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepRight,-self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
-            vis.updateFrame(nextLeftTransform, 'nextLeftTransform %d' % i , parent='nextLeftTransform', scale=0.2, visible=True)
 
             if self.isLeadingFootRight:
                 nextRightTransform.Concatenate(blockBegin)
@@ -156,8 +152,6 @@ class StairsDemo(object):
         om.removeFromObjectModel(om.findObjectByName('block corners'))
         om.getOrCreateContainer('block corners',om.getOrCreateContainer('stairs'))
 
-        #print 'got %d clusters' % len(clusters)
-
         # get the rectangles from the clusters:
         blocks = []
         for i, cluster in enumerate(clusters):
@@ -189,6 +183,7 @@ class StairsDemo(object):
             block.distToRobot = np.linalg.norm(np.array(linkFrame.GetPosition()) - np.array(block.cornerTransform.GetPosition()))
         blocks.sort(key=operator.attrgetter('distToRobot'))
 
+        # Visualization:
         # draw blocks including the ground plane:
         om.removeFromObjectModel(om.findObjectByName('blocks'))
         blocksFolder=om.getOrCreateContainer('blocks',om.getOrCreateContainer('stairs'))
@@ -214,7 +209,7 @@ class StairsDemo(object):
             obj = vis.showPolyData(d.getPolyData(),'ground plane', color=[1,1,0],alpha=0.1, parent=blocksFolder)
             obj.actor.SetUserTransform(blockCenter)
 
-        return blocks,groundPlane
+        return blocks
 
     def sendFootstepPlanRequest(self, footsteps, nextDoubleSupportPose):
         goalSteps = []
@@ -242,14 +237,12 @@ class StairsDemo(object):
         # force correct planning parameters:
         request.params.leading_foot = goalSteps[0].is_right_foot
         request.params.planning_mode = lcmdrc.footstep_plan_params_t.MODE_AUTO
-        #request.params.behavior = lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING
         request.params.map_mode = lcmdrc.footstep_plan_params_t.FOOT_PLANE
         request.params.max_num_steps = len(goalSteps)
         request.params.min_num_steps = len(goalSteps)
         request.default_step_params = default_step_params
 
-        #lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', request)
-        plan = self.footstepsDriver.sendFootstepPlanRequest(request, waitForResponse=True)
+        lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', request)
 
     def loadSDFFileAndRunSim(self):
         filename= os.environ['DRC_BASE'] + '/software/models/worlds/terrain_simple_flagstones.sdf'  
@@ -336,7 +329,7 @@ class StairsTaskPanel(TaskUserPanel):
     def onPropertyChanged(self, propertySet, propertyName):
         self._syncProperties()
         if (self.autoQuery):
-            self.stairsDemo.onSync = True
+            self.stairsDemo.onSyncProperties = True
             self.stairsDemo.testStairs()
 
     def _syncProperties(self):
@@ -379,7 +372,6 @@ class StairsTaskPanel(TaskUserPanel):
         self.taskTree.removeAllTasks()
 
         # add tasks
-
         # prep
         addFolder('prep')
         addTask(rt.SetNeckPitch(name='set neck position', angle=50))
