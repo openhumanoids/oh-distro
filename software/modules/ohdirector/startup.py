@@ -33,6 +33,11 @@ def startup(robotSystem, globalsDict=None):
     manualWalkingTaskPanel = manualwalkingdemo.ManualWalkingTaskPanel(manualWalkingDemo)
     tasklaunchpanel.panel.addTaskPanel('Manual Walking', manualWalkingTaskPanel.widget)
 
+    stairsDemo = stairsdemo.StairsDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
+    stairsTaskPanel = stairsdemo.StairsTaskPanel(stairsDemo)
+
+    tasklaunchpanel.panel.addTaskPanel('Stairs', stairsTaskPanel.widget)
+
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
@@ -41,9 +46,3 @@ def startup(robotSystem, globalsDict=None):
         globalsDict['manualWalkingTaskPanel'] = manualWalkingTaskPanel
         globalsDict['stairsDemo'] = stairsDemo
         globalsDict['stairsTaskPanel'] = stairsTaskPanel
-
-
-    stairsDemo = stairsdemo.StairsDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
-    stairsTaskPanel = stairsdemo.StairsTaskPanel(stairsDemo)
-
-    tasklaunchpanel.panel.addTaskPanel('Stairs', stairsTaskPanel.widget)
