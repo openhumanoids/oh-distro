@@ -618,67 +618,15 @@ void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, V
 	}
 }
 
-void CapabilityMap::computePositionProbabilityDistribution(Vector3d mu, Vector3d sigma)
+void CapabilityMap::computeProbabilityDistribution(const VectorXd mu, const VectorXd sigma)
 {
-	this->computeProbabilityDistribution(this->voxel_centres, this->position_probability, mu, sigma);
-	IOFormat fmt(30);
-//	int w = 10;
-//	for (int i = 0; i < this->position_probability.rows(); i++)
-//	{
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(0) << " ";
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(1) << " ";
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(2) << " ";
-//		this->log.width(w);
-//		this->log << right << this->position_probability[i].format(fmt) << endl;
-//	}
-	this->log << this->position_probability.format(fmt) << endl << endl << endl;
-}
-
-void CapabilityMap::computeOrientationProbabilityDistribution(Vector3d mu, Vector3d sigma)
-{
-	this->computeProbabilityDistribution(this->occupancy_map_orientations, this->orientation_probability, mu, sigma);
-	IOFormat fmt(30);
-//	int w = 10;
-//	for (int i = 0; i < this->orientation_probability.rows(); i++)
-//	{
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(0) << " ";
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(1) << " ";
-//		this->log.width(w);
-//		this->log << right << this->getVoxelCentre(i)(2) << " ";
-//		this->log.width(w);
-//		this->log << right << this->orientation_probability[i].format(fmt) << endl;
-//	}
-	this->log << this->orientation_probability.format(fmt) << endl << endl << endl;
-}
-
-void CapabilityMap::computeProbabilityDistribution(vector<Vector3d> & values, VectorXd &pdf, Vector3d mu, Vector3d sigma)
-{
-	Matrix3d sigma_inverse = (Vector3d(1, 1, 1).cwiseQuotient(sigma)).asDiagonal();
-	pdf.resize(values.size());
-	IOFormat fmt(30);
-	for (int p = 0; p < pdf.size(); p++)
-	{
-		pdf(p) = pow(pow(2*M_PI, 3)*sigma.prod(), -.5)*(exp(-.5*(values[p] - mu).transpose() * sigma_inverse * (values[p] - mu)));
-	}
-	cout << setprecision(30) << mu << endl << sigma << endl << pdf(0) << endl;
-	double p_sum = pdf.sum();
-	for (int p = 0; p < pdf.size(); p++)
-	{
-		pdf(p) /= p_sum;
-	}
-}
-
-void CapabilityMap::computeTotalProbabilityDistribution()
-{
+	VectorXd sigma_inverse = ((ArrayXd)sigma).pow(-1);
+	MatrixXd sigma_inverse_matrix = sigma_inverse.asDiagonal();
 	int n_orient = this->getNActiveOrientations();
-	this->total_probability.resize(n_orient);
-	this->total_probability_orientations.resize(n_orient);
-	this->total_probability_voxels.resize(n_orient);
+	this->voxel_probability.resize(n_orient);
+	this->probability_orientations.resize(n_orient);
+	this->probability_voxels.resize(n_orient);
+	VectorXd values(6);
 	int idx = 0;
 	for (int vox = 0; vox < this->active_orientations.rows(); vox++)
 	{
@@ -686,41 +634,49 @@ void CapabilityMap::computeTotalProbabilityDistribution()
 		{
 			if (this->active_orientations(vox, orient))
 			{
-				this->total_probability[idx] = this->position_probability(vox) * this->orientation_probability(orient);
-				this->total_probability_orientations[idx] = orient;
-				this->total_probability_voxels[idx] = vox;
+				values << this->voxel_centres[vox] , this->occupancy_map_orientations[orient];
+				this->probability_voxels[idx] = vox;
+				this->probability_orientations[idx] = orient;
+				this->voxel_probability(idx) = pow(pow(2*M_PI, 6)*sigma.prod(), -.5)*(exp(-.5*(values - mu).transpose() * sigma_inverse_matrix * (values - mu)));
 				idx++;
 			}
 		}
+	}
+//	double prob_sum = accumulate(this->voxel_probability.begin(), this->voxel_probability.end(), 0.);
+//	for (int i = 0; i < this->voxel_probability.size(); i++)
+//	{
+//		this->voxel_probability[i] /= prob_sum;
+//	}
+	this->voxel_probability = this->voxel_probability / this->voxel_probability.sum();
+	for (int p = 0; p < this->voxel_probability.size(); p++)
+	{
+		this->log  << setprecision(15) << this->voxel_centres[this->probability_voxels[p]](0) << " " <<
+				this->voxel_centres[this->probability_voxels[p]](1) << " " <<
+				this->voxel_centres[this->probability_voxels[p]](2) << " " <<
+				this->occupancy_map_orientations[this->probability_orientations[p]](0) << " " <<
+				this->occupancy_map_orientations[this->probability_orientations[p]](1) << " " <<
+				this->occupancy_map_orientations[this->probability_orientations[p]](2) << " " <<
+				this->voxel_probability(p) << endl;
 	}
 }
 
 int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 {
-	if (this->total_probability.size() == 0)
-	{
-		this->computeTotalProbabilityDistribution();
-	}
-	std::vector<double> cumulative_probability(this->total_probability.size());
-	partial_sum(this->total_probability.begin(), this->total_probability.end(), cumulative_probability.data());
-	srand(time(NULL));
-//	double rnd = rand() / (double)RAND_MAX * cumulative_probability.back();
-	double rnd = this->random_sequence(sample[0]);
-//	this->random_sequence.erase(this->random_sequence.begin());
-//	cout << "random number: " << rnd << endl;
-	rnd *= cumulative_probability.back();
-//	cout <<  cumulative_probability.back() << endl;
-//	this->log << rnd << endl;
-//	cout << "random number: " << rnd << endl;
-	ArrayXd eigen_cumulative_probability =  Map<ArrayXd> (&cumulative_probability[0], cumulative_probability.size());
-	Array<bool, Dynamic, 1> isGreater = eigen_cumulative_probability > rnd;
+	if (this->voxel_probability.size() < 1){return 13;}
+	ArrayXd cumulative_probability(this->voxel_probability.size());
+	partial_sum(this->voxel_probability.data(), this->voxel_probability.data() + this->voxel_probability.size(), cumulative_probability.data());
+	double rnd = rand() / (double)RAND_MAX;
+	Array<bool, Dynamic, 1> isGreater = cumulative_probability > rnd;
 	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data();
-//	cout << idx << endl;
-	sample[0] = this->total_probability_voxels[idx];
-	sample[1] = this->total_probability_orientations[idx];
-	this->total_probability.erase(this->total_probability.begin() + idx);
-	this->total_probability_voxels.erase(this->total_probability_voxels.begin() + idx);
-	this->total_probability_orientations.erase(this->total_probability_orientations.begin() + idx);
+	sample[0] = this->probability_voxels[idx];
+	sample[1] = this->probability_orientations[idx];
+	if (idx < this->voxel_probability.rows() - 1)
+	{
+		this->voxel_probability.block(idx,0,this->voxel_probability.rows() - 1 - idx, 1) = this->voxel_probability.block(idx + 1, 0, this->voxel_probability.rows() -1 - idx, 1);
+	}
+	this->voxel_probability.conservativeResize(this->voxel_probability.rows() - 1);
+	this->probability_voxels.erase(this->probability_voxels.begin() + idx);
+	this->probability_orientations.erase(this->probability_orientations.begin() + idx);
 	return 1;
 }
 
@@ -742,25 +698,21 @@ void CapabilityMap::setOccupancyMapOrientations()
 
 void CapabilityMap::setActiveSide(Side side)
 {
-	if (this->active_side == this->Side::LEFT && side == this->Side::RIGHT || this->active_side == this->Side::RIGHT && side == this->Side::LEFT)
+	this->active_side = side;
+	for (auto vox : this->voxel_centres)
 	{
-		this->active_side = side;
-		cout << "mirror cm" << endl;
-		for (auto vox : this->voxel_centres)
-		{
-			vox(1) *= -1;
-		}
-		if (side == this->Side::LEFT)
-		{
-			this->map_centre = this->map_centre_left;
-		}
-		else
-		{
-			this->map_centre = this->map_centre_right;
-		}
-		this->resetActiveVoxels();
-		this->resetActiveOrientations();
+		vox(1) *= -1;
 	}
+	if (side == this->Side::LEFT)
+	{
+		this->map_centre = this->map_centre_left;
+	}
+	else
+	{
+		this->map_centre = this->map_centre_right;
+	}
+	this->resetActiveVoxels();
+	this->resetActiveOrientations();
 }
 
 void CapabilityMap::setActiveSide(string side_str)

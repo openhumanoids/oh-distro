@@ -54,8 +54,12 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	bot_lcmgl_t* lcmgl_pc = bot_lcmgl_init(lcm->getUnderlyingLCM(), "Capability_map");
 	capability_map.drawActiveMap(lcmgl_pc, 53, capability_map.getMapCentre());
 	output.n_valid_samples = capability_map.getNActiveOrientations();
-	capability_map.computeOrientationProbabilityDistribution();
-	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
+	VectorXd sigma(6), mu(6);
+	sigma << 1e10, 1e10, 0.01, 0.01, 0.05, 100;
+	mu << capability_map.getMapCentre(), 0, 0, 0;
+	capability_map.computeProbabilityDistribution(mu, sigma);
+//	capability_map.computeOrientationProbabilityDistribution();
+//	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
 	CM_timer.stop();
 
 
@@ -82,6 +86,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	int n_iter = 0;
 	vector<int> sample(2);
 	IOFormat fmt(40);
+	srand(time(NULL));
 	while (info != 1 && n_iter <= max_iterations)
 	{
 		sample[0] = n_iter;
@@ -140,7 +145,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 //				}
 //			}
 //		}
-		getchar();
+//		getchar();
 		if (ik_info < 10)
 		{
 			kin_timer.start();

@@ -55,7 +55,6 @@ public:
 	Eigen::Vector3d getOrientation(int orient){return occupancy_map_orientations[orient];}
 	Eigen::Vector3d getVoxelCentre(int vox){return voxel_centres[vox];}
 	std::vector<Eigen::Vector3d> getVoxelCentres(){return voxel_centres;}
-	Eigen::VectorXd getPositionProbability(){return position_probability;}
 	void setNVoxels(unsigned int n_voxels);
 	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
 	void setNDirectionsPerVoxel(unsigned int n_dir);
@@ -71,21 +70,12 @@ public:
 			double direction_threshold = M_PI/6);
 
 	/**
-	 * compute a multivariate Gaussian distribution to draw capability map voxels based on their orientation
-	 * \param mu A 3D vector specifying the mean of the multivariate distribution
-	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
+	 * compute a 6D multivariate Gaussian distribution for all active voxels and orientations.
+	 * \param mu A 6D vector specifying the mean (x, y, z, roll, pitch, yaw) of the multivariate distribution
+	 * \param sigma A 6D vector specifying the sigma  (x, y, z, roll, pitch, yaw) matrix diagonal of the multivariate distribution
 	 */
-	void computePositionProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(1e10, 1e10, 0.01)*pow(.65, 2));//magic numbers to match matlab distribution
 
-	/**
-	 * compute a multivariate Gaussian distribution to draw capability map voxels based on their position relative to the map centre.
-	 * \param mu A 3D vector specifying the mean of the multivariate distribution
-	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
-	 */
-	void computeOrientationProbabilityDistribution(Eigen::Vector3d mu = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d sigma = Eigen::Vector3d(5,//*pow(0.08726646259971647390241145103573217056692, 2),
-																																		 .5,//*pow(0.1745329251994329478048229020714643411338, 2),
-																																		 10));//*pow(0.7853981633974482789994908671360462903976, 2)));//magic numbers to match matlab distribution
-
+	void computeProbabilityDistribution(const Eigen::VectorXd mu, const Eigen::VectorXd sigma);
 	/**
 	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample
 	 */
@@ -129,11 +119,9 @@ private:
 	Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> active_orientations; /**< Dimensions:\n  n capability map voxels\n  n orientations */
 	std::vector<Eigen::Vector3d> occupancy_voxel_centres;
 	std::vector<Eigen::Vector3d> occupancy_map_orientations;
-	Eigen::VectorXd position_probability;
-	Eigen::VectorXd orientation_probability;
-	std::vector<double> total_probability;
-	std::vector<int> total_probability_orientations;
-	std::vector<int> total_probability_voxels;
+	Eigen::VectorXd voxel_probability;
+	std::vector<int> probability_orientations;
+	std::vector<int> probability_voxels;
 	Eigen::VectorXd random_sequence;
 
 	void activateVoxels(std::vector<int> idx);
@@ -155,19 +143,6 @@ private:
 			Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
 	void drawMapCubes(bot_lcmgl_t *lcmgl, Eigen::Vector3d lb, Eigen::Vector3d ub, double resolution,
 			Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0));
-	/**
-	 * compute a 3D multivariate Gaussian distribution for a vector of values.
-	 * \param values The samples to compute the probability
-	 * \param pdf A pointer to the vector on which probabilities will be written
-	 * \param mu A 3D vector specifying the mean of the multivariate distribution
-	 * \param sigma A 3D vector specifying the sigma matrix diagonal of the multivariate distribution
-	 */
-	void computeProbabilityDistribution(std::vector<Eigen::Vector3d> & values, Eigen::VectorXd &pdf, Eigen::Vector3d mu, Eigen::Vector3d sigma);
-
-	/**
-	 * compute the orientation-position combined probability
-	 */
-	void computeTotalProbabilityDistribution();
 };
 
 
