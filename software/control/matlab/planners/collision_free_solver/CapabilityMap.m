@@ -35,6 +35,9 @@
     occupancy_map_orient
     occupancy_map_n_orient
     occupancy_map_orient_prob
+    voxel_probability
+    probability_voxels
+    probability_orientations
   end
   
   methods
@@ -631,6 +634,7 @@
         h = rpy2rotmat(obj.occupancy_map_orient(:,o)) * bsxfun(@plus, obj.vox_centres, obj.EE_pose(1:3) - obj.map_centre.(obj.active_side));
         obj.occupancy_map_active_orient(:,o) =  all([h(3,:) > range(1); h(3, :) < range(2); obj.active_voxels]);
       end
+      
       voxels = all(~obj.occupancy_map_active_orient, 2);
       obj = obj.deactivateVoxels(voxels);
       obj.occupancy_map_active_orient(voxels, :) = false(nnz(voxels), obj.occupancy_map_n_orient);
@@ -898,6 +902,28 @@
       centres = [reshape(x, 1, obj.occupancy_map_n_voxels); ...
                  reshape(y, 1, obj.occupancy_map_n_voxels); ...
                  reshape(z, 1, obj.occupancy_map_n_voxels)];
+    end
+    
+    function obj = computeProbabilityDistribution(obj, mu, sigma)
+      if nargin < 3, sigma = [1e10 1e10 0.01 0.01 0.05 100]; end
+      if nargin < 2 || isempty(mu), mu = [0 0 0 0 0 0]; end
+      [obj.probability_voxels, obj.probability_orientations] = find(obj.occupancy_map_active_orient);
+      obj.voxel_probability = mvnpdf([obj.vox_centres(:,obj.probability_voxels)' obj.occupancy_map_orient(:, obj.probability_orientations)'], mu, diag(sigma));
+      obj.voxel_probability = obj.voxel_probability / sum(obj.voxel_probability);      
+      f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
+      fprintf(f_id, '%.15g %.15g %.15g %.15g %.15g %.15g %.15g\n', [obj.vox_centres(:,obj.probability_voxels);...
+        obj.occupancy_map_orient(:,obj.probability_orientations); obj.voxel_probability']);
+      fclose(f_id);
+    end
+    
+    function [vox, orient, obj] = drawCapabilityMapSample(obj)
+      idx = find(rand() < cumsum(obj.voxel_probability), 1);
+      vox = obj.probability_voxels(idx);
+      orient = obj.probability_orientations(idx);
+      obj.voxel_probability(idx) = [];
+      obj.voxel_probability = obj.voxel_probability / sum(obj.voxel_probability);
+      obj.probability_voxels(idx) = [];
+      obj.probability_orientations(idx) = [];
     end
     
     function obj = computeOrientationProbabilityDistribution(obj, sigma, mu)

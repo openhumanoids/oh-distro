@@ -130,50 +130,14 @@ classdef FinalPosePlanner
       obj.capability_map = obj.capability_map.setEEPose(obj.x_goal);
       obj.capability_map = obj.capability_map.setActiveSide(obj.grasping_hand);
       [obj.capability_map, timing_vars] = obj.capability_map.reduceActiveSet(true, point_cloud);
-      active_voxels = find(obj.capability_map.active_voxels);
       valid_voxels = obj.capability_map.occupancy_map_active_orient(obj.capability_map.active_voxels, :);
       n_valid_samples = nnz(valid_voxels);
       if obj.verbose, fprintf('n valid samples: %d\n', n_valid_samples); end
-      orient_prob = obj.capability_map.occupancy_map_orient_prob;
-%       f_id = fopen('capabilityMapMatlab.log', 'w');
-%       fprintf(f_id, '%34.30g\n', orient_prob');
-%       fprintf(f_id, '\n\n');
       
       base = obj.robot.findLinkId(obj.capability_map.base_link);
       map_centre = obj.capability_map.map_centre.(obj.grasping_hand);
-      obj.capability_map = obj.capability_map.computePositionProbabilityDistribution([], bsxfun(@rdivide, map_centre, obj.capability_map.map_ub)');
-      pos_prob = obj.capability_map.vox_centres_prob;
-%       fprintf(f_id, '%35.30g\n', pos_prob);
-%       fprintf(f_id, '\n\n');
-      
-      tot_prob = pos_prob * orient_prob';
-      tot_prob = tot_prob .* obj.capability_map.occupancy_map_active_orient;
-%       for i = 1:size(obj.capability_map.occupancy_map_active_orient)
-%         fprintf(f_id, '%11g %11g %11g %11g %11g %11g %11g\n', obj.capability_map.vox_centres(1, i),...
-%                                                               obj.capability_map.vox_centres(2, i),...
-%                                                               obj.capability_map.vox_centres(3, i),...);
-%       end
-      tot_prob = nonzeros(tot_prob');
-      [tot_prob_orient, tot_prob_vox] = find(obj.capability_map.occupancy_map_active_orient');
-      cum_prob = cumsum(tot_prob);% / sum(tot_prob);
+      obj.capability_map = obj.capability_map.computeProbabilityDistribution([map_centre' 0 0 0]);
 %       f_id = fopen('/home/marco/oh-distro/software/planning/capabilityMapMatlab.log', 'w');
-%       for i = 1:size(obj.capability_map.vox_centres, 2)
-%         fprintf(f_id, '%6g %6g %6g\n', obj.capability_map.vox_centres(:,i));
-%       end
-%       idx = 1;
-%       for v = 1:size(obj.capability_map.occupancy_map_active_orient, 1)
-%         for o = 1:size(obj.capability_map.occupancy_map_active_orient, 2)
-%           if obj.capability_map.occupancy_map_active_orient(v, o)
-%             fprintf(f_id, '%10g %10g %10g %10g %10g %10g\n', o, v, orient_prob(o), pos_prob(v)...
-%             , tot_prob(idx), cum_prob(idx));
-% %             fprintf(f_id, '%10g %10g %10g %10g %10g %10g %10g\n', obj.capability_map.vox_centres(1,v), obj.capability_map.vox_centres(2,v), obj.capability_map.vox_centres(3,v),...
-% %                           obj.capability_map.occupancy_map_orient(1,o), obj.capability_map.occupancy_map_orient(2,o), obj.capability_map.occupancy_map_orient(3,o),...
-% %             tot_prob(idx));
-%             idx= idx +1;
-%           end
-% %           fprintf(f_id, '%10g %10g\n', idx, tot_prob(idx));
-%         end
-%       end
 %       fclose(f_id);
       if obj.debug || obj.verbose
         CM_time = toc(CM_timer);
@@ -187,34 +151,20 @@ classdef FinalPosePlanner
       kin_time = 0;
       collision_time = 0;
       
-      f_id = fopen('/home/marco/drc-testing-data/final_pose_planner/val_description/random_sequence');
-      samples = fread(f_id, [1000, 100], 'double');
-      fclose(f_id);
-      f_id = fopen('matlabCapabilityMap.log','a');
-      samples = samples(:,obj.seed);
+%       f_id = fopen('/home/marco/drc-testing-data/final_pose_planner/val_description/random_sequence');
+%       samples = fread(f_id, [1000, 100], 'double');
+%       fclose(f_id);
+%       f_id = fopen('matlabCapabilityMap.log','a');
+%       samples = samples(:,obj.seed);
       for vox = 1:min([n_valid_samples, 1000])
         if obj.debug || obj.verbose
           sampling_timer = tic();
         end
-%         rpy = samples(1:3, vox);
-%         pos = rpy2rotmat(rpy) * samples(4:6, vox);
-        
-        cum_prob = cumsum(tot_prob);% / sum(tot_prob);
-%         rnd = rand();
-        rnd = samples(vox);
-        disp(rnd)
-        disp(cum_prob(end))
-        rnd = rnd * cum_prob(end);
-%         fprintf(f_id, '%g\n', rnd);
-        idx = find(rnd < cum_prob, 1);
-        disp(rnd);
-        disp(idx)
-%         [orient_idx, voxel_idx] = ind2sub([obj.capability_map.occupancy_map_n_orient, obj.capability_map.n_voxels],  find(rnd < cum_prob, 1));
-        rpy = obj.capability_map.occupancy_map_orient(:,tot_prob_orient(idx));
-        pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:,tot_prob_vox(idx));
-        disp(pos + obj.x_goal(1:3));
-        disp(rpy);
-        tot_prob(idx) = 0;
+        [v, o, obj.capability_map] = obj.capability_map.drawCapabilityMapSample();
+        rpy = obj.capability_map.occupancy_map_orient(:,o);
+        pos = rpy2rotmat(rpy) * obj.capability_map.vox_centres(:,v);
+%         disp(v)
+%         disp(o)
         
         iter = iter + 1;
         if obj.debug || obj.verbose
@@ -229,9 +179,7 @@ classdef FinalPosePlanner
         if obj.debug, constraint_time = constraint_time + toc(constraint_timer); end
         if obj.debug, ik_timer = tic(); end
         [q, info, infeasible_constraints] = inverseKin(obj.robot, obj.q_nom, obj.q_nom, constraints{:}, obj.ikoptions);
-        est_pose_publisher.publish([q; zeros(size(q))], get_timestamp_now());
-%         [rpy' pos']
-%         obj.q_nom'
+%         est_pose_publisher.publish([q; zeros(size(q))], get_timestamp_now());
 %         pose_publisher.publish([q; zeros(size(q))], get_timestamp_now())
         valid = (info < 10);
         if obj.debug, ik_time = ik_time + toc(ik_timer); end
