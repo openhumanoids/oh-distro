@@ -45,11 +45,11 @@ class StairsDemo(object):
         self.onSyncProperties = False
 
         self.plans = []
-        self.blocks_list = []
+        self.blocksList = []
 
         # clusters and blocks
-        self.ground_width_thresh = 1.00
-        self.ground_depth_thresh = 1.10
+        self.groundWidthThresh = 1.00
+        self.groundDepthThresh = 1.10
 
         # Footsteps placement options
         self.isLeadingFootRight = True
@@ -87,12 +87,12 @@ class StairsDemo(object):
             # Step 3: find the corners of the minimum bounding rectangles
             blocks = self.extractBlocksFromSurfaces(clusters, standingFootFrame)
 
-            self.blocks_list = blocks
+            self.blocksList = blocks
         else:
             self.onSyncProperties = False
 
         # Step 4: Footsteps placement
-        footsteps = self.placeStepsOnBlocks(self.blocks_list, standingFootName, standingFootFrame)
+        footsteps = self.placeStepsOnBlocks(self.blocksList, standingFootName, standingFootFrame)
 
         assert len(footsteps) > 0
 
@@ -140,9 +140,9 @@ class StairsDemo(object):
         polyData = segmentation.labelPointDistanceAlongAxis(polyData, viewY, origin=viewOrigin, resultArrayName='distance_along_foot_y')
         polyData = segmentation.labelPointDistanceAlongAxis(polyData, viewZ, origin=viewOrigin, resultArrayName='distance_along_foot_z')
 
-        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_x', [0.12, self.ground_depth_thresh])
-        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_y', [-(self.ground_width_thresh/2), self.ground_width_thresh/2])
-        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_z', [-(self.ground_width_thresh/2), self.ground_width_thresh/2])
+        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_x', [0.12, self.groundDepthThresh])
+        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_y', [-(self.groundWidthThresh/2), self.groundWidthThresh/2])
+        polyData = segmentation.thresholdPoints(polyData, 'distance_along_foot_z', [-(self.groundWidthThresh/2), self.groundWidthThresh/2])
 
         vis.updatePolyData( polyData, 'walking snapshot trimmed', parent='cont debug', visible=True)
         return polyData
@@ -165,14 +165,14 @@ class StairsDemo(object):
         blocksGood = []
         groundPlane = None
 
-        step_width_max_thresh = 0.65
-        step_depth_max_thresh = 0.65
-        step_width_min_thresh = 0.35
-        step_depth_min_thresh = 0.30
+        stepWidthMaxThresh = 0.65
+        stepDepthMaxThresh = 0.65
+        stepWidthMinThresh = 0.35
+        stepDepthMinThresh = 0.30
 
         for i, block in enumerate(blocks):
-            if ((block.rectWidth<step_width_max_thresh) and (block.rectDepth<step_depth_max_thresh) 
-                and (block.rectWidth>step_width_min_thresh) and (block.rectDepth>step_depth_min_thresh)):
+            if ((block.rectWidth<stepWidthMaxThresh) and (block.rectDepth<stepDepthMaxThresh)
+                and (block.rectWidth>stepWidthMinThresh) and (block.rectDepth>stepDepthMinThresh)):
                 blocksGood.append(block)
             else:
                 groundPlane = block
@@ -222,10 +222,7 @@ class StairsDemo(object):
             step.is_right_foot = footstep.is_right_foot
             step.fixed_z = True
             step.is_in_contact = True
-            # Set ihmc parameters
             default_step_params = self.footstepsDriver.getDefaultStepParams()
-            default_step_params.ihmc_transfer_time = self.ihmcTransferTime
-            default_step_params.ihmc_swing_time = self.ihmcSwingTime
             step.params = default_step_params
 
             goalSteps.append(step)
@@ -306,9 +303,6 @@ class StairsTaskPanel(TaskUserPanel):
         self.params.setProperty('Forward Step Right', 0.10)
         self.params.setProperty('Forward Step Left', 0.18)
         self.params.setProperty('Step Width', 0.25)
-        # IHMC params
-        self.params.setProperty('IHMC Transfer Time', 1.0)
-        self.params.setProperty('IHMC Swing Time', 1.0)
 
         self._syncProperties()
         if (makeQuery):
@@ -320,8 +314,6 @@ class StairsTaskPanel(TaskUserPanel):
         self.params.addProperty('Forward Step Right', 0.10, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
         self.params.addProperty('Forward Step Left', 0.18, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
         self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('IHMC Transfer Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
-        self.params.addProperty('IHMC Swing Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
 
         # Set the dafault values in ui
         self.setDefaults(False)
@@ -341,8 +333,6 @@ class StairsTaskPanel(TaskUserPanel):
         self.stairsDemo.forwardStepRight = self.params.getProperty('Forward Step Right')
         self.stairsDemo.forwardStepLeft = self.params.getProperty('Forward Step Left')
         self.stairsDemo.stepWidth = self.params.getProperty('Step Width')
-        self.stairsDemo.ihmcTransferTime = self.params.getProperty('IHMC Transfer Time')
-        self.stairsDemo.ihmcSwingTime = self.params.getProperty('IHMC Swing Time')
 
     def addTasks(self):
         # some helpers
