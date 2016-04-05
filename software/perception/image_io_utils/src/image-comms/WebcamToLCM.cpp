@@ -10,7 +10,10 @@
 #include <iostream>
 #include <vector>
 
-#include "lcmtypes/bot_core.hpp"
+#include <ConciseArgs>
+
+#include "lcmtypes/bot_core/image_t.hpp"
+#include "lcmtypes/bot_core/images_t.hpp"
 
 int64_t bot_timestamp_now() {
   struct timeval tv;
@@ -20,6 +23,19 @@ int64_t bot_timestamp_now() {
 
 int main(int argc, char **argv) {
   bool compress_images = true;
+  bool simulate_multisense_camera_left = false;
+  int jpeg_quality = 90;
+
+  ConciseArgs opt(argc, (char**) argv);
+  opt.add(compress_images, "nc", "dont_compress_images",
+          "Turn off JPEG compression of images");
+  opt.add(simulate_multisense_camera_left, "m", "simulate_multisense",
+          "send CAMERA images_t");
+  opt.add(jpeg_quality, "j", "jpeg_quality", "jpeg quality (1-100)");
+  opt.parse();
+
+  std::cout << "Compress JPEG: " << std::to_string(compress_images) << " (quality: " << jpeg_quality << ")" << std::endl;
+  std::cout << "Simulate Multisense CAMERA images_t output: " << std::to_string(simulate_multisense_camera_left) << std::endl;
 
   lcm::LCM lcm_handle;
 
@@ -36,7 +52,7 @@ int main(int argc, char **argv) {
   cv::Mat frame;
   std::vector<int> params;
   params.push_back(cv::IMWRITE_JPEG_QUALITY);
-  params.push_back(90);
+  params.push_back(jpeg_quality);
 
   bot_core::image_t lcm_img;
   lcm_img.width = width;
@@ -74,8 +90,10 @@ int main(int argc, char **argv) {
     lcm_imgs.images[0] = lcm_img;
     lcm_imgs.utime = lcm_img.utime;
 
-    // lcm_handle.publish("CAMERA_LEFT", &lcm_img);
-    lcm_handle.publish("CAMERA", &lcm_imgs);
+    lcm_handle.publish("WEBCAM", &lcm_img);
+
+    if (simulate_multisense_camera_left)
+      lcm_handle.publish("CAMERA", &lcm_imgs);
 
     if (cv::waitKey(1) == 27) break;  // press ESC to stop
   }
