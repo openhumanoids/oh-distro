@@ -43,10 +43,10 @@ public:
 	 * 13  Error: no more sample to use.
 	 * 14  Error: Iteration limit reached.
 	 */
-	int findFinalPose(RigidBodyTree &robot, std::string end_effector, std::string endeffector_side, Eigen::VectorXd start_configuration,
-			Eigen::VectorXd endeffector_final_pose, const std::vector<RigidBodyConstraint *> &additional_constraints, Eigen::VectorXd nominal_configuration,
-			CapabilityMap &capability_map, std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output,
-			Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0), int max_iterations = 1000, double min_distance = 0.005); //todo: active collision options?
+	int findFinalPose(RigidBodyTree &robot, const std::string end_effector, const std::string endeffector_side, const Eigen::VectorXd start_configuration, Eigen::VectorXd final_configuration,
+			Eigen::VectorXd endeffector_final_pose, const std::vector<RigidBodyConstraint *> &additional_constraints, const Eigen::VectorXd nominal_configuration,
+			CapabilityMap &capability_map, const std::vector<Eigen::Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output,
+			const Eigen::Vector3d endeffector_point = Eigen::Vector3d(0,0,0), const int max_iterations = 1000, const double min_distance = 0.005);
 
 private:
 	/**
@@ -56,7 +56,7 @@ private:
 	 * \param variable_name The name of the variable to check (only used for error messages)
 	 * \return 12 if the configuration is invalid 0 otherwise.
 	 */
-	int checkConfiguration(const RigidBodyTree &robot, const Eigen::VectorXd &configuration, std::string variable_name);
+	int checkConfiguration(const RigidBodyTree &robot, const Eigen::VectorXd &configuration, const std::string variable_name);
 
 //	void generateEndeffectorConstraints(RigidBodyTree &robot, std::vector<RigidBodyConstraint *> &constraint_vector, int endeffector_id,
 //			Eigen::Matrix<double, 7, 1> endeffector_final_pose, Eigen::Vector3d endeffector_point,

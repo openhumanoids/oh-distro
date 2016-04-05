@@ -15,9 +15,9 @@ FinalPosePlanner::FinalPosePlanner()
 
 }
 
-int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, string endeffector_side, VectorXd start_configuration,
-		VectorXd endeffector_final_pose, const vector<RigidBodyConstraint *> &additional_constraints, VectorXd nominal_configuration,
-		CapabilityMap &capability_map, vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output, Vector3d endeffector_point, int max_iterations,  double min_distance){
+int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, const string end_effector, const string endeffector_side, const VectorXd start_configuration, VectorXd final_configuration,
+		VectorXd endeffector_final_pose, const vector<RigidBodyConstraint *> &additional_constraints, const VectorXd nominal_configuration, CapabilityMap &capability_map,
+		const vector<Vector3d> point_cloud, IKoptions ik_options, boost::shared_ptr<lcm::LCM> lcm, FPPOutput &output, const Vector3d endeffector_point, const int max_iterations,  const double min_distance){
 
 //	timing variables
     FPPTimer FPP_timer, IK_timer, CM_timer, collision_timer, constraints_timer, kin_timer, sampling_timer;
@@ -56,8 +56,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	sigma << 1e10, 1e10, 0.01, 0.01, 0.05, 100;
 	mu << capability_map.getMapCentre(), 0, 0, 0;
 	capability_map.computeProbabilityDistribution(mu, sigma);
-//	capability_map.computeOrientationProbabilityDistribution();
-//	capability_map.computePositionProbabilityDistribution(capability_map.getMapCentre());
 	CM_timer.stop();
 
 
@@ -73,7 +71,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	constraints.resize(constraints.size() + 2);
 	constraints_timer.stop();
 
-	VectorXd final_configuration(robot.num_positions);
+	final_configuration.resize(robot.num_positions);
 	vector<string> infeasible_constraints;
     VectorXd phi;
     Matrix3Xd normal, xA, xB;
@@ -102,7 +100,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		int base_id = robot.findLinkId(capability_map.getBaseLink());
 		Vector3d orientation = capability_map.getOrientation(sample[1]);
 		Vector3d position = rpy2rotmat(orientation) * capability_map.getVoxelCentre(sample[0]) + endeffector_final_pose.block<3,1>(0,0);
-//		cout << position.format(fmt) << endl << orientation.format(fmt) << endl;
 		WorldPositionConstraint base_position_constraint(&robot, base_id, capability_map.getMapCentre(), position, position);
 		WorldEulerConstraint base_euler_constraint(&robot, base_id, orientation, orientation);
 		constraints.end()[-1] = (&base_position_constraint);
@@ -113,37 +110,10 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 		IK_timer.start();
 		inverseKin(&robot, nominal_configuration, nominal_configuration, constraints.size(), constraints.data(), final_configuration, ik_info, infeasible_constraints, ik_options);
 		IK_timer.stop();
-//		publisher.publish(lcm, robot, final_configuration);
 		vector<string> name;
 		VectorXd lb;
 		VectorXd ub;
 		double time = 0.;
-//		for (auto constraint : constraints)
-//		{
-//			if(constraint->getCategory() == constraint->SingleTimeKinematicConstraintCategory)
-//			{
-//				name.clear();
-//				((SingleTimeKinematicConstraint*)constraint)->name(&time, name);
-//				((SingleTimeKinematicConstraint*)constraint)->bounds(&time, lb, ub);
-//
-//				for (auto n : name)
-//				{
-//					cout << n << endl;
-//				}
-//				cout << lb << endl << ub << endl;
-//			}
-//			else if(constraint->getCategory() == constraint->QuasiStaticConstraintCategory)
-//			{
-//				name.clear();
-//				((QuasiStaticConstraint*)constraint)->name(&time, name);
-//
-//				for (auto n : name)
-//				{
-//					cout << n << endl;
-//				}
-//			}
-//		}
-//		getchar();
 		if (ik_info < 10)
 		{
 			kin_timer.start();
@@ -158,7 +128,6 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 				if (((ArrayXd)phi > min_distance).all())
 				{
 					info = 1;
-//					capability_map.log << final_configuration << endl;
 //					publisher.publish(lcm, robot, final_configuration);
 				}
 			}
@@ -188,7 +157,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, string end_effector, s
 	return info;
 }
 
-int FinalPosePlanner::checkConfiguration(const RigidBodyTree &robot, const VectorXd &configuration, string variable_name)
+int FinalPosePlanner::checkConfiguration(const RigidBodyTree &robot, const VectorXd &configuration, const string variable_name)
 {
 	if (configuration.rows() != robot.num_positions)
 	{

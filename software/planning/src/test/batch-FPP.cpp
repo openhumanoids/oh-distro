@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
 	quasi_static_constraint.addContact(1, &right_foot_id, &right_contact_points);
 	constraints.push_back(&quasi_static_constraint);
 
-	VectorXd nominal_configuration;
+	VectorXd nominal_configuration, final_configuration;
 	nominal_configuration.resize(robot.num_positions);
 	nominal_configuration <<	0, 0, 1.0250, 0, 0 ,0 ,0, 0 ,0 ,0 ,0 ,0 ,0.3002,1.2500, 0, 0.7854, 1.5710 ,0, 0 ,0.3002, -1.2500,
 			0, -0.7854, 1.5710 ,0, 0, 0, 0, -0.4900, 1.2050 ,-0.7100, 0 ,0, 0, -0.4900 ,1.2050, -0.7100 ,0;
@@ -384,7 +384,7 @@ int main(int argc, char* argv[])
 					{
 						FPPOutput output;
 						cout << "Model: " << m << " Scene: " << s << " Hand: " << h << " Iteration: " << i + 1 << endl;
-						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, ik_options, theLCM, output, endeffector_point);
+						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, final_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, ik_options, theLCM, output, endeffector_point);
 						addTextToElement(info_node, info);
 						addTextToElement(computation_time_node, output.computation_time);
 						addTextToElement(IK_time_node, output.IK_time);
