@@ -10,17 +10,17 @@
 #include "bot_lcmgl_client/lcmgl.h"
 #include "drake/systems/plants/RigidBodyTree.h"
 
-void draw3dLine(bot_lcmgl_t *lcmgl, Eigen::Vector3d start, Eigen::Vector3d end);
-void draw3dLine(bot_lcmgl_t *lcmgl, double start_x, double start_y, double start_z, double end_x, double end_y, double end_z);
+void draw3dLine(bot_lcmgl_t *lcmgl, const Eigen::Vector3d start, const Eigen::Vector3d end);
+void draw3dLine(bot_lcmgl_t *lcmgl, const double start_x, const double start_y, const double start_z, const double end_x, const double end_y, const double end_z);
 void HSVtoRGB( float &r, float &g, float &b, float h, float s, float v );
-void drawPointCloud(bot_lcmgl_t *lcmgl, std::vector<Eigen::Vector3d> point_cloud);
+void drawPointCloud(bot_lcmgl_t *lcmgl, const std::vector<Eigen::Vector3d> point_cloud);
 
 class CandidateRobotPosePublisher
 {
 public:
 	CandidateRobotPosePublisher();
 	int64_t timestamp_now();
-	void publish(boost::shared_ptr<lcm::LCM> lcm, RigidBodyTree &robot, Eigen::VectorXd &pose);
+	void publish(boost::shared_ptr<lcm::LCM> lcm, const RigidBodyTree &robot, const Eigen::VectorXd &pose);
 };
 
 class FPPTimer

@@ -7,7 +7,7 @@
 using namespace std;
 using namespace Eigen;
 
-void draw3dLine(bot_lcmgl_t *lcmgl, Vector3d start, Vector3d end)
+void draw3dLine(bot_lcmgl_t *lcmgl, const Vector3d start, const Vector3d end)
 {
 	bot_lcmgl_begin(lcmgl, LCMGL_LINES);
 	bot_lcmgl_vertex3f(lcmgl, start[0], start[1], start[2]);
@@ -15,7 +15,7 @@ void draw3dLine(bot_lcmgl_t *lcmgl, Vector3d start, Vector3d end)
 	bot_lcmgl_end(lcmgl);
 }
 
-void draw3dLine(bot_lcmgl_t *lcmgl, double start_x, double start_y, double start_z, double end_x, double end_y, double end_z)
+void draw3dLine(bot_lcmgl_t *lcmgl, const double start_x, const double start_y, const double start_z, const double end_x, const double end_y, const double end_z)
 {
 	bot_lcmgl_begin(lcmgl, LCMGL_LINES);
 	bot_lcmgl_vertex3f(lcmgl, start_x, start_y, start_z);
@@ -76,7 +76,7 @@ void HSVtoRGB( float &r, float &g, float &b, float h, float s, float v )
 
 }
 
-void drawPointCloud(bot_lcmgl_t *lcmgl, std::vector<Vector3d> point_cloud)
+void drawPointCloud(bot_lcmgl_t *lcmgl, const std::vector<Vector3d> point_cloud)
 {
 	bot_lcmgl_point_size(lcmgl, 5);
 	bot_lcmgl_color3f(lcmgl, 1, 0, 0);
@@ -101,7 +101,7 @@ int64_t CandidateRobotPosePublisher::timestamp_now()
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-void CandidateRobotPosePublisher::publish(boost::shared_ptr<lcm::LCM> lcm, RigidBodyTree &robot, VectorXd &pose)
+void CandidateRobotPosePublisher::publish(boost::shared_ptr<lcm::LCM> lcm, const RigidBodyTree &robot, const VectorXd &pose)
 {
 	drc::robot_state_t pose_msg;
 	pose_msg.utime = this->timestamp_now();
