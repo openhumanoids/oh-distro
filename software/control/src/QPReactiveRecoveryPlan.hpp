@@ -95,6 +95,7 @@ class QPReactiveRecoveryPlan {
     Eigen::VectorXd q_des;
     Eigen::MatrixXd S;
     RobotPropertyCache robot_property_cache;
+    std::unordered_map<std::string, int> bodyOrFrameNameToIdMap;
 
     void findFootSoleFrames();
     FootStateMap getFootStates(const KinematicsCache<double>& cache, const Eigen::VectorXd &v, const std::vector<bool>& contact_force_detected);

@@ -63,13 +63,13 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       obj.r_foot_id = obj.r_control.findLinkId('r_foot');
       
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.lcmonitor_cmd = drake.util.MessageMonitor(drc.atlas_command_t,'utime');
+      obj.lcmonitor_cmd = drake.util.MessageMonitor(bot_core.atlas_command_t,'utime');
       obj.lcmonitor_neck = drake.util.MessageMonitor(drc.neck_pitch_t,'utime');
       obj.lc.subscribe('ATLAS_COMMAND',obj.lcmonitor_cmd);
       obj.lc.subscribe('DESIRED_NECK_PITCH',obj.lcmonitor_neck);
       
       % Setup ATLAS_COMMAND_T lcm type
-      lcmtype_cmd = drc.atlas_command_t;
+      lcmtype_cmd = bot_core.atlas_command_t;
       lcmtype_cmd = lcmtype_cmd.getClass();
       names={};
       f = lcmtype_cmd.getFields;
@@ -165,7 +165,8 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       standing_plan = QPLocomotionPlanCPPWrapper(QPLocomotionPlanSettings.fromStandingState(x0, r));
       %standing_plan.planned_support_command = QPControllerPlan.support_logic_maps.kinematic_or_sensed;
       plan_eval = bipedControllers.BipedPlanEval(r, standing_plan);
-      control = bipedControllers.InstantaneousQPController(r);
+      
+      control = bipedControllers.InstantaneousQPController(r.getManipulator().urdf{1}, r.control_config_file);
       obj.plan_eval_and_control = bipedControllers.BipedPlanEvalAndControlSystem(r, control, plan_eval);
     end
     

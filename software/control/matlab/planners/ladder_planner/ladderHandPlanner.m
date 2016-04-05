@@ -72,7 +72,7 @@ classdef ladderHandPlanner
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.lcmgl = drake.util.BotLCMGLClient(obj.lc,'drill_planned_path');
-      obj.state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
+      obj.state_monitor = drake.util.MessageMonitor(bot_core.robot_state_t, 'utime');
       obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
 
       iktraj_options = IKoptions(obj.r);
@@ -127,7 +127,7 @@ classdef ladderHandPlanner
       end
       
       if obj.doPublish && snopt_info <= 10
-        msg = drc.joint_angles_t;
+        msg = bot_core.joint_angles_t;
         msg.robot_name = 'atlas';
         msg.num_joints = length(obj.left_joint_indices);
         msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
@@ -175,7 +175,7 @@ classdef ladderHandPlanner
       end
       
       if obj.doPublish && snopt_info <= 10
-        msg = drc.joint_angles_t;
+        msg = bot_core.joint_angles_t;
         msg.robot_name = 'atlas';
         msg.num_joints = length(obj.right_joint_indices);
         msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
@@ -226,7 +226,7 @@ classdef ladderHandPlanner
       
       if obj.doPublish && snopt_info <= 10
         joints = [zero_joint_indices; obj.right_joint_indices; obj.left_joint_indices];
-        msg = drc.joint_angles_t;
+        msg = bot_core.joint_angles_t;
         msg.robot_name = 'atlas';
         msg.num_joints = length(joints);
         msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;

@@ -2,7 +2,7 @@
 import os,sys
 import time
 import lcm
-from drc.atlas_command_t import atlas_command_t
+from bot_core.atlas_command_t import atlas_command_t
 import time
 import numpy as np
 import math

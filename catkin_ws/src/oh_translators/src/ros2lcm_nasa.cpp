@@ -2,20 +2,14 @@
 
 // Selective ros2lcm translator for NASA
 
-#include <boost/thread.hpp>
-#include <boost/shared_ptr.hpp>
-
-#include <ros/ros.h>
-#include <ros/console.h>
-#include <cstdlib>
 #include <sys/time.h>
-#include <time.h>
+#include <cstdlib>
 #include <iostream>
 #include <map>
 #include <vector>
 #include <string>
+#include <ros/ros.h>
 #include <lcm/lcm-cpp.hpp>
-#include <Eigen/Dense>
 
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
@@ -25,8 +19,9 @@
 #include <val_hardware_msgs/valImuSensor.h>
 #include <val_hardware_msgs/valAtiSensor.h>
 
-#include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/drc/plan_status_t.hpp"
+#include "lcmtypes/bot_core/six_axis_force_torque_array_t.hpp"
+#include "lcmtypes/bot_core/joint_state_t.hpp"
+#include "lcmtypes/bot_core/ins_t.hpp"
 
 struct Joints
 {
@@ -41,6 +36,8 @@ class App
 public:
   App(ros::NodeHandle node_);
   ~App();
+
+  std::vector<std::string> joints_not_present_on_robot_;
 
 private:
   lcm::LCM lcmPublish_;
@@ -61,7 +58,6 @@ private:
   void jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg);
   void imuSensorNasaCallback(const val_hardware_msgs::valImuSensorConstPtr& msg);
   void footSensorNasaCallback(const val_hardware_msgs::valAtiSensorConstPtr& msg);
-
 };
 
 App::App(ros::NodeHandle node_in) :
@@ -78,7 +74,7 @@ App::App(ros::NodeHandle node_in) :
   // setting a queue of 1 reduces clumping of messages [desired for state estimation] but significantly reduces frequency
   // this is true even for just 2 subscriptions
   // setting to 100 means no messages are dropped during translation but imu data tends to be clumped into 50 message blocks
-  int queue_size = 100;
+  uint32_t queue_size = 100;
 
   jointStatesNasaSub_ = node_.subscribe(std::string("/joint_states"), queue_size,
                                     &App::jointStatesNasaCallback, this);
@@ -99,7 +95,7 @@ App::~App()
 void App::appendSensors(bot_core::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                             geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor)
 {
-  int num_sensors = 4;
+  unsigned int num_sensors = 4;
 
   msg_out.utime = (int64_t)l_foot_sensor.header.stamp.toNSec() / 1000; 
   msg_out.num_sensors = num_sensors;
@@ -167,12 +163,15 @@ void App::jointStatesNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
 
     for (int i = 0; i < msg->position.size(); i++)
     {
-        amsg.joint_name.push_back(msg->name[i]);
-        amsg.joint_position.push_back(msg->position[i]);
-        amsg.joint_velocity.push_back(msg->velocity[i]);
-        amsg.joint_effort.push_back(msg->effort[i]);
+        // Check whether joint is to be filtered
+        if (std::find(joints_not_present_on_robot_.begin(), joints_not_present_on_robot_.end(), msg->name[i]) == joints_not_present_on_robot_.end()) {
+            amsg.joint_name.push_back(msg->name[i]);
+            amsg.joint_position.push_back((const float &) msg->position[i]);
+            amsg.joint_velocity.push_back((const float &) msg->velocity[i]);
+            amsg.joint_effort.push_back((const float &) msg->effort[i]);
+        }
     }
-    amsg.num_joints = amsg.joint_name.size();
+    amsg.num_joints = static_cast<int16_t>(amsg.joint_name.size());
     lcmPublish_.publish("VAL_CORE_ROBOT_STATE", &amsg);
 }
 
@@ -184,17 +183,16 @@ void App::jointCommandsNasaCallback(const sensor_msgs::JointStateConstPtr& msg)
     for (int i = 0; i < msg->position.size(); i++)
     {
         amsg.joint_name.push_back(msg->name[i]);
-        amsg.joint_position.push_back(msg->position[i]);
-        amsg.joint_velocity.push_back(msg->effort[i]);
-        amsg.joint_effort.push_back(msg->effort[i]);
+        amsg.joint_position.push_back((const float &) msg->position[i]);
+        amsg.joint_velocity.push_back((const float &) msg->effort[i]);
+        amsg.joint_effort.push_back((const float &) msg->effort[i]);
     }
-    amsg.num_joints = amsg.joint_name.size();
+    amsg.num_joints = static_cast<int16_t>(amsg.joint_name.size());
     lcmPublish_.publish("VAL_COMMAND_FEEDBACK", &amsg);
 }
 
 void App::imuSensorNasaCallback(const val_hardware_msgs::valImuSensorConstPtr& msg)
 {
-
   for (int i=0; i < msg->name.size(); i++){
     bot_core::ins_t imu;
     imu.utime = (int64_t)floor(msg->header.stamp.toNSec() / 1000);
@@ -223,7 +221,6 @@ void App::imuSensorNasaCallback(const val_hardware_msgs::valImuSensorConstPtr& m
 
 void App::footSensorNasaCallback(const val_hardware_msgs::valAtiSensorConstPtr& msg)
 {
-
   lastLeftFootSensorMsg_.wrench = (msg->forceTorque[0]);
   lastLeftFootSensorMsg_.header = msg->header;
   lastRightFootSensorMsg_.wrench = (msg->forceTorque[1]);
@@ -238,7 +235,17 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "ros2lcm_nasa");
   ros::NodeHandle nh;
-  new App(nh);
+  App ros2lcm_translator(nh);
+
+  // These joints are not present on the robot and should be filtered for state_sync_nasa to work
+  ros2lcm_translator.joints_not_present_on_robot_.push_back("leftWristRoll");
+  ros2lcm_translator.joints_not_present_on_robot_.push_back("leftWristPitch");
+  ros2lcm_translator.joints_not_present_on_robot_.push_back("leftForearmYaw");
+
+  ros2lcm_translator.joints_not_present_on_robot_.push_back("rightWristRoll");
+  ros2lcm_translator.joints_not_present_on_robot_.push_back("rightWristPitch");
+  ros2lcm_translator.joints_not_present_on_robot_.push_back("rightForearmYaw");
+
   ROS_ERROR("ROS2LCM NASA Translator Ready");
   ros::spin();
   return 0;

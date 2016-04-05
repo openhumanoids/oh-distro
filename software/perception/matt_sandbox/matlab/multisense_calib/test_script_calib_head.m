@@ -6,9 +6,10 @@
 %logfile1 = '/home/antone/data/2014-03-28_multisense-02-calib/lcmlog-2014-03-28.03';
 %logfile1 = '/home/antone/data/2014-07-09_multisense-05-calib/lcmlog-2014-07-09.02';
 %logfile1 = '/home/antone/data/2015-01-29_multisense-47-calib/lcmlog-2015-01-29.01';
-logfile1 = '/home/antone/data/2015-02-11_multisense-02-calib/lcmlog-2015-02-11.00.stripped';
+%logfile1 = '/mnt/hgfs/host-data/Projects/DRC/data/2015-02-11_multisense-02-calib/lcmlog-2015-02-11.00.stripped';
+logfile1 = '/home/mfallon/logs/multisense-calibration-mit-atlas/lcmlog-2015-02-11.00.stripped';
 sensor_id = 2;
-addpath('/home/antone/matlab/common');
+addpath('../common');
 setup_lcm;
 
 
@@ -186,7 +187,7 @@ clear planes;
 for i = 1:3
     result = ransac_plane(pts_cur(:,1:3),0.05);
     planes(i).pts = pts_cur(result.inliers,:);
-    planes(i).plane = result.sol;
+    planes(i).plane = result.plane;
     planes(i).data = data_cur(result.inliers,:);
     pts_cur = pts_cur(~result.inliers,:);
     data_cur = data_cur(~result.inliers,:);
@@ -282,7 +283,7 @@ for iter = 1:max_iters
 end
 result3 = res;
 
-return
+%return
 
 %% get pixel data
 %res = result3;
@@ -291,19 +292,19 @@ all_pts = accum_scans(scans,res.P_pre_spindle_to_camera,res.P_lidar_to_post_spin
 img = log_data.imgs(1).img;
 pix = all_pts(:,1:3)*K';
 pix = pix(:,1:2)./pix(:,[3,3]);
-figure, plot3k(all_pts(:,1:3),'Marker',{'.',1}); axis equal; view3d
+figure, myplot3(all_pts(:,1:3),'r.'); axis equal; view3d
 
 %% output as pcl cloud
 rgb = impixel(img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
-savepcd('/home/antone/xyzrgb_orig.pcd',xyzrgb');
+%savepcd('/tmp/xyzrgb_orig.pcd',xyzrgb');
 
 %% output camera + lidar as cloud
 rgb = impixel(img,pix(:,1),pix(:,2));
 xyzrgb = [all_pts(:,1:3),rgb/255];
 all_pts2 = accum_scans(scans,res.P_pre_spindle_to_camera,res.P_lidar_to_post_spindle,[1,10],[-1000,1000],30);
 xyzrgb = [all_pts2(:,1:3), ones(size(all_pts2,1),3);xyzrgb];
-savepcd('/home/antone/xyzrgb_all.pcd',xyzrgb');
+%savepcd('/tmp/xyzrgb_all.pcd',xyzrgb');
 
 %% show all lidar points superimposed on image
 plot_points_on_image(all_pts(:,1:3),K,img);
@@ -313,12 +314,12 @@ plot_points_on_image(camera_cloud,K,img);
 
 
 %% export
-q = rot2quat(P_pre_spindle_to_camera(1:3,1:3));
+q = rot2quat(res.P_pre_spindle_to_camera(1:3,1:3));
 fprintf('\npre spindle to camera:\n');
-fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_pre_spindle_to_camera(1:3,4));
+fprintf('translation = [ %.15f, %.15f, %.15f ];\n', res.P_pre_spindle_to_camera(1:3,4));
 fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);
 
-q = rot2quat(P_lidar_to_post_spindle(1:3,1:3));
+q = rot2quat(res.P_lidar_to_post_spindle(1:3,1:3));
 fprintf('lidar to post spindle:\n');
-fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_lidar_to_post_spindle(1:3,4));
+fprintf('translation = [ %.15f, %.15f, %.15f ];\n', res.P_lidar_to_post_spindle(1:3,4));
 fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);

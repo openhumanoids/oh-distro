@@ -344,7 +344,7 @@ classdef drillPlanner
       if obj.doPublish && snopt_info <= 10
         obj.publishTraj(xtraj,snopt_info);
 %         xtraj = obj.posture_pub.generateAndPublishPosturePlan(q0,q_end_nom,0);
-%         msg = drc.joint_angles_t;
+%         msg = bot_core.joint_angles_t;
 %         msg.robot_name = 'atlas';
 %         msg.num_joints = length(obj.joint_indices);
 %         msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;

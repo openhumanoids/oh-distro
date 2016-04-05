@@ -11,7 +11,7 @@ public class JointAnglesCoder implements drake.util.LCMCoder
     java.util.TreeMap<String,Integer> m_joint_map;
     int m_num_joints;
 	
-    drc.joint_angles_t msg;   
+    bot_core.joint_angles_t msg;
     
     public JointAnglesCoder(String robot_name, String[] joint_name)
     {
@@ -23,7 +23,7 @@ public class JointAnglesCoder implements drake.util.LCMCoder
         m_joint_map.put(joint_name[i],i);
       }
       
-      msg = new drc.joint_angles_t();
+      msg = new bot_core.joint_angles_t();
       msg.robot_name = robot_name;
       msg.num_joints = joint_name.length;
       msg.joint_name = joint_name;
@@ -38,7 +38,7 @@ public class JointAnglesCoder implements drake.util.LCMCoder
     public drake.util.CoordinateFrameData decode(byte[] data)
     {
       try {
-        drc.joint_angles_t msg = new drc.joint_angles_t(data);
+        bot_core.joint_angles_t msg = new bot_core.joint_angles_t(data);
         if (msg.robot_name.equals(m_robot_name)) {
           Integer j;
           int index;

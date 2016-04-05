@@ -1,0 +1,3 @@
+<launch>
+  <node name="lcm2ros_valkyrie_hands" pkg="oh_translators" type="lcm2ros_sdh" output="screen" />
+</launch>

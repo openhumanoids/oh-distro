@@ -6,7 +6,7 @@ sys.path.append(home_dir + "/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 
 import lcm
-from drc.atlas_command_t import atlas_command_t
+from bot_core.atlas_command_t import atlas_command_t
 import time
 
 msg = atlas_command_t()

@@ -59,7 +59,7 @@ while (1)
   y = gravcomp.output(tsim, 0, x);
   efforts = efforts + y;
   
-  robot_command = drc.atlas_command_t();
+  robot_command = bot_core.atlas_command_t();
   robot_command.utime = tsim*1E6;
   robot_command.position = zeros(6,1);
   robot_command.velocity = zeros(6,1);

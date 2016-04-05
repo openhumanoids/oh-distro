@@ -8,10 +8,10 @@ sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 
 import lcm
 import select
-import drc
+import bot_core
 from time import sleep, time
 from datetime import datetime
-from drc.joint_state_t import joint_state_t
+
 
 import pyrobotiqhand.baseSModel as baseSModel
 import pyrobotiqhand.comModbusTcp as comModbusTcp
@@ -26,7 +26,7 @@ def publishSystemStatus(side, lcm, status):
     if connectPublished and activePublished:
         return
 
-    msg = drc.system_status_t()
+    msg = bot_core.system_status_t()
     msg.utime = (time() * 1000000)
     msg.system = 4  #provided as the system level for grippers
     msg.importance = 0
@@ -59,7 +59,7 @@ def publishJointStates(side, lcm, status):
     global l_names
     global r_names
 
-    state = joint_state_t()
+    state = bot_core.joint_state_t()
     state.utime = status.utime
     state.num_joints = 11
 
