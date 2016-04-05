@@ -25,8 +25,6 @@ struct Orient
 	Eigen::VectorXd yaw;
 };
 
-//typedef std::vector<Eigen::SparseMatrix<bool>> OccupancyMap;
-
 class CapabilityMap
 {
 public:
@@ -59,15 +57,15 @@ public:
 	std::vector<Eigen::Vector3d> getActiveVoxelCentres();
 	void setNDirectionsPerVoxel(unsigned int n_dir);
 	Eigen::RowVector2d getCapabilityMapSize();
-	void setActiveSide(Side side);
-	void setActiveSide(std::string side);
-	void drawCapabilityMap(bot_lcmgl_t* lcmgl, int orient = 0, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
-	void drawActiveMap(bot_lcmgl_t* lcmgl, int orient = 0, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
-	void setEndeffectorPose(Eigen::Matrix<double, 7, 1> pose);
-	void drawOccupancyMap(bot_lcmgl_t* lcmgl, unsigned int capability_map_voxel, unsigned int orient, Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
-	void reduceActiveSet(bool reset_active, std::vector<Eigen::Vector3d> point_cloud, FPPOutput &output, Eigen::Vector2d sagittal_range = Eigen::Vector2d(-M_PI/3, M_PI/3),
-			Eigen::Vector2d transverse_range =  Eigen::Vector2d(-M_PI/3, M_PI/3), Eigen::Vector2d height_range =  Eigen::Vector2d(0.6, 1.1),
-			double direction_threshold = M_PI/6);
+	void setActiveSide(const Side side);
+	void setActiveSide(const std::string side);
+	void drawCapabilityMap(bot_lcmgl_t* lcmgl, const int orient = 0, const Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), const bool draw_cubes = true);
+	void drawActiveMap(bot_lcmgl_t* lcmgl, const int orient = 0, const Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), const bool draw_cubes = true);
+	void setEndeffectorPose(const Eigen::Matrix<double, 7, 1> pose);
+	void drawOccupancyMap(bot_lcmgl_t* lcmgl, const unsigned int capability_map_voxel, const unsigned int orient, const Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), const bool draw_cubes = true);
+	void reduceActiveSet(const bool reset_active, const std::vector<Eigen::Vector3d> point_cloud, FPPOutput &output, const Eigen::Vector2d sagittal_range = Eigen::Vector2d(-M_PI/3, M_PI/3),
+			const Eigen::Vector2d transverse_range =  Eigen::Vector2d(-M_PI/3, M_PI/3), const Eigen::Vector2d height_range =  Eigen::Vector2d(0.6, 1.1),
+			const double direction_threshold = M_PI/6);
 
 	/**
 	 * compute a 6D multivariate Gaussian distribution for all active voxels and orientations.
@@ -80,7 +78,6 @@ public:
 	 * draw a random sample from a precomputed probability distribution and update the distribution by removing that sample
 	 */
 	int drawCapabilityMapSample(std::vector<int> &sample);
-	void generateRandomSequence(int seed);
 	std::ofstream log;
 
 private:
@@ -124,25 +121,25 @@ private:
 	std::vector<int> probability_voxels;
 	Eigen::VectorXd random_sequence;
 
-	void activateVoxels(std::vector<int> idx);
-	void deactivateVoxels(std::vector<int> idx);
-	bool isActiveVoxel(unsigned int voxel){return active_voxels[voxel];}
-	bool isActiveOrient(unsigned int voxel, unsigned int orient){return active_orientations(voxel, orient);}
-	void resetActiveVoxels(bool include_zero_reachability = false);
+	void activateVoxels(const std::vector<int> idx);
+	void deactivateVoxels(const std::vector<int> idx);
+	bool isActiveVoxel(const unsigned int voxel){return active_voxels[voxel];}
+	bool isActiveOrient(const unsigned int voxel, const unsigned int orient){return active_orientations(voxel, orient);}
+	void resetActiveVoxels(const bool include_zero_reachability = false);
 	void resetActiveOrientations();
-	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active = false);
-	void deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active = false);
-	void deactivateVoxelsByDirection(Eigen::Vector3d direction, double direction_threshold, bool reset_active = false);
-	void deactivateCollidingVoxels(std::vector<Eigen::Vector3d> point_cloud, bool reset_active = false);
-	std::vector<unsigned int> findVoxelsFromDirection(Eigen::Vector3d direction, double threshold, bool active_set_only = true);
-	std::vector<unsigned int> findPointsFromDirection(Eigen::Vector3d direction, double threshold);
+	void deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, const bool reset_active = false);
+	void deactivateVoxelsOutsideBaseHeightRange(const Eigen::Vector2d range, const bool reset_active = false);
+	void deactivateVoxelsByDirection(const Eigen::Vector3d direction, const double direction_threshold, const bool reset_active = false);
+	void deactivateCollidingVoxels(const std::vector<Eigen::Vector3d> point_cloud, const bool reset_active = false);
+	std::vector<unsigned int> findVoxelsFromDirection(const Eigen::Vector3d direction, const double threshold, const bool active_set_only = true);
+	std::vector<unsigned int> findPointsFromDirection(Eigen::Vector3d direction, const double threshold);
 	std::vector<Eigen::Vector3d> distributePointsOnSphere();
-	void computeVoxelCentres(std::vector<Eigen::Vector3d> &centre_array, Eigen::Vector3d lower_bound, Eigen::Vector3d upper_bound, double resolution);
+	void computeVoxelCentres(std::vector<Eigen::Vector3d> &centre_array, const Eigen::Vector3d lower_bound, const Eigen::Vector3d upper_bound, const double resolution);
 	void setOccupancyMapOrientations();
-	void drawMap(bot_lcmgl_t *lcmgl, std::vector<unsigned int> &voxels, Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),
-			Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), bool draw_cubes = true);
-	void drawMapCubes(bot_lcmgl_t *lcmgl, Eigen::Vector3d lb, Eigen::Vector3d ub, double resolution,
-			Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0));
+	void drawMap(bot_lcmgl_t *lcmgl, const std::vector<unsigned int> &voxels, const Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0),
+			const Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0), const bool draw_cubes = true);
+	void drawMapCubes(bot_lcmgl_t *lcmgl, const Eigen::Vector3d lb, const Eigen::Vector3d ub, const double resolution,
+			const Eigen::Vector3d orient = Eigen::Vector3d(0, 0, 0), const Eigen::Vector3d centre = Eigen::Vector3d(0, 0, 0));
 };
 
 

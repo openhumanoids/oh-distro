@@ -382,7 +382,6 @@ int main(int argc, char* argv[])
 
 					for (int i = 0; i < n_iter; i++)
 					{
-						cm.generateRandomSequence(i);
 						FPPOutput output;
 						cout << "Model: " << m << " Scene: " << s << " Hand: " << h << " Iteration: " << i + 1 << endl;
 						info = fpp.findFinalPose(robot, endeffector_names[m][h], h, start_configuration, endeffector_final_pose, constraints, nominal_configuration , cm, point_cloud, ik_options, theLCM, output, endeffector_point);

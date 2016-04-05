@@ -35,18 +35,6 @@ CapabilityMap::CapabilityMap(const string & log_filename, const string &urdf_fil
 	}
 }
 
-void CapabilityMap::generateRandomSequence(int seed)
-{
-//	double* random_sequence_array = mt19937ar(seed);
-////	cout << seed << endl;
-//	this->random_sequence.assign(random_sequence_array, random_sequence_array+1000);
-////	for (auto i : this->random_sequence){cout << i << endl;}
-	ifstream random_file("/home/marco/drc-testing-data/final_pose_planner/val_description/random_sequence");
-	MatrixXd matrix(1000,100);
-	random_file.read((char *) matrix.data(), sizeof(MatrixXd::Scalar)*100000);
-	this->random_sequence = matrix.col(seed);
-}
-
 void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 {
 	MatrixX2i idx;
@@ -227,8 +215,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 			this->occupancy_map_orient_steps.roll.resize(n_roll_steps);
 			inputFile.read((char *) this->occupancy_map_orient_steps.roll.data(), n_roll_steps * sizeof(double));
 			this->log << "Loaded occupancy_map_orient_steps.roll (" << this->occupancy_map_orient_steps.roll.rows() << ")\n";
-			IOFormat fmt(30);
-			cout << this->occupancy_map_orient_steps.roll.format(fmt) << endl;
 
 			unsigned int n_pitch_steps;
 			inputFile.read((char *) &n_pitch_steps, sizeof(n_pitch_steps));
@@ -265,16 +251,6 @@ void CapabilityMap::loadFromMatlabBinFile(const string map_file)
 	}
 }
 
-//void CapabilityMap::saveToFile(const string map_file)
-//{
-//	std::cout << "Saving capability map...\n";
-//	ofstream outputFile(map_file.c_str(), ofstream::binary);
-//	outputFile.write((char *) &this->n_voxels, sizeof(this->n_voxels));
-//	outputFile.write((char *) &this->n_directions_per_voxel, sizeof(this->n_directions_per_voxel));
-//	std::cout << "Capability map saved in " << map_file << '\n';
-//	outputFile.close();
-//}
-
 Vector2i CapabilityMap::getMapSize()
 {
 	Vector2i size;
@@ -282,12 +258,12 @@ Vector2i CapabilityMap::getMapSize()
 	return size;
 }
 
-void CapabilityMap::setNVoxels(unsigned int n_voxels)
+void CapabilityMap::setNVoxels(const unsigned int n_voxels)
 {
 	this->n_voxels = n_voxels;
 }
 
-void CapabilityMap::setNDirectionsPerVoxel(unsigned int n_dir)
+void CapabilityMap::setNDirectionsPerVoxel(const unsigned int n_dir)
 {
 	this->n_directions_per_voxel = n_dir;
 }
@@ -312,7 +288,7 @@ vector<Vector3d> CapabilityMap::getActiveVoxelCentres()
 	return centres;
 }
 
-void CapabilityMap::activateVoxels(vector<int> idx)
+void CapabilityMap::activateVoxels(const vector<int> idx)
 {
 	for (int i : idx)
 	{
@@ -320,7 +296,7 @@ void CapabilityMap::activateVoxels(vector<int> idx)
 	}
 }
 
-void CapabilityMap::deactivateVoxels(vector<int> idx)
+void CapabilityMap::deactivateVoxels(const vector<int> idx)
 {
 	for (int i : idx)
 	{
@@ -329,7 +305,7 @@ void CapabilityMap::deactivateVoxels(vector<int> idx)
 	}
 }
 
-void CapabilityMap::resetActiveVoxels(bool include_zero_reachability)
+void CapabilityMap::resetActiveVoxels(const bool include_zero_reachability)
 {
 	std::vector<int> idx(this->n_voxels);
 	iota(idx.begin(), idx.end(), 0);
@@ -354,8 +330,8 @@ void CapabilityMap::resetActiveOrientations()
 	}
 }
 
-void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cloud, FPPOutput &output, Vector2d sagittal_range, Vector2d transverse_range,
-		Vector2d height_range, double direction_threshold)
+void CapabilityMap::reduceActiveSet(const bool reset_active, const vector<Vector3d> point_cloud, FPPOutput &output, const Vector2d sagittal_range, const Vector2d transverse_range,
+		const Vector2d height_range, const double direction_threshold)
 {
 	FPPTimer angle_timer, height_timer, direction_timer, collision_timer;
 
@@ -382,7 +358,7 @@ void CapabilityMap::reduceActiveSet(bool reset_active, vector<Vector3d> point_cl
 	output.cm_collision_time = collision_timer.getDuration();
 }
 
-void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, bool reset_active)
+void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_range, Eigen::Vector2d transverse_range, const bool reset_active)
 {
 	if (reset_active)
 	{
@@ -415,7 +391,7 @@ void CapabilityMap::deactivateVoxelsOutsideAngleRanges(Eigen::Vector2d sagittal_
 	}
 }
 
-void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range, bool reset_active)
+void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(const Eigen::Vector2d range, const bool reset_active)
 {
 	Vector3d position;
 	vector<unsigned int> active_orients;
@@ -447,7 +423,7 @@ void CapabilityMap::deactivateVoxelsOutsideBaseHeightRange(Eigen::Vector2d range
 	}
 }
 
-void CapabilityMap::deactivateVoxelsByDirection(Vector3d direction, double direction_threshold, bool reset_active)
+void CapabilityMap::deactivateVoxelsByDirection(const Vector3d direction, const double direction_threshold, const bool reset_active)
 {
 	if (reset_active)
 	{
@@ -479,7 +455,7 @@ void CapabilityMap::deactivateVoxelsByDirection(Vector3d direction, double direc
 	this->deactivateVoxels(voxels_to_deactivate);
 }
 
-void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool reset_active)
+void CapabilityMap::deactivateCollidingVoxels(const vector<Vector3d> point_cloud, const bool reset_active)
 {
 	if (reset_active)
 	{
@@ -536,7 +512,7 @@ void CapabilityMap::deactivateCollidingVoxels(vector<Vector3d> point_cloud, bool
 	}
 }
 
-vector<unsigned int> CapabilityMap::findVoxelsFromDirection(Vector3d direction, double threshold, bool active_set_only)
+vector<unsigned int> CapabilityMap::findVoxelsFromDirection(const Vector3d direction, const double threshold, const bool active_set_only)
 {
 	vector<unsigned int> voxels;
 	vector<unsigned int> voxel_set;
@@ -558,7 +534,7 @@ vector<unsigned int> CapabilityMap::findVoxelsFromDirection(Vector3d direction, 
 	return voxels;
 }
 
-vector<unsigned int> CapabilityMap::findPointsFromDirection(Vector3d direction, double threshold)
+vector<unsigned int> CapabilityMap::findPointsFromDirection(Vector3d direction, const double threshold)
 {
 	vector<Vector3d> sphere_points = this->distributePointsOnSphere();
 	direction = direction / direction.norm();
@@ -599,7 +575,7 @@ vector<Vector3d> CapabilityMap::distributePointsOnSphere()
 	return points;
 }
 
-void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, Vector3d lower_bound, Vector3d upper_bound, double resolution)
+void CapabilityMap::computeVoxelCentres(vector<Eigen::Vector3d> &centre_array, const Vector3d lower_bound, const Vector3d upper_bound, const double resolution)
 {
 	Vector3d dimensions_double = (upper_bound - lower_bound) / resolution;
 	transform(dimensions_double.data(), dimensions_double.data() + 3, dimensions_double.data(), ptr_fun((double(*)(double))round));
@@ -642,22 +618,7 @@ void CapabilityMap::computeProbabilityDistribution(const VectorXd mu, const Vect
 			}
 		}
 	}
-//	double prob_sum = accumulate(this->voxel_probability.begin(), this->voxel_probability.end(), 0.);
-//	for (int i = 0; i < this->voxel_probability.size(); i++)
-//	{
-//		this->voxel_probability[i] /= prob_sum;
-//	}
 	this->voxel_probability = this->voxel_probability / this->voxel_probability.sum();
-//	for (int p = 0; p < this->voxel_probability.size(); p++)
-//	{
-//		this->log  << setprecision(15) << this->voxel_centres[this->probability_voxels[p]](0) << " " <<
-//				this->voxel_centres[this->probability_voxels[p]](1) << " " <<
-//				this->voxel_centres[this->probability_voxels[p]](2) << " " <<
-//				this->occupancy_map_orientations[this->probability_orientations[p]](0) << " " <<
-//				this->occupancy_map_orientations[this->probability_orientations[p]](1) << " " <<
-//				this->occupancy_map_orientations[this->probability_orientations[p]](2) << " " <<
-//				this->voxel_probability(p) << endl;
-//	}
 }
 
 int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
@@ -665,16 +626,9 @@ int CapabilityMap::drawCapabilityMapSample(vector<int> &sample)
 	if (this->voxel_probability.size() < 1){return 13;}
 	ArrayXd cumulative_probability(this->voxel_probability.size());
 	partial_sum(this->voxel_probability.data(), this->voxel_probability.data() + this->voxel_probability.size(), cumulative_probability.data());
-//	for (int p = 0; p < this->voxel_probability.size(); p++)
-//	{
-//		this->log  << setprecision(15) << cumulative_probability(p) << endl;
-//	}
-//	double rnd = rand() / (double)RAND_MAX;
-	double rnd = this->random_sequence(sample[0]);
-//	cout << rnd << endl;
+	double rnd = rand() / (double)RAND_MAX;
 	Array<bool, Dynamic, 1> isGreater = cumulative_probability > rnd;
 	int idx = find(isGreater.data(), isGreater.data() + isGreater.size(), 1) - isGreater.data();
-//	cout << idx << endl;
 	sample[0] = this->probability_voxels[idx];
 	sample[1] = this->probability_orientations[idx];
 	if (idx < this->voxel_probability.rows() - 1)
@@ -704,7 +658,7 @@ void CapabilityMap::setOccupancyMapOrientations()
 	}
 }
 
-void CapabilityMap::setActiveSide(Side side)
+void CapabilityMap::setActiveSide(const Side side)
 {
 	this->active_side = side;
 	for (auto vox : this->voxel_centres)
@@ -723,7 +677,7 @@ void CapabilityMap::setActiveSide(Side side)
 	this->resetActiveOrientations();
 }
 
-void CapabilityMap::setActiveSide(string side_str)
+void CapabilityMap::setActiveSide(const string side_str)
 {
 	Side side = this->active_side;
 	if (boost::iequals(side_str, "left"))
@@ -741,21 +695,21 @@ void CapabilityMap::setActiveSide(string side_str)
 	this->setActiveSide(side);
 }
 
-void CapabilityMap::setEndeffectorPose(Matrix<double, 7, 1> pose)
+void CapabilityMap::setEndeffectorPose(const Matrix<double, 7, 1> pose)
 {
 	this->endeffector_pose = pose;
 }
 
 
 
-void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, int orient, Vector3d centre, bool draw_cubes)
+void CapabilityMap::drawCapabilityMap(bot_lcmgl_t *lcmgl, const int orient, const Vector3d centre, const bool draw_cubes)
 {
 	std::vector<unsigned int> idx;
 	boost::push_back(idx, boost::irange(0, (int)this->n_voxels));
 	this->drawMap(lcmgl, idx, this->occupancy_map_orientations[orient], centre, draw_cubes);
 }
 
-void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, int orient, Vector3d centre, bool draw_cubes)
+void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, const int orient, const Vector3d centre, const bool draw_cubes)
 {
 	std::vector<unsigned int> idx;
 	for (int vox = 0; vox < this->n_voxels; vox++)
@@ -768,7 +722,7 @@ void CapabilityMap::drawActiveMap(bot_lcmgl_t *lcmgl, int orient, Vector3d centr
 	this->drawMap(lcmgl, idx, this->occupancy_map_orientations[orient], centre, draw_cubes);
 }
 
-void CapabilityMap::drawOccupancyMap(bot_lcmgl_t *lcmgl, unsigned int capability_map_voxel, unsigned int orient, Eigen::Vector3d centre, bool draw_cubes)
+void CapabilityMap::drawOccupancyMap(bot_lcmgl_t *lcmgl, const unsigned int capability_map_voxel, const unsigned int orient, const Eigen::Vector3d centre, const bool draw_cubes)
 {
 	if (draw_cubes)
 	{
@@ -787,7 +741,7 @@ void CapabilityMap::drawOccupancyMap(bot_lcmgl_t *lcmgl, unsigned int capability
 	bot_lcmgl_switch_buffer(lcmgl);
 }
 
-void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<unsigned int> &voxels, Vector3d orient, Vector3d centre, bool draw_cubes)
+void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, const vector<unsigned int> &voxels, const Vector3d orient, const Vector3d centre, const bool draw_cubes)
 {
 	int start_idx;
 	if (draw_cubes)
@@ -827,7 +781,7 @@ void CapabilityMap::drawMap(bot_lcmgl_t *lcmgl, vector<unsigned int> &voxels, Ve
 	}
 	bot_lcmgl_switch_buffer(lcmgl);
 }
-void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, Vector3d lb, Vector3d ub, double resolution, Vector3d orient, Vector3d centre)
+void CapabilityMap::drawMapCubes(bot_lcmgl_t *lcmgl, const Vector3d lb, const Vector3d ub, const double resolution, const Vector3d orient, const Vector3d centre)
 {
 	Vector3d dim = (ub-lb)/resolution;
 	Vector3i dimensions = dim.cast<int>();
