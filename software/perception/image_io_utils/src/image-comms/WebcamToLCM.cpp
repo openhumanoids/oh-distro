@@ -6,11 +6,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <ConciseArgs>
+
 #include <algorithm>
 #include <iostream>
 #include <vector>
-
-#include <ConciseArgs>
 
 #include "lcmtypes/bot_core/image_t.hpp"
 #include "lcmtypes/bot_core/images_t.hpp"
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   bool simulate_multisense_camera_left = false;
   int jpeg_quality = 90;
 
-  ConciseArgs opt(argc, (char**) argv);
+  ConciseArgs opt(argc, argv);
   opt.add(compress_images, "nc", "dont_compress_images",
           "Turn off JPEG compression of images");
   opt.add(simulate_multisense_camera_left, "m", "simulate_multisense",
@@ -34,8 +34,10 @@ int main(int argc, char **argv) {
   opt.add(jpeg_quality, "j", "jpeg_quality", "jpeg quality (1-100)");
   opt.parse();
 
-  std::cout << "Compress JPEG: " << std::to_string(compress_images) << " (quality: " << jpeg_quality << ")" << std::endl;
-  std::cout << "Simulate Multisense CAMERA images_t output: " << std::to_string(simulate_multisense_camera_left) << std::endl;
+  std::cout << "Compress JPEG: " << std::to_string(compress_images)
+            << " (quality: " << jpeg_quality << ")" << std::endl;
+  std::cout << "Simulate Multisense CAMERA images_t output: "
+            << std::to_string(simulate_multisense_camera_left) << std::endl;
 
   lcm::LCM lcm_handle;
 
