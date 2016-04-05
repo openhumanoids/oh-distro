@@ -272,5 +272,51 @@
       "name": "hands up safely 3",
       "nominal_handedness": "left"
     }
+  ],
+  "Table Box Pick": [
+    {
+      "allow_mirror": true,
+      "description": "hand spread and back",
+      "joints": {
+        "leftElbowPitch": -0.09792999999999985,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": -1.2097600000000002,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightElbowPitch": 0.30439,
+        "rightForearmYaw": 1.5709999799728394,
+        "rightShoulderPitch": 0.3001966178417206,
+        "rightShoulderRoll": 1.25,
+        "rightShoulderYaw": -1.41568,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0
+      },
+      "name": "spread hands",
+      "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "hands goalie",
+      "joints": {
+        "leftElbowPitch": -1.7450219999999999,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": -0.5233599999999998,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightElbowPitch": 1.745022,
+        "rightForearmYaw": 1.5709999799728394,
+        "rightShoulderPitch": 0.3001966178417206,
+        "rightShoulderRoll": 1.25,
+        "rightShoulderYaw": -0.5233599999999998,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0
+      },
+      "name": "hands goalie",
+      "nominal_handedness": "none"
+    }
   ]
 }

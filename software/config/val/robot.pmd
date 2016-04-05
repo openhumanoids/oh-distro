@@ -8,6 +8,11 @@ group "0.ros_bridge" {
         exec = "roslaunch oh_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_pelvisMiddleImu";
         host = "localhost";
     }
+
+    cmd "ihmc_ros_network_processor" {
+        exec = "bash -c 'cd /home/val/valkyrie && ./runROSNetworkProcessor.sh'";
+        host = "zelda";
+    }
 }
 
 group "1.params_and_model_pub" {
