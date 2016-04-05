@@ -2193,17 +2193,6 @@
     <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <gazebo reference="leftAnkleRoll">
-    <sensor name="leftFootSixAxis" type="force_torque">
-      <pose>0.0215646 0.0 -0.051054 3.14 0.0 0.0</pose>
-      <sensor_number id="FT001SIM"/>
-      <node id="/sensors/leftFootSixAxis"/>
-      <api name="TurbodriverForceTorqueSensor"/>
-      <always_on>true</always_on>
-      <update_rate>1000</update_rate>
-      <force_torque>
-        <frame>sensor</frame>
-      </force_torque>
-    </sensor>
   </gazebo>
   <link name="rightCOP_Frame">
     <inertial>
@@ -2222,17 +2211,6 @@
     <implicitSpringDamper>1</implicitSpringDamper>
   </gazebo>
   <gazebo reference="rightAnkleRoll">
-    <sensor name="rightFootSixAxis" type="force_torque">
-      <pose>0.0215646 0.0 -0.051054 3.14 0.0 0.0</pose>
-      <sensor_number id="FT001SIM"/>
-      <node id="/sensors/rightFootSixAxis"/>
-      <api name="TurbodriverForceTorqueSensor"/>
-      <always_on>true</always_on>
-      <update_rate>1000</update_rate>
-      <force_torque>
-        <frame>sensor</frame>
-      </force_torque>
-    </sensor>
   </gazebo>
   <joint name="multisense_head_root_joint" type="fixed">
     <origin rpy="-3.14159 0.130899694 0.0" xyz="0.183585961 0.0 0.075353826"/>
