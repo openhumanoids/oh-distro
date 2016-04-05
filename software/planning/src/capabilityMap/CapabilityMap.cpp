@@ -646,11 +646,14 @@ void CapabilityMap::setOccupancyMapOrientations()
 
 void CapabilityMap::setActiveSide(const Side side)
 {
-	this->active_side = side;
-	for (auto vox : this->voxel_centres)
+	if (this->active_side != side)
 	{
-		vox(1) *= -1;
+		for (auto &vox : this->voxel_centres)
+		{
+			vox(1) *= -1;
+		}
 	}
+	this->active_side = side;
 	if (side == this->Side::LEFT)
 	{
 		this->map_centre = this->map_centre_left;
