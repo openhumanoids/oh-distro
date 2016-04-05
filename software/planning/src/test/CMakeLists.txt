@@ -1,11 +1,7 @@
 add_definitions(-ggdb3 -std=c++0x)
 
-add_executable(test-FPP test-FPP.cpp)
-target_link_libraries(test-FPP boost_system capabilityMap drawingUtil finalPosePlanner drakeIKoptions drakeRigidBodyConstraint mt19937ar)
-pods_use_pkg_config_packages(test-FPP bot2-lcmgl-client 
-  capabilityMap lcm)
 add_executable(batch-FPP batch-FPP.cpp)
 target_link_libraries(batch-FPP boost_system capabilityMap drawingUtil finalPosePlanner drakeIKoptions drakeRigidBodyConstraint tinyxml2 boost_program_options)
 pods_use_pkg_config_packages(batch-FPP bot2-lcmgl-client
   capabilityMap lcm)
-pods_install_executables(test-FPP batch-FPP)
+pods_install_executables(batch-FPP)
