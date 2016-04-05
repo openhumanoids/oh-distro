@@ -9,7 +9,7 @@ from director import tasklaunchpanel
 from director import applogic
 from director import teleoppanel
 
-import tableMapping
+import tablemapping
 
 
 def startup(robotSystem, globalsDict=None):
