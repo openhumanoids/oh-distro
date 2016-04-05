@@ -222,7 +222,10 @@ class StairsDemo(object):
             step.is_right_foot = footstep.is_right_foot
             step.fixed_z = True
             step.is_in_contact = True
+            # Set ihmc parameters
             default_step_params = self.footstepsDriver.getDefaultStepParams()
+            default_step_params.ihmc_transfer_time = self.ihmcTransferTime
+            default_step_params.ihmc_swing_time = self.ihmcSwingTime
             step.params = default_step_params
 
             goalSteps.append(step)
@@ -303,6 +306,9 @@ class StairsTaskPanel(TaskUserPanel):
         self.params.setProperty('Forward Step Right', 0.10)
         self.params.setProperty('Forward Step Left', 0.18)
         self.params.setProperty('Step Width', 0.25)
+        # IHMC params
+        self.params.setProperty('IHMC Transfer Time', 1.0)
+        self.params.setProperty('IHMC Swing Time', 1.0)
 
         self._syncProperties()
         if (makeQuery):
@@ -314,6 +320,8 @@ class StairsTaskPanel(TaskUserPanel):
         self.params.addProperty('Forward Step Right', 0.10, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
         self.params.addProperty('Forward Step Left', 0.18, attributes=om.PropertyAttributes(decimals=2, minimum=0.05, maximum=0.25, singleStep=0.01))
         self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
+        self.params.addProperty('IHMC Transfer Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
+        self.params.addProperty('IHMC Swing Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
 
         # Set the dafault values in ui
         self.setDefaults(False)
@@ -333,6 +341,8 @@ class StairsTaskPanel(TaskUserPanel):
         self.stairsDemo.forwardStepRight = self.params.getProperty('Forward Step Right')
         self.stairsDemo.forwardStepLeft = self.params.getProperty('Forward Step Left')
         self.stairsDemo.stepWidth = self.params.getProperty('Step Width')
+        self.stairsDemo.ihmcTransferTime = self.params.getProperty('IHMC Transfer Time')
+        self.stairsDemo.ihmcSwingTime = self.params.getProperty('IHMC Swing Time')
 
     def addTasks(self):
         # some helpers
