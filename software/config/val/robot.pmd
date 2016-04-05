@@ -49,6 +49,10 @@ group "3.state_without_pronto" {
         exec = "drc-joints2frames";
         host = "localhost";
     }
+    cmd "state-sync" {
+        exec = "nasa-state-sync";
+        host = "localhost";
+    }
 }
 
 group "2.state_with_pronto" {
