@@ -1,14 +1,10 @@
 #ifndef SRC_CAPABILITYMAP_HPP_
 #define SRC_CAPABILITYMAP_HPP_
 
-#include <string>
-#include <math.h>
 #include <fstream>
 
-#include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <drake/systems/plants/RigidBodyTree.h>
-#include "drake/drakeShapes_export.h"
 #include "bot_lcmgl_client/lcmgl.h"
 #include "finalPosePlanner/FPPOutput.hpp"
 

@@ -1,23 +1,9 @@
-#include <fstream>
-#include <stdlib.h>
-#include <algorithm>
-#include <numeric>
-#include <math.h>
-#include <time.h>
 #include <boost/range/irange.hpp>
 #include <boost/range/algorithm_ext/push_back.hpp>
 #include <boost/range/adaptors.hpp>
-#include <boost/algorithm/cxx11/copy_if.hpp>
-#include <boost/algorithm/string.hpp>
-#include <iomanip>
 
 #include "capabilityMap/CapabilityMap.hpp"
 #include "drawingUtil/drawingUtil.hpp"
-#include "drake/util/drakeGeometryUtil.h"
-
-extern "C" {
-double *mt19937ar(uint32_t seed);
-}
 
 using namespace std;
 using namespace Eigen;
@@ -680,11 +666,11 @@ void CapabilityMap::setActiveSide(const Side side)
 void CapabilityMap::setActiveSide(const string side_str)
 {
 	Side side = this->active_side;
-	if (boost::iequals(side_str, "left"))
+	if (strcmp(side_str.c_str(), "left") == 0)
 	{
 		side = Side::LEFT;
 	}
-	else if (boost::iequals(side_str, "right"))
+	else if (strcmp(side_str.c_str(), "right") == 0)
 	{
 		side = Side::RIGHT;
 	}
