@@ -179,6 +179,7 @@ class AprilTagDetector {
 
 class CameraListener {
     public:
+        std::string publish_img_with_matches_channel;
 
     void setDetector(AprilTagDetector* detector) {
         mDetector = detector;
@@ -270,8 +271,7 @@ class CameraListener {
             img_with_matches.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
             cv::imencode(".jpg", image, img_with_matches.data, params);
             img_with_matches.size = img_with_matches.data.size();
-            // mLcmWrapper->get()->publish("CAMERA_APRIL_TAG_MATCHES", &img_with_matches);
-            mLcmWrapper->get()->publish("KINECT_RGB", &img_with_matches);
+            mLcmWrapper->get()->publish(publish_img_with_matches_channel.c_str(), &img_with_matches);
         }
         
         image_u8_destroy(image_u8);
@@ -329,6 +329,7 @@ int main(int argc, char *argv[])
     getopt_add_bool(getopt, '2', "refine-pose", 0, "Spend more time trying to precisely localize tags");
     getopt_add_double(getopt, 's', "size", "0.1735", "Physical side-length of the tag (meters)");
     getopt_add_bool(getopt, 'p', "publish-img-with-match", 0, "Publish image with overlayed match(es)");
+    getopt_add_string(getopt, 'c', "publish-img-with-match-channel", "CAMERA_APRIL_TAG_MATCHES", "LCM channel for image with overlayed match(es)");
     
 
     if (!getopt_parse(getopt, argc, argv, 1) || getopt_get_bool(getopt, "help")) {
@@ -339,6 +340,8 @@ int main(int argc, char *argv[])
 
     AprilTagDetector tag_detector(getopt);
     CameraListener camera_listener;
+
+    camera_listener.publish_img_with_matches_channel = getopt_get_string(getopt, "publish-img-with-match-channel");
 
     if (camera_listener.setup(getopt_get_bool(getopt, "window"), getopt_get_bool(getopt, "publish-img-with-match"))) {
         camera_listener.setDetector(&tag_detector);
