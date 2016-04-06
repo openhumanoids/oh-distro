@@ -10,7 +10,4 @@
   	<param name="camera_topic" type="str" value="/multisense/left/image_rect_color" />
   	<param name="flip_rgb" type="bool" value="false" />
   </node>
-
-  <!-- Alternatively use JointStatePublisher -->
-  <!--<node name="ros2lcm_nasa" type="ros2lcm_nasa" pkg="oh_translators" output="screen"/>-->
 </launch>
