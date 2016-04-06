@@ -21,30 +21,47 @@ import bot_core as lcmbotcore
 
 from director.tasks.taskuserpanel import TaskUserPanel
 from director.tasks.taskuserpanel import ImageBasedAffordanceFit
+from director.simpletimer import SimpleTimer
 
 import director.tasks.robottasks as rt
 
-class SetNeckOrientation(rt.AsyncTask):
+
+def publishAngle(lowerNeckPitch, neckYaw):
+    jointGroups = drcargs.getDirectorConfig()['teleopJointGroups']
+    jointGroupNeck = filter(lambda group: group['name'] == 'Neck', jointGroups)
+    if (len(jointGroupNeck) == 1):
+        neckJoints = jointGroupNeck[0]['joints']
+    else:
+        return
+    m = lcmbotcore.joint_angles_t()
+    m.utime = getUtime()
+    m.num_joints = 2
+    m.joint_name = [ neckJoints[0], neckJoints[1] ]
+    m.joint_position = [ math.radians(lowerNeckPitch), math.radians(neckYaw)]
+    lcmUtils.publish('DESIRED_NECK_ANGLES', m)
+       
+class SetSurveyPattern(rt.AsyncTask):
 
     @staticmethod
     def getDefaultProperties(properties):
-        properties.addProperty('Angles', [0,0])
+	properties.addProperty('Lower neck pitch', [0])
+	properties.addProperty('Neck yaw', [0])
 
     def run(self):
-        neckAngles = self.properties.getProperty('Angles')
-        jointGroups = drcargs.getDirectorConfig()['teleopJointGroups']
-        jointGroupNeck = filter(lambda group: group['name'] == 'Neck', jointGroups)
-        if (len(jointGroupNeck) == 1):
-            neckJoints = jointGroupNeck[0]['joints']
-        else:
-            return
+	pitchAngles = self.properties.getProperty('Lower neck pitch')
+	yawAngles = self.properties.getProperty('Neck yaw')
 
-        m = lcmbotcore.joint_angles_t()
-        m.utime = getUtime()
-        m.num_joints = 2
-        m.joint_name = [ neckJoints[0], neckJoints[1] ] 
-        m.joint_position = [ math.radians(neckAngles[0]), math.radians(neckAngles[1])]
-        lcmUtils.publish('DESIRED_NECK_ANGLES', m)
+	for i in range(len(pitchAngles)):
+	     self.statusMessage = 'lowerNeckPitch: ' + str(pitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i])	     
+	     publishAngle(pitchAngles[i], yawAngles[i])
+             delayTime = 3.0
+             t = SimpleTimer()
+             while True:
+                 elapsed = t.elapsed()
+                 if elapsed >= delayTime:
+                     break
+                 #self.statusMessage = 'Waiting %.1f seconds' % (delayTime - elapsed)
+                 yield
 
 
 class TableMapping(object):
@@ -64,7 +81,7 @@ class TableMapping(object):
         self.tableData = None
 	self.picker = None
 	self.lowerNeckPitch = 0.;
-	self.neckYaw = -0.;
+	self.neckYaw = 0.;
 	self.initialPose = None;
 
     #utilities
@@ -103,8 +120,7 @@ class TableMapping(object):
                 return self.getEstimatedRobotStatePose()
 
     def setHeadPosition(self):
-	neckOrientation = SetNeckOrientation(angles=[self.lowerNeckPitch, self.neckYaw])
-	neckOrientation.run()
+        publishAngle(self.lowerNeckPitch, self.neckYaw)
 	
     #table detection
     def userFitTable(self, tableNumber):
@@ -196,8 +212,8 @@ class TableTaskPanel(TaskUserPanel):
         self.initImageView(self.fitter.imageView, activateAffordanceUpdater=False)
 
     def addDefaultProperties(self):
-        self.params.addProperty('lowerNeckPitch', 0, attributes=om.PropertyAttributes(minimum=0, maximum=66.6, hidden=False, singleStep=0.01, decimals=3))
-        self.params.addProperty('neckYaw', 0, attributes=om.PropertyAttributes(minimum=-60, maximum=60, hidden=False, singleStep=0.01, decimals=3))
+        self.params.addProperty('lowerNeckPitch', 0., attributes=om.PropertyAttributes(minimum=0, maximum=66.6, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('neckYaw', 0., attributes=om.PropertyAttributes(minimum=-60, maximum=60, hidden=False, singleStep=0.01, decimals=2))
 
     def onPropertyChanged(self, propertySet, propertyName):
         propertyName = str(propertyName)
@@ -240,6 +256,23 @@ class TableTaskPanel(TaskUserPanel):
         self.taskTree.removeAllTasks()
         ###############
 
+	surveyAngles = []
+	surveyAngles.append([60, -45]) #bottom right
+	surveyAngles.append([45, -45]) #top right
+
+	surveyAngles.append([60, -25]) #half right bottom
+	surveyAngles.append([45, -25]) #half right top
+
+	surveyAngles.append([60, 0]) #bottom center
+	surveyAngles.append([45, 0]) #top center
+
+	surveyAngles.append([60, 25]) #half left bottom
+	surveyAngles.append([45, 25]) #half left top
+
+	surveyAngles.append([60, 45]) #bottom left
+	surveyAngles.append([45, 45]) #top left
+	surveyAngles.append([0, 0]) #reset
+
 	#prep
 	addFolder('Preparation')
         addFunc('fit table 1', functools.partial(self.tableMapping.userFitTable, tableNumber=1))
@@ -256,33 +289,7 @@ class TableTaskPanel(TaskUserPanel):
 
 	#survey table
 	addFolder("Survey Table 1")
-        addTask(SetNeckOrientation(name='look bottom right', angles=[60,-45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top right', angles=[45,-45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom half right', angles=[60,-25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top half right', angles=[45,-25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom center', angles=[60,0]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top center', angles=[45,0]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom half left', angles=[60,25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top half left', angles=[45,25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom left', angles=[60,45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top left', angles=[45,45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='reset neck position', angles=[0,0]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
+        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles]))
 
         addFolder('Back Up')
         addFunc('create back up frame', self.tableMapping.computeBackUpStanceFrame)
@@ -300,30 +307,4 @@ class TableTaskPanel(TaskUserPanel):
 
 	#survey table
 	addFolder("Survey Table 2")
-        addTask(SetNeckOrientation(name='look bottom right', angles=[60,-45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top right', angles=[45,-45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom half right', angles=[60,-25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top half right', angles=[45,-25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom center', angles=[60,0]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top center', angles=[45,0]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom half left', angles=[60,25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top half left', angles=[45,25]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='look bottom left', angles=[60,45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-        addTask(SetNeckOrientation(name='look top left', angles=[45,45]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
-
-        addTask(SetNeckOrientation(name='reset neck position', angles=[0,0]))
-	addTask(rt.DelayTask(name='sleep', delayTime=3.0))
+        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles]))
