@@ -140,6 +140,11 @@ group "7.control" {
         exec = "LD_PRELOAD='/usr/lib/x86_64-linux-gnu/libpcre.so' roslaunch valkyrie_translator HandControl.launch";
         host = "link";
     }
+
+    cmd "ForearmControl" {
+        exec = "LD_PRELOAD='/usr/lib/x86_64-linux-gnu/libpcre.so' roslaunch valkyrie_translator ForearmControl.launch";
+        host = "link";
+    }
 }
 
 cmd "director" {
