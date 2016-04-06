@@ -107,23 +107,33 @@ class StairsDemo(object):
         footsteps = []
         print 'got %d blocks' % len(blocks)
         for i, block in enumerate(blocks):
-            blockBegin = transformUtils.frameFromPositionAndRPY([-block.rectDepth,block.rectWidth/2,0.0], [0,0,0])
-            blockBegin.Concatenate(block.cornerTransform)
+            #blockBegin = transformUtils.frameFromPositionAndRPY([-block.rectDepth,block.rectWidth/2,0.0], [0,0,0])
+            #blockBegin.Concatenate(block.cornerTransform)
+
+            blockBegin = transformUtils.copyFrame(block.cornerTransform)
+            blockBegin.PreMultiply()
+            cornerToCenterTransform = transformUtils.frameFromPositionAndRPY([-block.rectDepth,block.rectWidth/2,0.0], [0,0,0])
+            blockBegin.Concatenate(cornerToCenterTransform)
             vis.updateFrame(blockBegin, 'block begin %d' % i , parent='block begins', scale=0.2, visible=True)
 
             # TO_DO find a better way to get the vertical translation of footsteps reference frame
-            nextLeftTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepLeft,self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
-            nextRightTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepRight,-self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
+            nextRightTransform = transformUtils.copyFrame(blockBegin)
+            rightTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepRight,-self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
+            nextRightTransform.PreMultiply()
+            nextRightTransform.Concatenate(rightTransform)
+            vis.updateFrame(transformUtils.copyFrame(nextRightTransform), 'right transform %d' % i , parent='block begins', scale=0.2, visible=True)
+
+            nextLeftTransform = transformUtils.copyFrame(blockBegin)
+            leftTransform = transformUtils.frameFromPositionAndRPY([self.forwardStepLeft,self.stepWidth/2,-contact_pts_left[0][2]], [0,0,0])
+            nextLeftTransform.PreMultiply()
+            nextLeftTransform.Concatenate(leftTransform)
+            vis.updateFrame(transformUtils.copyFrame(nextLeftTransform), 'left transform %d' % i , parent='block begins', scale=0.2, visible=True)
 
             if self.isLeadingFootRight:
-                nextRightTransform.Concatenate(blockBegin)
                 footsteps.append(Footstep(nextRightTransform,True))
-                nextLeftTransform.Concatenate(blockBegin)
                 footsteps.append(Footstep(nextLeftTransform,False))
             else:
-                nextLeftTransform.Concatenate(blockBegin)
                 footsteps.append(Footstep(nextLeftTransform,False))
-                nextRightTransform.Concatenate(blockBegin)
                 footsteps.append(Footstep(nextRightTransform,True))
 
         return footsteps
@@ -190,8 +200,10 @@ class StairsDemo(object):
         for i, block in enumerate(blocks):
             vis.updateFrame(block.cornerTransform, 'block corners %d' % i , parent='block corners', scale=0.2, visible=True)
 
-            blockCenter = transformUtils.frameFromPositionAndRPY([-block.rectDepth/2,block.rectWidth/2,0.0], [0,0,0])
-            blockCenter.Concatenate(block.cornerTransform)
+            blockCenter = transformUtils.copyFrame(block.cornerTransform)
+            blockCenter.PreMultiply()
+            cornerToCenterTransform = transformUtils.frameFromPositionAndRPY([-block.rectDepth/2,block.rectWidth/2,0.0], [0,0,0])
+            blockCenter.Concatenate(cornerToCenterTransform)
 
             d = DebugData()
             d.addCube([ block.rectDepth, block.rectWidth,0.005],[0,0,0])
@@ -201,8 +213,10 @@ class StairsDemo(object):
         if (groundPlane is not None):
             vis.updateFrame(groundPlane.cornerTransform, 'ground plane', parent='block corners', scale=0.2, visible=True)
 
-            blockCenter = transformUtils.frameFromPositionAndRPY([-groundPlane.rectDepth/2,groundPlane.rectWidth/2,0.0], [0,0,0])
-            blockCenter.Concatenate(groundPlane.cornerTransform)
+            blockCenter = transformUtils.copyFrame(groundPlane.cornerTransform)
+            blockCenter.PreMultiply()
+            cornerToCenterTransform = transformUtils.frameFromPositionAndRPY([-groundPlane.rectDepth/2,groundPlane.rectWidth/2,0.0], [0,0,0])
+            blockCenter.Concatenate(cornerToCenterTransform)
 
             d = DebugData()
             d.addCube([ groundPlane.rectDepth, groundPlane.rectWidth,0.005],[0,0,0])
