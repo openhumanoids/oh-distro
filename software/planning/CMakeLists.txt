@@ -8,3 +8,7 @@ add_subdirectory(src/util)
 add_subdirectory(src/capabilityMap)
 add_subdirectory(src/test)
 add_subdirectory(src/finalPosePlanner)
+
+# Unit Testing
+include(CTest)
+add_test(NAME test_FPP COMMAND test-FPP)

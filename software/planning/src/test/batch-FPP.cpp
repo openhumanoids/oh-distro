@@ -135,9 +135,12 @@ int main(int argc, char* argv[])
   }
   cout << endl;
 
-  CapabilityMap cm("/home/marco/oh-distro/software/planning/capabilityMap.log");
-  cm.loadFromMatlabBinFile(
-      "/home/marco/drc-testing-data/final_pose_planner/val_description/CapabilityMapMatlab.bin");
+  ss.str("");
+  ss << getenv("DRC_BASE") << "/software/planning/capabilityMap.log";
+  CapabilityMap cm(ss.str());
+  ss.str("");
+  ss << getenv("DRC_BASE") << "/../drc-testing-data/final_pose_planner/val_description/CapabilityMapMatlab.bin";
+  cm.loadFromMatlabBinFile(ss.str());
 
   boost::shared_ptr<lcm::LCM> theLCM(new lcm::LCM);
   if (!theLCM->good())
@@ -145,8 +148,9 @@ int main(int argc, char* argv[])
     std::cerr << "ERROR: lcm is not good()" << std::endl;
   }
 
-  RigidBodyTree robot(
-      "/home/marco/oh-distro/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
+  ss.str("");
+  ss << getenv("DRC_BASE") << "/software/models/val_description/urdf/valkyrie_sim_drake.urdf";
+  RigidBodyTree robot(ss.str());
   std::vector<RigidBodyConstraint *> constraints;
   FinalPosePlanner fpp;
 
