@@ -25,22 +25,9 @@ from director.simpletimer import SimpleTimer
 
 import director.tasks.robottasks as rt
 
-
-def publishAngle(lowerNeckPitch, neckYaw):
-    jointGroups = drcargs.getDirectorConfig()['teleopJointGroups']
-    jointGroupNeck = filter(lambda group: group['name'] == 'Neck', jointGroups)
-    if (len(jointGroupNeck) == 1):
-        neckJoints = jointGroupNeck[0]['joints']
-    else:
-        return
-    m = lcmbotcore.joint_angles_t()
-    m.utime = getUtime()
-    m.num_joints = 2
-    m.joint_name = [ neckJoints[0], neckJoints[1] ]
-    m.joint_position = [ math.radians(lowerNeckPitch), math.radians(neckYaw)]
-    lcmUtils.publish('DESIRED_NECK_ANGLES', m)
-       
 class SetSurveyPattern(rt.AsyncTask):
+
+    delayTime = 3.0;
 
     @staticmethod
     def getDefaultProperties(properties):
@@ -53,8 +40,8 @@ class SetSurveyPattern(rt.AsyncTask):
 
         for i in range(len(pitchAngles)):
              self.statusMessage = 'lowerNeckPitch: ' + str(pitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i])  
-             publishAngle(pitchAngles[i], yawAngles[i])
-             yield rt.DelayTask(delayTime=3.0).run()
+             TableMapping.publishAngle(pitchAngles[i], yawAngles[i])
+             yield rt.DelayTask(delayTime=self.delayTime).run()
 
 class TableMapping(object):
 
@@ -75,6 +62,21 @@ class TableMapping(object):
         self.lowerNeckPitch = 0.;
         self.neckYaw = 0.;
         self.initialPose = None;
+
+    @staticmethod
+    def publishAngle(lowerNeckPitch, neckYaw):
+        jointGroups = drcargs.getDirectorConfig()['teleopJointGroups']
+        jointGroupNeck = filter(lambda group: group['name'] == 'Neck', jointGroups)
+        if (len(jointGroupNeck) == 1):
+            neckJoints = jointGroupNeck[0]['joints']
+        else:
+            return
+        m = lcmbotcore.joint_angles_t()
+        m.utime = getUtime()
+        m.num_joints = 2
+        m.joint_name = [ neckJoints[0], neckJoints[1] ]
+        m.joint_position = [ math.radians(lowerNeckPitch), math.radians(neckYaw)]
+        lcmUtils.publish('DESIRED_NECK_ANGLES', m)
 
     #utilities
     def loadSDFFileAndRunSim(self):
@@ -112,7 +114,7 @@ class TableMapping(object):
                 return self.getEstimatedRobotStatePose()
 
     def setHeadPosition(self):
-        publishAngle(self.lowerNeckPitch, self.neckYaw)
+        self.publishAngle(self.lowerNeckPitch, self.neckYaw)
 
     #table detection
     def userFitTable(self, tableNumber):
@@ -206,6 +208,7 @@ class TableTaskPanel(TaskUserPanel):
     def addDefaultProperties(self):
         self.params.addProperty('lowerNeckPitch', 0., attributes=om.PropertyAttributes(minimum=0, maximum=66.6, hidden=False, singleStep=0.01, decimals=2))
         self.params.addProperty('neckYaw', 0., attributes=om.PropertyAttributes(minimum=-60, maximum=60, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('delayTime', 3., attributes=om.PropertyAttributes(minimum=0, maximum=60, hidden=False, singleStep=0.01, decimals=2))
 
     def onPropertyChanged(self, propertySet, propertyName):
         propertyName = str(propertyName)
@@ -215,6 +218,9 @@ class TableTaskPanel(TaskUserPanel):
 
         elif propertyName == 'lowerNeckPitch':
             self.tableMapping.lowerNeckPitch = self.params.getProperty('lowerNeckPitch')
+
+        elif propertyName == 'delayTime':
+            SetSurveyPattern.delayTime = self.params.getProperty('delayTime')
 
     def addButtons(self):
         self.addManualSpacer()
