@@ -45,6 +45,7 @@ def startup(robotSystem, globalsDict=None):
 
     stairsDemo = stairsdemo.StairsDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
     stairsTaskPanel = stairsdemo.StairsTaskPanel(stairsDemo)
+
     tasklaunchpanel.panel.addTaskPanel('Stairs', stairsTaskPanel.widget)
 
     tableMapping = tablemapping.TableMapping(rs.robotStateModel, rs.manipPlanner, rs.view,  rs.ikPlanner, rs.robotStateJointController)
