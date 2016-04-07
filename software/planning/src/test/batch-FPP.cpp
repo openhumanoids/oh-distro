@@ -3,7 +3,7 @@
 #include "drake/thirdParty/tinyxml2/tinyxml2.h"
 
 #include "finalPosePlanner/FinalPosePlanner.hpp"
-#include "drawingUtil/drawingUtil.hpp"
+#include "fppUtil/fppUtil.hpp"
 
 using namespace std;
 using namespace Eigen;

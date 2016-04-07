@@ -1,5 +1,5 @@
-#ifndef SRC_DRAWINGUTIL_HPP_
-#define SRC_DRAWINGUTIL_HPP_
+#ifndef SRC_FPPUTIL_HPP_
+#define SRC_FPPUTIL_HPP_
 
 #include <sys/time.h>
 #include <boost/shared_ptr.hpp>

@@ -3,7 +3,7 @@
 #include <boost/range/adaptors.hpp>
 
 #include "capabilityMap/CapabilityMap.hpp"
-#include "drawingUtil/drawingUtil.hpp"
+#include "fppUtil/fppUtil.hpp"
 
 using namespace std;
 using namespace Eigen;
