@@ -41,12 +41,17 @@ class CommandLineConfig{
 
       // Defaults - not read from command line:
       use_torque_adjustment = false;
+
+      // Mode - switches between CORE_ROBOT_STATE (NASA) and VAL_CORE_ROBOT_STATE (IHMC) as source
+      mode = "ihmc";
     }
     ~CommandLineConfig(){};
 
     std::string output_channel;
 
     bool use_torque_adjustment;
+
+    std::string mode;
 };
 
 ///////////////////////////////////////////////////////////////

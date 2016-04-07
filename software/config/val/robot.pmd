@@ -43,14 +43,30 @@ group "2.drivers" {
     }
 }
 
-
-group "3.state_without_pronto" {
+group "3.a.state_without_pronto_using_ihmc" {
     cmd "joints2frames_without" {
         exec = "drc-joints2frames";
         host = "localhost";
     }
     cmd "state-sync" {
-        exec = "nasa-state-sync";
+        exec = "nasa-state-sync -m ihmc";
+        host = "localhost";
+    }
+}
+
+group "3.b.state_without_pronto_using_nasa" {
+    cmd "joints2frames_without" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+
+    cmd "ros_nasa_bridge" {
+        exec = "roslaunch oh_translators nasa_bridge.launch";
+        host = "localhost";
+    }
+
+    cmd "state-sync" {
+        exec = "nasa-state-sync -m nasa";
         host = "localhost";
     }
 }
@@ -76,6 +92,7 @@ group "4.plan_and_control" {
         exec = "drc-ihmc-step-translator";
         host = "localhost";
     }
+
     cmd "contact_monitor" {
         exec = "drc-contact-monitor -n";
         host = "localhost";
@@ -95,7 +112,6 @@ group "4.plan_and_control" {
 }
 
 group "5.maps" {
-
     cmd "data-request-server" {
         exec = "data-request-server";
         host = "localhost";
@@ -110,11 +126,9 @@ group "5.maps" {
         exec = "bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} drc-lidar-passthrough -c 0.06 -s'";
         host = "localhost";
     }
-
 }
 
 group "6.exotica" {
-
     cmd "exotica_bridge" {
         exec = "roslaunch oh_translators exotica_bridge.launch";
         host = "localhost";
@@ -126,6 +140,11 @@ group "6.exotica" {
 }
 
 group "7.control" {
+    cmd "JointStatePublisher" {
+        exec = "roslaunch valkyrie_translator JointStatePublisher.launch";
+        host = "link";
+    }
+
     cmd "LCM2ROSControl" {
         exec = "roslaunch valkyrie_translator LCM2ROSControl.launch";
         host = "link";
@@ -147,11 +166,6 @@ cmd "director" {
     host = "localhost";
 }
 
-cmd "director_exotica" {
-    exec = "director -c $DRC_BASE/software/config/val/robot.cfg -val2 -exo";
-    host = "localhost";
-}
-
 cmd "pose-util" {
     exec = "drc-robot-pose-util";
     host = "localhost";
@@ -167,11 +181,11 @@ script "start_ui_exotica" {
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.drivers";
-    start group "3.state_without_pronto";
+    start group "3.a.state_without_pronto_using_ihmc";
     start group "4.plan_and_control";
     start group "5.maps";
     start group "6.exotica";
-    start cmd "director_exotica";
+    start cmd "director";
 }
 
 script "start_ui" {
@@ -179,7 +193,7 @@ script "start_ui" {
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.drivers";
-    start group "3.state_without_pronto";
+    start group "3.a.state_without_pronto_using_ihmc";
     start group "4.plan_and_control";
     start group "5.maps";
     start cmd "director";
