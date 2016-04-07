@@ -27,21 +27,23 @@ import director.tasks.robottasks as rt
 
 class SetSurveyPattern(rt.AsyncTask):
 
-    delayTime = 3.0;
+    headSweepTime = 3.0;
 
     @staticmethod
     def getDefaultProperties(properties):
         properties.addProperty('Lower neck pitch', [0])
+        properties.addProperty('Upper neck pitch', [0])
         properties.addProperty('Neck yaw', [0])
 
     def run(self):
-        pitchAngles = self.properties.getProperty('Lower neck pitch')
-        yawAngles = self.properties.getProperty('Neck yaw')
+        lowerPitchAngles = self.properties.getProperty('Lower neck pitch')
+        upperPitchAngles = self.properties.getProperty('Upper neck pitch')
+        yawAngles = self.properties.getProperty('Neck yaw') 
 
-        for i in range(len(pitchAngles)):
-             self.statusMessage = 'lowerNeckPitch: ' + str(pitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i])  
-             TableMapping.publishAngle(pitchAngles[i], yawAngles[i])
-             yield rt.DelayTask(delayTime=self.delayTime).run()
+        for i in range(len(lowerPitchAngles)):
+             self.statusMessage = 'lowerNeckPitch: ' + str(lowerPitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i]) + ', upperNeckPitch: ' + str(upperPitchAngles[i])
+             TableMapping.publishAngle(lowerPitchAngles[i], yawAngles[i], upperPitchAngles[i])
+             yield rt.DelayTask(delayTime=self.headSweepTime).run()
 
 class TableMapping(object):
 
@@ -60,11 +62,12 @@ class TableMapping(object):
         self.tableData = None
         self.picker = None
         self.lowerNeckPitch = 0.;
+        self.upperNeckPitch = 0.;
         self.neckYaw = 0.;
         self.initialPose = None;
 
     @staticmethod
-    def publishAngle(lowerNeckPitch, neckYaw):
+    def publishAngle(lowerNeckPitch, neckYaw, upperNeckPitch):
         jointGroups = drcargs.getDirectorConfig()['teleopJointGroups']
         jointGroupNeck = filter(lambda group: group['name'] == 'Neck', jointGroups)
         if (len(jointGroupNeck) == 1):
@@ -73,9 +76,9 @@ class TableMapping(object):
             return
         m = lcmbotcore.joint_angles_t()
         m.utime = getUtime()
-        m.num_joints = 2
-        m.joint_name = [ neckJoints[0], neckJoints[1] ]
-        m.joint_position = [ math.radians(lowerNeckPitch), math.radians(neckYaw)]
+        m.num_joints = 3
+        m.joint_name = [ neckJoints[0], neckJoints[1], neckJoints[2] ]
+        m.joint_position = [ math.radians(lowerNeckPitch), math.radians(neckYaw), math.radians(upperNeckPitch)]
         lcmUtils.publish('DESIRED_NECK_ANGLES', m)
 
     #utilities
@@ -114,7 +117,7 @@ class TableMapping(object):
                 return self.getEstimatedRobotStatePose()
 
     def setHeadPosition(self):
-        self.publishAngle(self.lowerNeckPitch, self.neckYaw)
+        self.publishAngle(self.lowerNeckPitch, self.neckYaw, self.upperNeckPitch)
 
     #table detection
     def userFitTable(self, tableNumber):
@@ -206,21 +209,25 @@ class TableTaskPanel(TaskUserPanel):
         self.initImageView(self.fitter.imageView, activateAffordanceUpdater=False)
 
     def addDefaultProperties(self):
-        self.params.addProperty('lowerNeckPitch', 0., attributes=om.PropertyAttributes(minimum=0, maximum=66.6, hidden=False, singleStep=0.01, decimals=2))
-        self.params.addProperty('neckYaw', 0., attributes=om.PropertyAttributes(minimum=-60, maximum=60, hidden=False, singleStep=0.01, decimals=2))
-        self.params.addProperty('delayTime', 3., attributes=om.PropertyAttributes(minimum=0, maximum=60, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('Lower Neck Pitch', 0., attributes=om.PropertyAttributes(minimum=0, maximum=66.6, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('Upper Neck Pitch', 0., attributes=om.PropertyAttributes(minimum=-50, maximum=0, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('Neck Yaw', 0., attributes=om.PropertyAttributes(minimum=-60, maximum=60, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('Head Sweep Time', 3., attributes=om.PropertyAttributes(minimum=0, maximum=60, hidden=False, singleStep=0.01, decimals=2))
 
     def onPropertyChanged(self, propertySet, propertyName):
         propertyName = str(propertyName)
 
-        if propertyName == 'neckYaw':
-            self.tableMapping.neckYaw = self.params.getProperty('neckYaw')
+        if propertyName == 'Neck Yaw':
+            self.tableMapping.neckYaw = self.params.getProperty('Neck Yaw')
 
-        elif propertyName == 'lowerNeckPitch':
-            self.tableMapping.lowerNeckPitch = self.params.getProperty('lowerNeckPitch')
+        elif propertyName == 'Lower Neck Pitch':
+            self.tableMapping.lowerNeckPitch = self.params.getProperty('Lower Neck Pitch')
 
-        elif propertyName == 'delayTime':
-            SetSurveyPattern.delayTime = self.params.getProperty('delayTime')
+        elif propertyName == 'Upper Neck Pitch':
+            self.tableMapping.upperNeckPitch = self.params.getProperty('Upper Neck Pitch')
+
+        elif propertyName == 'Head Sweep Time':
+            SetSurveyPattern.headSweepTime = self.params.getProperty('Head Sweep Time')
 
     def addButtons(self):
         self.addManualSpacer()
@@ -255,21 +262,21 @@ class TableTaskPanel(TaskUserPanel):
         ###############
 
         surveyAngles = []
-        surveyAngles.append([60, -45]) #bottom right
-        surveyAngles.append([45, -45]) #top right
+        surveyAngles.append([60, -45, 0]) #bottom right
+        surveyAngles.append([45, -45, 0]) #top right
 
-        surveyAngles.append([60, -25]) #half right bottom
-        surveyAngles.append([45, -25]) #half right top
+        surveyAngles.append([60, -25, 0]) #half right bottom
+        surveyAngles.append([45, -25, 0]) #half right top
 
-        surveyAngles.append([60, 0]) #bottom center
-        surveyAngles.append([45, 0]) #top center
+        surveyAngles.append([60, 0, 0]) #bottom center
+        surveyAngles.append([45, 0, 0]) #top center
 
-        surveyAngles.append([60, 25]) #half left bottom
-        surveyAngles.append([45, 25]) #half left top
+        surveyAngles.append([60, 25, 0]) #half left bottom
+        surveyAngles.append([45, 25, 0]) #half left top
 
-        surveyAngles.append([60, 45]) #bottom left
-        surveyAngles.append([45, 45]) #top left
-        surveyAngles.append([0, 0]) #reset
+        surveyAngles.append([60, 45, 0]) #bottom left
+        surveyAngles.append([45, 45, 0]) #top left
+        surveyAngles.append([0, 0, 0]) #reset
 
         #prep
         addFolder('Preparation')
@@ -287,7 +294,7 @@ class TableTaskPanel(TaskUserPanel):
 
         #survey table
         addFolder("Survey Table 1")
-        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles]))
+        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles], upperNeckPitch=[neckAngles[2] for neckAngles in surveyAngles] ))
 
         addFolder('Back Up')
         addFunc('create back up frame', self.tableMapping.computeBackUpStanceFrame)
@@ -305,4 +312,4 @@ class TableTaskPanel(TaskUserPanel):
 
         #survey table
         addFolder("Survey Table 2")
-        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles]))
+        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles], upperNeckPitch=[neckAngles[2] for neckAngles in surveyAngles]))

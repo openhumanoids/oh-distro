@@ -52,4 +52,4 @@ def startup(robotSystem, globalsDict=None):
         globalsDict['manualWalkingTaskPanel'] = manualWalkingTaskPanel
         globalsDict['stairsDemo'] = stairsDemo
         globalsDict['stairsTaskPanel'] = stairsTaskPanel
-        globalsDict['tableMapping'] = tableMappingTaskPanel
+        globalsDict['tableMappingTaskPanel'] = tableMappingTaskPanel
