@@ -9,6 +9,9 @@ from director import tasklaunchpanel
 from director import applogic
 from director import teleoppanel
 
+import tablemapping
+
+
 def startup(robotSystem, globalsDict=None):
     rs = robotSystem
 
@@ -35,8 +38,11 @@ def startup(robotSystem, globalsDict=None):
 
     stairsDemo = stairsdemo.StairsDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
     stairsTaskPanel = stairsdemo.StairsTaskPanel(stairsDemo)
-
     tasklaunchpanel.panel.addTaskPanel('Stairs', stairsTaskPanel.widget)
+
+    tableMapping = tablemapping.TableMapping(rs.robotStateModel, rs.manipPlanner, rs.view,  rs.ikPlanner, rs.robotStateJointController)
+    tableMappingTaskPanel = tablemapping.TableTaskPanel(tableMapping)
+    tasklaunchpanel.panel.addTaskPanel("Table Mapping", tableMappingTaskPanel.widget)
 
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
@@ -46,3 +52,4 @@ def startup(robotSystem, globalsDict=None):
         globalsDict['manualWalkingTaskPanel'] = manualWalkingTaskPanel
         globalsDict['stairsDemo'] = stairsDemo
         globalsDict['stairsTaskPanel'] = stairsTaskPanel
+        globalsDict['tableMapping'] = tableMappingTaskPanel
