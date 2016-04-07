@@ -94,7 +94,7 @@ CandidateRobotPosePublisher::CandidateRobotPosePublisher()
 
 }
 
-int64_t CandidateRobotPosePublisher::timestamp_now()
+int64_t timestamp_now()
 {
   timeval tv;
   gettimeofday(&tv, NULL);
@@ -105,7 +105,7 @@ void CandidateRobotPosePublisher::publish(boost::shared_ptr<lcm::LCM> lcm,
     const RigidBodyTree &robot, const VectorXd &pose)
 {
   drc::robot_state_t pose_msg;
-  pose_msg.utime = this->timestamp_now();
+  pose_msg.utime = timestamp_now();
   pose_msg.pose.translation.x = pose(0);
   pose_msg.pose.translation.y = pose(1);
   pose_msg.pose.translation.z = pose(2);

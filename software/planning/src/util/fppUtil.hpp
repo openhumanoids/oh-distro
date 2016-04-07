@@ -19,7 +19,6 @@ class CandidateRobotPosePublisher
 {
 public:
   CandidateRobotPosePublisher();
-  int64_t timestamp_now();
   void publish(boost::shared_ptr<lcm::LCM> lcm, const RigidBodyTree &robot,
       const Eigen::VectorXd &pose);
 };

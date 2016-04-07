@@ -66,7 +66,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, const string end_effec
   CM_timer.stop();
 
 //	FINAL POSE SEARCH
-//	CandidateRobotPosePublisher publisher;
+//  CandidateRobotPosePublisher publisher;
   constraints_timer.start();
   vector<RigidBodyConstraint *> constraints = additional_constraints;
   Vector3d bound(1e-3, 1e-3, 1e-3);
@@ -140,7 +140,7 @@ int FinalPosePlanner::findFinalPose(RigidBodyTree &robot, const string end_effec
         if (((ArrayXd) phi > min_distance).all())
         {
           info = 1;
-//					publisher.publish(lcm, robot, final_configuration);
+//          publisher.publish(lcm, robot, final_configuration);
         }
       }
     }
