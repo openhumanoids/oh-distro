@@ -391,7 +391,7 @@ class TableplanningDemo(object):
         
     def showMPModel(self):
         self.teleopRobotModel.setProperty('Visible', True)
-        self.teleopRobotModel.setProperty('Alpha', 0.3)
+        self.teleopRobotModel.setProperty('Alpha', 1)
         
     def showPlan(self, plan):
         self.hideMPModel()
