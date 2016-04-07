@@ -7,6 +7,7 @@ classdef VertexArrayMotionPlanningTree < MotionPlanningTree & MotionPlanningProb
     % whose lower and upper bounds for each element of the sampling_lb and sampling_ub.
     sampling_lb
     sampling_ub
+    point_cloud
   end
 
   properties (Access = protected)

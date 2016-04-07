@@ -5,25 +5,16 @@ classdef SE3MotionPlanningTree < CompositeVertexArrayTree
   end
 
   methods
-    function obj = SE3MotionPlanningTree()
+    function obj = SE3MotionPlanningTree(end_effector_body)
       T_R3 = R3MotionPlanningTree();
       T_SO3 = SO3MotionPlanningTree();
       obj = obj@CompositeVertexArrayTree({T_R3, T_SO3},{'R3', 'SO3'});
       obj = obj.setLCMGL('SE3MotionPlanningTree',[0, 0, 0]);
-      urdf = fullfile(getDrakePath, 'systems', 'plants', 'test', 'FallingBrick.urdf');
+      urdf = fullfile(getDrakePath, '../../', 'control', 'matlab', 'planners', 'collision_free_solver', 'empty.urdf');
       options.floating = true;
       obj.rbm = RigidBodyManipulator(urdf, options);
-      obj.rbm = obj.rbm.removeCollisionGroupsExcept({});
-      % TODO: Switch to something like the below.
-      %obj.rbm = RigidBodyManipulator();
-      %obj.rbm.name{1} = 'robot';
-      %body = RigidBody();
-      %body = body.setInertial(1, zeros(3,1), eye(3));
-      %body.linkname = 'body';
-      %body.robotnum = 1;
-      %obj.rbm = obj.rbm.addLink(body);
-      %obj.rbm = obj.rbm.addFloatingBase(1, 2, [0;0;0], [0;0;0],'quat'); 
-      %obj.rbm = obj.rbm.addFloatingBase(1, 2, [0;0;0], [0;0;0]); 
+      obj.rbm = obj.rbm.addLink(end_effector_body);
+      obj.rbm = obj.rbm.addFloatingBase(1, 2, [0;0;0], [0;0;0], 'quat');
       obj = obj.compile();
     end
 
@@ -36,12 +27,12 @@ classdef SE3MotionPlanningTree < CompositeVertexArrayTree
       valid = valid && obj.isCollisionFree(q);
     end
 
-    function valid = isCollisionFree(obj, q)
-      xyz = q(1:3);
-      quat = q(4:7); 
-      rpy = quat2rpy(quat);
-      phi = obj.rbm.collisionDetect([xyz; rpy]);
-      valid = all(phi > obj.min_distance);
+    function valid = isCollisionFree(obj, q, ee_point)
+      if nargin > 2
+        q(1:3) = q(1:3) - quat2rotmat(q(4:7)) * ee_point;
+      end
+      kinsol = obj.rbm.doKinematics(q);
+      valid = ~obj.rbm.collidingPointsCheckOnly(kinsol, obj.point_cloud, obj.min_distance);
     end
 
     function obj = addGeometryToRobot(obj, geom)

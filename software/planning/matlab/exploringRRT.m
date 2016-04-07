@@ -7,7 +7,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   if ~isfield(options,'n_smoothing_passes'), options.n_smoothing_passes = 10; end;
   if ~isfield(options,'planning_mode'), options.planning_mode = 'multiRRT'; end;
   if ~isfield(options,'visualize'), options.visualize = true; end;
-  if ~isfield(options,'scene'), options.scene = 1; end;
+  if ~isfield(options,'scene'), options.scene = 4; end;
   if ~isfield(options,'model'), options.model = 'val2'; end;
   if ~isfield(options,'convex_hull'), options.convex_hull = true; end;
   if ~isfield(options,'graspingHand'), options.graspingHand = 'right'; end;
@@ -22,29 +22,18 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   end
   
   options.floating = true;
-  options.terrain = RigidBodyFlatTerrain(); %Changed to a smaller terrain to avoid visualization problem when zooming
   options.joint_v_max = 15*pi/180;
-  options.viewer = 'NullVisualizer';
   
   if isempty(options.robot)
-    [r, robotURDF] = Scenes.generateScene(options);
+    r = Scenes.generateRobot(options);
   else
     r = options.robot;
   end
   
   if options.visualize
+    pose_publisher = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE', true, r.getPositionFrame.getCoordinateNames);
     plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN', true, r.getPositionFrame.getCoordinateNames);
-    visWorld = RigidBodyManipulator();
-    for b = 1:numel(r.body(1).visual_geometry)
-      visWorld = addGeometryToBody(visWorld, 1, r.body(1).visual_geometry{b});
-    end
-    visWorld = visWorld.compile();
-    visWorld.constructVisualizer();
-    addpath(fullfile(getDrakePath(), '../../', 'ddapp/src/matlab') )
-    fixed_point_file = [getDrakePath(), '/../../control/matlab/data/val_description/valkyrie_fp_june2015.mat'];
-    left_foot_link = 'LeftFoot';
-    right_foot_link = 'RightFoot';
-%     runIKServer
+    Scenes.visualizeOctomap(options);
   end
   
   if nargin > 1
@@ -53,16 +42,13 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   rndSeed = rng;
   save lastRndg.mat rndSeed
   
-  lFoot = Scenes.getLeftFoot(options, r);
-  rFoot = Scenes.getRightFoot(options, r);
-  
   g_hand = Scenes.getGraspingHand(options, r);
   point_in_link_frame = Scenes.getPointInLinkFrame(options);
   
   q_nom = Scenes.getFP(options.model, r);
   
   if options.visualize
-    publishTraj(r, plan_publisher, q_nom)
+    pose_publisher.publish([q_nom; zeros(size(q_nom))], get_timestamp_now())
   end
   
   %Set IK options
@@ -90,28 +76,27 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   [q_start, info] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
   if info > 10, error('Starting pose is invalid'); end
   if options.visualize
-    publishTraj(r, plan_publisher, q_start)
+    pose_publisher.publish([q_start; zeros(size(q_start))], get_timestamp_now())
   end
   
   %Compute final pose
   
-  cm = CapabilityMap([getenv('DRC_BASE') '/software/control/matlab/data/val_description/capabilityMap.mat']);
+  cm = CapabilityMap([getenv('DRC_BASE') '/../drc-testing-data/final_pose_planner/val_description/capabilityMap.mat']);
   x_end.val1.right = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 pi/2])];
   x_end.val1.left = [Scenes.getTargetObjPos(options)'; rpy2quat([0 0 -pi/2])];
   x_end.val2 = x_end.val1;
 
-  finalPose = FinalPoseProblem(r, g_hand, q_start, x_end.(options.model).(options.graspingHand), ...
+  finalPose = FinalPosePlanner(r, g_hand, q_start, x_end.(options.model).(options.graspingHand), ...
     startPoseConstraints, q_nom, cm, ikoptions, ...
     'graspinghand', options.graspingHand, ...
     'endeffectorpoint', point_in_link_frame, ...
     'debug', false);
   
-  [xGoalFull, info] = finalPose.findFinalPose();
+  [xGoalFull, info] = finalPose.findFinalPose(Scenes.getOctomap(options));
   if info > 10, error('Failed to find a final pose'); end
   q_end = xGoalFull(8:end);
   if options.visualize
-    publishTraj(r, plan_publisher, q_end)
-%     v.draw(0, q_end)
+    pose_publisher.publish([q_end; zeros(size(q_end))], get_timestamp_now())
   end
   
   %Recompute starting configuration
@@ -122,7 +107,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   [q_start, info] = inverseKin(r, ik_seed_pose, ik_nominal_pose, startPoseConstraints{:}, ikoptions);
   if info > 10, error('Starting pose is invalid'); end
   if options.visualize
-    publishTraj(r, plan_publisher, q_start)
+    pose_publisher.publish([q_start; zeros(size(q_start))], get_timestamp_now())
   end
   
   
@@ -137,6 +122,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   xyz_box_edge_length = 2;
   
   if ~strcmp(options.planning_mode, 'multiRRT')
+    %{
     min_distance = 0.01;
     active_collision_options.body_idx = setdiff(1:r.getNumBodies(),inactive_collision_bodies);
     options.display_after_every = 1;
@@ -169,6 +155,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   
     TA = TA.setLCMGL('TA',[1,0,0]);
     TB = TB.setLCMGL('TB',[0,0,1]);
+    %}
   end
   
   qNomCFile.val1.right = 'valkyrie/valkyrie_fp_rHand_up';
@@ -190,7 +177,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   constraints = [startPoseConstraints, Scenes.generateEEConstraints(r, options, EEpose)];
   qStartC = inverseKin(r, qNominalC, qNominalC, constraints{:}, ikoptions);
   if options.visualize
-    publishTraj(r, plan_publisher, qStartC)
+    pose_publisher.publish([qStartC; zeros(size(qStartC))], get_timestamp_now())
   end
   kinsol = r.doKinematics(qStartC);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
@@ -201,23 +188,23 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   constraints = [startPoseConstraints, Scenes.generateEEConstraints(r, options, EEpose)];
   qStartD = inverseKin(r, qNominalD, qNominalD, constraints{:}, ikoptions);
   if options.visualize
-    publishTraj(r, plan_publisher, qStartD)
+    pose_publisher.publish([qStartD; zeros(size(qStartD))], get_timestamp_now())
   end
   kinsol = r.doKinematics(qStartD);
   xyz_quat_start = r.forwardKin(kinsol,g_hand,point_in_link_frame,2);
   xStartD = [xyz_quat_start; qStartD];
   
   if options.visualize
-    publishTraj(r, plan_publisher, q_start)
+    pose_publisher.publish([q_start; zeros(size(q_start))], get_timestamp_now())
   end
   
   rrt_timer = tic;
   display('Computing motion plan ...')
   switch options.planning_mode
-    case 'rrt'
-      [TA, path_ids_A, info] = TA.rrt(x_start, x_goal, TA, options);
-    case 'rrt_connect'
-      [TA, path_ids_A, info, TB] = TA.rrtConnect(x_start, x_goal, TB, options);
+%     case 'rrt'
+%       [TA, path_ids_A, info] = TA.rrt(x_start, x_goal, TA, options);
+%     case 'rrt_connect'
+%       [TA, path_ids_A, info, TB] = TA.rrtConnect(x_start, x_goal, TB, options);
     case 'multiRRT'
       
       optionsPlanner = struct();
@@ -231,8 +218,8 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
         case 2
           additionalTrees = [];
       end
-          multiTree = MultipleTreeProblem(r, g_hand, x_start, x_end.(options.model).(options.graspingHand), ...
-            additionalTrees, startPoseConstraints, q_nom,...
+          multiTree = MultipleTreePlanner(r, g_hand, x_start, x_end.(options.model).(options.graspingHand), ...
+            additionalTrees, startPoseConstraints, q_nom, Scenes.getOctomap(options), ...
             'ikoptions', ikoptions, 'endeffectorpoint', point_in_link_frame);
 
       [multiTree, info, cost, q_path] = multiTree.rrtStar(optionsPlanner, xGoalFull);
@@ -240,6 +227,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       if info == 1
         disp('Motion plan computed')
         path_length = size(q_path,2);
+        plan_publisher.publish([ones(1, path_length); zeros(1, path_length);q_path(8:end,:);zeros(r.num_positions, path_length)], linspace(0,1,path_length), now() * 24 * 60 * 60, ones(1, path_length))
         xtraj = PPTrajectory(pchip(linspace(0, 1, path_length), [q_path(8:end,:); zeros(r.getNumVelocities(), size(q_path,2))] ));
       else
         disp('Failded to compute a motion plan')
@@ -255,6 +243,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
   rrt_time = toc(rrt_timer);  
   
   if (info == Info.SUCCESS)
+    %{
     if ~any(strcmp(options.planning_mode, {'rrt*', 'multiRRT'}))
       T_smooth = TA;
       simVars.TConnected = T_smooth;
@@ -279,6 +268,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
       end
       q_path = extractPath(T_smooth, path_ids_A);
     end
+    %}
     path_length = size(q_path,2);
     
     % Scale timing to obey joint velocity limits
@@ -302,8 +292,6 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     rState = r.getStateFrame();
     xtraj = PPTrajectory(pchip(t_scaled,[q_path(:,idx_unique); zeros(r.getNumVelocities(),numel(t_scaled))]));
     xtraj = xtraj.setOutputFrame(r.getStateFrame());
-    publishTraj(r, plan_publisher, xtraj)
-%     s.publishTraj(xtraj, 1)
     
     %Output structures
     switch options.planning_mode
@@ -355,7 +343,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
 %         statVars.nPoints = info.nPoints;
 %         statVars.nTrees = info.nTrees;
         statVars.rndSeed = rndSeed; 
-        statVars.options = rmfield(options, {'robot', 'terrain'});
+        statVars.options = rmfield(options, 'robot');
         simVars.info = info;
 %         if options.visualize
 %           fprintf(['TIMING:\n',...
@@ -402,7 +390,7 @@ function [xtraj, info, simVars, statVars] = exploringRRT(options, rng_seed)
     statVars.finalPoseCost = [];
     statVars.nPoints = [];
     statVars.rndSeed = rndSeed; 
-    statVars.options = rmfield(options, {'robot', 'terrain'});
+    statVars.options = options;
     simVars.info = info;
     fprintf('Failed to find a solution (%s)\n', info)
   end
@@ -420,8 +408,6 @@ end
     xtraj_atlas = zeros(2+2*nq_atlas,length(ts));
     xtraj_atlas(2+(1:nq_atlas),:) = q(1:nq_atlas,:);
     snopt_info_vector = 1*ones(1, size(xtraj_atlas,2));
-
-    ts = [0, 1];
     plan_publisher.publish(xtraj_atlas, ts, utime, snopt_info_vector);
   end
 
