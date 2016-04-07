@@ -107,9 +107,6 @@ class StairsDemo(object):
         footsteps = []
         print 'got %d blocks' % len(blocks)
         for i, block in enumerate(blocks):
-            #blockBegin = transformUtils.frameFromPositionAndRPY([-block.rectDepth,block.rectWidth/2,0.0], [0,0,0])
-            #blockBegin.Concatenate(block.cornerTransform)
-
             blockBegin = transformUtils.copyFrame(block.cornerTransform)
             blockBegin.PreMultiply()
             cornerToCenterTransform = transformUtils.frameFromPositionAndRPY([-block.rectDepth,block.rectWidth/2,0.0], [0,0,0])
