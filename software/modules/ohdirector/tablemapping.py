@@ -44,45 +44,37 @@ class SetSurveyPattern(rt.AsyncTask):
 
     @staticmethod
     def getDefaultProperties(properties):
-	properties.addProperty('Lower neck pitch', [0])
-	properties.addProperty('Neck yaw', [0])
+        properties.addProperty('Lower neck pitch', [0])
+        properties.addProperty('Neck yaw', [0])
 
     def run(self):
-	pitchAngles = self.properties.getProperty('Lower neck pitch')
-	yawAngles = self.properties.getProperty('Neck yaw')
+        pitchAngles = self.properties.getProperty('Lower neck pitch')
+        yawAngles = self.properties.getProperty('Neck yaw')
 
-	for i in range(len(pitchAngles)):
-	     self.statusMessage = 'lowerNeckPitch: ' + str(pitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i])	     
-	     publishAngle(pitchAngles[i], yawAngles[i])
-             delayTime = 3.0
-             t = SimpleTimer()
-             while True:
-                 elapsed = t.elapsed()
-                 if elapsed >= delayTime:
-                     break
-                 #self.statusMessage = 'Waiting %.1f seconds' % (delayTime - elapsed)
-                 yield
-
+        for i in range(len(pitchAngles)):
+             self.statusMessage = 'lowerNeckPitch: ' + str(pitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i])  
+             publishAngle(pitchAngles[i], yawAngles[i])
+             yield rt.DelayTask(delayTime=3.0).run()
 
 class TableMapping(object):
 
     def __init__(self, robotStateModel, manipPlanner, view, ikPlanner, sensorJointController):
-	self.robotStateModel = robotStateModel
-	self.manipPlanner = manipPlanner
-	self.ikPlanner = ikPlanner
+        self.robotStateModel = robotStateModel
+        self.manipPlanner = manipPlanner
+        self.ikPlanner = ikPlanner
         self.view = view
         self.sensorJointController = sensorJointController
         self.affordanceManager = segmentation.affordanceManager
 
-	#live operation flags
+        #live operation flags
         self.planFromCurrentRobotState = True
         self.plans = []
 
         self.tableData = None
-	self.picker = None
-	self.lowerNeckPitch = 0.;
-	self.neckYaw = 0.;
-	self.initialPose = None;
+        self.picker = None
+        self.lowerNeckPitch = 0.;
+        self.neckYaw = 0.;
+        self.initialPose = None;
 
     #utilities
     def loadSDFFileAndRunSim(self):
@@ -94,8 +86,8 @@ class TableMapping(object):
         lcmUtils.publish('SCS_API_CONTROL', msg)
 
     def initRobotPose(self):
-	robotState = self.getEstimatedRobotStatePose();
-	self.initialPose = transformUtils.frameFromPositionAndRPY([robotState[0], robotState[1], robotState[2]],[0,0,0])
+        robotState = self.getEstimatedRobotStatePose();
+        self.initialPose = transformUtils.frameFromPositionAndRPY([robotState[0], robotState[1], robotState[2]],[0,0,0])
 
 
     def getEstimatedRobotStatePose(self):
@@ -121,7 +113,7 @@ class TableMapping(object):
 
     def setHeadPosition(self):
         publishAngle(self.lowerNeckPitch, self.neckYaw)
-	
+
     #table detection
     def userFitTable(self, tableNumber):
         self.tableData = None
@@ -171,7 +163,7 @@ class TableMapping(object):
         t = vtk.vtkTransform()
         t.PostMultiply()
         t.Concatenate(self.initialPose)
-        vis.showFrame(t, 'back up frame', scale=0.2)	        
+        vis.showFrame(t, 'back up frame', scale=0.2)        
 
     #manipulation planning - used for making the robot lower its arms at the start of the script
     def addPlan(self, plan):
@@ -256,25 +248,25 @@ class TableTaskPanel(TaskUserPanel):
         self.taskTree.removeAllTasks()
         ###############
 
-	surveyAngles = []
-	surveyAngles.append([60, -45]) #bottom right
-	surveyAngles.append([45, -45]) #top right
+        surveyAngles = []
+        surveyAngles.append([60, -45]) #bottom right
+        surveyAngles.append([45, -45]) #top right
 
-	surveyAngles.append([60, -25]) #half right bottom
-	surveyAngles.append([45, -25]) #half right top
+        surveyAngles.append([60, -25]) #half right bottom
+        surveyAngles.append([45, -25]) #half right top
 
-	surveyAngles.append([60, 0]) #bottom center
-	surveyAngles.append([45, 0]) #top center
+        surveyAngles.append([60, 0]) #bottom center
+        surveyAngles.append([45, 0]) #top center
 
-	surveyAngles.append([60, 25]) #half left bottom
-	surveyAngles.append([45, 25]) #half left top
+        surveyAngles.append([60, 25]) #half left bottom
+        surveyAngles.append([45, 25]) #half left top
 
-	surveyAngles.append([60, 45]) #bottom left
-	surveyAngles.append([45, 45]) #top left
-	surveyAngles.append([0, 0]) #reset
+        surveyAngles.append([60, 45]) #bottom left
+        surveyAngles.append([45, 45]) #top left
+        surveyAngles.append([0, 0]) #reset
 
-	#prep
-	addFolder('Preparation')
+        #prep
+        addFolder('Preparation')
         addFunc('fit table 1', functools.partial(self.tableMapping.userFitTable, tableNumber=1))
         addFunc('fit table 2', functools.partial(self.tableMapping.userFitTable, tableNumber=2))
         addFunc('store initial robot pose', self.tableMapping.initRobotPose)
@@ -287,8 +279,8 @@ class TableTaskPanel(TaskUserPanel):
         addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
         addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
-	#survey table
-	addFolder("Survey Table 1")
+        #survey table
+        addFolder("Survey Table 1")
         addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles]))
 
         addFolder('Back Up')
@@ -305,6 +297,6 @@ class TableTaskPanel(TaskUserPanel):
         addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
         addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
-	#survey table
-	addFolder("Survey Table 2")
+        #survey table
+        addFolder("Survey Table 2")
         addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles]))
