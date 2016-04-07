@@ -103,7 +103,7 @@ class TableplanningDemo(object):
     ### Table and Bin Focused Functions
     def userFitTable(self):
         self.tableData = None
-        self.picker = PointPicker(self.view, numberOfPoints=2, drawLines=True, callback=self.onSegmentTable)
+        self.picker = PointPicker(self.view, numberOfPoints=1, drawLines=False, callback=self.onSegmentTable)
         self.picker.start()
     
     def userReFitTable(self):
@@ -126,30 +126,19 @@ class TableplanningDemo(object):
 
         return polyData
 
-    def onSegmentTable(self, p1, p2):
-        print p1
-        print p2
+    def onSegmentTable(self, p1):
         if self.picker is not None:
             self.picker.stop()
             om.removeFromObjectModel(self.picker.annotationObj)
             self.picker = None
 
-        tableData = segmentation.segmentTableEdge(self.getInputPointCloud(), p1, p2)
-
-        pose = transformUtils.poseFromTransform(tableData.frame)
-        desc = dict(classname='MeshAffordanceItem', Name='table', Color=[0,1,0], pose=pose)
-        aff = self.affordanceManager.newAffordanceFromDescription(desc)
-        aff.setPolyData(tableData.mesh)
-
-        self.tableData = tableData
-
-        tableBox = vis.showPolyData(tableData.box, 'table box', parent=aff, color=[0,1,0], visible=False)
-        tableBox.actor.SetUserTransform(tableData.frame)
-
-        # how far back to stand - from the middle of the table
-        # -0.6 is too far. reduced 0.5 was too low. now trying -0.55
-        relativeStance = transformUtils.frameFromPositionAndRPY([-0.55, 0, 0],[0,0,0])
-        self.computeTableStanceFrame(relativeStance)
+        clusters = segmentation.segmentTableScene(self.getInputPointCloud(), p1)
+        objs = vis.showClusterObjects(clusters.clusters + [clusters.table], parent='segmentation')
+        for obj in objs:
+            affObj = affordanceitems.MeshAffordanceItem.promotePolyDataItem(obj)
+            self.affordanceManager.registerAffordance(affObj)
+            affObj.setProperty('Collision Enabled', True)
+        self.tableData = objs
 
     def computeTableStanceFrame(self, relativeStance):
         tableTransform = om.findObjectByName('table').getChildFrame().transform
