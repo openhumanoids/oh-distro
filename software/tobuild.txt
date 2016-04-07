@@ -12,5 +12,5 @@ perception
 motion_estimate
 atlas-collection
 control
-director/distro/pods/drc
 planning
+director/distro/pods/drc
