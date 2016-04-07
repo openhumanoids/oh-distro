@@ -2,6 +2,7 @@ import valkyriedriver
 import valkyriedriverpanel
 import exampletaskpanel
 import tableboxdemo
+import tableplanningdemo
 import manualwalkingdemo
 import stairsdemo
 
@@ -28,6 +29,12 @@ def startup(robotSystem, globalsDict=None):
     tableboxTaskPanel = tableboxdemo.TableboxTaskPanel(tableboxDemo)
     tasklaunchpanel.panel.addTaskPanel('Tablebox', tableboxTaskPanel.widget)
 
+    tableplanningDemo = tableplanningdemo.TableplanningDemo(rs.robotStateModel, rs.playbackRobotModel,
+                    rs.ikPlanner, rs.manipPlanner, rs.footstepsDriver, rs.lHandDriver, rs.rHandDriver,
+                    rs.view, rs.robotStateJointController, rs.teleopRobotModel, rs.teleopJointController, rs.footstepsDriver)
+    tableplanningTaskPanel = tableplanningdemo.TableplanningTaskPanel(tableplanningDemo)
+    tasklaunchpanel.panel.addTaskPanel('TablePlanning', tableplanningTaskPanel.widget)
+    
     manualWalkingDemo = manualwalkingdemo.ManualWalkingDemo(rs.robotStateModel,
                     rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
     manualWalkingTaskPanel = manualwalkingdemo.ManualWalkingTaskPanel(manualWalkingDemo)
@@ -37,7 +44,7 @@ def startup(robotSystem, globalsDict=None):
     stairsTaskPanel = stairsdemo.StairsTaskPanel(stairsDemo)
 
     tasklaunchpanel.panel.addTaskPanel('Stairs', stairsTaskPanel.widget)
-
+    
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
