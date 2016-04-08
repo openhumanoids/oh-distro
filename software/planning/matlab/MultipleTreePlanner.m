@@ -1,4 +1,4 @@
-classdef MultipleTreeProblem
+classdef MultipleTreePlanner
   
   properties
     robot
@@ -16,20 +16,21 @@ classdef MultipleTreeProblem
     activeCollisionOptions
     status
     iterations
+    point_cloud
   end
   
   properties (Constant)
-    EXPLORING = 1
-    GOAL_REACHED = 2
-    SUCCESS = 1
+    EXPLORING = 2
+    GOAL_REACHED = 1
+    SUCCESS = 3
     FAIL_ITERATION_LIMIT = 11
     FAIL_NO_FINAL_POSE = 12
   end
   
   methods
     
-    function obj = MultipleTreeProblem(robot, endEffectorId,...
-        xStart, xGoal, xStartAddTrees, additionalConstraints, qNom, varargin)
+    function obj = MultipleTreePlanner(robot, endEffectorId, xStart, ...
+        xGoal, xStartAddTrees, additionalConstraints, qNom, point_cloud, varargin)
       % Class which builds and maintains multiple motion planning trees
       % (i.e. two or more) and searches to connect them such that a
       % spanning solution can reach a goal
@@ -66,6 +67,10 @@ classdef MultipleTreeProblem
       obj.activeCollisionOptions = opt.activecollisionoptions;
       obj.endEffectorPoint = opt.endeffectorpoint;
       obj.status = obj.EXPLORING;
+      if size(point_cloud, 1) ~= 3
+        point_cloud = point_cloud';
+      end
+      obj.point_cloud = point_cloud;
       
       %compute sampling space
       xyzMin = [min([xStart(1:2), xGoal(1:2)], [], 2) - 0.5; 0];
@@ -74,7 +79,7 @@ classdef MultipleTreeProblem
       %initialize trees
       obj.trees = OptimalTaskSpaceMotionPlanningTree.empty(obj.nTrees, 0);  
       for t = 1:obj.nTrees
-        obj.trees(t) = OptimalTaskSpaceMotionPlanningTree(obj.robot, obj.endEffectorId, obj.endEffectorPoint);
+        obj.trees(t) = OptimalTaskSpaceMotionPlanningTree(obj.robot, obj.endEffectorId, obj.endEffectorPoint, obj.point_cloud);
         obj.trees(t) = obj.trees(t).setMinDistance(obj.minDistance);
         obj.trees(t) = obj.trees(t).setOrientationWeight(opt.orientationweight);
         obj.trees(t).max_edge_length = opt.maxedgelength;
@@ -87,6 +92,7 @@ classdef MultipleTreeProblem
         obj.trees(t) = obj.trees(t).addKinematicConstraint(obj.additionalConstraints{:});
         obj.trees(t) = obj.trees(t).setNominalConfiguration(obj.qNom);
         obj.trees(t) = obj.trees(t).compile();
+        obj.trees(t).point_cloud = point_cloud;
         if t == 1
           obj.trees(t) = obj.trees(t).setLCMGL('Tree 1 (Start Pose)',[1,0,0]);
         elseif t == 2
@@ -193,6 +199,7 @@ classdef MultipleTreeProblem
         obj.trees(1) = obj.trees(1).shortcut();
         qPath = obj.trees(1).rebuildTraj(obj.xGoal);
         cost = obj.trees(1).C(obj.trees(1).traj(1));
+        info = 1;
         if options.visualize
           fprintf('Final Cost = %.4f\n', cost)
         end
