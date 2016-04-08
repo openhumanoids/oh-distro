@@ -23,126 +23,26 @@ class Footstep():
         self.is_right_foot = is_right_foot
 
 class CalisthenicsDemo(object):
-    def __init__(self, robotStateModel, footstepsDriver, robotStateJointController, ikPlanner):
+    def __init__(self, robotStateModel, footstepsDriver, robotStateJointController, ikPlanner, manipPlanner):
         self.footstepsDriver = footstepsDriver
         self.robotStateModel = robotStateModel
         self.robotStateJointController = robotStateJointController
         self.ikPlanner = ikPlanner
+        self.manipPlanner = manipPlanner
 
-    def testCalisthenics(self):
-        feetMidPoint = self.footstepsDriver.getFeetMidPoint(self.robotStateModel)
-        startPose = self.robotStateJointController.getPose('EST_ROBOT_STATE')
+        # live operation flags:
+        self.planFromCurrentRobotState = True
+        self.onSyncProperties = False
 
-        # Step 1: Footsteps placement
-        footsteps = self.placeStepsManually(feetMidPoint)
+        self.plans = []
 
-        assert len(footsteps) > 0
-
-        # Step 2: Send request to planner. It replies with complete footstep plan message.
-        self.sendFootstepPlanRequest(footsteps, startPose)
-
-    def getSimpleFootstepsFolder(self):
-        obj = om.findObjectByName('simple footsteps')
-        if obj is None:
-            obj = om.getOrCreateContainer('simple footsteps')
-            obj.setProperty('Visible', False)
-            om.collapse(obj)
-        return obj
-
-    def placeStepsManually(self, startFeetMidPoint = None):
-        # Place footsteps on the ground manually (no planning)
-        # The number of footsteps, width, forward distance and turning angle between steps are given by user.
-        footsteps = []
-
-        contactPtsLeft, contactPtsRight = self.footstepsDriver.getContactPts()
-        contactPtsMid = np.mean(contactPtsRight, axis=0) # mid point on foot relative to foot frame
-
-        midLineFrame = transformUtils.copyFrame(startFeetMidPoint)
-
-        simpleFootstepsFolder = self.getSimpleFootstepsFolder()
-        map(om.removeFromObjectModel, simpleFootstepsFolder.children())
-
-        for i in range(self.numSteps):
-            if i == 0:
-                correctionFootToMidContact = contactPtsMid[0]
-            else:
-                correctionFootToMidContact = 0
-
-            if i < (self.numSteps-1):
-                forwardDistance = (self.forwardStep / 2) - correctionFootToMidContact
-            else:
-                forwardDistance = 0
-
-            if (i % 2 == 0 and not self.isLeadingFootRight) or (i % 2 != 0 and self.isLeadingFootRight):
-                leftRightShift = self.stepWidth / 2
-            else:
-                leftRightShift = -self.stepWidth / 2
-
-            if i < (self.numSteps-1):
-                nextTurnAngle = self.turnAngle
-            else:
-                nextTurnAngle = 0
-
-            # Determine the forward motion of a frame along the center line between the feet:
-            forwardMotionTransform = transformUtils.frameFromPositionAndRPY([forwardDistance, 0, 0], [0,0, nextTurnAngle])
-            midLineFrame.PreMultiply()
-            midLineFrame.Concatenate(forwardMotionTransform)
-            #vis.showFrame(transformUtils.copyFrame(midLineFrame), "midLineFrame")
-
-            # Shift the feet left or right as required
-            nextTransform = transformUtils.copyFrame(midLineFrame)
-            leftRightTransform = transformUtils.frameFromPositionAndRPY([0, leftRightShift, 0], [0,0,0])
-            nextTransform.PreMultiply()
-            nextTransform.Concatenate(leftRightTransform)
-            vis.showFrame(transformUtils.copyFrame(nextTransform), "nextTransform", parent=simpleFootstepsFolder, visible=simpleFootstepsFolder.getProperty('Visible'))
-
-            if i % 2 == 0:
-                footsteps.append(Footstep(nextTransform,self.isLeadingFootRight))
-            else:
-                footsteps.append(Footstep(nextTransform,not(self.isLeadingFootRight)))
-
-        return footsteps
-
-
-    def sendFootstepPlanRequest(self, footsteps, nextDoubleSupportPose):
-        goalSteps = []
-
-        for i, footstep in enumerate(footsteps):
-            step_t = footstep.transform
-
-            step = lcmdrc.footstep_t()
-            step.pos = positionMessageFromFrame(step_t)
-            step.is_right_foot =  footstep.is_right_foot
-            # Set ihmc parameters
-            default_step_params = self.footstepsDriver.getDefaultStepParams()
-            default_step_params.ihmc_transfer_time = self.ihmcTransferTime
-            default_step_params.ihmc_swing_time = self.ihmcSwingTime
-            step.params = default_step_params
-
-            goalSteps.append(step)
-
-        request = self.footstepsDriver.constructFootstepPlanRequest(nextDoubleSupportPose)
-        request.num_goal_steps = len(goalSteps)
-        request.goal_steps = goalSteps
-
-        # force correct planning parameters:
-        request.params.leading_foot = goalSteps[0].is_right_foot
-        request.params.planning_mode = lcmdrc.footstep_plan_params_t.MODE_SPLINE
-        request.params.map_mode = lcmdrc.footstep_plan_params_t.TERRAIN_HEIGHTS_Z_NORMALS
-        request.params.max_num_steps = len(goalSteps)
-        request.params.min_num_steps = len(goalSteps)
-        request.default_step_params = default_step_params
-
-        lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', request)
-
-    def executePlan(self):
-        self.footstepsDriver.commitFootstepPlan(self.footstepsDriver.lastFootstepPlan)
-
+    def commitManipPlan(self):
+        self.manipPlanner.commitManipPlan(self.plans[-1])
 
     def makeFootFrame(self, side):
         footLink = self.ikPlanner.leftFootLink if side == 'left' else self.ikPlanner.rightFootLink
         footTransform = self.robotStateModel.getLinkFrame(footLink)
-        vis.showFrame(footTransform, "right foot goal")
+        vis.showFrame(footTransform, side + " foot goal")
 
     def makeLeftFootFrame(self):
         self.makeFootFrame("left")
@@ -151,12 +51,11 @@ class CalisthenicsDemo(object):
         self.makeFootFrame("right")
 
     def moveRightFootToFrame(self):
-        self.moveFootToFrame("right")
+        self.moveFootToGoalFrame("right")
 
-
-    def moveFootToFrame(self, side):
+    def moveFootToGoalFrame(self, side):
         if side == 'left':
-            footFrame = om.findObjectByName('right foot goal')
+            footFrame = om.findObjectByName('left foot goal')
         else:
             footFrame = om.findObjectByName('right foot goal')
 
@@ -164,7 +63,7 @@ class CalisthenicsDemo(object):
 
 
     def getCurrentRelativeFootFrame(self, side = 'right'):
-        # Get the frame between the standing foot (otherSide) and the floating foot (side)
+        # Get the transform between the standing foot (otherSide) and the raised foot (side)
         side = 'right'
         otherSide = 'left'
 
@@ -188,34 +87,40 @@ class CalisthenicsDemo(object):
 
 
     def moveFootToSkater(self):
-        side = 'right'
+        floatingFoot = 'right'
         pos = [-0.79294841, -0.1598023,  0.4183836 ]
         quat = [ 0.63925192, -0.00519966,  0.76897871, -0.00129613]
-        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), side)
+        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), floatingFoot)
 
     def moveFootToPreSkater(self):
-        side = 'right'
+        floatingFoot = 'right'
         pos = [-0.45855504, -0.15881477,  0.19467936]
         quat = [  8.49938853e-01,  -3.58606857e-03,   5.26868563e-01,   7.76788522e-04]
-        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), side)
+        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), floatingFoot)
 
     def moveFootToJustOffGround(self):
-        side = 'right'
+        floatingFoot = 'right'
         pos = [ 0.0, -0.24, 0.05]
         quat = [ 1,0,0,0 ]
-        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), side)
+        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), floatingFoot)
 
     def moveFootToOnGround(self):
-        side = 'right'
+        floatingFoot = 'right'
         pos = [ 0.0, -0.24, 0.00]
         quat = [ 1,0,0,0 ]
-        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), side)
+        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), floatingFoot)
 
     def moveFootToBelowGround(self):
-        side = 'right'
+        floatingFoot = 'right'
         pos = [ 0.0, -0.24, -0.02]
         quat = [ 1,0,0,0 ]
-        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), side)
+        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), floatingFoot)
+
+    def moveFootToSuperman(self):
+        floatingFoot = 'right'
+        pos = [ -0.00222505, -0.64204418, 0.19250567]
+        quat = [ 9.71305230e-01, -2.37834617e-01, 9.18712295e-04, -2.36906030e-05]
+        self.moveFootToRelativeFrame(transformUtils.transformFromPose(pos, quat), floatingFoot)
 
     def moveFootToRelativeFrame(self, relativeFootTransform, side = 'right'):
         # move side to this transfrom relative to the otherSide (which we are standing on)       
@@ -254,6 +159,47 @@ class CalisthenicsDemo(object):
             lcmUtils.publish("DESIRED_RIGHT_FOOT_POSE", msg)
 
 
+
+    def addPlan(self, plan):
+        self.plans.append(plan)
+
+    def executePlan(self):
+        self.footstepsDriver.commitFootstepPlan(self.footstepsDriver.lastFootstepPlan)
+
+    def commitManipPlan(self):
+        self.manipPlanner.commitManipPlan(self.plans[-1])
+
+    def getEstimatedRobotStatePose(self):
+        return self.robotStateJointController.getPose('EST_ROBOT_STATE')
+
+    def getPlanningStartPose(self):
+        if self.planFromCurrentRobotState:
+            return self.getEstimatedRobotStatePose()
+        else:
+            if self.plans:
+                return robotstate.convertStateMessageToDrakePose(self.plans[-1].plan[-1])
+            else:
+                return self.getEstimatedRobotStatePose()
+
+    def planSkaterPrep(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'Calisthenics', 'skater_prep')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)
+
+    def planNominal(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'Calisthenics', 'nominal full posture')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)        
+
+    def planSupermanPrep(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'Calisthenics', 'superman_1')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)        
+
+
 class CalisthenicsTaskPanel(TaskUserPanel):
 
     def __init__(self, calisthenicsDemo):
@@ -264,14 +210,11 @@ class CalisthenicsTaskPanel(TaskUserPanel):
 
         self.addDefaultProperties()
         self.addButtons()
-        self.autoQuery = True
+        self.addTasks()
 
     def addButtons(self):
-        self.addManualButton('Plan Footsteps', self.calisthenicsDemo.testCalisthenics)
-        self.addManualButton('Execute Plan', self.calisthenicsDemo.executePlan)
 
         self.addManualSpacer()
-        self.addManualButton('Set Straight Defaults', self.setStraightDefaults)
         self.addManualButton('Create Left Frame', self.calisthenicsDemo.makeLeftFootFrame)       
         self.addManualButton('Create Right Frame', self.calisthenicsDemo.makeRightFootFrame)
         self.addManualButton('Move Right Foot', self.calisthenicsDemo.moveRightFootToFrame)
@@ -282,52 +225,69 @@ class CalisthenicsTaskPanel(TaskUserPanel):
         self.addManualButton('RFoot Pre Skater', self.calisthenicsDemo.moveFootToPreSkater)
         self.addManualButton('RFoot Skater', self.calisthenicsDemo.moveFootToSkater)
 
-    def setStraightDefaults(self, makeQuery = True):
-        self.autoQuery = False
 
-        # Manual footsteps placement options
-        self.params.setProperty('Leading Foot', 1) # Right
-        self.params.setProperty('Num Steps', 6)
-        self.params.setProperty('Forward Step', 0.35)
-        self.params.setProperty('Turn Angle', 0.0) # degrees
-        self.params.setProperty('Step Width', 0.25)
-        # IHMC params
-        self.params.setProperty('IHMC Transfer Time', 1.0)
-        self.params.setProperty('IHMC Swing Time', 1.0)
-
-        self._syncProperties()
-        if (makeQuery):
-            self.calisthenicsDemo.testCalisthenics()
-        self.autoQuery = True
 
     def addDefaultProperties(self):
-        self.params.addProperty('Leading Foot', 1, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
-        self.params.addProperty('Num Steps',  6, attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=30, singleStep=1))
-        self.params.addProperty('Forward Step', 0.35 , attributes=om.PropertyAttributes(decimals=2, minimum=-0.6, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('Turn Angle', 0.0, attributes=om.PropertyAttributes(decimals=2, minimum=-40, maximum=40, singleStep=1))
-        self.params.addProperty('Step Width', 0.25, attributes=om.PropertyAttributes(decimals=2, minimum=0.15, maximum=0.6, singleStep=0.01))
-        self.params.addProperty('IHMC Transfer Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.25, maximum=2.0, singleStep=0.01))
-        self.params.addProperty('IHMC Swing Time', 1.0, attributes=om.PropertyAttributes(decimals=2, minimum=0.6, maximum=1.5, singleStep=0.01))
+        #self.params.addProperty('Leading Foot', 1, attributes=om.PropertyAttributes(enumNames=['Left','Right']))
 
-        self.setStraightDefaults(False)
         self._syncProperties()
 
     def onPropertyChanged(self, propertySet, propertyName):
         self._syncProperties()
 
-        if (self.autoQuery):
-            self.calisthenicsDemo.testCalisthenics()
 
     def _syncProperties(self):
-        if self.params.getPropertyEnumValue('Leading Foot') == 'Left':
-            self.calisthenicsDemo.isLeadingFootRight = False
-        else:
-            self.calisthenicsDemo.isLeadingFootRight = True
-    
-        self.calisthenicsDemo.numSteps = self.params.getProperty('Num Steps')
-        self.calisthenicsDemo.forwardStep = self.params.getProperty('Forward Step')
-        self.calisthenicsDemo.turnAngle = self.params.getProperty('Turn Angle')
-        self.calisthenicsDemo.stepWidth = self.params.getProperty('Step Width')
-        self.calisthenicsDemo.ihmcTransferTime = self.params.getProperty('IHMC Transfer Time')
-        self.calisthenicsDemo.ihmcSwingTime = self.params.getProperty('IHMC Swing Time')
+        x = 1
 
+
+    def addTasks(self):
+        # some helpers
+        self.folder = None
+        def addTask(task, parent=None):
+            parent = parent or self.folder
+            self.taskTree.onAddTask(task, copy=False, parent=parent)
+        def addFunc(name, func, parent=None):
+            addTask(rt.CallbackTask(callback=func, name=name), parent=parent)
+        def addFolder(name, parent=None):
+            self.folder = self.taskTree.addGroup(name, parent=parent)
+            return self.folder
+
+        def addManipTask(name, planFunc, userPrompt=False):
+            prevFolder = self.folder
+            addFolder(name, prevFolder)
+            addFunc('plan motion', planFunc)
+            if not userPrompt:
+                addTask(rt.CheckPlanInfo(name='check manip plan info'))
+            else:
+                addTask(rt.UserPromptTask(name='approve manip plan', message='Please approve manipulation plan.'))
+            addFunc('execute manip plan', self.calisthenicsDemo.commitManipPlan)
+            self.folder = prevFolder
+
+        def addFootTask(task, parent=None):
+            parent = parent or self.folder
+            self.taskTree.onAddTask(task, copy=False, parent=parent)
+
+
+        c = self.calisthenicsDemo
+
+        self.taskTree.removeAllTasks()
+
+        # add tasks
+        # prep
+        addFolder('skater on right')
+        addManipTask('move into skater prep', c.planSkaterPrep, userPrompt=True)
+        addFunc('foot off ground', c.moveFootToJustOffGround)
+        addFunc('foot pre skater', c.moveFootToPreSkater)
+        addFunc('foot skater', c.moveFootToSkater)
+        addFunc('foot pre skater', c.moveFootToPreSkater)
+        addFunc('foot off ground', c.moveFootToJustOffGround)
+        addFunc('foot below ground', c.moveFootToBelowGround)
+        addManipTask('return to nominal', c.planNominal, userPrompt=True)        
+
+        addFolder('superman on left')
+        addManipTask('move into superman prep', c.planSupermanPrep, userPrompt=True)
+        addFunc('foot off ground', c.moveFootToJustOffGround)
+        addFunc('foot to superman', c.moveFootToSuperman)
+        addFunc('foot off ground', c.moveFootToJustOffGround)
+        addFunc('foot below ground', c.moveFootToBelowGround)
+        addManipTask('return to nominal', c.planNominal, userPrompt=True)

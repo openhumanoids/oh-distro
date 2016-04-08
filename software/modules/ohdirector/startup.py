@@ -47,7 +47,7 @@ def startup(robotSystem, globalsDict=None):
     tasklaunchpanel.panel.addTaskPanel("Table Mapping", tableMappingTaskPanel.widget)
 
     calisthenicsDemo = calisthenicsdemo.CalisthenicsDemo(rs.robotStateModel,
-                    rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
+                    rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
     calisthenicsTaskPanel = calisthenicsdemo.CalisthenicsTaskPanel(calisthenicsDemo)
     tasklaunchpanel.panel.addTaskPanel('Calisthenics', calisthenicsTaskPanel.widget)
 
