@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   ik_options.setMajorIterationsLimit(100);
   ik_options.setMajorOptimalityTolerance(1e-3);
 
-//  FEET CONSTRAINTS
+  // FEET CONSTRAINTS
   int left_foot_id = robot.findLinkId("LeftFoot");
   int right_foot_id = robot.findLinkId("RightFoot");
   int world_id = robot.findLinkId("world");
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   constraints.push_back(&right_foot_euler_constraint);
   constraints.push_back(&relative_pos_constraint);
 
-//  QUASI-STATIC CONSTRAINT
+  // QUASI-STATIC CONSTRAINT
   Matrix3Xd left_contact_points;
   Matrix3Xd right_contact_points;
   robot.getTerrainContactPoints(*(robot.bodies[left_foot_id]), left_contact_points);
@@ -134,6 +134,8 @@ int main(int argc, char* argv[])
   nominal_configuration.resize(robot.num_positions);
   nominal_configuration << 0, 0, 1.0250, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3002, 1.2500, 0, 0.7854, 1.5710, 0, 0, 0.3002, -1.2500, 0, -0.7854, 1.5710, 0, 0, 0, 0, -0.4900, 1.2050, -0.7100, 0, 0, 0, -0.4900, 1.2050, -0.7100, 0;
 
+
+  std::cout << "Load scene\n";
   ss.str("");
   ss << getenv("DRC_BASE") << "/../drc-testing-data/final_pose_planner/scene1.bin";
   string point_cloud_file = ss.str();
@@ -159,6 +161,7 @@ int main(int argc, char* argv[])
 
     cm.setActiveSide("left");
 
+    std::cout << "Starting iteration\n";
     int n_iter = 0;
     while (n_iter < 10 && info != 1)
     {
@@ -169,6 +172,7 @@ int main(int argc, char* argv[])
       n_iter++;
     }
   }
+  std::cout <<  info << "\n";
   if (info != 1) {throw runtime_error("test-FPP failed");}
   return 0;
 }

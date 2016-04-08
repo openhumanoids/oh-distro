@@ -1,5 +1,5 @@
 #include "fppUtil.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -104,7 +104,7 @@ int64_t timestamp_now()
 void CandidateRobotPosePublisher::publish(boost::shared_ptr<lcm::LCM> lcm,
     const RigidBodyTree &robot, const VectorXd &pose)
 {
-  drc::robot_state_t pose_msg;
+  bot_core::robot_state_t pose_msg;
   pose_msg.utime = timestamp_now();
   pose_msg.pose.translation.x = pose(0);
   pose_msg.pose.translation.y = pose(1);
