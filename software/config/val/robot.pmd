@@ -159,6 +159,11 @@ group "7.control" {
         exec = "roslaunch valkyrie_translator HandControl.launch";
         host = "link";
     }
+
+    cmd "ForearmControl" {
+        exec = "roslaunch valkyrie_translator ForearmControl.launch";
+        host = "link";
+    }
 }
 
 cmd "director" {
