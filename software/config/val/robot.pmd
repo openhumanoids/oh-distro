@@ -127,22 +127,22 @@ group "6.exotica" {
 
 group "7.control" {
     cmd "LCM2ROSControl" {
-        exec = "LD_PRELOAD='/usr/lib/x86_64-linux-gnu/libpcre.so' roslaunch valkyrie_translator LCM2ROSControl.launch";
+        exec = "roslaunch valkyrie_translator LCM2ROSControl.launch";
         host = "link";
     }
 
     cmd "NeckControl" {
-        exec = "LD_PRELOAD='/usr/lib/x86_64-linux-gnu/libpcre.so' roslaunch valkyrie_translator NeckControl.launch";
+        exec = "roslaunch valkyrie_translator NeckControl.launch";
         host = "link";
     }
 
     cmd "HandControl" {
-        exec = "LD_PRELOAD='/usr/lib/x86_64-linux-gnu/libpcre.so' roslaunch valkyrie_translator HandControl.launch";
+        exec = "roslaunch valkyrie_translator HandControl.launch";
         host = "link";
     }
 
     cmd "ForearmControl" {
-        exec = "LD_PRELOAD='/usr/lib/x86_64-linux-gnu/libpcre.so' roslaunch valkyrie_translator ForearmControl.launch";
+        exec = "roslaunch valkyrie_translator ForearmControl.launch";
         host = "link";
     }
 }
