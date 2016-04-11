@@ -1,11 +1,15 @@
 import valkyriedriver
 import valkyriedriverpanel
 import exampletaskpanel
+import tableboxdemo
+import manualwalkingdemo
+import stairsdemo
 
 from director import tasklaunchpanel
 from director import applogic
+from director import teleoppanel
 
-import manualwalkingdemo
+import tablemapping
 
 
 def startup(robotSystem, globalsDict=None):
@@ -18,15 +22,34 @@ def startup(robotSystem, globalsDict=None):
     applogic.getMainWindow().panelToolBar().removeAction(atlasPanelAction)
 
     # add a new task panel
-    exampleTaskPanel = exampletaskpanel.ExampleTaskPanel(robotSystem)
-    tasklaunchpanel.panel.addTaskPanel('Example Task', exampleTaskPanel.widget)
+    #exampleTaskPanel = exampletaskpanel.ExampleTaskPanel(robotSystem)
+    #tasklaunchpanel.panel.addTaskPanel('Example Task', exampleTaskPanel.widget)
 
+    tableboxDemo = tableboxdemo.TableboxDemo(rs.robotStateModel, rs.playbackRobotModel,
+                    rs.ikPlanner, rs.manipPlanner, rs.footstepsDriver, rs.lHandDriver, rs.rHandDriver,
+                    rs.view, rs.robotStateJointController)
+    tableboxTaskPanel = tableboxdemo.TableboxTaskPanel(tableboxDemo)
+    tasklaunchpanel.panel.addTaskPanel('Tablebox', tableboxTaskPanel.widget)
+
+    manualWalkingDemo = manualwalkingdemo.ManualWalkingDemo(rs.robotStateModel,
+                    rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
+    manualWalkingTaskPanel = manualwalkingdemo.ManualWalkingTaskPanel(manualWalkingDemo)
+    tasklaunchpanel.panel.addTaskPanel('Manual Walking', manualWalkingTaskPanel.widget)
+
+    stairsDemo = stairsdemo.StairsDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
+    stairsTaskPanel = stairsdemo.StairsTaskPanel(stairsDemo)
+    tasklaunchpanel.panel.addTaskPanel('Stairs', stairsTaskPanel.widget)
+
+    tableMapping = tablemapping.TableMapping(rs.robotStateModel, rs.manipPlanner, rs.view,  rs.ikPlanner, rs.robotStateJointController)
+    tableMappingTaskPanel = tablemapping.TableTaskPanel(tableMapping)
+    tasklaunchpanel.panel.addTaskPanel("Table Mapping", tableMappingTaskPanel.widget)
 
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
-
-    manualwalkingDemo = manualwalkingdemo.ManualWalkingDemo(rs.robotStateModel, rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
-    manualWalkingTaskPanel = manualwalkingdemo.ManualWalkingTaskPanel(manualwalkingDemo)
-
-    tasklaunchpanel.panel.addTaskPanel('Manual Walking', manualWalkingTaskPanel.widget)
+        globalsDict['tableboxDemo'] = tableboxDemo
+        globalsDict['manualWalkingDemo'] = manualWalkingDemo
+        globalsDict['manualWalkingTaskPanel'] = manualWalkingTaskPanel
+        globalsDict['stairsDemo'] = stairsDemo
+        globalsDict['stairsTaskPanel'] = stairsTaskPanel
+        globalsDict['tableMappingTaskPanel'] = tableMappingTaskPanel

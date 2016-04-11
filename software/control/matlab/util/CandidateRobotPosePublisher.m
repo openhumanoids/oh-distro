@@ -40,11 +40,11 @@ classdef CandidateRobotPosePublisher
             end
             num_dofs = (size(X,1))/2;
             
-            msg = drc.robot_state_t();
+            msg = bot_core.robot_state_t();
             msg.utime = t;
-            msg.pose = drc.position_3d_t();
-            msg.pose.translation = drc.vector_3d_t();
-            msg.pose.rotation = drc.quaternion_t();
+            msg.pose = bot_core.position_3d_t();
+            msg.pose.translation = bot_core.vector_3d_t();
+            msg.pose.rotation = bot_core.quaternion_t();
             msg.pose.translation.x = X(1);
             msg.pose.translation.y = X(2);
             msg.pose.translation.z = X(3);
@@ -55,9 +55,9 @@ classdef CandidateRobotPosePublisher
             msg.pose.rotation.y = q(3);
             msg.pose.rotation.z = q(4);
             
-            msg.twist = drc.twist_t();
-            msg.twist.linear_velocity = drc.vector_3d_t();
-            msg.twist.angular_velocity = drc.vector_3d_t();   
+            msg.twist = bot_core.twist_t();
+            msg.twist.linear_velocity = bot_core.vector_3d_t();
+            msg.twist.angular_velocity = bot_core.vector_3d_t();
             msg.twist.linear_velocity.x = X(num_dofs+1);
             msg.twist.linear_velocity.y = X(num_dofs+2);
             msg.twist.linear_velocity.z = X(num_dofs+3);
@@ -78,7 +78,7 @@ classdef CandidateRobotPosePublisher
                 msg.joint_velocity(j-float_offset) = X(j+num_dofs);
             end
                    
-            msg.force_torque = drc.force_torque_t();
+            msg.force_torque = bot_core.force_torque_t();
         end
         
     end % end methods

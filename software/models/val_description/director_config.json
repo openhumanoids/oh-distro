@@ -171,7 +171,7 @@
   "leftFootMeshFiles" : ["model/meshes/legs/foot.obj"],
   "rightFootMeshFiles" : ["model/meshes/legs/foot.obj"],
   "postureDatabaseFile" : "./stored_poses.json",
-  "capabilityMapFile": "../../control/matlab/data/val_description/capabilityMap.mat",
+  "capabilityMapFile": "../../../../drc-testing-data/final_pose_planner/val_description/capabilityMap.mat",
   "mirrorJointSignFlips" : ["WaistRotator", "leftShoulderRoll", "rightShoulderRoll", "leftElbowPitch", "rightElbowPitch"],
 
   "pelvisLink" : "pelvis",

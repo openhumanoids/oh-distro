@@ -57,8 +57,19 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
   }
 
   /// 2. Subscribe to required signals
-  lcm::Subscription* sub0 = lcm_->subscribe("VAL_CORE_ROBOT_STATE",&state_sync_nasa::coreRobotHandler,this);
-  lcm::Subscription* sub1 = lcm_->subscribe("VAL_FORCE_TORQUE",&state_sync_nasa::forceTorqueHandler,this);
+  lcm::Subscription* sub0;
+  lcm::Subscription* sub1;
+  if (cl_cfg_->mode == "ihmc") {
+    std::cout << "Using IHMC as source for robot state and force torque" << std::endl;
+    sub0 = lcm_->subscribe("CORE_ROBOT_STATE", &state_sync_nasa::coreRobotHandler, this);
+    sub1 = lcm_->subscribe("FORCE_TORQUE", &state_sync_nasa::forceTorqueHandler, this);
+  } else if (cl_cfg_->mode == "nasa") {
+    std::cout << "Using NASA as source for robot state and force torque" << std::endl;
+    sub0 = lcm_->subscribe("VAL_CORE_ROBOT_STATE", &state_sync_nasa::coreRobotHandler, this);
+    sub1 = lcm_->subscribe("VAL_FORCE_TORQUE", &state_sync_nasa::forceTorqueHandler, this);
+  } else {
+    std::cerr << "Unsupported mode! Must be either nasa or ihmc" << std::endl;
+  }
   force_torque_init_ = false;
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub2 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver:
@@ -332,7 +343,8 @@ int
 main(int argc, char ** argv){
   boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );  
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");  
+  opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
+  opt.add(cl_cfg->mode, "m", "mode","Mode - ihmc or nasa (source of joint states and force torque messages)");
   opt.parse();
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
