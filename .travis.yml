@@ -32,6 +32,7 @@ before_install:
   - git submodule update --init --recursive
   - cd $TRAVIS_BUILD_DIR/software/drake && git remote add sandbox https://github.com/openhumanoids/drake.git && git fetch sandbox
   - cd $TRAVIS_BUILD_DIR/software/director && git remote add sandbox https://github.com/openhumanoids/director.git && git fetch sandbox
+  - git submodule update
 
 install: true
 
