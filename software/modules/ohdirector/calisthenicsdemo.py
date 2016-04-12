@@ -17,6 +17,12 @@ import drc as lcmdrc
 import ihmc as lcmihmc
 
 
+class DelayExecution(rt.AsyncTask):
+    waitingTime = 3.0; # safe default
+
+    def run(self):
+        yield rt.DelayTask(delayTime=self.waitingTime).run()
+
 class Footstep():
     def __init__(self, transform, is_right_foot):
         self.transform = transform
@@ -35,6 +41,7 @@ class CalisthenicsDemo(object):
         self.onSyncProperties = False
 
         self.plans = []
+        self.footTrajectoryTime = 3.0 # safe default
 
     def commitManipPlan(self):
         self.manipPlanner.commitManipPlan(self.plans[-1])
@@ -149,7 +156,12 @@ class CalisthenicsDemo(object):
 
         # Rule of thumb speed limit: 10cm/sec
         distanceToMoveFoot = np.linalg.norm(tuple(np.subtract(currenFootTransform.GetPosition(), goalFootTransform.GetPosition() )) )
-        msg.trajectory_time = distanceToMoveFoot*10.0
+        self.footTrajectoryTime = distanceToMoveFoot*10.0
+
+        # For Controller
+        msg.trajectory_time = self.footTrajectoryTime 
+        # For autonomy, add this time to account for delays
+        DelayExecution.waitingTime = self.footTrajectoryTime + 4.0 
 
         if side == 'left':
             msg.robot_side = 0
@@ -157,7 +169,6 @@ class CalisthenicsDemo(object):
         else:
             msg.robot_side = 1
             lcmUtils.publish("DESIRED_RIGHT_FOOT_POSE", msg)
-
 
 
     def addPlan(self, plan):
@@ -199,6 +210,11 @@ class CalisthenicsDemo(object):
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)        
 
+    def planSupermanArms(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'Calisthenics', 'superman_arms_and_back')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)
 
 class CalisthenicsTaskPanel(TaskUserPanel):
 
@@ -224,7 +240,6 @@ class CalisthenicsTaskPanel(TaskUserPanel):
         self.addManualButton('RFoot Just Above', self.calisthenicsDemo.moveFootToJustOffGround)
         self.addManualButton('RFoot Pre Skater', self.calisthenicsDemo.moveFootToPreSkater)
         self.addManualButton('RFoot Skater', self.calisthenicsDemo.moveFootToSkater)
-
 
 
     def addDefaultProperties(self):
@@ -261,33 +276,53 @@ class CalisthenicsTaskPanel(TaskUserPanel):
             else:
                 addTask(rt.UserPromptTask(name='approve manip plan', message='Please approve manipulation plan.'))
             addFunc('execute manip plan', self.calisthenicsDemo.commitManipPlan)
+            addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'))
             self.folder = prevFolder
 
         def addFootTask(task, parent=None):
             parent = parent or self.folder
             self.taskTree.onAddTask(task, copy=False, parent=parent)
 
-
         c = self.calisthenicsDemo
-
         self.taskTree.removeAllTasks()
 
-        # add tasks
-        # prep
-        addFolder('skater on right')
+        ######################### Script 1
+        addFolder('skater on left foot')
         addManipTask('move into skater prep', c.planSkaterPrep, userPrompt=True)
+
         addFunc('foot off ground', c.moveFootToJustOffGround)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot pre skater', c.moveFootToPreSkater)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot skater', c.moveFootToSkater)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot pre skater', c.moveFootToPreSkater)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot off ground', c.moveFootToJustOffGround)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot below ground', c.moveFootToBelowGround)
+        addTask(DelayExecution(name='wait for foot'))
         addManipTask('return to nominal', c.planNominal, userPrompt=True)        
 
-        addFolder('superman on left')
+        ######################### Script 2
+        addFolder('superman on left foot')
         addManipTask('move into superman prep', c.planSupermanPrep, userPrompt=True)
+        addManipTask('superman arms and back', c.planSupermanArms, userPrompt=True)
+
         addFunc('foot off ground', c.moveFootToJustOffGround)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot to superman', c.moveFootToSuperman)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot off ground', c.moveFootToJustOffGround)
+        addTask(DelayExecution(name='wait for foot'))
+
         addFunc('foot below ground', c.moveFootToBelowGround)
+        addTask(DelayExecution(name='wait for foot'))
         addManipTask('return to nominal', c.planNominal, userPrompt=True)
