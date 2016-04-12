@@ -16,4 +16,6 @@ if(drake-ik_FOUND)
 	  VERSION 0.0.1)
 else(drake-ik_FOUND)
 	message(WARNING "Drake IK not found - not building FinalPosePlanner (likely Gurobi or Snopt have been missing when building Drake)")
+	pods_install_headers(FPPOutput.hpp
+	              DESTINATION finalPosePlanner)
 endif(drake-ik_FOUND)
