@@ -30,7 +30,7 @@ before_install:
   - git add .gitmodules catkin_ws/.gitmodules software/externals/cmake/externals.cmake
   - git rm --cached -f catkin_ws/src/exotica-dev
   - git submodule update --init --recursive
-  - cd $TRAVIS_BUILD_DIR/software && git remote add sandbox https://github.com/oh-dev/oh-distro.git && git fetch sandbox
+  - cd $TRAVIS_BUILD_DIR/software/drake && git remote add sandbox https://github.com/openhumanoids/drake.git && git fetch sandbox
   - cd $TRAVIS_BUILD_DIR/software/director && git remote add sandbox https://github.com/openhumanoids/director.git && git fetch sandbox
 
 install: true
