@@ -53,3 +53,4 @@ script:
 
 after_failure:
   - echo "Dummy for uploading logs"
+  - ls /home/travis/build/openhumanoids/oh-distro-private/software/build/lib/pkgconfig
