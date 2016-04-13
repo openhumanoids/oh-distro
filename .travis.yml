@@ -37,9 +37,6 @@ install: true
 script:
   - cd $TRAVIS_BUILD_DIR/software
   - source $TRAVIS_BUILD_DIR/software/config/drc_environment.sh
-  - echo $PKG_CONFIG_PATH
-  - echo $LD_LIBRARY_PATH
-  - echo $PATH
   - mkdir $TRAVIS_BUILD_DIR/software/externals/pod-build
   - cd $TRAVIS_BUILD_DIR/software/externals/pod-build
   - cmake .. -DBUILD_PRIVATE_EXTERNALS:BOOL=OFF -DUSE_SYSTEM_LCM:BOOL=OFF -DCMAKE_INSTALL_PREFIX:STRING=$TRAVIS_BUILD_DIR/software/build -DUSE_SYSTEM_PCL:BOOL=ON -DUSE_SYSTEM_OPENCV:BOOL=ON
