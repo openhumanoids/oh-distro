@@ -27,6 +27,14 @@ which are much better supported:
 OpenHumanoids
 =============
 
+**Private:**
+
+.. image:: https://travis-ci.com/openhumanoids/oh-distro-private.svg?token=r3Tk8EVmRT74kcFqh9rX&branch=master
+    :target: https://travis-ci.com/openhumanoids/oh-distro-private
+
+
+**Public:**
+
 .. image:: https://travis-ci.org/openhumanoids/oh-distro.svg?branch=master
     :target: https://travis-ci.org/openhumanoids/oh-distro
 
