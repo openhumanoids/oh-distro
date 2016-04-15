@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/bot_core/vector_3d_t.hpp"
 #include "lcmtypes/bot_core/rigid_transform_t.hpp"
@@ -424,7 +425,7 @@ void App::solveGazeProblem() {
     getRobotState(robot_state_msg, 0 * 1E6, q_sol, jointNames);
     // lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg); // for debug
 
-    bot_core::robot_state_t joint_position_goal_msg = bot_core::robot_state_t();
+    bot_core::joint_angles_t joint_position_goal_msg = bot_core::joint_angles_t();
     std::vector<std::string> neckJointNames;
     neckJointNames.push_back("lowerNeckPitch");
     neckJointNames.push_back("neckYaw");
@@ -434,21 +435,6 @@ void App::solveGazeProblem() {
     joint_position_goal_msg.num_joints = 3;
     joint_position_goal_msg.joint_name.assign(3, "");
     joint_position_goal_msg.joint_position.assign(3, (const float &)0.);
-    joint_position_goal_msg.joint_velocity.assign(3, (const float &)0.);
-    joint_position_goal_msg.joint_effort.assign(3, (const float &)0.);
-    joint_position_goal_msg.pose.translation.x = 0.0;
-    joint_position_goal_msg.pose.translation.y = 0.0;
-    joint_position_goal_msg.pose.translation.z = 0.0;
-    joint_position_goal_msg.pose.rotation.w = 1.0;
-    joint_position_goal_msg.pose.rotation.x = 0.0;
-    joint_position_goal_msg.pose.rotation.y = 0.0;
-    joint_position_goal_msg.pose.rotation.z = 0.0;
-    joint_position_goal_msg.twist.linear_velocity.x = 0.0;
-    joint_position_goal_msg.twist.linear_velocity.y = 0.0;
-    joint_position_goal_msg.twist.linear_velocity.z = 0.0;
-    joint_position_goal_msg.twist.angular_velocity.x = 0.0;
-    joint_position_goal_msg.twist.angular_velocity.y = 0.0;
-    joint_position_goal_msg.twist.angular_velocity.z = 0.0;
 
     std::vector<std::string>::iterator it1 =
         std::find(jointNames.begin(), jointNames.end(), "lowerNeckPitch");
