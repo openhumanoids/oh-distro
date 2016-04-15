@@ -5,6 +5,8 @@ from xml.dom import getDOMImplementation
 import director.tasks.robottasks as rt
 from director.tasks.taskuserpanel import TaskUserPanel
 import functools
+import datetime
+import os
 
 def addValue(element, value, data_format):
     format_string = '{{:s}} {{:{:s}}}'.format(data_format)
@@ -83,8 +85,9 @@ class TrajectoryTrackingTest(object):
         impl = getDOMImplementation()
         document = impl.createDocument(None, 'results', None)
         root = document.documentElement
-        detailsElement = document.createElement('details')
-        root.appendChild(detailsElement)
+        createdElement = document.createElement('created')
+        createdElement.appendChild(document.createTextNode(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        root.appendChild(createdElement)
         
         for poseName in self.plan_positions:
             testElement = document.createElement('test')
@@ -125,34 +128,8 @@ class TrajectoryTrackingTest(object):
             executedPlanElement.appendChild(executedPlanTimeElement)
             for t in self.execution_time[poseName]:
                 addValue(executedPlanTimeElement, t, 'd')
-#         
-#             executedPlanElement = document.createElement('executed_plan')
-#             testElement.appendChild(executedPlanElement)
-#             
-#             executedPlanPositionElement = document.createElement('position')
-#             executedPlanPositionElement.appendChild(document.createTextNode(''))
-#             executedPlanElement.appendChild(executedPlanPositionElement)
-#             
-#             executedPlanTimeElement = document.createElement('time')
-#             executedPlanTimeElement.appendChild(document.createTextNode(''))
-#             executedPlanElement.appendChild(executedPlanTimeElement)
-#                 
-#                 self.executedPlanPositionElement = self.document.createElement('position')
-#                 self.executedPlanPositionElement.setAttribute('joint_name', msg.plan[0].joint_name[joint])
-#                 self.executedPlanPositionElement.appendChild(self.document.createTextNode(''))
-#                 self.executedPlanElement.appendChild(self.executedPlanPositionElement)
-#                 
-#                 for p in msg.plan:
-#                     addValue(self.committedPlanPositionElement, p.joint_position[joint], '.15g')
-#             for p in msg.plan:
-#                 addValue(self.committedPlanTimeElement, p.utime, 'd')
 
-#             for joint in range(len(msg.joint_name)):
-#                 for element in self.executedPlanElement.getElementsByTagName('position'):
-#                     if element.getAttribute('joint_name') == msg.joint_name[joint]:
-#                         addValue(element, msg.joint_position[joint], '.15g')
-#             addValue(self.executedPlanTimeElement, msg.utime, 'd')
-        outputFile = open('trajectory_tracking_output', 'w')
+        outputFile = open(os.path.expanduser('~') + '/trajectory_tracking_output', 'w')
         outputFile.write(document.toprettyxml())
         outputFile.close()
 
