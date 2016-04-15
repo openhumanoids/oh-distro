@@ -1,7 +1,8 @@
 add_definitions(-ggdb3 -std=c++0x)
 
 # Drake-IK requires either Gurobi or SNOPT to build
-pods_find_pkg_config(drake-ik)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(drake-ik REQUIRED drake-ik)
 
 if(drake-ik_FOUND)
 	add_library(finalPosePlanner  SHARED FinalPosePlanner.cpp)

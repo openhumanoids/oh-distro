@@ -5,7 +5,8 @@ set(POD_NAME planning)
 include(cmake/pods.cmake)
 
 # Drake-IK requires either Gurobi or SNOPT to build, FPP requires Drake IK
-pods_find_pkg_config(drake-ik)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(drake-ik REQUIRED drake-ik)
 
 if(drake-ik_FOUND)
 	add_subdirectory(src/util)
