@@ -15,6 +15,7 @@
 #   pods_install_executables(...)
 #   pods_install_pkg_config_file(...)
 #
+#   pods_find_pkg_config(...)
 #   pods_use_pkg_config_packages(...)
 #
 # Python
@@ -272,6 +273,48 @@ function(pods_install_python_packages py_src_dir)
         if (NOT _installed_a_package)
             message(FATAL_ERROR "${py_src_dir} does not contain any python packages!\n")
         endif()
+    endif()
+endfunction()
+
+
+# pods_find_pkg_config(<package-name> <minimum_version>)
+#
+# Invokes `pkg-config --exists <package-name>` and, per the cmake standard,
+# sets the variable <package-name>_FOUND if it succeeds
+#
+# Takes an optional minimum version number as the second argument.
+#
+# example usage:
+#   pods_find_pkg_config(eigen3)
+#   if (eigen3_FOUND)
+#      ... do something ...
+#   endif()
+function(pods_find_pkg_config)
+    if (DEFINED ${ARGV0}_FOUND AND ${ARGV0}_FOUND AND ${ARGC} EQUAL 1) # not caching version info yet (but I could)
+      return()
+    endif()
+    if (NOT PKG_CONFIG_EXECUTABLE)
+      find_package(PkgConfig REQUIRED)
+    endif()
+
+    if(${ARGC} EQUAL 1)
+      execute_process(COMMAND
+        ${PKG_CONFIG_EXECUTABLE} --exists ${ARGV}
+        RESULT_VARIABLE found)
+    elseif(${ARGC} EQUAL 2)
+      execute_process(COMMAND
+        ${PKG_CONFIG_EXECUTABLE} --atleast-version=${ARGV1} ${ARGV0}
+        RESULT_VARIABLE found)
+    else()
+      message(FATAL_ERROR "pods_find_pkg_config take one or two arguments")
+    endif()
+
+    if (found EQUAL 0)
+       message(STATUS "Found ${ARGV0}")
+       set(${ARGV0}_FOUND 1 CACHE BOOL "" FORCE)
+    else()
+      message(STATUS "Could NOT find ${ARGV0} (version >= ${ARGV1}) using pods_find_pkg_config. PKG_CONFIG_PATH = $ENV{PKG_CONFIG_PATH}")
+      set(${ARGV0}_FOUND 0 CACHE BOOL "" FORCE)
     endif()
 endfunction()
 
