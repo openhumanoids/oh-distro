@@ -334,7 +334,7 @@ class TableplanningDemo(object):
         self.showPlan(newPlan)
 
     def placeHandModel(self):
-        if not om.findObjectByName('Final Pose End Effector'):
+        if not om.findObjectByName('final pose end effector'):
             side = self.reachingHand
             handFrame = self.footstepPlanner.getFeetMidPoint(self.robotStateModel)
             handFrame.PreMultiply()
@@ -346,8 +346,8 @@ class TableplanningDemo(object):
             handFrame.Concatenate(transformUtils.frameFromPositionAndRPY([0,0,0], rotation))
             handFactory = HandFactory(self.robotStateModel)
             handFactory.placeHandModelWithTransform(handFrame, self.robotStateModel.views[0],
-                                                    side, 'Final Pose End Effector', 'planning')
-            handObj = om.findObjectByName('Final Pose End Effector frame')
+                                                    side, 'final pose end effector', 'planning')
+            handObj = om.findObjectByName('final pose end effector frame')
             handObj.connectFrameModified(self.onHandModelModified)
         
     def onHandModelModified(self, frame):
@@ -358,8 +358,8 @@ class TableplanningDemo(object):
         
     def changeHand(self, handName):
         self.reachingHand = handName
-        if om.findObjectByName('Final Pose End Effector'):
-            om.removeFromObjectModel(om.findObjectByName('Final Pose End Effector'))
+        if om.findObjectByName('final pose end effector'):
+            om.removeFromObjectModel(om.findObjectByName('final pose end effector'))
             self.placeHandModel()
             
     def runIK(self):
@@ -373,24 +373,24 @@ class TableplanningDemo(object):
     def showPose(self, pose):
         self.hidePlan()
         self.teleopJointController.setPose('reach_end', pose)
-        self.showMPModel()
+        self.showTeleoModel()
         
-    def hideMPModel(self):
+    def hideTeleopModel(self):
         self.teleopRobotModel.setProperty('Visible', False)
         
-    def showMPModel(self):
+    def showTeleoModel(self):
         self.teleopRobotModel.setProperty('Visible', True)
         self.teleopRobotModel.setProperty('Alpha', 1)
         
     def showPlan(self, plan):
-        self.hideMPModel()
+        self.hideTeleopModel()
         self.playbackRobotModel.setProperty('Visible', True)
         
     def hidePlan(self):
         self.playbackRobotModel.setProperty('Visible', False)
         
     def getGoalFrame(self, linkName):
-        return om.findObjectByName('Final Pose End Effector frame')
+        return om.findObjectByName('final pose end effector frame')
         
     def createIKConstraints(self, baseConstraint, backConstraint, feetConstraint, reachHand):
         startPoseName = 'reach_start'

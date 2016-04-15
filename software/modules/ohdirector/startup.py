@@ -36,7 +36,7 @@ def startup(robotSystem, globalsDict=None):
                     rs.ikPlanner, rs.manipPlanner, rs.footstepsDriver, rs.lHandDriver, rs.rHandDriver,
                     rs.view, rs.robotStateJointController, rs.teleopRobotModel, rs.teleopJointController, rs.footstepsDriver)
     tableplanningTaskPanel = tableplanningdemo.TableplanningTaskPanel(tableplanningDemo)
-    tasklaunchpanel.panel.addTaskPanel('TablePlanning', tableplanningTaskPanel.widget)
+    tasklaunchpanel.panel.addTaskPanel('Table Planning', tableplanningTaskPanel.widget)
     
     manualWalkingDemo = manualwalkingdemo.ManualWalkingDemo(rs.robotStateModel,
                     rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner)
