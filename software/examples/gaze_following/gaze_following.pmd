@@ -5,7 +5,7 @@ group "99.gaze_following_demo" {
     }
 
     cmd "gaze_following_planner" {
-        exec = "oh-gaze-following-demo";
+        exec = "oh-gaze-tracking-demo";
         host = "localhost";
     }
 }
