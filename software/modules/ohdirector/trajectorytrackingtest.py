@@ -173,7 +173,9 @@ class TrackingTestPanel(TaskUserPanel):
             addFunc(self.trackingTest.commitManipPlan, name='execute manip plan', parent=group)
             addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'), parent=group)
         
-        addTest('arm up', 'left')
-#         addTest('arm up', 'right')
+        addTest('arm side', 'left')
+        addTest('arm side', 'right')
+        addTest('arm front', 'left')
+        addTest('arm front', 'right')
         addFunc(self.trackingTest.closeFile, name = 'save results', parent = 'arm up (right)')
         

@@ -614,7 +614,7 @@
   "Trajectory Tracking Test": [
     {
       "allow_mirror": true,
-      "description": "arm up",
+      "description": "arm side",
       "joints": {
         "leftElbowPitch": 0.0007120000082068145,
         "leftForearmYaw": 1.5709999799728394,
@@ -624,7 +624,22 @@
         "leftWristPitch": 0.0,
         "leftWristRoll": 0.0
       },
-      "name": "arm up",
+      "name": "arm side",
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "arm front",
+      "joints": {
+        "leftElbowPitch": -0.00025518774054944515,
+        "leftForearmYaw": 1.5709168910980225,
+        "leftShoulderPitch": -1.5843071937561035,
+        "leftShoulderRoll": -1.307399034500122,
+        "leftShoulderYaw": 0.0005197525024414062,
+        "leftWristPitch": -0.00026057951617985964,
+        "leftWristRoll": 0.013148415833711624
+      },
+      "name": "arm front",
       "nominal_handedness": "left"
     }
   ]
