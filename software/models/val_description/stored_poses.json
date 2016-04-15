@@ -610,5 +610,22 @@
       "name": "hands goalie",
       "nominal_handedness": "none"
     }
+  ],
+  "Trajectory Tracking Test": [
+    {
+      "allow_mirror": true,
+      "description": "arm up",
+      "joints": {
+        "leftElbowPitch": 0.0007120000082068145,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftShoulderPitch": 0.0017999999690800905,
+        "leftShoulderRoll": 0.001610000035725534,
+        "leftShoulderYaw": 0.0,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0
+      },
+      "name": "arm up",
+      "nominal_handedness": "left"
+    }
   ]
 }

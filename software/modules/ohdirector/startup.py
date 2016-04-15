@@ -4,6 +4,7 @@ import exampletaskpanel
 import tableboxdemo
 import manualwalkingdemo
 import stairsdemo
+import trajectorytrackingtest
 
 from director import tasklaunchpanel
 from director import applogic
@@ -45,6 +46,10 @@ def startup(robotSystem, globalsDict=None):
     tableMapping = tablemapping.TableMapping(rs.robotStateModel, rs.manipPlanner, rs.view,  rs.ikPlanner, rs.robotStateJointController)
     tableMappingTaskPanel = tablemapping.TableTaskPanel(tableMapping)
     tasklaunchpanel.panel.addTaskPanel("Table Mapping", tableMappingTaskPanel.widget)
+    
+    trajectoryTrackingTest = trajectorytrackingtest.TrajectoryTrackingTest(rs.ikPlanner, rs.manipPlanner, rs.robotStateJointController)
+    trackingTestPanel = trajectorytrackingtest.TrackingTestPanel(trajectoryTrackingTest)
+    tasklaunchpanel.panel.addTaskPanel('Tracking Test', trackingTestPanel.widget)
 
     calisthenicsDemo = calisthenicsdemo.CalisthenicsDemo(rs.robotStateModel,
                     rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
