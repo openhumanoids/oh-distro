@@ -51,6 +51,20 @@ class ValkyrieDriver(object):
 
         lcmUtils.publish("DESIRED_HAND_ANGLES", msg)
 
+    def openHand(self, side):
+        '''
+        Opens all pitch joints, doesn't move the thumb roll (Pseudo soft E-stop)
+        '''
+        assert side in ["left", "right"]
+
+        msg = lcmbotcore.joint_angles_t()
+        msg.joint_name = [side + "IndexFingerMotorPitch1", side + "MiddleFingerMotorPitch1", side + "PinkyMotorPitch1", side + "ThumbMotorPitch1", side + "ThumbMotorPitch2"]
+        msg.num_joints = len(msg.joint_name)
+        msg.joint_position = [0] * len(msg.joint_name)
+
+        lcmUtils.publish("DESIRED_HAND_ANGLES", msg)
+
+
 
 def init(ikPlanner):
 

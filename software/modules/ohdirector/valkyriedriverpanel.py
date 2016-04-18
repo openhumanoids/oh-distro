@@ -53,6 +53,7 @@ class ValkyrieDriverPanel(object):
 
         # Hand Control
         self.ui.sendHandCommandButton.connect('clicked()', self.sendHandCommandButtonClicked)
+        self.ui.openHandButton.connect('clicked()', self.openHandButtonClicked)
 
 
     def getModeInt(self, inputStr):
@@ -120,6 +121,10 @@ class ValkyrieDriverPanel(object):
         middleFingerPitch = float(self.ui.middleFingerPitchSlider.value) / 99.
         pinkyPitch = float(self.ui.pinkyPitchSlider.value) / 99.
         self.driver.sendHandCommand(side, thumbRoll, thumbPitch1, thumbPitch2, indexFingerPitch, middleFingerPitch, pinkyPitch)
+
+    def openHandButtonClicked(self):
+        side = self.ui.handSelectorComboBox.currentText.lower()
+        self.driver.openHand(side)
 
 
 def _getAction():
