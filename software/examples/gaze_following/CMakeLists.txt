@@ -6,4 +6,11 @@ include(cmake/pods.cmake)
 
 pods_install_python_script(oh-send-neck-command scripts/send-neck-command.py)
 
-add_subdirectory(src/)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(drake-ik REQUIRED drake-ik)
+
+if(drake-ik_FOUND)
+	add_subdirectory(src/)
+else()
+	message(WARNING "drake-ik not found, skipping gaze following demo")
+endif()
