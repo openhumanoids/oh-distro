@@ -609,7 +609,6 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
     int i1 = (i > 0) ? (i - 1) : 0;
     int i2 = i;
     int i3 = (i < msg->num_states - 1) ? (i + 1) : (msg->num_states - 1);
-
     for (int j = 0; j < arm_indices.size(); j++)
     {
       point.positions.push_back(state.joint_position[arm_indices[j]]);
@@ -622,8 +621,8 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
       // point.effort.push_back( state.joint_effort[ arm_indices[j] ] );
 
       point.time = getPlanTimeAtWaypoint( state.utime );
-      std::cout << i << ": " << getPlanTimeAtWaypoint(state.utime) << " " << (state.utime - msg->plan[i-1].utime) * 1E-6
-                << " is time and difference of the arm waypoints [Right: " << is_right << "]\n";
+//      std::cout << i << ": " << getPlanTimeAtWaypoint(state.utime) << " " << (state.utime - msg->plan[i-1].utime) * 1E-6
+//                << " is time and difference of the arm waypoints [Right: " << is_right << "]\n";
 
 
     }
@@ -779,6 +778,33 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 
   if (outputTrajectoryMode_ == TrajectoryMode::wholeBody)
   {
+    //  Temporary fix
+    bool send_last = false;
+    if(nh_.hasParam("/lcm2ros_ihmc/only_send_last_traj_point"))
+      nh_.getParam("/lcm2ros_ihmc/only_send_last_traj_point",send_last);
+    if(send_last)
+    {
+      ROS_WARN_STREAM("Actual trajectory length "<<msg->num_states<<", only last point will be sent");
+      wbt_msg.right_arm_trajectory.trajectory_points.resize(1);
+      wbt_msg.right_arm_trajectory.trajectory_points[0] = right_arm_trajectory.trajectory_points[right_arm_trajectory.trajectory_points.size()-1];
+      wbt_msg.left_arm_trajectory.trajectory_points.resize(1);
+      wbt_msg.left_arm_trajectory.trajectory_points[0] = left_arm_trajectory.trajectory_points[left_arm_trajectory.trajectory_points.size()-1];
+      bot_core::robot_state_t last_state = msg->plan[msg->num_states-1];
+      wbt_msg.pelvis_world_position.resize(1);
+      wbt_msg.pelvis_world_position[0].x = last_state.pose.translation.x;
+      wbt_msg.pelvis_world_position[0].y = last_state.pose.translation.y;
+      wbt_msg.pelvis_world_position[0].z = last_state.pose.translation.z;
+      wbt_msg.pelvis_world_orientation.resize(1);
+      wbt_msg.pelvis_world_orientation[0].x = last_state.pose.rotation.x;
+      wbt_msg.pelvis_world_orientation[0].y = last_state.pose.rotation.y;
+      wbt_msg.pelvis_world_orientation[0].z = last_state.pose.rotation.z;
+      wbt_msg.pelvis_world_orientation[0].w = last_state.pose.rotation.w;
+      wbt_msg.chest_world_orientation.resize(1);
+      wbt_msg.chest_world_orientation[0] = chest_trajectory[chest_trajectory.size()-1];
+      wbt_msg.time_at_waypoint.resize(1);
+      wbt_msg.time_at_waypoint[0] = getPlanTimeAtWaypoint(last_state.utime);
+      wbt_msg.num_waypoints = 1;
+    }
     whole_body_trajectory_pub_.publish(wbt_msg);
     ROS_ERROR("LCM2ROS sent Whole Body Trajectory");
   }
