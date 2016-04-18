@@ -33,7 +33,6 @@
   <depend>std_msgs</depend>
   <depend>trajectory_msgs</depend>
   <depend>tf</depend>
-  <depend>val_hardware_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export />
