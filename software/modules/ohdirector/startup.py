@@ -10,12 +10,14 @@ from director import applogic
 from director import teleoppanel
 
 import tablemapping
+import manualwalkingdemo
+import calisthenicsdemo
 
 
 def startup(robotSystem, globalsDict=None):
     rs = robotSystem
 
-    valkyrieDriver = valkyriedriver.ValkyrieDriver()
+    valkyrieDriver = valkyriedriver.ValkyrieDriver(rs.ikPlanner)
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
 
     atlasPanelAction = applogic.getToolBarActions()['ActionAtlasDriverPanel']
@@ -44,12 +46,24 @@ def startup(robotSystem, globalsDict=None):
     tableMappingTaskPanel = tablemapping.TableTaskPanel(tableMapping)
     tasklaunchpanel.panel.addTaskPanel("Table Mapping", tableMappingTaskPanel.widget)
 
+    calisthenicsDemo = calisthenicsdemo.CalisthenicsDemo(rs.robotStateModel,
+                    rs.footstepsDriver, rs.robotStateJointController, rs.ikPlanner, rs.manipPlanner)
+    calisthenicsTaskPanel = calisthenicsdemo.CalisthenicsTaskPanel(calisthenicsDemo)
+    tasklaunchpanel.panel.addTaskPanel('Calisthenics', calisthenicsTaskPanel.widget)
+
+
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
+
         globalsDict['tableboxDemo'] = tableboxDemo
+
         globalsDict['manualWalkingDemo'] = manualWalkingDemo
         globalsDict['manualWalkingTaskPanel'] = manualWalkingTaskPanel
+
         globalsDict['stairsDemo'] = stairsDemo
         globalsDict['stairsTaskPanel'] = stairsTaskPanel
+
         globalsDict['tableMappingTaskPanel'] = tableMappingTaskPanel
+
+        globalsDict['calisthenicsDemo'] = calisthenicsDemo

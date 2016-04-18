@@ -1,0 +1,15 @@
+package ihmc;
+
+struct foot_pose_packet_message_t
+{
+  int64_t utime;
+
+  int8_t robot_side;
+
+  double position[3];
+  float orientation[4]; // NB: ordered wxyz
+
+  float trajectory_time;
+}
+
+
