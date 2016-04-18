@@ -4,11 +4,6 @@ group "0.ros_bridge" {
         host = "localhost";
     }
 
-    cmd "ros_bridge_with_pronto" {
-        exec = "roslaunch oh_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_pelvisMiddleImu";
-        host = "localhost";
-    }
-
     cmd "ihmc_ros_network_processor" {
         exec = "bash -c 'cd /home/val/valkyrie && ./runROSNetworkProcessor.sh'";
         host = "zelda";
@@ -30,8 +25,8 @@ group "1.params_and_model_pub" {
 
 group "2.drivers" {
     cmd "multisense" {
-        exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a $VAL_MULTISENSE_IP -m 1500";
-        host = "localhost";
+        exec = "multisense-lcm-driver -o 0 -n hokuyo_joint -a 10.66.171.42";
+        host = "zelda";
     }
     cmd "spin-lidar" {
         exec = "drc-spin-lidar";
@@ -43,25 +38,9 @@ group "2.drivers" {
     }
 }
 
-group "3.a.state_without_pronto_using_ihmc" {
+group "3.state_without_pronto" {
     cmd "joints2frames_without" {
         exec = "drc-joints2frames";
-        host = "localhost";
-    }
-    cmd "state-sync" {
-        exec = "nasa-state-sync -m ihmc";
-        host = "localhost";
-    }
-}
-
-group "3.b.state_without_pronto_using_nasa" {
-    cmd "joints2frames_without" {
-        exec = "drc-joints2frames";
-        host = "localhost";
-    }
-
-    cmd "ros_nasa_bridge" {
-        exec = "roslaunch oh_translators nasa_bridge.launch";
         host = "localhost";
     }
 
@@ -70,22 +49,6 @@ group "3.b.state_without_pronto_using_nasa" {
         host = "localhost";
     }
 }
-
-group "2.state_with_pronto" {
-    cmd "state-sync" {
-        exec = "nasa-state-sync";
-        host = "localhost";
-    }
-    cmd "joints2frames_with" {
-        exec = "drc-joints2frames";
-        host = "localhost";
-    }
-    cmd "se-fusion" {
-        exec = "se-fusion";
-        host = "localhost";
-    }
-}
-
 
 group "4.plan_and_control" {
     cmd "drc-ihmc-step-translator" {
@@ -181,35 +144,25 @@ cmd "ros-multisense" {
     host = "localhost";
 }
 
-script "start_ui_exotica" {
-    start cmd "ros_bridge_without_pronto";
-    start group "1.params_and_model_pub";
-    wait ms 1000;
-    start group "2.drivers";
-    start group "3.a.state_without_pronto_using_ihmc";
-    start group "4.plan_and_control";
-    start group "5.maps";
-    start group "6.exotica";
-    start cmd "director";
-}
-
 script "start_ui" {
     start cmd "ros_bridge_without_pronto";
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.drivers";
-    start group "3.a.state_without_pronto_using_ihmc";
+    start group "3.state_without_pronto";
     start group "4.plan_and_control";
     start group "5.maps";
     start cmd "director";
 }
 
-script "start_ui_with_pronto" {
-    start cmd "ros_bridge_with_pronto";
+script "start_ui_exotica" {
+    start cmd "ros_bridge_without_pronto";
     start group "1.params_and_model_pub";
     wait ms 1000;
-    start group "2.state_with_pronto";
+    start group "2.drivers";
+    start group "3.state_without_pronto";
     start group "4.plan_and_control";
     start group "5.maps";
+    start group "6.exotica";
     start cmd "director";
 }

@@ -21,7 +21,9 @@ import bot_core
 
 class ValkyrieDriver(object):
 
-    #def __init__(self):
+    def __init__(self, ikPlanner):
+        self.ikPlanner = ikPlanner
+
     #    #self._setupSubscriptions()
 
     #def _setupSubscriptions(self):
@@ -32,9 +34,9 @@ class ValkyrieDriver(object):
         msg.data = wholeBodyMode
         lcmUtils.publish('IHMC_CONTROL_MODE_COMMAND', msg)
 
-def init():
+def init(ikPlanner):
 
     global driver
-    driver = ValkyrieDriver()
+    driver = ValkyrieDriver(ikPlanner)
 
     return driver
