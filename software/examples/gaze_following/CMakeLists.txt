@@ -4,10 +4,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(POD_NAME gaze_following_demo)
 include(cmake/pods.cmake)
 
-pods_install_python_script(oh-send-neck-command scripts/send-neck-command.py)
-
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(drake-ik REQUIRED drake-ik)
+pkg_check_modules(drake-ik)
 
 if(drake-ik_FOUND)
 	add_subdirectory(src/)
