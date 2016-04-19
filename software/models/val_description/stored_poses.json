@@ -538,6 +538,31 @@
       },
       "name": "hands up safely 3",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "valkyrie_wins",
+      "joints": {
+        "leftElbowPitch": -1.7482638359069824,
+        "leftForearmYaw": 0.0,
+        "leftShoulderPitch": 0.0820680782198906,
+        "leftShoulderRoll": 0.03706444427371025,
+        "leftShoulderYaw": -1.4664814472198486,
+        "leftWristPitch": -0.0,
+        "leftWristRoll": 0.0,
+        "rightElbowPitch": 1.7356979846954346,
+        "rightForearmYaw": 0.0,
+        "rightShoulderPitch": 0.3021947145462036,
+        "rightShoulderRoll": -0.0547061450779438,
+        "rightShoulderYaw": -1.5140358209609985,
+        "rightWristPitch": -0.0,
+        "rightWristRoll": 0.0,
+        "torsoPitch": -0.029145240783691406,
+        "torsoRoll": 0.08897089958190918,
+        "torsoYaw": 0.0245436429977417
+      },
+      "name": "valkyrie_wins",
+      "nominal_handedness": "none"
     }
   ],
   "Table Box Pick": [
