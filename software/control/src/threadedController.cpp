@@ -362,6 +362,7 @@ namespace {
         std::this_thread::yield();
       }
 
+
       // auto begin = std::chrono::high_resolution_clock::now();
 
 
@@ -482,6 +483,8 @@ namespace {
     solveArgs.pdata = pdata;
     solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->getRobot().bodies.size());
 
+    lcmHandler.Start();
+    controlReceiver.InitSubscriptions();
 
     // so that the encodeControllerState method will have access to them
     state_coordinate_names_shared = state_coordinate_names;
