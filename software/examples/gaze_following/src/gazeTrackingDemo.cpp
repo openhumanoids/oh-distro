@@ -55,9 +55,6 @@ class App {
 
   ~App() {}
 
-  void getRobotState(bot_core::robot_state_t &robot_state_msg, int64_t utime_in,
-                     Eigen::VectorXd q, std::vector<std::string> jointNames);
-
   int getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol);
 
   void solveGazeProblem();
@@ -87,6 +84,8 @@ class App {
 
   BotParam *botparam_;
   BotFrames *botframes_;
+
+  Eigen::Vector3d last_goal_pose_;
 };
 
 App::App(std::shared_ptr<lcm::LCM> lcm_in, const CommandLineConfig &cl_cfg_in)
@@ -144,33 +143,6 @@ void findJointAndInsert(const RigidBodyTree &model, const std::string &name,
 
   position_list->insert(position_list->end(), position_indices.begin(),
                         position_indices.end());
-}
-
-// TODO(tbd): move to Eigen conversions
-Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
-  // This conversion function introduces a NaN in Eigen Rotations when:
-  // roll == pi , pitch,yaw =0    ... or other combinations.
-  // cos(pi) ~=0 but not exactly 0
-  // Post DRC Trails: replace these with Eigen's own conversions
-  if (((roll == M_PI) && (pitch == 0)) && (yaw == 0)) {
-    return Eigen::Quaterniond(0, 1, 0, 0);
-  } else if (((pitch == M_PI) && (roll == 0)) && (yaw == 0)) {
-    return Eigen::Quaterniond(0, 0, 1, 0);
-  } else if (((yaw == M_PI) && (roll == 0)) && (pitch == 0)) {
-    return Eigen::Quaterniond(0, 0, 0, 1);
-  }
-
-  double sy = sin(yaw * 0.5);
-  double cy = cos(yaw * 0.5);
-  double sp = sin(pitch * 0.5);
-  double cp = cos(pitch * 0.5);
-  double sr = sin(roll * 0.5);
-  double cr = cos(roll * 0.5);
-  double w = cr * cp * cy + sr * sp * sy;
-  double x = sr * cp * cy - cr * sp * sy;
-  double y = cr * sp * cy + sr * cp * sy;
-  double z = cr * cp * sy - sr * sp * cy;
-  return Eigen::Quaterniond(w, x, y, z);
 }
 
 Eigen::VectorXd robotStateToDrakePosition(
@@ -231,40 +203,6 @@ Eigen::VectorXd robotStateToDrakePosition(
 }
 
 /////////////////////////////////////////////////
-void App::getRobotState(bot_core::robot_state_t &robot_state_msg,
-                        int64_t utime_in, Eigen::VectorXd q,
-                        std::vector<std::string> jointNames) {
-  robot_state_msg.utime = utime_in;
-
-  // Pelvis Pose:
-  robot_state_msg.pose.translation.x = q(0);
-  robot_state_msg.pose.translation.y = q(1);
-  robot_state_msg.pose.translation.z = q(2);
-
-  Eigen::Quaterniond quat = euler_to_quat(q(3), q(4), q(5));
-
-  robot_state_msg.pose.rotation.w = quat.w();
-  robot_state_msg.pose.rotation.x = quat.x();
-  robot_state_msg.pose.rotation.y = quat.y();
-  robot_state_msg.pose.rotation.z = quat.z();
-
-  robot_state_msg.twist.linear_velocity.x = 0;
-  robot_state_msg.twist.linear_velocity.y = 0;
-  robot_state_msg.twist.linear_velocity.z = 0;
-  robot_state_msg.twist.angular_velocity.x = 0;
-  robot_state_msg.twist.angular_velocity.y = 0;
-  robot_state_msg.twist.angular_velocity.z = 0;
-
-  // Joint States:
-  for (size_t i = 0; i < jointNames.size(); i++) {
-    robot_state_msg.joint_name.push_back(jointNames[i]);
-    robot_state_msg.joint_position.push_back(q(i));
-    robot_state_msg.joint_velocity.push_back(0);
-    robot_state_msg.joint_effort.push_back(0);
-  }
-  robot_state_msg.num_joints = robot_state_msg.joint_position.size();
-}
-
 int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
   Eigen::Vector2d tspan;
   tspan << 0, 1;
@@ -343,7 +281,7 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
   inverseKin(&model_, q_star, q_star, constraint_array.size(),
              constraint_array.data(), q_sol, info, infeasible_constraint,
              ikoptions);
-  printf("INFO = %d\n", info);
+  // printf("INFO = %d\n", info);
   if (info != 1) {
     for (auto it = infeasible_constraint.begin();
          it != infeasible_constraint.end(); it++)
@@ -351,21 +289,6 @@ int App::getConstraints(Eigen::VectorXd q_star, Eigen::VectorXd &q_sol) {
   }
 
   return info;
-}
-
-static inline bot_core::pose_t getPoseAsBotPose(Eigen::Isometry3d pose,
-                                                int64_t utime) {
-  bot_core::pose_t pose_msg;
-  pose_msg.utime = utime;
-  pose_msg.pos[0] = pose.translation().x();
-  pose_msg.pos[1] = pose.translation().y();
-  pose_msg.pos[2] = pose.translation().z();
-  Eigen::Quaterniond r_x(pose.rotation());
-  pose_msg.orientation[0] = r_x.w();
-  pose_msg.orientation[1] = r_x.x();
-  pose_msg.orientation[2] = r_x.y();
-  pose_msg.orientation[3] = r_x.z();
-  return pose_msg;
 }
 
 void App::solveGazeProblem() {
@@ -382,24 +305,12 @@ void App::solveGazeProblem() {
     return;
   }
 
-  // publish neck pitch and yaw joints as orientation. this works ok when robot
-  // is facing 1,0,0,0
   std::vector<std::string> jointNames;
   for (int i = 0; i < model_.num_positions; i++) {
-    // std::cout << model_.getPositionName(i) << " " << i << "\n";
     jointNames.push_back(model_.getPositionName(i));
   }
 
-  bot_core::robot_state_t robot_state_msg;
-  getRobotState(robot_state_msg, 0 * 1E6, q_sol, jointNames);
-  // lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg); // for debug
-
   bot_core::joint_angles_t joint_position_goal_msg = bot_core::joint_angles_t();
-  std::vector<std::string> neckJointNames;
-  neckJointNames.push_back("lowerNeckPitch");
-  neckJointNames.push_back("neckYaw");
-  neckJointNames.push_back("upperNeckPitch");
-  // getRobotState(joint_position_goal_msg, 0*1E6, q_sol, neckJointNames);
   joint_position_goal_msg.utime = bot_timestamp_now();
   joint_position_goal_msg.num_joints = 3;
   joint_position_goal_msg.joint_name.assign(3, "");
@@ -430,6 +341,9 @@ void App::solveGazeProblem() {
             << (q_sol[neckYawIndex]) << "*, " << (q_sol[upperNeckPitchIndex])
             << "*" << std::endl;
 
+  // Update last goal pose
+  last_goal_pose_ = cl_cfg_.gazeGoal;
+
   toc();
 }
 
@@ -448,7 +362,6 @@ void App::gazeGoalHandler(const lcm::ReceiveBuffer *rbuf,
   std::cout << "Updated gaze goal to " << cl_cfg_.gazeGoal << std::endl;
 }
 
-int aprilTagCounter = 0;
 void App::aprilTagTransformHandler(const lcm::ReceiveBuffer *rbuf,
                                    const std::string &channel,
                                    const bot_core::rigid_transform_t *msg) {
@@ -458,9 +371,16 @@ void App::aprilTagTransformHandler(const lcm::ReceiveBuffer *rbuf,
   cl_cfg_.gazeGoal(0) = aprilTagLocation.translation().x();
   cl_cfg_.gazeGoal(1) = aprilTagLocation.translation().y();
   cl_cfg_.gazeGoal(2) = aprilTagLocation.translation().z();
-  if (aprilTagCounter % 30 == 0)
+
+  double distance = std::sqrt(pow(last_goal_pose_(0) - cl_cfg_.gazeGoal(0), 2) +
+                              pow(last_goal_pose_(1) - cl_cfg_.gazeGoal(1), 2) +
+                              pow(last_goal_pose_(2) - cl_cfg_.gazeGoal(2), 2));
+
+  // Only solve problem and publish goal if distance was significant
+  if (distance > 0.1) {
     std::cout << "New gaze goal: " << cl_cfg_.gazeGoal.transpose() << std::endl;
-  aprilTagCounter++;
+    solveGazeProblem();
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -482,6 +402,5 @@ int main(int argc, char *argv[]) {
             << "============================" << std::endl;
 
   while (0 == lcm->handle()) {
-    app.solveGazeProblem();
   }
 }
