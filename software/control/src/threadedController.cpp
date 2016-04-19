@@ -22,26 +22,14 @@ using namespace Eigen;
 
 namespace {
 
-struct ThreadedControllerOptions {
-  std::string atlas_command_channel;
-  std::string robot_behavior_channel;
-  int max_infocount; // If we see info < 0 more than max_infocount times, freeze Atlas. Set to -1 to disable freezing.
-};
-
-
-namespace {
-
-  using namespace Eigen;
-
   struct ThreadedControllerOptions {
     std::string atlas_command_channel;
-    std::string atlas_behavior_channel;
+    std::string robot_behavior_channel;
     int max_infocount; // If we see info < 0 more than max_infocount times, freeze Atlas. Set to -1 to disable freezing.
   };
 
   std::atomic<bool> done(false);
 
-  InstantaneousQPController *pdata;
   std::atomic<bool> newInputAvailable(false);
   std::atomic<bool> newStateAvailable(false);
 
@@ -52,13 +40,13 @@ namespace {
   std::shared_ptr<FootContactDriver> foot_contact_driver;
   Matrix<bool, Dynamic, 1> b_contact_force;
   VectorXd drake_input_to_robot_state;
+  std::vector<string> state_coordinate_names_shared;
 
   class SolveArgs {
   public:
 
-    NewQPControllerData *pdata;
+    InstantaneousQPController *pdata;
 
-    drc::behavior_command_t robot_behavior_msg;
     std::shared_ptr<DrakeRobotState> robot_state;
     std::shared_ptr<drake::lcmt_qp_controller_input> qp_input;
     std::shared_ptr<QPControllerOutput> qp_output;
@@ -72,7 +60,7 @@ namespace {
 
   SolveArgs solveArgs;
 
-  drc::atlas_behavior_command_t atlas_behavior_msg;
+  drc::behavior_command_t robot_behavior_msg;
 
   int infocount = 0;
 
@@ -232,17 +220,16 @@ namespace {
       newInputAvailable = true;
     }
 
-  void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
-  {
-    //std::cout << "received robotstate on lcm thread " << std::this_thread::get_id() << std::endl;
+    void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
+    {
+      //std::cout << "received robotstate on lcm thread " << std::this_thread::get_id() << std::endl;
 
       std::shared_ptr<DrakeRobotState> state(new DrakeRobotState);
 
-    int nq = solveArgs.pdata->getRobot().num_positions;
-    int nv = solveArgs.pdata->getRobot().num_velocities;
-    state->q = VectorXd::Zero(nq);
-    state->qd = VectorXd::Zero(nv);
-
+      int nq = solveArgs.pdata->getRobot().num_positions;
+      int nv = solveArgs.pdata->getRobot().num_velocities;
+      state->q = VectorXd::Zero(nq);
+      state->qd = VectorXd::Zero(nv);
 
       state_driver->decode(msg, state.get());
 
@@ -251,22 +238,21 @@ namespace {
       pointerMutex.lock();
       solveArgs.robot_state = state;
 
-    const bot_core::force_torque_t& force_torque = msg->force_torque;
+      const bot_core::force_torque_t& force_torque = msg->force_torque;
 
-    solveArgs.foot_force_torque_measurements[Side::LEFT].frame_idx = solveArgs.pdata->getRPC().foot_ids.at(Side::LEFT); // TODO: make sure that this is right
-    solveArgs.foot_force_torque_measurements[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
+      solveArgs.foot_force_torque_measurements[Side::LEFT].frame_idx = solveArgs.pdata->getRPC().foot_ids.at(Side::LEFT); // TODO: make sure that this is right
+      solveArgs.foot_force_torque_measurements[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
 
-    solveArgs.foot_force_torque_measurements[Side::RIGHT].frame_idx = solveArgs.pdata->getRPC().foot_ids.at(Side::RIGHT); // TODO: make sure that this is right
-    solveArgs.foot_force_torque_measurements[Side::RIGHT].wrench << force_torque.r_foot_torque_x, force_torque.r_foot_torque_y, 0.0, 0.0, 0.0, force_torque.r_foot_force_z;
+      solveArgs.foot_force_torque_measurements[Side::RIGHT].frame_idx = solveArgs.pdata->getRPC().foot_ids.at(Side::RIGHT); // TODO: make sure that this is right
+      solveArgs.foot_force_torque_measurements[Side::RIGHT].wrench << force_torque.r_foot_torque_x, force_torque.r_foot_torque_y, 0.0, 0.0, 0.0, force_torque.r_foot_force_z;
 
       pointerMutex.unlock();
       newStateAvailable = true;
     }
 
-  void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg)
-  {
-    Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->getRobot().bodies.size());
-
+    void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg)
+    {
+      Matrix<bool, Dynamic, 1> b_contact_force = Matrix<bool, Dynamic, 1>::Zero(solveArgs.pdata->getRobot().bodies.size());
 
       foot_contact_driver->decode(msg, b_contact_force);
 
@@ -341,14 +327,15 @@ namespace {
     // std::cout << "size of qp_output.qdd is " << qp_output.qdd.size() << std::endl;
     // std::cout << "size of state coordinate names are" << solveArgs.pdata->state_coordinate_names.size() << std::endl;
 
+    QPControllerState controller_state = solveArgs.pdata->getControllerState();
 
     for(int i=0; i<num_joints; i++){
-      msg.q_integrator_state[i] = solveArgs.pdata->state.q_integrator_state(i);
+      msg.q_integrator_state[i] = controller_state.q_integrator_state(i);
       msg.vref_integrator_state[i] = qp_output.qd_ref(i);
       msg.q_ref[i] = qp_output.q_ref(i);
       msg.qd_ref[i] = qp_output.qd_ref(i);
       msg.qdd[i] = qp_output.qdd(i);
-      msg.joint_name[i] = solveArgs.pdata->state_coordinate_names[i];
+      msg.joint_name[i] = state_coordinate_names_shared[i];
     }
 
     //Inputs are in a different order, need to deal with that
@@ -362,19 +349,40 @@ namespace {
     return msg;
   }
 
-  void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
-  {
+  void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
 
     QPControllerOutput qp_output;
     done = false;
 
     while (!done) {
 
-    if (qp_input->be_silent) {
-      // Act as a dummy controller, produce no ATLAS_COMMAND, and reset all integrator states
-      solveArgs.pdata->resetControllerState(robot_state->t);
-      infocount = 0;
-    } else {
+      //std::cout << "waiting for new data... " << std::this_thread::get_id() << std::endl;
+
+      while (!newStateAvailable || !newInputAvailable) {
+        std::this_thread::yield();
+      }
+
+      // auto begin = std::chrono::high_resolution_clock::now();
+
+
+      // copy pointers
+      pointerMutex.lock();
+      std::shared_ptr <DrakeRobotState> robot_state = solveArgs.robot_state;
+      std::shared_ptr <drake::lcmt_qp_controller_input> qp_input = solveArgs.qp_input;
+      b_contact_force = solveArgs.b_contact_force;
+      std::map <Side, ForceTorqueMeasurement> foot_force_torque_measurements = solveArgs.foot_force_torque_measurements;
+      pointerMutex.unlock();
+
+      // newInputAvailable = false;
+      newStateAvailable = false;
+
+      // std::cout << "calling solve " << std::endl;
+
+      if (qp_input->be_silent) {
+        // Act as a dummy controller, produce no ATLAS_COMMAND, and reset all integrator states
+        solveArgs.pdata->resetControllerState(robot_state->t);
+        infocount = 0;
+      } else {
 /*
       onst drake::lcmt_qp_controller_input& qp_input,
     const DrakeRobotState& robot_state,
@@ -383,56 +391,59 @@ namespace {
         foot_force_torque_measurements,
     QPControllerOutput& qp_output, QPControllerDebugData* debug
 */
-      int info = solveArgs.pdata->setupAndSolveQP(*qp_input, *robot_state, b_contact_force, foot_force_torque_measurements, qp_output, &(*(solveArgs.debug)));
+        int info = solveArgs.pdata->setupAndSolveQP(*qp_input, *robot_state, b_contact_force,
+                                                    foot_force_torque_measurements, qp_output, &(*(solveArgs.debug)));
 
-      if (!isOutputSafe(qp_output)) {
-        // First priority is to halt unsafe behavior
-        robot_behavior_msg.utime = 0;
-        robot_behavior_msg.command = "freeze";
-        lcmHandler.LCMHandle->publish(ctrl_opts->robot_behavior_channel, &robot_behavior_msg);
-      }
-
-      if (info < 0 && ctrl_opts->max_infocount > 0) {
-        infocount++;
-        std::cout << "Infocount incremented " << infocount << std::endl;
-        if (infocount >= ctrl_opts->max_infocount) {
-          if (infocount == ctrl_opts->max_infocount) {
-            std::cout << "Infocount exceeded. Freezing Atlas!" << std::endl;
-          }
-          /*
+        if (!isOutputSafe(qp_output)) {
+          // First priority is to halt unsafe behavior
           robot_behavior_msg.utime = 0;
           robot_behavior_msg.command = "freeze";
           lcmHandler.LCMHandle->publish(ctrl_opts->robot_behavior_channel, &robot_behavior_msg);
-          */
-          // we've lost control and are probably falling. cross fingers...
-          drc::recovery_trigger_t trigger_msg;
-          trigger_msg.utime = static_cast<int64_t> (robot_state->t * 1e6);
-          trigger_msg.activate = true;
-          trigger_msg.override = true;
-          lcmHandler.LCMHandle->publish("BRACE_FOR_FALL", &trigger_msg);
         }
-      } else {
-        infocount = 0;
-      }
-      // std::cout << "u: " << qp_output.u << std::endl;
-      // std::cout << "q: " << qp_output.q_ref << std::endl;
-      // std::cout << "qd: " << qp_output.qd_ref << std::endl;
-      // std::cout << "qdd: " << qp_output.qdd << std::endl;
 
-      const QPControllerParams params = solveArgs.pdata->getParamSet(qp_input->param_set_name);
+        if (info < 0 && ctrl_opts->max_infocount > 0) {
+          infocount++;
+          std::cout << "Infocount incremented " << infocount << std::endl;
+          if (infocount >= ctrl_opts->max_infocount) {
+            if (infocount == ctrl_opts->max_infocount) {
+              std::cout << "Infocount exceeded. Freezing Atlas!" << std::endl;
+            }
+            /*
+            robot_behavior_msg.utime = 0;
+            robot_behavior_msg.command = "freeze";
+            lcmHandler.LCMHandle->publish(ctrl_opts->robot_behavior_channel, &robot_behavior_msg);
+            */
+            // we've lost control and are probably falling. cross fingers...
+            drc::recovery_trigger_t trigger_msg;
+            trigger_msg.utime = static_cast<int64_t> (robot_state->t * 1e6);
+            trigger_msg.activate = true;
+            trigger_msg.override = true;
+            lcmHandler.LCMHandle->publish("BRACE_FOR_FALL", &trigger_msg);
+          }
+        } else {
+          infocount = 0;
+        }
+        // std::cout << "u: " << qp_output.u << std::endl;
+        // std::cout << "q: " << qp_output.q_ref << std::endl;
+        // std::cout << "qd: " << qp_output.qd_ref << std::endl;
+        // std::cout << "qdd: " << qp_output.qdd << std::endl;
 
-      // publish ATLAS_COMMAND
-      bot_core::atlas_command_t* command_msg = command_driver->encode(robot_state->t, &qp_output, params.hardware);
-      lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg); // publishes the atlas_command msg
+        const QPControllerParams params = solveArgs.pdata->getParamSet(qp_input->param_set_name);
 
-      //publish CONTROLLER_STATE lcm message for debugging purposes
-        if (publishControllerState){
+        // publish ATLAS_COMMAND
+        bot_core::atlas_command_t *command_msg = command_driver->encode(robot_state->t, &qp_output, params.hardware);
+        lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg); // publishes the atlas_command msg
+
+        //publish CONTROLLER_STATE lcm message for debugging purposes
+        if (publishControllerState) {
           int num_joints = qp_output.q_ref.size();
-          drake::lcmt_qp_controller_state controller_state_msg = encodeControllerState(robot_state->t, num_joints, qp_output);
+          drake::lcmt_qp_controller_state controller_state_msg = encodeControllerState(robot_state->t, num_joints,
+                                                                                       qp_output);
           lcmHandler.LCMHandle->publish(CONTROLLER_STATE_CHANNEL, &controller_state_msg);
         }
-    }
+      }
 
+    }
   }
 
   void getDrakeInputToRobotStateIndexMap(const std::vector<std::string> &input_joint_names, const std::vector<std::string> & state_coordinate_names, VectorXd & drake_input_to_robot_state){
@@ -457,37 +468,28 @@ namespace {
   }
 
 
-void controllerLoop(InstantaneousQPController *pdata, std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
-{
-  int num_states = pdata->getRobot().num_positions + pdata->getRobot().num_velocities;
-  std::vector<string> state_coordinate_names(num_states);
-  for (int i=0; i<num_states; i++){
-    state_coordinate_names[i] = pdata->getRobot().getStateName(i);
-  }
-  state_driver.reset(new RobotStateDriver(state_coordinate_names));
-  command_driver.reset(new AtlasCommandDriver(&(pdata->getJointNames()), state_coordinate_names));
-  foot_contact_driver.reset(new FootContactDriver(pdata->getRPC()));
+  void controllerLoop(InstantaneousQPController *pdata, std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
+  {
+    int num_states = pdata->getRobot().num_positions + pdata->getRobot().num_velocities;
+    std::vector<string> state_coordinate_names(num_states);
+    for (int i=0; i<num_states; i++){
+      state_coordinate_names[i] = pdata->getRobot().getStateName(i);
+    }
+    state_driver.reset(new RobotStateDriver(state_coordinate_names));
+    command_driver.reset(new AtlasCommandDriver(&(pdata->getJointNames()), state_coordinate_names));
+    foot_contact_driver.reset(new FootContactDriver(pdata->getRPC()));
 
-  solveArgs.pdata = pdata;
-  solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->getRobot().bodies.size());
+    solveArgs.pdata = pdata;
+    solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->getRobot().bodies.size());
 
-  // std::cout << "pdata num bodies: " << pdata->getRobot().bodies.size() << std::endl;
+
+    // so that the encodeControllerState method will have access to them
+    state_coordinate_names_shared = state_coordinate_names;
+
+    // std::cout << "pdata num bodies: " << pdata->getRobot().bodies.size() << std::endl;
 
     threadLoop(ctrl_opts);
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
