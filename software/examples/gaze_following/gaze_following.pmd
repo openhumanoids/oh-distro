@@ -1,6 +1,6 @@
 group "99.gaze_following_demo" {
     cmd "april_tags" {
-        exec = "drc-car-tags -p -q -c KINECT_RGB";
+        exec = "drc-car-tags -p -q -c KINECT_RGB -s 0.08675";
         host = "localhost";
     }
 
