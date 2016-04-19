@@ -406,6 +406,40 @@ class TableboxDemo(object):
         ikplanner.getIkOptions().setProperty('Use pointwise', True)
 
 
+    def planBoxLift(self):
+        ikplanner.getIkOptions().setProperty('Use pointwise', False)
+        startPose = self.getPlanningStartPose()
+
+        # Basic Constraint set:
+        constraints = self.ikPlanner.createMovingBodyConstraints('reach_start', lockBase=self.lockBase, lockBack=self.lockBack, lockLeftArm=True, lockRightArm=True)
+        self.constraintSet = self.ikPlanner.makeConstraintSet(constraints, startPose)
+
+        # append a constraint to move the pelvis up by 10cm
+        tf = transformUtils.copyFrame(self.robotStateModel.getLinkFrame('pelvis'))
+        tf.Concatenate( transformUtils.frameFromPositionAndRPY([0,0,0.075],[0,0,0]) )
+        vis.updateFrame(tf,'goal pelvis frame', visible=False)
+        p = ik.PositionConstraint(linkName="pelvis", referenceFrame=tf, lowerBound=-0.0001*np.ones(3), upperBound=0.0001*np.ones(3))
+        q = ik.QuatConstraint(linkName="pelvis", quaternion=tf)
+        p.tspan = [1.0,1.0]
+        q.tspan = [1.0,1.0]
+        self.constraintSet.constraints.extend([p, q])
+
+        backConstraint = self.ikPlanner.createPostureConstraint('q_zero', self.ikPlanner.backJoints)
+        backConstraint.tspan = [1.0,1.0]
+        self.constraintSet.constraints[3] = backConstraint
+
+        neckConstraint = self.ikPlanner.createPostureConstraint('q_zero', self.ikPlanner.neckJoints)
+        neckConstraint.tspan = [1.0,1.0]
+        self.constraintSet.constraints.append(neckConstraint)
+
+        self.constraintSet.runIk()
+        print 'planning lift'
+        plan = self.constraintSet.runIkTraj()
+        self.addPlan(plan)
+
+        ikplanner.getIkOptions().setProperty('Use pointwise', True)
+
+
     def planWalkToTable(self):
         self.planWalkToStance(om.findObjectByName('table stance frame').transform)
 
