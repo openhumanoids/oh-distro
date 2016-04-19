@@ -5,7 +5,7 @@ set(POD_NAME gaze_following_demo)
 include(cmake/pods.cmake)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(drake-ik)
+pkg_check_modules(drake-ik drake-ik)
 
 if(drake-ik_FOUND)
 	add_subdirectory(src/)

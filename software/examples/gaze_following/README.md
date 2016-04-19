@@ -9,5 +9,5 @@ To start:
 
 Alternatively:
 
-1. Run ``drc-car-tags -p -q -c KINECT_RGB -s 0.08675``
+1. Run ``drc-car-tags -p -q -c KINECT_RGB``
 2. Run ``oh-gaze-following-demo``

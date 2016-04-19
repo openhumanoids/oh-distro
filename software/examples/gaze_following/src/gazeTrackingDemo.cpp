@@ -377,7 +377,7 @@ void App::aprilTagTransformHandler(const lcm::ReceiveBuffer *rbuf,
                               pow(last_goal_pose_(2) - cl_cfg_.gazeGoal(2), 2));
 
   // Only solve problem and publish goal if distance was significant
-  if (distance > 0.1) {
+  if (distance > 0.06) {
     std::cout << "New gaze goal: " << cl_cfg_.gazeGoal.transpose() << std::endl;
     solveGazeProblem();
   }
