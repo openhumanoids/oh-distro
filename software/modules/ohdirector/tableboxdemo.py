@@ -23,6 +23,7 @@ from director import sceneloader
 from director.debugVis import DebugData
 from director import affordanceitems
 from director import ikplanner
+from director import ik
 from director import vtkNumpy
 from numpy import array
 from director.uuidutil import newUUID
@@ -173,16 +174,38 @@ class TableboxDemo(object):
         relativeStance = transformUtils.frameFromPositionAndRPY([-0.55, 0, 0],[0,0,0])
         self.computeTableStanceFrame(relativeStance)
 
-    def computeTableStanceFrame(self, relativeStance):
+        # auto add the box on the table
+        boxFrame = transformUtils.copyFrame(tableData.frame)
+        boxFrame.PreMultiply()
+        tableToBoxFrame = transformUtils.frameFromPositionAndRPY([-0.05, 0, 0.15], [0,0, 0])
+        boxFrame.Concatenate(tableToBoxFrame)
+        self.spawnBlockAffordanceAtFrame(boxFrame)
+
+        safeStance = transformUtils.frameFromPositionAndRPY([-1, 0, 0],[0,0,0])
+        self.computeTableStanceFrame(safeStance, 'safe stance frame')
+
+        facingStance = transformUtils.frameFromPositionAndRPY([-1, 0, 0],[0,0,-60.0])
+        self.computeTableStanceFrame(facingStance, 'facing stance frame')
+
+
+    def computeTableStanceFrame(self, relativeStance, relativeStanceFrameName='table stance frame'):
         tableTransform = om.findObjectByName('table').getChildFrame().transform
         zGround = 0.0
         tableHeight = tableTransform.GetPosition()[2] - zGround
 
-        t = vtk.vtkTransform()
-        t.PostMultiply()
-        t.Translate(relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight)
-        t.Concatenate(tableTransform)
-        vis.showFrame(t, 'table stance frame', parent=om.findObjectByName('table'), scale=0.2)
+
+        t = transformUtils.copyFrame(tableTransform)
+        t.PreMultiply()
+        relativePosition = [relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight]
+        tableToStance = transformUtils.frameFromPositionAndRPY(relativePosition, relativeStance.GetOrientation() )
+        t.Concatenate(tableToStance)
+
+        #t = vtk.vtkTransform()
+        #t.PostMultiply()
+        #t.Translate(relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight)
+        #t.Concatenate(tableTransform)
+
+        vis.showFrame(t, relativeStanceFrameName, parent=om.findObjectByName('table'), scale=0.2)
 
 
     # TODO: deprecate this function: (to end of section):
@@ -344,8 +367,8 @@ class TableboxDemo(object):
     #################################
     def loadSDFFileAndRunSim(self):
         filename= os.environ['DRC_BASE'] + '/software/models/worlds/tablebox_demo.sdf'  
-        #sc=sceneloader.SceneLoader()
-        #sc.loadSDF(filename)
+        sc=sceneloader.SceneLoader()
+        sc.loadSDF(filename)
         msg=lcmdrc.scs_api_command_t()
         msg.command="loadSDF "+filename+"\nsimulate"
         lcmUtils.publish('SCS_API_CONTROL', msg)
@@ -361,14 +384,17 @@ class TableboxDemo(object):
 
 
     def spawnBlockAffordance(self):
-        boxLength = 0.3
-        boxWidth = 0.25
-        boxHeight = 0.3
-
         boxFrame = self.footstepPlanner.getFeetMidPoint(self.robotStateModel)
         boxFrame.PreMultiply()
         boxFrame.Translate([0.49, 0.0, 1.02])
         #vis.updateFrame(boxFrame, 'boxFrame')
+        self.spawnBlockAffordanceAtFrame(boxFrame)
+
+
+    def spawnBlockAffordanceAtFrame(self, boxFrame):
+        boxLength = 0.3
+        boxWidth = 0.25
+        boxHeight = 0.3
 
         xAxis,yAxis, zAxis = transformUtils.getAxesFromTransform(boxFrame)
         segmentation.createBlockAffordance(boxFrame.GetPosition(), xAxis,yAxis, zAxis, boxLength, boxWidth, boxHeight, 'box', parent='affordances')
@@ -461,6 +487,9 @@ class TableboxDemo(object):
         endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'handsdown incl back')
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
+
+    def planNominal(self):
+        self.ikPlanner.computeNominalPlan(self.sensorJointController.q)
 
 
 '''
@@ -633,8 +662,24 @@ class TableboxTaskPanel(TaskUserPanel):
         #- fit box
         #- grasp box
         addFolder('grasp')
-        addFunc('spawn block affordance', v.spawnBlockAffordance)
+        #addFunc('spawn block affordance', v.spawnBlockAffordance)
         addManipTask('Box grasp', v.planSimpleBoxGrasp, userPrompt=True)
+        addManipTask('Lift box', v.planBoxLift, userPrompt=True)
 
-        #- lift box
-        #- walk backwards
+        # walk back
+        addFolder('walk back')
+        addTask(rt.RequestFootstepPlan(name='plan walk back', stanceFrameName='safe stance frame'))
+        addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
+        addTask(rt.CommitFootstepPlan(name='walk back', planName='table stance frame footstep plan'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
+
+        addTask(rt.SetNeckPitch(name='set neck position', angle=0))
+
+        # Prepare to hand off
+        addFolder('turn to handoff')
+        addTask(rt.RequestFootstepPlan(name='plan walk to handoff', stanceFrameName='facing stance frame'))
+        addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
+        addTask(rt.CommitFootstepPlan(name='walk to handoff', planName='facing stance frame footstep plan'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
+
+        addManipTask('Plan Nominal', v.planNominal, userPrompt=True)
