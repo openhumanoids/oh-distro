@@ -27,14 +27,35 @@ from director import vtkNumpy
 from numpy import array
 from director.uuidutil import newUUID
 from director import lcmUtils
+from director.utime import getUtime
 import ioUtils
 import drc as lcmdrc
+import bot_core as lcmbotcore
 
 from director.tasks.taskuserpanel import TaskUserPanel
 from director.tasks.taskuserpanel import ImageBasedAffordanceFit
 
 import director.tasks.robottasks as rt
 
+class SetSurveyPattern(rt.AsyncTask):
+
+    headSweepTime = 3.0;
+
+    @staticmethod
+    def getDefaultProperties(properties):
+        properties.addProperty('Lower neck pitch', [0])
+        properties.addProperty('Upper neck pitch', [0])
+        properties.addProperty('Neck yaw', [0])
+
+    def run(self):
+        lowerPitchAngles = self.properties.getProperty('Lower neck pitch')
+        upperPitchAngles = self.properties.getProperty('Upper neck pitch')
+        yawAngles = self.properties.getProperty('Neck yaw') 
+
+        for i in range(len(lowerPitchAngles)):
+             self.statusMessage = 'lowerNeckPitch: ' + str(lowerPitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i]) + ', upperNeckPitch: ' + str(upperPitchAngles[i])
+             TableboxDemo.publishAngle(lowerPitchAngles[i], yawAngles[i], upperPitchAngles[i])
+             yield rt.DelayTask(delayTime=self.headSweepTime).run()
 
 class TableboxDemo(object):
 
@@ -79,6 +100,22 @@ class TableboxDemo(object):
         self.constraintSet = []
 
         self.picker = None
+
+
+    @staticmethod
+    def publishAngle(lowerNeckPitch, neckYaw, upperNeckPitch):
+        jointGroups = drcargs.getDirectorConfig()['teleopJointGroups']
+        jointGroupNeck = filter(lambda group: group['name'] == 'Neck', jointGroups)
+        if (len(jointGroupNeck) == 1):
+            neckJoints = jointGroupNeck[0]['joints']
+        else:
+            return
+        m = lcmbotcore.joint_angles_t()
+        m.utime = getUtime()
+        m.num_joints = 3
+        m.joint_name = [ neckJoints[0], neckJoints[1], neckJoints[2] ]
+        m.joint_position = [ math.radians(lowerNeckPitch), math.radians(neckYaw), math.radians(upperNeckPitch)]
+        lcmUtils.publish('DESIRED_NECK_ANGLES', m)
 
 
     def planPlaybackFunction(plans):
@@ -305,6 +342,14 @@ class TableboxDemo(object):
 
 
     #################################
+    def loadSDFFileAndRunSim(self):
+        filename= os.environ['DRC_BASE'] + '/software/models/worlds/tablebox_demo.sdf'  
+        #sc=sceneloader.SceneLoader()
+        #sc.loadSDF(filename)
+        msg=lcmdrc.scs_api_command_t()
+        msg.command="loadSDF "+filename+"\nsimulate"
+        lcmUtils.publish('SCS_API_CONTROL', msg)
+
     def loadTestPointCloud(self):
         filename = os.environ['DRC_BASE'] +  '/../drc-testing-data/tabletop/table-box-uoe.vtp'
         polyData = ioUtils.readPolyData( filename )
@@ -428,6 +473,9 @@ class TableboxTaskPanel(TaskUserPanel):
         self.addManualButton('Move to Stance',self.tableboxDemo.moveRobotToTableStanceFrame)
         self.addManualButton('Spread Arms',self.tableboxDemo.planArmsSpread)
 
+        self.addManualSpacer()        
+        self.addManualButton('Load Scenario', self.tableboxDemo.loadSDFFileAndRunSim)
+
 
     def addDefaultProperties(self):
         self.params.addProperty('Base', 1,
@@ -508,6 +556,22 @@ class TableboxTaskPanel(TaskUserPanel):
 
         self.taskTree.removeAllTasks()
 
+        surveyAngles = []
+        surveyAngles.append([60, -45, 0]) #bottom right
+        surveyAngles.append([45, -45, 0]) #top right
+
+        surveyAngles.append([60, -25, 0]) #half right bottom
+        surveyAngles.append([45, -25, 0]) #half right top
+
+        surveyAngles.append([60, 0, 0]) #bottom center
+        surveyAngles.append([45, 0, 0]) #top center
+
+        surveyAngles.append([60, 25, 0]) #half left bottom
+        surveyAngles.append([45, 25, 0]) #half left top
+
+        surveyAngles.append([60, 45, 0]) #bottom left
+        surveyAngles.append([45, 45, 0]) #top left
+        surveyAngles.append([0, 0, 0]) #reset
 
         ###############
         # find the table
@@ -524,10 +588,13 @@ class TableboxTaskPanel(TaskUserPanel):
         addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
         addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
+        addFolder("Survey Table 1")
+        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles], upperNeckPitch=[neckAngles[2] for neckAngles in surveyAngles] ))
+
         #- raise arms
         addFolder('prep')
-        addManipTask('spread arms', v.planArmsSpread, userPrompt=True)
-        addManipTask('raise arms', v.planArmsRaise, userPrompt=True)
+        addManipTask('spread arms', v.planArmsSpread, userPrompt=False)
+        addManipTask('raise arms', v.planArmsRaise, userPrompt=False)
 
         #- fit box
         #- grasp box
