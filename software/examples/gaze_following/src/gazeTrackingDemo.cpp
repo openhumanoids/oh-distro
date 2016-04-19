@@ -9,8 +9,6 @@
 #include <drake/systems/plants/constraint/RigidBodyConstraint.h>
 #include <drake/systems/plants/IKoptions.h>
 #include <ConciseArgs>
-#include <lcm/lcm-cpp.hpp>
-#include <model-client/model-client.hpp>
 
 #include <cstdlib>
 #include <iostream>
@@ -18,27 +16,29 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <stack>
+#include <ctime>
+
+#include <lcm/lcm-cpp.hpp>
+#include <model-client/model-client.hpp>
 
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/bot_core/vector_3d_t.hpp"
 #include "lcmtypes/bot_core/rigid_transform_t.hpp"
-#include "lcmtypes/bot_core/pose_t.hpp"
 
 /**
  * Matlab-like tic toc for benchmarking
  * From: http://stackoverflow.com/a/13485583
  */
-#include <stack>
-#include <ctime>
 std::stack<clock_t> tictoc_stack;
 
 void tic() { tictoc_stack.push(clock()); }
 
 void toc() {
   std::cout << "Time elapsed: "
-            << ((double)(clock() - tictoc_stack.top())) / CLOCKS_PER_SEC
-            << std::endl;
+            << static_cast<double>((clock() - tictoc_stack.top())) /
+                   CLOCKS_PER_SEC << std::endl;
   tictoc_stack.pop();
 }
 
