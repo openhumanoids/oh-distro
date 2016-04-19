@@ -25,19 +25,33 @@
 #include "lcmtypes/bot_core/rigid_transform_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
 
+/**
+ * Matlab-like tic toc for benchmarking
+ * From: http://stackoverflow.com/a/13485583
+ */
+#include <stack>
+#include <ctime>
+std::stack<clock_t> tictoc_stack;
+
+void tic() {
+    tictoc_stack.push(clock());
+}
+
+void toc() {
+    std::cout << "Time elapsed: " << ((double)(clock() - tictoc_stack.top())) / CLOCKS_PER_SEC << std::endl;
+    tictoc_stack.pop();
+}
+
 struct CommandLineConfig {
   std::string urdf_filename;
   Eigen::Vector3d gazeGoal;
 };
 
-enum TrackingControlMode { DESIRED_HEAD_ORIENTATION, JOINT_POSITION_GOAL };
-
 inline double toRad(double deg) { return (deg * M_PI / 180); }
 
 class App {
  public:
-  App(std::shared_ptr<lcm::LCM> lcm_in, const CommandLineConfig &cl_cfg_in,
-      TrackingControlMode mode_in);
+  App(std::shared_ptr<lcm::LCM> lcm_in, const CommandLineConfig &cl_cfg_in);
 
   ~App() {}
 
@@ -67,7 +81,6 @@ class App {
   std::shared_ptr<lcm::LCM> lcm_;
   CommandLineConfig cl_cfg_;
   RigidBodyTree model_;
-  TrackingControlMode mode_;
 
   bot_core::robot_state_t rstate_;
   std::map<std::string, int> dofMap_;
@@ -76,9 +89,8 @@ class App {
   BotFrames *botframes_;
 };
 
-App::App(std::shared_ptr<lcm::LCM> lcm_in, const CommandLineConfig &cl_cfg_in,
-         TrackingControlMode mode_in)
-    : lcm_(lcm_in), cl_cfg_(cl_cfg_in), mode_(mode_in) {
+App::App(std::shared_ptr<lcm::LCM> lcm_in, const CommandLineConfig &cl_cfg_in)
+    : lcm_(lcm_in), cl_cfg_(cl_cfg_in) {
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_ = bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
@@ -357,17 +369,7 @@ static inline bot_core::pose_t getPoseAsBotPose(Eigen::Isometry3d pose,
 }
 
 void App::solveGazeProblem() {
-  // Publish the query for visualisation in Director
-  bot_core::pose_t goalMsg;
-  goalMsg.utime = rstate_.utime;
-  goalMsg.pos[0] = cl_cfg_.gazeGoal(0);
-  goalMsg.pos[1] = cl_cfg_.gazeGoal(1);
-  goalMsg.pos[2] = cl_cfg_.gazeGoal(2);
-  goalMsg.orientation[0] = 1;
-  goalMsg.orientation[1] = 0;
-  goalMsg.orientation[2] = 0;
-  goalMsg.orientation[3] = 0;
-  lcm_->publish("POSE_BODY_ALT", &goalMsg);
+  tic();
 
   // Solve the IK problem for the neck:
   Eigen::VectorXd q_star(
@@ -376,104 +378,65 @@ void App::solveGazeProblem() {
   int info = getConstraints(q_star, q_sol);
   if (info != 1) {
     std::cout << "Problem not solved\n";
+    toc();
     return;
   }
 
-  if (mode_ ==
-      TrackingControlMode::DESIRED_HEAD_ORIENTATION) {  // publish
-                                                        // utorso-to-head as
-                                                        // orientation, not
-                                                        // properly tracking but
-                                                        // works with different
-                                                        // orientations
-    // Get the utorso to head frame:
-    int head_link = model_.findLinkId("head");
-    int utorso_link = model_.findLinkId("torso");
-    KinematicsCache<double> cache = model_.doKinematics(q_sol);
-    Eigen::Isometry3d world_to_head =
-        model_.relativeTransform(cache, head_link, 0);
-    Eigen::Isometry3d utorso_to_head =
-        model_.relativeTransform(cache, head_link, utorso_link);
-
-    // Apply 180 roll as head orientation control seems to be in z-up frame
-    Eigen::Isometry3d rotation_frame;
-    rotation_frame.setIdentity();
-    Eigen::Quaterniond quat = euler_to_quat(M_PI, 0, 0);
-    rotation_frame.rotate(quat);
-    utorso_to_head = utorso_to_head * rotation_frame;
-
-    bot_core::pose_t world_to_head_frame_pose_msg =
-        getPoseAsBotPose(world_to_head, rstate_.utime);
-    lcm_->publish("POSE_VICON", &world_to_head_frame_pose_msg);  // for debug
-    bot_core::pose_t utorso_to_head_frame_pose_msg =
-        getPoseAsBotPose(utorso_to_head, rstate_.utime);
-    lcm_->publish("DESIRED_HEAD_ORIENTATION",
-                  &utorso_to_head_frame_pose_msg);  // temp
-  } else if (mode_ ==
-             TrackingControlMode::JOINT_POSITION_GOAL) {  // publish neck pitch
-                                                          // and yaw joints as
-                                                          // orientation. this
-                                                          // works ok when robot
-                                                          // is facing 1,0,0,0
-    std::vector<std::string> jointNames;
-    for (int i = 0; i < model_.num_positions; i++) {
-      // std::cout << model_.getPositionName(i) << " " << i << "\n";
-      jointNames.push_back(model_.getPositionName(i));
-    }
-
-    bot_core::robot_state_t robot_state_msg;
-    getRobotState(robot_state_msg, 0 * 1E6, q_sol, jointNames);
-    // lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg); // for debug
-
-    bot_core::joint_angles_t joint_position_goal_msg = bot_core::joint_angles_t();
-    std::vector<std::string> neckJointNames;
-    neckJointNames.push_back("lowerNeckPitch");
-    neckJointNames.push_back("neckYaw");
-    neckJointNames.push_back("upperNeckPitch");
-    // getRobotState(joint_position_goal_msg, 0*1E6, q_sol, neckJointNames);
-    joint_position_goal_msg.utime = bot_timestamp_now();
-    joint_position_goal_msg.num_joints = 3;
-    joint_position_goal_msg.joint_name.assign(3, "");
-    joint_position_goal_msg.joint_position.assign(3, (const float &)0.);
-
-    std::vector<std::string>::iterator it1 =
-        std::find(jointNames.begin(), jointNames.end(), "lowerNeckPitch");
-    int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
-
-    std::vector<std::string>::iterator it2 =
-        std::find(jointNames.begin(), jointNames.end(), "neckYaw");
-    int neckYawIndex = std::distance(jointNames.begin(), it2);
-
-    std::vector<std::string>::iterator it3 =
-        std::find(jointNames.begin(), jointNames.end(), "upperNeckPitch");
-    int upperNeckPitchIndex = std::distance(jointNames.begin(), it3);
-
-    joint_position_goal_msg.joint_name[0] = "lowerNeckPitch";
-    joint_position_goal_msg.joint_position[0] = q_sol[lowerNeckPitchIndex];
-    joint_position_goal_msg.joint_name[1] = "neckYaw";
-    joint_position_goal_msg.joint_position[1] = q_sol[neckYawIndex];
-    joint_position_goal_msg.joint_name[2] = "upperNeckPitch";
-    joint_position_goal_msg.joint_position[2] = q_sol[upperNeckPitchIndex];
-
-    lcm_->publish("DESIRED_NECK_ANGLES", &joint_position_goal_msg);
-
-    std::cout << "DESIRED_NECK_ANGLES " << (q_sol[lowerNeckPitchIndex]) << "*, "
-              << (q_sol[neckYawIndex]) << "*, " << (q_sol[upperNeckPitchIndex])
-              << "*" << std::endl;
-  } else {
-    std::cerr << "Mode not selected" << std::endl;
+  // publish neck pitch and yaw joints as orientation. this works ok when robot
+  // is facing 1,0,0,0
+  std::vector<std::string> jointNames;
+  for (int i = 0; i < model_.num_positions; i++) {
+    // std::cout << model_.getPositionName(i) << " " << i << "\n";
+    jointNames.push_back(model_.getPositionName(i));
   }
-}
 
-int robotStateCounter = 0;
+  bot_core::robot_state_t robot_state_msg;
+  getRobotState(robot_state_msg, 0 * 1E6, q_sol, jointNames);
+  // lcm_->publish("CANDIDATE_ROBOT_ENDPOSE",&robot_state_msg); // for debug
+
+  bot_core::joint_angles_t joint_position_goal_msg = bot_core::joint_angles_t();
+  std::vector<std::string> neckJointNames;
+  neckJointNames.push_back("lowerNeckPitch");
+  neckJointNames.push_back("neckYaw");
+  neckJointNames.push_back("upperNeckPitch");
+  // getRobotState(joint_position_goal_msg, 0*1E6, q_sol, neckJointNames);
+  joint_position_goal_msg.utime = bot_timestamp_now();
+  joint_position_goal_msg.num_joints = 3;
+  joint_position_goal_msg.joint_name.assign(3, "");
+  joint_position_goal_msg.joint_position.assign(3, (const float &)0.);
+
+  std::vector<std::string>::iterator it1 =
+      std::find(jointNames.begin(), jointNames.end(), "lowerNeckPitch");
+  int lowerNeckPitchIndex = std::distance(jointNames.begin(), it1);
+
+  std::vector<std::string>::iterator it2 =
+      std::find(jointNames.begin(), jointNames.end(), "neckYaw");
+  int neckYawIndex = std::distance(jointNames.begin(), it2);
+
+  std::vector<std::string>::iterator it3 =
+      std::find(jointNames.begin(), jointNames.end(), "upperNeckPitch");
+  int upperNeckPitchIndex = std::distance(jointNames.begin(), it3);
+
+  joint_position_goal_msg.joint_name[0] = "lowerNeckPitch";
+  joint_position_goal_msg.joint_position[0] = q_sol[lowerNeckPitchIndex];
+  joint_position_goal_msg.joint_name[1] = "neckYaw";
+  joint_position_goal_msg.joint_position[1] = q_sol[neckYawIndex];
+  joint_position_goal_msg.joint_name[2] = "upperNeckPitch";
+  joint_position_goal_msg.joint_position[2] = q_sol[upperNeckPitchIndex];
+
+  lcm_->publish("DESIRED_NECK_ANGLES", &joint_position_goal_msg);
+
+  std::cout << "DESIRED_NECK_ANGLES " << (q_sol[lowerNeckPitchIndex]) << "*, "
+            << (q_sol[neckYawIndex]) << "*, " << (q_sol[upperNeckPitchIndex])
+            << "*" << std::endl;
+
+  toc();
+}
 
 void App::robotStateHandler(const lcm::ReceiveBuffer *rbuf,
                             const std::string &channel,
                             const bot_core::robot_state_t *msg) {
   rstate_ = *msg;
-  if (robotStateCounter % 400 == 0) solveGazeProblem();
-
-  robotStateCounter++;
 }
 
 void App::gazeGoalHandler(const lcm::ReceiveBuffer *rbuf,
@@ -486,7 +449,6 @@ void App::gazeGoalHandler(const lcm::ReceiveBuffer *rbuf,
 }
 
 int aprilTagCounter = 0;
-
 void App::aprilTagTransformHandler(const lcm::ReceiveBuffer *rbuf,
                                    const std::string &channel,
                                    const bot_core::rigid_transform_t *msg) {
@@ -506,24 +468,20 @@ int main(int argc, char *argv[]) {
   cl_cfg.gazeGoal =
       Eigen::Vector3d(2, 1, 1.2);  // Position we would like the head to gaze at
 
-  TrackingControlMode mode;
-  mode = TrackingControlMode::JOINT_POSITION_GOAL;
-
   ConciseArgs parser(argc, argv, "simple-fusion");
   parser.add(cl_cfg.gazeGoal(0), "x", "goal_x", "goal_x");
   parser.add(cl_cfg.gazeGoal(1), "y", "goal_y", "goal_y");
   parser.add(cl_cfg.gazeGoal(2), "z", "goal_z", "goal_z");
-  // parser.add(mode, "m", "mode", "mode, 0 for DESIRED_HEAD_ORIENTATION, 1 for
-  // JOINT_POSITION_GOAL");
   parser.parse();
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if (!lcm->good()) std::cerr << "ERROR: lcm is not good()" << std::endl;
 
-  App app(lcm, cl_cfg, mode);
+  App app(lcm, cl_cfg);
   std::cout << "Ready" << std::endl
             << "============================" << std::endl;
 
   while (0 == lcm->handle()) {
+    app.solveGazeProblem();
   }
 }
