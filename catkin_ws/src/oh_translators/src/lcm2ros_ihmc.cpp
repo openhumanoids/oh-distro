@@ -589,7 +589,7 @@ bool LCM2ROS::getSingleArmPlan(const drc::robot_plan_t* msg, std::vector<std::st
   }
 
   // m.joint_names = output_joint_names_arm;
-  for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
+  for (int i = 0; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     bot_core::robot_state_t state = msg->plan[i];
     ihmc_msgs::JointTrajectoryPointMessage point;
@@ -632,7 +632,7 @@ Eigen::Isometry3d KDLToEigen(KDL::Frame tf)
 
 bool LCM2ROS::getChestTrajectoryPlan(const drc::robot_plan_t* msg, std::vector<geometry_msgs::Quaternion> &m)
 {
-  for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
+  for (int i = 0; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     // 0. Extract World Pose of body:
     bot_core::robot_state_t this_state = msg->plan[i];
@@ -731,7 +731,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
   wbt_msg.num_joints_per_arm = l_arm_strings.size();
 
   // 2. Insert Pelvis Pose
-  for (int i = 1; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
+  for (int i = 0; i < msg->num_states; i++)  // NB: skipping the first sample as it has time = 0
   {
     bot_core::robot_state_t state = msg->plan[i];
 
@@ -751,7 +751,7 @@ void LCM2ROS::robotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string
     std::cout << i << ": " << getPlanTimeAtWaypoint(state.utime) << " " << (state.utime - msg->plan[i-1].utime) * 1E-6 << " is time and difference of the pelvis waypoints\n";
 
   }
-  wbt_msg.num_waypoints = msg->num_states - 1;  // NB: skipping the first sample as it has time = 0
+  wbt_msg.num_waypoints = msg->num_states - 0;  // NB: skipping the first sample as it has time = 0
 
   // 3. Insert Chest Pose (in work frame)
   std::vector<geometry_msgs::Quaternion> chest_trajectory;
