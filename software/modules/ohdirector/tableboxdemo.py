@@ -102,6 +102,9 @@ class TableboxDemo(object):
 
         self.picker = None
 
+        # Angle of for grasping box
+        self.wristAngleBox = 30
+
 
     @staticmethod
     def publishAngle(lowerNeckPitch, neckYaw, upperNeckPitch):
@@ -409,13 +412,14 @@ class TableboxDemo(object):
         palmSeperation = (dim[1] - 0.14)/2.0
         print palmSeperation
 
-
-        leftFrame = transformUtils.frameFromPositionAndRPY([0.0, palmSeperation, 0.0], [90,90,0])
+        leftFrame = transformUtils.frameFromPositionAndRPY([0.0, palmSeperation, 0.0], [90, 90+self.wristAngleBox,0])
         leftFrame = transformUtils.concatenateTransforms([leftFrame, boxFrame])
         vis.updateFrame(leftFrame, 'reach left')
 
         rightFrame = transformUtils.frameFromPositionAndRPY([0.0, -palmSeperation, 0.0], [0,-90,-90])
         rightFrame = transformUtils.concatenateTransforms([rightFrame, boxFrame])
+        rightFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, 0, self.wristAngleBox])
+        rightFrame = transformUtils.concatenateTransforms([rightFrame2, rightFrame])
         vis.updateFrame(rightFrame, 'reach right')
 
         startPose = self.getPlanningStartPose()
@@ -440,10 +444,17 @@ class TableboxDemo(object):
         constraints = self.ikPlanner.createMovingBodyConstraints('reach_start', lockBase=self.lockBase, lockBack=self.lockBack, lockLeftArm=True, lockRightArm=True)
         self.constraintSet = self.ikPlanner.makeConstraintSet(constraints, startPose)
 
+
+        # append a constraint to move the pelvis up to 10cm above ground
+        tf = transformUtils.copyFrame(self.footstepPlanner.getFeetMidPoint(self.robotStateModel))
+        tf.Concatenate( transformUtils.frameFromPositionAndRPY([0.0,0,1.0],[0,0,0]) )
+        vis.updateFrame(tf,'goal pelvis frame', visible=True)
+
         # append a constraint to move the pelvis up by 10cm
-        tf = transformUtils.copyFrame(self.robotStateModel.getLinkFrame('pelvis'))
-        tf.Concatenate( transformUtils.frameFromPositionAndRPY([0,0,0.075],[0,0,0]) )
-        vis.updateFrame(tf,'goal pelvis frame', visible=False)
+        #tf = transformUtils.copyFrame(self.robotStateModel.getLinkFrame('pelvis'))
+        #tf.Concatenate( transformUtils.frameFromPositionAndRPY([0,0,0.075],[0,0,0]) )
+        #vis.updateFrame(tf,'goal pelvis frame', visible=False)
+
         p = ik.PositionConstraint(linkName="pelvis", referenceFrame=tf, lowerBound=-0.0001*np.ones(3), upperBound=0.0001*np.ones(3))
         q = ik.QuatConstraint(linkName="pelvis", quaternion=tf)
         p.tspan = [1.0,1.0]
@@ -527,7 +538,7 @@ class TableboxTaskPanel(TaskUserPanel):
 
         self.addManualSpacer()
         self.addManualButton('Load Test Cloud', self.tableboxDemo.loadTestPointCloud)
-        self.addManualSpacer()        
+        self.addManualSpacer()
 
         p1 = np.array([-0.58354658, -0.98459125, 0.75729603])
         p2 = np.array([-0.40979841, -0.76145965,  0.73299527])
@@ -536,8 +547,10 @@ class TableboxTaskPanel(TaskUserPanel):
         self.addManualButton('Move to Stance',self.tableboxDemo.moveRobotToTableStanceFrame)
         self.addManualButton('Spread Arms',self.tableboxDemo.planArmsSpread)
 
-        self.addManualSpacer()        
+        self.addManualSpacer()
         self.addManualButton('Load Scenario', self.tableboxDemo.loadSDFFileAndRunSim)
+        self.addManualSpacer()
+        self.addManualButton('Spawn Box', self.tableboxDemo.spawnBlockAffordance)
 
 
     def addDefaultProperties(self):
@@ -647,7 +660,7 @@ class TableboxTaskPanel(TaskUserPanel):
         addFolder('walk')
         addTask(rt.RequestFootstepPlan(name='plan walk to table', stanceFrameName='table stance frame'))
         addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
-        addTask(rt.SetNeckPitch(name='set neck position', angle=35))
+        addTask(rt.SetNeckPitch(name='set neck position', angle=25)) # was 35
         addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
         addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
