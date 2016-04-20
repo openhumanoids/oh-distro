@@ -1,7 +1,7 @@
 //
 // Created by manuelli on 10/12/15.
 //
-#include "drake/controlUtil.h"
+#include "drake/systems/controllers/controlUtil.h"
 #include <Eigen/Geometry>
 #include <gurobi_c++.h>
 #include <lcm/lcm-cpp.hpp>

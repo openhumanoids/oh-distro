@@ -1,37 +1,42 @@
 #include "residual-detector.hpp"
 #include <model-client/model-client.hpp>
+#include "drake/util/yaml/yamlUtil.h"
+#include "drake/systems/plants/KinematicsCache.h"
+
 
 #define RESIDUAL_GAIN 20.0;
 #define PUBLISH_CHANNEL "RESIDUAL_OBSERVER_STATE"
 using namespace Eigen;
 
 
-ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename):
+ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
+                                   std::shared_ptr<ResidualDetectorOps> residualDetectorOps):
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
     useFootForceFlag(false), useFootFTFlag(false), useGeometricJacobianFlag(false){
 
 
 
-  if (urdfFilename=="none"){
-    std::cout << "using default urdf" << std::endl;
-    std::string drcBase = std::string(std::getenv("DRC_BASE"));
-    urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
-    drake_model.addRobotFromURDF(urdfFilename);
-    this->contactFilter.addRobotFromURDF(urdfFilename);
-  }
-  else if (urdfFilename.empty()) {
-    do {
-      botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
-    } while(botparam_ == NULL);
-    std::shared_ptr<ModelClient> model = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(),0));
-    drake_model.addRobotFromURDFString(model->getURDFString());
-    this->contactFilter.addRobotFromURDFString(model->getURDFString());
-  }
-  else{
-    drake_model.addRobotFromURDF(urdfFilename);
-    this->contactFilter.addRobotFromURDF(urdfFilename);
-  }
+//  if (urdfFilename=="none"){
+//    std::cout << "using default urdf" << std::endl;
+//    std::string drcBase = std::string(std::getenv("DRC_BASE"));
+//    urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
+//    drake_model.addRobotFromURDF(urdfFilename);
+//    this->contactFilter.addRobotFromURDF(urdfFilename);
+//  }
+//  else if (urdfFilename.empty()) {
+//    do {
+//      botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+//    } while(botparam_ == NULL);
+//    std::shared_ptr<ModelClient> model = std::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(),0));
+//    drake_model.addRobotFromURDFString(model->getURDFString());
+//    this->contactFilter.addRobotFromURDFString(model->getURDFString());
+//  }
+//  else{
+//    drake_model.addRobotFromURDF(urdfFilename);
+//    this->contactFilter.addRobotFromURDF(urdfFilename);
+//  }
 
+  drake_model.addRobotFromURDF(residualDetectorOps->urdfFilename);
   // if you want to use quaternions. Normally it defaults to ROLLPITCHYAW, need to override by passing optional args
   // see RigidBodyManipulatorURDF.cpp file for the syntax
   // drake_model.addRobotFromURDFString(model->getURDFString(), ".", DrakeJoint::QUATERNION)
@@ -41,6 +46,18 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   lcm_->subscribe("FOOT_CONTACT_ESTIMATE", &ResidualDetector::onFootContact, this);
   lcm_->subscribe("FOOT_FORCE_TORQUE", &ResidualDetector::onFootForceTorque, this);
   lcm_->subscribe("EXTERNAL_FORCE_TORQUE", &ResidualDetector::onExternalForceTorque, this);
+
+  // Initialize the robot property cache
+  YAML::Node control_config = YAML::LoadFile(residualDetectorOps->control_config_filename);
+  std::ofstream debug_file(residualDetectorOps->control_config_filename + ".debug.yaml");
+  RobotPropertyCache robotPropertyCache = parseKinematicTreeMetadata(control_config["kinematic_tree_metadata"],
+                                   drake_model);
+
+
+  //initialize the kinematics cache
+  cache = KinematicsCache<AutoDiffFixedMaxSize>(drake_model.bodies); // keep this around
+  cacheTypeDouble = KinematicsCache<double>(drake_model.bodies);
+
 
 
 
@@ -63,19 +80,15 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   state_driver.reset(new RobotStateDriver(this->state_coordinate_names));
 
 
-  // initialize foot_contact_driver
-  BodyIdsCache body_ids_cache;
-  body_ids_cache.r_foot = drake_model.findLinkId("r_foot");
-  body_ids_cache.l_foot = drake_model.findLinkId("l_foot");
-  body_ids_cache.pelvis = drake_model.findLinkId("pelvis");
-
-  this->foot_body_ids[Side::LEFT] = body_ids_cache.l_foot;
-  this->foot_body_ids[Side::RIGHT] = body_ids_cache.r_foot;
+  this->foot_body_ids[Side::LEFT] = robotPropertyCache.foot_ids[Side::LEFT];
+  this->foot_body_ids[Side::RIGHT] = robotPropertyCache.foot_ids[Side::RIGHT];
 
   this->args.b_contact_force[Side::LEFT] = false;
   this->args.b_contact_force[Side::RIGHT] = false;
 
-  foot_contact_driver.reset(new FootContactDriver(body_ids_cache));
+
+  // initialize the foot contact driver
+  foot_contact_driver.reset(new FootContactDriver(robotPropertyCache));
 
   // initialize the residual_state
   residual_state.t_prev = 0;
@@ -91,7 +104,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   residual_state.foot_contact_joint_torque = VectorXd::Zero(nq);
 
 
-  this->residualGain = RESIDUAL_GAIN;
+  this->residualGain = residualDetectorOps->residualGain;
   this->publishChannel = PUBLISH_CHANNEL;
 
   this->residualGainVector = residualGain*VectorXd::Ones(this->nq);
@@ -125,7 +138,7 @@ void ResidualDetector::useFootForceTorque() {
 }
 
 void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
-                                    const drc::robot_state_t *msg) {
+                                    const bot_core::robot_state_t *msg) {
 
 //  if (this->verbose_) {
 //    std::cout << "got a robot state message" << std::endl;
@@ -145,7 +158,7 @@ void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::s
 
   this->args.robot_state = state;
 
-  const drc::force_torque_t& force_torque = msg->force_torque;
+  const bot_core::force_torque_t& force_torque = msg->force_torque;
 
   this->args.foot_force_torque_measurement[Side::LEFT].frame_idx = this->foot_body_ids[Side::LEFT];
   this->args.foot_force_torque_measurement[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
@@ -191,6 +204,7 @@ void ResidualDetector::onExternalForceTorque(const lcm::ReceiveBuffer* rbuf, con
 
 
 void ResidualDetector::updateResidualState() {
+  using namespace Drake;
 
   // acquire a lock and copy data to local variables
   // need to really understand what data is being copied here, and what is a reference
@@ -216,16 +230,16 @@ void ResidualDetector::updateResidualState() {
   double dt = t - this->residual_state.t_prev;
 
   // compute H for current state (q,qd)
-  this->drake_model.doKinematics(robot_state->q, robot_state->qd, true);
-
-  // could replace this GradVar declaration with auto?
-  GradientVar<double, Eigen::Dynamic, Eigen::Dynamic> gradVar = this->drake_model.massMatrix<double>(1);
-  const auto & H = gradVar.value();
-
-  MatrixXd H_grad = gradVar.gradient().value(); // size nq^2 x nq
+//  KinematicsCache<double> cache = this->drake_model.doKinematics(robot_state->q, robot_state->qd, true);
+//  typedef DrakeJoint::AutoDiffFixedMaxSize AutoDiffFixedMaxSize; // this is now declaered in residual-detector.h file
 
 
-
+  auto q_autodiff = initializeAutoDiff(robot_state->q.cast<AutoDiffFixedMaxSize>().eval());
+  cache.initialize(q_autodiff);
+  drake_model.doKinematics(cache);
+  auto H_autodiff = drake_model.massMatrix(cache);
+  auto H = autoDiffToValueMatrix(H_autodiff);
+  auto H_grad = autoDiffToGradientMatrix(H_autodiff);
 
   MatrixXd footJacobian; // should be 3 x nv
   Vector3d points(0,0,0); //point ifs at origin of foot frame
@@ -259,7 +273,8 @@ void ResidualDetector::updateResidualState() {
     if (this->useFootFTFlag){
 //      std::cout << "using Foot FT" << std::endl;
       std::vector<int> v_indices;
-      footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
+      auto footJacobian_autodiff = this->drake_model.geometricJacobian(cache, body_id, body_id, 0, true, &v_indices);
+      footJacobian = autoDiffToValueMatrix(footJacobian_autodiff);
       const Vector6d &wrench = side_force.second.wrench;
       VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
       VectorXd joint_torque = VectorXd::Zero(this->nq);
@@ -271,31 +286,31 @@ void ResidualDetector::updateResidualState() {
 
       foot_ft_to_joint_torques[side_force.first] = joint_torque;
     }
-    else if (this->useFootForceFlag) {
-      std::cout << "using Foot Forces" << std::endl;
-      footJacobian = this->drake_model.forwardKinJacobian(points, body_id, 0, 0, true, 0).value();
-      const Vector3d &force = side_force.second.wrench.block(3, 0, 3, 1); // extract the force measurement
-
-      foot_ft_to_joint_torques[side_force.first] = footJacobian.transpose() * force;
-
-      if (this->useGeometricJacobianFlag){
-        std::cout << "using geometric Jacobian" << std::endl;
-        std::vector<int> v_indices;
-        footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
-        Vector6d wrench = side_force.second.wrench;
-        wrench.head<3>().setZero(); // set the wrenches to zero
-        VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
-        VectorXd joint_torque = VectorXd::Zero(this->nq);
-
-        // convert them to a full sized joint_torque vector
-        for (int i = 0; i < v_indices.size(); i++){
-          joint_torque(v_indices[i]) = joint_torque_at_v_indices(i);
-        }
-
-        foot_ft_to_joint_torques[side_force.first] = joint_torque;
-      }
-
-    }
+//    else if (this->useFootForceFlag) {
+//      std::cout << "using Foot Forces" << std::endl;
+//      footJacobian = this->drake_model.forwardKinJacobian(points, body_id, 0, 0, true, 0).value();
+//      const Vector3d &force = side_force.second.wrench.block(3, 0, 3, 1); // extract the force measurement
+//
+//      foot_ft_to_joint_torques[side_force.first] = footJacobian.transpose() * force;
+//
+//      if (this->useGeometricJacobianFlag){
+//        std::cout << "using geometric Jacobian" << std::endl;
+//        std::vector<int> v_indices;
+//        footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
+//        Vector6d wrench = side_force.second.wrench;
+//        wrench.head<3>().setZero(); // set the wrenches to zero
+//        VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
+//        VectorXd joint_torque = VectorXd::Zero(this->nq);
+//
+//        // convert them to a full sized joint_torque vector
+//        for (int i = 0; i < v_indices.size(); i++){
+//          joint_torque(v_indices[i]) = joint_torque_at_v_indices(i);
+//        }
+//
+//        foot_ft_to_joint_torques[side_force.first] = joint_torque;
+//      }
+//
+//    }
     else{
       std::cout << "told not to use foot forces, setting foot_ft_to_joint_torques to zero" << std::endl;
       foot_ft_to_joint_torques[Side::LEFT] = VectorXd::Zero(this->nq);
@@ -312,10 +327,13 @@ void ResidualDetector::updateResidualState() {
 
   //compute the gravitational term in manipulator equations, hack by calling doKinematics with zero velocity
   VectorXd qd_zero = VectorXd::Zero(this->nq);
-  this->drake_model.doKinematics(robot_state->q, qd_zero, true);
-  // dummy of zero external forces
-  std::map<int, std::unique_ptr< GradientVar<double, TWIST_SIZE, 1> > > f_ext; //hopefully TWIST_SIZE has been defined in a header i've imported
-  VectorXd gravity = this->drake_model.inverseDynamics(f_ext).value();
+  cacheTypeDouble.initialize(robot_state->q, qd_zero);
+  this->drake_model.doKinematics(cacheTypeDouble, false);
+
+
+  eigen_aligned_unordered_map<RigidBody const*, Matrix<double, TWIST_SIZE, 1>>
+      f_ext; // this is just a dummy force, doesn't do anything
+  VectorXd gravity = this->drake_model.dynamicsBiasTerm(cacheTypeDouble, f_ext, false);
 
   // computes a vector whose i^th entry is g_i(q) - 1/2*qd^T*dH/dq_i*qd
   VectorXd alpha = VectorXd::Zero(this->nq);
@@ -673,6 +691,25 @@ std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string
 
 
 int main( int argc, char* argv[]){
+
+
+  // deal with parsing later
+  std::string robotType = "atlas_v5";
+  std::shared_ptr<ResidualDetectorOps> residualDetectorOps(new ResidualDetectorOps());
+  residualDetectorOps->useFootForceTorque = true;
+
+  std::string drcBase = std::getenv("DRC_BASE");
+
+  if (robotType == "atlas_v5"){
+    residualDetectorOps->robotType = "atlas_v5";
+    residualDetectorOps->control_config_filename = drcBase + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
+    residualDetectorOps->urdfFilename = "/software/models/atlas_v5/model_LR_RR.urdf";
+  }
+
+  // populate it for valkyrie as well
+
+
+
   bool runTest = false;
   bool runQPTest = false;
   bool isVerbose = false;
@@ -702,88 +739,96 @@ int main( int argc, char* argv[]){
     std::cerr << "Error: lcm is not good()" << std::endl;
   }
 
-  ResidualDetector residualDetector(lcm, isVerbose);
+  ResidualDetector residualDetector(lcm, isVerbose, residualDetectorOps);
 
-  if (argc==1){
-    std::cout << "using foot force and torque" << std::endl;
-    residualDetector.useFootForceTorque();
-  }
+//  if (argc==1){
+//    std::cout << "using foot force and torque" << std::endl;
+//    residualDetector.useFootForceTorque();
+//  }
 
+//
+//  for (int i=1; i < argc; i++){
+//    if (i==1) {
+//      if (std::string(argv[i]) == "--useFootForceTorque") {
+//        std::cout << "using foot force & torque" << std::endl;
+//        residualDetector.useFootForceTorque();
+//      }
+//      else if (std::string(argv[i]) == "--useFootForce") {
+//        std::cout << "using foot force only, no torques" << std::endl;
+//        residualDetector.useFootForce();
+//      }
+//      else if (std::string(argv[i]) == "--useFootForceGeometricJacobian") {
+//        std::cout << "using foot force only, no torques, using geometric jacobian" << std::endl;
+//        residualDetector.useFootForce(true);
+//      }
+//      else if (std::string(argv[i]) == "--kinematicChain"){
+//        std::cout << "computing kinematicChain";
+//      }
+//      else if (std::string(argv[i])== "--runTest"){
+//        runDetectorLoop = false;
+//        runTest = true;
+//      }
+//      else if (std::string(argv[i]) == "--runQPTest"){
+//        runQPTest = true;
+//        runDetectorLoop = false;
+//      }
+//      else {
+//        std::cout << "didn't receive an option" << std::endl;
+//        std::cout << "using foot force & torque" << std::endl;
+//        residualDetector.useFootForceTorque();
+//      }
+//    }
+//
+//    if (std::string(argv[i]) == "--runContactFilter") {
+//      std::cout << "running Contact Filter Loop" << std::endl;
+//      runContactFilterLoop = true;
+//    }
+//
+//    if (std::string(argv[i]) == "--testCSVRead"){
+//      runContactFilterLoop = false;
+//      runDetectorLoop = false;
+//      runCSVTest = true;
+//    }
+//
+//    if (std::string(argv[i]) == "--useDirectorCSV"){
+//      filename = "testDirector.csv";
+//    }
+//
+//    if (std::string(argv[i]).find(".csv") != std::string::npos){
+//      filename = std::string(argv[i]);
+//    }
+//
+//  }
+//
+//  if (runContactFilterLoop){
+//    std::cout << "attemping to start contact filter thread loop" << std::endl;
+//    std::thread contactFilterThread(&ResidualDetector::contactFilterThreadLoop, &residualDetector, filename);
+//    std::cout << "started contact filter thread loop, detaching thread" << std::endl;
+//    contactFilterThread.detach();
+//  }
+//
+//  if (runContactFilterActiveLinkLoop){
+//    std::cout << "attemping to start contact filter active link thread loop" << std::endl;
+//    std::thread contactFilterThread(&ResidualDetector::activeLinkContactFilterThreadLoop, &residualDetector);
+//    std::cout << "started active link contact filter thread loop, detaching thread" << std::endl;
+//    contactFilterThread.detach();
+//  }
+//
+//  if(runTest){
+//    residualDetector.testContactFilterRotationMethod(true);
+//  }
+//
+//  if(runQPTest){
+//    residualDetector.testQP();
+//  }
+//
+//
+//
+//  if (runCSVTest){
+//    std::string filename = "test.csv";
+//    constructContactFilterPointsFromFile(filename);
+//  }
 
-  for (int i=1; i < argc; i++){
-    if (i==1) {
-      if (std::string(argv[i]) == "--useFootForceTorque") {
-        std::cout << "using foot force & torque" << std::endl;
-        residualDetector.useFootForceTorque();
-      }
-      else if (std::string(argv[i]) == "--useFootForce") {
-        std::cout << "using foot force only, no torques" << std::endl;
-        residualDetector.useFootForce();
-      }
-      else if (std::string(argv[i]) == "--useFootForceGeometricJacobian") {
-        std::cout << "using foot force only, no torques, using geometric jacobian" << std::endl;
-        residualDetector.useFootForce(true);
-      }
-      else if (std::string(argv[i]) == "--kinematicChain"){
-        std::cout << "computing kinematicChain";
-      }
-      else if (std::string(argv[i])== "--runTest"){
-        runDetectorLoop = false;
-        runTest = true;
-      }
-      else if (std::string(argv[i]) == "--runQPTest"){
-        runQPTest = true;
-        runDetectorLoop = false;
-      }
-      else {
-        std::cout << "didn't receive an option" << std::endl;
-        std::cout << "using foot force & torque" << std::endl;
-        residualDetector.useFootForceTorque();
-      }
-    }
-
-    if (std::string(argv[i]) == "--runContactFilter") {
-      std::cout << "running Contact Filter Loop" << std::endl;
-      runContactFilterLoop = true;
-    }
-
-    if (std::string(argv[i]) == "--testCSVRead"){
-      runContactFilterLoop = false;
-      runDetectorLoop = false;
-      runCSVTest = true;
-    }
-
-    if (std::string(argv[i]) == "--useDirectorCSV"){
-      filename = "testDirector.csv";
-    }
-
-    if (std::string(argv[i]).find(".csv") != std::string::npos){
-      filename = std::string(argv[i]);
-    }
-
-  }
-
-  if (runContactFilterLoop){
-    std::cout << "attemping to start contact filter thread loop" << std::endl;
-    std::thread contactFilterThread(&ResidualDetector::contactFilterThreadLoop, &residualDetector, filename);
-    std::cout << "started contact filter thread loop, detaching thread" << std::endl;
-    contactFilterThread.detach();
-  }
-
-  if (runContactFilterActiveLinkLoop){
-    std::cout << "attemping to start contact filter active link thread loop" << std::endl;
-    std::thread contactFilterThread(&ResidualDetector::activeLinkContactFilterThreadLoop, &residualDetector);
-    std::cout << "started active link contact filter thread loop, detaching thread" << std::endl;
-    contactFilterThread.detach();
-  }
-
-  if(runTest){
-    residualDetector.testContactFilterRotationMethod(true);
-  }
-
-  if(runQPTest){
-    residualDetector.testQP();
-  }
 
   if (runDetectorLoop){
     std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
@@ -792,11 +837,6 @@ int main( int argc, char* argv[]){
     // in the main thread run the lcm handler
     std::cout << "Starting lcm handler loop" << std::endl;
     while(0 == lcm->handle()); // infinite loop, won't ever progress past this
-  }
-
-  if (runCSVTest){
-    std::string filename = "test.csv";
-    constructContactFilterPointsFromFile(filename);
   }
 
   return 0;

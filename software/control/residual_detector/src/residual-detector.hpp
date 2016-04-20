@@ -6,13 +6,14 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
-#include "drake/ForceTorqueMeasurement.h"
-#include "drake/QPCommon.h"
-#include "drake/Side.h"
+#include "drake/systems/plants/ForceTorqueMeasurement.h"
+#include "drake/systems/controllers/QPCommon.h"
+#include "drake/systems/robotInterfaces/Side.h"
 #include "RobotStateDriver.hpp"
 #include "ContactFilter.hpp"
 #include "FootContactDriver.hpp"
-#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/bot_core/robot_state_t.hpp"
+#include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/foot_force_torque_t.hpp"
 #include "lcmtypes/drc/residual_observer_state_t.hpp"
 #include "lcmtypes/drake/lcmt_external_force_torque.hpp"
@@ -24,6 +25,11 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+
+#include "drake/core/Gradient.h"
+#include "drake/systems/plants/KinematicsCache.h"
+
+
 
 #ifndef CONTROL_RESIDUAL_DETECTOR_H
 #define CONTROL_RESIDUAL_DETECTOR_H
@@ -56,11 +62,19 @@ struct ResidualArgs{
   std::map<Side, bool> b_contact_force;
 };
 
+struct ResidualDetectorOps{
+  std::string robotType;
+  std::string urdfFilename;
+  std::string control_config_filename;
+  double residualGain;
+  bool useFootForceTorque;
+};
+
 class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::string urdfFilename="none");
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::shared_ptr<ResidualDetectorOps> residualDetectorOps);
   ~ResidualDetector(){
   }
   void residualThreadLoop();
@@ -88,7 +102,7 @@ private:
   int nv;
   double t_prev;
   BotParam* botparam_;
-  RigidBodyManipulator drake_model;
+  RigidBodyTree drake_model;
   std::mutex pointerMutex;
   std::vector<std::string> state_coordinate_names;
   std::string publishChannel;
@@ -104,6 +118,9 @@ private:
 
 
   std::map<Side, int> foot_body_ids;
+  typedef DrakeJoint::AutoDiffFixedMaxSize AutoDiffFixedMaxSize;
+  KinematicsCache<AutoDiffFixedMaxSize> cache;
+  KinematicsCache<double> cacheTypeDouble;
 
   std::shared_ptr<RobotStateDriver> state_driver;
   std::shared_ptr<FootContactDriver> foot_contact_driver;
@@ -111,7 +128,7 @@ private:
   ContactFilter contactFilter;
 
   // forward declarations
-  void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+  void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg);
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg);
   void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
   void onExternalForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_external_force_torque* msg);
