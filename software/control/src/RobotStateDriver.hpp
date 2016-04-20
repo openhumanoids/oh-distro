@@ -2,12 +2,6 @@
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 
 using namespace Eigen;
-struct DrakeRobotStateWithTorque{
-    double t;
-    VectorXd q;
-    VectorXd qd;
-    VectorXd torque;
-};
 
 class RobotStateDriver {
   private:
