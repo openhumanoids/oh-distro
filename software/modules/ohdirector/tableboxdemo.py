@@ -40,7 +40,7 @@ import director.tasks.robottasks as rt
 
 class SetSurveyPattern(rt.AsyncTask):
 
-    headSweepTime = 3.0;
+    headSweepTime = 3.0
 
     @staticmethod
     def getDefaultProperties(properties):
@@ -412,14 +412,27 @@ class TableboxDemo(object):
         palmSeperation = (dim[1] - 0.14)/2.0
         print palmSeperation
 
+        self.wristAngleBox = 0
         leftFrame = transformUtils.frameFromPositionAndRPY([0.0, palmSeperation, 0.0], [90, 90+self.wristAngleBox,0])
         leftFrame = transformUtils.concatenateTransforms([leftFrame, boxFrame])
+
+        #leftFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [15, 0, 0])
+        #leftFrame = transformUtils.concatenateTransforms([leftFrame2, leftFrame])
+        #leftFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, 15, 0])
+        #leftFrame = transformUtils.concatenateTransforms([leftFrame2, leftFrame])
+
         vis.updateFrame(leftFrame, 'reach left')
 
         rightFrame = transformUtils.frameFromPositionAndRPY([0.0, -palmSeperation, 0.0], [0,-90,-90])
         rightFrame = transformUtils.concatenateTransforms([rightFrame, boxFrame])
         rightFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, 0, self.wristAngleBox])
         rightFrame = transformUtils.concatenateTransforms([rightFrame2, rightFrame])
+
+        #rightFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [15, 0, 0])
+        #rightFrame = transformUtils.concatenateTransforms([rightFrame2, rightFrame])
+        #rightFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, -15, 0])
+        #rightFrame = transformUtils.concatenateTransforms([rightFrame2, rightFrame])
+
         vis.updateFrame(rightFrame, 'reach right')
 
         startPose = self.getPlanningStartPose()
@@ -629,24 +642,18 @@ class TableboxTaskPanel(TaskUserPanel):
             self.folder = prevFolder
 
         v = self.tableboxDemo
-
         self.taskTree.removeAllTasks()
+        ###############
 
         surveyAngles = []
-        surveyAngles.append([60, -45, 0]) #bottom right
-        surveyAngles.append([45, -45, 0]) #top right
+        surveyAngles.append([45, -15, 0]) #bottom right
+        surveyAngles.append([35, -15, 0]) #top right
 
-        surveyAngles.append([60, -25, 0]) #half right bottom
-        surveyAngles.append([45, -25, 0]) #half right top
+        surveyAngles.append([45, 0, 0]) #bottom center
+        surveyAngles.append([35, 0, 0]) #top center
 
-        surveyAngles.append([60, 0, 0]) #bottom center
-        surveyAngles.append([45, 0, 0]) #top center
-
-        surveyAngles.append([60, 25, 0]) #half left bottom
-        surveyAngles.append([45, 25, 0]) #half left top
-
-        surveyAngles.append([60, 45, 0]) #bottom left
-        surveyAngles.append([45, 45, 0]) #top left
+        surveyAngles.append([45, 15, 0]) #bottom left
+        surveyAngles.append([35, 15, 0]) #top left
         surveyAngles.append([0, 0, 0]) #reset
 
         ###############
@@ -655,15 +662,16 @@ class TableboxTaskPanel(TaskUserPanel):
         addManipTask('move hands down', v.planArmsDown, userPrompt=True)
         addFunc('activate table fit', self.tableboxDemo.userFitTable)
         addTask(rt.UserPromptTask(name='approve table fit', message='Please approve the table fit.'))
+        addTask(rt.SetNeckPitch(name='set neck position', angle=25)) # was 35
 
         # walk to table
         addFolder('walk')
         addTask(rt.RequestFootstepPlan(name='plan walk to table', stanceFrameName='table stance frame'))
         addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
-        addTask(rt.SetNeckPitch(name='set neck position', angle=25)) # was 35
         addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
         addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
+        #survey table
         addFolder("Survey Table 1")
         addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles], upperNeckPitch=[neckAngles[2] for neckAngles in surveyAngles] ))
 

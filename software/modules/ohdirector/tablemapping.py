@@ -27,7 +27,7 @@ import director.tasks.robottasks as rt
 
 class SetSurveyPattern(rt.AsyncTask):
 
-    headSweepTime = 3.0;
+    headSweepTime = 3.5;
 
     @staticmethod
     def getDefaultProperties(properties):
@@ -209,9 +209,9 @@ class TableTaskPanel(TaskUserPanel):
         self.initImageView(self.fitter.imageView, activateAffordanceUpdater=False)
 
     def addDefaultProperties(self):
-        self.params.addProperty('Lower Neck Pitch', 0., attributes=om.PropertyAttributes(minimum=0, maximum=66.6, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('Lower Neck Pitch', 0., attributes=om.PropertyAttributes(minimum=0, maximum=45, hidden=False, singleStep=0.01, decimals=2))
         self.params.addProperty('Upper Neck Pitch', 0., attributes=om.PropertyAttributes(minimum=-50, maximum=0, hidden=False, singleStep=0.01, decimals=2))
-        self.params.addProperty('Neck Yaw', 0., attributes=om.PropertyAttributes(minimum=-60, maximum=60, hidden=False, singleStep=0.01, decimals=2))
+        self.params.addProperty('Neck Yaw', 0., attributes=om.PropertyAttributes(minimum=-15, maximum=15, hidden=False, singleStep=0.01, decimals=2))
         self.params.addProperty('Head Sweep Time', 3., attributes=om.PropertyAttributes(minimum=0, maximum=60, hidden=False, singleStep=0.01, decimals=2))
 
     def onPropertyChanged(self, propertySet, propertyName):
@@ -262,20 +262,20 @@ class TableTaskPanel(TaskUserPanel):
         ###############
 
         surveyAngles = []
-        surveyAngles.append([60, -45, 0]) #bottom right
-        surveyAngles.append([45, -45, 0]) #top right
+        surveyAngles.append([45, -15, 0]) #bottom right
+        surveyAngles.append([35, -15, 0]) #top right
 
-        surveyAngles.append([60, -25, 0]) #half right bottom
-        surveyAngles.append([45, -25, 0]) #half right top
+        surveyAngles.append([45, -7, 0]) #half right bottom
+        surveyAngles.append([35, -7, 0]) #half right top
 
-        surveyAngles.append([60, 0, 0]) #bottom center
-        surveyAngles.append([45, 0, 0]) #top center
+        surveyAngles.append([45, 0, 0]) #bottom center
+        surveyAngles.append([35, 0, 0]) #top center
 
-        surveyAngles.append([60, 25, 0]) #half left bottom
-        surveyAngles.append([45, 25, 0]) #half left top
+        surveyAngles.append([45, 7, 0]) #half left bottom
+        surveyAngles.append([35, 7, 0]) #half left top
 
-        surveyAngles.append([60, 45, 0]) #bottom left
-        surveyAngles.append([45, 45, 0]) #top left
+        surveyAngles.append([45, 15, 0]) #bottom left
+        surveyAngles.append([35, 15, 0]) #top left
         surveyAngles.append([0, 0, 0]) #reset
 
         #prep

@@ -334,7 +334,7 @@
     <axis xyz="1 0 0"/>
     <parent link="rightShoulderPitchLink"/>
     <child link="rightShoulderRollLink"/>
-    <limit effort="190" lower="-1.266" upper="1.519" velocity="5.89"/>
+    <limit effort="190" lower="-1.266" upper="1.509" velocity="5.89"/>
     <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
@@ -456,7 +456,7 @@
     <axis xyz="0 0 1"/>
     <parent link="rightWristRollLink"/>
     <child link="rightPalm"/>
-    <limit effort="14" lower="-0.49" upper="0.36" velocity="1"/>
+    <limit effort="14" lower="-0.48" upper="0.36" velocity="1"/>
     <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
@@ -922,7 +922,7 @@
     <axis xyz="1 0 0"/>
     <parent link="leftShoulderPitchLink"/>
     <child link="leftShoulderRollLink"/>
-    <limit effort="190" lower="-1.519" upper="1.266" velocity="5.89"/>
+    <limit effort="190" lower="-1.509" upper="1.266" velocity="5.89"/>
     <controller_gains Kd="0.0" Ki="0.0" Kp="0.0"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
@@ -1044,7 +1044,7 @@
     <axis xyz="0 0 1"/>
     <parent link="leftWristRollLink"/>
     <child link="leftPalm"/>
-    <limit effort="14" lower="-0.36" upper="0.49" velocity="1"/>
+    <limit effort="14" lower="-0.36" upper="0.48" velocity="1"/>
     <controller_gains Kd="400" Ki="0.0" Kp="20000"/>
     <dynamics damping="0.1" friction="0.0"/>
   </joint>
