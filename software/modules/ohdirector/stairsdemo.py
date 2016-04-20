@@ -58,9 +58,9 @@ class StairsDemo(object):
     def testStairs(self, leadFoot=None):
         if (leadFoot is None):
             if self.isLeadingFootRight:
-                leadFoot=self.ikPlanner.rightFootLink #'r_foot'
+                leadFoot=self.ikPlanner.rightFootLink #'rightFoot'
             else:
-                leadFoot=self.ikPlanner.leftFootLink #'l_foot'
+                leadFoot=self.ikPlanner.leftFootLink #'leftFoot'
 
         polyData = segmentation.getCurrentRevolutionData()
         startPose = self.getEstimatedRobotStatePose()
@@ -92,7 +92,7 @@ class StairsDemo(object):
             self.onSyncProperties = False
 
         # Step 4: Footsteps placement
-        footsteps = self.placeStepsOnBlocks(self.blocksList, standingFootName, standingFootFrame)
+        footsteps = self.placeStepsOnBlocks(self.blocksList)
 
         assert len(footsteps) > 0
 
@@ -101,7 +101,7 @@ class StairsDemo(object):
         # Step 5: Send request to planner. It replies with complete footsteps plan message.
         self.sendFootstepPlanRequest(footsteps, nextDoubleSupportPose)
 
-    def placeStepsOnBlocks(self, blocks, standingFootName, standingFootFrame):
+    def placeStepsOnBlocks(self, blocks):
         contact_pts_left, contact_pts_right = self.footstepsDriver.getContactPts()
 
         footsteps = []
