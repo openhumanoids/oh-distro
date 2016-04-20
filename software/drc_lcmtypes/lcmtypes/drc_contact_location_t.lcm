@@ -1,0 +1,10 @@
+package drc;
+
+// Output of a 
+
+struct contact_location_t
+{
+  int64_t utime;
+  string link_name;
+  float contact_location_in_world[3];
+}

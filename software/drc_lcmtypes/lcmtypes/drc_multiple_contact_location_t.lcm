@@ -1,0 +1,10 @@
+package drc;
+
+// Output of a 
+
+struct multiple_contact_location_t
+{
+  int64_t utime;
+  int16_t num_contacts;
+  contact_location_t contacts[num_contacts]; 
+}

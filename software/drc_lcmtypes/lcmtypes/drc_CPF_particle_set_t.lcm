@@ -1,0 +1,13 @@
+package drc;
+
+// Output of a 
+
+struct CPF_particle_set_t
+{
+  int64_t utime;
+  int16_t num_particles;
+  CPF_particle_t particle_list[num_particles];
+  CPF_particle_t most_likely_particle;
+  CPF_particle_t historical_most_likely_particle;
+  float color[3];
+}

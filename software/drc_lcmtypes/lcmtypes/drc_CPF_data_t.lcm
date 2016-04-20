@@ -1,0 +1,10 @@
+package drc;
+
+// Output of a 
+
+struct CPF_data_t
+{
+  int64_t utime;
+  int16_t num_particle_sets;
+  CPF_particle_set_t particle_sets[num_particle_sets];
+}

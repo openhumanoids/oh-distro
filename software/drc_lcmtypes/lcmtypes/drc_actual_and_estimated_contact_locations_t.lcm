@@ -1,0 +1,10 @@
+package drc;
+
+// Output of a 
+
+struct actual_and_estimated_contact_locations_t
+{
+  int64_t utime;
+  multiple_contact_location_t actual_contact_location;
+  multiple_contact_location_t estimated_contact_location; 
+}
