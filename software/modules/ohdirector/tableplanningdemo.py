@@ -44,7 +44,7 @@ import director.applogic as app
 class TableplanningDemo(object):
 
     def __init__(self, robotStateModel, playbackRobotModel, ikPlanner, manipPlanner, footstepPlanner,
-                 lhandDriver, rhandDriver, view, sensorJointController, teleopRobotModel, teleopJointController, footstepsDriver):
+                 lhandDriver, rhandDriver, view, sensorJointController, teleopRobotModel, teleopJointController, footstepsDriver, valkyrieDriver):
         # TODO self.planPlaybackFunction = planPlaybackFunction
         self.robotStateModel = robotStateModel
         self.playbackRobotModel = playbackRobotModel
@@ -54,6 +54,7 @@ class TableplanningDemo(object):
         # TODO self.atlasDriver = atlasDriver
         self.lhandDriver = lhandDriver
         self.rhandDriver = rhandDriver
+        self.valkyrieDriver = valkyrieDriver
         # TODO self.multisenseDriver = multisenseDriver
         self.sensorJointController = sensorJointController
         self.view = view
@@ -91,6 +92,8 @@ class TableplanningDemo(object):
         self.feetConstraint = 'Sliding'
         self.reachingHand = 'right'
         self.ikPlanner.planningMode = 'drake'
+        
+        self.grasp_plan = None
     def planPlaybackFunction(plans):
         planPlayback.stopAnimation()
         playbackRobotModel.setProperty('Visible', True)
@@ -213,6 +216,7 @@ class TableplanningDemo(object):
     def closeHand(self, side):
         self.getHandDriver(side).sendCustom(100.0, 100.0, 100.0, 0)
 
+
     # TODO: re-enable
     #def sendNeckPitchLookDown(self):
     #    self.multisenseDriver.setNeckPitch(40)
@@ -332,7 +336,7 @@ class TableplanningDemo(object):
         newPlan = self.constraintSet.runIkTraj()
         self.addPlan(newPlan)
         self.showPlan(newPlan)
-
+        
     def placeHandModel(self):
         if not om.findObjectByName('final pose end effector'):
             side = self.reachingHand
@@ -355,7 +359,12 @@ class TableplanningDemo(object):
         if self.feetConstraint == 'Sliding':
             stanceFrame = self.footstepsDriver.getFeetMidPoint(self.teleopRobotModel)
             vis.updateFrame(stanceFrame, 'table stance frame')
-        
+            backFrameOffset = transformUtils.frameFromPositionAndRPY([-0.3, 0, 0],[0,0,60.0])
+            backFrame = vtk.vtkTransform()
+            backFrame.PostMultiply()
+            backFrame.Concatenate(backFrameOffset)
+            vis.updateFrame(backFrame, 'walk back stance frame', parent=om.findObjectByName('table'), scale=0.2)
+            
     def changeHand(self, handName):
         self.reachingHand = handName
         if om.findObjectByName('final pose end effector'):
@@ -489,8 +498,39 @@ class TableplanningDemo(object):
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
         self.ikPlanner.planningMode = curr
-
-
+    
+    def planLeftArmUp(self):
+        curr = self.ikPlanner.planningMode
+        self.ikPlanner.planningMode = 'drake'
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'hands up safely 3')
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)
+        self.ikPlanner.planningMode = curr
+        
+    def handGrasp(self):        
+        self.valkyrieDriver.sendHandCommand(side=self.reachingHand, thumbRoll=0.0, thumbPitch1=0.6, thumbPitch2=0.6, indexFingerPitch=0.6, middleFingerPitch=0.6, pinkyPitch=0.6)
+        
+    def handOpen(self):
+        self.valkyrieDriver.openHand(side=self.reachingHand)
+        
+    def planNominal(self):
+        curr = self.ikPlanner.planningMode
+        self.ikPlanner.planningMode = 'drake'
+        self.ikPlanner.computeNominalPlan(self.sensorJointController.q)
+        self.ikPlanner.planningMode = curr
+        
+    def liftHandUp(self):
+        self.moveHandsUpAfterGrasping()
+        self.onMotionPlanning()
+        
+    def moveHandsUpAfterGrasping(self):
+        handFrame = om.findObjectByName('final pose end effector frame').transform
+        handFrame.PreMultiply()
+        handFrameUp = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.1],[0,0,0])
+        handFrame.Concatenate(handFrameUp)
+        vis.updateFrame(handFrame, 'final pose end effector frame', parent=om.findObjectByName('final pose end effector'), scale=0.2)
+        self.onHandModelModified(handFrame)
 '''
 Tableboxdemo Image Fit for live-stream of webcam
 '''
@@ -628,23 +668,37 @@ class TableplanningTaskPanel(TaskUserPanel):
         # preparation
         addFolder('prepare')
         addManipTask('move hands down', v.planArmsDown, userPrompt=True)
+        addTask(rt.SetNeckPitch(name='set neck position', angle=35))
         addFunc('activate table fit', self.tableplanningDemo.userFitTable)
         addTask(rt.UserPromptTask(name='approve table fit', message='Please approve the table fit.'))
-        
         
         # walk to table (end-pose planning)
         addFolder('end pose planning')
         addFunc('find stance pose', v.onEndPosePlanning)
+        addTask(rt.UserPromptTask(name='approve end pose', message='Please approve the end pose.'))
         addTask(rt.RequestFootstepPlan(name='plan walk to table', stanceFrameName='table stance frame'))
         addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
-        addTask(rt.SetNeckPitch(name='set neck position', angle=35))
         addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
-        #addTask(rt.WaitForWalkExecution(name='wait for walking'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
         #- fit box
         #- grasp box
         addFolder('grasp')
+        addFunc('re-activate table fit', self.tableplanningDemo.userFitTable)
+        addTask(rt.UserPromptTask(name='approve table fit', message='Please approve the table fit again.'))
+        addManipTask('move to pregrasp', v.planLeftArmUp, userPrompt=True)
         addManipTask('reach target', v.onMotionPlanning, userPrompt=True)
+        addFunc('grasp', v.handGrasp)
+        addTask(rt.UserPromptTask(name='approve hand grasp', message='Please approve the hand grasp.'))
+        
+        addFolder('post grasp')
+        addTask(rt.UserPromptTask(name='move hand up', message='Please approve move hand up.'))
+        addManipTask('lift up hand', v.onMotionPlanning, userPrompt=True)
+        addTask(rt.RequestFootstepPlan(name='plan walk back and turn', stanceFrameName='walk back stance frame'))
+        addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
+        addTask(rt.CommitFootstepPlan(name='walk back and turn', planName='walk back stance frame frame footstep plan'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
 
-        #- lift box
-        #- walk backwards
+        addFunc('open', v.handOpen)
+        addTask(rt.UserPromptTask(name='approve hand open', message='Please approve the hand open.'))
+        addManipTask('Plan Nominal', v.planNominal, userPrompt=True)
