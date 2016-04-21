@@ -1,4 +1,4 @@
-#include "drc/foot_contact_estimate_t.hpp"
+#include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "drake/systems/controllers/QPCommon.h"
 
 
