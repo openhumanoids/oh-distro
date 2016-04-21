@@ -36,7 +36,7 @@ if sparsePlot:
 addPlot(timeWindow=10, yLimits=[-50,50])
 # addSignals('RESIDUAL_OBSERVER_STATE', msg.utime, msg.residual, joints, keyLookup=names)
 # addSignals('RESIDUAL_OBSERVER_STATE_W_FOOT_FORCE', msg.utime, msg.residual, joints, keyLookup=names)
-addSignals('RESIDUAL_OBSERVER_STATE_W_FOOT_FT', msg.utime, msg.residual, joints, keyLookup=names)
+addSignals('RESIDUAL_OBSERVER_STATE', msg.utime, msg.residual, joints, keyLookup=names)
 
 # for ext in channel_extensions:
 #     channel = 'CONTACT_FILTER_POINT_ESTIMATE_'+ext
