@@ -18,6 +18,7 @@
 #include "drake/systems/robotInterfaces/Side.h"
 #include "drake/systems/controllers/InstantaneousQPController.h"
 
+
 using namespace Eigen;
 
 namespace {
@@ -472,6 +473,8 @@ namespace {
   void controllerLoop(InstantaneousQPController *pdata, std::shared_ptr<ThreadedControllerOptions> ctrl_opts)
   {
     int num_states = pdata->getRobot().num_positions + pdata->getRobot().num_velocities;
+
+
     std::vector<string> state_coordinate_names(num_states);
     for (int i=0; i<num_states; i++){
       state_coordinate_names[i] = pdata->getRobot().getStateName(i);
@@ -482,6 +485,19 @@ namespace {
 
     solveArgs.pdata = pdata;
     solveArgs.b_contact_force = Matrix<bool, Dynamic, 1>::Zero(pdata->getRobot().bodies.size());
+
+
+    std::vector<std::string> input_joint_names;
+
+    auto & actuatorVec = pdata->getRobot().actuators;
+    for(auto & actuator: actuatorVec){
+      std::string actuatorName = actuator.body->getJoint().getName();
+      std::cout << actuatorName << std::endl;
+      input_joint_names.push_back(actuatorName);
+    }
+    //initialize the drake coordinate names
+    getDrakeInputToRobotStateIndexMap(input_joint_names, state_coordinate_names, drake_input_to_robot_state);
+
 
     lcmHandler.Start();
     controlReceiver.InitSubscriptions();
