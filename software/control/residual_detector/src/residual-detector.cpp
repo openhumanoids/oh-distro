@@ -1,7 +1,9 @@
 #include "residual-detector.hpp"
 #include <model-client/model-client.hpp>
 #include "drake/util/yaml/yamlUtil.h"
-#include "drake/systems/plants/KinematicsCache.h"
+
+#include <ConciseArgs>
+#include <stdexcept>
 
 
 #define RESIDUAL_GAIN 20.0;
@@ -12,8 +14,9 @@ using namespace Eigen;
 ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
                                    std::shared_ptr<ResidualDetectorOps> residualDetectorOps):
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
-    useFootForceFlag(false), useFootFTFlag(false), useGeometricJacobianFlag(false){
+    useFootForceFlag(false), useFootFTFlag(true), useGeometricJacobianFlag(false){
 
+    useFootFTFlag = residualDetectorOps->useFootForceTorque;
 
 
 //  if (urdfFilename=="none"){
@@ -55,8 +58,8 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 
 
   //initialize the kinematics cache
-  cache = KinematicsCache<AutoDiffFixedMaxSize>(drake_model.bodies); // keep this around
-  cacheTypeDouble = KinematicsCache<double>(drake_model.bodies);
+  cache = std::shared_ptr<KinematicsCache<AutoDiffFixedMaxSize>>(new KinematicsCache<AutoDiffFixedMaxSize>(drake_model.bodies)); // keep this around
+  cacheTypeDouble = std::shared_ptr<KinematicsCache<double>>(new KinematicsCache<double>(drake_model.bodies));
 
 
 
@@ -234,10 +237,12 @@ void ResidualDetector::updateResidualState() {
 //  typedef DrakeJoint::AutoDiffFixedMaxSize AutoDiffFixedMaxSize; // this is now declaered in residual-detector.h file
 
 
-  auto q_autodiff = initializeAutoDiff(robot_state->q.cast<AutoDiffFixedMaxSize>().eval());
-  cache.initialize(q_autodiff);
-  drake_model.doKinematics(cache);
-  auto H_autodiff = drake_model.massMatrix(cache);
+
+  Matrix<AutoDiffFixedMaxSize, Eigen::Dynamic, 1> q_autodiff(robot_state->q.size());
+  initializeAutoDiff(robot_state->q, q_autodiff);
+  cache->initialize(q_autodiff);
+  drake_model.doKinematics(*cache);
+  auto H_autodiff = drake_model.massMatrix(*cache);
   auto H = autoDiffToValueMatrix(H_autodiff);
   auto H_grad = autoDiffToGradientMatrix(H_autodiff);
 
@@ -273,7 +278,7 @@ void ResidualDetector::updateResidualState() {
     if (this->useFootFTFlag){
 //      std::cout << "using Foot FT" << std::endl;
       std::vector<int> v_indices;
-      auto footJacobian_autodiff = this->drake_model.geometricJacobian(cache, body_id, body_id, 0, true, &v_indices);
+      auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, body_id, body_id, 0, true, &v_indices);
       footJacobian = autoDiffToValueMatrix(footJacobian_autodiff);
       const Vector6d &wrench = side_force.second.wrench;
       VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
@@ -327,13 +332,13 @@ void ResidualDetector::updateResidualState() {
 
   //compute the gravitational term in manipulator equations, hack by calling doKinematics with zero velocity
   VectorXd qd_zero = VectorXd::Zero(this->nq);
-  cacheTypeDouble.initialize(robot_state->q, qd_zero);
-  this->drake_model.doKinematics(cacheTypeDouble, false);
+  cacheTypeDouble->initialize(robot_state->q, qd_zero);
+  this->drake_model.doKinematics(*cacheTypeDouble, false);
 
 
   eigen_aligned_unordered_map<RigidBody const*, Matrix<double, TWIST_SIZE, 1>>
       f_ext; // this is just a dummy force, doesn't do anything
-  VectorXd gravity = this->drake_model.dynamicsBiasTerm(cacheTypeDouble, f_ext, false);
+  VectorXd gravity = this->drake_model.dynamicsBiasTerm(*cacheTypeDouble, f_ext, false);
 
   // computes a vector whose i^th entry is g_i(q) - 1/2*qd^T*dH/dq_i*qd
   VectorXd alpha = VectorXd::Zero(this->nq);
@@ -419,33 +424,33 @@ void ResidualDetector::publishResidualState(std::string publishChannel, const Re
   this->lcm_->publish(publishChannel, &residual_state_msg);
 }
 
-void ResidualDetector::computeContactFilter(bool publishMostLikely, bool publishAll){
-  // copy the required data to local variables
-  std::unique_lock<std::mutex> lck(pointerMutex);
-  VectorXd residual = this->residual_state.r;
-  double t = this->args.robot_state->t;
-  VectorXd q = this->args.robot_state->q;
-  VectorXd v = this->args.robot_state->qd;
-  lck.unlock();
+//void ResidualDetector::computeContactFilter(bool publishMostLikely, bool publishAll){
+//  // copy the required data to local variables
+//  std::unique_lock<std::mutex> lck(pointerMutex);
+//  VectorXd residual = this->residual_state.r;
+//  double t = this->args.robot_state->t;
+//  VectorXd q = this->args.robot_state->q;
+//  VectorXd v = this->args.robot_state->qd;
+//  lck.unlock();
+//
+//  this->contactFilter.computeLikelihoodFull(t, residual, q, v, publishMostLikely, publishAll);
+//}
 
-  this->contactFilter.computeLikelihoodFull(t, residual, q, v, publishMostLikely, publishAll);
-}
-
-void ResidualDetector::computeActiveLinkContactFilter(bool publish, bool useActiveLinkInfo){
-  std::unique_lock<std::mutex> lck(pointerMutex);
-  VectorXd residual = this->residual_state.r;
-  double t = this->args.robot_state->t;
-  VectorXd q = this->args.robot_state->q;
-  VectorXd v = this->args.robot_state->qd;
-  std::vector<std::string> activeLinkNames = this->linksWithExternalForce;
-  lck.unlock();
-
-  if (!useActiveLinkInfo){
-    activeLinkNames.clear();
-  }
-
-  this->contactFilter.computeActiveLinkForceTorque(t, residual, q, v, publish, activeLinkNames);
-}
+//void ResidualDetector::computeActiveLinkContactFilter(bool publish, bool useActiveLinkInfo){
+//  std::unique_lock<std::mutex> lck(pointerMutex);
+//  VectorXd residual = this->residual_state.r;
+//  double t = this->args.robot_state->t;
+//  VectorXd q = this->args.robot_state->q;
+//  VectorXd v = this->args.robot_state->qd;
+//  std::vector<std::string> activeLinkNames = this->linksWithExternalForce;
+//  lck.unlock();
+//
+//  if (!useActiveLinkInfo){
+//    activeLinkNames.clear();
+//  }
+//
+//  this->contactFilter.computeActiveLinkForceTorque(t, residual, q, v, publish, activeLinkNames);
+//}
 
 void ResidualDetector::residualThreadLoop() {
   bool done = false;
@@ -458,149 +463,149 @@ void ResidualDetector::residualThreadLoop() {
   }
 }
 
-void ResidualDetector::contactFilterThreadLoop(std::string filename) {
-  std::cout << "entered contact filter loop" << std::endl;
+//void ResidualDetector::contactFilterThreadLoop(std::string filename) {
+//  std::cout << "entered contact filter loop" << std::endl;
+////  Vector3d contactPosition(0,0,0);
+////  Vector3d contactNormal(0,0,1);
+////  std::string filename = "testCFP.csv";
+//  std::vector<ContactFilterPoint> cfpVec = constructContactFilterPointsFromFile(filename);
+//  std::cout << "constructed cfpVec" << std::endl;
+//  this->contactFilter.addContactPoints(cfpVec);
+//
+//  std::cout << "added all contact points to the ContactFilter object" << std::endl;
+//  bool publishMostLikely = true;
+//  bool publishAll = true;
+//  bool done = false;
+//
+//  while (!done){
+//
+//    // only run as fast as the residual state is getting updated,
+//    // otherwise we are essentially double counting the measurements
+//    while(!this->residual_state.running || !this->newResidualStateAvailable){
+//      std::this_thread::yield();
+//    }
+//    this->computeContactFilter(publishMostLikely, publishAll);
+//    this->newResidualStateAvailable = false;
+//  }
+//}
+
+//void ResidualDetector::activeLinkContactFilterThreadLoop() {
+//  std::cout << "entered contact filter body wrench loop" << std::endl;
+//  bool publish = true;
+//  bool useActiveLinkInfo = true;
+//  bool done = false;
+//  while (!done){
+//    while (!this->residual_state.running || !this->newResidualStateAvailableForActiveLink){
+//      std::this_thread::yield();
+//    }
+//    this->computeActiveLinkContactFilter(publish, useActiveLinkInfo);
+//    this->newResidualStateAvailableForActiveLink = false;
+//  }
+//}
+
+
+//// TESTING
+//void ResidualDetector::kinematicChain(std::string linkName, int body_id){
+//
+//  // the default of body_id, then overwrite with linkName
+//  if (body_id==-1){
+//    body_id = this->drake_model.findLinkId(linkName);
+//  }
+//  VectorXd q = VectorXd::Zero(this->nq);
+//  VectorXd v = VectorXd::Zero(this->nv);
+//
+//  // compute H for current state (q,qd)
+//  this->drake_model.doKinematics(q, v, true);
+//  std::vector<int> v_indices;
+//  auto footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
+//
+//  //now we want to print out what the v_indices correspond to
+//  std::cout << this->drake_model.getBodyOrFrameName(body_id) << " kinematic chain" << std::endl;
+//  for (auto &i: v_indices){
+//    std::cout << this->drake_model.getVelocityName(i) << std::endl;
+//  }
+//
+//}
+
+
+//// TESTING
+//void ResidualDetector::testContactFilterRotationMethod(bool useRandom) {
+//
+//
+//  Vector3d a(1, 0, 0);
+//  Vector3d b(-1, 0, 0);
+////  if (useRandom){
+////    a = Vector3d::Random();
+////    b = Vector3d::Random();
+////    a.normalize();
+////    b.normalize();
+////  }
+//
+//  auto R = rotateVectorToAlign(a,b);
+//
+//  std::cout << "a is:\n" << a << std::endl;
+//  std::cout << "b is:\n" << b << std::endl;
+//  std::cout << "R is:\n" << R << std::endl;
+//  auto c = R*a;
+//  std::cout << "R*a is:\n" << c << std::endl;
+//  Vector3d d = c - b;
+//  double diffNorm = d.norm();
+//  std::cout << "norm of c-b is:\n" << diffNorm << std::endl;
+//}
+
+//void ResidualDetector::testQP(){
+//  VectorXd residual = VectorXd::Zero(this->nv);
+//  VectorXd q = residual;
+//  VectorXd v = residual;
 //  Vector3d contactPosition(0,0,0);
 //  Vector3d contactNormal(0,0,1);
-//  std::string filename = "testCFP.csv";
-  std::vector<ContactFilterPoint> cfpVec = constructContactFilterPointsFromFile(filename);
-  std::cout << "constructed cfpVec" << std::endl;
-  this->contactFilter.addContactPoints(cfpVec);
+////  this->contactFilter.computeLikelihood(residual, q, v, contactPosition, contactNormal, body_id);
+//  this->contactFilter.testQP();
+//}
 
-  std::cout << "added all contact points to the ContactFilter object" << std::endl;
-  bool publishMostLikely = true;
-  bool publishAll = true;
-  bool done = false;
-
-  while (!done){
-
-    // only run as fast as the residual state is getting updated,
-    // otherwise we are essentially double counting the measurements
-    while(!this->residual_state.running || !this->newResidualStateAvailable){
-      std::this_thread::yield();
-    }
-    this->computeContactFilter(publishMostLikely, publishAll);
-    this->newResidualStateAvailable = false;
-  }
-}
-
-void ResidualDetector::activeLinkContactFilterThreadLoop() {
-  std::cout << "entered contact filter body wrench loop" << std::endl;
-  bool publish = true;
-  bool useActiveLinkInfo = true;
-  bool done = false;
-  while (!done){
-    while (!this->residual_state.running || !this->newResidualStateAvailableForActiveLink){
-      std::this_thread::yield();
-    }
-    this->computeActiveLinkContactFilter(publish, useActiveLinkInfo);
-    this->newResidualStateAvailableForActiveLink = false;
-  }
-}
-
-
-// TESTING
-void ResidualDetector::kinematicChain(std::string linkName, int body_id){
-
-  // the default of body_id, then overwrite with linkName
-  if (body_id==-1){
-    body_id = this->drake_model.findLinkId(linkName);
-  }
-  VectorXd q = VectorXd::Zero(this->nq);
-  VectorXd v = VectorXd::Zero(this->nv);
-
-  // compute H for current state (q,qd)
-  this->drake_model.doKinematics(q, v, true);
-  std::vector<int> v_indices;
-  auto footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
-
-  //now we want to print out what the v_indices correspond to
-  std::cout << this->drake_model.getBodyOrFrameName(body_id) << " kinematic chain" << std::endl;
-  for (auto &i: v_indices){
-    std::cout << this->drake_model.getVelocityName(i) << std::endl;
-  }
-
-}
-
-
-// TESTING
-void ResidualDetector::testContactFilterRotationMethod(bool useRandom) {
-
-
-  Vector3d a(1, 0, 0);
-  Vector3d b(-1, 0, 0);
-//  if (useRandom){
-//    a = Vector3d::Random();
-//    b = Vector3d::Random();
-//    a.normalize();
-//    b.normalize();
-//  }
-
-  auto R = rotateVectorToAlign(a,b);
-
-  std::cout << "a is:\n" << a << std::endl;
-  std::cout << "b is:\n" << b << std::endl;
-  std::cout << "R is:\n" << R << std::endl;
-  auto c = R*a;
-  std::cout << "R*a is:\n" << c << std::endl;
-  Vector3d d = c - b;
-  double diffNorm = d.norm();
-  std::cout << "norm of c-b is:\n" << diffNorm << std::endl;
-}
-
-void ResidualDetector::testQP(){
-  VectorXd residual = VectorXd::Zero(this->nv);
-  VectorXd q = residual;
-  VectorXd v = residual;
-  Vector3d contactPosition(0,0,0);
-  Vector3d contactNormal(0,0,1);
-//  this->contactFilter.computeLikelihood(residual, q, v, contactPosition, contactNormal, body_id);
-  this->contactFilter.testQP();
-}
-
-// SHOULD DO THIS PROGRAMATICALLY LATER
-std::vector<ContactFilterPoint> constructContactFilterPoints(){
-  std::vector<ContactFilterPoint> vec;
-  ContactFilterPoint cfp;
-
-  cfp.body_id = 1;
-  cfp.body_name = "pelvis";
-  cfp.name = "ORIGIN";
-  cfp.contactNormal = Vector3d(0,0,1);
-  cfp.contactPoint = Vector3d(0,0,0);
-  vec.push_back(cfp);
-
-  cfp.body_id = 1;
-  cfp.body_name = "pelvis";
-  cfp.name = "L_PELVIS";
-  cfp.contactNormal = Vector3d(0,0,1);
-  cfp.contactPoint = Vector3d(-0.092,0.0616,-0.144);
-  vec.push_back(cfp);
-
-  cfp.body_id = 1;
-  cfp.body_name = "pelvis";
-  cfp.name = "R_PELVIS";
-  cfp.contactNormal = Vector3d(0,0,1);
-  cfp.contactPoint = Vector3d(-0.092,-0.0616,-0.144);
-  vec.push_back(cfp);
-
-  cfp.body_id = 1;
-  cfp.body_name = "pelvis";
-  cfp.name = "M_PELVIS";
-  cfp.contactNormal = Vector3d(0,0,1);
-  cfp.contactPoint = Vector3d(-0.092,0.0,-0.144);
-  vec.push_back(cfp);
-
-
-  cfp.body_id = 1;
-  cfp.body_name = "pelvis";
-  cfp.name = "B_PELVIS";
-  cfp.contactNormal = Vector3d(1,0,0);
-  cfp.contactPoint = Vector3d(-0.15477851,  0.00025932, -0.00269301);
-  vec.push_back(cfp);
-
-  return vec;
-}
+//// SHOULD DO THIS PROGRAMATICALLY LATER
+//std::vector<ContactFilterPoint> constructContactFilterPoints(){
+//  std::vector<ContactFilterPoint> vec;
+//  ContactFilterPoint cfp;
+//
+//  cfp.body_id = 1;
+//  cfp.body_name = "pelvis";
+//  cfp.name = "ORIGIN";
+//  cfp.contactNormal = Vector3d(0,0,1);
+//  cfp.contactPoint = Vector3d(0,0,0);
+//  vec.push_back(cfp);
+//
+//  cfp.body_id = 1;
+//  cfp.body_name = "pelvis";
+//  cfp.name = "L_PELVIS";
+//  cfp.contactNormal = Vector3d(0,0,1);
+//  cfp.contactPoint = Vector3d(-0.092,0.0616,-0.144);
+//  vec.push_back(cfp);
+//
+//  cfp.body_id = 1;
+//  cfp.body_name = "pelvis";
+//  cfp.name = "R_PELVIS";
+//  cfp.contactNormal = Vector3d(0,0,1);
+//  cfp.contactPoint = Vector3d(-0.092,-0.0616,-0.144);
+//  vec.push_back(cfp);
+//
+//  cfp.body_id = 1;
+//  cfp.body_name = "pelvis";
+//  cfp.name = "M_PELVIS";
+//  cfp.contactNormal = Vector3d(0,0,1);
+//  cfp.contactPoint = Vector3d(-0.092,0.0,-0.144);
+//  vec.push_back(cfp);
+//
+//
+//  cfp.body_id = 1;
+//  cfp.body_name = "pelvis";
+//  cfp.name = "B_PELVIS";
+//  cfp.contactNormal = Vector3d(1,0,0);
+//  cfp.contactPoint = Vector3d(-0.15477851,  0.00025932, -0.00269301);
+//  vec.push_back(cfp);
+//
+//  return vec;
+//}
 
 
 std::vector<std::vector<std::string>> parseCSVFile(std::string filename){
@@ -653,182 +658,83 @@ std::vector<std::vector<std::string>> parseCSVFile(std::string filename){
 }
 
 
-std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename){
-
-  std::string drcBase = std::string(std::getenv("DRC_BASE"));
-  std::string filenameWithPath = drcBase + "/software/control/residual_detector/src/particle_grids/" + filename;
-  std::vector<std::vector<std::string>> fileString = parseCSVFile(filenameWithPath);
-
-//  // print out the file that you just read in
+//std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename){
+//
+//  std::string drcBase = std::string(std::getenv("DRC_BASE"));
+//  std::string filenameWithPath = drcBase + "/software/control/residual_detector/src/particle_grids/" + filename;
+//  std::vector<std::vector<std::string>> fileString = parseCSVFile(filenameWithPath);
+//
+////  // print out the file that you just read in
+////  for (auto & line: fileString){
+////    for (auto & word: line){
+////      std::cout << word << ",";
+////    }
+////    std::cout << std::endl;
+////  }
+//
+//  std::vector<ContactFilterPoint> cfpVec;
 //  for (auto & line: fileString){
-//    for (auto & word: line){
-//      std::cout << word << ",";
+////    std::cout << "attemping to make cfp object" << std::endl;
+////    std::cout << "line has size " << line.size() << std::endl;
+//    ContactFilterPoint cfp;
+//    cfp.body_name = line[0];
+//    Vector3d contactPoint(atof(line[1].c_str()), atof(line[2].c_str()), atof(line[3].c_str()));
+//    Vector3d contactNormal(atof(line[4].c_str()), atof(line[5].c_str()), atof(line[6].c_str()));
+//    cfp.contactPoint = contactPoint;
+//    cfp.contactNormal = contactNormal;
+//
+//    if (line.size() == 8) {
+//      cfp.name = line[7];
 //    }
-//    std::cout << std::endl;
+//    cfpVec.push_back(cfp);
 //  }
-
-  std::vector<ContactFilterPoint> cfpVec;
-  for (auto & line: fileString){
-//    std::cout << "attemping to make cfp object" << std::endl;
-//    std::cout << "line has size " << line.size() << std::endl;
-    ContactFilterPoint cfp;
-    cfp.body_name = line[0];
-    Vector3d contactPoint(atof(line[1].c_str()), atof(line[2].c_str()), atof(line[3].c_str()));
-    Vector3d contactNormal(atof(line[4].c_str()), atof(line[5].c_str()), atof(line[6].c_str()));
-    cfp.contactPoint = contactPoint;
-    cfp.contactNormal = contactNormal;
-
-    if (line.size() == 8) {
-      cfp.name = line[7];
-    }
-    cfpVec.push_back(cfp);
-  }
-
-  return cfpVec;
-
-}
+//
+//  return cfpVec;
+//
+//}
 
 
 
 int main( int argc, char* argv[]){
 
 
-  // deal with parsing later
-  std::string robotType = "atlas_v5";
+  ConciseArgs parser(argc, argv);
+  bool atlas_v5 = false;
+  bool valkyrie_v1 = false;
+  bool valkyrie_v2 = false;
+
+  parser.add(atlas_v5, "v5", "atlas_v5", "set robot to atlas_v5");
+  parser.add(valkyrie_v1, "val1", "valkyrie_v1", "set robot to valkyrie v1");
+  parser.add(valkyrie_v2, "val2", "valkyrie_v2", "set robot to valkyrie_v2");
+  parser.parse();
+
+
   std::shared_ptr<ResidualDetectorOps> residualDetectorOps(new ResidualDetectorOps());
   residualDetectorOps->useFootForceTorque = true;
 
   std::string drcBase = std::getenv("DRC_BASE");
 
-  if (robotType == "atlas_v5"){
+  if(!atlas_v5){
+    throw std::invalid_argument("currently only support atlas_v5, pass -v5 or --atlas_v5 args");
+  }
+
+  if (atlas_v5){
     residualDetectorOps->robotType = "atlas_v5";
     residualDetectorOps->control_config_filename = drcBase + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
-    residualDetectorOps->urdfFilename = "/software/models/atlas_v5/model_LR_RR.urdf";
+    residualDetectorOps->urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
   }
 
-  // populate it for valkyrie as well
+  // TODO: add support for valkyrie
 
-
-
-  bool runTest = false;
-  bool runQPTest = false;
-  bool isVerbose = false;
-  bool runDetectorLoop = true;
-  bool runContactFilterLoop = false;
-  bool runContactFilterActiveLinkLoop = true;
-  bool runCSVTest = false;
-  std::string urdfFilename = "";
-  std::string filename = "directorDense.csv";
-  std::string linkName;
-
-
-  for (int i=1; i < argc; i++){
-    if (std::string(argv[i]) == "--testCSVRead"){
-      std::cout << "running CSV test" << std::endl;
-      std::string filename = "test.csv";
-      constructContactFilterPointsFromFile(filename);
-      return 0;
-    }
-
-  }
-
-
-
+  // initialize LCM
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr << "Error: lcm is not good()" << std::endl;
   }
 
+  bool isVerbose = false;
+  bool runDetectorLoop = true;
   ResidualDetector residualDetector(lcm, isVerbose, residualDetectorOps);
-
-//  if (argc==1){
-//    std::cout << "using foot force and torque" << std::endl;
-//    residualDetector.useFootForceTorque();
-//  }
-
-//
-//  for (int i=1; i < argc; i++){
-//    if (i==1) {
-//      if (std::string(argv[i]) == "--useFootForceTorque") {
-//        std::cout << "using foot force & torque" << std::endl;
-//        residualDetector.useFootForceTorque();
-//      }
-//      else if (std::string(argv[i]) == "--useFootForce") {
-//        std::cout << "using foot force only, no torques" << std::endl;
-//        residualDetector.useFootForce();
-//      }
-//      else if (std::string(argv[i]) == "--useFootForceGeometricJacobian") {
-//        std::cout << "using foot force only, no torques, using geometric jacobian" << std::endl;
-//        residualDetector.useFootForce(true);
-//      }
-//      else if (std::string(argv[i]) == "--kinematicChain"){
-//        std::cout << "computing kinematicChain";
-//      }
-//      else if (std::string(argv[i])== "--runTest"){
-//        runDetectorLoop = false;
-//        runTest = true;
-//      }
-//      else if (std::string(argv[i]) == "--runQPTest"){
-//        runQPTest = true;
-//        runDetectorLoop = false;
-//      }
-//      else {
-//        std::cout << "didn't receive an option" << std::endl;
-//        std::cout << "using foot force & torque" << std::endl;
-//        residualDetector.useFootForceTorque();
-//      }
-//    }
-//
-//    if (std::string(argv[i]) == "--runContactFilter") {
-//      std::cout << "running Contact Filter Loop" << std::endl;
-//      runContactFilterLoop = true;
-//    }
-//
-//    if (std::string(argv[i]) == "--testCSVRead"){
-//      runContactFilterLoop = false;
-//      runDetectorLoop = false;
-//      runCSVTest = true;
-//    }
-//
-//    if (std::string(argv[i]) == "--useDirectorCSV"){
-//      filename = "testDirector.csv";
-//    }
-//
-//    if (std::string(argv[i]).find(".csv") != std::string::npos){
-//      filename = std::string(argv[i]);
-//    }
-//
-//  }
-//
-//  if (runContactFilterLoop){
-//    std::cout << "attemping to start contact filter thread loop" << std::endl;
-//    std::thread contactFilterThread(&ResidualDetector::contactFilterThreadLoop, &residualDetector, filename);
-//    std::cout << "started contact filter thread loop, detaching thread" << std::endl;
-//    contactFilterThread.detach();
-//  }
-//
-//  if (runContactFilterActiveLinkLoop){
-//    std::cout << "attemping to start contact filter active link thread loop" << std::endl;
-//    std::thread contactFilterThread(&ResidualDetector::activeLinkContactFilterThreadLoop, &residualDetector);
-//    std::cout << "started active link contact filter thread loop, detaching thread" << std::endl;
-//    contactFilterThread.detach();
-//  }
-//
-//  if(runTest){
-//    residualDetector.testContactFilterRotationMethod(true);
-//  }
-//
-//  if(runQPTest){
-//    residualDetector.testQP();
-//  }
-//
-//
-//
-//  if (runCSVTest){
-//    std::string filename = "test.csv";
-//    constructContactFilterPointsFromFile(filename);
-//  }
-
 
   if (runDetectorLoop){
     std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);

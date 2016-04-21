@@ -10,7 +10,6 @@
 #include "drake/systems/controllers/QPCommon.h"
 #include "drake/systems/robotInterfaces/Side.h"
 #include "RobotStateDriver.hpp"
-#include "ContactFilter.hpp"
 #include "FootContactDriver.hpp"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
@@ -36,8 +35,6 @@
 
 #endif //CONTROL_RESIDUAL_DETECTOR_H
 
-std::vector<ContactFilterPoint> constructContactFilterPoints();
-std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename);
 
 struct ResidualDetectorState{
   double t_prev;
@@ -119,13 +116,11 @@ private:
 
   std::map<Side, int> foot_body_ids;
   typedef DrakeJoint::AutoDiffFixedMaxSize AutoDiffFixedMaxSize;
-  KinematicsCache<AutoDiffFixedMaxSize> cache;
-  KinematicsCache<double> cacheTypeDouble;
+  std::shared_ptr<KinematicsCache<AutoDiffFixedMaxSize>> cache;
+  std::shared_ptr<KinematicsCache<double>> cacheTypeDouble;
 
   std::shared_ptr<RobotStateDriver> state_driver;
   std::shared_ptr<FootContactDriver> foot_contact_driver;
-
-  ContactFilter contactFilter;
 
   // forward declarations
   void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::robot_state_t* msg);
@@ -134,6 +129,6 @@ private:
   void onExternalForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_external_force_torque* msg);
   void updateResidualState();
   void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
-  void computeContactFilter(bool publishMostLikely, bool publishAll=false);
+//  void computeContactFilter(bool publishMostLikely, bool publishAll=false);
 };
 
