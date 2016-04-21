@@ -84,6 +84,9 @@ public:
   void computeActiveLinkContactFilter(bool publish, bool useActiveLinkInfo);
   void activeLinkContactFilterThreadLoop();
 
+  RigidBodyTree drake_model;
+
+
 private:
   std::shared_ptr<lcm::LCM> lcm_;
   bool running_;
@@ -99,7 +102,6 @@ private:
   int nv;
   double t_prev;
   BotParam* botparam_;
-  RigidBodyTree drake_model;
   std::mutex pointerMutex;
   std::vector<std::string> state_coordinate_names;
   std::string publishChannel;

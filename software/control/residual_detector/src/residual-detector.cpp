@@ -4,6 +4,7 @@
 
 #include <ConciseArgs>
 #include <stdexcept>
+#include <string>
 
 
 #define RESIDUAL_GAIN 20.0;
@@ -83,8 +84,8 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   state_driver.reset(new RobotStateDriver(this->state_coordinate_names));
 
 
-  this->foot_body_ids[Side::LEFT] = robotPropertyCache.foot_ids[Side::LEFT];
-  this->foot_body_ids[Side::RIGHT] = robotPropertyCache.foot_ids[Side::RIGHT];
+  this->foot_body_ids[Side::LEFT] = drake_model.findLinkId("l_foot");
+  this->foot_body_ids[Side::RIGHT] = drake_model.findLinkId("r_foot");
 
   this->args.b_contact_force[Side::LEFT] = false;
   this->args.b_contact_force[Side::RIGHT] = false;
@@ -143,9 +144,9 @@ void ResidualDetector::useFootForceTorque() {
 void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
                                     const bot_core::robot_state_t *msg) {
 
-//  if (this->verbose_) {
-//    std::cout << "got a robot state message" << std::endl;
-//  }
+  if (this->verbose_) {
+    std::cout << "got a robot state message" << std::endl;
+  }
 
   std::shared_ptr<DrakeRobotStateWithTorque> state(new DrakeRobotStateWithTorque);
   int nq = this->drake_model.num_positions;
@@ -260,10 +261,10 @@ void ResidualDetector::updateResidualState() {
 
     if (this->verbose_){
       if (b_contact_force.at(side)){
-        std::cout << std::cout << side.toString() << " foot in contact" << std::endl;
+        std::cout << side.toString() << " foot in contact" << std::endl;
       }
       else{
-        std::cout << std::cout << side.toString() << " foot NOT in contact" << std::endl;
+        std::cout << side.toString() << " foot NOT in contact" << std::endl;
       }
     }
     // check if this body is actually in contact or not
@@ -278,7 +279,7 @@ void ResidualDetector::updateResidualState() {
     if (this->useFootFTFlag){
 //      std::cout << "using Foot FT" << std::endl;
       std::vector<int> v_indices;
-      auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, body_id, body_id, 0, true, &v_indices);
+      auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, 0, body_id, body_id, true, &v_indices);
       footJacobian = autoDiffToValueMatrix(footJacobian_autodiff);
       const Vector6d &wrench = side_force.second.wrench;
       VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
@@ -290,6 +291,15 @@ void ResidualDetector::updateResidualState() {
       }
 
       foot_ft_to_joint_torques[side_force.first] = joint_torque;
+
+      if(this->verbose_){
+        std::cout << "v_indices.size()" << v_indices.size() << std::endl;
+        std::cout << "footJacobian.cols() " << footJacobian.cols() << std::endl;
+        std::cout << "footJacobian.rows() " << footJacobian.rows() << std::endl;
+        std::cout << "body_id " << body_id << std::endl;
+        std::cout << "body_id lookup " << drake_model.findLinkId("l_foot") << std::endl;
+      }
+
     }
 //    else if (this->useFootForceFlag) {
 //      std::cout << "using Foot Forces" << std::endl;
@@ -387,6 +397,13 @@ void ResidualDetector::updateResidualState() {
   if (this->verbose_){
     double Hz = 1/dt;
     std::cout << "residual update running at " << Hz << std::endl;
+//    std::cout << "torque " << this->residual_state.torque << std::endl;
+
+    std::cout << "gamma " << this->residual_state.gamma << std::endl;
+    std::cout << "alpha " << alpha << std::endl;
+    std::cout << "residual " << this->residual_state.r << std::endl;
+    std::cout << "integral_new " << integral_new << std::endl;
+    std::cout << "dt " << dt << std::endl;
   }
 
   //publish over LCM
@@ -702,15 +719,18 @@ int main( int argc, char* argv[]){
   bool atlas_v5 = false;
   bool valkyrie_v1 = false;
   bool valkyrie_v2 = false;
+  bool isVerbose = false;
 
   parser.add(atlas_v5, "v5", "atlas_v5", "set robot to atlas_v5");
   parser.add(valkyrie_v1, "val1", "valkyrie_v1", "set robot to valkyrie v1");
   parser.add(valkyrie_v2, "val2", "valkyrie_v2", "set robot to valkyrie_v2");
+  parser.add(isVerbose, "verbose");
   parser.parse();
 
 
   std::shared_ptr<ResidualDetectorOps> residualDetectorOps(new ResidualDetectorOps());
   residualDetectorOps->useFootForceTorque = true;
+  residualDetectorOps->residualGain = 20.0;
 
   std::string drcBase = std::getenv("DRC_BASE");
 
@@ -724,6 +744,8 @@ int main( int argc, char* argv[]){
     residualDetectorOps->urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
   }
 
+  // little bit of testing
+
   // TODO: add support for valkyrie
 
   // initialize LCM
@@ -732,9 +754,10 @@ int main( int argc, char* argv[]){
     std::cerr << "Error: lcm is not good()" << std::endl;
   }
 
-  bool isVerbose = false;
+
   bool runDetectorLoop = true;
   ResidualDetector residualDetector(lcm, isVerbose, residualDetectorOps);
+
 
   if (runDetectorLoop){
     std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
