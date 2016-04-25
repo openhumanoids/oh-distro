@@ -103,7 +103,7 @@ class TableboxDemo(object):
         self.picker = None
 
         # Angle of for grasping box
-        self.wristAngleBox = 30
+        self.wristAngleBox = 0
 
 
     @staticmethod
@@ -177,7 +177,7 @@ class TableboxDemo(object):
         relativeStance = transformUtils.frameFromPositionAndRPY([-0.55, 0, 0],[0,0,0])
         self.computeTableStanceFrame(relativeStance)
 
-        # auto add the box on the table
+        # automatically add the box on the table (skip user segmentation)
         boxFrame = transformUtils.copyFrame(tableData.frame)
         boxFrame.PreMultiply()
         tableToBoxFrame = transformUtils.frameFromPositionAndRPY([-0.05, 0, 0.15], [0,0, 0])
@@ -196,17 +196,11 @@ class TableboxDemo(object):
         zGround = 0.0
         tableHeight = tableTransform.GetPosition()[2] - zGround
 
-
         t = transformUtils.copyFrame(tableTransform)
         t.PreMultiply()
         relativePosition = [relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight]
         tableToStance = transformUtils.frameFromPositionAndRPY(relativePosition, relativeStance.GetOrientation() )
         t.Concatenate(tableToStance)
-
-        #t = vtk.vtkTransform()
-        #t.PostMultiply()
-        #t.Translate(relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight)
-        #t.Concatenate(tableTransform)
 
         vis.showFrame(t, relativeStanceFrameName, parent=om.findObjectByName('table'), scale=0.2)
 
@@ -412,27 +406,14 @@ class TableboxDemo(object):
         palmSeperation = (dim[1] - 0.14)/2.0
         print palmSeperation
 
-        self.wristAngleBox = 0
         leftFrame = transformUtils.frameFromPositionAndRPY([0.0, palmSeperation, 0.0], [90, 90+self.wristAngleBox,0])
         leftFrame = transformUtils.concatenateTransforms([leftFrame, boxFrame])
-
-        #leftFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [15, 0, 0])
-        #leftFrame = transformUtils.concatenateTransforms([leftFrame2, leftFrame])
-        #leftFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, 15, 0])
-        #leftFrame = transformUtils.concatenateTransforms([leftFrame2, leftFrame])
-
         vis.updateFrame(leftFrame, 'reach left')
 
         rightFrame = transformUtils.frameFromPositionAndRPY([0.0, -palmSeperation, 0.0], [0,-90,-90])
         rightFrame = transformUtils.concatenateTransforms([rightFrame, boxFrame])
-        rightFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, 0, self.wristAngleBox])
-        rightFrame = transformUtils.concatenateTransforms([rightFrame2, rightFrame])
-
-        #rightFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [15, 0, 0])
-        #rightFrame = transformUtils.concatenateTransforms([rightFrame2, rightFrame])
-        #rightFrame2 = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, -15, 0])
-        #rightFrame = transformUtils.concatenateTransforms([rightFrame2, rightFrame])
-
+        wristRotationFrame = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, 0, self.wristAngleBox])
+        rightFrame = transformUtils.concatenateTransforms([wristRotationFrame, rightFrame])
         vis.updateFrame(rightFrame, 'reach right')
 
         startPose = self.getPlanningStartPose()
@@ -677,8 +658,8 @@ class TableboxTaskPanel(TaskUserPanel):
 
         #- raise arms
         addFolder('prep')
-        addManipTask('spread arms', v.planArmsSpread, userPrompt=False)
-        addManipTask('raise arms', v.planArmsRaise, userPrompt=False)
+        addManipTask('spread arms', v.planArmsSpread, userPrompt=True)
+        addManipTask('raise arms', v.planArmsRaise, userPrompt=True)
 
         #- fit box
         #- grasp box
