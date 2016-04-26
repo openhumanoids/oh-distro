@@ -38,25 +38,7 @@ from director.tasks.taskuserpanel import ImageBasedAffordanceFit
 
 import director.tasks.robottasks as rt
 
-class SetSurveyPattern(rt.AsyncTask):
-
-    headSweepTime = 3.0
-
-    @staticmethod
-    def getDefaultProperties(properties):
-        properties.addProperty('Lower neck pitch', [0])
-        properties.addProperty('Upper neck pitch', [0])
-        properties.addProperty('Neck yaw', [0])
-
-    def run(self):
-        lowerPitchAngles = self.properties.getProperty('Lower neck pitch')
-        upperPitchAngles = self.properties.getProperty('Upper neck pitch')
-        yawAngles = self.properties.getProperty('Neck yaw') 
-
-        for i in range(len(lowerPitchAngles)):
-             self.statusMessage = 'lowerNeckPitch: ' + str(lowerPitchAngles[i]) + ', neckYaw: ' + str(yawAngles[i]) + ', upperNeckPitch: ' + str(upperPitchAngles[i])
-             TableboxDemo.publishAngle(lowerPitchAngles[i], yawAngles[i], upperPitchAngles[i])
-             yield rt.DelayTask(delayTime=self.headSweepTime).run()
+import headsurveypattern
 
 class TableboxDemo(object):
 
@@ -105,21 +87,6 @@ class TableboxDemo(object):
         # Angle of for grasping box
         self.wristAngleBox = 0
 
-
-    @staticmethod
-    def publishAngle(lowerNeckPitch, neckYaw, upperNeckPitch):
-        jointGroups = drcargs.getDirectorConfig()['teleopJointGroups']
-        jointGroupNeck = filter(lambda group: group['name'] == 'Neck', jointGroups)
-        if (len(jointGroupNeck) == 1):
-            neckJoints = jointGroupNeck[0]['joints']
-        else:
-            return
-        m = lcmbotcore.joint_angles_t()
-        m.utime = getUtime()
-        m.num_joints = 3
-        m.joint_name = [ neckJoints[0], neckJoints[1], neckJoints[2] ]
-        m.joint_position = [ math.radians(lowerNeckPitch), math.radians(neckYaw), math.radians(upperNeckPitch)]
-        lcmUtils.publish('DESIRED_NECK_ANGLES', m)
 
 
     def planPlaybackFunction(plans):
@@ -624,18 +591,6 @@ class TableboxTaskPanel(TaskUserPanel):
 
         v = self.tableboxDemo
         self.taskTree.removeAllTasks()
-        ###############
-
-        surveyAngles = []
-        surveyAngles.append([45, -15, 0]) #bottom right
-        surveyAngles.append([35, -15, 0]) #top right
-
-        surveyAngles.append([45, 0, 0]) #bottom center
-        surveyAngles.append([35, 0, 0]) #top center
-
-        surveyAngles.append([45, 15, 0]) #bottom left
-        surveyAngles.append([35, 15, 0]) #top left
-        surveyAngles.append([0, 0, 0]) #reset
 
         ###############
         # find the table
@@ -654,7 +609,7 @@ class TableboxTaskPanel(TaskUserPanel):
 
         #survey table
         addFolder("Survey Table 1")
-        addTask(SetSurveyPattern(name='run neck pattern', lowerNeckPitch=[neckAngles[0] for neckAngles in surveyAngles], neckYaw=[neckAngles[1] for neckAngles in surveyAngles], upperNeckPitch=[neckAngles[2] for neckAngles in surveyAngles] ))
+        addTask(headsurveypattern.HeadSurveyPattern(name='survey neck'))
 
         #- raise arms
         addFolder('prep')
