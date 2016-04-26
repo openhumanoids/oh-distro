@@ -13,6 +13,7 @@ if(drake-ik_FOUND)
 	add_subdirectory(src/capabilityMap)
 	add_subdirectory(src/test)
 	add_subdirectory(src/finalPosePlanner)
+	add_subdirectory(src/trajectoryTrackingTestAnalysis)
 
 	# Unit Testing
 	include(CTest)
