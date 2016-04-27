@@ -1,13 +1,14 @@
-import bot_core as lcmbotcore
-import drc as lcmdrc
-from director import lcmUtils
-from xml.dom import getDOMImplementation
 import director.tasks.robottasks as rt
 from director.tasks.taskuserpanel import TaskUserPanel
+from director.simpletimer import SimpleTimer
+
 import functools
-import datetime
-import os
-    
+
+def waitForSeconds(seconds):
+    timer = SimpleTimer()
+    timer.reset()
+    while timer.elapsed() < seconds:
+        pass
 
 class TrajectoryTrackingTest(object):
     def __init__(self, ikPlanner, manipPlanner, robotStateJointController):
@@ -17,9 +18,7 @@ class TrajectoryTrackingTest(object):
         self.plans = []
     
     def planNominalPose(self):
-        startPose = self.robotStateJointController.getPose('EST_ROBOT_STATE')
-        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'handsdown both')
-        self.plans.append(self.ikPlanner.computePostureGoal(startPose, endPose))
+        self.plans.append(self.ikPlanner.computeNominalPlan(self.robotStateJointController.q))
 
     def commitManipPlan(self):
         self.manipPlanner.commitManipPlan(self.plans[-1])
@@ -55,12 +54,14 @@ class TrackingTestPanel(TaskUserPanel):
             addTask(rt.CheckPlanInfo(name='check manip plan info'), parent=groupNominal)
             addFunc(self.trackingTest.commitManipPlan, name='execute manip plan', parent=groupNominal)
             addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'), parent=groupNominal)
+            addFunc(functools.partial(waitForSeconds, 2), name='wait 2s', parent=groupNominal)
             
             groupRequested = self.taskTree.addGroup('plan requested pose', parent=group)
             addFunc(functools.partial(self.trackingTest.planPose, pose, side), name='plan requested pose', parent=groupRequested)
             addTask(rt.CheckPlanInfo(name='check manip plan info'), parent=groupRequested)
             addFunc(self.trackingTest.commitManipPlan, name='execute manip plan', parent=groupRequested)
             addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'), parent=groupRequested)
+            addFunc(functools.partial(waitForSeconds, 2), name='wait 2s', parent=groupRequested)
         
         addTest('raise left arm side', 'arm side', 'left')
         addTest('raise right arm side', 'arm side',  'right')
