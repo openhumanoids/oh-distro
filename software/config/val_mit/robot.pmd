@@ -81,6 +81,24 @@ group "5.maps" {
     }
 }
 
+group "6.streaming"{
+
+    cmd "robot streaming no controller" {
+        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --robot";
+        host = "base";
+    }
+
+    cmd "robot streaming with controller" {
+        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --robotWithController";
+        host = "base";
+    }
+
+    cmd "base" {
+        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --base";
+        host = "base";
+    }
+}
+
 cmd "pose-util" {
     exec = "drc-robot-pose-util";
     host = "base";
