@@ -101,7 +101,7 @@ class TableboxDemo(object):
     ### Table and Bin Focused Functions
     def userFitTable(self):
         self.tableData = None
-        self.picker = PointPicker(self.view, numberOfPoints=2, drawLines=True, callback=self.onSegmentTable)
+        self.picker = PointPicker(self.view, numberOfPoints=1, drawLines=False, callback=self.onSegmentTable)
         self.picker.start()
 
 
@@ -119,15 +119,14 @@ class TableboxDemo(object):
 
         return polyData
 
-    def onSegmentTable(self, p1, p2):
+    def onSegmentTable(self, p1):
         print p1
-        print p2
         if self.picker is not None:
             self.picker.stop()
             om.removeFromObjectModel(self.picker.annotationObj)
             self.picker = None
 
-        tableData = segmentation.segmentTableEdge(self.getInputPointCloud(), p1, p2)
+        tableData = segmentation.segmentTableAndFrame(self.getInputPointCloud(), p1)
 
         pose = transformUtils.poseFromTransform(tableData.frame)
         desc = dict(classname='MeshAffordanceItem', Name='table', Color=[0,1,0], pose=pose)
@@ -502,9 +501,7 @@ class TableboxTaskPanel(TaskUserPanel):
         self.addManualSpacer()
 
         p1 = np.array([-0.58354658, -0.98459125, 0.75729603])
-        p2 = np.array([-0.40979841, -0.76145965,  0.73299527])
-
-        self.addManualButton('User Table', functools.partial(self.tableboxDemo.onSegmentTable, p1, p2) )        
+        self.addManualButton('User Table', functools.partial(self.tableboxDemo.onSegmentTable, p1) )
         self.addManualButton('Move to Stance',self.tableboxDemo.moveRobotToTableStanceFrame)
         self.addManualButton('Spread Arms',self.tableboxDemo.planArmsSpread)
 
