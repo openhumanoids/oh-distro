@@ -23,18 +23,22 @@ from director import sceneloader
 from director.debugVis import DebugData
 from director import affordanceitems
 from director import ikplanner
+from director import ik
 from director import vtkNumpy
 from numpy import array
 from director.uuidutil import newUUID
 from director import lcmUtils
+from director.utime import getUtime
 import ioUtils
 import drc as lcmdrc
+import bot_core as lcmbotcore
 
 from director.tasks.taskuserpanel import TaskUserPanel
 from director.tasks.taskuserpanel import ImageBasedAffordanceFit
 
 import director.tasks.robottasks as rt
 
+import headsurveypattern
 
 class TableboxDemo(object):
 
@@ -80,6 +84,10 @@ class TableboxDemo(object):
 
         self.picker = None
 
+        # Angle of for grasping box
+        self.wristAngleBox = 0
+
+
 
     def planPlaybackFunction(plans):
         planPlayback.stopAnimation()
@@ -93,7 +101,7 @@ class TableboxDemo(object):
     ### Table and Bin Focused Functions
     def userFitTable(self):
         self.tableData = None
-        self.picker = PointPicker(self.view, numberOfPoints=2, drawLines=True, callback=self.onSegmentTable)
+        self.picker = PointPicker(self.view, numberOfPoints=1, drawLines=False, callback=self.onSegmentTable)
         self.picker.start()
 
 
@@ -111,15 +119,14 @@ class TableboxDemo(object):
 
         return polyData
 
-    def onSegmentTable(self, p1, p2):
+    def onSegmentTable(self, p1):
         print p1
-        print p2
         if self.picker is not None:
             self.picker.stop()
             om.removeFromObjectModel(self.picker.annotationObj)
             self.picker = None
 
-        tableData = segmentation.segmentTableEdge(self.getInputPointCloud(), p1, p2)
+        tableData = segmentation.segmentTableAndFrame(self.getInputPointCloud(), p1)
 
         pose = transformUtils.poseFromTransform(tableData.frame)
         desc = dict(classname='MeshAffordanceItem', Name='table', Color=[0,1,0], pose=pose)
@@ -136,16 +143,32 @@ class TableboxDemo(object):
         relativeStance = transformUtils.frameFromPositionAndRPY([-0.55, 0, 0],[0,0,0])
         self.computeTableStanceFrame(relativeStance)
 
-    def computeTableStanceFrame(self, relativeStance):
+        # automatically add the box on the table (skip user segmentation)
+        boxFrame = transformUtils.copyFrame(tableData.frame)
+        boxFrame.PreMultiply()
+        tableToBoxFrame = transformUtils.frameFromPositionAndRPY([-0.05, 0, 0.15], [0,0, 0])
+        boxFrame.Concatenate(tableToBoxFrame)
+        self.spawnBlockAffordanceAtFrame(boxFrame)
+
+        safeStance = transformUtils.frameFromPositionAndRPY([-1, 0, 0],[0,0,0])
+        self.computeTableStanceFrame(safeStance, 'safe stance frame')
+
+        facingStance = transformUtils.frameFromPositionAndRPY([-1, 0, 0],[0,0,-60.0])
+        self.computeTableStanceFrame(facingStance, 'facing stance frame')
+
+
+    def computeTableStanceFrame(self, relativeStance, relativeStanceFrameName='table stance frame'):
         tableTransform = om.findObjectByName('table').getChildFrame().transform
         zGround = 0.0
         tableHeight = tableTransform.GetPosition()[2] - zGround
 
-        t = vtk.vtkTransform()
-        t.PostMultiply()
-        t.Translate(relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight)
-        t.Concatenate(tableTransform)
-        vis.showFrame(t, 'table stance frame', parent=om.findObjectByName('table'), scale=0.2)
+        t = transformUtils.copyFrame(tableTransform)
+        t.PreMultiply()
+        relativePosition = [relativeStance.GetPosition()[0], relativeStance.GetPosition()[1], -tableHeight]
+        tableToStance = transformUtils.frameFromPositionAndRPY(relativePosition, relativeStance.GetOrientation() )
+        t.Concatenate(tableToStance)
+
+        vis.showFrame(t, relativeStanceFrameName, parent=om.findObjectByName('table'), scale=0.2)
 
 
     # TODO: deprecate this function: (to end of section):
@@ -305,6 +328,14 @@ class TableboxDemo(object):
 
 
     #################################
+    def loadSDFFileAndRunSim(self):
+        filename= os.environ['DRC_BASE'] + '/software/models/worlds/tablebox_demo.sdf'  
+        sc=sceneloader.SceneLoader()
+        sc.loadSDF(filename)
+        msg=lcmdrc.scs_api_command_t()
+        msg.command="loadSDF "+filename+"\nsimulate"
+        lcmUtils.publish('SCS_API_CONTROL', msg)
+
     def loadTestPointCloud(self):
         filename = os.environ['DRC_BASE'] +  '/../drc-testing-data/tabletop/table-box-uoe.vtp'
         polyData = ioUtils.readPolyData( filename )
@@ -316,14 +347,17 @@ class TableboxDemo(object):
 
 
     def spawnBlockAffordance(self):
-        boxLength = 0.3
-        boxWidth = 0.25
-        boxHeight = 0.3
-
         boxFrame = self.footstepPlanner.getFeetMidPoint(self.robotStateModel)
         boxFrame.PreMultiply()
         boxFrame.Translate([0.49, 0.0, 1.02])
         #vis.updateFrame(boxFrame, 'boxFrame')
+        self.spawnBlockAffordanceAtFrame(boxFrame)
+
+
+    def spawnBlockAffordanceAtFrame(self, boxFrame):
+        boxLength = 0.3
+        boxWidth = 0.25
+        boxHeight = 0.3
 
         xAxis,yAxis, zAxis = transformUtils.getAxesFromTransform(boxFrame)
         segmentation.createBlockAffordance(boxFrame.GetPosition(), xAxis,yAxis, zAxis, boxLength, boxWidth, boxHeight, 'box', parent='affordances')
@@ -338,13 +372,14 @@ class TableboxDemo(object):
         palmSeperation = (dim[1] - 0.14)/2.0
         print palmSeperation
 
-
-        leftFrame = transformUtils.frameFromPositionAndRPY([0.0, palmSeperation, 0.0], [90,90,0])
+        leftFrame = transformUtils.frameFromPositionAndRPY([0.0, palmSeperation, 0.0], [90, 90+self.wristAngleBox,0])
         leftFrame = transformUtils.concatenateTransforms([leftFrame, boxFrame])
         vis.updateFrame(leftFrame, 'reach left')
 
         rightFrame = transformUtils.frameFromPositionAndRPY([0.0, -palmSeperation, 0.0], [0,-90,-90])
         rightFrame = transformUtils.concatenateTransforms([rightFrame, boxFrame])
+        wristRotationFrame = transformUtils.frameFromPositionAndRPY([0.0, 0, 0.0], [0, 0, self.wristAngleBox])
+        rightFrame = transformUtils.concatenateTransforms([wristRotationFrame, rightFrame])
         vis.updateFrame(rightFrame, 'reach right')
 
         startPose = self.getPlanningStartPose()
@@ -355,6 +390,47 @@ class TableboxDemo(object):
 
         self.constraintSet.runIk()
         print 'planning bihanded reach'
+        plan = self.constraintSet.runIkTraj()
+        self.addPlan(plan)
+
+        ikplanner.getIkOptions().setProperty('Use pointwise', True)
+
+
+    def planBoxLift(self):
+        ikplanner.getIkOptions().setProperty('Use pointwise', False)
+        startPose = self.getPlanningStartPose()
+
+        # Basic Constraint set:
+        constraints = self.ikPlanner.createMovingBodyConstraints('reach_start', lockBase=self.lockBase, lockBack=self.lockBack, lockLeftArm=True, lockRightArm=True)
+        self.constraintSet = self.ikPlanner.makeConstraintSet(constraints, startPose)
+
+
+        # append a constraint to move the pelvis up to 10cm above ground
+        tf = transformUtils.copyFrame(self.footstepPlanner.getFeetMidPoint(self.robotStateModel))
+        tf.Concatenate( transformUtils.frameFromPositionAndRPY([0.0,0,1.0],[0,0,0]) )
+        vis.updateFrame(tf,'goal pelvis frame', visible=True)
+
+        # append a constraint to move the pelvis up by 10cm
+        #tf = transformUtils.copyFrame(self.robotStateModel.getLinkFrame('pelvis'))
+        #tf.Concatenate( transformUtils.frameFromPositionAndRPY([0,0,0.075],[0,0,0]) )
+        #vis.updateFrame(tf,'goal pelvis frame', visible=False)
+
+        p = ik.PositionConstraint(linkName="pelvis", referenceFrame=tf, lowerBound=-0.0001*np.ones(3), upperBound=0.0001*np.ones(3))
+        q = ik.QuatConstraint(linkName="pelvis", quaternion=tf)
+        p.tspan = [1.0,1.0]
+        q.tspan = [1.0,1.0]
+        self.constraintSet.constraints.extend([p, q])
+
+        backConstraint = self.ikPlanner.createPostureConstraint('q_zero', self.ikPlanner.backJoints)
+        backConstraint.tspan = [1.0,1.0]
+        self.constraintSet.constraints[3] = backConstraint
+
+        neckConstraint = self.ikPlanner.createPostureConstraint('q_zero', self.ikPlanner.neckJoints)
+        neckConstraint.tspan = [1.0,1.0]
+        self.constraintSet.constraints.append(neckConstraint)
+
+        self.constraintSet.runIk()
+        print 'planning lift'
         plan = self.constraintSet.runIkTraj()
         self.addPlan(plan)
 
@@ -382,6 +458,9 @@ class TableboxDemo(object):
         endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'handsdown incl back')
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
+
+    def planNominal(self):
+        self.ikPlanner.computeNominalPlan(self.sensorJointController.q)
 
 
 '''
@@ -419,14 +498,17 @@ class TableboxTaskPanel(TaskUserPanel):
 
         self.addManualSpacer()
         self.addManualButton('Load Test Cloud', self.tableboxDemo.loadTestPointCloud)
-        self.addManualSpacer()        
+        self.addManualSpacer()
 
         p1 = np.array([-0.58354658, -0.98459125, 0.75729603])
-        p2 = np.array([-0.40979841, -0.76145965,  0.73299527])
-
-        self.addManualButton('User Table', functools.partial(self.tableboxDemo.onSegmentTable, p1, p2) )        
+        self.addManualButton('User Table', functools.partial(self.tableboxDemo.onSegmentTable, p1) )
         self.addManualButton('Move to Stance',self.tableboxDemo.moveRobotToTableStanceFrame)
         self.addManualButton('Spread Arms',self.tableboxDemo.planArmsSpread)
+
+        self.addManualSpacer()
+        self.addManualButton('Load Scenario', self.tableboxDemo.loadSDFFileAndRunSim)
+        self.addManualSpacer()
+        self.addManualButton('Spawn Box', self.tableboxDemo.spawnBlockAffordance)
 
 
     def addDefaultProperties(self):
@@ -505,9 +587,7 @@ class TableboxTaskPanel(TaskUserPanel):
             self.folder = prevFolder
 
         v = self.tableboxDemo
-
         self.taskTree.removeAllTasks()
-
 
         ###############
         # find the table
@@ -515,14 +595,18 @@ class TableboxTaskPanel(TaskUserPanel):
         addManipTask('move hands down', v.planArmsDown, userPrompt=True)
         addFunc('activate table fit', self.tableboxDemo.userFitTable)
         addTask(rt.UserPromptTask(name='approve table fit', message='Please approve the table fit.'))
+        addTask(rt.SetNeckPitch(name='set neck position', angle=25)) # was 35
 
         # walk to table
         addFolder('walk')
         addTask(rt.RequestFootstepPlan(name='plan walk to table', stanceFrameName='table stance frame'))
         addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
-        addTask(rt.SetNeckPitch(name='set neck position', angle=35))
         addTask(rt.CommitFootstepPlan(name='walk to table', planName='table stance frame footstep plan'))
         addTask(rt.WaitForWalkExecution(name='wait for walking'))
+
+        #survey table
+        addFolder("Survey Table 1")
+        addTask(headsurveypattern.HeadSurveyPattern(name='survey neck'))
 
         #- raise arms
         addFolder('prep')
@@ -532,8 +616,24 @@ class TableboxTaskPanel(TaskUserPanel):
         #- fit box
         #- grasp box
         addFolder('grasp')
-        addFunc('spawn block affordance', v.spawnBlockAffordance)
+        #addFunc('spawn block affordance', v.spawnBlockAffordance)
         addManipTask('Box grasp', v.planSimpleBoxGrasp, userPrompt=True)
+        addManipTask('Lift box', v.planBoxLift, userPrompt=True)
 
-        #- lift box
-        #- walk backwards
+        # walk back
+        addFolder('walk back')
+        addTask(rt.RequestFootstepPlan(name='plan walk back', stanceFrameName='safe stance frame'))
+        addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
+        addTask(rt.CommitFootstepPlan(name='walk back', planName='table stance frame footstep plan'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
+
+        addTask(rt.SetNeckPitch(name='set neck position', angle=0))
+
+        # Prepare to hand off
+        addFolder('turn to handoff')
+        addTask(rt.RequestFootstepPlan(name='plan walk to handoff', stanceFrameName='facing stance frame'))
+        addTask(rt.UserPromptTask(name='approve footsteps', message='Please approve footstep plan.'))
+        addTask(rt.CommitFootstepPlan(name='walk to handoff', planName='facing stance frame footstep plan'))
+        addTask(rt.WaitForWalkExecution(name='wait for walking'))
+
+        addManipTask('Plan Nominal', v.planNominal, userPrompt=True)

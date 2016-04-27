@@ -36,3 +36,9 @@ add_executable(drc-video-decode VideoDecode.cpp)
 pods_use_pkg_config_packages(drc-video-decode drc-utils opencv x264 libswscale libavutil libavcodec)
 target_link_libraries(drc-video-decode)
 pods_install_executables(drc-video-decode)
+
+# transmit webcam to lcm
+add_executable(oh-webcam-driver WebcamToLCM.cpp)
+pods_use_pkg_config_packages(oh-webcam-driver opencv lcm lcmtypes_bot2-core)
+target_link_libraries(oh-webcam-driver)
+pods_install_executables(oh-webcam-driver)
