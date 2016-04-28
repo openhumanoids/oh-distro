@@ -1,14 +1,7 @@
 import director.tasks.robottasks as rt
 from director.tasks.taskuserpanel import TaskUserPanel
-from director.simpletimer import SimpleTimer
 
 import functools
-
-def waitForSeconds(seconds):
-    timer = SimpleTimer()
-    timer.reset()
-    while timer.elapsed() < seconds:
-        pass
 
 class TrajectoryTrackingTest(object):
     def __init__(self, ikPlanner, manipPlanner, robotStateJointController):
@@ -54,14 +47,14 @@ class TrackingTestPanel(TaskUserPanel):
             addTask(rt.CheckPlanInfo(name='check manip plan info'), parent=groupNominal)
             addFunc(self.trackingTest.commitManipPlan, name='execute manip plan', parent=groupNominal)
             addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'), parent=groupNominal)
-            addFunc(functools.partial(waitForSeconds, 2), name='wait 2s', parent=groupNominal)
+            addTask(rt.DelayTask(name='wait 2 seconds', delayTime=2.0), parent=groupNominal)
             
             groupRequested = self.taskTree.addGroup('plan requested pose', parent=group)
             addFunc(functools.partial(self.trackingTest.planPose, pose, side), name='plan requested pose', parent=groupRequested)
             addTask(rt.CheckPlanInfo(name='check manip plan info'), parent=groupRequested)
             addFunc(self.trackingTest.commitManipPlan, name='execute manip plan', parent=groupRequested)
             addTask(rt.WaitForManipulationPlanExecution(name='wait for manip execution'), parent=groupRequested)
-            addFunc(functools.partial(waitForSeconds, 2), name='wait 2s', parent=groupRequested)
+            addTask(rt.DelayTask(name='wait 2 seconds', delayTime=2.0), parent=groupRequested)
         
         addTest('raise left arm side', 'arm side', 'left')
         addTest('raise right arm side', 'arm side',  'right')
