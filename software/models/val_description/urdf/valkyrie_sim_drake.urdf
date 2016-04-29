@@ -3002,7 +3002,7 @@
     </inertial>
   </link>
   <joint name="l_hand_face_joint" type="fixed">
-    <origin rpy="3.14159265359 0 1.57079632679" xyz="0.07 0.0 -0.08"/>
+    <origin rpy="3.14159265359 0 1.57079632679" xyz="0.06 0.0 -0.045"/>
     <parent link="l_hand_force_torque"/>
     <child link="l_hand_face"/>
   </joint>
@@ -3052,7 +3052,7 @@
     </inertial>
   </link>
   <joint name="r_hand_face_joint" type="fixed">
-    <origin rpy="0 0 -1.57079632679" xyz="0.07 0 0.08"/>
+    <origin rpy="0 0 -1.57079632679" xyz="0.06 0 0.045"/>
     <parent link="r_hand_force_torque"/>
     <child link="r_hand_face"/>
   </joint>

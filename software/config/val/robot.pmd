@@ -45,7 +45,7 @@ group "3.state_without_pronto" {
     }
 
     cmd "state-sync" {
-        exec = "nasa-state-sync -m nasa";
+        exec = "drc-state-sync-val -i";
         host = "localhost";
     }
 }
