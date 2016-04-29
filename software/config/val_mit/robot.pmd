@@ -104,6 +104,11 @@ group "6.streaming"{
         exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --base";
         host = "base";
     }
+
+    cmd "robot streaming with controller fixed base force control" {
+        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --robotWithController --fixedBase --forceControl"; 
+        host = "base";
+    }
 }
 
 cmd "pose-util" {
