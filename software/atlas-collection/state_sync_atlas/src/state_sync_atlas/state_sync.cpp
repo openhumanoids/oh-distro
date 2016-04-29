@@ -112,11 +112,25 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     for (int i =0; i < n_gains;i++){
       k.push_back( (float) gains_in[i] );
     }
-    torque_adjustment_ = new EstimateTools::TorqueAdjustment(k);
 
+    std::vector<std::string> jnames_v;
+    char** jnames = bot_param_get_str_array_alloc(botparam_, "state_estimator.legodo.adjustment_joints");
+    if (jnames == NULL) {
+      fprintf(stderr, "Error: must specify state_estimator.legodo.adjustment_joints\n");
+      exit(1);
+    }
+    else {
+      for (int i = 0; jnames[i]; i++) {
+        jnames_v.push_back(std::string(jnames[i]));
+      }
+    }
+    bot_param_str_array_free(jnames);
+
+    torque_adjustment_ = new EstimateTools::TorqueAdjustment(jnames_v, k);
   }else{
     std::cout << "Torque-based joint angle adjustment: Not Using\n";
   }
+
 
   string joint_filter_type = bot_param_get_str_or_fail(botparam_, "control.filtering.joints.type" );
   if (joint_filter_type == "kalman"){
@@ -434,7 +448,7 @@ void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   }
 
   if (cl_cfg_->use_torque_adjustment){
-    torque_adjustment_->processSample(core_robot_joints_.position, core_robot_joints_.effort );
+    torque_adjustment_->processSample(core_robot_joints_.name, core_robot_joints_.position, core_robot_joints_.effort );
   }
 
   // TODO: check forque_

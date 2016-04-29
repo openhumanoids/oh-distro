@@ -6,7 +6,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include <map>
-#include <model-client/model-client.hpp>
 
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/bot_core/joint_state_t.hpp"
@@ -38,20 +37,18 @@ class CommandLineConfig{
     CommandLineConfig(){
       // Read from command line:
       output_channel = "EST_ROBOT_STATE";
+      use_ihmc = false;
 
       // Defaults - not read from command line:
       use_torque_adjustment = false;
 
-      // Mode - switches between CORE_ROBOT_STATE (NASA) and VAL_CORE_ROBOT_STATE (IHMC) as source
-      mode = "ihmc";
     }
     ~CommandLineConfig(){};
 
     std::string output_channel;
-
+    bool use_ihmc;
     bool use_torque_adjustment;
 
-    std::string mode;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -71,19 +68,17 @@ class state_sync_nasa{
     boost::shared_ptr<CommandLineConfig> cl_cfg_;
     boost::shared_ptr<lcm::LCM> lcm_;
     BotParam* botparam_;
-    boost::shared_ptr<ModelClient> model_;
         
     void coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
     void forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::six_axis_force_torque_array_t* msg);
     void poseIHMCHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
-    void poseProntoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
-
+    void poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void neckStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
 
     Joints core_robot_joints_;
 
-    PoseT pose_IHMC_;
-    PoseT pose_Pronto_;
+    PoseT pose_ihmc_;
+    PoseT pose_pronto_;
     void setPoseToZero(PoseT &pose);
            
     // Torque Adjustment:
