@@ -1,11 +1,5 @@
 // Copyright 2015 Maurice Fallon, Vladimir Ivan
-
 // Selective ros2lcm translator
-// two modes:
-// - passthrough: produces POSE_BODY and EST_ROBOT_STATE and CAMERA_LEFT
-// - state estimation: produces CORE_ROBOT_STATE and POSE_BDI
-//
-// both modes produce SCAN
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -48,9 +42,6 @@
 // IHMC types
 #include "lcmtypes/ihmc/last_received_message_t.hpp"
 #include "lcmtypes/ihmc/footstep_status_t.hpp"
-
-#define MODE_PASSTHROUGH 0
-#define MODE_STATE_ESTIMATION 1
 
 struct Joints
 {
@@ -165,12 +156,9 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
   footstepStatusSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/footstep_status"), 100,
                                        &App::footstepStatusCallback, this);
 
-  // Multisense Joint Angles:
-  if (mode_ == MODE_STATE_ESTIMATION)
-  {
-    headJointStatesSub_ = node_.subscribe(std::string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
+  // Multisense Joint Angles: only available in simulation:
+  headJointStatesSub_ = node_.subscribe(std::string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
                                           this);
-  }
   laserScanSub_ = node_.subscribe(std::string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
 
 }
@@ -257,13 +245,8 @@ void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
   lcm_pose_msg.orientation[1] = lastPoseMsg_.pose.pose.orientation.x;
   lcm_pose_msg.orientation[2] = lastPoseMsg_.pose.pose.orientation.y;
   lcm_pose_msg.orientation[3] = lastPoseMsg_.pose.pose.orientation.z;
-  lcmPublish_.publish("POSE_BDI", &lcm_pose_msg);
-  lcmPublish_.publish("POSE_BODY", &lcm_pose_msg);
+  lcmPublish_.publish("POSE_BODY_ALT", &lcm_pose_msg);
 
-  if (mode_ == MODE_PASSTHROUGH)
-  {
-    lcmPublish_.publish("POSE_BODY", &lcm_pose_msg);
-  }
 }
 
 void App::leftFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg)
@@ -539,70 +522,30 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   appendSensors(force_torque, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
   appendSensors(six_axis_force_torque_array, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
 
-  if (mode_ == MODE_STATE_ESTIMATION)
+  if (robotName_.compare("atlas") == 0)
   {
-
-    if (robotName_.compare("atlas") == 0)
-    {
-      // Filter out unexpected Atlas joint names
-      filterJointNames(joints.name);
-      // joints = reorderJoints(joints);
-    }
-    bot_core::joint_state_t amsg;
-    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
-
-    for (int i = 0; i < joints.position.size(); i++)
-    {
-      if ( joints.name[i] != "hokuyo_joint")  // dont publish hokuyo joint
-      {
-        amsg.joint_name.push_back(joints.name[i]);
-        amsg.joint_position.push_back(joints.position[i]);
-        amsg.joint_velocity.push_back(0);  // (double) msg->velocity[ i ];
-        amsg.joint_effort.push_back(0);  // msg->effort[i];
-      }
-    }
-    amsg.num_joints = amsg.joint_name.size();
-
-    lcmPublish_.publish("CORE_ROBOT_STATE", &amsg);
-    lcmPublish_.publish("FORCE_TORQUE", &six_axis_force_torque_array);
-
+    // Filter out unexpected Atlas joint names
+    filterJointNames(joints.name);
   }
-  else if (mode_ == MODE_PASSTHROUGH)
+
+  bot_core::joint_state_t amsg;
+  amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
+
+  for (int i = 0; i < joints.position.size(); i++)
   {
-    if (robotName_.compare("atlas") == 0)
+    if ( joints.name[i] != "hokuyo_joint")  // dont publish hokuyo joint
     {
-      filterJointNames(joints.name);
-      // don't reorder in passthrough mode
+      amsg.joint_name.push_back(joints.name[i]);
+      amsg.joint_position.push_back(joints.position[i]);
+      amsg.joint_velocity.push_back(0);  // (double) msg->velocity[ i ];
+      amsg.joint_effort.push_back(0);  // msg->effort[i];
     }
-
-    if (robotName_.compare("valkyrie") == 0)
-    {
-    }
-
-    bot_core::robot_state_t msg_out;
-    msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
-    int n_joints = joints.position.size();
-    msg_out.joint_position.assign(n_joints, 0);
-    msg_out.joint_velocity.assign(n_joints, 0);
-    msg_out.joint_effort.assign(n_joints, 0);
-    msg_out.num_joints = n_joints;
-    msg_out.joint_name = joints.name;
-    for (int i = 0; i < n_joints; i++)
-    {
-      msg_out.joint_position[i] = joints.position[i];
-      msg_out.joint_velocity[i] = 0;  // (double) msg->velocity[ i ];
-      msg_out.joint_effort[i] = 0;  // msg->effort[i];
-    }
-    msg_out.pose.translation.x = lastPoseMsg_.pose.pose.position.x;
-    msg_out.pose.translation.y = lastPoseMsg_.pose.pose.position.y;
-    msg_out.pose.translation.z = lastPoseMsg_.pose.pose.position.z;
-    msg_out.pose.rotation.w = lastPoseMsg_.pose.pose.orientation.w;
-    msg_out.pose.rotation.x = lastPoseMsg_.pose.pose.orientation.x;
-    msg_out.pose.rotation.y = lastPoseMsg_.pose.pose.orientation.y;
-    msg_out.pose.rotation.z = lastPoseMsg_.pose.pose.orientation.z;
-    msg_out.force_torque = force_torque;
-    lcmPublish_.publish("EST_ROBOT_STATE", &msg_out);
   }
+  amsg.num_joints = amsg.joint_name.size();
+
+  lcmPublish_.publish("CORE_ROBOT_STATE", &amsg);
+  lcmPublish_.publish("FORCE_TORQUE", &six_axis_force_torque_array);
+
 
   bot_core::utime_t utime_msg;
   int64_t joint_utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
@@ -717,26 +660,10 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  int mode;  // MODE_PASSTHROUGH or MODE_STATE_ESTIMATION
-  if (modeArgument.compare("passthrough") == 0)
-  {
-    mode = MODE_PASSTHROUGH;
-  }
-  else if (modeArgument.compare("state_estimation") == 0)
-  {
-    mode = MODE_STATE_ESTIMATION;
-  }
-  else
-  {
-    ROS_ERROR("modeArgument not understood: use passthrough or state_estimation");
-    exit(-1);
-  }
-
   ros::init(argc, argv, "ros2lcm_ihmc");
   ros::NodeHandle nh;
-  new App(nh, mode, robotName, imuSensor);
-  ROS_ERROR("ROS2LCM IHMC Translator Ready [mode: %d, %s] [robotName: %s] [imuSensor: %s]", mode, modeArgument.c_str(),
-            robotName.c_str(), imuSensor.c_str());
+  new App(nh, robotName, imuSensor);
+  ROS_ERROR("ROS2LCM IHMC Translator Ready [robotName: %s] [imuSensor: %s]", robotName.c_str(), imuSensor.c_str());
   ros::spin();
   return 0;
 }
