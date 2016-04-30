@@ -54,13 +54,12 @@ struct Joints
 class App
 {
 public:
-  App(ros::NodeHandle node_, int mode_, std::string robotName_, std::string imuSensor_);
+  App(ros::NodeHandle node_, std::string robotName_, std::string imuSensor_);
   ~App();
 
 private:
   lcm::LCM lcmPublish_;
   ros::NodeHandle node_;
-  int mode_;
   std::string robotName_;
   std::string imuSensor_;
   bool verbose_;
@@ -103,8 +102,8 @@ private:
 
 };
 
-App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::string imuSensor_in) :
-    node_(node_in), mode_(mode_in), robotName_(robotName_in), imuSensor_(imuSensor_in)
+App::App(ros::NodeHandle node_in, std::string robotName_in, std::string imuSensor_in) :
+    node_(node_in), robotName_(robotName_in), imuSensor_(imuSensor_in)
 {
   ROS_INFO("Initializing Translator");
   if (!lcmPublish_.good())

@@ -24,6 +24,10 @@ group "1.params_and_model_pub" {
 }
 
 group "2.state_without_pronto" {
+    cmd "state-sync-without-pronto" {
+        exec = "drc-state-sync-val -i";
+        host = "localhost";
+    }
     cmd "joints2frames_without" {
         exec = "drc-joints2frames -m";
         host = "localhost";
@@ -32,8 +36,8 @@ group "2.state_without_pronto" {
 
 
 group "2.state_with_pronto" {
-    cmd "state-sync" {
-        exec = "se-state-sync-simple";
+    cmd "state-sync-with-pronto" {
+        exec = "drc-state-sync-val";
         host = "localhost";
     }
     cmd "joints2frames_with" {
