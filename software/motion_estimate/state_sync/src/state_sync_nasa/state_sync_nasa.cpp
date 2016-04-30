@@ -209,7 +209,7 @@ void state_sync_nasa::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std:
     Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodybdi * localmit_to_bodymit.inverse();
 
     bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_pronto_.utime );
-    lcm_->publish("LOCAL_TO_LOCAL_BDI", &localmit_to_localbdi_msg);    
+    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);    
   }
 
 }
