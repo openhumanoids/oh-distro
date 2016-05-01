@@ -64,6 +64,8 @@ private:
   lcm::LCM lcmPublish_;
   ros::NodeHandle node_;
   int mode_;
+  // Prepend the channels of the IHMC signals (usually for diagnostic reasons)
+  std::string channel_prepend_;
   std::string robotName_;
   std::string imuSensor_;
   bool verbose_;
@@ -144,6 +146,7 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
 
   if (mode_ == MODE_SIM_ROBOT)
   {
+    channel_prepend_ = ""; // Set this to "IHMC_" to publish CRS, FT and IMU signals for diagnostic purposes with IHMC_<name>
     ROS_INFO("Will publish simulated sensor signals");
     // Robot joint angles
     jointStatesSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/joint_states"), queue_size,
@@ -394,7 +397,7 @@ void App::imuSensorCallback(const sensor_msgs::ImuConstPtr& msg)
   if (i != std::string::npos)
     imuName.erase(i, s.length());
 
-  lcmPublish_.publish(("IMU_" + imuName), &imu);
+  lcmPublish_.publish( ( channel_prepend_ +  "IMU_" + imuName), &imu);
 }
 
 int scan_counter = 0;
@@ -558,8 +561,8 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   }
   amsg.num_joints = amsg.joint_name.size();
 
-  lcmPublish_.publish("CORE_ROBOT_STATE", &amsg);
-  lcmPublish_.publish("FORCE_TORQUE", &six_axis_force_torque_array);
+  lcmPublish_.publish( ( channel_prepend_ + "CORE_ROBOT_STATE" ), &amsg);
+  lcmPublish_.publish( ( channel_prepend_ + "FORCE_TORQUE" ), &six_axis_force_torque_array);
 
 
   bot_core::utime_t utime_msg;
