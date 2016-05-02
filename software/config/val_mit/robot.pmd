@@ -51,7 +51,7 @@ group "2.plan_and_control" {
     }
 
     cmd "InstQP Val" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/drake/drake/examples/Valkyrie/config/control_config_hardware.yaml -lc ROBOT_COMMAND";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/control_config_hardware.yaml -lc ROBOT_COMMAND";
         host = "base";
         stop_signal = 15;
     }
