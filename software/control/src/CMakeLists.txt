@@ -77,7 +77,6 @@ add_executable(runDRCInstQP runDRCInstQP.cpp)
 pods_use_pkg_config_packages(runDRCInstQP drake-qp-common drake-control-util drake-side drake-rbm)
 target_link_libraries(runDRCInstQP RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 target_link_libraries (runDRCInstQP ${CMAKE_THREAD_LIBS_INIT})
-# target_link_libraries(runDRCInstQP lcm)
 pods_install_executables(runDRCInstQP)
 
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
