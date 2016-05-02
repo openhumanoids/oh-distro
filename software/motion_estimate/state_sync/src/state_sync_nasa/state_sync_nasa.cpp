@@ -29,6 +29,10 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
   sync.setBotParam(new_botparam);
 }
 
+inline double clamp(double x, double lower, double upper) {
+  return std::max(lower, std::min(upper, x));
+}
+inline double toRad(double deg) { return (deg * M_PI / 180); }
 
 state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
                        std::shared_ptr<CommandLineConfig> &cl_cfg_):
@@ -36,7 +40,26 @@ state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 1); // 1 means keep updated, 0 would ignore updates
   bot_param_add_update_subscriber(botparam_,
                                   onParamChangeSync, this);
-   
+
+  std::shared_ptr<ModelClient> model_client = std::shared_ptr<ModelClient>(
+      new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  RigidBodyTree model;
+  model.addRobotFromURDFString(model_client->getURDFString());
+  model.compile();
+  std::map<std::string, int> dof_map = model.computePositionNameToIndexMap();
+
+  for (auto iter = dof_map.begin(); iter != dof_map.end(); ++iter) {
+    // std::cout << iter->first << " has min "
+    //   << model.joint_limit_min[iter->second]
+    //   << " and max "
+    //   << model.joint_limit_max[iter->second] << std::endl;
+
+    joint_limit_min_.insert(std::pair<std::string, double>(
+        iter->first, model.joint_limit_min[iter->second]));
+    joint_limit_max_.insert(std::pair<std::string, double>(
+        iter->first, model.joint_limit_max[iter->second]));
+  }
+
   // Subscribe to required signals
   lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE", &state_sync_nasa::coreRobotHandler, this);
   lcm::Subscription* sub1 = lcm_->subscribe("FORCE_TORQUE", &state_sync_nasa::forceTorqueHandler, this);
@@ -305,12 +328,42 @@ void state_sync_nasa::publishRobotState(int64_t utime_in,  const  bot_core::six_
   }
 }
 
-void state_sync_nasa::appendJoints(bot_core::robot_state_t& msg_out, Joints joints){
-  for (size_t i = 0; i < joints.position.size(); i++)  {
-    msg_out.joint_name.push_back( joints.name[i] );
-    msg_out.joint_position.push_back( joints.position[i] );
-    msg_out.joint_velocity.push_back( joints.velocity[i]);
-    msg_out.joint_effort.push_back( joints.effort[i] );
+void state_sync_nasa::appendJoints(bot_core::robot_state_t& msg_out,
+                                   Joints joints) {
+  for (size_t i = 0; i < joints.position.size(); i++) {
+    msg_out.joint_name.push_back(joints.name[i]);
+
+    // Check whether joint is to be clamped to its joint limits
+    msg_out.joint_position.push_back(
+        clampJointToJointLimits(joints.name[i], joints.position[i]));
+
+    msg_out.joint_velocity.push_back(joints.velocity[i]);
+    msg_out.joint_effort.push_back(joints.effort[i]);
+  }
+}
+
+float state_sync_nasa::clampJointToJointLimits(std::string joint_name,
+                                               float joint_position) {
+  if (std::find(joints_to_be_clamped_to_joint_limits_.begin(),
+                joints_to_be_clamped_to_joint_limits_.end(),
+                joint_name) != joints_to_be_clamped_to_joint_limits_.end()) {
+    // Clamp if within +/-clamping_tolerance_in_degrees_, else return
+    // warning/error and raw value
+    double tolerance = toRad(clamping_tolerance_in_degrees_);
+    double& lower_limit = joint_limit_min_[joint_name];
+    double& upper_limit = joint_limit_max_[joint_name];
+
+    if ((joint_position + lower_limit) > tolerance ||
+        (joint_position - upper_limit) > tolerance) {
+      std::cerr << "WARNING: " << joint_name << " deviates >"
+                << clamping_tolerance_in_degrees_
+                << "deg from joint limits, not clamping" << std::endl;
+      return joint_position;
+    } else {
+      return clamp(joint_position, lower_limit, upper_limit);
+    }
+  } else {
+    return joint_position;
   }
 }
 
@@ -324,7 +377,21 @@ main(int argc, char ** argv){
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
   if (!lcm->good()) return 1;
+
+  // Add joints which are OK to be clamped to their respective joint limits
+  std::vector<std::string> joints_to_be_clamped_to_joint_limits;
+  joints_to_be_clamped_to_joint_limits.push_back("lowerNeckPitch");
+  joints_to_be_clamped_to_joint_limits.push_back("upperNeckPitch");
+  joints_to_be_clamped_to_joint_limits.push_back("leftWristRoll");
+  joints_to_be_clamped_to_joint_limits.push_back("leftWristPitch");
+  joints_to_be_clamped_to_joint_limits.push_back("rightWristRoll");
+  joints_to_be_clamped_to_joint_limits.push_back("rightWristPitch");
+
   state_sync_nasa app(lcm, cl_cfg);
+  app.joints_to_be_clamped_to_joint_limits_ =
+      joints_to_be_clamped_to_joint_limits;
+  app.clamping_tolerance_in_degrees_ = 2.5;  // 2.5deg is OK, above will fail
+
   while (0 == lcm->handle())
     ;
   return 0;
