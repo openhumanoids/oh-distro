@@ -29,10 +29,10 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
   sync.setBotParam(new_botparam);
 }
 
-state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
-                       boost::shared_ptr<CommandLineConfig> &cl_cfg_):
-                       lcm_(lcm_), cl_cfg_(cl_cfg_) {
 
+state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
+                       std::shared_ptr<CommandLineConfig> &cl_cfg_):
+                       lcm_(lcm_), cl_cfg_(cl_cfg_) {
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 1); // 1 means keep updated, 0 would ignore updates
   bot_param_add_update_subscriber(botparam_,
                                   onParamChangeSync, this);
@@ -316,17 +316,16 @@ void state_sync_nasa::appendJoints(bot_core::robot_state_t& msg_out, Joints join
 
 int
 main(int argc, char ** argv){
-  boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );  
+  std::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig());
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(cl_cfg->use_ihmc, "i", "use_ihmc","Use the IHMC estimate of the body frame in ERS");
   opt.parse();
-  
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
-  if(!lcm->good())
-    return 1;  
-  
+
+  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
+  if (!lcm->good()) return 1;
   state_sync_nasa app(lcm, cl_cfg);
-  while(0 == lcm->handle());
+  while (0 == lcm->handle())
+    ;
   return 0;
 }

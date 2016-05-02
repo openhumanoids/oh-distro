@@ -3,9 +3,8 @@
 
 #include <lcm/lcm-cpp.hpp>
 
-#include <boost/shared_ptr.hpp>
-
 #include <map>
+#include <memory>
 
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/bot_core/joint_state_t.hpp"
@@ -54,7 +53,7 @@ class CommandLineConfig{
 ///////////////////////////////////////////////////////////////
 class state_sync_nasa{
   public:
-    state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_, boost::shared_ptr<CommandLineConfig> &cl_cfg_);
+    state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_, std::shared_ptr<CommandLineConfig> &cl_cfg_);
     
     ~state_sync_nasa(){
     }
@@ -65,8 +64,8 @@ class state_sync_nasa{
     }
     
   private:
-    boost::shared_ptr<CommandLineConfig> cl_cfg_;
-    boost::shared_ptr<lcm::LCM> lcm_;
+    std::shared_ptr<CommandLineConfig> cl_cfg_;
+    std::shared_ptr<lcm::LCM> lcm_;
     BotParam* botparam_;
         
     void coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg);
