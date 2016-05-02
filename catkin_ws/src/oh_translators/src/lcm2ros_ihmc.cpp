@@ -668,20 +668,6 @@ bool LCM2ROS::getChestTrajectoryPlan(const drc::robot_plan_t* msg, std::vector<g
     this_chest.z = wTt_quat.z();
     m.push_back(this_chest);
 
-    /*
-    bot_core::pose_t lcm_pose_msg;
-    lcm_pose_msg.utime = (int64_t)0;
-    lcm_pose_msg.pos[0] = world_to_torso.translation().x();
-    lcm_pose_msg.pos[1] = world_to_torso.translation().y();
-    lcm_pose_msg.pos[2] = world_to_torso.translation().z();
-    lcm_pose_msg.orientation[0] = wTt_quat.w();
-    lcm_pose_msg.orientation[1] = wTt_quat.x();
-    lcm_pose_msg.orientation[2] = wTt_quat.y();
-    lcm_pose_msg.orientation[3] = wTt_quat.z();
-    lcm_->publish("POSE_BDI", &lcm_pose_msg);
-    std::cout << i << "\n";
-    sleep(1);
-    */
   }
 
   return true;

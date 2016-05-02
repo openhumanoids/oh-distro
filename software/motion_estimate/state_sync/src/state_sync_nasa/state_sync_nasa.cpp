@@ -40,10 +40,10 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
   // Subscribe to required signals
   lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE", &state_sync_nasa::coreRobotHandler, this);
   lcm::Subscription* sub1 = lcm_->subscribe("FORCE_TORQUE", &state_sync_nasa::forceTorqueHandler, this);
-  lcm::Subscription* sub2 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver
+  lcm::Subscription* sub2 = lcm_->subscribe("POSE_BODY_ALT",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver
   lcm::Subscription* sub3;
   if (cl_cfg_->use_ihmc){
-    sub3 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseBodyHandler,this);  // If the Pronto state estimator isn't running
+    sub3 = lcm_->subscribe("POSE_BODY_ALT",&state_sync_nasa::poseBodyHandler,this);  // If the Pronto state estimator isn't running
   }else{
     sub3 = lcm_->subscribe("POSE_BODY",&state_sync_nasa::poseBodyHandler,this);  // Always provided the state estimator:
   }
@@ -209,9 +209,14 @@ void state_sync_nasa::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std:
     Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodybdi * localmit_to_bodymit.inverse();
 
     bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_pronto_.utime );
-    lcm_->publish("LOCAL_TO_LOCAL_BDI", &localmit_to_localbdi_msg);    
+    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);    
   }
 
+  // If using the IHMC estimate, then publish it to the rest of the system as POSE_BODY
+  if (cl_cfg_->use_ihmc){
+     lcm_->publish("POSE_BODY",msg);
+
+  }
 }
 
 // Returns false if the pose is old or hasn't appeared yet

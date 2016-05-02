@@ -1,11 +1,5 @@
 // Copyright 2015 Maurice Fallon, Vladimir Ivan
-
 // Selective ros2lcm translator
-// two modes:
-// - passthrough: produces POSE_BODY and EST_ROBOT_STATE and CAMERA_LEFT
-// - state estimation: produces CORE_ROBOT_STATE and POSE_BDI
-//
-// both modes produce SCAN
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -49,8 +43,8 @@
 #include "lcmtypes/ihmc/last_received_message_t.hpp"
 #include "lcmtypes/ihmc/footstep_status_t.hpp"
 
-#define MODE_PASSTHROUGH 0
-#define MODE_STATE_ESTIMATION 1
+#define MODE_REAL_ROBOT 0
+#define MODE_SIM_ROBOT 1
 
 struct Joints
 {
@@ -70,6 +64,8 @@ private:
   lcm::LCM lcmPublish_;
   ros::NodeHandle node_;
   int mode_;
+  // Prepend the channels of the IHMC signals (usually for diagnostic reasons)
+  std::string channel_prepend_;
   std::string robotName_;
   std::string imuSensor_;
   bool verbose_;
@@ -80,21 +76,24 @@ private:
   ros::Subscriber rightHandSensorSub_, behaviorSub_, lastReceivedMessageSub_;
   ros::Subscriber footstepStatusSub_;
 
-  void jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
-  void headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
+  // Published in both Simulation and Real Robot:
   void poseCallBack(const nav_msgs::OdometryConstPtr& msg);
-  void laserScanCallback(const sensor_msgs::LaserScanConstPtr& msg);
-  void imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg);
-  void imuSensorCallback(const sensor_msgs::ImuConstPtr& msg);
-
-  void leftFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
-  void rightFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
-  void leftHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
-  void rightHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
   void behaviorCallback(const std_msgs::Int32ConstPtr& msg);
   void lastReceivedMessageCallback(const ihmc_msgs::LastReceivedMessageConstPtr& msg);
   void footstepStatusCallback(const ihmc_msgs::FootstepStatusMessageConstPtr& msg);
 
+  // The following sensor signals are published only in simulation:
+  void jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
+  void headJointStatesCallback(const sensor_msgs::JointStateConstPtr& msg);
+  void laserScanCallback(const sensor_msgs::LaserScanConstPtr& msg);
+  void imuBatchCallback(const ihmc_msgs::BatchRawImuDataConstPtr& msg);
+  void imuSensorCallback(const sensor_msgs::ImuConstPtr& msg);
+  void leftFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+  void rightFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+  void leftHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+  void rightHandSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg);
+
+  //
   void appendSensors(bot_core::force_torque_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
                          geometry_msgs::WrenchStamped r_foot_sensor, geometry_msgs::WrenchStamped l_hand_sensor, geometry_msgs::WrenchStamped r_hand_sensor);
   void appendSensors(bot_core::six_axis_force_torque_array_t& msg_out, geometry_msgs::WrenchStamped l_foot_sensor,
@@ -136,28 +135,8 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
 
   int queue_size = 100;
 
-  // Robot joint angles
-  jointStatesSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/joint_states"), queue_size,
-                                    &App::jointStatesCallback, this);
   poseSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/robot_pose"), queue_size, &App::poseCallBack,
                              this);
-
-  imuBatchSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_ + "_batch"), queue_size,
-                                 &App::imuBatchCallback, this);
-  imuSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_), queue_size,
-                                  &App::imuSensorCallback, this);
-//  imuSensorSub_ = node_.subscribe(std::string("/imu/imu/"), queue_size,
-//                                  &App::imuSensorCallback, this);
-
-  leftFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/left"), queue_size,
-                                       &App::leftFootSensorCallback, this);
-  rightFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/right"),
-                                        queue_size, &App::rightFootSensorCallback, this);
-  leftHandSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/wrist_force_sensor/left"), queue_size,
-                                       &App::leftHandSensorCallback, this);
-  rightHandSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/wrist_force_sensor/right"),
-                                        queue_size, &App::rightHandSensorCallback, this);
-  // using previously used queue_size for scan:
   behaviorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/behavior"), 100, &App::behaviorCallback,
                                  this);
   lastReceivedMessageSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/last_received_message"), 100,
@@ -165,13 +144,33 @@ App::App(ros::NodeHandle node_in, int mode_in, std::string robotName_in, std::st
   footstepStatusSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/footstep_status"), 100,
                                        &App::footstepStatusCallback, this);
 
-  // Multisense Joint Angles:
-  if (mode_ == MODE_STATE_ESTIMATION)
+  if (mode_ == MODE_SIM_ROBOT)
   {
+    channel_prepend_ = ""; // Set this to "IHMC_" to publish CRS, FT and IMU signals for diagnostic purposes with IHMC_<name>
+    ROS_INFO("Will publish simulated sensor signals");
+    // Robot joint angles
+    jointStatesSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/joint_states"), queue_size,
+                                      &App::jointStatesCallback, this);
+    // Atlas IMU Batch is depreciated:
+    //imuBatchSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_ + "_batch"), queue_size,
+    //                               &App::imuBatchCallback, this);
+    imuSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/imu/" + imuSensor_), queue_size,
+                                    &App::imuSensorCallback, this);
+
+    leftFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/left"), queue_size,
+                                         &App::leftFootSensorCallback, this);
+    rightFootSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/foot_force_sensor/right"),
+                                          queue_size, &App::rightFootSensorCallback, this);
+    leftHandSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/wrist_force_sensor/left"), queue_size,
+                                         &App::leftHandSensorCallback, this);
+    rightHandSensorSub_ = node_.subscribe(std::string("/ihmc_ros/" + robotName_ + "/output/wrist_force_sensor/right"),
+                                          queue_size, &App::rightHandSensorCallback, this);
+
+    // Multisense Joint Angles: only available in simulation anyway:
     headJointStatesSub_ = node_.subscribe(std::string("/multisense/joint_states"), queue_size, &App::headJointStatesCallback,
-                                          this);
+                                            this);
+    laserScanSub_ = node_.subscribe(std::string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
   }
-  laserScanSub_ = node_.subscribe(std::string("/multisense/lidar_scan"), 100, &App::laserScanCallback, this);
 
 }
 
@@ -257,13 +256,8 @@ void App::poseCallBack(const nav_msgs::OdometryConstPtr& msg)
   lcm_pose_msg.orientation[1] = lastPoseMsg_.pose.pose.orientation.x;
   lcm_pose_msg.orientation[2] = lastPoseMsg_.pose.pose.orientation.y;
   lcm_pose_msg.orientation[3] = lastPoseMsg_.pose.pose.orientation.z;
-  lcmPublish_.publish("POSE_BDI", &lcm_pose_msg);
-  lcmPublish_.publish("POSE_BODY", &lcm_pose_msg);
+  lcmPublish_.publish("POSE_BODY_ALT", &lcm_pose_msg);
 
-  if (mode_ == MODE_PASSTHROUGH)
-  {
-    lcmPublish_.publish("POSE_BODY", &lcm_pose_msg);
-  }
 }
 
 void App::leftFootSensorCallback(const geometry_msgs::WrenchStampedConstPtr& msg)
@@ -396,7 +390,14 @@ void App::imuSensorCallback(const sensor_msgs::ImuConstPtr& msg)
   imu.pressure = 0;
   imu.rel_alt = 0;
 
-  lcmPublish_.publish(("MICROSTRAIN_INS"), &imu);
+  // Remove 'pelvis_' from topic name: pelvis_pelvisRearImu -> pelvisRearImu
+  std::string imuName = imuSensor_;
+  std::string s = "pelvis_";
+  std::string::size_type i = imuName.find(s);
+  if (i != std::string::npos)
+    imuName.erase(i, s.length());
+
+  lcmPublish_.publish( ( channel_prepend_ +  "IMU_" + imuName), &imu);
 }
 
 int scan_counter = 0;
@@ -539,70 +540,30 @@ void App::jointStatesCallback(const sensor_msgs::JointStateConstPtr& msg)
   appendSensors(force_torque, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
   appendSensors(six_axis_force_torque_array, lastLeftFootSensorMsg_, lastRightFootSensorMsg_, lastLeftHandSensorMsg_, lastRightHandSensorMsg_);
 
-  if (mode_ == MODE_STATE_ESTIMATION)
+  if (robotName_.compare("atlas") == 0)
   {
-
-    if (robotName_.compare("atlas") == 0)
-    {
-      // Filter out unexpected Atlas joint names
-      filterJointNames(joints.name);
-      // joints = reorderJoints(joints);
-    }
-    bot_core::joint_state_t amsg;
-    amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
-
-    for (int i = 0; i < joints.position.size(); i++)
-    {
-      if ( joints.name[i] != "hokuyo_joint")  // dont publish hokuyo joint
-      {
-        amsg.joint_name.push_back(joints.name[i]);
-        amsg.joint_position.push_back(joints.position[i]);
-        amsg.joint_velocity.push_back(0);  // (double) msg->velocity[ i ];
-        amsg.joint_effort.push_back(0);  // msg->effort[i];
-      }
-    }
-    amsg.num_joints = amsg.joint_name.size();
-
-    lcmPublish_.publish("CORE_ROBOT_STATE", &amsg);
-    lcmPublish_.publish("FORCE_TORQUE", &six_axis_force_torque_array);
-
+    // Filter out unexpected Atlas joint names
+    filterJointNames(joints.name);
   }
-  else if (mode_ == MODE_PASSTHROUGH)
+
+  bot_core::joint_state_t amsg;
+  amsg.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
+
+  for (int i = 0; i < joints.position.size(); i++)
   {
-    if (robotName_.compare("atlas") == 0)
+    if ( joints.name[i] != "hokuyo_joint")  // dont publish hokuyo joint
     {
-      filterJointNames(joints.name);
-      // don't reorder in passthrough mode
+      amsg.joint_name.push_back(joints.name[i]);
+      amsg.joint_position.push_back(joints.position[i]);
+      amsg.joint_velocity.push_back(0);  // (double) msg->velocity[ i ];
+      amsg.joint_effort.push_back(0);  // msg->effort[i];
     }
-
-    if (robotName_.compare("valkyrie") == 0)
-    {
-    }
-
-    bot_core::robot_state_t msg_out;
-    msg_out.utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
-    int n_joints = joints.position.size();
-    msg_out.joint_position.assign(n_joints, 0);
-    msg_out.joint_velocity.assign(n_joints, 0);
-    msg_out.joint_effort.assign(n_joints, 0);
-    msg_out.num_joints = n_joints;
-    msg_out.joint_name = joints.name;
-    for (int i = 0; i < n_joints; i++)
-    {
-      msg_out.joint_position[i] = joints.position[i];
-      msg_out.joint_velocity[i] = 0;  // (double) msg->velocity[ i ];
-      msg_out.joint_effort[i] = 0;  // msg->effort[i];
-    }
-    msg_out.pose.translation.x = lastPoseMsg_.pose.pose.position.x;
-    msg_out.pose.translation.y = lastPoseMsg_.pose.pose.position.y;
-    msg_out.pose.translation.z = lastPoseMsg_.pose.pose.position.z;
-    msg_out.pose.rotation.w = lastPoseMsg_.pose.pose.orientation.w;
-    msg_out.pose.rotation.x = lastPoseMsg_.pose.pose.orientation.x;
-    msg_out.pose.rotation.y = lastPoseMsg_.pose.pose.orientation.y;
-    msg_out.pose.rotation.z = lastPoseMsg_.pose.pose.orientation.z;
-    msg_out.force_torque = force_torque;
-    lcmPublish_.publish("EST_ROBOT_STATE", &msg_out);
   }
+  amsg.num_joints = amsg.joint_name.size();
+
+  lcmPublish_.publish( ( channel_prepend_ + "CORE_ROBOT_STATE" ), &amsg);
+  lcmPublish_.publish( ( channel_prepend_ + "FORCE_TORQUE" ), &six_axis_force_torque_array);
+
 
   bot_core::utime_t utime_msg;
   int64_t joint_utime = (int64_t)msg->header.stamp.toNSec() / 1000;  // from nsec to usec
@@ -717,26 +678,25 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  int mode;  // MODE_PASSTHROUGH or MODE_STATE_ESTIMATION
-  if (modeArgument.compare("passthrough") == 0)
+  int mode;  // MODE_REAL_ROBOT or MODE_SIM_ROBOT
+  if (modeArgument.compare("real_robot") == 0)
   {
-    mode = MODE_PASSTHROUGH;
+    mode = MODE_REAL_ROBOT;
   }
-  else if (modeArgument.compare("state_estimation") == 0)
+  else if (modeArgument.compare("sim_robot") == 0)
   {
-    mode = MODE_STATE_ESTIMATION;
+    mode = MODE_SIM_ROBOT;
   }
   else
   {
-    ROS_ERROR("modeArgument not understood: use passthrough or state_estimation");
+    ROS_ERROR("modeArgument not understood: use real_robot or sim_robot");
     exit(-1);
-  }
+  }  
 
   ros::init(argc, argv, "ros2lcm_ihmc");
   ros::NodeHandle nh;
   new App(nh, mode, robotName, imuSensor);
-  ROS_ERROR("ROS2LCM IHMC Translator Ready [mode: %d, %s] [robotName: %s] [imuSensor: %s]", mode, modeArgument.c_str(),
-            robotName.c_str(), imuSensor.c_str());
+  ROS_ERROR("qROS2LCM IHMC Translator Ready [mode: %d, %s] [robotName: %s] [imuSensor: %s]", mode, modeArgument.c_str(), robotName.c_str(), imuSensor.c_str());
   ros::spin();
   return 0;
 }

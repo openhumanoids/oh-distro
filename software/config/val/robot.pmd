@@ -1,5 +1,5 @@
 group "0.ros_bridge" {
-    cmd "ros_bridge_without_pronto" {
+    cmd "ros_bridge" {
         exec = "roslaunch oh_translators ihmc_bridge.launch";
         host = "localhost";
     }
@@ -145,7 +145,7 @@ cmd "ros-multisense" {
 }
 
 script "start_ui" {
-    start cmd "ros_bridge_without_pronto";
+    start cmd "ros_bridge";
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.drivers";
@@ -156,7 +156,7 @@ script "start_ui" {
 }
 
 script "start_ui_exotica" {
-    start cmd "ros_bridge_without_pronto";
+    start cmd "ros_bridge";
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.drivers";

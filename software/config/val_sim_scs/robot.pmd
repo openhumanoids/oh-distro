@@ -1,10 +1,6 @@
 group "0.ros_bridge" {
-    cmd "ros_bridge_without_pronto" {
-        exec = "roslaunch oh_translators ihmc_bridge.launch mode:=passthrough";
-        host = "localhost";
-    }
-    cmd "ros_bridge_with_pronto" {
-        exec = "roslaunch oh_translators ihmc_bridge.launch mode:=state_estimation imuSensor:=pelvis_pelvisMiddleImu";
+    cmd "ros_bridge" {
+        exec = "roslaunch oh_translators ihmc_bridge.launch mode:=sim_robot";
         host = "localhost";
     }
 }
@@ -24,6 +20,10 @@ group "1.params_and_model_pub" {
 }
 
 group "2.state_without_pronto" {
+    cmd "state-sync-without-pronto" {
+        exec = "drc-state-sync-val -i";
+        host = "localhost";
+    }
     cmd "joints2frames_without" {
         exec = "drc-joints2frames -m";
         host = "localhost";
@@ -32,8 +32,8 @@ group "2.state_without_pronto" {
 
 
 group "2.state_with_pronto" {
-    cmd "state-sync" {
-        exec = "se-state-sync-simple";
+    cmd "state-sync-with-pronto" {
+        exec = "drc-state-sync-val";
         host = "localhost";
     }
     cmd "joints2frames_with" {
@@ -123,7 +123,7 @@ cmd "scs" {
 }
 
 script "start_ui_exotica" {
-    start cmd "ros_bridge_without_pronto";
+    start cmd "ros_bridge";
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.state_without_pronto";
@@ -134,31 +134,11 @@ script "start_ui_exotica" {
 }
 
 script "start_ui" {
-    start cmd "ros_bridge_without_pronto";
+    start cmd "ros_bridge";
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.state_without_pronto";
     start group "3.plan_and_control";
     start group "4.maps";
     start cmd "director";
-}
-
-script "start_ui_with_pronto" {
-    start cmd "ros_bridge_with_pronto";
-    start group "1.params_and_model_pub";
-    wait ms 1000;
-    start group "2.state_with_pronto";
-    start group "3.plan_and_control";
-    start group "4.maps";
-    start cmd "director";
-}
-
-script "start_ui_with_scs" {
-    run_script "start_without_pronto";
-    start cmd "scs";
-}
-
-script "start_ui_with_scs_pronto" {
-    run_script "start_with_pronto";
-    start cmd "scs";
 }

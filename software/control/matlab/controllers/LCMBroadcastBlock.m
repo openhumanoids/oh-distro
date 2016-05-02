@@ -497,7 +497,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (obj.publish_truth)
         obj.lc.publish('POSE_BODY', pose_body_frame);
       else
-        obj.lc.publish('POSE_BDI', pose_body_frame);
+        obj.lc.publish('POSE_BODY_ALT', pose_body_frame);
       end
       
       % state_sync expects separate message for the hand state

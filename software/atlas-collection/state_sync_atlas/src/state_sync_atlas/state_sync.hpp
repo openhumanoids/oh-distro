@@ -44,7 +44,7 @@ class CommandLineConfig{
       simulation_mode = false;
       publish_pose_body = true;
       output_channel = "EST_ROBOT_STATE";
-      atlas_version = 4;
+      atlas_version = 5;
 
       // Defaults - not read from command line:
       use_encoder_joint_sensors = false;

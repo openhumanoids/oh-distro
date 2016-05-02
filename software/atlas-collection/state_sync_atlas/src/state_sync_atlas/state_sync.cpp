@@ -41,7 +41,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub2 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);
   lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
-  lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
+  lcm::Subscription* sub5 = lcm_->subscribe("POSE_BODY_ALT",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
   lcm::Subscription* sub6 = lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
   lcm::Subscription* sub7 = lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);
   
@@ -506,7 +506,7 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   pose_MIT_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
   pose_MIT_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
 
-  // If State sync has received POSE_BDI and POSE_BODY, we must be running our own estimator
+  // If State sync has received POSE_BODY_ALT and POSE_BODY, we must be running our own estimator
   // So there will be a difference between these, so publish this for things like walking footstep transformations
   // TODO: rate limit this to something like 10Hz
   // TODO: this might need to be published only when pose_BDI_.utime and pose_MIT_.utime are very similar
@@ -518,7 +518,7 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
     Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodybdi * localmit_to_bodymit.inverse();
 
     bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_MIT_.utime );
-    lcm_->publish("LOCAL_TO_LOCAL_BDI", &localmit_to_localbdi_msg);    
+    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);    
   }
 
 }
@@ -699,7 +699,7 @@ main(int argc, char ** argv){
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg->standalone_head, "l", "standalone_head","Standalone Head");
   opt.add(cl_cfg->standalone_hand, "f", "standalone_hand","Standalone Hand");
-  opt.add(cl_cfg->bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
+  opt.add(cl_cfg->bdi_motion_estimate, "b", "bdi","Use POSE_BODY_ALT (from BDI) to make EST_ROBOT_STATE");
   opt.add(cl_cfg->simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");

@@ -51,7 +51,7 @@ def on_robot_state(channel, data):
 lc = lcm.LCM()
 print "started"
 
-lc.subscribe("POSE_BDI", on_pose)
+lc.subscribe("POSE_BODY_ALT", on_pose)
 lc.subscribe("KINECT_FRAME", on_image)
 lc.subscribe("EST_ROBOT_STATE", on_robot_state)
   

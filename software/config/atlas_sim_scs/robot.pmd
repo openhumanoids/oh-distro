@@ -1,10 +1,6 @@
 group "0.ros_bridge" {
-    cmd "ros_bridge_without_pronto" {
-        exec = "roslaunch oh_translators ihmc_bridge.launch robotName:=atlas";
-        host = "localhost";
-    }
-    cmd "ros_bridge_with_pronto" {
-        exec = "roslaunch oh_translators ihmc_bridge.launch robotName:=atlas mode:=state_estimation imuSensor:=pelvis_imu_sensor_at_imu_frame";
+    cmd "ros_bridge" {
+        exec = "roslaunch oh_translators ihmc_bridge.launch robotName:=atlas mode:=sim_robot imuSensor:=pelvis_imu_sensor_at_imu_frame";
         host = "localhost";
     }
 }
@@ -26,6 +22,15 @@ group "1.params_and_model_pub" {
 group "2.state_without_pronto" {
     cmd "joints2frames_without" {
         exec = "drc-joints2frames -m";
+        host = "localhost";
+    }
+
+    cmd "state-sync" {
+        exec = "drc-state-sync-atlas -a 5 -b";
+        host = "localhost";
+    }
+    cmd "joints2frames_with" {
+        exec = "drc-joints2frames";
         host = "localhost";
     }
 }
@@ -102,7 +107,7 @@ cmd "pose-util" {
 
 
 script "start_ui" {
-    start cmd "ros_bridge_without_pronto";
+    start cmd "ros_bridge";
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.state_without_pronto";
@@ -112,7 +117,7 @@ script "start_ui" {
 }
 
 script "start_ui_with_pronto" {
-    start cmd "ros_bridge_with_pronto";
+    start cmd "ros_bridge";
     start group "1.params_and_model_pub";
     wait ms 1000;
     start group "2.state_with_pronto";
