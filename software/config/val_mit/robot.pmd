@@ -56,6 +56,13 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
+    cmd "InstQP Val Fixed Base" {
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/Valkyrie/config/control_config_hardware.yaml -lc ROBOT_COMMAND -fb";
+        host = "base";
+        stop_signal = 15;
+    }
+
+
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner.withValkyrie(); p.run();\"";
        host = "base";
@@ -95,6 +102,11 @@ group "6.streaming"{
 
     cmd "base" {
         exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --base";
+        host = "base";
+    }
+
+    cmd "robot streaming with controller fixed base force control" {
+        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --robotWithController --fixedBase --forceControl"; 
         host = "base";
     }
 }

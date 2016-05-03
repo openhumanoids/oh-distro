@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
   std::string command_channel = "ATLAS_COMMAND"; 
   std::string behavior_channel = "ATLAS_BEHAVIOR_COMMAND";
   std::string control_config_filename = std::string(drc_path) + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
+  bool fixedBase = false;
   int max_infocount = -1;
 
   ConciseArgs parser(argc, argv);
@@ -24,10 +25,21 @@ int main(int argc, char** argv) {
   parser.add(command_channel, "lc", "lcm-command-channelname", "Command channel (LCM)");
   parser.add(behavior_channel, "lb", "lcm-behavior-channelname", "Behavior channel (LCM)");
   parser.add(max_infocount, "i", "max-infocount", "Max infocount before controller safing");
+  parser.add(fixedBase, "fb", "fixedBase", "set to true if you want to launch controller with fixedBase model");
   parser.parse();
 
+
+  DrakeJoint::FloatingBaseType floatingBaseType;
+  if (fixedBase){
+    std::cout << "using a FIXED base robot in QP controller" << std::endl;
+    floatingBaseType = DrakeJoint::FIXED;
+  } else{
+    floatingBaseType = DrakeJoint::ROLLPITCHYAW;
+    std::cout << "using a FLOATING base robot in QP controller" << std::endl;
+  }
+
   std::unique_ptr<RigidBodyTree> robot =
-      std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf));
+      std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, floatingBaseType));
   if (parser.wasParsed("urdf-mods")){
     applyURDFModifications(robot, urdf_mods);
   }
