@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<KinematicModel VERSION="3.2">
+	<Parameters>
+		<Parameter NAME="pelvis_val_pelvis_val1_x" VALUE="42.430198669433594" PRIOR="42.430198669433594" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val1_y" VALUE="0.38291072845458984" PRIOR="0.38291072845458984" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val1_z" VALUE="-75.745498657226562" PRIOR="-75.745498657226562" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val2_x" VALUE="36.803276062011719" PRIOR="36.803276062011719" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val2_y" VALUE="0.23376750946044922" PRIOR="0.23376750946044922" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val2_z" VALUE="-16.981033325195312" PRIOR="-16.981033325195312" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val3_x" VALUE="-24.306129455566406" PRIOR="-24.306129455566406" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val3_y" VALUE="-119.755126953125" PRIOR="-119.755126953125" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val3_z" VALUE="47.446334838867188" PRIOR="47.446334838867188" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val4_x" VALUE="-54.927345275878906" PRIOR="-54.927345275878906" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val4_y" VALUE="119.13845062255859" PRIOR="119.13845062255859" HIDDEN="1"/>
+		<Parameter NAME="pelvis_val_pelvis_val4_z" VALUE="45.280197143554688" PRIOR="45.280197143554688" HIDDEN="1"/>
+	</Parameters>
+	<Skeleton>
+		<Segment NAME="pelvis_val" OPACITY="255" BOUNDS="-50 -50 -50 50 50 50" MASS="0" MASS-CENTRE="0 0 0" INERTIA="0 0 0" RGB="255 164 0" HIDDEN="0" DRAW-END-RATIO="1" DRAW-HEIGHT="0.5" DRAW-TWIST="0" DRAW-WIDTH="0.5" DRAW-STYLE="box" DRAW-SHADING="shaded-smooth">
+			<JointFree NAME="World_pelvis_val" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" INVERSE-POST-ORIENTATION="0 0 0" INVERSE-POST-POSITION="0 0 0" MEAN="0 0 0 0 0 0" COVARIANCE="2.464900016784668 0 0 0 0 0 0 2.464900016784668 0 0 0 0 0 0 246.49000549316406 0 0 0 0 0 0 1000000 0 0 0 0 0 0 1000000 0 0 0 0 0 0 1000000" T="* * * * * *" SIGNS="+ + + + + +" RANGE-CENTRING-STATE="0 0 0 0 0 0" RANGE-MATRIX="29.60881233215332 0 0 0 0 0 0 29.60881233215332 0 0 0 0 0 0 29.60881233215332 0 0 0 0 0 0 100000000 0 0 0 0 0 0 100000000 0 0 0 0 0 0 100000000">
+				<JointTemplate MEAN="0 0 0 0 0 0" COVARIANCE="2.464900016784668 0 0 0 0 0 0 2.464900016784668 0 0 0 0 0 0 246.49000549316406 0 0 0 0 0 0 1000000 0 0 0 0 0 0 1000000 0 0 0 0 0 0 1000000" TPOSE-MEAN="0 0 0 0 0 0" TPOSE-COVARIANCE="0.10000000149011612 0 0 0 0 0 0 0.10000000149011612 0 0 0 0 0 0 0.10000000149011612 0 0 0 0 0 0 0.10000000149011612 0 0 0 0 0 0 0.10000000149011612 0 0 0 0 0 0 0.10000000149011612" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" INVERSE-POST-ORIENTATION="0 0 0" INVERSE-POST-POSITION="0 0 0"/>
+			</JointFree>
+		</Segment>
+	</Skeleton>
+	<MarkerSet>
+		<Markers>
+			<Marker NAME="pelvis_val1" RADIUS="12.5" RGB="255 164 0" STATUS="required" VIEW-ANGLE="0"/>
+			<Marker NAME="pelvis_val2" RADIUS="12.5" RGB="255 164 0" STATUS="optional" VIEW-ANGLE="0"/>
+			<Marker NAME="pelvis_val3" RADIUS="12.5" RGB="255 164 0" STATUS="optional" VIEW-ANGLE="0"/>
+			<Marker NAME="pelvis_val4" RADIUS="12.5" RGB="255 164 0" STATUS="optional" VIEW-ANGLE="0"/>
+		</Markers>
+		<Sticks>
+			<Stick MARKER1="pelvis_val1" MARKER2="pelvis_val2" RGB1="255 164 0" RGB2="255 164 0"/>
+			<Stick MARKER1="pelvis_val1" MARKER2="pelvis_val3" RGB1="255 164 0" RGB2="255 164 0"/>
+			<Stick MARKER1="pelvis_val1" MARKER2="pelvis_val4" RGB1="255 164 0" RGB2="255 164 0"/>
+			<Stick MARKER1="pelvis_val2" MARKER2="pelvis_val3" RGB1="255 164 0" RGB2="255 164 0"/>
+			<Stick MARKER1="pelvis_val2" MARKER2="pelvis_val4" RGB1="255 164 0" RGB2="255 164 0"/>
+			<Stick MARKER1="pelvis_val3" MARKER2="pelvis_val4" RGB1="255 164 0" RGB2="255 164 0"/>
+		</Sticks>
+	</MarkerSet>
+	<TargetSet>
+		<Targets>
+			<TargetLocalPointToWorldPoint COVARIANCE="1 0 0 0 1 0 0 0 1" FILL-GAPS="0" GAUSSIAN="1" HIDDEN="0" MARKER="pelvis_val1" OPACITY="255" POSITION="'pelvis_val_pelvis_val1_x' 'pelvis_val_pelvis_val1_y' 'pelvis_val_pelvis_val1_z'" RGB="93 93 93" SEGMENT="pelvis_val" WEIGHT="1" DRAW-STYLE="None">
+				<TargetLocalPointToWorldPointTemplate COVARIANCE="1 0 0 0 1 0 0 0 1"/>
+			</TargetLocalPointToWorldPoint>
+			<TargetLocalPointToWorldPoint COVARIANCE="1 0 0 0 1 0 0 0 1" FILL-GAPS="0" GAUSSIAN="1" HIDDEN="0" MARKER="pelvis_val2" OPACITY="255" POSITION="'pelvis_val_pelvis_val2_x' 'pelvis_val_pelvis_val2_y' 'pelvis_val_pelvis_val2_z'" RGB="93 93 93" SEGMENT="pelvis_val" WEIGHT="1" DRAW-STYLE="None">
+				<TargetLocalPointToWorldPointTemplate COVARIANCE="1 0 0 0 1 0 0 0 1"/>
+			</TargetLocalPointToWorldPoint>
+			<TargetLocalPointToWorldPoint COVARIANCE="1 0 0 0 1 0 0 0 1" FILL-GAPS="0" GAUSSIAN="1" HIDDEN="0" MARKER="pelvis_val3" OPACITY="255" POSITION="'pelvis_val_pelvis_val3_x' 'pelvis_val_pelvis_val3_y' 'pelvis_val_pelvis_val3_z'" RGB="93 93 93" SEGMENT="pelvis_val" WEIGHT="1" DRAW-STYLE="None">
+				<TargetLocalPointToWorldPointTemplate COVARIANCE="1 0 0 0 1 0 0 0 1"/>
+			</TargetLocalPointToWorldPoint>
+			<TargetLocalPointToWorldPoint COVARIANCE="1 0 0 0 1 0 0 0 1" FILL-GAPS="0" GAUSSIAN="1" HIDDEN="0" MARKER="pelvis_val4" OPACITY="255" POSITION="'pelvis_val_pelvis_val4_x' 'pelvis_val_pelvis_val4_y' 'pelvis_val_pelvis_val4_z'" RGB="93 93 93" SEGMENT="pelvis_val" WEIGHT="1" DRAW-STYLE="None">
+				<TargetLocalPointToWorldPointTemplate COVARIANCE="1 0 0 0 1 0 0 0 1"/>
+			</TargetLocalPointToWorldPoint>
+		</Targets>
+	</TargetSet>
+</KinematicModel>
+
