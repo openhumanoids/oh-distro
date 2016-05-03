@@ -1,4 +1,3 @@
-#include <mex.h>
 #include "threadedController.cpp"
 #include "drake/systems/controllers/controlUtil.h"
 #include "drake/systems/controllers/InstantaneousQPController.h"

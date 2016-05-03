@@ -38,7 +38,7 @@ pods_use_pkg_config_packages(bot_param_get_seqno bot2-param-client)
 add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
 pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-add_mex(AtlasCommandDriver SHARED AtlasCommandDriver.cpp)
+add_library(AtlasCommandDriver SHARED AtlasCommandDriver.cpp)
 pods_use_pkg_config_packages(AtlasCommandDriver drake-qp-common)
 
 # NOTE: add_library can NOT be replaced by add_mex here, because executables link against it.
@@ -48,7 +48,7 @@ add_library(RobotStateDriver SHARED RobotStateDriver.cpp)
 target_link_libraries(RobotStateDriver drakeGeometryUtil)
 pods_install_headers(RobotStateDriver.hpp DESTINATION control)
 
-add_mex(FootContactDriver SHARED FootContactDriver.cpp)
+add_library(FootContactDriver SHARED FootContactDriver.cpp)
 pods_use_pkg_config_packages(FootContactDriver drake-qp-common drake-side)
 
 add_library(ExponentialForm SHARED ExponentialForm.cpp)
@@ -72,9 +72,11 @@ pods_use_pkg_config_packages(constructRecoveryMexPointer drake-qp-common drake-m
 target_link_libraries(constructRecoveryMexPointer QPReactiveRecoveryPlan drakeYAMLUtil)
 install(TARGETS constructRecoveryMexPointer DESTINATION matlab)
 
+find_package (Threads)
 add_executable(runDRCInstQP runDRCInstQP.cpp)
 pods_use_pkg_config_packages(runDRCInstQP drake-qp-common drake-control-util drake-side drake-rbm)
 target_link_libraries(runDRCInstQP RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
+target_link_libraries (runDRCInstQP ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(runDRCInstQP)
 
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
