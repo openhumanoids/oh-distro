@@ -4,7 +4,7 @@
 #include <atomic>
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
-#include "drake/lcmt_qp_controller_state.hpp"
+#include "drc/controller_state_t.hpp"
 #include "drc/controller_status_t.hpp"
 #include "drc/recovery_trigger_t.hpp"
 #include "bot_core/robot_state_t.hpp"
@@ -27,6 +27,7 @@ namespace {
     std::string atlas_command_channel;
     std::string robot_behavior_channel;
     int max_infocount; // If we see info < 0 more than max_infocount times, freeze Atlas. Set to -1 to disable freezing.
+    bool publishControllerState;
   };
 
   std::atomic<bool> done(false);
@@ -65,8 +66,6 @@ namespace {
 
   int infocount = 0;
 
-//determines whether we should publish the controller state as an LCM message
-  bool publishControllerState = true;
   std::string CONTROLLER_STATE_CHANNEL("CONTROLLER_STATE");
 
 
@@ -310,9 +309,9 @@ namespace {
     return true;
   }
 
-  drake::lcmt_qp_controller_state encodeControllerState(double t, int num_joints, const QPControllerOutput &qp_output){
+  drc::controller_state_t encodeControllerState(double t, int num_joints, const QPControllerOutput &qp_output){
 
-    drake::lcmt_qp_controller_state msg;
+    drc::controller_state_t msg;
     msg.timestamp = (long)(t*1000000);
     msg.num_joints = num_joints;
     msg.q_integrator_state.resize(num_joints);
@@ -328,7 +327,7 @@ namespace {
     // std::cout << "size of qp_output.qdd is " << qp_output.qdd.size() << std::endl;
     // std::cout << "size of state coordinate names are" << solveArgs.pdata->state_coordinate_names.size() << std::endl;
 
-    QPControllerState controller_state = solveArgs.pdata->getControllerState();
+    const QPControllerState& controller_state = solveArgs.pdata->getControllerState();
 
     for(int i=0; i<num_joints; i++){
       msg.q_integrator_state[i] = controller_state.q_integrator_state(i);
@@ -437,9 +436,9 @@ namespace {
         lcmHandler.LCMHandle->publish(ctrl_opts->atlas_command_channel, command_msg); // publishes the atlas_command msg
 
         //publish CONTROLLER_STATE lcm message for debugging purposes
-        if (publishControllerState) {
+        if (ctrl_opts->publishControllerState) {
           int num_joints = qp_output.q_ref.size();
-          drake::lcmt_qp_controller_state controller_state_msg = encodeControllerState(robot_state->t, num_joints,
+          drc::controller_state_t controller_state_msg = encodeControllerState(robot_state->t, num_joints,
                                                                                        qp_output);
           lcmHandler.LCMHandle->publish(CONTROLLER_STATE_CHANNEL, &controller_state_msg);
         }
