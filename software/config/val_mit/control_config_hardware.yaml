@@ -84,7 +84,7 @@ qp_controller_params:
     position_specific:
       DEFAULT:
         Kp: 150
-        damping_ratio: 0.6
+        damping_ratio: 0.2
         w_qdd: 0.001 
         integrator:
           gain: 1.75
