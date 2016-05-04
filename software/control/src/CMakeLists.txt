@@ -29,6 +29,9 @@ if(matlab)
   target_link_libraries(constructRecoveryMexPointer QPReactiveRecoveryPlan drakeYAMLUtil)
   install(TARGETS constructRecoveryMexPointer DESTINATION matlab)
 
+  pods_find_pkg_config(mini-maps)
+  pods_find_pkg_config(opencv)
+
   if (mini-maps_FOUND AND opencv_FOUND)
 
     add_mex(HeightMapWrapper HeightMapWrapper.cpp)
@@ -52,9 +55,6 @@ if(matlab)
   install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize BotParamClient DESTINATION matlab)
 
 endif()
-
-pods_find_pkg_config(mini-maps)
-pods_find_pkg_config(opencv)
 
 add_library(AtlasCommandDriver SHARED AtlasCommandDriver.cpp)
 pods_use_pkg_config_packages(AtlasCommandDriver drake-qp-common eigen3)
