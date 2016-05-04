@@ -54,8 +54,9 @@ endif()
 
 include_directories(${INCLUDE_INSTALL_PATH})
 
-if (matlab AND snopt_c_FOUND)
-  add_subdirectory(src)
+add_subdirectory(src)
+
+if (matlab)
   add_subdirectory(matlab/@QPReactiveRecoveryPlan)
 endif()
 

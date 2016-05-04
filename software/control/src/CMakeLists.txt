@@ -9,37 +9,55 @@ pods_use_pkg_config_packages(SteeringCommandDriver lcm)
 add_executable(GamepadDriver GamepadPublisher.cpp Joystick.cpp GamepadDriver.cpp)
 pods_use_pkg_config_packages(GamepadDriver lcm)
 
-add_mex(RobotStateMonitor RobotStateMonitor.cpp)
-pods_use_pkg_config_packages(RobotStateMonitor eigen3 lcm)
+if(matlab)
+  add_mex(RobotStateMonitor RobotStateMonitor.cpp)
+  pods_use_pkg_config_packages(RobotStateMonitor eigen3 lcm)
 
-add_mex(AtlasCommandPublisher AtlasCommandPublisher.cpp)
-pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
+  add_mex(AtlasCommandPublisher AtlasCommandPublisher.cpp)
+  pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
-add_mex(footstepPlanShiftmex footstepPlanShiftmex.cpp)
-pods_use_pkg_config_packages(footstepPlanShiftmex eigen3 drake-control-util drake-rbm drake-mex-util)
+  add_mex(footstepPlanShiftmex footstepPlanShiftmex.cpp)
+  pods_use_pkg_config_packages(footstepPlanShiftmex eigen3 drake-control-util drake-rbm drake-mex-util)
 
-install(TARGETS RobotStateMonitor AtlasCommandPublisher footstepPlanShiftmex DESTINATION matlab)
+  install(TARGETS RobotStateMonitor AtlasCommandPublisher footstepPlanShiftmex DESTINATION matlab)
 
-add_mex(mxSerialize mxSerialize.cpp)
-add_mex(mxDeserialize mxDeserialize.cpp)
+  add_mex(mxSerialize mxSerialize.cpp)
+  add_mex(mxDeserialize mxDeserialize.cpp)
+
+  add_mex(constructRecoveryMexPointer constructRecoveryMexPointer.cpp)
+  pods_use_pkg_config_packages(constructRecoveryMexPointer drake-qp-common drake-mex-util drake-control-util)
+  target_link_libraries(constructRecoveryMexPointer QPReactiveRecoveryPlan drakeYAMLUtil)
+  install(TARGETS constructRecoveryMexPointer DESTINATION matlab)
+
+  if (mini-maps_FOUND AND opencv_FOUND)
+
+    add_mex(HeightMapWrapper HeightMapWrapper.cpp)
+    pods_use_pkg_config_packages(HeightMapWrapper terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
+    install(TARGETS HeightMapWrapper DESTINATION matlab)
+
+  endif()
+
+  add_mex(BotParamClient BotParamClient.cpp)
+  pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
+
+  add_mex(bot_timestamp_now bot_timestamp_now.cpp)
+  pods_use_pkg_config_packages(bot_timestamp_now bot2-core)
+
+  add_mex(bot_param_get_seqno bot_param_get_seqno.cpp)
+  pods_use_pkg_config_packages(bot_param_get_seqno bot2-param-client)
+
+  add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
+  pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
+
+  install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize BotParamClient DESTINATION matlab)
+
+endif()
 
 pods_find_pkg_config(mini-maps)
 pods_find_pkg_config(opencv)
 
-add_mex(BotParamClient BotParamClient.cpp)
-pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
-
-add_mex(bot_timestamp_now bot_timestamp_now.cpp)
-pods_use_pkg_config_packages(bot_timestamp_now bot2-core)
-
-add_mex(bot_param_get_seqno bot_param_get_seqno.cpp)
-pods_use_pkg_config_packages(bot_param_get_seqno bot2-param-client)
-
-add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
-pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
-
 add_library(AtlasCommandDriver SHARED AtlasCommandDriver.cpp)
-pods_use_pkg_config_packages(AtlasCommandDriver drake-qp-common)
+pods_use_pkg_config_packages(AtlasCommandDriver drake-qp-common eigen3)
 
 # NOTE: add_library can NOT be replaced by add_mex here, because executables link against it.
 # RobotStateDriver currently does need to include controlUtil.h from drake however, for a typedef.
@@ -67,11 +85,6 @@ pods_install_pkg_config_file(drc-qp-reactive-recovery
   REQUIRES
   VERSION 0.0.1)
 
-add_mex(constructRecoveryMexPointer constructRecoveryMexPointer.cpp)
-pods_use_pkg_config_packages(constructRecoveryMexPointer drake-qp-common drake-mex-util drake-control-util)
-target_link_libraries(constructRecoveryMexPointer QPReactiveRecoveryPlan drakeYAMLUtil)
-install(TARGETS constructRecoveryMexPointer DESTINATION matlab)
-
 find_package (Threads)
 add_executable(runDRCInstQP runDRCInstQP.cpp)
 pods_use_pkg_config_packages(runDRCInstQP drake-qp-common drake-control-util drake-side drake-rbm)
@@ -91,17 +104,8 @@ pods_install_executables(drc-atlas-fall-detector )
 
 add_subdirectory(contact-passthrough)
 
-install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize BotParamClient DESTINATION matlab)
 install(TARGETS RobotStateDriver AtlasCommandDriver FootContactDriver DESTINATION lib)
 
-
-if (mini-maps_FOUND AND opencv_FOUND)
-
-  add_mex(HeightMapWrapper HeightMapWrapper.cpp)
-  pods_use_pkg_config_packages(HeightMapWrapper terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
-  install(TARGETS HeightMapWrapper DESTINATION matlab)
-
-endif()
 
 pods_find_pkg_config(bullet)
 if (bullet_FOUND)
