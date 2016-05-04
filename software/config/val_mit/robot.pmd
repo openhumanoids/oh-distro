@@ -19,10 +19,20 @@ group "1.state_mit" {
     cmd "state-sync" {
         exec = "se-state-sync-simple";
         host = "base";
+    }
+
+    cmd "drc-state-sync-val" {
+        exec = "drc-state-sync-val";
+        host = "base";
     }    
 
     cmd "se-fusion" {
         exec = "se-fusion";
+        host = "base";
+    }
+
+    cmd "se-fusion no param server" {
+        exec = "se-fusion -P val_mit/robot.cfg -U val_description/urdf/valkyrie_sim.urdf";
         host = "base";
     }
 
