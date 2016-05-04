@@ -1,9 +1,9 @@
 sudo: required
 dist: trusty
-language:
-  - generic
+language: c++
 cache:
   - apt
+  - ccache
 virtualenv:
   system_site_packages: true
 git:
