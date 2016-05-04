@@ -61,13 +61,13 @@ group "2.plan_and_control" {
     }
 
     cmd "InstQP Val" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/control_config_hardware.yaml -lc ROBOT_COMMAND";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND";
         host = "base";
         stop_signal = 15;
     }
 
     cmd "InstQP Val Fixed Base" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/Valkyrie/config/control_config_hardware.yaml -lc ROBOT_COMMAND -fb";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -fb";
         host = "base";
         stop_signal = 15;
     }
