@@ -13,7 +13,7 @@ endif()
 # check whether matlab is present, else skip the control/matlab directory
 find_program(matlab matlab)
 if (NOT matlab)
-  message(WARNING "Matlab not found, skipping control")
+  message(WARNING "Matlab not found")
 else (matlab)
   message(STATUS "Matlab found, setting up MEX build")
   # set up matlab build
