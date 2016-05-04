@@ -563,6 +563,43 @@
       },
       "name": "valkyrie_wins",
       "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "pose we go into before standing",
+      "joints": {
+        "leftAnklePitch": -0.7827540040016174,
+        "leftAnkleRoll": -0.00032701282179914415,
+        "leftElbowPitch": -0.7853981852531433,
+        "leftForearmYaw": 1.5709999799728394,
+        "leftHipPitch": -0.6812708377838135,
+        "leftHipRoll": 0.00012920695007778704,
+        "leftHipYaw": 0.00036994999391026795,
+        "leftKneePitch": 1.471226692199707,
+        "leftShoulderPitch": 0.3001966178417206,
+        "leftShoulderRoll": -1.25,
+        "leftShoulderYaw": -1.734723475976807e-18,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightAnklePitch": -0.7827715873718262,
+        "rightAnkleRoll": 0.00013720555580221117,
+        "rightElbowPitch": 0.7853981852531433,
+        "rightForearmYaw": 1.5709999799728394,
+        "rightHipPitch": -0.681193470954895,
+        "rightHipRoll": -0.00015272961172740906,
+        "rightHipYaw": 0.0007757112034596503,
+        "rightKneePitch": 1.4712108373641968,
+        "rightShoulderPitch": 0.3001966178417206,
+        "rightShoulderRoll": 1.25,
+        "rightShoulderYaw": 0.0,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0,
+        "torsoPitch": 0.025005578994750977,
+        "torsoRoll": -0.0004019394109491259,
+        "torsoYaw": -0.00014099798863753676
+      },
+      "name": "stand prep",
+      "nominal_handedness": "none"
     }
   ],
   "Table Box Pick": [
