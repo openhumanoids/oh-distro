@@ -11,6 +11,7 @@ lcmtypes/cpp/
 lcmtypes/c/
 /software/drivers/atlas/AtlasRobotInterface_3.0.0/logs/
 software/config/drc_control_setup.m
+/catkin_ws/build/
 *.o
 *.so
 lqr_solution_cache.mat
