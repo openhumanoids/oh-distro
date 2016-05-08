@@ -21,9 +21,9 @@ group "1.state_mit" {
         host = "base";
     }
 
-    cmd "drc-state-sync-val" {
+    cmd "drc-state-sync-val on link02" {
         exec = "drc-state-sync-val";
-        host = "base";
+        host = "link02";
     }    
 
     cmd "se-fusion" {
@@ -34,6 +34,11 @@ group "1.state_mit" {
     cmd "se-fusion no param server" {
         exec = "se-fusion -P val_mit/robot.cfg -U val_description/urdf/valkyrie_sim.urdf";
         host = "base";
+    }
+
+    cmd "se-fusion no param server on link02" {
+        exec = "se-fusion -P val_mit/robot.cfg -U val_description/urdf/valkyrie_sim.urdf";
+        host = "link02";
     }
 
     cmd "contact-passthrough" {
@@ -69,6 +74,12 @@ group "2.plan_and_control" {
     cmd "InstQP Val Fixed Base" {
         exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -fb";
         host = "base";
+        stop_signal = 15;
+    }
+
+    cmd "InstQP Val Fixed Base On link02" {
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -fb";
+        host = "link02";
         stop_signal = 15;
     }
 
