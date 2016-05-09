@@ -38,23 +38,26 @@ def showUoeViconMarkers():
 	pd = segmentation.transformPolyData(d.getPolyData(), worldToPelvis)
 	obj = vis.updatePolyData(pd, 'nasa model', visible=True, color=[1,0,0])
 
+	#store points as vertical vectors
 	p = np.matrix([point1, point2, point3, point4]).transpose()
 	m = np.matrix([m1, m2, m3, m4]).transpose()
+
+	pointsNo = p.shape[1]
 
 	pMean = np.empty([3,1])
 	mMean = np.empty([3,1])
 
-	for row in range(4):
-		mMean += m[:, row]
-		pMean += p[:, row]
+	for col in range(pointsNo):
+		mMean += m[:, col]
+		pMean += p[:, col]
 
-	mMean /= 4.
-	pMean /= 4.
+	mMean /= pointsNo
+	pMean /= pointsNo
 
 	w = np.empty([3,3])
 
-	for row in range(4):
-		w = w + (p[:, row] - pMean) * (m[:, row] - mMean).transpose() 
+	for col in range(pointsNo):
+		w = w + (p[:, col] - pMean) * (m[:, col] - mMean).transpose() 
 
 	[u,s,vT] = np.linalg.svd(w)
 
@@ -63,17 +66,16 @@ def showUoeViconMarkers():
 
 	pelvisToVicon = vtk.vtkMatrix4x4()
 
-	for line in range(3):
-		for row in range(3):
-			pelvisToVicon.SetElement(line, row, r[line, row])
+	for row in range(3):
+		for col in range(3):
+			pelvisToVicon.SetElement(row, col, r[row, col])
 
-	for line in range(3):
-		pelvisToVicon.SetElement(line, 3, t[line, 0])
+	for row in range(3):
+		pelvisToVicon.SetElement(row, 3, t[row, 0])
 
 	vtkPelvisToVicon = vtk.vtkTransform()
 	vtkPelvisToVicon.SetMatrix(pelvisToVicon)
 
-	#markers relative to vicon pelvis frame
 	d2 = DebugData()
 	d2.addSphere(m1, radius=0.01)
 	d2.addSphere(m2, radius=0.01)
