@@ -25,12 +25,6 @@ def showUoeViconMarkers():
 	point3[0] += 0.0575
 	point4[0] += 0.0325
 
-	d2 = DebugData()
-	d2.addSphere(m1, radius=0.01)
-	d2.addSphere(m2, radius=0.01)
-	d2.addSphere(m3, radius=0.01)
-	d2.addSphere(m4, radius=0.01)
-
 	d = DebugData()
 	d.addSphere(point1, radius=0.01)
 	d.addSphere(point2, radius=0.01)
@@ -41,27 +35,8 @@ def showUoeViconMarkers():
 
 	worldToPelvis = transformUtils.copyFrame( robotStateModel.getLinkFrame( 'pelvis') )
 
-	# hand made alignment
-	pos = [-0.143, -0.002, 0.1065]
-	rpy = [0, -6.*np.pi/180.0, 1.0*np.pi/180.0]
-
-	quat = transformUtils.rollPitchYawToQuaternion(rpy)
-	viconToPelvis = transformUtils.transformFromPose(pos, quat)
-
-
 	pd = segmentation.transformPolyData(d.getPolyData(), worldToPelvis)
 	obj = vis.updatePolyData(pd, 'nasa model', visible=True, color=[1,0,0])
-
-
-
-	worldToVicon =  transformUtils.copyFrame(worldToPelvis)
-	worldToVicon.PreMultiply()
-	worldToVicon.Concatenate( viconToPelvis.GetLinearInverse() )
-
-	vis.showFrame(worldToVicon,'vicon markers frame')
-
-	pd2 = segmentation.transformPolyData(d2.getPolyData(), worldToVicon)
-	obj = vis.updatePolyData(pd2, 'vicon markers', visible=True, color=[0,1,0])
 
 	p = np.matrix([point1, point2, point3, point4]).transpose()
 	m = np.matrix([m1, m2, m3, m4]).transpose()
@@ -99,15 +74,17 @@ def showUoeViconMarkers():
 	vtkPelvisToVicon.SetMatrix(pelvisToVicon)
 
 	#markers relative to vicon pelvis frame
-	d3 = DebugData()
-	d3.addSphere(m1, radius=0.01)
-	d3.addSphere(m2, radius=0.01)
-	d3.addSphere(m3, radius=0.01)
-	d3.addSphere(m4, radius=0.01)
+	d2 = DebugData()
+	d2.addSphere(m1, radius=0.01)
+	d2.addSphere(m2, radius=0.01)
+	d2.addSphere(m3, radius=0.01)
+	d2.addSphere(m4, radius=0.01)
 
-	worldToViconClosed =  transformUtils.copyFrame(worldToPelvis)
-	worldToViconClosed.PreMultiply()
-	worldToViconClosed.Concatenate(vtkPelvisToVicon)
+	worldToVicon =  transformUtils.copyFrame(worldToPelvis)
+	worldToVicon.PreMultiply()
+	worldToVicon.Concatenate(vtkPelvisToVicon)
 
-	pd3 = segmentation.transformPolyData(d3.getPolyData(), worldToViconClosed)
-	obj = vis.updatePolyData(pd3, 'closed form solution', visible=True, color=[0,0,1])
+	pd2 = segmentation.transformPolyData(d2.getPolyData(), worldToVicon)
+	obj = vis.updatePolyData(pd2, 'closed form solution', visible=True, color=[0,0,1])
+
+	vis.showFrame(worldToVicon,'vicon markers frame')
