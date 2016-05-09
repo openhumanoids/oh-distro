@@ -30,7 +30,7 @@ group "2.vis" {
 
 
     cmd "director" {
-        exec = "director -c $DRC_BASE/software/config/husky/robot.cfg";
+        exec = "director -husky -c $DRC_BASE/software/config/husky/robot.cfg";
         host = "localhost";
     }
 }
