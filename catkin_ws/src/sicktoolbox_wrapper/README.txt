@@ -24,4 +24,9 @@ Initial/Defaults is 1141 points
 -	Scan Resolution: 0.1667 (deg)
 -	Scan Area: [-5,185]
 
+
+required packages:
+apt-get install build-essential libtool autoconf
+
+
 mfallon may 2016
