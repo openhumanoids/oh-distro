@@ -6,3 +6,6 @@ ipwebcam
 robotiqhand
 irobothand
 openni
+
+# disabled currently
+#sicklms5xx
