@@ -29,7 +29,7 @@ catkin_package(
 
 set(TARGETS
     ros2lcm_sick
-    sicklms5xx-app
+#    sicklms5xx-app
 )
 
 include_directories(
@@ -37,16 +37,17 @@ include_directories(
 )
 
 
+## Driver (publishes ROS)
+#add_executable(sicklms5xx-app src/sicklms5xx.cpp)
+#target_link_libraries(sicklms5xx-app ${catkin_LIBRARIES} sicklms5xx)
+#pods_use_pkg_config_packages(sicklms5xx-app eigen3)
+
+
 ## Simple Translator:
 add_executable(ros2lcm_sick src/ros2lcm_sick.cpp)
 target_link_libraries(ros2lcm_sick ${catkin_LIBRARIES})
 #add_dependencies(ros2lcm_sick)
-pods_use_pkg_config_packages(ros2lcm_sick  eigen3 lcm)
-
-## Driver (publishes ROS)
-add_executable(sicklms5xx-app src/sicklms5xx.cpp)
-target_link_libraries(sicklms5xx-app ${catkin_LIBRARIES} sicklms5xx)
-pods_use_pkg_config_packages(sicklms5xx-app eigen3  bot2-core)
+pods_use_pkg_config_packages(ros2lcm_sick  eigen3 lcm  bot2-core)
 
 #############
 ## Install ##
