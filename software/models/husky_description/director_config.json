@@ -47,6 +47,6 @@
   "handCombinations": [
   ],
 
-  "userConfig" : ["useKuka","fixedBaseArm"]
-
+  "userConfig" : ["fixedBaseArm"],
+  "disableComponents" : ["usePlanning"]
 }
