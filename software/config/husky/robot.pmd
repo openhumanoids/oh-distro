@@ -18,8 +18,8 @@ group "1.vision_navigation" {
         exec = "se-simple-vo  -p";
         host = "localhost";
     }
-    cmd "se-delay" {
-        exec = "director -husky -c $DRC_BASE/software/config/husky/robot.cfg";
+    cmd "se-ers-delay" {
+        exec = "se-ers-delay";
         host = "localhost";
     }
 }
