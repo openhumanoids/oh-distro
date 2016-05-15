@@ -18,6 +18,10 @@ group "1.vision_navigation" {
         exec = "se-simple-vo  -p";
         host = "localhost";
     }
+    cmd "se-ers-delay" {
+        exec = "se-ers-delay";
+        host = "localhost";
+    }
 }
 
 
