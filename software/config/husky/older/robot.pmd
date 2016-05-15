@@ -3,13 +3,10 @@ group "0.params_and_model_pub" {
         exec = "bot-param-server $DRC_BASE/software/config/husky/robot.cfg";
         host = "localhost";
     }
-    cmd "model" {
-        exec = "robot_model_publisher $DRC_BASE/software/models/husky_description/model.urdf";
-        host = "localhost";
-    }
+
 }
 
-group "1.vision_navigation" {
+group "1.navigation" {
     cmd "fusion" {
         exec = "se-simple-fusion -p POSE_BODY";
         host = "localhost";
@@ -18,22 +15,19 @@ group "1.vision_navigation" {
         exec = "se-simple-vo  -p";
         host = "localhost";
     }
-    cmd "se-ers-delay" {
-        exec = "se-ers-delay";
-        host = "localhost";
-    }
 }
 
 
 group "2.vis" {
-    cmd "pronto-viewer" {
-        exec = "pronto-viewer -c husky/robot.cfg";
+    cmd "drc-viewer" {
+        exec = "drc-viewer";
         host = "localhost";
     }
     cmd "glview" {
         exec = "multisense-glview";
         host = "localhost";
     }
+
 
     cmd "director" {
         exec = "director -husky -c $DRC_BASE/software/config/husky/robot.cfg";
@@ -44,7 +38,7 @@ group "2.vis" {
 
 group "3.rosbag" {
     cmd "rosbag" {
-        exec = "rosbag play /home/mfallon/logs/husky/2016-05-11-outdoors-with-georgi-tony/2016-05-11-11-06-03.bag";
+        exec = "rosbag play /home/mfallon/logs/husky/2015-04-15-around-forum/2015-04-15-11-49-34.bag";
         host = "localhost";
     }
 
@@ -53,16 +47,10 @@ group "3.rosbag" {
         host = "localhost";
     }
 
-    cmd "translator_ms" {
+    cmd "bridge" {
         exec = "roslaunch oh_translators multisense_bridge.launch";
         host = "localhost";
     }
-
-    cmd "translator_husky" {
-        exec = "rosrun oh_translators ros2lcm_husky";
-        host = "localhost";
-    }
-
     cmd "rviz" {
         exec = "rosrun rviz rviz";
         host = "localhost";
@@ -72,7 +60,7 @@ group "3.rosbag" {
 
 group "4.lcmlog" {
     cmd "lcm-log" {
-        exec = "lcm-logplayer-gui /home/mfallon/logs/husky/2016-05-11-outdoors-with-georgi-tony/2016-05-11-11-06-03.lcmlog";
+        exec = "lcm-logplayer-gui /home/mfallon/logs/husky/2015-04-15-around-forum/2015-04-15-11-49-34-quick.lcmlog ";
         host = "localhost";
     }
 }

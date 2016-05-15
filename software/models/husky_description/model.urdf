@@ -53,6 +53,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </geometry>
     </collision>
   </link>
+  <!-- For conviencence, added by mfallon -->
+  <link name="pelvis"/>
+  <joint name="pelvis_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="pelvis"/>
+  </joint>
   <!-- Base footprint is on the ground under the robot -->
   <link name="base_footprint"/>
   <joint name="base_footprint_joint" type="fixed">

@@ -26,8 +26,8 @@ group "01.state_mit" {
         exec = "se-fusion -v";
         host = "atlas2";
     }
-    cmd "yaw-lock" {
-        exec = "se-yaw-lock -yd";
+    cmd "yawlock" {
+        exec = "se-yawlock -yd";
         host = "atlas2";
     }
     cmd "contact-passthrough" {
