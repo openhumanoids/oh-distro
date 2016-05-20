@@ -1,0 +1,14 @@
+package drc;
+
+// Causes a transition in the LCM2ROSControl process that drives Val
+
+struct behavior_transition_t
+{
+	int64_t utime;
+	int32_t behavior;
+	double transition_duration_s;
+
+	const int32_t FREEZE=0;
+	const int32_t POSITION_CONTROL=1;
+	const int32_t NORMAL=2;
+}
