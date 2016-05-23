@@ -31,19 +31,19 @@ addPlot(timeWindow=15, yLimits=[-180, 180])
 #addSignalFunction('EST_ROBOT_STATE', pitchFunction)
 #addSignalFunction('EST_ROBOT_STATE', yawFunction)
 
-addSignalFunction('VAL_IMU_pelvisRearImu', rollFunctionSimple)
-addSignalFunction('VAL_IMU_pelvisRearImu', pitchFunctionSimple)
-addSignalFunction('VAL_IMU_pelvisRearImu', yawFunctionSimple)
+addSignalFunction('IMU_pelvisRearImu', rollFunctionSimple)
+addSignalFunction('IMU_pelvisRearImu', pitchFunctionSimple)
+addSignalFunction('IMU_pelvisRearImu', yawFunctionSimple)
 
 addPlot(timeWindow=15, yLimits=[-1, 1])
-addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.gyro[0])
-addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.gyro[1])
-addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.gyro[2])
+addSignal('IMU_pelvisRearImu', msg.utime, msg.gyro[0])
+addSignal('IMU_pelvisRearImu', msg.utime, msg.gyro[1])
+addSignal('IMU_pelvisRearImu', msg.utime, msg.gyro[2])
 
 addPlot(timeWindow=15, yLimits=[-1, 1])
-addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.accel[0])
-addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.accel[1])
-addSignal('VAL_IMU_pelvisRearImu', msg.utime, msg.accel[2])
+addSignal('IMU_pelvisRearImu', msg.utime, msg.accel[0])
+addSignal('IMU_pelvisRearImu', msg.utime, msg.accel[1])
+addSignal('IMU_pelvisRearImu', msg.utime, msg.accel[2])
 
 
 
