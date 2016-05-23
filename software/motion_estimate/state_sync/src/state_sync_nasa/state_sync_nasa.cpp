@@ -220,6 +220,12 @@ void state_sync_nasa::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std:
   pose_pronto_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
   pose_pronto_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
 
+
+  // pin the floating base if we set that option
+  if(cl_cfg_->pin_floating_base){
+    pose_pronto_.pos = Eigen::Vector3d(0,0,1);
+  }
+
   // If State sync has received POSE_BDI and POSE_BODY, we must be running our own estimator
   // So there will be a difference between these, so publish this for things like walking footstep transformations
   // TODO: rate limit this to something like 10Hz
@@ -380,6 +386,7 @@ main(int argc, char ** argv){
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(cl_cfg->use_ihmc, "i", "use_ihmc","Use the IHMC estimate of the body frame in ERS");
+  opt.add(cl_cfg->pin_floating_base, "pinned", "pinned_floating_base", "pin floating base position");
   opt.parse();
 
   std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
