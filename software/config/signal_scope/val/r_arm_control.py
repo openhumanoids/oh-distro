@@ -23,7 +23,7 @@ RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 RGB_tuples_dark = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_dark)
 RGB_tuples_v3 = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_v3)
 
-timeWindow = 2
+timeWindow = 5
 
 # position plot
 addPlot(timeWindow=timeWindow, yLimits=[-1.5, 1.5])
