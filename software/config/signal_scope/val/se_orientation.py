@@ -20,14 +20,17 @@ def yawFunctionPose(msg):
 addPlot(timeWindow=15, yLimits=[-180, 180])
 addSignalFunction('POSE_BODY', rollFunctionPose)
 addSignalFunction('POSE_BODY_ALT', rollFunctionPose)
+addSignalFunction('POSE_VICON', rollFunctionPose)
 
 addPlot(timeWindow=15, yLimits=[-180, 180])
 addSignalFunction('POSE_BODY', pitchFunctionPose)
 addSignalFunction('POSE_BODY_ALT', pitchFunctionPose)
+addSignalFunction('POSE_VICON', pitchFunctionPose)
 
 addPlot(timeWindow=15, yLimits=[-180, 180])
 addSignalFunction('POSE_BODY', yawFunctionPose)
 addSignalFunction('POSE_BODY_ALT', yawFunctionPose)
+addSignalFunction('POSE_VICON', yawFunctionPose)
 
 addPlot(timeWindow=15, yLimits=[-180, 180])
 addSignal('POSE_BODY', msg.utime, msg.pos[0])
