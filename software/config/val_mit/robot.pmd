@@ -16,13 +16,14 @@ group "1.state_mit" {
         host = "base";
     }
 
-    cmd "state-sync" {
-        exec = "se-state-sync-simple";
-        host = "base";
-    }
 
     cmd "drc-state-sync-val on link02" {
         exec = "drc-state-sync-val";
+        host = "link02";
+    }
+
+    cmd "drc-state-sync-val (pinned) on link02" {
+        exec = "drc-state-sync-val -pinned";
         host = "link02";
     }    
 
