@@ -8,9 +8,11 @@
 #include "drc/controller_status_t.hpp"
 #include "drc/recovery_trigger_t.hpp"
 #include "bot_core/robot_state_t.hpp"
+#include "bot_core/quaternion_t.hpp"
 #include "drc/behavior_command_t.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include "drake/systems/controllers/QPCommon.h"
+#include "drake/util/drakeGeometryUtil.h"
 #include "RobotStateDriver.hpp"
 #include "AtlasCommandDriver.hpp"
 #include "FootContactDriver.hpp"
@@ -27,6 +29,7 @@ struct ThreadedControllerOptions {
   std::string robot_behavior_channel;
   int max_infocount; // If we see info < 0 more than max_infocount times, freeze Atlas. Set to -1 to disable freezing.
   bool publishControllerState;
+  bool fixedBase = false;
 };
 
 std::atomic<bool> done(false);
@@ -36,6 +39,7 @@ std::atomic<bool> newStateAvailable(false);
 
 std::mutex pointerMutex;
 
+std::shared_ptr<bot_core::robot_state_t> robot_state_msg;
 std::shared_ptr<RobotStateDriver> state_driver;
 std::shared_ptr<AtlasCommandDriver> command_driver;
 std::shared_ptr<FootContactDriver> foot_contact_driver;
@@ -232,9 +236,13 @@ public:
 
     state_driver->decode(msg, state.get());
 
+    std::shared_ptr<bot_core::robot_state_t> msgCopy(new bot_core::robot_state_t);
+    *msgCopy = *msg; // copy over contents of msg to new shared_ptr
+
     // std::cout << "decoded robot state " << state->t << std::endl;
 
     pointerMutex.lock();
+    robot_state_msg = msgCopy;
     solveArgs.robot_state = state;
 
     const bot_core::force_torque_t& force_torque = msg->force_torque;
@@ -374,6 +382,10 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
   QPControllerOutput qp_output;
   done = false;
 
+  // original gravity vector
+  Eigen::Matrix<double, TWIST_SIZE, 1> a_grav;
+  a_grav << 0, 0, 0, 0, 0, -9.81;
+
   while (!done) {
 
     //std::cout << "waiting for new data... " << std::this_thread::get_id() << std::endl;
@@ -391,10 +403,29 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
     std::shared_ptr <drake::lcmt_qp_controller_input> qp_input = solveArgs.qp_input;
     b_contact_force = solveArgs.b_contact_force;
     std::map <Side, ForceTorqueMeasurement> foot_force_torque_measurements = solveArgs.foot_force_torque_measurements;
+    std::shared_ptr<bot_core::robot_state_t> state_msg = robot_state_msg;
     pointerMutex.unlock();
 
     // newInputAvailable = false;
     newStateAvailable = false;
+
+    //change the direction of the gravity
+    if(ctrl_opts->fixedBase){
+      // adjust the gravity vector!!!!
+      Vector3d grav(0,0,-9.81);
+      bot_core::quaternion_t quatMsg = state_msg->pose.rotation;
+      Vector4d quat(quatMsg.w, quatMsg.x, quatMsg.y, quatMsg.z);
+      Vector3d transformedGrav = quatRotateVec(quat,grav);
+      a_grav.tail(3) = transformedGrav;
+
+      // apply this transformed gravity to the RigidBodyTree
+      solveArgs.pdata->robot->a_grav = a_grav;
+
+      // debugging print statements
+//      std::cout << "gravity vector " << transformedGrav << std::endl;
+//      std::cout << "a_grav " << solveArgs.pdata->robot->a_grav.tail(3) << std::endl;
+
+    }
 
     // std::cout << "calling solve " << std::endl;
 

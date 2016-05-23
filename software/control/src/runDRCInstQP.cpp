@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
   ctrl_opts->robot_behavior_channel = behavior_channel;
   ctrl_opts->max_infocount = max_infocount;
   ctrl_opts->publishControllerState = publishControllerState;
+  ctrl_opts->fixedBase = fixedBase;
   if (ctrl_opts->atlas_command_channel.size() == 0) {
     throw std::runtime_error("Atlas command channel cannot be empty");
   }
