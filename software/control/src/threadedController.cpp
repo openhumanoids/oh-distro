@@ -428,7 +428,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
     newStateAvailable = false;
 
     //change the direction of the gravity
-    if(false){
+    if(ctrl_opts->fixedBase){
       // adjust the gravity vector!!!!
       Vector3d grav(0,0,-9.81);
       bot_core::quaternion_t quatMsg = state_msg->pose.rotation;
@@ -438,11 +438,6 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
 
       // apply this transformed gravity to the RigidBodyTree
       solveArgs.pdata->robot->a_grav = a_grav;
-
-      // debugging print statements
-      std::cout << "gravity vector " << transformedGrav << std::endl;
-//      std::cout << "a_grav " << solveArgs.pdata->robot->a_grav.tail(3) << std::endl;
-
     }
 
     // std::cout << "calling solve " << std::endl;
