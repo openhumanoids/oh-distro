@@ -432,8 +432,9 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
       // adjust the gravity vector!!!!
       Vector3d grav(0,0,-9.81);
       bot_core::quaternion_t quatMsg = state_msg->pose.rotation;
-      Vector4d quat(quatMsg.w, quatMsg.x, quatMsg.y, quatMsg.z);
-      Vector3d transformedGrav = quatRotateVec(quat,grav);
+      Vector4d robotToWorldQuat(quatMsg.w, quatMsg.x, quatMsg.y, quatMsg.z);
+      Vector4d worldToRobotQuat = quatConjugate(robotToWorldQuat);
+      Vector3d transformedGrav = quatRotateVec(worldToRobotQuat,grav);
       a_grav.tail(3) = transformedGrav;
 
       // apply this transformed gravity to the RigidBodyTree
