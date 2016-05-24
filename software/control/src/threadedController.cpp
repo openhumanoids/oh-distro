@@ -357,6 +357,24 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   return msg;
 }
 
+bot_core::robot_state_t encodeControllerQDes(double t, int num_joints, const QPControllerOutput &qp_output){
+  bot_core::robot_state_t msg;
+  msg.utime = (long)(t*1000000);
+  msg.num_joints = num_joints;
+  msg.joint_name.resize(num_joints);
+  msg.joint_position.resize(num_joints);
+  msg.joint_velocity.resize(num_joints);
+  msg.joint_effort.resize(num_joints);
+
+  for(int i = 0; i < num_joints; i++){
+    msg.joint_position[i] = qp_output.q_des(i);
+    msg.joint_velocity[i] = qp_output.qdot_des(i);
+    msg.joint_name[i] = state_coordinate_names_shared[i];
+  }
+
+  return msg;
+}
+
 void getDrakeInputToRobotStateIndexMap(const std::vector<std::string> &input_joint_names, const std::vector<std::string> & state_coordinate_names,
                                        VectorXd & drake_input_to_robot_state) {
   int num_inputs = input_joint_names.size();
@@ -492,6 +510,9 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
         drc::controller_state_t controller_state_msg = encodeControllerState(robot_state->t, num_joints,
                                                                              qp_output);
         lcmHandler.LCMHandle->publish(CONTROLLER_STATE_CHANNEL, &controller_state_msg);
+
+        bot_core::robot_state_t controller_qdes_msg = encodeControllerQDes(robot_state->t, num_joints, qp_output);
+        lcmHandler.LCMHandle->publish("CONTROLLER_Q_DES", &controller_qdes_msg);
       }
     }
   }
