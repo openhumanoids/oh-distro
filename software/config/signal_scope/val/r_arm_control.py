@@ -4,7 +4,7 @@ import colorsys
 
 # joints to plot
 joints = ["rightHipYaw", "rightHipRoll", "rightHipPitch", "rightKneePitch", "rightAnklePitch", "rightAnkleRoll"]
-joints = ['rightShoulderRoll']
+joints = ['rightShoulderPitch']
 
 # string arrays for EST_ROBOT_STATE and ATLAS_COMMAND
 jn = msg.joint_name
@@ -31,18 +31,21 @@ addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=
 # addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
 addSignals('ROBOT_COMMAND', msg.utime, msg.position, joints, keyLookup=jns)
 addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_v3)
-addSignal('QP_CONTROLLER_INPUT', msg.timestamp, msg.whole_body_data.q_des[7])
+addSignals('CONTROLLER_Q_DES', msg.utime, msg.joint_position, joints, keyLookup=jn)
+# addSignal('QP_CONTROLLER_INPUT', msg.timestamp, msg.whole_body_data.q_des[7])
 
 # velocity plot
 addPlot(timeWindow=timeWindow, yLimits=[-1.5, 1.5])
 addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples)
 # addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_dark)
 addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_v3)
+addSignals('CONTROLLER_Q_DES', msg.utime, msg.joint_velocity, joints, keyLookup=jn)
 
 # effort plot
 addPlot(timeWindow=timeWindow, yLimits=[-40, 40])
-addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples)
-addSignals('LCM2ROSCONTROL_lcm_torque', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
+# addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples)
+# addSignals('LCM2ROSCONTROL_lcm_torque', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
 # addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_dark)
 addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_v3)
 addSignals('ROBOT_COMMAND', msg.utime, msg.effort, joints, keyLookup=jns)
+addSignals('ROBOT_COMMAND_LOG', msg.utime, msg.effort, joints, keyLookup=jns)
