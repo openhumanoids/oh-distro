@@ -4,7 +4,6 @@
 #include <atomic>
 #include <sys/select.h>
 #include "drake/lcmt_qp_controller_input.hpp"
-#include "drake/lcmt_qp_controller_input_new.hpp"
 #include "drc/controller_state_t.hpp"
 #include "drc/controller_status_t.hpp"
 #include "drc/recovery_trigger_t.hpp"
@@ -54,7 +53,7 @@ public:
   InstantaneousQPController *pdata;
 
   std::shared_ptr<DrakeRobotState> robot_state;
-  std::shared_ptr<drake::lcmt_qp_controller_input_new> qp_input;
+  std::shared_ptr<drake::lcmt_qp_controller_input> qp_input;
   std::shared_ptr<QPControllerOutput> qp_output;
 
   Matrix<bool, Dynamic, 1> b_contact_force;
@@ -210,11 +209,11 @@ public:
     sub->setQueueCapacity(1);
   }
 
-  void inputHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_qp_controller_input_new* msg)
+  void inputHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_qp_controller_input* msg)
   {
     //std::cout << "received qp_input on lcm thread " << std::this_thread::get_id() << std::endl;
 
-    std::shared_ptr<drake::lcmt_qp_controller_input_new> msgCopy(new drake::lcmt_qp_controller_input_new);
+    std::shared_ptr<drake::lcmt_qp_controller_input> msgCopy(new drake::lcmt_qp_controller_input);
     *msgCopy = *msg;
 
     // std::cout << "got input msg with param set name: " << msgCopy->param_set_name << std::endl;
@@ -419,7 +418,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
     // copy pointers
     pointerMutex.lock();
     std::shared_ptr <DrakeRobotState> robot_state = solveArgs.robot_state;
-    std::shared_ptr <drake::lcmt_qp_controller_input_new> qp_input = solveArgs.qp_input;
+    std::shared_ptr <drake::lcmt_qp_controller_input> qp_input = solveArgs.qp_input;
     b_contact_force = solveArgs.b_contact_force;
     std::map <Side, ForceTorqueMeasurement> foot_force_torque_measurements = solveArgs.foot_force_torque_measurements;
     std::shared_ptr<bot_core::robot_state_t> state_msg = robot_state_msg;
