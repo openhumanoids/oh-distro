@@ -25,17 +25,17 @@ RGB_tuples_v3 = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_v3)
 # position plot
 addPlot(timeWindow=15, yLimits=[-1.5, 1.5])
 addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples)
-#addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
+#addSignals('IHMC_CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
 addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jns, colors=RGB_tuples_v3)
 
 # velocity plot
 addPlot(timeWindow=15, yLimits=[-1.5, 1.5])
 addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples)
-#addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_dark)
+#addSignals('IHMC_CORE_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_dark)
 addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jns, colors=RGB_tuples_v3)
 
 # effort plot
 addPlot(timeWindow=15, yLimits=[-150, 150])
 addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples)
-#addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_dark)
+#addSignals('IHMC_CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_dark)
 addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jns, colors=RGB_tuples_v3)
