@@ -418,7 +418,7 @@
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
     </visual>
-    <collision>
+    <collision group="right_hand">
       <geometry>
         <mesh filename="package://val_description/model/meshes/arms/palm_right.dae"/>
       </geometry>
@@ -1006,7 +1006,7 @@
       </geometry>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
     </visual>
-    <collision>
+    <collision group="left_hand">
       <geometry>
         <mesh filename="package://val_description/model/meshes/arms/palm_left.dae"/>
       </geometry>

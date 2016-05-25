@@ -134,6 +134,7 @@ set(java_src_files
   AtlasStateExtraCoder.java
   HandStateListener.java
   LCMGLLineBuffer.java
+	ValkyrieCommandCoder.java
   ViconBodyPointCoder.java
   )
 

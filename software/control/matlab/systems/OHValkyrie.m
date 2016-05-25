@@ -6,7 +6,7 @@ classdef OHValkyrie < Valkyrie
         options = struct();
       end
       options = applyDefaults(options,...
-                              struct('valkyrie_version', 1,...
+                              struct('valkyrie_version', 2,...
                                      'use_new_kinsol', true));
 
       if ~any(options.valkyrie_version == [1,2])
@@ -34,6 +34,13 @@ classdef OHValkyrie < Valkyrie
 
       obj = obj@Valkyrie(urdf, options);
 
+      obj.r_foot_name = 'rightFoot+rightCOP_Frame';
+			obj.l_foot_name = 'leftFoot+leftCOP_Frame';
+			obj.pelvis_name = 'pelvis+pelvisMiddleImu_Frame+pelvisRearImu_Frame';
+
+			obj.control_config_file = fullfile(getenv('DRC_PATH'), '/drake/drake/examples/Valkyrie/config/control_config_sim_oh.yaml');
+			obj.fixed_point_file = fullfile(getenv('DRC_PATH'), '/control/matlab/data/val_description/valkyrie_fp_gizatt_apr2016.mat');
+			obj.bracing_config_file = fullfile(getenv('DRC_PATH'), '/control/matlab/data/val_description/valkyrie_fp_gizatt_apr2016.mat');
       warning(S);
     end
 
@@ -48,7 +55,13 @@ classdef OHValkyrie < Valkyrie
 
       % input_frame = OHValkyrieInput(obj);
       % obj = obj.setInputFrame(input_frame);
+			input_frame = drcFrames.ValkyrieInput(obj);
+			obj = obj.setInputFrame(input_frame);
     end
   end
+
+	properties
+		bracing_config_file;
+	end
 end
 
