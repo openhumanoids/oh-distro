@@ -122,7 +122,7 @@ group "6.streaming"{
         host = "base";
     }
 
-    cmd "base" {
+    cmd "base streaming" {
         exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --base";
         host = "base";
     }
@@ -173,4 +173,16 @@ script "go" {
     start cmd "PlanEval";
     start cmd "InstQP Val";
     start cmd "director";
+}
+
+script "streaming" {
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "drc-state-sync-val (pinned) on link02";
+    start cmd "se-fusion no param server on link02";
+    wait ms 1000;
+    start cmd "InstQP Val Fixed Base On link02";
+    start cmd "base streaming";
+    start cmd "robot streaming with controller fixed base force control";
 }

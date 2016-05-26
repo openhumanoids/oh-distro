@@ -21,12 +21,12 @@ group "1.state_mit" {
         host = "localhost";
     }
 
-    cmd "drc-state-sync-val on link02" {
+    cmd "drc-state-sync-val" {
         exec = "drc-state-sync-val";
         host = "localhost";
     }
 
-    cmd "drc-state-sync-val pinned" {
+    cmd "drc-state-sync-val (pinned)" {
         exec = "drc-state-sync-val -pinned";
         host = "localhost";
     }       
@@ -37,11 +37,6 @@ group "1.state_mit" {
     }
 
     cmd "se-fusion no param server" {
-        exec = "se-fusion -P val_mit/robot.cfg -U val_description/urdf/valkyrie_sim.urdf";
-        host = "localhost";
-    }
-
-    cmd "se-fusion no param server on link02" {
         exec = "se-fusion -P val_mit/robot.cfg -U val_description/urdf/valkyrie_sim.urdf";
         host = "localhost";
     }
@@ -120,7 +115,7 @@ group "6.streaming"{
         host = "localhost";
     }
 
-    cmd "base side" {
+    cmd "base streaming" {
         exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --base";
         host = "localhost";
     }
@@ -171,4 +166,16 @@ script "go" {
     start cmd "PlanEval";
     start cmd "InstQP Val";
     start cmd "director";
+}
+
+script "streaming" {
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "drc-state-sync-val (pinned)";
+    start cmd "se-fusion no param server";
+    wait ms 1000;
+    start cmd "InstQP Val Fixed Base";
+    start cmd "base streaming";
+    start cmd "robot streaming with controller fixed base force control";
 }
