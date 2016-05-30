@@ -1,0 +1,4 @@
+#!/bin/bash
+
+director --startup $DRC_BASE/software/modules/mitdirector/src/runstartup.py
+
