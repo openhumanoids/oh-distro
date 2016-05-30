@@ -113,22 +113,22 @@ group "5.maps" {
 group "6.streaming"{
 
     cmd "robot streaming no controller" {
-        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --robot";
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robot";
         host = "base";
     }
 
     cmd "robot streaming with controller" {
-        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --robotWithController";
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController";
         host = "base";
     }
 
     cmd "base streaming" {
-        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --base";
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --base";
         host = "base";
     }
 
     cmd "robot streaming with controller fixed base force control" {
-        exec = "directorPython ${DRC_BASE}/software/director/src/python/tests/testAtlasCommand.py --robotWithController --fixedBase --forceControl"; 
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController --fixedBase --forceControl"; 
         host = "base";
     }
 }
