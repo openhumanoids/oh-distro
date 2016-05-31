@@ -39,6 +39,7 @@ class CommandLineConfig{
       // Read from command line:
       output_channel = "EST_ROBOT_STATE";
       use_ihmc = false;
+      pin_floating_base = false;
 
       // Defaults - not read from command line:
       use_torque_adjustment = false;
@@ -49,6 +50,7 @@ class CommandLineConfig{
     std::string output_channel;
     bool use_ihmc;
     bool use_torque_adjustment;
+    bool pin_floating_base;
 
 };
 
