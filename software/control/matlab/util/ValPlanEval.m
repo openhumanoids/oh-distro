@@ -51,7 +51,7 @@ classdef ValPlanEval < bipedControllers.BipedPlanEval
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.atlas_state_coder = r.getStateFrame().lcmcoder;
-      obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
+      %obj.reactive_recovery_planner = QPReactiveRecoveryPlan(r);
       obj.bracing_plan = BracingPlan(obj.robot);
 
       obj = obj.addLCMInterface('foot_contact', 'FOOT_CONTACT_ESTIMATE', @drc.foot_contact_estimate_t, 0, @obj.handle_foot_contact);

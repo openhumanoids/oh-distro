@@ -334,24 +334,24 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   // std::cout << "size of qp_output.qdd is " << qp_output.qdd.size() << std::endl;
   // std::cout << "size of state coordinate names are" << solveArgs.pdata->state_coordinate_names.size() << std::endl;
 
-  const QPControllerState& controller_state = solveArgs.pdata->getControllerState();
+  // const QPControllerState& controller_state = solveArgs.pdata->getControllerState();
 
-  for(int i=0; i<num_joints; i++){
-    msg.q_integrator_state[i] = controller_state.q_integrator_state(i);
-    msg.vref_integrator_state[i] = qp_output.qd_ref(i);
-    msg.q_ref[i] = qp_output.q_ref(i);
-    msg.qd_ref[i] = qp_output.qd_ref(i);
-    msg.qdd[i] = qp_output.qdd(i);
-    msg.joint_name[i] = state_coordinate_names_shared[i];
-  }
+  // for(int i=0; i<num_joints; i++){
+  //   msg.q_integrator_state[i] = controller_state.q_integrator_state(i);
+  //   msg.vref_integrator_state[i] = qp_output.qd_ref(i);
+  //   msg.q_ref[i] = qp_output.q_ref(i);
+  //   msg.qd_ref[i] = qp_output.qd_ref(i);
+  //   msg.qdd[i] = qp_output.qdd(i);
+  //   msg.joint_name[i] = state_coordinate_names_shared[i];
+  // }
 
-  //Inputs are in a different order, need to deal with that
-  int num_inputs = drake_input_to_robot_state.size();
-  int robot_state_idx;
-  for( int i=0; i<num_inputs; i++){
-    robot_state_idx = drake_input_to_robot_state[i];
-    msg.u[robot_state_idx] = qp_output.u(i);
-  }
+  // //Inputs are in a different order, need to deal with that
+  // int num_inputs = drake_input_to_robot_state.size();
+  // int robot_state_idx;
+  // for( int i=0; i<num_inputs; i++){
+  //   robot_state_idx = drake_input_to_robot_state[i];
+  //   msg.u[robot_state_idx] = qp_output.u(i);
+  // }
 
   return msg;
 }
