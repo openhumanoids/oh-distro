@@ -600,6 +600,43 @@
       },
       "name": "stand prep",
       "nominal_handedness": "none"
+    },
+    {
+      "allow_mirror": true,
+      "description": "whole body nominal",
+      "joints": {
+        "leftAnklePitch": -0.706993873878413,
+        "leftAnkleRoll": 0.006856783659413139,
+        "leftElbowPitch": -1.57,
+        "leftForearmYaw": 1.57,
+        "leftHipPitch": -0.5432206767575375,
+        "leftHipRoll": -0.009979479768896399,
+        "leftHipYaw": 0.0,
+        "leftKneePitch": 1.2194939777453628,
+        "leftShoulderPitch": 0.0,
+        "leftShoulderRoll": -1.0,
+        "leftShoulderYaw": 0.5,
+        "leftWristPitch": 0.0,
+        "leftWristRoll": 0.0,
+        "rightAnklePitch": -0.706993873878413,
+        "rightAnkleRoll": -0.006856783659413139,
+        "rightElbowPitch": 1.57,
+        "rightForearmYaw": 1.57,
+        "rightHipPitch": -0.5432206767575375,
+        "rightHipRoll": 0.009979479768896399,
+        "rightHipYaw": 0.0,
+        "rightKneePitch": 1.2194939777453628,
+        "rightShoulderPitch": 0.0,
+        "rightShoulderRoll": 1.0,
+        "rightShoulderYaw": 0.5,
+        "rightWristPitch": 0.0,
+        "rightWristRoll": 0.0,
+        "torsoPitch": 0.0,
+        "torsoRoll": 0.0,
+        "torsoYaw": 0.0
+      },
+      "name": "whole body nominal",
+      "nominal_handedness": "none"
     }
   ],
   "Table Box Pick": [

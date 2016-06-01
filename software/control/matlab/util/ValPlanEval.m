@@ -117,7 +117,8 @@ classdef ValPlanEval < bipedControllers.BipedPlanEval
       obj.recovery_state = obj.RECOVERY_NONE;
       obj.last_plan_msg_utime = msg.utime;
       new_plan = DRCQPLocomotionPlan.from_qp_locomotion_plan_t(msg, obj.robot);
-      obj.switchToPlan(QPLocomotionPlanCPPWrapper(obj.smoothPlanTransition(new_plan)));
+      % obj.switchToPlan(QPLocomotionPlanCPPWrapper(obj.smoothPlanTransition(new_plan)));
+      obj.switchToPlan(QPLocomotionPlanCPPWrapper(new_plan));
     end
 
     function handle_bracing_plan(obj, msg)
@@ -191,6 +192,7 @@ classdef ValPlanEval < bipedControllers.BipedPlanEval
       obj.sendStatus()
     end
 
+    % needs to be updated to deal with new qp_input msg type
     function new_plan = smoothPlanTransition(obj, new_plan)
       % Make the transition to the new plan as smooth as possible
 

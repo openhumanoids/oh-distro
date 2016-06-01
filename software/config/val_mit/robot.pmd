@@ -16,6 +16,10 @@ group "1.state_mit" {
         host = "base";
     }
 
+    cmd "drc-state-sync-val on link02" {
+        exec = "drc-state-sync-val";
+        host = "base";
+    }
 
     cmd "drc-state-sync-val on link02" {
         exec = "drc-state-sync-val";
@@ -67,6 +71,12 @@ group "2.plan_and_control" {
     }
 
     cmd "InstQP Val" {
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND";
+        host = "link02";
+        stop_signal = 15;
+    }
+
+    cmd "InstQP base" {
         exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND";
         host = "base";
         stop_signal = 15;
