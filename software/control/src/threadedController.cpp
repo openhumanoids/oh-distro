@@ -323,22 +323,25 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   msg.num_joints = num_joints;
   msg.q_integrator_state.resize(num_joints);
   msg.vref_integrator_state.resize(num_joints);
+  msg.q_des.resize(num_joints);
+  msg.qd_des.resize(num_joints);
   msg.q_ref.resize(num_joints);
   msg.qd_ref.resize(num_joints);
   msg.qdd.resize(num_joints);
   msg.u.resize(num_joints);
   msg.joint_name.resize(num_joints);
 
+  msg.fastQPFailed = qp_output.fastQPFailed;
+  msg.qpInfo = qp_output.qpInfo;
 
-  // std::cout << "size of qp_output.u is " << qp_output.u.size() << std::endl;
-  // std::cout << "size of qp_output.qdd is " << qp_output.qdd.size() << std::endl;
-  // std::cout << "size of state coordinate names are" << solveArgs.pdata->state_coordinate_names.size() << std::endl;
 
   const QPControllerState& controller_state = solveArgs.pdata->getControllerState();
 
   for(int i=0; i<num_joints; i++){
     msg.q_integrator_state[i] = controller_state.q_integrator_state(i);
     msg.vref_integrator_state[i] = qp_output.qd_ref(i);
+    msg.q_des[i] = qp_output.q_des(i);
+    msg.qd_des[i] = qp_output.qdot_des(i);
     msg.q_ref[i] = qp_output.q_ref(i);
     msg.qd_ref[i] = qp_output.qd_ref(i);
     msg.qdd[i] = qp_output.qdd(i);
