@@ -200,7 +200,7 @@ qp_controller_params:
           ff_qd: 0
           ff_f_d: 1
           ff_const: 0
-          ff_qd_d: 0.2
+          ff_qd_d: 0.0
       upperNeckPitch:
         hardware:
           joint_is_force_controlled: false
