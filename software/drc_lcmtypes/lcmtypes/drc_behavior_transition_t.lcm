@@ -11,4 +11,5 @@ struct behavior_transition_t
 	const int32_t FREEZE=0;
 	const int32_t POSITION_CONTROL=1;
 	const int32_t NORMAL=2;
+	const int32_t STAND_PREP_HOLD=3;
 }
