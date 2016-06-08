@@ -53,6 +53,7 @@ class ValkyrieDriverPanel(object):
         self.ui.tareFTButton.connect('clicked()', self.onTareFT)
         self.ui.forceControlButton.connect('clicked()', self.onForceControl)
         self.ui.positionControlButton.connect('clicked()', self.onPositionControl)
+        self.ui.standPrepButton.connect('clicked()', self.onStandPrep)
 
 
         self.updateTimer = TimerCallback(targetFps=5)
@@ -199,6 +200,9 @@ class ValkyrieDriverPanel(object):
 
     def onPositionControl(self):
         self.driver.sendPositionControlCommand(self.ui.transitionTimeSpinBox.value)
+
+    def onStandPrep(self):
+        self.driver.sendStandPrepCommand(self.ui.transitionTimeSpinBox.value)
 
     def onValkyrieFreeze(self):
         self.driver.sendValkyrieFreezeCommand()

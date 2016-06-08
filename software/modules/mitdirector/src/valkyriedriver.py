@@ -424,6 +424,13 @@ class ValkyrieDriver(object):
         lcmUtils.publish("ROBOT_BEHAVIOR", msg)
 
     # for valkyrie
+    def sendStandPrepCommand(self, transitionTime):
+        msg = lcmdrc.behavior_transition_t()
+        msg.behavior = 3
+        msg.transition_duration_s = transitionTime
+        lcmUtils.publish("ROBOT_BEHAVIOR", msg)
+
+    # for valkyrie
     def sendValkyrieFreezeCommand(self):
         msg = lcmdrc.behavior_transition_t()
         msg.behavior = 1
