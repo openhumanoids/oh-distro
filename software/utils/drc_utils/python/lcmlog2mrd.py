@@ -40,7 +40,6 @@ def extract_mrd(manager, input_log):
     if not isinstance(input_log, lcm.EventLog):
         input_log = lcm.EventLog(input_log, "r")
 
-    channel_names = ['EST_ROBOT_STATE', 'ROBOT_COMMAND']
     list_jointNames = ['torsoYaw', 'torsoPitch', 'torsoRoll',
                        'leftHipYaw', 'leftHipPitch', 'leftHipRoll', 'leftKneePitch', 'leftAnklePitch', 'leftAnkleRoll', 
                        'rightHipYaw', 'rightHipPitch', 'rightHipRoll', 'rightKneePitch', 'rightAnklePitch', 'rightAnkleRoll', 
@@ -51,21 +50,47 @@ def extract_mrd(manager, input_log):
     rs_ctr = 0
     cmd_data = []
     cmd_ctr = 0
+    qp_data = []
+    qp_ctr = 0
+    qpinput_data = []
+    qpinput_ctr = []
+
+    ft_data = []
+    ft_ctr = 0
 
     t0 = -1
     rs_name2idx = dict()
     cmd_name2idx = dict()
+    qp_name2idx = dict()
 
     for event in input_log:
         try:
             msg = manager.decode_event(event) 
+            
+            # FT
+            if event.channel == 'FORCE_TORQUE':
+                if t0 == -1:
+                    t1 = msg.utime
+
+                ft_data.append((msg.utime-t0)/1e6)
+
+                for i in xrange(2):
+                    ft_data.append(msg.sensors[i].force[0])
+                    ft_data.append(msg.sensors[i].force[1])
+                    ft_data.append(msg.sensors[i].force[2])
+                    ft_data.append(msg.sensors[i].moment[0])
+                    ft_data.append(msg.sensors[i].moment[1])
+                    ft_data.append(msg.sensors[i].moment[2])
+
+                ft_ctr = ft_ctr + 1
     
             # EST_ROBOT_STATE
             if event.channel == 'EST_ROBOT_STATE':
                 # init name look up
                 if len(rs_name2idx) == 0:
                     for i, name in enumerate(msg.joint_name):
-                        rs_name2idx[name] = i 
+                        rs_name2idx[name] = i
+                if t0 == -1:
                     t0 = msg.utime
 
                 # add time
@@ -105,6 +130,8 @@ def extract_mrd(manager, input_log):
                 if len(cmd_name2idx) == 0:
                     for i, name in enumerate(msg.joint_names):
                         cmd_name2idx[name] = i
+                if t0 == -1:
+                    t0 = msg.utime
 
                 # add time
                 cmd_data.append((msg.utime-t0)/1e6)
@@ -122,10 +149,40 @@ def extract_mrd(manager, input_log):
                 
                 cmd_ctr = cmd_ctr + 1
     
+            # CONTROLLER_STATE
+            if event.channel == 'CONTROLLER_STATE':
+                # init name look up
+                if len(qp_name2idx) == 0:
+                    for i, name in enumerate(msg.joint_name):
+                        qp_name2idx[name] = i 
+                if t0 == -1:
+                    t0 = msg.timestamp
+
+                # add time
+                qp_data.append((msg.timestamp-t0)/1e6)
+
+                # q, qd, qdd
+                for name in list_jointNames:
+                    idx = qp_name2idx[name]
+                    qp_data.append(msg.q_ref[idx])
+                for name in list_jointNames:
+                    idx = qp_name2idx[name]
+                    qp_data.append(msg.qd_ref[idx])
+                for name in list_jointNames:
+                    idx = qp_name2idx[name]
+                    qp_data.append(msg.qdd[idx])
+                
+                qp_ctr = qp_ctr + 1
+             
+
         except FingerprintNotFoundException:
             if event.channel not in warned_channels:
                 print "Warning: fingerprint not found for message on channel: {:s}".format(event.channel)
                 warned_channels.add(event.channel)
+
+    print rs_ctr
+    print cmd_ctr
+    print qp_ctr
 
     ########
     rs_mrd = MRDPLOT()
@@ -201,9 +258,69 @@ def extract_mrd(manager, input_log):
     for name in list_jointNames:
       cmd_mrd.channel_units.append('Nm')
 
-    assert(rs_mrd.checkSize() and cmd_mrd.checkSize())
+    #######
+    qp_mrd = MRDPLOT()
+    qp_mrd.name = 'qp.mrd'
+    qp_mrd.n_channels = 1 + 3 * len(list_jointNames)
+    qp_mrd.n_points = qp_ctr
+    qp_mrd.freq = 500
+    qp_mrd.data = array('f', qp_data)
+    
+    qp_mrd.channel_names.append('time')
+    for name in list_jointNames:
+      qp_mrd.channel_names.append('qref[' + name + ']')
+    for name in list_jointNames:
+      qp_mrd.channel_names.append('qdref[' + name + ']')
+    for name in list_jointNames:
+      qp_mrd.channel_names.append('qdd[' + name + ']')
+    
+    qp_mrd.channel_units.append('s')
+    for name in list_jointNames:
+      qp_mrd.channel_units.append('rad')
+    for name in list_jointNames:
+      qp_mrd.channel_units.append('rad/s')
+    for name in list_jointNames:
+      qp_mrd.channel_units.append('rad/s^2')
 
-    return rs_mrd, cmd_mrd
+    #######
+    ft_mrd = MRDPLOT()
+    ft_mrd.name = 'ft.mrd'
+    ft_mrd.n_channels = 1 + 2*6
+    ft_mrd.n_points = ft_ctr
+    ft_mrd.freq = 500
+    ft_mrd.data = array('f', ft_data)
+    
+    ft_mrd.channel_names.append('time')
+    ft_mrd.channel_names.append('Fx[L]')
+    ft_mrd.channel_names.append('Fy[L]')
+    ft_mrd.channel_names.append('Fz[L]')
+    ft_mrd.channel_names.append('Mx[L]')
+    ft_mrd.channel_names.append('My[L]')
+    ft_mrd.channel_names.append('Mz[L]')
+    ft_mrd.channel_names.append('Fx[R]')
+    ft_mrd.channel_names.append('Fy[R]')
+    ft_mrd.channel_names.append('Fz[R]')
+    ft_mrd.channel_names.append('Mx[R]')
+    ft_mrd.channel_names.append('My[R]')
+    ft_mrd.channel_names.append('Mz[R]')
+
+    ft_mrd.channel_units.append('s')
+    ft_mrd.channel_units.append('N')
+    ft_mrd.channel_units.append('N')
+    ft_mrd.channel_units.append('N')
+    ft_mrd.channel_units.append('Nm')
+    ft_mrd.channel_units.append('Nm')
+    ft_mrd.channel_units.append('Nm')
+    ft_mrd.channel_units.append('N')
+    ft_mrd.channel_units.append('N')
+    ft_mrd.channel_units.append('N')
+    ft_mrd.channel_units.append('Nm')
+    ft_mrd.channel_units.append('Nm')
+    ft_mrd.channel_units.append('Nm')
+
+    assert(rs_mrd.checkSize() and cmd_mrd.checkSize() and qp_mrd.checkSize() and ft_mrd.checkSize())
+
+    return rs_mrd, cmd_mrd, qp_mrd, ft_mrd
 
 if __name__ == '__main__':
     import argparse
@@ -215,6 +332,8 @@ if __name__ == '__main__':
     print args.lcmtype_module_names
     manager = MessageTypeManager(args.lcmtype_module_names)
     
-    rs_mrd, cmd_mrd = extract_mrd(manager, args.source)
+    rs_mrd, cmd_mrd, qp_mrd, ft_mrd = extract_mrd(manager, args.source)
     rs_mrd.toFile()
     cmd_mrd.toFile()
+    qp_mrd.toFile()
+    ft_mrd.toFile()

@@ -9,10 +9,16 @@ if __name__ == '__main__':
 
     m1 = MRDPLOT()
     m2 = MRDPLOT()
+    m3 = MRDPLOT()
+    m4 = MRDPLOT()
 
-    m2.fromFile('cmd.mrd')
     m1.fromFile('rs.mrd')
+    m2.fromFile('cmd.mrd')
+    m3.fromFile('qp.mrd')
+    m4.fromFile('ft.mrd')
 
-    m3 = mergeMRD(m1, m2, 'both.mrd', 0.002)
-    m3.toFile()
+    m5 = mergeMRD(m1, m2, '2.mrd', 0.002)
+    m6 = mergeMRD(m5, m3, '3.mrd', 0.002)
+    m7 = mergeMRD(m6, m4, '4.mrd', 0.002)
+    m7.toFile()
 
