@@ -5,11 +5,15 @@ struct controller_state_t
   int64_t timestamp;
   int32_t num_joints;
 
-  string joint_name[num_joints];
+  boolean fastQPFailed;
+  int32_t qpInfo;
 
+  string joint_name[num_joints];
   float q_integrator_state[num_joints];
   float vref_integrator_state[num_joints];
 
+  float q_des[num_joints];
+  float qd_des[num_joints];
   float q_ref[num_joints];
   float qd_ref[num_joints];
   float qdd[num_joints];

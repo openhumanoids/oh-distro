@@ -462,6 +462,13 @@
                    </property>
                   </widget>
                  </item>
+                 <item>
+                  <widget class="QPushButton" name="standPrepButton">
+                   <property name="text">
+                    <string>Stand Prep</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </item>
                <item>
