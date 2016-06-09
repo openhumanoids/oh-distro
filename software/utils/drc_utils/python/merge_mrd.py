@@ -20,5 +20,6 @@ if __name__ == '__main__':
     m5 = mergeMRD(m1, m2, '2.mrd', 0.002)
     m6 = mergeMRD(m5, m3, '3.mrd', 0.002)
     m7 = mergeMRD(m6, m4, '4.mrd', 0.002)
+
     m7.toFile()
 

@@ -70,7 +70,7 @@ def extract_mrd(manager, input_log):
             # FT
             if event.channel == 'FORCE_TORQUE':
                 if t0 == -1:
-                    t1 = msg.utime
+                    t0 = msg.utime
 
                 ft_data.append((msg.utime-t0)/1e6)
 

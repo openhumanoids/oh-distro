@@ -28,13 +28,13 @@ std::atomic<bool> hasNewState(false);
 
 std::unique_ptr<RigidBodyTree> robot;
 DrakeRobotState robot_state;
-bot_core::robot_state_t robot_state_msg;
 std::shared_ptr<RobotStateDriver> state_driver;
 std::shared_ptr<KinematicsCache<double>> cache;
 
-drake::lcmt_qp_controller_input qp_input;
-QPControllerOutput qp_output;
-
+bot_core::robot_state_t robot_state_msg;
+drake::lcmt_qp_controller_input qp_input_msg;
+drc::controller_state_t qp_output_msg;
+//QPControllerOutput qp_output;
 
 class LCMHandler {
 
@@ -163,41 +163,37 @@ public:
   {
     lcm::Subscription* sub;
 
-    sub = this->lcmHandler->LCMHandle->subscribe("QP_CONTROLLER_INPUT", &LCMControlReceiver::inputHandler, this);
+    sub = this->lcmHandler->LCMHandle->subscribe("QP_CONTROLLER_INPUT", &LCMControlReceiver::qp_inputHandler, this);
     sub->setQueueCapacity(1);
 
-    sub = this->lcmHandler->LCMHandle->subscribe("EST_ROBOT_STATE", &LCMControlReceiver::onRobotState, this);
+    sub = this->lcmHandler->LCMHandle->subscribe("EST_ROBOT_STATE", &LCMControlReceiver::rsHandler, this);
     sub->setQueueCapacity(1);
 
+    sub = this->lcmHandler->LCMHandle->subscribe("CONTROLLER_STATE", &LCMControlReceiver::qp_outputHandler, this);
+    sub->setQueueCapacity(1);
+    
     //sub = this->lcmHandler->LCMHandle->subscribe("FOOT_CONTACT_ESTIMATE", &LCMControlReceiver::onFootContact, this);
     //sub->setQueueCapacity(1);
   }
 
-  void inputHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_qp_controller_input* msg)
+  void qp_inputHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_qp_controller_input* msg)
   {
     //std::cout << "received qp_input on lcm thread " << std::this_thread::get_id() << std::endl;
-
-    // std::cout << "got input msg with param set name: " << msgCopy->param_set_name << std::endl;
     pointerMutex.lock();
-    qp_input = *msg; 
+    qp_input_msg = *msg; 
     pointerMutex.unlock();
     hasNewInput = true;
   }
 
-  void onRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
+  void rsHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
   {
     //std::cout << "received robotstate on lcm thread " << std::this_thread::get_id() << std::endl;
-
-    //std::shared_ptr<DrakeRobotState> state(new DrakeRobotState);
-
     int nq = robot->num_positions;
     int nv = robot->num_velocities;
     robot_state.q.resize(nq);
     robot_state.qd.resize(nv);
 
     state_driver->decode(msg, &robot_state);
-
-    // std::cout << "decoded robot state " << state->t << std::endl;
 
     pointerMutex.lock();
     robot_state_msg = *msg;
@@ -215,10 +211,13 @@ public:
     hasNewState = true;
   }
 
+  void qp_outputHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::controller_state_t* msg)
+  {
+  
+  }
 
   LCMHandler* lcmHandler;
 };
- 
 
 
 } // end anonymous namespace
@@ -236,7 +235,94 @@ std::unordered_map<std::string, int> computeBodyOrFrameNameToIdMap(
   }
   return id_map;
 }
- 
+
+typedef Eigen::Matrix<double, 6, 1> Vector6d;
+
+// stuff that I want to compute
+class sfRobotState {
+public:
+  // minimum representation
+  VectorXd q;
+  VectorXd qd;
+  VectorXd trq;
+
+  Matrix<double,6,1> footFT_b[2];
+  
+  // computed from kinematics  
+  Eigen::Isometry3d pelv;
+  Eigen::Isometry3d foot[2];
+  Vector3d com;
+  
+  Vector3d comd;
+  Vector6d pelvd;
+  Vector6d footd[2];
+
+  Vector2d cop;
+  Vector2d cop_b[2];
+  
+  Matrix<double,6,1> footFT_w[2];
+
+
+  void genKin(const DrakeRobotState rs, const RigidBodyTree &robot, KinematicsCache<double> &cache) 
+  {
+    this->q = rs.q;
+    this->qd = rs.qd;
+    cache.initialize(this->q, this->qd);
+    robot.doKinematics(cache, true);
+
+    this->foot[0].linear() = robot.transformPoints(cache, Eigen::Vector3d::Zero(), body_or_frame_name_to_id.at("leftFoot"), 0);
+    this->foot[1].linear() = robot.transformPoints(cache, Eigen::Vector3d::Zero(), body_or_frame_name_to_id.at("rightFoot"), 0);
+    this->pelv.linear() = robot.transformPoints(cache, Eigen::Vector3d::Zero(), body_or_frame_name_to_id.at("pelvis"), 0);
+
+    this->com = robot.centerOfMass(cache);
+  }
+
+private:
+  std::unordered_map<std::string, int> body_or_frame_name_to_id;
+
+  std::unordered_map<std::string, int> computeBodyOrFrameNameToIdMap(const RigidBodyTree& robot) 
+  {
+    auto id_map = std::unordered_map<std::string, int>();
+    for (auto it = robot.bodies.begin(); it != robot.bodies.end(); ++it) {
+      id_map[(*it)->linkname] = it - robot.bodies.begin();
+    }
+
+    for (auto it = robot.frames.begin(); it != robot.frames.end(); ++it) {
+      id_map[(*it)->name] = -(it - robot.frames.begin()) - 2;
+    }
+    return id_map;
+  }
+
+  void init(const RigidBodyTree &robot)
+  {
+    this->body_or_frame_name_to_id = computeBodyOrFrameNameToIdMap(robot);
+  }
+
+};
+
+class sfQPInput {
+  VectorXd q_d;
+  VectorXd qd_d;
+  VectorXd qdd_d;
+
+  Vector2d cop_d;
+  Vector2d com_d;
+
+  Vector6d pelvdd_d;
+  Vector6d footdd_d[2];
+};
+
+class sfQPOutput {
+  VectorXd qdd;
+  VectorXd trq;
+  VectorXd grf[2];
+
+  Vector2d comdd;
+  Vector6d pelvdd;
+  Vector6d footdd;
+};
+
+
 int main ()
 {
   // start lcm stuff
