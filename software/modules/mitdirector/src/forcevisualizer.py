@@ -5,6 +5,7 @@ from director.debugVis import DebugData
 import director.objectmodel as om
 from director import lcmUtils
 import bot_core
+import drc as lcmdrc
 
 import numpy as np
 
@@ -28,8 +29,13 @@ class ForceVisualizer:
         visObj = vis.updatePolyData(d.getPolyData(), self.options['estForceVisName'], view=self.view, parent='robot state model')
         # visObj.setProperty('Visible', False)
 
-        self.addSubscribers()
+        visObj = vis.updatePolyData(d.getPolyData(), self.options['pelvisAccelerationVisName'], view=self.view, parent='robot state model')
+        # visObj.setProperty('Visible', False)
 
+        visObj = vis.updatePolyData(d.getPolyData(), self.options['copVisName'], view=self.view, parent='robot state model')
+        # visObj.setProperty('Visible', False)
+
+        self.addSubscribers()
 
 
         # setup a dict to keep track of the names we will need
@@ -54,6 +60,13 @@ class ForceVisualizer:
         self.options['forceArrowHeadRadius'] = 0.03
         self.options['forceArrowColor'] = [1,0,0]
         self.options['estForceVisName'] = 'est foot forces'
+        self.options['pelvisAccelerationVisName'] = 'desired pelvis acceleration'
+        self.options['pelvisMagnitudeNormalizer'] = 2.0
+        self.options['pelvisArrowLength'] = 0.8
+
+        self.options['copVisName'] = 'cop'
+
+
 
     def addSubscribers(self):
 
@@ -62,20 +75,25 @@ class ForceVisualizer:
                                                             self.onForceTorqueMessage)
         self.forceTorqueSubscriber.setSpeedLimit(60);
 
+        self.controllerStateSubscriber = lcmUtils.addSubscriber("CONTROLLER_STATE", lcmdrc.controller_state_t, self.onControllerStateMessage)
+        self.controllerStateSubscriber.setSpeedLimit(60)
+
 
     # msg is six_axis_force_torque_array_t
     def onForceTorqueMessage(self, msg):
 
-        if not (om.findObjectByName(self.options['estForceVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
-            return
+        if (om.findObjectByName(self.options['estForceVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
+            d = DebugData()
 
-        d = DebugData()
+            for idx, footName in enumerate(msg.names):
+                self.drawFootForce(footName, msg.sensors[idx], d)
 
-        for idx, footName in enumerate(msg.names):
-            self.drawFootForce(footName, msg.sensors[idx], d)
+            vis.updatePolyData(d.getPolyData(), name=self.options['estForceVisName'], view=self.view,
+                               parent='robot state model').setProperty('Color', [1,0,0])
 
-        vis.updatePolyData(d.getPolyData(), name=self.options['estForceVisName'], view=self.view,
-                           parent='robot state model').setProperty('Color', [1,0,0])
+
+        if om.findObjectByName(self.options['copVisName']):
+            self.computeCOP(msg)
 
 
     # here msg is six_axis_force_torque_t
@@ -95,6 +113,85 @@ class ForceVisualizer:
 
         debugData.addArrow(forceStartInWorld, forceEndInWorld, tubeRadius=self.options['forceArrowTubeRadius'],
                            headRadius=self.options['forceArrowHeadRadius'], color=self.options['forceArrowColor'])
+
+
+    # draw the acceleration of the pelvis that the QP thinks is happening
+    def onControllerStateMessage(self, msg):
+
+        if not (om.findObjectByName(self.options['pelvisAccelerationVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
+            return
+
+        pelvisJointNames = ['base_x', 'base_y', 'base_z']
+        pelvisAcceleration = np.zeros(3)
+
+        for idx, name in enumerate(pelvisJointNames):
+            stateIdx = msg.joint_name.index(name)
+            pelvisAcceleration[idx] = msg.qdd[stateIdx]
+
+
+        pelvisFrame = self.robotStateModel.getLinkFrame('pelvis')
+
+        arrowStart = np.array(pelvisFrame.TransformPoint((0,0,0)))
+        arrowEnd = arrowStart + self.options['pelvisArrowLength']*np.linalg.norm(pelvisAcceleration)/self.options['pelvisMagnitudeNormalizer']*pelvisAcceleration
+
+        debugData = DebugData()
+        debugData.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
+                           headRadius=self.options['forceArrowHeadRadius'])
+
+        vis.updatePolyData(debugData.getPolyData(), name=self.options['pelvisAccelerationVisName'], view=self.view,
+                           parent='robot state model').setProperty('Color', [0,1,0])
+
+        # print "got controller state message"
+        # print "pelvisAcceleration ", pelvisAcceleration
+        # print "arrowStart ", arrowStart
+        # print "arrowEnd ", arrowEnd
+
+
+    def computeCOP(self, msg):
+        d = DebugData()
+        copDataList = []
+        for idx, footName in enumerate(msg.names):
+            copDataList.append(self.computeSingleFootCOP(footName, msg.sensors[idx], d))
+
+        copInWorld = (copDataList[0]['cop']*copDataList[0]['fz'] + copDataList[1]['cop']*copDataList[1]['fz'])/(
+            copDataList[0]['fz'] + copDataList[1]['fz'])
+
+        d.addSphere(copInWorld, radius=0.02)
+        vis.updatePolyData(d.getPolyData(), name='cop', view=self.view,
+                           parent='robot state model').setProperty('Color', [0,1,0])
+
+
+    def computeSingleFootCOP(self, footName, msg, d):
+        x = -msg.moment[1]/msg.force[2]
+        y = msg.moment[0]/msg.force[2]
+        z_foot = 0.035
+        alpha = z_foot/msg.force[2]
+        force = np.array(msg.force)
+        cop = np.array((x,y,0))
+        cop = cop + alpha*force
+
+        ftFrameId = self.nameDict[footName]['frameId']
+        ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
+
+        copInWorld = np.array(ftFrameToWorld.TransformPoint(cop))
+
+        d.addSphere(copInWorld, radius=0.01)
+
+        copData = {'cop': copInWorld, 'fz': np.linalg.norm(force)}
+        return copData
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
