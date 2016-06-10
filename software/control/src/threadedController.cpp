@@ -7,6 +7,7 @@
 #include "drc/controller_state_t.hpp"
 #include "drc/controller_status_t.hpp"
 #include "drc/recovery_trigger_t.hpp"
+#include "drc/utime_t.hpp"
 #include "bot_core/robot_state_t.hpp"
 #include "bot_core/quaternion_t.hpp"
 #include "drc/behavior_command_t.hpp"
@@ -59,7 +60,7 @@ public:
   Matrix<bool, Dynamic, 1> b_contact_force;
   std::map<Side, ForceTorqueMeasurement> foot_force_torque_measurements;
   std::shared_ptr<QPControllerDebugData> debug;
-
+  bool resetControllerState;
   int info;
 };
 
@@ -207,6 +208,8 @@ public:
 
     sub = this->lcmHandler->LCMHandle->subscribe("FOOT_CONTACT_ESTIMATE", &LCMControlReceiver::onFootContact, this);
     sub->setQueueCapacity(1);
+
+    sub = this->lcmHandler->LCMHandle->subscribe("RESET_CONTROLLER_STATE", &LCMControlReceiver::onResetControllerState, this);
   }
 
   void inputHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_qp_controller_input* msg)
@@ -268,9 +271,18 @@ public:
     pointerMutex.unlock();
   }
 
+  void onResetControllerState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::utime_t* msg){
+  std::cout << "got reset controller state msg" << std::endl;
+  pointerMutex.lock();
+  solveArgs.resetControllerState = true;
+  pointerMutex.unlock();
+  }
+
 
   LCMHandler* lcmHandler;
 };
+
+
 
 
 LCMHandler lcmHandler;
@@ -434,6 +446,8 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
   Eigen::Matrix<double, TWIST_SIZE, 1> a_grav;
   a_grav << 0, 0, 0, 0, 0, -9.81;
 
+  bool resetControllerState = false;
+
   while (!done) {
 
     //std::cout << "waiting for new data... " << std::this_thread::get_id() << std::endl;
@@ -452,6 +466,8 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
     b_contact_force = solveArgs.b_contact_force;
     std::map <Side, ForceTorqueMeasurement> foot_force_torque_measurements = solveArgs.foot_force_torque_measurements;
     std::shared_ptr<bot_core::robot_state_t> state_msg = robot_state_msg;
+    resetControllerState = solveArgs.resetControllerState;
+    solveArgs.resetControllerState = false;
     pointerMutex.unlock();
 
     // newInputAvailable = false;
@@ -472,6 +488,11 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
     }
 
     // std::cout << "calling solve " << std::endl;
+
+    if(resetControllerState){
+      std::cout << "resetting controller state" << std::endl;
+      solveArgs.pdata->resetControllerState(robot_state->t);      
+    }
 
     if (qp_input->be_silent) {
       // Act as a dummy controller, produce no ATLAS_COMMAND, and reset all integrator states

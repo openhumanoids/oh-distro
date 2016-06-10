@@ -3,6 +3,7 @@ __author__ = 'manuelli'
 
 import valkyriedriver
 import valkyriedriverpanel
+import forcevisualizer
 
 from director import tasklaunchpanel
 from director import applogic
@@ -14,6 +15,7 @@ def startup(robotSystem, globalsDict=None):
 
     valkyrieDriver = valkyriedriver.ValkyrieDriver()
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
+    forceVisualizer = forcevisualizer.ForceVisualizer(robotSystem, applogic.getDRCView())
 
     # # remove AtlasDriverPanel
     atlasPanelAction = applogic.getToolBarActions()['ActionAtlasDriverPanel']
@@ -27,5 +29,6 @@ def startup(robotSystem, globalsDict=None):
     if globalsDict is not None:
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
+        globalsDict['forceVisualizer'] = forceVisualizer
 
         # add new task panel to global dict
