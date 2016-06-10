@@ -34,6 +34,8 @@ class ForceVisualizer:
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['copVisName'], view=self.view, parent='robot state model')
         # visObj.setProperty('Visible', False)
+        
+        visObj = vis.updatePolyData(d.getPolyData(), self.options['QPForceVisName'], view=self.view, parent='robot state model')
 
         self.addSubscribers()
 
@@ -63,6 +65,7 @@ class ForceVisualizer:
         self.options['pelvisAccelerationVisName'] = 'desired pelvis acceleration'
         self.options['pelvisMagnitudeNormalizer'] = 2.0
         self.options['pelvisArrowLength'] = 0.8
+        self.options['QPForceVisName'] = 'QP foot force'
 
         self.options['copVisName'] = 'cop'
 
@@ -115,32 +118,49 @@ class ForceVisualizer:
                            headRadius=self.options['forceArrowHeadRadius'], color=self.options['forceArrowColor'])
 
 
+    def drawQPContactWrench(self, msg):
+        # draw the contact wrenches
+        d = DebugData()
+        for i, wrench in enumerate(msg.contact_wrenches):
+            arrowStart = np.array((msg.contact_ref_points[i][0], msg.contact_ref_points[i][1], msg.contact_ref_points[i][2]))
+            force = np.array((wrench[3], wrench[4], wrench[5]))
+            arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*force
+            
+            d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
+                           headRadius=self.options['forceArrowHeadRadius'], color=self.options['forceArrowColor'])
+
+        vis.updatePolyData(d.getPolyData(), name=self.options['QPForceVisName'], view=self.view,
+                               parent='robot state model').setProperty('Color', [0,0,1])
+
     # draw the acceleration of the pelvis that the QP thinks is happening
     def onControllerStateMessage(self, msg):
 
-        if not (om.findObjectByName(self.options['pelvisAccelerationVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
-            return
+        if (om.findObjectByName(self.options['pelvisAccelerationVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
 
-        pelvisJointNames = ['base_x', 'base_y', 'base_z']
-        pelvisAcceleration = np.zeros(3)
+            pelvisJointNames = ['base_x', 'base_y', 'base_z']
+            pelvisAcceleration = np.zeros(3)
+    
+            for idx, name in enumerate(pelvisJointNames):
+                stateIdx = msg.joint_name.index(name)
+                pelvisAcceleration[idx] = msg.qdd[stateIdx]
+    
+    
+            pelvisFrame = self.robotStateModel.getLinkFrame('pelvis')
+    
+            arrowStart = np.array(pelvisFrame.TransformPoint((0,0,0)))
+            arrowEnd = arrowStart + self.options['pelvisArrowLength']*np.linalg.norm(pelvisAcceleration)/self.options['pelvisMagnitudeNormalizer']*pelvisAcceleration
+    
+            debugData = DebugData()
+            debugData.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
+                               headRadius=self.options['forceArrowHeadRadius'])
+    
+            vis.updatePolyData(debugData.getPolyData(), name=self.options['pelvisAccelerationVisName'], view=self.view,
+                               parent='robot state model').setProperty('Color', [0,1,0])
 
-        for idx, name in enumerate(pelvisJointNames):
-            stateIdx = msg.joint_name.index(name)
-            pelvisAcceleration[idx] = msg.qdd[stateIdx]
-
-
-        pelvisFrame = self.robotStateModel.getLinkFrame('pelvis')
-
-        arrowStart = np.array(pelvisFrame.TransformPoint((0,0,0)))
-        arrowEnd = arrowStart + self.options['pelvisArrowLength']*np.linalg.norm(pelvisAcceleration)/self.options['pelvisMagnitudeNormalizer']*pelvisAcceleration
-
-        debugData = DebugData()
-        debugData.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
-                           headRadius=self.options['forceArrowHeadRadius'])
-
-        vis.updatePolyData(debugData.getPolyData(), name=self.options['pelvisAccelerationVisName'], view=self.view,
-                           parent='robot state model').setProperty('Color', [0,1,0])
-
+        if (om.findObjectByName(self.options['QPForceVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
+            self.drawQPContactWrench(msg)
+        
+            
         # print "got controller state message"
         # print "pelvisAcceleration ", pelvisAcceleration
         # print "arrowStart ", arrowStart
