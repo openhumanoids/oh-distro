@@ -415,6 +415,9 @@ class ValkyrieDriver(object):
         msg.transition_duration_s = transitionTime
         lcmUtils.publish("ROBOT_BEHAVIOR", msg)
 
+        resetControllerStateMsg = lcmdrc.utime_t()
+        lcmUtils.publish("RESET_CONTROLLER_STATE", resetControllerStateMsg)
+
 
     # for valkyrie
     def sendPositionControlCommand(self, transitionTime):
