@@ -264,6 +264,8 @@ public:
     _init();
   }
 
+  void parseMsg(const )
+
   void genKin(const DrakeRobotState &rs) 
   {
     this->q = rs.q;
@@ -280,10 +282,6 @@ public:
     KinematicPath body_path;
     MatrixXd Jcompact, Jfull;
     
-    for (size_t i = 0; i < jointNames.size(); i++) {
-      int idx = joint_name_to_id.at(jointNames[i]);
-      pos[i] = 
-    }
 
     // com
     this->com = this->robot->centerOfMass(cache);
@@ -340,6 +338,7 @@ private:
 };
 
 class sfQPInput {
+public:
   VectorXd q_d;
   VectorXd qd_d;
   VectorXd qdd_d;
@@ -352,13 +351,28 @@ class sfQPInput {
 };
 
 class sfQPOutput {
+public:
   VectorXd qdd;
   VectorXd trq;
-  VectorXd grf[2];
+  Vector6d grf[2];
 
   Vector2d comdd;
   Vector6d pelvdd;
   Vector6d footdd;
+
+  void parseMsg(const drc::controller_state_t &msg) 
+  {
+    for (int i = 0; i < msg.num_joints; i++) {
+      this->qdd[i] = msg.qdd[i];
+      this->trq[i] = msg.u[i]; // first 6 = zero
+    }
+  }
+
+  void init(const drc::controller_state_t &msg)
+  {
+    this->qdd.resize(msg.num_joints);
+    this->trq.resize(msg.num_joints);
+  }
 };
 
 
@@ -420,9 +434,20 @@ int main ()
       robot_state.qd.resize(rs.robot->num_velocities);
       state_driver.decode(&robot_state_msg, &robot_state);
 
+      // copy pos, vel, trq and ft
+      for (size_t i = 0; i < jointNames.size(); i++) {
+        int idx = rs.joint_name_to_id.at(jointNames[i]);
+        rs.pos[i] = robot_state_msg.position[idx];
+        rs.vel[i] = robot_state_msg.position[idx];
+        rs.trq[i] = robot_state_msg.position[idx];
+      }
+
       rs.genKin(robot_state);
       
       hasNewState = false;
+    }
+    else {
+      std::this_thread::yield();
     }
   }
 
