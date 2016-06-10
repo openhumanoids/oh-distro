@@ -3,11 +3,11 @@
 #include "bot_core/robot_state_t.hpp"
 #include "bot_core/quaternion_t.hpp"
 #include "RobotStateDriver.hpp"
+#include "drc/controller_state_t.hpp"
 
 using namespace Eigen;
 
 
-// stuff that I want to compute
 class sfRobotState {
 public:
   std::unique_ptr<RigidBodyTree> robot;
@@ -35,16 +35,47 @@ public:
   
   Matrix<double,6,1> footFT_w[2];
   
+  // Jacobians
+  MatrixXd J_foot[2];
+  MatrixXd J_pelv;
+  MatrixXd J_com;
+  VectorXd Jdqd_foot[2];
+  VectorXd Jdqd_pelv;
+  VectorXd Jdqd_com;
 
   sfRobotState(std::unique_ptr<RigidBodyTree> robot_in)
     : robot(std::move(robot_in)),
       cache(this->robot->bodies)
   {
-    _init();
+    // build map
+    this->body_or_frame_name_to_id = std::unordered_map<std::string, int>();
+    for (auto it = robot->bodies.begin(); it != robot->bodies.end(); ++it) {
+      this->body_or_frame_name_to_id[(*it)->linkname] = it - robot->bodies.begin();
+    }
+
+    for (auto it = robot->frames.begin(); it != robot->frames.end(); ++it) {
+      this->body_or_frame_name_to_id[(*it)->name] = -(it - robot->frames.begin()) - 2;
+    }
+
+    // init state driver
+    int num_states = robot->num_positions + robot->num_velocities;
+    std::vector<std::string> state_coordinate_names(num_states);
+    for (int i=0; i<num_states; i++){
+      state_coordinate_names[i] = robot->getStateName(i);
+    }
+
+    state_driver.reset(new RobotStateDriver(state_coordinate_names));
+
+    this->pos.resize(robot->num_positions);
+    this->vel.resize(robot->num_positions);
+    this->trq.resize(robot->num_positions); 
+
+    this->_inited = false;
   }
 
   void parseMsg(const bot_core::robot_state_t &msg);
-  void buildJointName2Id(const bot_core::robot_state_t &msg);
+  void init(const bot_core::robot_state_t &msg);
+  bool hasInit() const { return this->_inited; }
 
 private:
   DrakeRobotState robot_state;
@@ -52,7 +83,37 @@ private:
   KinematicsCache<double> cache;
   std::unordered_map<std::string, int> body_or_frame_name_to_id;
   std::unordered_map<std::string, int> joint_name_to_id;
-
-  void _init();
+  bool _inited;
 };
+
+
+class sfQPOutput {
+public:
+  VectorXd qdd;
+  VectorXd trq;
+  Vector6d grf[2];
+
+  Vector2d comdd;
+  Vector6d pelvdd;
+  Vector6d footdd[2];
+
+  void parseMsg(const drc::controller_state_t &msg, const sfRobotState &rs);
+  void init(const drc::controller_state_t &msg)
+  {
+    this->qdd.resize(msg.num_joints);
+    this->trq.resize(msg.num_joints);
+    this->_inited = true;
+  }
+
+  bool isInit() const { return this->_inited; }
+  sfQPOutput() 
+  {
+    this->_inited = false;
+  }
+
+private:
+  bool _inited;
+};
+
+ 
 

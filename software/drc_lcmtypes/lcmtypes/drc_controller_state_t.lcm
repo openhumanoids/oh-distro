@@ -4,6 +4,8 @@ struct controller_state_t
 {
   int64_t timestamp;
   int32_t num_joints;
+  int32_t num_active_contact_links;
+  int32_t num_active_contact_points;
 
   boolean fastQPFailed;
   int32_t qpInfo;
@@ -18,4 +20,9 @@ struct controller_state_t
   float qd_ref[num_joints];
   float qdd[num_joints];
   float u[num_joints];
+  
+  float contact_wrenches[num_active_contact_links][6];
+  float contact_ref_points[num_active_contact_links][3];
+  float all_contact_points[num_active_contact_points][3];
+  float all_contact_forces[num_active_contact_points][3];
 }

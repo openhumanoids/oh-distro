@@ -244,31 +244,6 @@ public:
   Vector6d footdd_d[2];
 };
 
-class sfQPOutput {
-public:
-  VectorXd qdd;
-  VectorXd trq;
-  Vector6d grf[2];
-
-  Vector2d comdd;
-  Vector6d pelvdd;
-  Vector6d footdd;
-
-  void parseMsg(const drc::controller_state_t &msg) 
-  {
-    for (int i = 0; i < msg.num_joints; i++) {
-      this->qdd[i] = msg.qdd[i];
-      this->trq[i] = msg.u[i]; // first 6 = zero
-    }
-  }
-
-  void init(const drc::controller_state_t &msg)
-  {
-    this->qdd.resize(msg.num_joints);
-    this->trq.resize(msg.num_joints);
-  }
-};
-
 
 int main ()
 {
@@ -276,20 +251,9 @@ int main ()
   LCMHandler lcmHandler;
   LCMControlReceiver controlReceiver(&lcmHandler);
 
-  std::string urdf("/home/siyuanfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim.urdf");
+  std::string urdf("/home/siyuanfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
   sfRobotState rs(std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW)));
  
-  /*
-  int num_states = rs.robot->num_positions + rs.robot->num_velocities;
-  std::vector<string> state_coordinate_names(num_states);
-  for (int i=0; i<num_states; i++){
-    state_coordinate_names[i] = rs.robot->getStateName(i);
-  }
-
-  RobotStateDriver state_driver(state_coordinate_names);
-  DrakeRobotState robot_state;
-  */
-
   // start the lcm 
   lcmHandler.Start();
   controlReceiver.InitSubscriptions();
@@ -326,23 +290,10 @@ int main ()
 
   while(1) {
     if (hasNewState) {
+      if (!rs.hasInit())
+        rs.init(robot_state_msg);
+
       rs.parseMsg(robot_state_msg);
-
-      /*
-      robot_state.q.resize(rs.robot->num_positions);
-      robot_state.qd.resize(rs.robot->num_velocities);
-      state_driver.decode(&robot_state_msg, &robot_state);
-
-      // copy pos, vel, trq and ft
-      for (size_t i = 0; i < jointNames.size(); i++) {
-        int idx = rs.joint_name_to_id.at(jointNames[i]);
-        rs.pos[i] = robot_state_msg.position[idx];
-        rs.vel[i] = robot_state_msg.position[idx];
-        rs.trq[i] = robot_state_msg.position[idx];
-      }
-
-      rs.genKin(robot_state);
-      */
       
       hasNewState = false;
 

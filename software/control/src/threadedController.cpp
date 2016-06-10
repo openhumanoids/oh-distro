@@ -356,6 +356,33 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
     msg.u[robot_state_idx] = qp_output.u(i);
   }
 
+  // fill in the contact wrench stuff
+  msg.num_active_contact_links = qp_output.contact_wrenches.size();
+  msg.num_active_contact_points = qp_output.all_contact_points.size();
+  
+  msg.contact_wrenches.resize(msg.num_active_contact_links);
+  msg.contact_ref_points.resize(msg.num_active_contact_links);
+  msg.all_contact_points.resize(msg.num_active_contact_points);
+  msg.all_contact_forces.resize(msg.num_active_contact_points);
+
+  for (int i = 0; i < msg.num_active_contact_links; i++) {
+    msg.contact_wrenches[i].resize(6);
+    msg.contact_ref_points[i].resize(3);
+    for (int j = 0; j < 6; j++)
+      msg.contact_wrenches[i][j] = qp_output.contact_wrenches[i][j];
+    for (int j = 0; j < 3; j++)
+      msg.contact_ref_points[i][j] = qp_output.contact_ref_points[i][j];
+  }
+  
+  for (int i = 0; i < msg.num_active_contact_points; i++) {
+    msg.all_contact_points[i].resize(3);
+    msg.all_contact_forces[i].resize(3);
+    for (int j = 0; j < 3; j++) {
+      msg.all_contact_points[i][j] = qp_output.all_contact_points[i][j];
+      msg.all_contact_forces[i][j] = qp_output.all_contact_forces[i][j];
+    }
+  }
+
   return msg;
 }
 

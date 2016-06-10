@@ -30,7 +30,6 @@ RobotStateDriver::RobotStateDriver(vector<string> state_coordinate_names) {
       throw std::runtime_error("This method has not yet been updated to support quaternion floating base. It's assuming roll, pitch, yaw for floating base pose, but I couldn't find a 'base_roll' coordinate. \n");
     }
   }
-
 }
 
 void RobotStateDriver::decode(const bot_core::robot_state_t *msg, DrakeRobotState *state) {
