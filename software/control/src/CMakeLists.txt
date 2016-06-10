@@ -92,7 +92,7 @@ target_link_libraries(runDRCInstQP RobotStateDriver AtlasCommandDriver FootConta
 target_link_libraries (runDRCInstQP ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(runDRCInstQP)
 
-add_executable(sf_kin_example sf_kin_example.cpp)
+add_executable(sf_kin_example sf_kin_example.cpp sfRobotState.cpp)
 pods_use_pkg_config_packages(sf_kin_example drake-qp-common drake-control-util drake-side drake-rbm)
 target_link_libraries(sf_kin_example RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 target_link_libraries (sf_kin_example ${CMAKE_THREAD_LIBS_INIT})
