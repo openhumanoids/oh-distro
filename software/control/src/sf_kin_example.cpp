@@ -26,15 +26,12 @@ std::mutex pointerMutex;
 std::atomic<bool> hasNewInput(false);
 std::atomic<bool> hasNewState(false);
 
-std::unique_ptr<RigidBodyTree> robot;
-DrakeRobotState robot_state;
-std::shared_ptr<RobotStateDriver> state_driver;
-std::shared_ptr<KinematicsCache<double>> cache;
-
 bot_core::robot_state_t robot_state_msg;
 drake::lcmt_qp_controller_input qp_input_msg;
 drc::controller_state_t qp_output_msg;
 //QPControllerOutput qp_output;
+
+std::vector<std::string> jointNames;
 
 class LCMHandler {
 
@@ -188,12 +185,6 @@ public:
   void rsHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
   {
     //std::cout << "received robotstate on lcm thread " << std::this_thread::get_id() << std::endl;
-    int nq = robot->num_positions;
-    int nv = robot->num_velocities;
-    robot_state.q.resize(nq);
-    robot_state.qd.resize(nv);
-
-    state_driver->decode(msg, &robot_state);
 
     pointerMutex.lock();
     robot_state_msg = *msg;
@@ -241,13 +232,16 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 // stuff that I want to compute
 class sfRobotState {
 public:
+  std::unique_ptr<RigidBodyTree> robot;
+  
   // minimum representation
   VectorXd q;
   VectorXd qd;
-  VectorXd trq;
-
   Matrix<double,6,1> footFT_b[2];
   
+  VectorXd pos;
+  VectorXd vel;
+  VectorXd trq;
   // computed from kinematics  
   Eigen::Isometry3d pelv;
   Eigen::Isometry3d foot[2];
@@ -261,41 +255,86 @@ public:
   Vector2d cop_b[2];
   
   Matrix<double,6,1> footFT_w[2];
+  
 
+  sfRobotState(std::unique_ptr<RigidBodyTree> robot_in)
+    : robot(std::move(robot_in)),
+      cache(this->robot->bodies)
+  {
+    _init();
+  }
 
-  void genKin(const DrakeRobotState rs, const RigidBodyTree &robot, KinematicsCache<double> &cache) 
+  void genKin(const DrakeRobotState &rs) 
   {
     this->q = rs.q;
     this->qd = rs.qd;
-    cache.initialize(this->q, this->qd);
-    robot.doKinematics(cache, true);
 
-    this->foot[0].linear() = robot.transformPoints(cache, Eigen::Vector3d::Zero(), body_or_frame_name_to_id.at("leftFoot"), 0);
-    this->foot[1].linear() = robot.transformPoints(cache, Eigen::Vector3d::Zero(), body_or_frame_name_to_id.at("rightFoot"), 0);
-    this->pelv.linear() = robot.transformPoints(cache, Eigen::Vector3d::Zero(), body_or_frame_name_to_id.at("pelvis"), 0);
+    this->cache.initialize(this->q, this->qd);
+    this->robot->doKinematics(cache, true);
 
-    this->com = robot.centerOfMass(cache);
+    int foot_id[2], pelv_id;
+    foot_id[0] = body_or_frame_name_to_id.at("leftFoot");
+    foot_id[1] = body_or_frame_name_to_id.at("rightFoot");
+    pelv_id = body_or_frame_name_to_id.at("pelvis");
+    
+    KinematicPath body_path;
+    MatrixXd Jcompact, Jfull;
+    
+    for (size_t i = 0; i < jointNames.size(); i++) {
+      int idx = joint_name_to_id.at(jointNames[i]);
+      pos[i] = 
+    }
+
+    // com
+    this->com = this->robot->centerOfMass(cache);
+
+    Jfull = this->robot->centerOfMassJacobian(cache);
+    this->comd = Jfull * this->qd;
+
+    // pelvis
+    this->pelv.translation() = this->robot->transformPoints(cache, Eigen::Vector3d::Zero(), pelv_id, 0);
+    
+    body_path = this->robot->findKinematicPath(0, pelv_id);
+    Jcompact = this->robot->geometricJacobian(this->cache, 0, pelv_id, pelv_id, true);
+    Jfull = this->robot->compactToFull(Jcompact, body_path.joint_path, true);
+    this->pelvd = Jfull * this->qd;
+
+    // feet 
+    for (int i = 0; i < 2; i++) {
+      this->foot[i].translation() = this->robot->transformPoints(cache, Eigen::Vector3d::Zero(), foot_id[i], 0);
+      
+      body_path = this->robot->findKinematicPath(0, foot_id[i]);
+      Jcompact = this->robot->geometricJacobian(this->cache, 0, foot_id[i], foot_id[i], true);
+      Jfull = this->robot->compactToFull(Jcompact, body_path.joint_path, true);
+    
+      this->footd[i] = Jfull * this->qd;
+    }
+  }
+
+  void buildJointName2Id(const bot_core::robot_state_t &msg) 
+  {
+    joint_name_to_id.clear();
+    for (int i = 0; i < msg.joint_name.size(); i++) {
+      joint_name_to_id[msg.joint_name[i]] = i;
+    }
   }
 
 private:
+  KinematicsCache<double> cache;
   std::unordered_map<std::string, int> body_or_frame_name_to_id;
+  std::unordered_map<std::string, int> joint_name_to_id;
 
-  std::unordered_map<std::string, int> computeBodyOrFrameNameToIdMap(const RigidBodyTree& robot) 
+  void _init()
   {
-    auto id_map = std::unordered_map<std::string, int>();
-    for (auto it = robot.bodies.begin(); it != robot.bodies.end(); ++it) {
-      id_map[(*it)->linkname] = it - robot.bodies.begin();
+    // build map
+    this->body_or_frame_name_to_id = std::unordered_map<std::string, int>();
+    for (auto it = robot->bodies.begin(); it != robot->bodies.end(); ++it) {
+      this->body_or_frame_name_to_id[(*it)->linkname] = it - robot->bodies.begin();
     }
 
-    for (auto it = robot.frames.begin(); it != robot.frames.end(); ++it) {
-      id_map[(*it)->name] = -(it - robot.frames.begin()) - 2;
-    }
-    return id_map;
-  }
-
-  void init(const RigidBodyTree &robot)
-  {
-    this->body_or_frame_name_to_id = computeBodyOrFrameNameToIdMap(robot);
+    for (auto it = robot->frames.begin(); it != robot->frames.end(); ++it) {
+      this->body_or_frame_name_to_id[(*it)->name] = -(it - robot->frames.begin()) - 2;
+    } 
   }
 
 };
@@ -330,41 +369,59 @@ int main ()
   LCMControlReceiver controlReceiver(&lcmHandler);
 
   std::string urdf("/home/sfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim.urdf");
-  robot = std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW));
+  sfRobotState rs(std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW)));
   
-  int num_states = robot->num_positions + robot->num_velocities;
+  int num_states = rs.robot->num_positions + rs.robot->num_velocities;
   std::vector<string> state_coordinate_names(num_states);
   for (int i=0; i<num_states; i++){
-    state_coordinate_names[i] = robot->getStateName(i);
+    state_coordinate_names[i] = rs.robot->getStateName(i);
   }
-  state_driver.reset(new RobotStateDriver(state_coordinate_names));
-  cache.reset(new KinematicsCache<double>(robot->bodies));
+
+  RobotStateDriver state_driver(state_coordinate_names);
+  DrakeRobotState robot_state;
 
   // start the lcm 
   lcmHandler.Start();
   controlReceiver.InitSubscriptions();
-  
-  // stuff
-  Eigen::Vector3d com, comd;
-  Eigen::Vector3d foot[2], footd[2];
-  
-  std::unordered_map<std::string, int> body_or_frame_name_to_id = computeBodyOrFrameNameToIdMap(*robot);
-  int footIdx[2] = {0};
-  footIdx[0] = body_or_frame_name_to_id.at("leftFoot");
-  footIdx[1] = body_or_frame_name_to_id.at("rightFoot");
+
+  jointNames.push_back("torsoYaw");
+  jointNames.push_back("torsoPitch");
+  jointNames.push_back("torsoRoll");
+  jointNames.push_back("leftHipYaw");
+  jointNames.push_back("leftHipRoll");
+  jointNames.push_back("leftHipPitch");
+  jointNames.push_back("leftKneePitch");
+  jointNames.push_back("leftAnklePitch");
+  jointNames.push_back("leftAnkleRoll");
+  jointNames.push_back("rightHipYaw");
+  jointNames.push_back("rightHipRoll");
+  jointNames.push_back("rightHipPitch");
+  jointNames.push_back("rightKneePitch");
+  jointNames.push_back("rightAnklePitch");
+  jointNames.push_back("rightAnkleRoll");
+  jointNames.push_back("leftShoulderPitch");
+  jointNames.push_back("leftShoulderRoll");
+  jointNames.push_back("leftShoulderYaw");
+  jointNames.push_back("leftElbowPitch");
+  jointNames.push_back("rightShoulderPitch");
+  jointNames.push_back("rightShoulderRoll");
+  jointNames.push_back("rightShoulderYaw");
+  jointNames.push_back("rightElbowPitch");
+ 
+  std::cout << jointNames.size() << std::endl;
+
+  rs.pos.resize(jointNames.size());
+  rs.vel.resize(jointNames.size());
+  rs.trq.resize(jointNames.size());
 
   while(1) {
     if (hasNewState) {
-      cache->initialize(robot_state.q, robot_state.qd);
-      robot->doKinematics(*cache, true);
-      com = robot->centerOfMass(*cache);
+      robot_state.q.resize(rs.robot->num_positions);
+      robot_state.qd.resize(rs.robot->num_velocities);
+      state_driver.decode(&robot_state_msg, &robot_state);
+
+      rs.genKin(robot_state);
       
-      for (int i = 0; i < 2; i++)
-        foot[i] = robot->transformPoints(*cache, Eigen::Vector3d::Zero(), footIdx[i], 0);
-      
-      std::cout << "com: " << com << std::endl;
-      std::cout << "left: " << foot[0] << std::endl;
-      std::cout << "right: " << foot[1] << std::endl;
       hasNewState = false;
     }
   }
