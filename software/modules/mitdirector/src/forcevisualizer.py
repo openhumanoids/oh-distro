@@ -196,11 +196,18 @@ class ForceVisualizer:
 
 
     def computeSingleFootCOP(self, footName, msg, d):
-        x = -msg.moment[1]/msg.force[2]
-        y = msg.moment[0]/msg.force[2]
-        z_foot = 0.035
-        alpha = z_foot/msg.force[2]
+
         force = np.array(msg.force)
+        # hack for dealing with very small fz.
+        if np.linalg.norm(force) < 0.001:
+            force[2] = 0.001
+
+
+        x = -msg.moment[1]/force[2]
+        y = msg.moment[0]/force[2]
+        z_foot = 0.035
+        alpha = z_foot/force[2]
+
         cop = np.array((x,y,0))
         cop = cop + alpha*force
 
