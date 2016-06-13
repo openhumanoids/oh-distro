@@ -20,6 +20,11 @@ struct controller_state_t
   float qd_ref[num_joints];
   float qdd[num_joints];
   float u[num_joints];
+
+  float comdd[3];
+  float pelvdd[6];
+  float l_footdd[6];
+  float r_footdd[6];
   
   float contact_wrenches[num_active_contact_links][6];
   float contact_ref_points[num_active_contact_links][3];

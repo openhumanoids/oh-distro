@@ -34,6 +34,7 @@ public:
   Vector2d cop_b[2];
   
   Matrix<double,6,1> footFT_w[2];
+  Matrix<double,6,1> footFT_w_statics[2];
   
   // Jacobians
   MatrixXd J_foot[2];
@@ -93,7 +94,7 @@ public:
   VectorXd trq;
   Vector6d grf[2];
 
-  Vector2d comdd;
+  Vector3d comdd;
   Vector6d pelvdd;
   Vector6d footdd[2];
 
@@ -105,7 +106,8 @@ public:
     this->_inited = true;
   }
 
-  bool isInit() const { return this->_inited; }
+  bool hasInit() const { return this->_inited; }
+
   sfQPOutput() 
   {
     this->_inited = false;

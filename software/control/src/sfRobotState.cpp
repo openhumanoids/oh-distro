@@ -66,13 +66,19 @@ void sfRobotState::parseMsg(const bot_core::robot_state_t &msg)
   
   // foot ft, TODO, add the other 3
   this->footFT_b[0].setZero();
-  this->footFT_b[0][2] = msg.force_torque.l_foot_force_z;
-  this->footFT_b[0][3] = msg.force_torque.l_foot_torque_x;
-  this->footFT_b[0][4] = msg.force_torque.l_foot_torque_y;
+  this->footFT_b[0][3] = msg.force_torque.l_foot_force_x;
+  this->footFT_b[0][4] = msg.force_torque.l_foot_force_y;
+  this->footFT_b[0][5] = msg.force_torque.l_foot_force_z;
+  this->footFT_b[0][0] = msg.force_torque.l_foot_torque_x;
+  this->footFT_b[0][1] = msg.force_torque.l_foot_torque_y;
+  this->footFT_b[0][2] = msg.force_torque.l_foot_torque_z;
   this->footFT_b[1].setZero();
-  this->footFT_b[1][2] = msg.force_torque.r_foot_force_z;
-  this->footFT_b[1][3] = msg.force_torque.r_foot_torque_x;
-  this->footFT_b[1][4] = msg.force_torque.r_foot_torque_y;
+  this->footFT_b[1][3] = msg.force_torque.r_foot_force_x;
+  this->footFT_b[1][4] = msg.force_torque.r_foot_force_y;
+  this->footFT_b[1][5] = msg.force_torque.r_foot_force_z;
+  this->footFT_b[1][0] = msg.force_torque.r_foot_torque_x;
+  this->footFT_b[1][1] = msg.force_torque.r_foot_torque_y;
+  this->footFT_b[1][2] = msg.force_torque.r_foot_torque_z;
 
   for (int i = 0; i < 2; i++) {
     // rotate the ft measurement to the same orientation as the foot
@@ -81,6 +87,10 @@ void sfRobotState::parseMsg(const bot_core::robot_state_t &msg)
 
     this->footFT_w[i].segment<3>(0) = this->foot[i].rotation() * this->footFT_b[i].segment<3>(0);
     this->footFT_w[i].segment<3>(3) = this->foot[i].rotation() * this->footFT_b[i].segment<3>(3);
+
+    MatrixXd test = this->J_foot[i];
+    test.block(0,0,6,6).setZero();
+    this->footFT_w_statics[i] = -(test.transpose().fullPivHouseholderQr().solve(this->trq));
   }
   
   // cop

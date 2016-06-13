@@ -309,13 +309,19 @@ void state_sync_nasa::publishRobotState(int64_t utime_in,  const  bot_core::six_
   // Limb Sensor states
   bot_core::force_torque_t force_torque_convert;
   if (force_torque_msg.sensors.size() >= 2) {
+    force_torque_convert.l_foot_force_x = force_torque_msg.sensors[0].force[0];
+    force_torque_convert.l_foot_force_y = force_torque_msg.sensors[0].force[1];
     force_torque_convert.l_foot_force_z = force_torque_msg.sensors[0].force[2];
     force_torque_convert.l_foot_torque_x = force_torque_msg.sensors[0].moment[0];
     force_torque_convert.l_foot_torque_y = force_torque_msg.sensors[0].moment[1];
+    force_torque_convert.l_foot_torque_z = force_torque_msg.sensors[0].moment[2];
 
+    force_torque_convert.r_foot_force_x = force_torque_msg.sensors[1].force[0];
+    force_torque_convert.r_foot_force_y = force_torque_msg.sensors[1].force[1];
     force_torque_convert.r_foot_force_z = force_torque_msg.sensors[1].force[2];
     force_torque_convert.r_foot_torque_x = force_torque_msg.sensors[1].moment[0];
     force_torque_convert.r_foot_torque_y = force_torque_msg.sensors[1].moment[1];
+    force_torque_convert.r_foot_torque_z = force_torque_msg.sensors[1].moment[2];
   }
 
   if (force_torque_msg.sensors.size() == 4) {

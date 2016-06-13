@@ -395,6 +395,15 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
     }
   }
 
+  // fill in cartesian acc part
+  for (size_t i = 0; i < std::min(3, (int)(qp_output.comdd.size())); i++)
+    msg.comdd[i] = qp_output.comdd[i];
+  for (int i = 0; i < 6; i++)
+    msg.pelvdd[i] = qp_output.pelvdd[i];
+  for (int i = 0; i < 6; i++)
+    msg.l_footdd[i] = qp_output.footdd[0][i];
+  for (int i = 0; i < 6; i++)
+    msg.r_footdd[i] = qp_output.footdd[1][i];
   return msg;
 }
 
