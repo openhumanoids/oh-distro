@@ -4,6 +4,7 @@ from director import visualization as vis
 from director.debugVis import DebugData
 import director.objectmodel as om
 from director import lcmUtils
+from director import transformUtils
 import bot_core
 import drc as lcmdrc
 
@@ -122,7 +123,20 @@ class ForceVisualizer:
         # draw the contact wrenches
         d = DebugData()
         for i, wrench in enumerate(msg.contact_wrenches):
-            arrowStart = np.array((msg.contact_ref_points[i][0], msg.contact_ref_points[i][1], msg.contact_ref_points[i][2]))
+            
+            footName = ""
+            ftFrameId = 0
+            ftFrameToWorld = 0
+            if (i == 0):
+                ftFrameId = self.nameDict['r_foot']['frameId']
+                ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
+            else:
+                ftFrameId = self.nameDict['l_foot']['frameId']
+                ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
+
+
+            #arrowStart = np.array((msg.contact_ref_points[i][0], msg.contact_ref_points[i][1], msg.contact_ref_points[i][2]))
+            arrowStart = ftFrameToWorld.TransformPoint((0,0,0))
             force = np.array((wrench[3], wrench[4], wrench[5]))
             arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*force
             
