@@ -170,7 +170,9 @@ qp_controller_params:
     Kp_ang: 0
     w_slack: 0.05
     slack_limit: 100
-    w_grf: 0
+    w_grf: 0.00
+    mu: 0.01
+    w_zmp: 1.0
     Kp_accel: 1
     contact_threshold: 0.002
     min_knee_angle: 0.7
