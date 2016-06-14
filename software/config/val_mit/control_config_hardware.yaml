@@ -107,9 +107,9 @@ qp_controller_params:
           max: {x: 100, y: 100, z: 100, wx: 50, wy: 50, wz: 50}
         weight: 0.0
       *PELVIS_NAME :
-        Kp: {x: 150, y: 150, z: 150, wx: 200, wy: 200, wz: 200}
+        Kp: {x: 40, y: 40, z: 40, wx: 40, wy: 40, wz: 40}
         weight: 0.01
-        damping_ratio: 0.6
+        damping_ratio: 0.3
       *R_FOOT_NAME :
         weight: 0.01
       *L_FOOT_NAME :
@@ -168,12 +168,14 @@ qp_controller_params:
       eta: 0.0
     W_kdot: 0
     Kp_ang: 0
-    w_slack: 0.05
+    w_slack: 20
+    Jpdotv_multiplier: 0.0
     slack_limit: 100
     w_grf: 0.00
-    mu: 0.01
+    mu: 1
     w_zmp: 1.0
-    Kp_accel: 1
+    w_qdd_delta: 0.01
+    Kp_accel: 0.0
     contact_threshold: 0.002
     min_knee_angle: 0.7
     center_of_mass_observer:

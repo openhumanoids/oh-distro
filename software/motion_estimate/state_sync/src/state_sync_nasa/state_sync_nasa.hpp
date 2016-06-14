@@ -23,6 +23,7 @@
 
 #include <pronto_utils/pronto_math.hpp>
 #include <estimate_tools/torque_adjustment.hpp>
+#include <estimate_tools/alpha_filter.hpp>
 
 struct Joints { 
   std::vector<float> position;
@@ -43,13 +44,14 @@ class CommandLineConfig{
 
       // Defaults - not read from command line:
       use_torque_adjustment = false;
-
+      use_joint_velocity_low_pass = false;
     }
     ~CommandLineConfig(){};
 
     std::string output_channel;
     bool use_ihmc;
     bool use_torque_adjustment;
+    bool use_joint_velocity_low_pass;
     bool pin_floating_base;
 
 };
@@ -91,6 +93,9 @@ class state_sync_nasa{
            
     // Torque Adjustment:
     EstimateTools::TorqueAdjustment* torque_adjustment_;
+    // joint velocity filter
+    std::shared_ptr<EstimateTools::AlphaFilter> joint_vel_filter_;
+    Eigen::VectorXd raw_vel_, filtered_vel_;
 
     void publishRobotState(int64_t utime_in, const  bot_core::six_axis_force_torque_array_t& msg);
     void appendJoints(bot_core::robot_state_t& msg_out, Joints joints);

@@ -118,6 +118,22 @@ state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
     std::cout << "Torque-based joint angle adjustment: Not Using\n";
   }
 
+  /// 5. joint velocity low pass filter
+  cl_cfg_->use_joint_velocity_low_pass = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.joint_vel_alpha_filter" );
+  if (cl_cfg_->use_joint_velocity_low_pass) {
+    std::cout << "Low pass filtering jiont velocity: Using\n";
+    double alpha = 1.;
+    int stats = bot_param_get_double(botparam_, "state_estimator.legodo.joint_vel_alpha", &alpha);
+    if (stats) {
+      std::cout << "Cannot find param state_estimator.legodo.joint_vel_alpha\n";
+      alpha = 1;
+    }
+    std::cout << "Using alpha = " << alpha << std::endl;
+    joint_vel_filter_.reset(new EstimateTools::AlphaFilter(alpha));
+  }
+  else {
+    std::cout << "Low pass filtering jiont velocity: Not Using\n";
+  }
 }
 
 void state_sync_nasa::setPoseToZero(PoseT &pose){
@@ -156,8 +172,22 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
   core_robot_joints_.name = msg->joint_name;  // added recently
   core_robot_joints_.velocity = msg->joint_velocity;
   core_robot_joints_.effort = msg->joint_effort;
-  
 
+  // low pass filter velocity
+  if (cl_cfg_->use_joint_velocity_low_pass) {
+    if (raw_vel_.size() != core_robot_joints_.velocity.size()) {
+      raw_vel_.resize(core_robot_joints_.velocity.size());
+      filtered_vel_.resize(core_robot_joints_.velocity.size());
+    }
+    for (int i = 0; i < core_robot_joints_.velocity.size(); i++)
+      raw_vel_[i] = core_robot_joints_.velocity[i];
+    joint_vel_filter_->processSample(raw_vel_, filtered_vel_);
+
+    for (int i = 0; i < core_robot_joints_.velocity.size(); i++)
+      core_robot_joints_.velocity[i] = filtered_vel_[i];
+  }
+
+  // torque adjustment
   if (cl_cfg_->use_torque_adjustment){
     torque_adjustment_->processSample(core_robot_joints_.name, core_robot_joints_.position, core_robot_joints_.effort );
   }

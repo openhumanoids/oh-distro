@@ -1,6 +1,6 @@
 group "0.params_and_model_pub" {
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/val_sim_mit/robot.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/val_mit/robot.cfg";
         host = "base";
     }
     cmd "model_LR_RR" {
@@ -56,7 +56,7 @@ group "1.state_mit" {
 group "2.plan_and_control" {
     cmd "contact_monitor" {
         exec = "drc-contact-monitor";
-        host = "localhost";
+        host = "base";
     }
 
     cmd "FallDetector" {
