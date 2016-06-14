@@ -6,6 +6,7 @@ struct controller_state_t
   int32_t num_joints;
   int32_t num_active_contact_links;
   int32_t num_active_contact_points;
+  int32_t num_slack;
 
   boolean fastQPFailed;
   int32_t qpInfo;
@@ -26,6 +27,8 @@ struct controller_state_t
   float l_footdd[6];
   float r_footdd[6];
   
+  float slack[num_slack];
+
   float contact_wrenches[num_active_contact_links][6];
   float contact_ref_points[num_active_contact_links][3];
   float all_contact_points[num_active_contact_points][3];

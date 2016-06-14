@@ -395,6 +395,12 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
     }
   }
 
+  // fill in slack
+  msg.num_slack = qp_output.slack.size();
+  msg.slack.resize(msg.num_slack);
+  for (int i = 0; i < qp_output.slack.size(); i++)
+    msg.slack[i] = qp_output.slack[i];
+
   // fill in cartesian acc part
   for (size_t i = 0; i < std::min(3, (int)(qp_output.comdd.size())); i++)
     msg.comdd[i] = qp_output.comdd[i];
