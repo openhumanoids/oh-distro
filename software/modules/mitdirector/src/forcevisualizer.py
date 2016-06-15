@@ -122,15 +122,19 @@ class ForceVisualizer:
     def drawQPContactWrench(self, msg):
         # draw the contact wrenches
         d = DebugData()
+        copData = dict()
+        totalForce = np.zeros(3)
         for i, wrench in enumerate(msg.contact_wrenches):
             
             footName = ""
             ftFrameId = 0
             ftFrameToWorld = 0
             if (i == 0):
+                footName = "left"
                 ftFrameId = self.nameDict['r_foot']['frameId']
                 ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
             else:
+                footName = "right"
                 ftFrameId = self.nameDict['l_foot']['frameId']
                 ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
 
@@ -143,6 +147,30 @@ class ForceVisualizer:
             d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
                            headRadius=self.options['forceArrowHeadRadius'], color=self.options['forceArrowColor'])
 
+            # compute cop
+            cop = np.zeros(3)
+            cop[0] = -msg.contact_wrenches[i][1] / msg.contact_wrenches[i][5] + msg.contact_ref_points[i][0]
+            cop[1] = msg.contact_wrenches[i][0] / msg.contact_wrenches[i][5] + msg.contact_ref_points[i][1]
+            cop[2] = msg.contact_ref_points[i][2]
+
+            totalForce += np.array((msg.contact_wrenches[i][3],msg.contact_wrenches[i][4],msg.contact_wrenches[i][5]))
+
+            data = dict()
+            data['cop'] = cop
+            data['fz'] = msg.contact_wrenches[i][5]
+            copData[footName] = data
+
+        cop = np.zeros(3)
+        totalForceMag = copData['left']['fz'] + copData['right']['fz']
+        for footName in ("left", "right"):
+            cop += copData[footName]['cop']*copData[footName]['fz']/totalForceMag
+
+
+        bottomFootZVal = -0.09
+        if(np.abs(totalForce[2]) > 0.01):
+            cop += bottomFootZVal/totalForce[2]*totalForce 
+
+        d.addSphere(cop, radius=0.015)
         vis.updatePolyData(d.getPolyData(), name=self.options['QPForceVisName'], view=self.view,
                                parent='robot state model').setProperty('Color', [0,0,1])
 
@@ -190,7 +218,7 @@ class ForceVisualizer:
         copInWorld = (copDataList[0]['cop']*copDataList[0]['fz'] + copDataList[1]['cop']*copDataList[1]['fz'])/(
             copDataList[0]['fz'] + copDataList[1]['fz'])
 
-        d.addSphere(copInWorld, radius=0.02)
+        d.addSphere(copInWorld, radius=0.015)
         vis.updatePolyData(d.getPolyData(), name='cop', view=self.view,
                            parent='robot state model').setProperty('Color', [0,1,0])
 

@@ -7,6 +7,7 @@ struct controller_state_t
   int32_t num_active_contact_links;
   int32_t num_active_contact_points;
   int32_t num_slack;
+  int32_t num_tracked_bodies;
 
   boolean fastQPFailed;
   int32_t qpInfo;
@@ -33,4 +34,6 @@ struct controller_state_t
   float contact_ref_points[num_active_contact_links][3];
   float all_contact_points[num_active_contact_points][3];
   float all_contact_forces[num_active_contact_points][3];
+
+  qp_desired_body_acceleration_t desired_body_vdots[num_tracked_bodies];
 }

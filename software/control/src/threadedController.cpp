@@ -346,6 +346,13 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   msg.fastQPFailed = qp_output.fastQPFailed;
   msg.qpInfo = qp_output.qpInfo;
 
+  msg.num_tracked_bodies = qp_output.body_vdots.size();
+  msg.desired_body_vdots.resize(msg.num_tracked_bodies);
+  for (int i = 0; i < msg.num_tracked_bodies; i++) {
+    msg.desired_body_vdots[i].body_name = qp_output.body_vdots[i].name;
+    for (int j = 0; j < 6; j++)
+      msg.desired_body_vdots[i].body_vdot[j] = qp_output.body_vdots[i].body_vdot[j];
+  }
 
   const QPControllerState& controller_state = solveArgs.pdata->getControllerState();
 
@@ -462,7 +469,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
   a_grav << 0, 0, 0, 0, 0, -9.81;
 
   bool resetControllerState = false;
-
+  
   while (!done) {
 
     //std::cout << "waiting for new data... " << std::this_thread::get_id() << std::endl;
@@ -529,6 +536,7 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
         // First priority is to halt unsafe behavior
         robot_behavior_msg.utime = 0;
         robot_behavior_msg.command = "freeze";
+
         lcmHandler.LCMHandle->publish(ctrl_opts->robot_behavior_channel, &robot_behavior_msg);
       }
 
