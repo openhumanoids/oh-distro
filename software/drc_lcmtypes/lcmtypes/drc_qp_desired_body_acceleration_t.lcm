@@ -1,0 +1,7 @@
+package drc;
+
+struct qp_desired_body_acceleration_t 
+{
+	string body_name;
+	float body_vdot[6];
+}
