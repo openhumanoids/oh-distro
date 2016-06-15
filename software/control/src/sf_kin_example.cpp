@@ -243,7 +243,7 @@ int main ()
   LCMHandler lcmHandler;
   LCMControlReceiver controlReceiver(&lcmHandler);
 
-  std::string urdf("/home/sfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
+  std::string urdf("/home/siyuanfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
   sfRobotState rs(std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW)));
   sfQPOutput qpout;
  
