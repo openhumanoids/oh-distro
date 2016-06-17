@@ -17,7 +17,7 @@
 #include "drake/systems/robotInterfaces/Side.h"
 #include "drake/systems/controllers/InstantaneousQPController.h"
 #include "sfRobotState.h"
-
+#include <csignal>
 
 using namespace Eigen;
  
@@ -236,6 +236,7 @@ public:
   Vector6d footdd_d[2];
 };
 
+/*
 template <typename Scalar> Matrix<Scalar,6,1> getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<Scalar> &cache, int body_or_frame_id, const Vector3d &local_offset = Vector3d::Zero())
 {
   Matrix<Scalar,6,1> vel;
@@ -256,6 +257,32 @@ template <typename Scalar> Matrix<Scalar,6,1> getTaskSpaceVel(const RigidBodyTre
   return vel;  
 }
 
+template <typename Scalar> Matrix<Scalar,6,1> getTaskSpaceVel1(const RigidBodyTree &r, const KinematicsCache<Scalar> &cache, int body_or_frame_id, const Vector3d &local_offset = Vector3d::Zero())
+{
+  Transform<Scalar, 3, Isometry> H_body_to_frame;
+  int body_idx = r.parseBodyOrFrameID(body_or_frame_id, &H_body_to_frame);
+
+  const auto &element = cache.getElement(*(r.bodies[body_idx]));
+  Vector6d T = element.twist_in_world;
+  Vector3d pt = element.transform_to_world.translation();
+  
+  // get the body's task space vel
+  Vector6d v = T;
+  v.tail<3>() += v.head<3>().cross(pt); 
+
+  // global offset between pt and body
+  auto H_world_to_frame = element.transform_to_world * H_body_to_frame;
+  Transform<Scalar, 3, Isometry> H_frame_to_pt(Transform<Scalar, 3, Isometry>::Identity());
+  H_frame_to_pt.translation() = local_offset;
+  auto H_world_to_pt = H_world_to_frame * H_frame_to_pt; 
+  Vector3d world_offset = H_world_to_pt.translation() - element.transform_to_world.translation();
+  
+  // add the linear vel from the body rotation
+  v.tail<3>() += v.head<3>().cross(world_offset);
+
+  return v;
+}
+
 // implicityly says body wrt world expressed in world
 MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, KinematicsCache<double> &cache, int body)
 {
@@ -267,27 +294,18 @@ MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, KinematicsCache<double> &c
   return J;
 }
 
-MatrixXd getTaskSpaceJacobian1(const RigidBodyTree &r, KinematicsCache<double> &cache, int body, const Vector3d local_offset)
+void a(const RigidBodyTree &r, KinematicsCache<double> &cache, int body)
 {
-  std::vector<int> v_or_q_indices;
-  KinematicPath body_path = r.findKinematicPath(0, body);
-  MatrixXd Jg = r.geometricJacobian(cache, 0, body, 0, true, &v_or_q_indices);
-  MatrixXd J(6, r.num_velocities);
-  J.setZero();
+  const auto &element = cache.getElement(*(r.bodies[body]));
+  Vector6d T = element.twist_in_world;
+  Vector3d pt = element.transform_to_world.translation();
+  
+  Vector6d v = T;
+  v.tail<3>() += v.head<3>().cross(pt);
 
-  Vector3d points = r.transformPoints(cache, local_offset, body, 0);
-
-  int col = 0;
-  for (std::vector<int>::iterator it = v_or_q_indices.begin(); it != v_or_q_indices.end(); ++it) {
-    // angular
-    J.template block<SPACE_DIMENSION, 1>(0,*it) = Jg.block<3,1>(0,col);
-    // linear
-    J.template block<SPACE_DIMENSION, 1>(3,*it) = Jg.block<3,1>(3,col);
-    J.template block<SPACE_DIMENSION, 1>(3,*it).noalias() += Jg.block<3,1>(0,col).cross(points);
-    col++;
-  }
-
-  return J;
+  std::cout << "v: " << v.transpose() << std::endl;
+  Vector6d v1 = getTaskSpaceVel(r, cache, body);
+  std::cout << "v1: " << v1.transpose() << std::endl;
 }
 
 void test_velocity()
@@ -358,7 +376,6 @@ void test_velocity()
   MatrixXd Ja1 = getTaskSpaceJacobian1(r, cache, idx, Vector3d::Zero());
 
   std::cout << "Ja * qd: " << Ja * qd << std::endl;
-  printf("%d %d %d %d\n", Ja1.rows(), Ja1.cols(), Ja.rows(), Ja.cols());
   std::cout << "Ja = JJ: " << (Ja.bottomRows(3) - JJ).isZero() << std::endl;
   std::cout << "Ja = Ja1: " << (Ja - Ja1).isZero() << std::endl;
 
@@ -369,17 +386,36 @@ void test_velocity()
   Vector6d new_vel = getTaskSpaceVel(r, cache, idx, pt);
   Vector6d new_vel1 = getTaskSpaceVel(r, cache, idx);
   new_vel1.tail(3) += new_vel1.segment<3>(0).cross(vec);
+  
+  Vector6d new_vel2 = getTaskSpaceVel1(r, cache, idx, pt);
 
   std::cout << "vel: " << new_vel << std::endl;
   std::cout << "vel1: " << new_vel1 << std::endl;
-}
+  std::cout << "vel2: " << new_vel2 << std::endl;
 
+  a(r, cache, idx);
+
+  std::cout << "Jdqd: " << r.transformPointsJacobianDotTimesV(cache, pt, idx, 0).transpose() << std::endl;
+  std::cout << "Jdqd1: " << getTaskSpaceJacobianDotTimesV(r, cache, idx, pt).transpose() << std::endl;
+  std::cout << "Jdqd2: " << r.geometricJacobianDotTimesV(cache, 0, idx, 0).transpose() << std::endl;
+}
+*/
+  
+BatchLogger logger;
+
+void sigHandler(int signum)
+{
+  std::cout << "CAUGHT SIG " << signum << std::endl;
+  if (signum == SIGINT) {
+    logger.writeToMRDPLOT("/home/siyuanfeng/logs/mrdplot/bal");
+  }
+  std::cout << "GOODBYE CAPTAIN\n";
+  exit(0);
+}
 
 int main ()
 {
-
-  test_velocity();
-  /*
+  signal(SIGINT, sigHandler);
 
   // start lcm stuff
   LCMHandler lcmHandler;
@@ -392,12 +428,16 @@ int main ()
   // start the lcm 
   lcmHandler.Start();
   controlReceiver.InitSubscriptions();
+  
+  logger.init(0.002);
 
   while(1) {
     // proc robot state
     if (hasNewState) {
-      if (!rs.hasInit())
+      if (!rs.hasInit()) {
         rs.init(robot_state_msg);
+        rs.addToLog(logger);
+      }
 
       rs.parseMsg(robot_state_msg);
       
@@ -406,6 +446,8 @@ int main ()
       //for (int i = 0; i < rs.trq.size(); i++) {
       //  std::cout << rs.robot->getPositionName(i) << ": " << rs.trq[i] << ", " << trql[i] << ", " << trqr[i] << std::endl;
       //}
+      std::cout << "torsod: " << rs.torso.vel.transpose() << std::endl;
+
       std::cout << "statics l: " << rs.footFT_w_statics[0] << std::endl;
       std::cout << "statics r: " << rs.footFT_w_statics[1] << std::endl;
       std::cout << "fl: " << rs.footFT_w[0] << std::endl;
@@ -413,6 +455,8 @@ int main ()
       
       std::cout << "com: " << rs.com[0] << ", " << rs.com[1] << std::endl;
       std::cout << "cop: " << rs.cop[0] << ", " << rs.cop[1] << std::endl;
+
+      logger.saveData();
     }
     // proc qp output
     if (hasNewQPOut) {
@@ -429,7 +473,6 @@ int main ()
       hasNewQPOut = false;
     }
   }
-  */
 
   return 0;
 }
