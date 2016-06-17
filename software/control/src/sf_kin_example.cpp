@@ -455,13 +455,16 @@ int main ()
       
       std::cout << "com: " << rs.com[0] << ", " << rs.com[1] << std::endl;
       std::cout << "cop: " << rs.cop[0] << ", " << rs.cop[1] << std::endl;
-
-      logger.saveData();
+      
+      if (qpout.hasInit() && rs.hasInit())
+        logger.saveData();
     }
     // proc qp output
     if (hasNewQPOut) {
-      if (!qpout.hasInit())
+      if (!qpout.hasInit()) {
         qpout.init(qp_output_msg);
+        qpout.addToLog(logger, rs);
+      }
 
       if (rs.hasInit())
         qpout.parseMsg(qp_output_msg, rs);

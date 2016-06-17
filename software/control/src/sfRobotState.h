@@ -26,12 +26,12 @@ public:
     logger.add_datapoint(name+"[y]", "m", pose.translation().data()+1);
     logger.add_datapoint(name+"[z]", "m", pose.translation().data()+2);
     
-    logger.add_datapoint(name+"d[x]", "m/s", vel.data());
-    logger.add_datapoint(name+"d[y]", "m/s", vel.data()+1);
-    logger.add_datapoint(name+"d[z]", "m/s", vel.data()+2);
-    logger.add_datapoint(name+"d[wx]", "m/s", vel.data()+3);
-    logger.add_datapoint(name+"d[wy]", "m/s", vel.data()+4);
-    logger.add_datapoint(name+"d[wz]", "m/s", vel.data()+5);
+    logger.add_datapoint(name+"d[x]", "m/s", vel.data()+3);
+    logger.add_datapoint(name+"d[y]", "m/s", vel.data()+4);
+    logger.add_datapoint(name+"d[z]", "m/s", vel.data()+5);
+    logger.add_datapoint(name+"d[wx]", "m/s", vel.data()+0);
+    logger.add_datapoint(name+"d[wy]", "m/s", vel.data()+1);
+    logger.add_datapoint(name+"d[wz]", "m/s", vel.data()+2);
   }
 };
 
@@ -139,6 +139,7 @@ public:
   Vector3d comdd;
   Vector6d pelvdd;
   Vector6d footdd[2];
+  Vector6d torsodd;
 
   void parseMsg(const drc::controller_state_t &msg, const sfRobotState &rs);
   void init(const drc::controller_state_t &msg)
@@ -149,6 +150,8 @@ public:
   }
 
   bool hasInit() const { return this->_inited; }
+
+  void addToLog(Logger &logger, const sfRobotState &rs) const;
 
   sfQPOutput() 
   {

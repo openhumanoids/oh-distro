@@ -33,6 +33,36 @@ void sfRobotState::addToLog(Logger &logger) const
   l_foot.addToLog(logger);
   r_foot.addToLog(logger);
   torso.addToLog(logger);
+
+  logger.add_datapoint("com[x]", "m", com.data());
+  logger.add_datapoint("com[y]", "m", com.data()+1);
+  logger.add_datapoint("com[z]", "m", com.data()+2);
+  logger.add_datapoint("comd[x]", "m/s", comd.data());
+  logger.add_datapoint("comd[y]", "m/s", comd.data()+1);
+  logger.add_datapoint("comd[z]", "m/s", comd.data()+2);
+
+  logger.add_datapoint("cop[x]", "m", cop.data());
+  logger.add_datapoint("cop[y]", "m", cop.data()+1);
+
+  logger.add_datapoint("F_w[L][x]", "N", footFT_w[Side::LEFT].data()+3);
+  logger.add_datapoint("F_w[L][y]", "N", footFT_w[Side::LEFT].data()+4);
+  logger.add_datapoint("F_w[L][z]", "N", footFT_w[Side::LEFT].data()+5);
+  logger.add_datapoint("M_w[L][x]", "Nm", footFT_w[Side::LEFT].data()+0);
+  logger.add_datapoint("M_w[L][y]", "Nm", footFT_w[Side::LEFT].data()+1);
+  logger.add_datapoint("M_w[L][z]", "Nm", footFT_w[Side::LEFT].data()+1);
+  logger.add_datapoint("F_w[R][x]", "N", footFT_w[Side::RIGHT].data()+3);
+  logger.add_datapoint("F_w[R][y]", "N", footFT_w[Side::RIGHT].data()+4);
+  logger.add_datapoint("F_w[R][z]", "N", footFT_w[Side::RIGHT].data()+5);
+  logger.add_datapoint("M_w[R][x]", "Nm", footFT_w[Side::RIGHT].data()+0);
+  logger.add_datapoint("M_w[R][y]", "Nm", footFT_w[Side::RIGHT].data()+1);
+  logger.add_datapoint("M_w[R][z]", "Nm", footFT_w[Side::RIGHT].data()+1);
+
+  for (int i = 0; i < pos.size(); i++)
+    logger.add_datapoint("q["+robot->getPositionName(i)+"]", "rad", pos.data()+i);
+  for (int i = 0; i < vel.size(); i++)
+    logger.add_datapoint("v["+robot->getPositionName(i)+"]", "rad/s", vel.data()+i);
+  for (int i = 0; i < trq.size(); i++)
+    logger.add_datapoint("trq["+robot->getPositionName(i)+"]", "Nm", trq.data()+i);
 }
 
 void sfRobotState::parseMsg(const bot_core::robot_state_t &msg)
@@ -202,7 +232,61 @@ void sfQPOutput::parseMsg(const drc::controller_state_t &msg, const sfRobotState
   
   this->comdd = rs.J_com * this->qdd + rs.Jdv_com;
   this->pelvdd = rs.pelv.J * this->qdd + rs.pelv.Jdv;
+  this->torsodd = rs.torso.J * this->qdd + rs.pelv.Jdv;
   for (int i = 0; i < 2; i++)
     this->footdd[i] = rs.foot[i]->J * this->qdd + rs.foot[i]->Jdv;
 }
 
+void sfQPOutput::addToLog(Logger &logger, const sfRobotState &rs) const
+{
+  logger.add_datapoint("QP.comdd[x]", "m/s2", comdd.data()+0);
+  logger.add_datapoint("QP.comdd[y]", "m/s2", comdd.data()+1);
+  logger.add_datapoint("QP.comdd[z]", "m/s2", comdd.data()+2);
+
+  logger.add_datapoint("QP.pelvdd[x]", "m/s2", pelvdd.data()+3);
+  logger.add_datapoint("QP.pelvdd[y]", "m/s2", pelvdd.data()+4);
+  logger.add_datapoint("QP.pelvdd[z]", "m/s2", pelvdd.data()+5);
+  logger.add_datapoint("QP.pelvdd[wx]", "rad/s2", pelvdd.data()+0);
+  logger.add_datapoint("QP.pelvdd[wy]", "rad/s2", pelvdd.data()+1);
+  logger.add_datapoint("QP.pelvdd[wz]", "rad/s2", pelvdd.data()+2);
+
+  logger.add_datapoint("QP.torsodd[x]", "m/s2", torsodd.data()+3);
+  logger.add_datapoint("QP.torsodd[y]", "m/s2", torsodd.data()+4);
+  logger.add_datapoint("QP.torsodd[z]", "m/s2", torsodd.data()+5);
+  logger.add_datapoint("QP.torsodd[wx]", "rad/s2", torsodd.data()+0);
+  logger.add_datapoint("QP.torsodd[wy]", "rad/s2", torsodd.data()+1);
+  logger.add_datapoint("QP.torsodd[wz]", "rad/s2", torsodd.data()+2);
+
+  logger.add_datapoint("QP.footdd[L][x]", "m/s2", footdd[Side::LEFT].data()+3);
+  logger.add_datapoint("QP.footdd[L][y]", "m/s2", footdd[Side::LEFT].data()+4);
+  logger.add_datapoint("QP.footdd[L][z]", "m/s2", footdd[Side::LEFT].data()+5);
+  logger.add_datapoint("QP.footdd[L][wx]", "rad/s2", footdd[Side::LEFT].data()+0);
+  logger.add_datapoint("QP.footdd[L][wy]", "rad/s2", footdd[Side::LEFT].data()+1);
+  logger.add_datapoint("QP.footdd[L][wz]", "rad/s2", footdd[Side::LEFT].data()+2);
+  
+  logger.add_datapoint("QP.footdd[R][x]", "m/s2", footdd[Side::RIGHT].data()+3);
+  logger.add_datapoint("QP.footdd[R][y]", "m/s2", footdd[Side::RIGHT].data()+4);
+  logger.add_datapoint("QP.footdd[R][z]", "m/s2", footdd[Side::RIGHT].data()+5);
+  logger.add_datapoint("QP.footdd[R][wx]", "rad/s2", footdd[Side::RIGHT].data()+0);
+  logger.add_datapoint("QP.footdd[R][wy]", "rad/s2", footdd[Side::RIGHT].data()+1);
+  logger.add_datapoint("QP.footdd[R][wz]", "rad/s2", footdd[Side::RIGHT].data()+2);
+
+  for (int i = 0; i < qdd.size(); i++) 
+    logger.add_datapoint("QP.qdd["+rs.robot->getPositionName(i)+"]", "rad/s2", qdd.data()+i);
+  
+  for (int i = 0; i < trq.size(); i++) 
+    logger.add_datapoint("QP.trq["+rs.robot->getPositionName(i)+"]", "Nm", trq.data()+i);
+
+  logger.add_datapoint("QP.F[L][x]", "N", grf[Side::LEFT].data()+3);
+  logger.add_datapoint("QP.F[L][y]", "N", grf[Side::LEFT].data()+4);
+  logger.add_datapoint("QP.F[L][z]", "N", grf[Side::LEFT].data()+5);
+  logger.add_datapoint("QP.M[L][x]", "Nm", grf[Side::LEFT].data()+0);
+  logger.add_datapoint("QP.M[L][y]", "Nm", grf[Side::LEFT].data()+1);
+  logger.add_datapoint("QP.M[L][z]", "Nm", grf[Side::LEFT].data()+2);
+  logger.add_datapoint("QP.F[R][x]", "N", grf[Side::RIGHT].data()+3);
+  logger.add_datapoint("QP.F[R][y]", "N", grf[Side::RIGHT].data()+4);
+  logger.add_datapoint("QP.F[R][z]", "N", grf[Side::RIGHT].data()+5);
+  logger.add_datapoint("QP.M[R][x]", "Nm", grf[Side::RIGHT].data()+0);
+  logger.add_datapoint("QP.M[R][y]", "Nm", grf[Side::RIGHT].data()+1);
+  logger.add_datapoint("QP.M[R][z]", "Nm", grf[Side::RIGHT].data()+2);
+}
