@@ -236,9 +236,151 @@ public:
   Vector6d footdd_d[2];
 };
 
+template <typename Scalar> Matrix<Scalar,6,1> getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<Scalar> &cache, int body_or_frame_id, const Vector3d &local_offset = Vector3d::Zero())
+{
+  Matrix<Scalar,6,1> vel;
+  Transform<Scalar, 3, Isometry> H_body_to_frame;
+  int body_idx = r.parseBodyOrFrameID(body_or_frame_id, &H_body_to_frame);
+  const auto &element = cache.getElement(*(r.bodies[body_idx]));
+  Transform<Scalar, 3, Isometry> H_world_to_frame = element.transform_to_world * H_body_to_frame;
+
+  Transform<Scalar, 3, Isometry> H_frame_to_pt(Transform<Scalar, 3, Isometry>::Identity());
+  H_frame_to_pt.translation() = local_offset;
+  Transform<Scalar, 3, Isometry> H_world_to_pt = H_world_to_frame * H_frame_to_pt;
+
+  // because the new fake frame at point has the same twist as body / frame 
+  Matrix<Scalar,6,1> twist_in_body = transformSpatialMotion(H_world_to_pt.inverse(), element.twist_in_world);
+  vel.head(3) = H_world_to_pt.linear() * twist_in_body.head(3);
+  vel.tail(3) = H_world_to_pt.linear() * twist_in_body.tail(3);
+
+  return vel;  
+}
+
+// implicityly says body wrt world expressed in world
+MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, KinematicsCache<double> &cache, int body)
+{
+  KinematicPath body_path = r.findKinematicPath(0, body);
+  MatrixXd J = r.geometricJacobian(cache, 0, body, body, true);
+  J = r.compactToFull(J, body_path.joint_path, true);
+  J.topRows(3) = cache.getElement(*(r.bodies[body])).transform_to_world.linear() * J.topRows(3);
+  J.bottomRows(3) = cache.getElement(*(r.bodies[body])).transform_to_world.linear() * J.bottomRows(3);
+  return J;
+}
+
+MatrixXd getTaskSpaceJacobian1(const RigidBodyTree &r, KinematicsCache<double> &cache, int body, const Vector3d local_offset)
+{
+  std::vector<int> v_or_q_indices;
+  KinematicPath body_path = r.findKinematicPath(0, body);
+  MatrixXd Jg = r.geometricJacobian(cache, 0, body, 0, true, &v_or_q_indices);
+  MatrixXd J(6, r.num_velocities);
+  J.setZero();
+
+  Vector3d points = r.transformPoints(cache, local_offset, body, 0);
+
+  int col = 0;
+  for (std::vector<int>::iterator it = v_or_q_indices.begin(); it != v_or_q_indices.end(); ++it) {
+    // angular
+    J.template block<SPACE_DIMENSION, 1>(0,*it) = Jg.block<3,1>(0,col);
+    // linear
+    J.template block<SPACE_DIMENSION, 1>(3,*it) = Jg.block<3,1>(3,col);
+    J.template block<SPACE_DIMENSION, 1>(3,*it).noalias() += Jg.block<3,1>(0,col).cross(points);
+    col++;
+  }
+
+  return J;
+}
+
+void test_velocity()
+{
+  std::minstd_rand0 g1 (12345);
+
+  std::string urdf("/home/siyuanfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
+  RigidBodyTree r(urdf, DrakeJoint::ROLLPITCHYAW);
+  KinematicsCache<double> cache(r.bodies);
+
+  // make state
+  //VectorXd q = r.getZeroConfiguration();
+  //VectorXd qd = VectorXd::Zero(r.num_velocities);
+  //qd[4] = 1;
+
+  VectorXd q = r.getRandomConfiguration(g1);
+  VectorXd qd = VectorXd::Random(r.num_velocities);
+
+  cache.initialize(q, qd);
+  r.doKinematics(cache, true);
+
+  for (int i = 0; i < r.num_velocities; i++)
+    std::cout << i << r.getVelocityName(i) << std::endl;
+  
+  // body name to idx 
+  std::unordered_map<std::string, int> body_or_frame_name_to_id;
+  body_or_frame_name_to_id = std::unordered_map<std::string, int>();
+  for (auto it = r.bodies.begin(); it != r.bodies.end(); ++it) {
+    body_or_frame_name_to_id[(*it)->linkname] = it - r.bodies.begin();
+  } 
+
+  // try foot
+  int idx = body_or_frame_name_to_id.at("leftFoot");
+  KinematicPath body_path = r.findKinematicPath(0, idx);
+  // body wrt world, expressed in world
+  MatrixXd J_w_w_b = r.geometricJacobian(cache, 0, idx, 0, true);
+  J_w_w_b = r.compactToFull(J_w_w_b, body_path.joint_path, true);
+  // body wrt world, expressed in body
+  MatrixXd J_b_w_b = r.geometricJacobian(cache, 0, idx, idx, true);
+  J_b_w_b = r.compactToFull(J_b_w_b, body_path.joint_path, true);
+
+  VectorXd twist_w = J_w_w_b * qd;
+  VectorXd twist_b = J_b_w_b * qd;
+
+  Isometry3d b_2_w = r.relativeTransform(cache, 0, idx);
+  Matrix<double,6,6> R(Matrix<double,6,6>::Zero());
+  R.block<3,3>(0,0) = b_2_w.linear();
+  R.block<3,3>(3,3) = b_2_w.linear();
+
+  Vector6d T_w = cache.getElement(*r.bodies[r.parseBodyOrFrameID(idx)]).twist_in_world;
+  Vector6d T_w_0 = cache.getElement(*r.bodies[0]).twist_in_world;
+
+  std::cout << "twist_w: " << twist_w.transpose() << std::endl;
+  std::cout << "T_w: " << T_w.transpose() << std::endl;
+  std::cout << "transform  twist_b: " << transformSpatialMotion(b_2_w, twist_b).transpose() << std::endl;
+
+  std::cout << std::endl;
+  std::cout << std::endl;
+
+  std::cout << "R * twist_b: " << (R * twist_b).transpose() << std::endl;
+  std::cout << "vel: " << getTaskSpaceVel(r, cache, idx).transpose() << std::endl;
+  
+  //std::cout << "b_2_w: " << b_2_w.linear() << std::endl;
+  //std::cout << "b_2_w: " << b_2_w.translation() << std::endl;
+
+  MatrixXd JJ = r.transformPointsJacobian(cache, Vector3d::Zero(), idx, 0, true);
+  MatrixXd Ja = getTaskSpaceJacobian(r, cache, idx);
+  MatrixXd Ja1 = getTaskSpaceJacobian1(r, cache, idx, Vector3d::Zero());
+
+  std::cout << "Ja * qd: " << Ja * qd << std::endl;
+  printf("%d %d %d %d\n", Ja1.rows(), Ja1.cols(), Ja.rows(), Ja.cols());
+  std::cout << "Ja = JJ: " << (Ja.bottomRows(3) - JJ).isZero() << std::endl;
+  std::cout << "Ja = Ja1: " << (Ja - Ja1).isZero() << std::endl;
+
+  // test velocity
+  Vector3d pt(0.3, 0.4, 0.5);
+  Vector3d vec = b_2_w.linear() * pt;
+  
+  Vector6d new_vel = getTaskSpaceVel(r, cache, idx, pt);
+  Vector6d new_vel1 = getTaskSpaceVel(r, cache, idx);
+  new_vel1.tail(3) += new_vel1.segment<3>(0).cross(vec);
+
+  std::cout << "vel: " << new_vel << std::endl;
+  std::cout << "vel1: " << new_vel1 << std::endl;
+}
+
 
 int main ()
 {
+
+  test_velocity();
+  /*
+
   // start lcm stuff
   LCMHandler lcmHandler;
   LCMControlReceiver controlReceiver(&lcmHandler);
@@ -287,6 +429,7 @@ int main ()
       hasNewQPOut = false;
     }
   }
+  */
 
   return 0;
 }
