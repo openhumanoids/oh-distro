@@ -1,5 +1,6 @@
 #pragma once
 
+#include "drake/lcmt_qp_controller_input.hpp"
 #include "bot_core/robot_state_t.hpp"
 #include "bot_core/quaternion_t.hpp"
 #include "RobotStateDriver.hpp"
@@ -130,17 +131,33 @@ Vector6d getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<double> &
 MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, KinematicsCache<double> &cache, int body, const Vector3d &local_offset = Vector3d::Zero());
 Vector6d getTaskSpaceJacobianDotTimesV(const RigidBodyTree &r, KinematicsCache<double> &cache, int body_or_frame_id, const Vector3d &local_offset = Vector3d::Zero());
 
-class sfQPOutput {
+class sfQPState {
 public:
+  // output
   VectorXd qdd;
   VectorXd trq;
-  Vector6d grf[2];
+  Vector6d grf_w[2]; // grf in world frame, at the ft sensor
+  Vector6d grf_b[2]; // grf in body frame, at the ft sensor
+  Vector2d cop_w; // total cop in world
+  Vector2d cop_b[2]; // b frame cop for each foot, at the ft sensor
 
   Vector3d comdd;
   Vector6d pelvdd;
   Vector6d footdd[2];
   Vector6d torsodd;
 
+  // input
+  Vector3d com_d;
+  Vector3d comd_d;
+  Vector3d comdd_d;
+  Vector2d cop_d;
+  
+  VectorXd qdd_d;
+  Vector6d pelvdd_d;
+  Vector6d footdd_d[2];
+  Vector6d torsodd_d;
+
+  void parseZMPInput(const drake::lcmt_qp_controller_input &msg);
   void parseMsg(const drc::controller_state_t &msg, const sfRobotState &rs);
   void init(const drc::controller_state_t &msg)
   {
@@ -153,13 +170,27 @@ public:
 
   void addToLog(Logger &logger, const sfRobotState &rs) const;
 
-  sfQPOutput() 
+  sfQPState() 
   {
     this->_inited = false;
+    this->_hasZMPInput = false;
   }
 
 private:
   bool _inited;
+  bool _hasZMPInput;
+  Matrix<double,4,4> A_ls; 
+  Matrix<double,4,2> B_ls;
+  Matrix<double,2,4> C_ls;
+  Matrix<double,2,2> D_ls;
+  Matrix<double,4,1> x0;
+  Matrix<double,2,1> y0;
+  Matrix<double,2,1> u0;
+  Matrix<double,2,2> R_ls;
+  Matrix<double,2,2> Qy;
+  Matrix<double,4,4> S;
+  Matrix<double,4,1> s1;
+  Matrix<double,4,1> s1dot;
 };
 
  

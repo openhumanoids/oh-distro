@@ -126,7 +126,7 @@ void BatchLogger::saveData()
     _nPoints = LOGGER_MAX_N_POINTS;
 } 
 
-void BatchLogger::writeToMRDPLOT(const char *prefix)
+void BatchLogger::writeToMRDPLOT(const std::string &prefix)
 {
   if (!_inited || _nPoints == 0)
     return;
@@ -134,7 +134,7 @@ void BatchLogger::writeToMRDPLOT(const char *prefix)
   MRDPLOT_DATA *d;
 
   d = malloc_mrdplot_data( 0, 0 );
-  d->filename = generate_file_name(prefix);
+  d->filename = generate_file_name(prefix.c_str());
   d->n_channels = _nChannels;
   d->n_points = _nPoints;
   d->total_n_numbers = d->n_channels*d->n_points;

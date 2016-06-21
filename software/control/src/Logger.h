@@ -118,7 +118,7 @@ class BatchLogger : public Logger {
     ~BatchLogger() {;}
     void init(double timestep);
     void saveData();
-    void writeToMRDPLOT(const char *prefix);  
+    void writeToMRDPLOT(const std::string &prefix);
 };
 
 

@@ -20,6 +20,7 @@
 #include <csignal>
 
 using namespace Eigen;
+typedef Eigen::Matrix<double, 6, 1> Vector6d;
  
 namespace {
 
@@ -27,6 +28,9 @@ std::mutex pointerMutex;
 std::atomic<bool> hasNewQPIn(false);
 std::atomic<bool> hasNewState(false);
 std::atomic<bool> hasNewQPOut(false);
+
+BatchLogger logger;
+const char *home_dir = NULL;
 
 bot_core::robot_state_t robot_state_msg;
 drake::lcmt_qp_controller_input qp_input_msg;
@@ -220,21 +224,73 @@ std::unordered_map<std::string, int> computeBodyOrFrameNameToIdMap(
   return id_map;
 }
 
-typedef Eigen::Matrix<double, 6, 1> Vector6d;
+void sigHandler(int signum)
+{
+  std::cout << "CAUGHT SIG " << signum << std::endl;
+  if (signum == SIGINT) {
+    logger.writeToMRDPLOT(std::string(home_dir) + std::string("/logs/mrdplot/bal"));
+  }
+  std::cout << "GOODBYE CAPTAIN\n";
+  exit(0);
+}
+
+int main ()
+{
+  signal(SIGINT, sigHandler);
+
+  // start lcm stuff
+  LCMHandler lcmHandler;
+  LCMControlReceiver controlReceiver(&lcmHandler);
+  home_dir = getenv("HOME");
+  std::string urdf = std::string(home_dir) + std::string("/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
+  sfRobotState rs(std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW)));
+  sfQPState qpout;
+ 
+  // start the lcm 
+  lcmHandler.Start();
+  controlReceiver.InitSubscriptions();
+  
+  logger.init(0.002);
+
+  while(1) {
+    // proc robot state
+    if (hasNewState) {
+      if (!rs.hasInit()) {
+        rs.init(robot_state_msg);
+        rs.addToLog(logger);
+      }
+
+      rs.parseMsg(robot_state_msg);
+      
+      hasNewState = false;
+
+      if (qpout.hasInit() && rs.hasInit())
+        logger.saveData();
+    }
+    // set qp input
+    if (hasNewQPIn) {
+      qpout.parseZMPInput(qp_input_msg);
+    }
+    // proc qp output
+    if (hasNewQPOut && rs.hasInit()) {
+      if (!qpout.hasInit()) {
+        qpout.init(qp_output_msg);
+        qpout.addToLog(logger, rs);
+      }
+
+      qpout.parseMsg(qp_output_msg, rs);
+
+      hasNewQPOut = false;
+    }
+  }
+
+  return 0;
+}
 
 
-class sfQPInput {
-public:
-  VectorXd q_d;
-  VectorXd qd_d;
-  VectorXd qdd_d;
 
-  Vector2d cop_d;
-  Vector2d com_d;
 
-  Vector6d pelvdd_d;
-  Vector6d footdd_d[2];
-};
+
 
 /*
 template <typename Scalar> Matrix<Scalar,6,1> getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<Scalar> &cache, int body_or_frame_id, const Vector3d &local_offset = Vector3d::Zero())
@@ -400,82 +456,4 @@ void test_velocity()
   std::cout << "Jdqd2: " << r.geometricJacobianDotTimesV(cache, 0, idx, 0).transpose() << std::endl;
 }
 */
-  
-BatchLogger logger;
 
-void sigHandler(int signum)
-{
-  std::cout << "CAUGHT SIG " << signum << std::endl;
-  if (signum == SIGINT) {
-    logger.writeToMRDPLOT("/home/siyuanfeng/logs/mrdplot/bal");
-  }
-  std::cout << "GOODBYE CAPTAIN\n";
-  exit(0);
-}
-
-int main ()
-{
-  signal(SIGINT, sigHandler);
-
-  // start lcm stuff
-  LCMHandler lcmHandler;
-  LCMControlReceiver controlReceiver(&lcmHandler);
-
-  std::string urdf("/home/siyuanfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
-  sfRobotState rs(std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW)));
-  sfQPOutput qpout;
- 
-  // start the lcm 
-  lcmHandler.Start();
-  controlReceiver.InitSubscriptions();
-  
-  logger.init(0.002);
-
-  while(1) {
-    // proc robot state
-    if (hasNewState) {
-      if (!rs.hasInit()) {
-        rs.init(robot_state_msg);
-        rs.addToLog(logger);
-      }
-
-      rs.parseMsg(robot_state_msg);
-      
-      hasNewState = false;
-
-      //for (int i = 0; i < rs.trq.size(); i++) {
-      //  std::cout << rs.robot->getPositionName(i) << ": " << rs.trq[i] << ", " << trql[i] << ", " << trqr[i] << std::endl;
-      //}
-      std::cout << "torsod: " << rs.torso.vel.transpose() << std::endl;
-
-      std::cout << "statics l: " << rs.footFT_w_statics[0] << std::endl;
-      std::cout << "statics r: " << rs.footFT_w_statics[1] << std::endl;
-      std::cout << "fl: " << rs.footFT_w[0] << std::endl;
-      std::cout << "fr: " << rs.footFT_w[1] << std::endl;
-      
-      std::cout << "com: " << rs.com[0] << ", " << rs.com[1] << std::endl;
-      std::cout << "cop: " << rs.cop[0] << ", " << rs.cop[1] << std::endl;
-      
-      if (qpout.hasInit() && rs.hasInit())
-        logger.saveData();
-    }
-    // proc qp output
-    if (hasNewQPOut) {
-      if (!qpout.hasInit()) {
-        qpout.init(qp_output_msg);
-        qpout.addToLog(logger, rs);
-      }
-
-      if (rs.hasInit())
-        qpout.parseMsg(qp_output_msg, rs);
-
-      std::cout << "comdd_qp: " << qp_output_msg.comdd[0] << " " << qp_output_msg.comdd[1] << " " <<  qp_output_msg.comdd[2] << std::endl; 
-      std::cout << "comdd: " << qpout.comdd << std::endl;
-      std::cout << "lfdd: " << qpout.footdd[0] << std::endl;
-      std::cout << "rfdd: " << qpout.footdd[1] << std::endl;
-      hasNewQPOut = false;
-    }
-  }
-
-  return 0;
-}
