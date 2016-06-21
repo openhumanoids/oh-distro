@@ -276,10 +276,18 @@ void sfQPState::parseMsg(const drc::controller_state_t &msg, const sfRobotState 
     xlimp.tail(2) = rs.comd.head(2);
     x_bar = xlimp - x0;
 
+    Matrix<double,4,2> N = C_ls.transpose()*Qy*D_ls;
+    Matrix<double,2,4> N_B = N.transpose() + B_ls.transpose()*S;
+    Matrix<double,2,1> y_d_bar = y0 - x0.head(2);
+    Matrix<double,2,1> r_2 = -2*D_ls.transpose()*Qy*y_d_bar;
+    Matrix<double,2,1> r_s = 0.5*(r_2 + B_ls.transpose()*s1);
+
+    comdd_d.head(2) = -R_DQyD_ls.inverse() * (N_B*x_bar + r_s);
+    
     Matrix<double,1,2> lin = -(C_ls*xlimp-y0).transpose() * Qy * D_ls
-      + u0.transpose() * R_ls
+      //+ u0.transpose() * R_ls
       - (S*x_bar+0.5*s1).transpose() * B_ls;
-    comdd_d.head(2) = R_DQyD_ls.inverse() * lin.transpose();
+    comdd_d1.head(2) = R_DQyD_ls.inverse() * lin.transpose();
 
     com_d.head(2) = x0.head(2);
     comd_d.head(2) = x0.tail(2);
@@ -310,6 +318,10 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP_d.comdd_d[x]", "m/s2", comdd_d.data()+0);
   logger.add_datapoint("QP_d.comdd_d[y]", "m/s2", comdd_d.data()+1);
   logger.add_datapoint("QP_d.comdd_d[z]", "m/s2", comdd_d.data()+2);
+
+  logger.add_datapoint("QP_d.comdd_d1[x]", "m/s2", comdd_d1.data()+0);
+  logger.add_datapoint("QP_d.comdd_d1[y]", "m/s2", comdd_d1.data()+1);
+  logger.add_datapoint("QP_d.comdd_d1[z]", "m/s2", comdd_d1.data()+2);
   
   logger.add_datapoint("QP.comdd[x]", "m/s2", comdd.data()+0);
   logger.add_datapoint("QP.comdd[y]", "m/s2", comdd.data()+1);

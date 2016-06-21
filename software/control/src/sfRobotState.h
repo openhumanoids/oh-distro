@@ -150,6 +150,7 @@ public:
   Vector3d com_d;
   Vector3d comd_d;
   Vector3d comdd_d;
+  Vector3d comdd_d1;
   Vector2d cop_d;
   
   VectorXd qdd_d;
