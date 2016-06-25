@@ -1,9 +1,9 @@
 sudo: required
 dist: trusty
-language:
-  - generic
+language: generic
 cache:
   - apt
+  - ccache
 virtualenv:
   system_site_packages: true
 git:
@@ -22,7 +22,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export DISPLAY=:99.0 ; fi
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16
   - cd $TRAVIS_BUILD_DIR
-  - sed -i 's/git@github.com:/https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/.gitmodules 
+  - sed -i 's/git@github.com:/https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/.gitmodules
   - sed -i 's/git@github.com:/https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/catkin_ws/.gitmodules
   - sed -i 's/ssh:\/\/git@github.com\//https:\/\/github.com\//g' $TRAVIS_BUILD_DIR/software/externals/cmake/externals.cmake
   - git config --global user.email "builds@travis-ci.com" && git config --global user.name "Travis CI"
@@ -43,8 +43,9 @@ script:
   - cd $TRAVIS_BUILD_DIR/software/externals
   - make -j4 -Wno-dev > ~/build_log_externals.txt # turn off CMake policy warnings
   - cd $TRAVIS_BUILD_DIR/software
-  - make -j4 -Wno-dev > ~/build_log_software.txt # turn off CMake policy warnings
+  - cd drake/drake
+  - make -j1 -Wno-dev
+  - cd ../..
+  - make -j4 -Wno-dev
   #- cd .. && ./.ci_testing.sh
 
-after_failure:
-  - echo "Dummy for uploading logs"

@@ -7,7 +7,7 @@ body motion block. '''
 import lcm
 import drc
 from drake import lcmt_qp_controller_input, lcmt_body_motion_data
-from drc import robot_state_t
+from bot_core import robot_state_t
 import sys
 import time
 from bot_lcmgl import lcmgl, GL_LINES

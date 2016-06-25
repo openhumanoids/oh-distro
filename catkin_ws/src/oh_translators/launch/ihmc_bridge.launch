@@ -1,8 +1,8 @@
 <launch>
   <arg name="robotName" default="valkyrie" />
-  <arg name="mode" default="state_estimation" />
-  <arg name="imuSensor" default="pelvis_imu_sensor_at_pelvis_frame" />
-
+  <arg name="mode" default="real_robot" />
+  <arg name="imuSensor" default="pelvis_pelvisRearImu" />
+  <rosparam name="/lcm2ros_ihmc/only_send_last_traj_point" type="bool" value="false" />
   <node name="ros2lcm_ihmc" type="ros2lcm_ihmc" pkg="oh_translators" output="screen" args="$(arg mode) $(arg robotName) $(arg imuSensor)" />
   <node name="lcm2ros_ihmc" type="lcm2ros_ihmc" pkg="oh_translators" output="screen" args="$(arg robotName)"/>
 

@@ -5,7 +5,7 @@ classdef CombinedPlanner < DRCPlanner
     end
 
     function obj = withValkyrie()
-      obj = CombinedPlanner(CombinedPlanner.constructValkyrie());
+      obj = CombinedPlanner(CombinedPlanner.constructValkyrie(2));
     end
   end
 

@@ -38,8 +38,9 @@ addSignal('COMMITTED_ROBOT_PLAN_STATES', msg.utime, msg.pose.translation.z)
 addPlot(timeWindow=15, yLimits=[-1, 1])
 addSignal('EST_ROBOT_STATE', msg.utime, msg.force_torque.l_foot_force_z)
 addSignal('EST_ROBOT_STATE', msg.utime, msg.force_torque.r_foot_force_z)
-addSignal('VAL_FORCE_TORQUE', msg.utime, msg.sensors[0].force[2])
-addSignal('VAL_FORCE_TORQUE', msg.utime, msg.sensors[1].force[2])
+
+addSignal('FORCE_TORQUE', msg.utime, msg.sensors[0].force[2],label="left")
+addSignal('FORCE_TORQUE', msg.utime, msg.sensors[1].force[2],label="right")
 
 #addPlot(timeWindow=15, yLimits=[-1, 1])
 #addSignal('EST_ROBOT_STATE', msg.utime, msg.force_torque.l_foot_torque_x)

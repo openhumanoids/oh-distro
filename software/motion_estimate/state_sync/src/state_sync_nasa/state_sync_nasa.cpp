@@ -29,52 +29,49 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
   sync.setBotParam(new_botparam);
 }
 
-state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
-                       boost::shared_ptr<CommandLineConfig> &cl_cfg_):
+inline double clamp(double x, double lower, double upper) {
+  return std::max(lower, std::min(upper, x));
+}
+inline double toRad(double deg) { return (deg * M_PI / 180); }
+
+state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
+                       std::shared_ptr<CommandLineConfig> &cl_cfg_):
                        lcm_(lcm_), cl_cfg_(cl_cfg_) {
-
-  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
-  jointNames = model_->getJointNames();
-
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 1); // 1 means keep updated, 0 would ignore updates
   bot_param_add_update_subscriber(botparam_,
                                   onParamChangeSync, this);
-   
-  ////////////////////////////////////////////////////////////////////////////////////////
-  /// 1. Get the Joint names and determine the correct configuration:
-  
-  core_robot_joints_.name = jointNames;
-   
-  assignJointsStruct( core_robot_joints_ );
-  
-  // The number of joints is expected to be 33; 32 robot joints (i.e. without the hands) plus the Hokuyo joint
-  std::cout << "No. of Joints: "
-      << core_robot_joints_.position.size() << " valkyrie\n";
 
-  // Output list of all joints
-  for (unsigned int i = 0; i < core_robot_joints_.position.size(); i++) {
-    std::cout << core_robot_joints_.name[i] << " is joint no. " << i << std::endl;
+  std::shared_ptr<ModelClient> model_client = std::shared_ptr<ModelClient>(
+      new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  RigidBodyTree model;
+  model.addRobotFromURDFString(model_client->getURDFString());
+  model.compile();
+  std::map<std::string, int> dof_map = model.computePositionNameToIndexMap();
+
+  for (auto iter = dof_map.begin(); iter != dof_map.end(); ++iter) {
+    // std::cout << iter->first << " has min "
+    //   << model.joint_limit_min[iter->second]
+    //   << " and max "
+    //   << model.joint_limit_max[iter->second] << std::endl;
+
+    joint_limit_min_.insert(std::pair<std::string, double>(
+        iter->first, model.joint_limit_min[iter->second]));
+    joint_limit_max_.insert(std::pair<std::string, double>(
+        iter->first, model.joint_limit_max[iter->second]));
   }
 
-  /// 2. Subscribe to required signals
-  lcm::Subscription* sub0;
-  lcm::Subscription* sub1;
-  if (cl_cfg_->mode == "ihmc") {
-    std::cout << "Using IHMC as source for robot state and force torque" << std::endl;
-    sub0 = lcm_->subscribe("CORE_ROBOT_STATE", &state_sync_nasa::coreRobotHandler, this);
-    sub1 = lcm_->subscribe("FORCE_TORQUE", &state_sync_nasa::forceTorqueHandler, this);
-  } else if (cl_cfg_->mode == "nasa") {
-    std::cout << "Using NASA as source for robot state and force torque" << std::endl;
-    sub0 = lcm_->subscribe("VAL_CORE_ROBOT_STATE", &state_sync_nasa::coreRobotHandler, this);
-    sub1 = lcm_->subscribe("VAL_FORCE_TORQUE", &state_sync_nasa::forceTorqueHandler, this);
-  } else {
-    std::cerr << "Unsupported mode! Must be either nasa or ihmc" << std::endl;
+  // Subscribe to required signals
+  lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE", &state_sync_nasa::coreRobotHandler, this);
+  lcm::Subscription* sub1 = lcm_->subscribe("FORCE_TORQUE", &state_sync_nasa::forceTorqueHandler, this);
+  lcm::Subscription* sub2 = lcm_->subscribe("POSE_BODY_ALT",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver
+  lcm::Subscription* sub3;
+  if (cl_cfg_->use_ihmc){
+    sub3 = lcm_->subscribe("POSE_BODY_ALT",&state_sync_nasa::poseBodyHandler,this);  // If the Pronto state estimator isn't running
+  }else{
+    sub3 = lcm_->subscribe("POSE_BODY",&state_sync_nasa::poseBodyHandler,this);  // Always provided the state estimator:
   }
-  force_torque_init_ = false;
-  ///////////////////////////////////////////////////////////////
-  lcm::Subscription* sub2 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseIHMCHandler,this); // Always provided by the IHMC Driver:
-  lcm::Subscription* sub3 = lcm_->subscribe("POSE_BDI",&state_sync_nasa::poseProntoHandler,this);  // Always provided the state estimator:
   lcm::Subscription* sub4 = lcm_->subscribe("NECK_STATE",&state_sync_nasa::neckStateHandler,this);  // Provided when NeckController is running
+  force_torque_init_ = false;
 
   
   bool use_short_queue = true;
@@ -86,8 +83,8 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
     sub4->setQueueCapacity(1);
   }
 
-  setPoseToZero(pose_IHMC_);
-  setPoseToZero(pose_Pronto_);
+  setPoseToZero(pose_ihmc_);
+  setPoseToZero(pose_pronto_);
 
 
   /// 4. Joint Filtering
@@ -102,17 +99,46 @@ state_sync_nasa::state_sync_nasa(boost::shared_ptr<lcm::LCM> &lcm_,
     for (int i =0; i < n_gains;i++){
       k.push_back( (float) gains_in[i] );
     }
-    torque_adjustment_ = new EstimateTools::TorqueAdjustment(k);
 
+    std::vector<std::string> jnames_v;
+    char** jnames = bot_param_get_str_array_alloc(botparam_, "state_estimator.legodo.adjustment_joints");
+    if (jnames == NULL) {
+      fprintf(stderr, "Error: must specify state_estimator.legodo.adjustment_joints\n");
+      exit(1);
+    }
+    else {
+      for (int i = 0; jnames[i]; i++) {
+        jnames_v.push_back(std::string(jnames[i]));
+      }
+    }
+    bot_param_str_array_free(jnames);
+
+    torque_adjustment_ = new EstimateTools::TorqueAdjustment(jnames_v, k);
   }else{
     std::cout << "Torque-based joint angle adjustment: Not Using\n";
   }
 
+  /// 5. joint velocity low pass filter
+  cl_cfg_->use_joint_velocity_low_pass = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.joint_vel_alpha_filter" );
+  if (cl_cfg_->use_joint_velocity_low_pass) {
+    std::cout << "Low pass filtering jiont velocity: Using\n";
+    double alpha = 1.;
+    int stats = bot_param_get_double(botparam_, "state_estimator.legodo.joint_vel_alpha", &alpha);
+    if (stats) {
+      std::cout << "Cannot find param state_estimator.legodo.joint_vel_alpha\n";
+      alpha = 1;
+    }
+    std::cout << "Using alpha = " << alpha << std::endl;
+    joint_vel_filter_.reset(new EstimateTools::AlphaFilter(alpha));
+  }
+  else {
+    std::cout << "Low pass filtering jiont velocity: Not Using\n";
+  }
 }
 
 void state_sync_nasa::setPoseToZero(PoseT &pose){
   pose.utime = 0; // use this to signify un-initalised
-  pose.pos << 0,0, 0.95;// for ease of use//Eigen::Vector3d::Identity();
+  pose.pos << 0,0, 0.95; // for ease of use, initialise at typical height
   pose.vel << 0,0,0;
   pose.orientation << 1.,0.,0.,0.;
   pose.rotation_rate << 0,0,0;
@@ -141,27 +167,29 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
   }   
 
   //checkJointLengths(core_robot_joints_.position.size(),  msg->joint_position.size(), channel);
-
-  std::vector <float> mod_positions;
-  mod_positions = msg->joint_position;
-  core_robot_joints_.position = mod_positions;
+  core_robot_joints_.position = msg->joint_position;
 
   core_robot_joints_.name = msg->joint_name;  // added recently
   core_robot_joints_.velocity = msg->joint_velocity;
   core_robot_joints_.effort = msg->joint_effort;
-  
-  for (int i=0; i<jointNames.size(); i++) {
-    if (std::find(core_robot_joints_.name.begin(), core_robot_joints_.name.end(), jointNames[i]) == core_robot_joints_.name.end()) {
-      mod_positions.push_back(0);
-      core_robot_joints_.name.push_back(jointNames[i]);
-      core_robot_joints_.position.push_back(0);
-      core_robot_joints_.velocity.push_back(0);
-      core_robot_joints_.effort.push_back(0);
+
+  // low pass filter velocity
+  if (cl_cfg_->use_joint_velocity_low_pass) {
+    if (raw_vel_.size() != core_robot_joints_.velocity.size()) {
+      raw_vel_.resize(core_robot_joints_.velocity.size());
+      filtered_vel_.resize(core_robot_joints_.velocity.size());
     }
+    for (int i = 0; i < core_robot_joints_.velocity.size(); i++)
+      raw_vel_[i] = core_robot_joints_.velocity[i];
+    joint_vel_filter_->processSample(raw_vel_, filtered_vel_);
+
+    for (int i = 0; i < core_robot_joints_.velocity.size(); i++)
+      core_robot_joints_.velocity[i] = filtered_vel_[i];
   }
 
+  // torque adjustment
   if (cl_cfg_->use_torque_adjustment){
-    torque_adjustment_->processSample(core_robot_joints_.position, core_robot_joints_.effort );
+    torque_adjustment_->processSample(core_robot_joints_.name, core_robot_joints_.position, core_robot_joints_.effort );
   }
 
   // TODO: check forque_
@@ -206,37 +234,48 @@ Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
 }
 
 void state_sync_nasa::poseIHMCHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  pose_IHMC_.utime = msg->utime;
-  pose_IHMC_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
-  pose_IHMC_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
-  pose_IHMC_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
-  pose_IHMC_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
-  pose_IHMC_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
+  pose_ihmc_.utime = msg->utime;
+  pose_ihmc_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  pose_ihmc_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  pose_ihmc_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  pose_ihmc_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  pose_ihmc_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
 }
 
-void state_sync_nasa::poseProntoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  pose_Pronto_.utime = msg->utime;
-  pose_Pronto_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
-  pose_Pronto_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
-  pose_Pronto_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
-  pose_Pronto_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
-  pose_Pronto_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
+void state_sync_nasa::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  pose_pronto_.utime = msg->utime;
+  pose_pronto_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  pose_pronto_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  pose_pronto_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  pose_pronto_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  pose_pronto_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
+
+
+  // pin the floating base if we set that option
+  if(cl_cfg_->pin_floating_base){
+    pose_pronto_.pos = Eigen::Vector3d(0,0,1);
+  }
 
   // If State sync has received POSE_BDI and POSE_BODY, we must be running our own estimator
   // So there will be a difference between these, so publish this for things like walking footstep transformations
   // TODO: rate limit this to something like 10Hz
   // TODO: this might need to be published only when pose_BDI_.utime and pose_MIT_.utime are very similar
-  if ( pose_IHMC_.utime > 0 ){
-    Eigen::Isometry3d localmit_to_bodymit = getPoseAsIsometry3d(pose_Pronto_);
-    Eigen::Isometry3d localmit_to_bodybdi = getPoseAsIsometry3d(pose_IHMC_);
+  if ( pose_ihmc_.utime > 0 ){
+    Eigen::Isometry3d localmit_to_bodymit = getPoseAsIsometry3d(pose_pronto_);
+    Eigen::Isometry3d localmit_to_bodybdi = getPoseAsIsometry3d(pose_ihmc_);
 // localmit_to_body.inverse() * localmit_to_body_bdi;
     // Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodymit.inverse() * localmit_to_bodymit.inverse() * localmit_to_bodybdi;
     Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodybdi * localmit_to_bodymit.inverse();
 
-    bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_Pronto_.utime );
-    lcm_->publish("LOCAL_TO_LOCAL_BDI", &localmit_to_localbdi_msg);    
+    bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_pronto_.utime );
+    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);    
   }
 
+  // If using the IHMC estimate, then publish it to the rest of the system as POSE_BODY
+  if (cl_cfg_->use_ihmc){
+     lcm_->publish("POSE_BODY",msg);
+
+  }
 }
 
 // Returns false if the pose is old or hasn't appeared yet
@@ -299,15 +338,23 @@ void state_sync_nasa::publishRobotState(int64_t utime_in,  const  bot_core::six_
   
   // Limb Sensor states
   bot_core::force_torque_t force_torque_convert;
-  if (force_torque_msg.sensors.size() == 4) {
+  if (force_torque_msg.sensors.size() >= 2) {
+    force_torque_convert.l_foot_force_x = force_torque_msg.sensors[0].force[0];
+    force_torque_convert.l_foot_force_y = force_torque_msg.sensors[0].force[1];
     force_torque_convert.l_foot_force_z = force_torque_msg.sensors[0].force[2];
     force_torque_convert.l_foot_torque_x = force_torque_msg.sensors[0].moment[0];
     force_torque_convert.l_foot_torque_y = force_torque_msg.sensors[0].moment[1];
+    force_torque_convert.l_foot_torque_z = force_torque_msg.sensors[0].moment[2];
 
+    force_torque_convert.r_foot_force_x = force_torque_msg.sensors[1].force[0];
+    force_torque_convert.r_foot_force_y = force_torque_msg.sensors[1].force[1];
     force_torque_convert.r_foot_force_z = force_torque_msg.sensors[1].force[2];
     force_torque_convert.r_foot_torque_x = force_torque_msg.sensors[1].moment[0];
     force_torque_convert.r_foot_torque_y = force_torque_msg.sensors[1].moment[1];
+    force_torque_convert.r_foot_torque_z = force_torque_msg.sensors[1].moment[2];
+  }
 
+  if (force_torque_msg.sensors.size() == 4) {
     force_torque_convert.l_hand_force[0] = force_torque_msg.sensors[2].force[0];
     force_torque_convert.l_hand_force[1] = force_torque_msg.sensors[2].force[1];
     force_torque_convert.l_hand_force[2] = force_torque_msg.sensors[2].force[2];
@@ -325,33 +372,77 @@ void state_sync_nasa::publishRobotState(int64_t utime_in,  const  bot_core::six_
 
   robot_state_msg.force_torque = force_torque_convert;
   
-  if ( insertPoseInRobotState(robot_state_msg, pose_Pronto_) ){
+  if ( insertPoseInRobotState(robot_state_msg, pose_pronto_) ){
     lcm_->publish( cl_cfg_->output_channel, &robot_state_msg);
   }
 }
 
-void state_sync_nasa::appendJoints(bot_core::robot_state_t& msg_out, Joints joints){
-  for (size_t i = 0; i < joints.position.size(); i++)  {
-    msg_out.joint_name.push_back( joints.name[i] );
-    msg_out.joint_position.push_back( joints.position[i] );
-    msg_out.joint_velocity.push_back( joints.velocity[i]);
-    msg_out.joint_effort.push_back( joints.effort[i] );
+void state_sync_nasa::appendJoints(bot_core::robot_state_t& msg_out,
+                                   Joints joints) {
+  for (size_t i = 0; i < joints.position.size(); i++) {
+    msg_out.joint_name.push_back(joints.name[i]);
+
+    // Check whether joint is to be clamped to its joint limits
+    msg_out.joint_position.push_back(
+        clampJointToJointLimits(joints.name[i], joints.position[i]));
+
+    msg_out.joint_velocity.push_back(joints.velocity[i]);
+    msg_out.joint_effort.push_back(joints.effort[i]);
+  }
+}
+
+float state_sync_nasa::clampJointToJointLimits(std::string joint_name,
+                                               float joint_position) {
+  if (std::find(joints_to_be_clamped_to_joint_limits_.begin(),
+                joints_to_be_clamped_to_joint_limits_.end(),
+                joint_name) != joints_to_be_clamped_to_joint_limits_.end()) {
+    // Clamp if within +/-clamping_tolerance_in_degrees_, else return
+    // warning/error and raw value
+    double tolerance = toRad(clamping_tolerance_in_degrees_);
+    double& lower_limit = joint_limit_min_[joint_name];
+    double& upper_limit = joint_limit_max_[joint_name];
+
+    if ((joint_position + lower_limit) > tolerance ||
+        (joint_position - upper_limit) > tolerance) {
+      std::cerr << "WARNING: " << joint_name << " deviates >"
+                << clamping_tolerance_in_degrees_
+                << "deg from joint limits, not clamping" << std::endl;
+      return joint_position;
+    } else {
+      return clamp(joint_position, lower_limit, upper_limit);
+    }
+  } else {
+    return joint_position;
   }
 }
 
 int
 main(int argc, char ** argv){
-  boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );  
+  std::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig());
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
-  opt.add(cl_cfg->mode, "m", "mode","Mode - ihmc or nasa (source of joint states and force torque messages)");
+  opt.add(cl_cfg->use_ihmc, "i", "use_ihmc","Use the IHMC estimate of the body frame in ERS");
+  opt.add(cl_cfg->pin_floating_base, "pinned", "pinned_floating_base", "pin floating base position");
   opt.parse();
-  
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
-  if(!lcm->good())
-    return 1;  
-  
+
+  std::shared_ptr<lcm::LCM> lcm(new lcm::LCM());
+  if (!lcm->good()) return 1;
+
+  // Add joints which are OK to be clamped to their respective joint limits
+  std::vector<std::string> joints_to_be_clamped_to_joint_limits;
+  joints_to_be_clamped_to_joint_limits.push_back("lowerNeckPitch");
+  joints_to_be_clamped_to_joint_limits.push_back("upperNeckPitch");
+  joints_to_be_clamped_to_joint_limits.push_back("leftWristRoll");
+  joints_to_be_clamped_to_joint_limits.push_back("leftWristPitch");
+  joints_to_be_clamped_to_joint_limits.push_back("rightWristRoll");
+  joints_to_be_clamped_to_joint_limits.push_back("rightWristPitch");
+
   state_sync_nasa app(lcm, cl_cfg);
-  while(0 == lcm->handle());
+  app.joints_to_be_clamped_to_joint_limits_ =
+      joints_to_be_clamped_to_joint_limits;
+  app.clamping_tolerance_in_degrees_ = 2.5;  // 2.5deg is OK, above will fail
+
+  while (0 == lcm->handle())
+    ;
   return 0;
 }

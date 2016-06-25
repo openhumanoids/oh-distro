@@ -11,8 +11,8 @@ if(NOT USE_SYSTEM_LCM)
     )
 endif()
 
-set(bot_core_lcmtypes_url https://github.com/iamwolf/bot_core_lcmtypes.git)
-set(bot_core_lcmtypes_revision c29cd6076d13ca2a3ecc23ffcbe28a0a1ab46314)
+set(bot_core_lcmtypes_url https://github.com/openhumanoids/bot_core_lcmtypes.git)
+set(bot_core_lcmtypes_revision ccb9985e93ca3c082de2ff77602b687cda11d341)
 set(bot_core_lcmtypes_depends ${lcm_proj})
 
 set(libbot_url https://github.com/openhumanoids/libbot.git)
@@ -166,7 +166,7 @@ set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
 set(pypolyhedron_depends)
 
 set(kinematics-utils_url https://github.com/ipab-slmc/kinematics-utils.git)
-set(kinematics-utils_revision 1479da5c0386ee824b42520d08c4d23b03e92cda)
+set(kinematics-utils_revision 4c828062d6412f9b58278a5fa22cfbff4dff2ac6)
 set(kinematics-utils_depends Eigen_pod)
 
 set(libmultisense_url https://bitbucket.org/crl/libmultisense)

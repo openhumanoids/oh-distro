@@ -23,7 +23,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   kdl_conversions
   roslint
-  val_hardware_msgs
 )
 
 catkin_package(
@@ -36,7 +35,6 @@ catkin_package(
 ###########
 
 set(TARGETS
-    ros2lcm_nasa
     lcm2ros_valkyrie_hands
     ros2lcm_ihmc
     lcm2ros_ihmc
@@ -49,6 +47,7 @@ set(TARGETS
     lcm2ros_exotica
     ros2lcm_sdh
     lcm2ros_sdh
+    ros2lcm_husky
 )
 
 include_directories(
@@ -56,11 +55,6 @@ include_directories(
 )
 
 ######################################################
-add_executable(ros2lcm_nasa src/ros2lcm_nasa.cpp)
-target_link_libraries(ros2lcm_nasa ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(ros2lcm_nasa lcm bot2-core eigen3)
-#add_dependencies(ros2lcm_nasa)# ipab_msgs_generate_messages_cpp)# ihmc_msgs_generate_messages_cpp)
-
 add_executable(lcm2ros_valkyrie_hands src/lcm2ros_valkyrie_hands.cpp)
 target_link_libraries(lcm2ros_valkyrie_hands )
 pods_use_pkg_config_packages(lcm2ros_valkyrie_hands lcm lcmtypes_robotiqhand lcmtypes_bot2-core)
@@ -127,13 +121,18 @@ pods_use_pkg_config_packages(lcm2ros_exotica lcm bot2-core eigen3 octomap)
 ######################################################
 add_executable(ros2lcm_sdh src/ros2lcm_sdh.cpp)
 target_link_libraries(ros2lcm_sdh ${catkin_LIBRARIES})
-add_dependencies(ros2lcm_sdh ipab_msgs_generate_messages_cpp)
 pods_use_pkg_config_packages(ros2lcm_sdh lcm bot2-core eigen3)
 
 add_executable(lcm2ros_sdh src/lcm2ros_sdh.cpp)
 target_link_libraries(lcm2ros_sdh ${catkin_LIBRARIES})
-add_dependencies(lcm2ros_sdh ipab_msgs_generate_messages_cpp)
 pods_use_pkg_config_packages(lcm2ros_sdh lcm bot2-core lcmtypes_robotiqhand  std_srvs)
+
+
+######################################################
+add_executable(ros2lcm_husky src/ros2lcm_husky.cpp)
+target_link_libraries(ros2lcm_husky ${catkin_LIBRARIES})
+#add_dependencies(ros2lcm_husky )
+pods_use_pkg_config_packages(ros2lcm_husky lcm bot2-core eigen3)
 
 
 #############

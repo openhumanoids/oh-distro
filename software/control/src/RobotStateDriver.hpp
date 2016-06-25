@@ -1,3 +1,5 @@
+#pragma once
+
 #include "drake/systems/controllers/controlUtil.h"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 

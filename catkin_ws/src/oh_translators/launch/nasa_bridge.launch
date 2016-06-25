@@ -1,3 +1,0 @@
-<launch>
-  <node name="ros2lcm_nasa" type="ros2lcm_nasa" pkg="oh_translators" output="screen"/>
-</launch>

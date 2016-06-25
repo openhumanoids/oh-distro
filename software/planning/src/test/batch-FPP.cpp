@@ -140,6 +140,17 @@ int main(int argc, char* argv[])
   CapabilityMap cm(ss.str());
   ss.str("");
   ss << getenv("DRC_BASE") << "/../drc-testing-data/final_pose_planner/val_description/CapabilityMapMatlab.bin";
+  if (FILE *file = fopen(ss.str().c_str(), "r"))
+  {
+    fclose(file);
+  }
+  else
+  {
+    string path = ss.str();
+    ss.str("");
+    ss << "ERROR: No capability map found. Please download it from http://terminator.robots.inf.ed.ac.uk/public/final_pose_planner/CapabilityMapMatlab.bin and save it to " << path;
+    throw runtime_error(ss.str());
+  }
   cm.loadFromMatlabBinFile(ss.str());
 
   boost::shared_ptr<lcm::LCM> theLCM(new lcm::LCM);

@@ -31,6 +31,7 @@ pods_install_python_script(sim-publish-recovery-trigger-off python/publish_recov
 pods_install_python_script(sim-publish-recovery-trigger-on python/publish_recovery_trigger_on.py)
 pods_install_python_script(sim-publish-threedof-force python/publish_threedof_force.py)
 pods_install_python_script(drc-rolling-log-splicer python/rolling_logs.py)
+pods_install_python_script(drc-rewrite-log-timestamps python/lcm_log_timestamps.py)
 
 # Misc Tools added from ipab/tools
 pods_install_python_script(drc-send-com-height python/send_com_height.py)
@@ -46,6 +47,12 @@ pods_install_python_script(drc-republish-old-valkyrie-logs python/republish_old_
 # not using python interp:
 file(COPY python/drc-robot-pose-util DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 file(COPY scripts/drc-atlas-rsync DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+file(COPY scripts/mit-director DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+file(COPY scripts/drc-valkyrie-rsync.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+file(COPY scripts/restart_valkyrie_field_networking.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+file(COPY scripts/restart_valkyrie_deputies.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+file(COPY scripts/shutdown_valkyrie_computers.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 
 
 pods_install_python_script(drc-send-robot-state python/send_robot_state.py)

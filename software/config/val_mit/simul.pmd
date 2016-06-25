@@ -1,0 +1,182 @@
+group "0.params_and_model_pub" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/val_mit/robot.cfg";
+        host = "localhost";
+    }
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/val_description/urdf/valkyrie_sim.urdf";
+        host = "localhost";
+    }
+}
+
+group "1.state_mit" {
+
+    cmd "joints2frames" {
+        exec = "drc-joints2frames";
+        host = "localhost";
+    }
+
+    cmd "state-sync" {
+        exec = "se-state-sync-simple";
+        host = "localhost";
+    }
+
+    cmd "drc-state-sync-val" {
+        exec = "drc-state-sync-val";
+        host = "localhost";
+    }
+
+    cmd "drc-state-sync-val (pinned)" {
+        exec = "drc-state-sync-val -pinned";
+        host = "localhost";
+    }       
+
+    cmd "se-fusion" {
+        exec = "se-fusion";
+        host = "localhost";
+    }
+
+    cmd "se-fusion no param server" {
+        exec = "se-fusion -P val_mit/robot.cfg -U val_description/urdf/valkyrie_sim.urdf";
+        host = "localhost";
+    }
+
+    cmd "contact-passthrough" {
+        exec = "drc-controller-contact-passthrough";
+        host = "localhost";
+    }
+
+}
+
+group "2.plan_and_control" {
+    cmd "contact_monitor" {
+        exec = "drc-contact-monitor";
+        host = "localhost";
+    }
+
+    cmd "FallDetector" {
+      exec = "drc-atlas-fall-detector 1";
+      host = "localhost";
+    }
+
+    cmd "PlanEval" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runValPlanEval(1, struct('valkyrie_version', 2, 'hand_right', 'none', 'hand_left', 'none')); \"";
+        host = "localhost";
+        stop_signal = 15;
+    }
+
+    cmd "InstQP Val" {
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -pub";
+        host = "localhost";
+        stop_signal = 15;
+    }
+
+    cmd "InstQP Val Fixed Base" {
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -fb -pub";
+        host = "localhost";
+        stop_signal = 15;
+    }
+
+
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner.withValkyrie(); p.run();\"";
+       host = "localhost";
+       stop_signal = 15;
+    }
+}
+
+group "5.maps" {
+
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "localhost";
+    }
+
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "localhost";
+    }
+
+    cmd "lidar-passthrough" {
+        exec = "bash -c 'ROS_PACKAGE_PATH=${DRC_BASE}/software/models:${DRC_BASE}/software/models/common_components:${ROS_PACKAGE_PATH} drc-lidar-passthrough -c 0.06'";
+        host = "localhost";
+    }
+}
+
+
+group "6.streaming"{
+
+    cmd "robot streaming no controller" {
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robot";
+        host = "localhost";
+    }
+
+    cmd "robot streaming with controller" {
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController";
+        host = "localhost";
+    }
+
+    cmd "base streaming" {
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --base";
+        host = "localhost";
+    }
+
+    cmd "robot streaming with controller fixed base force control" {
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController --fixedBase --forceControl"; 
+        host = "localhost";
+    }
+}
+
+
+
+cmd "pose-util" {
+    exec = "drc-robot-pose-util";
+    host = "localhost";
+}
+
+cmd "director" {
+    exec = "director -c robot.cfg --director_config ${DRC_BASE}/software/models/val_description/director_config.json";
+    host = "localhost";
+}
+
+cmd "base_deputy" {
+    exec = "bot-procman-deputy -n base";
+    host = "localhost";
+}
+
+cmd "drakeValkyrieSimulation Walking Flat" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeValkyrieSimulation(0, 0, 0, 0, '');\"";
+    host = "localhost";
+}
+cmd "drakeValkyrieSimulation Walking Flat (Vis)" {
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeValkyrieSimulation(1, 0, 0, 0, '');\"";
+    host = "localhost";
+}
+
+
+script "go" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start group "1.state_mit";
+    start group "5.maps";
+    start cmd "CombinedPlanner";
+
+    start cmd "drakeValkyrieSimulation Walking Flat";
+    start cmd "PlanEval";
+    start cmd "InstQP Val";
+    start cmd "director";
+}
+
+script "streaming" {
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start cmd "drc-state-sync-val (pinned)";
+    start cmd "se-fusion no param server";
+    wait ms 1000;
+    start cmd "InstQP Val Fixed Base";
+    start cmd "base streaming";
+    start cmd "robot streaming with controller fixed base force control";
+}

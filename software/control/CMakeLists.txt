@@ -13,7 +13,7 @@ endif()
 # check whether matlab is present, else skip the control/matlab directory
 find_program(matlab matlab)
 if (NOT matlab)
-  message(WARNING "Matlab not found, skipping control")
+  message(WARNING "Matlab not found")
 else (matlab)
   message(STATUS "Matlab found, setting up MEX build")
   # set up matlab build
@@ -54,8 +54,9 @@ endif()
 
 include_directories(${INCLUDE_INSTALL_PATH})
 
-if (matlab AND snopt_c_FOUND)
-  add_subdirectory(src)
+add_subdirectory(src)
+
+if (matlab)
   add_subdirectory(matlab/@QPReactiveRecoveryPlan)
 endif()
 

@@ -1,0 +1,52 @@
+{
+  "modelName" : "husky",
+  "urdfConfig": {
+    "default": "./model.urdf",
+    "robotState": "./model.urdf",
+    "ik":         "./model.urdf",
+    "chull":      "./model.urdf",
+    "playback":   "./model.urdf",
+    "teleop":     "./model.urdf"
+  },
+
+  "teleopJointGroups" : [
+      { "name" : "Base",
+        "joints" : [
+          "base_x",
+          "base_y",
+          "base_z",
+          "base_roll",
+          "base_pitch",
+          "base_yaw"
+          ],
+        "labels" : ["x", "y", "z", "roll", "pitch", "yaw"]
+      },
+
+      { "name" : "Left Arm",
+        "joints" : [
+          ],
+        "labels" : ["0","1", "2", "3", "4", "5", "6"]
+      }
+
+    ],
+
+  "drakeJointNames": [
+    "base_x",
+    "base_y",
+    "base_z",
+    "base_roll",
+    "base_pitch",
+    "base_yaw"
+  ],
+  "robotStateJointNames": [
+  ],
+  "fixedPointFile" : "../../control/matlab/data/kuka/kuka_lwr_fp.mat",
+  "postureDatabaseFile" : "./stored_poses.json",
+
+
+  "handCombinations": [
+  ],
+
+  "userConfig" : ["fixedBaseArm"],
+  "disableComponents" : ["usePlanning"]
+}

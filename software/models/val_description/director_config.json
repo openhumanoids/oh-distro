@@ -167,7 +167,7 @@
     "rightAnklePitch",
     "rightAnkleRoll"
   ],
-  "fixedPointFile" : "../../control/matlab/data/val_description/valkyrie_fp_june2015.mat",
+  "fixedPointFile" : "../../control/matlab/data/val_description/valkyrie_fp_gizatt_apr2016.mat",
   "leftFootMeshFiles" : ["model/meshes/legs/foot.obj"],
   "rightFootMeshFiles" : ["model/meshes/legs/foot.obj"],
   "postureDatabaseFile" : "./stored_poses.json",

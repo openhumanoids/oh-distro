@@ -6,11 +6,11 @@ execfile(os.path.join(os.path.dirname(__file__), 'rotations.py'))
 # joints to plot
 #joints = ['l_arm_shz','l_arm_shx','l_arm_ely','l_arm_elx','l_arm_uwy','l_arm_mwx','l_arm_lwy']
 #joints = ['rightShoulderPitch','rightShoulderRoll','rightShoulderYaw','rightElbowPitch','rightForearmYaw','rightWristRoll','rightWristPitch']
-joints = ['rightShoulderPitch','rightShoulderRoll','rightShoulderYaw','rightElbowPitch']#,'rightForearmYaw']#,'rightWristRoll','rightWristPitch']
+joints = ['rightShoulderPitch','rightShoulderRoll','rightShoulderYaw','rightElbowPitch','rightForearmYaw','rightWristRoll','rightWristPitch']
 
 # string arrays for EST_ROBOT_STATE and ATLAS_COMMAND
 jn = msg.joint_name
-jns = msg.joint_names
+jns = msg.joint_name
 
 
 N = len(joints)
@@ -55,12 +55,16 @@ addSignal('COMMITTED_ROBOT_PLAN_STATES', msg.utime, msg.pose.translation.z)
 
 
 # effort plot
-addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
-addSignals('VAL_COMMAND_FEEDBACK', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples)
-addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
+#addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
+#addSignals('VAL_COMMAND_FEEDBACK', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples)
+#addSignals('VAL_CORE_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_dark)
 
 # position plot
-#addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
+addPlot(timeWindow=15, yLimits=[-2.75, 2.75])
+
+addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jns, colors=RGB_tuples)
+addSignals('COMMITTED_ROBOT_PLAN_STATES', msg.utime, msg.joint_position, joints, keyLookup=jns, colors=RGB_tuples_dark)
+
 #for joint in joints:
 #    addSignal('EST_ROBOT_STATE', msg.utime, msg.joint_position[jn[joint]])
 #    addSignal('COMMITTED_ROBOT_PLAN_STATES', msg.utime, msg.joint_position[jn[joint]])

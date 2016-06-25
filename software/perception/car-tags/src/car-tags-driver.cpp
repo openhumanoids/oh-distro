@@ -179,12 +179,13 @@ class AprilTagDetector {
 
 class CameraListener {
     public:
+        std::string publish_img_with_matches_channel;
 
     void setDetector(AprilTagDetector* detector) {
         mDetector = detector;
     }
 
-    bool setup(bool show_window) {
+    bool setup(bool show_window, bool publish_img_with_matches = false) {
         mBotWrapper.reset(new drc::BotWrapper());
 
         while (!mBotWrapper->getBotParam()) {
@@ -204,6 +205,8 @@ class CameraListener {
         K(1,1) = bot_camtrans_get_focal_length_y(mCamTransLeft);
         K(0,2) = bot_camtrans_get_principal_x(mCamTransLeft);
         K(1,2) = bot_camtrans_get_principal_y(mCamTransLeft);
+
+        mPublishImageWithMatches = publish_img_with_matches;
 
         mShowWindow = show_window;
         return true;
@@ -250,11 +253,25 @@ class CameraListener {
             tag_to_camera_msg.utime = msg->utime;
             mLcmWrapper->get()->publish("APRIL_TAG_TO_CAMERA_LEFT", &tag_to_camera_msg);
             break;
-            
         }
         if (mShowWindow) {
             cv::imshow("detections", image);
             cv::waitKey(1);
+        }
+        if (mPublishImageWithMatches) {
+            bot_core::image_t img_with_matches;
+            img_with_matches.utime = msg->utime;
+            img_with_matches.width = image.size().width;
+            img_with_matches.height = image.size().height;
+            img_with_matches.row_stride = 3 * img_with_matches.width;
+            img_with_matches.nmetadata = 0;
+            std::vector<int> params;
+            params.push_back(cv::IMWRITE_JPEG_QUALITY);
+            params.push_back(90);
+            img_with_matches.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+            cv::imencode(".jpg", image, img_with_matches.data, params);
+            img_with_matches.size = img_with_matches.data.size();
+            mLcmWrapper->get()->publish(publish_img_with_matches_channel.c_str(), &img_with_matches);
         }
         
         image_u8_destroy(image_u8);
@@ -285,6 +302,7 @@ class CameraListener {
 
     private:
     bool mShowWindow;
+    bool mPublishImageWithMatches;
     AprilTagDetector *mDetector;
     drc::LcmWrapper::Ptr mLcmWrapper;
     drc::BotWrapper::Ptr mBotWrapper;
@@ -310,6 +328,8 @@ int main(int argc, char *argv[])
     getopt_add_bool(getopt, '1', "refine-decode", 0, "Spend more time trying to decode tags");
     getopt_add_bool(getopt, '2', "refine-pose", 0, "Spend more time trying to precisely localize tags");
     getopt_add_double(getopt, 's', "size", "0.1735", "Physical side-length of the tag (meters)");
+    getopt_add_bool(getopt, 'p', "publish-img-with-match", 0, "Publish image with overlayed match(es)");
+    getopt_add_string(getopt, 'c', "publish-img-with-match-channel", "CAMERA_APRIL_TAG_MATCHES", "LCM channel for image with overlayed match(es)");
     
 
     if (!getopt_parse(getopt, argc, argv, 1) || getopt_get_bool(getopt, "help")) {
@@ -321,7 +341,9 @@ int main(int argc, char *argv[])
     AprilTagDetector tag_detector(getopt);
     CameraListener camera_listener;
 
-    if (camera_listener.setup(getopt_get_bool(getopt, "window"))) {
+    camera_listener.publish_img_with_matches_channel = getopt_get_string(getopt, "publish-img-with-match-channel");
+
+    if (camera_listener.setup(getopt_get_bool(getopt, "window"), getopt_get_bool(getopt, "publish-img-with-match"))) {
         camera_listener.setDetector(&tag_detector);
         camera_listener.start();
     }
