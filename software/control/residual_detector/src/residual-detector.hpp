@@ -59,10 +59,12 @@ struct ResidualArgs{
   std::map<Side, bool> b_contact_force;
 };
 
-struct ResidualDetectorOps{
+struct ResidualDetectorConfig{
   std::string robotType;
   std::string urdfFilename;
   std::string control_config_filename;
+  std::string leftFootName;
+  std::string rightFootName;
   double residualGain;
   bool useFootForceTorque;
 };
@@ -71,7 +73,7 @@ class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::shared_ptr<ResidualDetectorOps> residualDetectorOps);
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::shared_ptr<ResidualDetectorConfig> residualDetectorConfig);
   ~ResidualDetector(){
   }
   void residualThreadLoop();
@@ -134,3 +136,5 @@ private:
 //  void computeContactFilter(bool publishMostLikely, bool publishAll=false);
 };
 
+
+ResidualDetectorConfig parseConfig(std::string configFile);

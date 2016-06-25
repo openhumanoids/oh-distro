@@ -13,11 +13,11 @@ using namespace Eigen;
 
 
 ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-                                   std::shared_ptr<ResidualDetectorOps> residualDetectorOps):
+                                   std::shared_ptr<ResidualDetectorConfig> residualDetectorConfig):
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
     useFootForceFlag(false), useFootFTFlag(true), useGeometricJacobianFlag(false){
 
-    useFootFTFlag = residualDetectorOps->useFootForceTorque;
+    useFootFTFlag = residualDetectorConfig->useFootForceTorque;
 
 
 //  if (urdfFilename=="none"){
@@ -40,7 +40,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 //    this->contactFilter.addRobotFromURDF(urdfFilename);
 //  }
 
-  drake_model.addRobotFromURDF(residualDetectorOps->urdfFilename);
+  drake_model.addRobotFromURDF(residualDetectorConfig->urdfFilename);
   // if you want to use quaternions. Normally it defaults to ROLLPITCHYAW, need to override by passing optional args
   // see RigidBodyManipulatorURDF.cpp file for the syntax
   // drake_model.addRobotFromURDFString(model->getURDFString(), ".", DrakeJoint::QUATERNION)
@@ -52,8 +52,8 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   lcm_->subscribe("EXTERNAL_FORCE_TORQUE", &ResidualDetector::onExternalForceTorque, this);
 
   // Initialize the robot property cache
-  YAML::Node control_config = YAML::LoadFile(residualDetectorOps->control_config_filename);
-  std::ofstream debug_file(residualDetectorOps->control_config_filename + ".debug.yaml");
+  YAML::Node control_config = YAML::LoadFile(residualDetectorConfig->control_config_filename);
+  std::ofstream debug_file(residualDetectorConfig->control_config_filename + ".debug.yaml");
   RobotPropertyCache robotPropertyCache = parseKinematicTreeMetadata(control_config["kinematic_tree_metadata"],
                                    drake_model);
 
@@ -92,6 +92,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 
 
   // initialize the foot contact driver
+  // what is this foot_contact_driver even doing???
   foot_contact_driver.reset(new FootContactDriver(robotPropertyCache));
 
   // initialize the residual_state
@@ -108,7 +109,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   residual_state.foot_contact_joint_torque = VectorXd::Zero(nq);
 
 
-  this->residualGain = residualDetectorOps->residualGain;
+  this->residualGain = residualDetectorConfig->residualGain;
   this->publishChannel = PUBLISH_CHANNEL;
 
   this->residualGainVector = residualGain*VectorXd::Ones(this->nq);
@@ -301,31 +302,6 @@ void ResidualDetector::updateResidualState() {
       }
 
     }
-//    else if (this->useFootForceFlag) {
-//      std::cout << "using Foot Forces" << std::endl;
-//      footJacobian = this->drake_model.forwardKinJacobian(points, body_id, 0, 0, true, 0).value();
-//      const Vector3d &force = side_force.second.wrench.block(3, 0, 3, 1); // extract the force measurement
-//
-//      foot_ft_to_joint_torques[side_force.first] = footJacobian.transpose() * force;
-//
-//      if (this->useGeometricJacobianFlag){
-//        std::cout << "using geometric Jacobian" << std::endl;
-//        std::vector<int> v_indices;
-//        footJacobian = this->drake_model.geometricJacobian<double>(0, body_id, body_id, 0, true, &v_indices).value();
-//        Vector6d wrench = side_force.second.wrench;
-//        wrench.head<3>().setZero(); // set the wrenches to zero
-//        VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
-//        VectorXd joint_torque = VectorXd::Zero(this->nq);
-//
-//        // convert them to a full sized joint_torque vector
-//        for (int i = 0; i < v_indices.size(); i++){
-//          joint_torque(v_indices[i]) = joint_torque_at_v_indices(i);
-//        }
-//
-//        foot_ft_to_joint_torques[side_force.first] = joint_torque;
-//      }
-//
-//    }
     else{
       std::cout << "told not to use foot forces, setting foot_ft_to_joint_torques to zero" << std::endl;
       foot_ft_to_joint_torques[Side::LEFT] = VectorXd::Zero(this->nq);
@@ -670,53 +646,36 @@ std::vector<std::vector<std::string>> parseCSVFile(std::string filename){
 
   }
 
-
   return result;
 }
 
+ResidualDetectorConfig parseConfig(std::string filename){
+  ResidualDetectorConfig config;
+  YAML::Node configYAML = YAML::LoadFile(filename);
+  YAML::Node robot_data = configYAML["robot_data"];
 
-//std::vector<ContactFilterPoint> constructContactFilterPointsFromFile(std::string filename){
-//
-//  std::string drcBase = std::string(std::getenv("DRC_BASE"));
-//  std::string filenameWithPath = drcBase + "/software/control/residual_detector/src/particle_grids/" + filename;
-//  std::vector<std::vector<std::string>> fileString = parseCSVFile(filenameWithPath);
-//
-////  // print out the file that you just read in
-////  for (auto & line: fileString){
-////    for (auto & word: line){
-////      std::cout << word << ",";
-////    }
-////    std::cout << std::endl;
-////  }
-//
-//  std::vector<ContactFilterPoint> cfpVec;
-//  for (auto & line: fileString){
-////    std::cout << "attemping to make cfp object" << std::endl;
-////    std::cout << "line has size " << line.size() << std::endl;
-//    ContactFilterPoint cfp;
-//    cfp.body_name = line[0];
-//    Vector3d contactPoint(atof(line[1].c_str()), atof(line[2].c_str()), atof(line[3].c_str()));
-//    Vector3d contactNormal(atof(line[4].c_str()), atof(line[5].c_str()), atof(line[6].c_str()));
-//    cfp.contactPoint = contactPoint;
-//    cfp.contactNormal = contactNormal;
-//
-//    if (line.size() == 8) {
-//      cfp.name = line[7];
-//    }
-//    cfpVec.push_back(cfp);
-//  }
-//
-//  return cfpVec;
-//
-//}
+  std::string drcBase = std::getenv("DRC_BASE");
+  // parse robot data
+  config.urdfFilename = drcBase + robot_data["urdf"].as<std::string>();
+  config.robotType = robot_data["robot_type"].as<std::string>();
+  config.control_config_filename = drcBase + robot_data["control_config_filename"].as<std::string>();
+  config.leftFootName = robot_data["leftFootName"].as<std::string>();
+  config.rightFootName = robot_data["rightFootName"].as<std::string>();
 
+
+  // parse residual detector specific stuff
+  YAML::Node residual_detector = configYAML["residual_detector"];
+  config.useFootForceTorque = residual_detector["useFootForceTorque"].as<bool>();
+  config.residualGain = residual_detector["gain"].as<double>();
+  return config;
+}
 
 
 int main( int argc, char* argv[]){
 
 
   ConciseArgs parser(argc, argv);
-  bool atlas_v5 = false;
+  bool atlas_v5 = true;
   bool valkyrie_v1 = false;
   bool valkyrie_v2 = false;
   bool isVerbose = false;
@@ -727,10 +686,8 @@ int main( int argc, char* argv[]){
   parser.add(isVerbose, "verbose");
   parser.parse();
 
+  std::string configFilename;
 
-  std::shared_ptr<ResidualDetectorOps> residualDetectorOps(new ResidualDetectorOps());
-  residualDetectorOps->useFootForceTorque = true;
-  residualDetectorOps->residualGain = 20.0;
 
   std::string drcBase = std::getenv("DRC_BASE");
 
@@ -739,10 +696,11 @@ int main( int argc, char* argv[]){
   }
 
   if (atlas_v5){
-    residualDetectorOps->robotType = "atlas_v5";
-    residualDetectorOps->control_config_filename = drcBase + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
-    residualDetectorOps->urdfFilename = drcBase + "/software/models/atlas_v5/model_LR_RR.urdf";
+    configFilename = drcBase + "/software/control/residual_detector/config/residual_detector_config_atlas_v5.yaml";
   }
+
+  ResidualDetectorConfig rdConfig= parseConfig(configFilename);
+  std::shared_ptr<ResidualDetectorConfig> residualDetectorConfig(&rdConfig);
 
   // little bit of testing
 
@@ -756,7 +714,7 @@ int main( int argc, char* argv[]){
 
 
   bool runDetectorLoop = true;
-  ResidualDetector residualDetector(lcm, isVerbose, residualDetectorOps);
+  ResidualDetector residualDetector(lcm, isVerbose, residualDetectorConfig);
 
 
   if (runDetectorLoop){
