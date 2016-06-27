@@ -245,19 +245,20 @@ classdef ValPlanEval < bipedControllers.BipedPlanEval
     end
 
     function current_plan = getCurrentPlan(obj, t, x)
-      while true
-        current_plan = obj.plan_queue{1};
-        if ~current_plan.isFinished(t, x);
-          break
-        end
-        disp('current plan is finished')
-        if length(obj.plan_queue) == 1
-          obj.plan_queue{1} = current_plan.getSuccessor(t, x);
-        else
-          obj.plan_queue(1) = [];
-        end
-        obj.sendStatus();
-      end
+      current_plan = obj.plan_queue{1};
+      % while true
+      %   current_plan = obj.plan_queue{1};
+      %   if ~current_plan.isFinished(t, x);
+      %     break
+      %   end
+      %   disp('current plan is finished')
+      %   if length(obj.plan_queue) == 1
+      %     % obj.plan_queue{1} = current_plan.getSuccessor(t, x);
+      %   else
+      %     obj.plan_queue(1) = [];
+      %   end
+      %   obj.sendStatus();
+      % end
     end
 
     function sendStatus(obj)
