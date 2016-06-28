@@ -12,5 +12,5 @@ class RobotStateDriver {
 
   public:
     RobotStateDriver(std::vector<std::string> state_coordinate_names);
-    void decode(const bot_core::robot_state_t *msg, DrakeRobotState *state);
+    void decode(const bot_core::robot_state_t *msg, DrakeRobotState *state, Eigen::VectorXd *torque = NULL);
 };

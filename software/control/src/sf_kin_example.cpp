@@ -207,8 +207,8 @@ public:
   LCMHandler* lcmHandler;
 };
 
-
 } // end anonymous namespace
+
 
 
 std::unordered_map<std::string, int> computeBodyOrFrameNameToIdMap(

@@ -32,7 +32,7 @@ RobotStateDriver::RobotStateDriver(vector<string> state_coordinate_names) {
   }
 }
 
-void RobotStateDriver::decode(const bot_core::robot_state_t *msg, DrakeRobotState *state) {
+void RobotStateDriver::decode(const bot_core::robot_state_t *msg, DrakeRobotState *state, Eigen::VectorXd *torque) {
   state->t = ((double) msg->utime) / 1000000;
 
   for (int i=0; i < msg->num_joints; i++) {
@@ -41,6 +41,9 @@ void RobotStateDriver::decode(const bot_core::robot_state_t *msg, DrakeRobotStat
       int index = it->second;
       state->q(index) = msg->joint_position[i];
       state->qd(index) = msg->joint_velocity[i];
+      if (torque != NULL) {
+        (*torque)[index] = msg->joint_effort[i];
+      }
     }
   }
 

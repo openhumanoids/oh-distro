@@ -98,7 +98,12 @@ target_link_libraries(sf_kin_example RobotStateDriver AtlasCommandDriver FootCon
 target_link_libraries (sf_kin_example ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sf_kin_example)
 
-
+add_executable(sfQP sfeng/sf_kin_example.cpp sfeng/QPController.cpp sfeng/QPEstimator.cpp sfeng/sfUtils.cpp sfeng/sfRobotState.cpp sfeng/EigenQuadProg.cpp sfeng/MRDLogger.cpp sfeng/sfQPState.cpp)
+pods_use_pkg_config_packages(sfQP drake-qp-common drake-control-util drake-side drake-rbm)
+target_link_libraries(sfQP RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
+target_link_libraries (sfQP ${CMAKE_THREAD_LIBS_INIT})
+pods_install_executables(sfQP)
+ 
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
 pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm drake-convex-hull)
 target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver)
