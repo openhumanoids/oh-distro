@@ -17,7 +17,10 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
     useFootForceFlag(false), useFootFTFlag(true), useGeometricJacobianFlag(false){
 
-    useFootFTFlag = residualDetectorConfig->useFootForceTorque;
+    // clean this up, very messy at the moment
+    if(residualDetectorConfig->useFootForceTorque){
+      this->useFootForceTorque();
+    }
 
 
 //  if (urdfFilename=="none"){
@@ -137,9 +140,10 @@ void ResidualDetector::useFootForce(bool useGeometricJacobian) {
 }
 
 void ResidualDetector::useFootForceTorque() {
-  this->publishChannel = this->publishChannel + "_W_FOOT_FT";
+  this->publishChannel = this->publishChannel + "_W_FOOT_FT"; // this actually gets overwritten later . . .
   this->useFootForceFlag = false;
   this->useFootFTFlag = true;
+  std::cout << "using foot force torque " << std::endl;
 }
 
 void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
