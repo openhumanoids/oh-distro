@@ -1,5 +1,5 @@
 __author__ = 'manuelli'
-from director import contactfilter
+import contactfilter
 from contactfilter import ContactFilter
 
 

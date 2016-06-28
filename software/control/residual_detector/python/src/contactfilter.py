@@ -22,18 +22,19 @@ import contactfilterutils as cfUtils
 from PythonQt import QtCore, QtGui
 from director import transformUtils
 from director import lcmUtils
-from director import contactfiltergurobi
+import contactfiltergurobi
 from director.debugVis import DebugData
 from director import visualization as vis
-from director import gurobiutils as grbUtils
+import gurobiutils as grbUtils
 from director.timercallback import TimerCallback
 from director import objectmodel as om
-from director import contactpointlocator
 from director import drcargs
 
 
 import drc as lcmdrc
 import drake as lcmdrake
+import contactpointlocator
+
 
 
 FRICTION_CONE_APPROX_SIZE = 4
@@ -42,6 +43,8 @@ MU = 0.4
 class ContactFilter(object):
 
     def __init__(self, robotStateModel, robotStateJointController):
+
+        print "initializing the contact filter"
 
         self.robotStateJointController = robotStateJointController
         self.robotStateModel = robotStateModel

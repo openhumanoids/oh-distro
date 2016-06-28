@@ -7,7 +7,6 @@ import PythonQt
 import matplotlib.pyplot as plt
 import Queue
 import collections
-from contactfilterutils import DequePeak
 
 import os
 import os.path
@@ -22,11 +21,11 @@ import contactfilterutils as cfUtils
 from PythonQt import QtCore, QtGui
 from director import transformUtils
 from director import lcmUtils
-from director import contactfiltergurobi
+import contactfiltergurobi
 from director.debugVis import DebugData
 from director import drcargs
 from director import visualization as vis
-from director import gurobiutils as grbUtils
+import gurobiutils as grbUtils
 from director.timercallback import TimerCallback
 from director import objectmodel as om
 from director import filterUtils
@@ -52,11 +51,11 @@ class ContactPointLocator(object):
 
     def loadCellsFromFile(self, filename=None):
         if filename is None:
-            filename = "test2"
+            filename = "wholeBody"
 
         drcBase = os.getenv('DRC_BASE')
         robotType = drcargs.getGlobalArgParser().getRobotType()
-        fullFilename = drcBase + "/software/director/src/python/data/contactparticlefilter/" + \
+        fullFilename = drcBase + "/software/control/residual_detector/python/data/contactparticlefilter/" + \
                        robotType + "/" + filename + ".out"
 
         print "filename is ", fullFilename
