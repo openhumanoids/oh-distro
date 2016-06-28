@@ -92,7 +92,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.qp_controller_state_monitor = drake.util.MessageMonitor(drake.lcmt_qp_controller_state, 'timestamp');
+      obj.qp_controller_state_monitor = drake.util.MessageMonitor(drc.controller_state_t, 'timestamp');
       obj.lc.subscribe('CONTROLLER_STATE', obj.qp_controller_state_monitor);
       
       if (isa(obj.getInputFrame, 'drcFrames.AtlasState'))
@@ -470,7 +470,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % assumes that we are using floating base coordinates. Need to be careful since drake ordering of the 
       % joints is different from the ordering in est_robot_state
       if (~isempty(qp_controller_state_msg) && obj.publish_truth)
-        qp_controller_state_msg = drake.lcmt_qp_controller_state(qp_controller_state_msg);
+        qp_controller_state_msg = drc.controller_state_t(qp_controller_state_msg);
         for(i=1:length(state_msg.joint_name))
           name = state_msg.joint_name(i);
           drake_joint_idx = strmatch(name, qp_controller_state_msg.joint_name);
