@@ -4,10 +4,14 @@ from director.consoleapp import ConsoleApp
 from director import visualization as vis
 from director import roboturdf
 from director import robotsystem
-from director import contactfilter
+from director import drcargs
+import contactfilter
+
+
 
 app = ConsoleApp()
 view = app.createView()
+
 
 
 # robotStateModel, robotStateJointController = roboturdf.loadRobotModel('robot state model', view, parent='sensors', color=roboturdf.getRobotGrayColor(), visible=True)

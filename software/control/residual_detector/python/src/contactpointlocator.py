@@ -2,7 +2,7 @@ __author__ = 'manuelli'
 import director
 from director import roboturdf
 import numpy as np
-import vtkAll as vtk
+from director import vtkAll as vtk
 import PythonQt
 import matplotlib.pyplot as plt
 import Queue
