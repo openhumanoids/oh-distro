@@ -1,6 +1,7 @@
 #include "plan_eval.h"
 #include "drake/util/drakeGeometryUtil.h"
 #include "drake/solvers/qpSpline/splineGeneration.h"
+#include "drake/util/lcmUtil.h"
 
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 
@@ -34,18 +35,62 @@ void PlanEval::ReceiverLoop()
 
 void PlanEval::PublisherLoop() {
   std::cout << "PlanEval Publisher thread start: " << std::this_thread::get_id() << std::endl;
+  double cur_time = 0;
+
   while (!publisher_stop_) {
     if (has_plan_) {
-      drake::lcmt_qp_controller_input local_msg;
-      qp_input_lock_.lock();
-      local_msg = qp_input_;
-      qp_input_lock_.unlock();
 
-      lcm_handle_.publish("QP_CONTROLLER_INPUT", &local_msg);
+      //lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
       // sleep
     }
   }
   std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id() << std::endl;
+}
+
+drake::lcmt_qp_controller_input PlanEval::MakeManipQPInput(double cur_time) {
+  auto q_des = q_trajs_.value(cur_time);
+  std::vector<float> q_des_std_vector;
+  q_des_std_vector.resize(q_des.size());
+  for(int i = 0; i < q_des.size(); i++){
+    q_des_std_vector[i] = static_cast<float>(q_des(i));
+  }
+  int qtrajSegmentIdx = q_trajs_.getSegmentIndex(cur_time);
+  // why is it 2?
+  int endSegmentIdx = std::min(2, q_trajs_.getNumberOfSegments() - qtrajSegmentIdx);
+  PiecewisePolynomial<double> qtrajSlice = q_trajs_.slice(qtrajSegmentIdx, endSegmentIdx);
+
+  drake::lcmt_qp_controller_input qp_input;
+  qp_input.be_silent = false;
+  qp_input.timestamp = static_cast<int64_t>(cur_time * 1e6);
+  qp_input.num_support_data = 0;
+  qp_input.num_tracked_bodies = 0;
+  qp_input.num_external_wrenches = 0;
+  qp_input.num_joint_pd_overrides = 0;
+
+
+  drake::lcmt_piecewise_polynomial qtrajSplineMsg;
+  encodePiecewisePolynomial(qtrajSlice, qtrajSplineMsg);
+  qp_input.whole_body_data.spline = qtrajSplineMsg;
+  qp_input.whole_body_data.q_des = q_des_std_vector;
+  qp_input.whole_body_data.timestamp = 0;
+  qp_input.whole_body_data.num_positions = robot_.num_positions;
+  // hack constrained_dofs
+  qp_input.whole_body_data.constrained_dofs.resize(17);
+  for (int i = 0; i < 7; i++) {
+    qp_input.whole_body_data.constrained_dofs[i] = 20 + i;
+    qp_input.whole_body_data.constrained_dofs[i+7] = 13 + i;
+  }
+  qp_input.whole_body_data.constrained_dofs[14] = 10;
+  qp_input.whole_body_data.constrained_dofs[15] = 7;
+  qp_input.whole_body_data.constrained_dofs[16] = 8;
+  qp_input.whole_body_data.num_constrained_dofs = qp_input.whole_body_data.constrained_dofs.size();
+
+  // zmp data
+
+
+  // make 3 body motion data, pelvis, 2 feet
+ 
+  return qp_input;
 }
 
 void PlanEval::Start() {
@@ -126,7 +171,7 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
     KeyframeToState(keyframe, q_, v_);
     KinematicsCache<double> cache = robot_.doKinematics(q_, v_);
     
-    Ts[i] = (double)keyframe.utime / 1e6;
+    Ts[i] = t0 + (double)keyframe.utime / 1e6;
     q_des = q_;
   }
 
@@ -148,6 +193,8 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
     }
   }
   q_trajs_ = PiecewisePolynomial<double>(polynomials, q_trajs[0].getSegmentTimes());
+
+
 }
 
 

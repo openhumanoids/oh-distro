@@ -46,8 +46,6 @@ class PlanEval {
   std::atomic<bool> receiver_stop_;
 
   // output
-  std::mutex qp_input_lock_;
-  drake::lcmt_qp_controller_input qp_input_;
   std::thread publisher_thread_;
   std::atomic<bool> publisher_stop_;
 
@@ -68,5 +66,8 @@ class PlanEval {
   void HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg);
 
   void GenerateQPInputForManip(const drc::robot_plan_t &plan);
+
+
+  drake::lcmt_qp_controller_input MakeManipQPInput(double cur_time);
 
 };
