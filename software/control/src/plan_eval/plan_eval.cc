@@ -5,6 +5,83 @@
 
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 
+namespace Eigen {
+  typedef Matrix<double, 6, 1> Vector6d;
+};
+
+struct SimplePose {
+  Eigen::Vector3d lin;
+  Eigen::Quaterniond rot;
+};
+
+PiecewisePolynomial<double> nWaypointCubicCartesianSpline(const std::vector<double> &times, const std::vector<SimplePose> &poses, const std::vector<SimplePose> &vels) {
+  assert(times.size() == poses.sizes());
+  assert(times.size() == vels.sizes());
+  assert(times.size() > 0);
+
+  size_t T = times.size();
+  std::vector<Eigen::Vector6d> expmap(poses.size()), expmap_dot(poses.size());
+  Eigen::Vector3d tmp, tmpd;
+  for (size_t t = 0; t < times.size(); t++) {
+    quat2expmapSequence(poses[t].rot.coeffs(), vels[t].rot.coeffs(), tmp, tmpd);
+    // TODO: need to do the closest expmap mumble
+    expmap[t].segment<3>(0) = poses[t].lin;
+    expmap[t].segment<3>(3) = tmp;
+    expmap_dot[t].segment<3>(0) = vels[t].lin;
+    expmap_dot[t].segment<3>(3) = tmpd;
+  }
+
+  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> polynomials(T-1);
+  // copy drake/util/pchipDeriv.m
+  for (size_t t = 0; t < T-1; t++) {
+    polynomials[t].resize(6, 1);
+    double a = times[t+1] - times[t];
+    double b = a * a;
+    double c = b * a;
+    for (size_t i = 0; i < 6; i++) {
+      double c4 = expmap[t][i];
+      double c3 = expmap_dot[t][i];
+      double c1 = 1. / b * (expmap_dot[t][i] - c3 - 2. / a * (expmap[t+1][i] - c4 -a * c3));
+      double c2 = 1. / b * (expmap[t+1][i] - c4 - a * c3 - c * c1);
+      // figure out the order
+      Eigen::Vector4d coeffs(c1, c2, c3, c4);
+      polynomials[t](i, 0) = Polynomial<double>(coeffs);
+    }
+  }
+
+  return PiecewisePolynomial<double>(polynomials, times);
+}
+
+PiecewisePolynomial<double> nWaypointMultiCubicSpline(const std::vector<double> &times, const std::vector<Eigen::VectorXd> &X) {
+  assert(times.size() == X.sizes());
+  assert(times.size() > 0);
+  assert(X[0].size() > 0);
+
+  size_t dof = X[0].size();
+  size_t T = X.size();
+  std::vector<PiecewisePolynomial<double>> trajs(dof);
+  Eigen::VectorXd tmpX(T-2);
+
+  for (size_t i = 0; i < dof; i++) {
+    double q0 = X[0][i];
+    double q1 = X[T-1][i];
+    double v0 = 0;
+    double v1 = 0;
+    for (size_t t = 1; t < T-1; t++)
+      tmpX[t-1] = X[t][i];
+    trajs[i] = nWaypointCubicSpline(times, q0, v0, q1, v1, tmpX);
+  }
+
+  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> polynomials(T-1);
+  for (size_t t = 0; t < polynomials.size(); t++) {
+    polynomials[t].resize(dof, 1);
+    for (size_t i = 0; i < dof; i++) {
+      polynomials[t](i, 0) = trajs[i].getPolynomial(t);
+    }
+  }
+  return PiecewisePolynomial<double>(polynomials, trajs[0].getSegmentTimes());
+}
+
 void PlanEval::Init() {
   if (!lcm_handle_.good()) {
     std::cerr << "ERROR: lcm is not good()" << std::endl;
@@ -93,6 +170,9 @@ drake::lcmt_qp_controller_input PlanEval::MakeManipQPInput(double cur_time) {
   return qp_input;
 }
 
+
+
+
 void PlanEval::Start() {
   receiver_stop_ = false;
   if (isReceiverRunning()) {
@@ -159,11 +239,11 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
   double t0 = plan_.utime / 1e6;
   
   std::vector<double> Ts;
-  Eigen::MatrixXd q_des; // t steps by n
+  std::vector<Eigen::VectorXd> q_des; // t steps by n
 
   int dof = robot_.num_velocities;
   Ts.resize(plan_.plan.size());
-  q_des.resize(plan_.plan.size(), dof);
+  q_des.resize(plan_.plan.size());
 
   // go through set points
   for (size_t i = 0; i < plan_.plan.size(); i++) {
@@ -172,29 +252,10 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
     KinematicsCache<double> cache = robot_.doKinematics(q_, v_);
     
     Ts[i] = t0 + (double)keyframe.utime / 1e6;
-    q_des = q_;
+    q_des[i] = q_;
   }
 
-  // TODO: extend the cubic traj gen to multi dim
-  // the first 6 is bogus. sfeng believes QP controller ignores it anyway
-  std::vector<PiecewisePolynomial<double>> q_trajs(dof);
-  for (size_t i = 0; i < dof; i++) {
-    double q0 = q_des(0, i);  // first knot q
-    double qd0 = 0;
-    double q1 = q_des(plan_.plan.size()-1, i);  // last knot q
-    double qd1 = 0;
-    q_trajs[i] = nWaypointCubicSpline(Ts, q0, qd0, q1, qd1, q_des.block(1, i, plan_.plan.size()-2, 1));
-  }
-  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> polynomials(q_trajs[0].getSegmentTimes().size()-1);
-  for (size_t t = 0; t < polynomials.size(); t++) {
-    polynomials[t].resize(dof, 1);
-    for (size_t i = 0; i < dof; i++) {
-      polynomials[t](i, 0) = q_trajs[i].getPolynomial(t);
-    }
-  }
-  q_trajs_ = PiecewisePolynomial<double>(polynomials, q_trajs[0].getSegmentTimes());
-
-
+  q_trajs_ = nWaypointMultiCubicSpline(Ts, q_des);
 }
 
 
