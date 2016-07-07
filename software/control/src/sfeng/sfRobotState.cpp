@@ -13,7 +13,6 @@ void sfRobotState::_fillKinematics(const std::string &name, Isometry3d &pose, Ve
   Jdv = getTaskSpaceJacobianDotTimesV(*(robot), cache, id, local_offset);
 }
 
-// assumeing init is called. otherwise memory isn't quite right
 void sfRobotState::addToLog(MRDLogger &logger) const
 {
   logger.addChannel("time", "s", &time);
@@ -60,7 +59,7 @@ void sfRobotState::update(double t, const VectorXd &q, const VectorXd &v, const 
   if (q.size() != this->pos.size() || 
       v.size() != this->vel.size() || 
       trq.size() != this->trq.size()) {
-    throw std::runtime_error("robot state dimension mismatch");
+    throw std::runtime_error("robot state update dimension mismatch");
   }
 
   time = t;
@@ -102,10 +101,6 @@ void sfRobotState::update(double t, const VectorXd &q, const VectorXd &v, const 
   for (int i = 0; i < 2; i++) {
     footFT_w[i].segment<3>(0) = foot_sensor[i]->pose.linear() * footFT_b[i].segment<3>(0);
     footFT_w[i].segment<3>(3) = foot_sensor[i]->pose.linear() * footFT_b[i].segment<3>(3);
-
-    //MatrixXd test = foot[i]->J;
-    //test.block(0,0,6,6).setZero();
-    //footFT_w_statics[i] = -(test.transpose().fullPivHouseholderQr().solve(trq));
   }
   
   // cop

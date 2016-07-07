@@ -103,6 +103,13 @@ pods_use_pkg_config_packages(sfQP drake-qp-common drake-control-util drake-side 
 target_link_libraries(sfQP RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 target_link_libraries (sfQP ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sfQP)
+
+add_executable(sf_plan_eval plan_eval/test.cc plan_eval/plan_eval.cc)
+add_definitions(-g)
+pods_use_pkg_config_packages(sf_plan_eval drake-qp-common drake-control-util drake-side drake-rbm)
+target_link_libraries(sf_plan_eval RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeSplineGeneration drakeTrajectories)
+target_link_libraries (sf_plan_eval ${CMAKE_THREAD_LIBS_INIT})
+pods_install_executables(sf_plan_eval)
  
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
 pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm drake-convex-hull)

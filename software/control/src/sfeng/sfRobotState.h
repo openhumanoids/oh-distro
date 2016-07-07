@@ -11,9 +11,13 @@ public:
   std::string name;
   std::string link_name;
   Eigen::Isometry3d pose;
+  // task space velocity, or twist of a frame that has the same orientation 
+  // as the world frame, but located at the origin of the body frame
   Vector6d vel;
-  
+ 
+  // task space Jacobian, xdot = J * v 
   MatrixXd J;
+  // task space Jd * v
   Vector6d Jdv;
 
   BodyOfInterest(const std::string &n) 
@@ -42,7 +46,7 @@ public:
     logger.addChannel(name+"d[wz]", "m/s", vel.data()+2);
   }
 };
-
+ 
 
 class sfRobotState {
 public:
@@ -57,45 +61,43 @@ public:
   // these have base 6
   VectorXd pos;
   VectorXd vel;
-  VectorXd trq; // only the actuated joints
+  VectorXd trq; // in the same order as vel, but only has actuated joints
 
-  Vector6d footFT_b[2];
-
-  MatrixXd M;
-  VectorXd h;
+  MatrixXd M; // inertial matrix
+  VectorXd h; // bias term: M * qdd + h = tau + J^T * lambda
 
   // computed from kinematics  
-  Vector3d com;
-  Vector3d comd;
-  MatrixXd J_com;
-  Vector3d Jdv_com;
+  Vector3d com; // center of mass
+  Vector3d comd; // com velocity
+  MatrixXd J_com; // com Jacobian: comd = J_com * v
+  Vector3d Jdv_com; // J_com_dot * v
 
-  BodyOfInterest pelv;
+  BodyOfInterest pelv; // pelvis 
+  BodyOfInterest torso; // torso
   BodyOfInterest l_foot; // at the bottom of foot
-  BodyOfInterest r_foot; // at the bottom of foot
-  BodyOfInterest l_foot_sensor;
+  BodyOfInterest r_foot; 
+  BodyOfInterest l_foot_sensor; // at the foot sensor
   BodyOfInterest r_foot_sensor;
-  BodyOfInterest torso;
 
-  std::vector<BodyOfInterest *> foot; // easy access to l_foot, r_foot
-  std::vector<BodyOfInterest *> foot_sensor; // easy access to l_foot_sensor, r_foot_sensor
+  BodyOfInterest *foot[2]; // easy access to l_foot, r_foot
+  BodyOfInterest *foot_sensor[2]; // easy access to l_foot_sensor, r_foot_sensor
 
-  Vector2d cop;
-  Vector2d cop_b[2];
+  Vector2d cop; // center of pressure
+  Vector2d cop_b[2]; // individual center of pressue in foot frame
   
-  Vector6d footFT_w[2];
-  //Vector6d footFT_w_statics[2];
+  Vector6d footFT_b[2]; // wrench measured in the body frame
+  Vector6d footFT_w[2]; // wrench rotated to world frame
   
   sfRobotState(std::unique_ptr<RigidBodyTree> robot_in)
     : robot(std::move(robot_in)),
       cache(robot->bodies),
       pelv("pelvis"),
+      torso("torso"),
       l_foot("leftFoot"),
       r_foot("rightFoot"),
       l_foot_sensor("leftFootSensor", "leftFoot"),
-      r_foot_sensor("rightFootSensor", "rightFoot"),
-      torso("torso")
-  {
+      r_foot_sensor("rightFootSensor", "rightFoot")
+  { 
     // build map
     bodyName2ID = std::unordered_map<std::string, int>();
     for (auto it = robot->bodies.begin(); it != robot->bodies.end(); ++it) {
@@ -115,11 +117,9 @@ public:
       actuatorName2ID[robot->actuators[i].name] = i;
     }
 
-    foot.resize(2);
     foot[Side::LEFT] = &l_foot;
     foot[Side::RIGHT] = &r_foot;
     
-    foot_sensor.resize(2);
     foot_sensor[Side::LEFT] = &l_foot_sensor;
     foot_sensor[Side::RIGHT] = &r_foot_sensor;
 
@@ -130,7 +130,6 @@ public:
     trq.resize(robot->actuators.size());
   }
 
-  //void parseMsg(const bot_core::robot_state_t &msg);
   void addToLog(MRDLogger &logger) const;
 
   // ft_l, and ft_r needs to be ROTATED FIRST s.t. x fwd, z up!!!
