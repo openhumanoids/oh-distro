@@ -107,7 +107,7 @@ pods_install_executables(sfQP)
 add_executable(sf_plan_eval plan_eval/test.cc plan_eval/plan_eval.cc)
 add_definitions(-g)
 pods_use_pkg_config_packages(sf_plan_eval drake-qp-common drake-control-util drake-side drake-rbm)
-target_link_libraries(sf_plan_eval RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeSplineGeneration drakeTrajectories drakeLCMUtil drakePolynomial)
+target_link_libraries(sf_plan_eval RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeSplineGeneration drakeTrajectories drakeLCMUtil drakePolynomial drakeQPLocomotionPlan)
 target_link_libraries (sf_plan_eval ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sf_plan_eval)
  

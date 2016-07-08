@@ -58,7 +58,7 @@ class PlanEval {
 
   // splines for joints
   PiecewisePolynomial<double> q_trajs_;
-  std::vector<BodyMotionData> x_trajs_;
+  std::vector<BodyMotionData> body_motions_;
 
   void Init();
   void ReceiverLoop();

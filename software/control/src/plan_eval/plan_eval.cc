@@ -3,16 +3,21 @@
 #include "drake/solvers/qpSpline/splineGeneration.h"
 #include "drake/util/lcmUtil.h"
 
-static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
-
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
 };
-
 struct SimplePose {
   Eigen::Vector3d lin;
   Eigen::Quaterniond rot;
 };
+ 
+static std::string primaryBodyOrFrameName(const std::string& full_body_name);
+static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
+static void KeyframeToState(const bot_core::robot_state_t &keyframe, Eigen::VectorXd &q, Eigen::VectorXd &v);
+static Eigen::Vector6d getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body_or_frame_id, const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
+static Eigen::Vector6d getTaskSpaceJacobianDotTimesV(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body_or_frame_id, const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
+static Eigen::MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body, const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
+
 
 // poses and vels are task space pose and vel
 PiecewisePolynomial<double> nWaypointCubicCartesianSpline(const std::vector<double> &times, const std::vector<SimplePose> &poses, const std::vector<SimplePose> &vels) {
@@ -165,7 +170,63 @@ drake::lcmt_qp_controller_input PlanEval::MakeManipQPInput(double cur_time) {
 
   // zmp data
 
+  // body motion data
+  for (size_t b = 0; b < body_motions_.size(); b++) {
+    const BodyMotionData& body_motion = body_motions_[b];
+    int body_or_frame_id = body_motion.getBodyOrFrameId();
+    int body_id = robot_.parseBodyOrFrameID(body_or_frame_id);
+    int body_motion_segment_index = body_motion.findSegmentIndex(cur_time);
+    
+    bool is_foot = false;
+    if (is_foot) {
+    
+    }
+    
+    // extract the right knot points
+    PiecewisePolynomial<double> body_motion_trajectory_slice =
+      body_motion.getTrajectory().slice(
+          body_motion_segment_index,
+          std::min(2, body_motion.getTrajectory().getNumberOfSegments() -
+            body_motion_segment_index)); 
+    
+    // make lcmt_body_motion_data msg
+    drake::lcmt_body_motion_data body_motion_data_for_support_lcm;
+    body_motion_data_for_support_lcm.timestamp = 0;
+    body_motion_data_for_support_lcm.body_or_frame_name =
+        primaryBodyOrFrameName(robot_.getBodyOrFrameName(body_or_frame_id));
 
+    encodePiecewisePolynomial(body_motion_trajectory_slice,
+                              body_motion_data_for_support_lcm.spline);
+
+    body_motion_data_for_support_lcm.in_floating_base_nullspace =
+        body_motion.isInFloatingBaseNullSpace(body_motion_segment_index);
+    body_motion_data_for_support_lcm.control_pose_when_in_contact =
+        body_motion.isPoseControlledWhenInContact(body_motion_segment_index);
+    
+    const Eigen::Isometry3d& transform_task_to_world =
+        body_motion.getTransformTaskToWorld();
+    Eigen::Vector4d quat_task_to_world = rotmat2quat(transform_task_to_world.linear());
+    Eigen::Vector3d translation_task_to_world = transform_task_to_world.translation();
+    eigenVectorToCArray(quat_task_to_world,
+                        body_motion_data_for_support_lcm.quat_task_to_world);
+    eigenVectorToCArray(
+        translation_task_to_world,
+        body_motion_data_for_support_lcm.translation_task_to_world);
+    eigenVectorToCArray(body_motion.getXyzProportionalGainMultiplier(),
+                        body_motion_data_for_support_lcm.xyz_kp_multiplier);
+    eigenVectorToCArray(
+        body_motion.getXyzDampingRatioMultiplier(),
+        body_motion_data_for_support_lcm.xyz_damping_ratio_multiplier);
+    body_motion_data_for_support_lcm.expmap_kp_multiplier =
+        body_motion.getExponentialMapProportionalGainMultiplier();
+    body_motion_data_for_support_lcm.expmap_damping_ratio_multiplier =
+        body_motion.getExponentialMapDampingRatioMultiplier();
+    eigenVectorToCArray(body_motion.getWeightMultiplier(),
+                        body_motion_data_for_support_lcm.weight_multiplier);
+
+    qp_input.body_motion_data.push_back(body_motion_data_for_support_lcm);
+    qp_input.num_tracked_bodies++; 
+  }
 
   return qp_input;
 }
@@ -199,35 +260,6 @@ void PlanEval::Stop() {
   publisher_thread_.join();
 }
 
-
-void KeyframeToState(const bot_core::robot_state_t &keyframe, Eigen::VectorXd q, Eigen::VectorXd v)
-{
-  // assuming floating base
-  q[0] = keyframe.pose.translation.x;
-  q[1] = keyframe.pose.translation.y;
-  q[2] = keyframe.pose.translation.z;
-
-  Eigen::Matrix<double, 4, 1> quat;
-  quat[0] = keyframe.pose.rotation.w;
-  quat[1] = keyframe.pose.rotation.x;
-  quat[2] = keyframe.pose.rotation.y;
-  quat[3] = keyframe.pose.rotation.z; 
-  q.segment<3>(3) = quat2rpy(quat);
-
-  v[0] = keyframe.twist.linear_velocity.x;
-  v[1] = keyframe.twist.linear_velocity.y;
-  v[2] = keyframe.twist.linear_velocity.z;
-  v[3] = keyframe.twist.angular_velocity.x;
-  v[4] = keyframe.twist.angular_velocity.y;
-  v[5] = keyframe.twist.angular_velocity.z;
-
-  for (size_t i = 0; i < keyframe.joint_position.size(); i++) {
-    q[i+6] = keyframe.joint_position[i];
-  }
-  for (size_t i = 0; i < keyframe.joint_velocity.size(); i++) {
-    v[i+6] = keyframe.joint_velocity[i];
-  }
-}
 
 
 void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg) {
@@ -272,10 +304,14 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
       Eigen::Isometry3d pose = robot_.relativeTransform(cache, 0, id);
       x_d[b][t].lin = pose.translation();
       x_d[b][t].rot = Eigen::Quaterniond(pose.linear());
-
-      // TODO: fix this (set vel to zero for now)
-      xd_d[b][t].lin = Eigen::Vector3d::Zero();
-      xd_d[b][t].rot = Eigen::Quaterniond::Identity();
+      
+      // TODO offset can be nonzero
+      Eigen::Vector6d xd = getTaskSpaceVel(robot_, cache, id, Eigen::Vector3d::Zero());
+      xd_d[b][t].lin = xd.segment<3>(3);
+      // http://www.euclideanspace.com/physics/kinematics/angularvelocity/QuaternionDifferentiation2.pdf
+      Eigen::Quaterniond W(0, xd[0], xd[1], xd[2]);
+      W = W * x_d[b][t].rot;
+      xd_d[b][t].rot = Eigen::Quaterniond(0.5*W.coeffs());
     }
   }
 
@@ -283,33 +319,147 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
   q_trajs_ = nWaypointMultiCubicSpline(Ts, q_des);
 
   // make body motion splines
-  x_trajs_.resize(num_bodies);
+  body_motions_.resize(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
-    x_trajs_[b].body_or_frame_id = robot_.findLink(body_names[b])->body_index; 
-    x_trajs_[b].trajectory = nWaypointCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
-    x_trajs_[b].toe_off_allowed.resize(num_T, false);
-    x_trajs_[b].in_floating_base_nullspace.resize(num_T, false);
-    // TODO: is this true?
-    x_trajs_[b].control_pose_when_in_contact.resize(num_T, true);
-    x_trajs_[b].transform_task_to_world = Eigen::Isometry3d::Identity();
-    x_trajs_[b].xyz_proportional_gain_multiplier = Eigen::Vector3d::Constant(1);
-    x_trajs_[b].xyz_damping_ratio_multiplier = Eigen::Vector3d::Constant(1);
-    x_trajs_[b].exponential_map_proportional_gain_multiplier = 1;
-    x_trajs_[b].exponential_map_damping_ratio_multiplier = 1;
-    x_trajs_[b].weight_multiplier = Eigen::Vector6d::Constant(1);
+    body_motions_[b].body_or_frame_id = robot_.findLink(body_names[b])->body_index; 
+    body_motions_[b].trajectory = nWaypointCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
+    body_motions_[b].toe_off_allowed.resize(num_T, false);
+    body_motions_[b].in_floating_base_nullspace.resize(num_T, false);
+    if (body_names[b].compare("pelvis") == 0)
+      body_motions_[b].control_pose_when_in_contact.resize(num_T, true);
+    else
+      body_motions_[b].control_pose_when_in_contact.resize(num_T, false);
+
+    body_motions_[b].transform_task_to_world = Eigen::Isometry3d::Identity();
+    body_motions_[b].xyz_proportional_gain_multiplier = Eigen::Vector3d::Constant(1);
+    body_motions_[b].xyz_damping_ratio_multiplier = Eigen::Vector3d::Constant(1);
+    body_motions_[b].exponential_map_proportional_gain_multiplier = 1;
+    body_motions_[b].exponential_map_damping_ratio_multiplier = 1;
+    body_motions_[b].weight_multiplier = Eigen::Vector6d::Constant(1);
   }
+
+  // make zmp traj
+  
+  // make support
+
 }
 
 
 
 
+std::string primaryBodyOrFrameName(const std::string& full_body_name) {
+  int i;
+  for (i = 0; i < full_body_name.size(); i++) {
+    if (std::strncmp(&full_body_name[i], "+", 1) == 0) {
+      break;
+    }
+  }
+
+  return full_body_name.substr(0, i);
+}
 
 
 
+void KeyframeToState(const bot_core::robot_state_t &keyframe, Eigen::VectorXd &q, Eigen::VectorXd &v)
+{
+  // assuming floating base
+  q[0] = keyframe.pose.translation.x;
+  q[1] = keyframe.pose.translation.y;
+  q[2] = keyframe.pose.translation.z;
 
+  Eigen::Matrix<double, 4, 1> quat;
+  quat[0] = keyframe.pose.rotation.w;
+  quat[1] = keyframe.pose.rotation.x;
+  quat[2] = keyframe.pose.rotation.y;
+  quat[3] = keyframe.pose.rotation.z; 
+  q.segment<3>(3) = quat2rpy(quat);
 
+  v[0] = keyframe.twist.linear_velocity.x;
+  v[1] = keyframe.twist.linear_velocity.y;
+  v[2] = keyframe.twist.linear_velocity.z;
+  v[3] = keyframe.twist.angular_velocity.x;
+  v[4] = keyframe.twist.angular_velocity.y;
+  v[5] = keyframe.twist.angular_velocity.z;
 
+  for (size_t i = 0; i < keyframe.joint_position.size(); i++) {
+    q[i+6] = keyframe.joint_position[i];
+  }
+  for (size_t i = 0; i < keyframe.joint_velocity.size(); i++) {
+    v[i+6] = keyframe.joint_velocity[i];
+  }
+}
 
+ 
+
+Eigen::Vector6d getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body_or_frame_id, const Eigen::Vector3d &local_offset)
+{
+  Eigen::Isometry3d H_body_to_frame;
+  int body_idx = r.parseBodyOrFrameID(body_or_frame_id, &H_body_to_frame);
+
+  const auto &element = cache.getElement(*(r.bodies[body_idx]));
+  Eigen::Vector6d T = element.twist_in_world;
+  Eigen::Vector3d pt = element.transform_to_world.translation();
+  
+  // get the body's task space vel
+  Eigen::Vector6d v = T;
+  v.tail<3>() += v.head<3>().cross(pt); 
+
+  // global offset between pt and body
+  auto H_world_to_frame = element.transform_to_world * H_body_to_frame;
+  Eigen::Isometry3d H_frame_to_pt(Eigen::Isometry3d::Identity());
+  H_frame_to_pt.translation() = local_offset;
+  auto H_world_to_pt = H_world_to_frame * H_frame_to_pt; 
+  Eigen::Vector3d world_offset = H_world_to_pt.translation() - element.transform_to_world.translation();
+  
+  // add the linear vel from the body rotation
+  v.tail<3>() += v.head<3>().cross(world_offset);
+
+  return v;
+}
+
+Eigen::MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body, const Eigen::Vector3d &local_offset)
+{
+  std::vector<int> v_or_q_indices;
+  KinematicPath body_path = r.findKinematicPath(0, body);
+  Eigen::MatrixXd Jg = r.geometricJacobian(cache, 0, body, 0, true, &v_or_q_indices);
+  Eigen::MatrixXd J(6, r.num_velocities);
+  //MatrixXd J(6, r.number_of_velocities());
+  J.setZero();
+
+  Eigen::Vector3d points = r.transformPoints(cache, local_offset, body, 0);
+
+  int col = 0;
+  for (std::vector<int>::iterator it = v_or_q_indices.begin(); it != v_or_q_indices.end(); ++it) {
+    // angular
+    J.template block<SPACE_DIMENSION, 1>(0,*it) = Jg.block<3,1>(0,col);
+    // linear, just like the linear velocity, assume qd = 1, the column is the linear velocity.
+    J.template block<SPACE_DIMENSION, 1>(3,*it) = Jg.block<3,1>(3,col);
+    J.template block<SPACE_DIMENSION, 1>(3,*it).noalias() += Jg.block<3,1>(0,col).cross(points);
+    col++;
+  }
+
+  return J;
+}
+
+Eigen::Vector6d getTaskSpaceJacobianDotTimesV(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body_or_frame_id, const Eigen::Vector3d &local_offset)
+{
+  // position of point in world
+  Eigen::Vector3d p = r.transformPoints(cache, local_offset, body_or_frame_id, 0);
+  Eigen::Vector6d twist = r.relativeTwist(cache, 0, body_or_frame_id, 0);
+  Eigen::Vector6d J_geometric_dot_times_v = r.geometricJacobianDotTimesV(cache, 0, body_or_frame_id, 0);
+
+  // linear vel of r
+  Eigen::Vector3d pdot = twist.head<3>().cross(p) + twist.tail<3>();
+
+  // each column of J_task Jt = [Jg_omega; Jg_v + Jg_omega.cross(p)]
+  // Jt * v, angular part stays the same, 
+  // linear part = [\dot{Jg_v}v + \dot{Jg_omega}.cross(p) + Jg_omega.cross(rdot)] * v 
+  //             = [lin of JgdotV + ang of JgdotV.cross(p) + omega.cross(rdot)]
+  Eigen::Vector6d Jdv = J_geometric_dot_times_v;
+  Jdv.tail<3>() += twist.head<3>().cross(pdot) + J_geometric_dot_times_v.head<3>().cross(p);
+
+  return Jdv;
+} 
 
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout) {
   int lcmFd = lcm_handle.getFileno();
