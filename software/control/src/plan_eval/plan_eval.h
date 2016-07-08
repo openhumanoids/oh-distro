@@ -7,6 +7,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 
+#include "bot_core/robot_state_t.hpp"
 #include "drc/robot_plan_t.hpp" 
 #include "drake/lcmt_qp_controller_input.hpp"
 
@@ -16,9 +17,18 @@
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
 #include "drake/systems/robotInterfaces/BodyMotionData.h"
 
+struct RigidBodySupportStateElement {
+  int body;
+  Eigen::Matrix3Xd contact_points;
+  bool use_contact_surface;
+  Eigen::Vector4d support_surface;
+};
+
+typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
+
 class PlanEval {
  public:
-  PlanEval() : robot_(std::string("/home/sfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf"), DrakeJoint::ROLLPITCHYAW) {
+  PlanEval() : robot_(std::string("/home/siyuanfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf"), DrakeJoint::ROLLPITCHYAW) {
     has_plan_ = false;
     receiver_stop_ = false;
     publisher_stop_ = false;
@@ -38,6 +48,7 @@ class PlanEval {
 
  private:
   lcm::LCM lcm_handle_;
+  double time_; ///< from est robot state
 
   // input
   std::mutex plan_lock_;
@@ -58,13 +69,29 @@ class PlanEval {
 
   // splines for joints
   PiecewisePolynomial<double> q_trajs_;
+
+  // spline for zmp
+  PiecewisePolynomial<double> zmp_traj_;
+  Eigen::Matrix4d A_;
+  Eigen::Matrix<double,4,2> B_;
+  Eigen::Matrix<double,2,4> C_;
+  Eigen::Matrix<double,2,2> D_;
+  Eigen::Matrix2d Qy_, R_;
+  Eigen::Matrix4d S_;
+  Eigen::Vector4d s1_;
+
+  // list of tracked bodies
   std::vector<BodyMotionData> body_motions_;
+  
+  // list of support
+  RigidBodySupportState support_state_;
 
   void Init();
   void ReceiverLoop();
   void PublisherLoop();
   
   void HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg);
+  void HandleEstRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg);
 
   void GenerateQPInputForManip(const drc::robot_plan_t &plan);
 

@@ -97,6 +97,9 @@ void PlanEval::Init() {
   lcm::Subscription* sub;
   sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN", &PlanEval::HandleCommittedRobotPlan, this);
   sub->setQueueCapacity(1);
+  
+  sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState, this);
+  sub->setQueueCapacity(1);
 }
 
 void PlanEval::ReceiverLoop()
@@ -122,8 +125,8 @@ void PlanEval::PublisherLoop() {
 
   while (!publisher_stop_) {
     if (has_plan_) {
-
-      //lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
+      drake::lcmt_qp_controller_input qp_input = MakeManipQPInput(time_);
+      lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
       // sleep
     }
   }
@@ -228,10 +231,34 @@ drake::lcmt_qp_controller_input PlanEval::MakeManipQPInput(double cur_time) {
     qp_input.num_tracked_bodies++; 
   }
 
+  // make support
+  qp_input.support_data.resize(support_state_.size());
+  for (size_t s = 0; s < support_state_.size(); s++) {
+    drake::lcmt_support_data &support_data_element_lcm = qp_input.support_data[s];
+    const RigidBodySupportStateElement& element = support_state_[s];
+
+    support_data_element_lcm.timestamp = 0;
+    support_data_element_lcm.body_name = primaryBodyOrFrameName(
+        robot_.getBodyOrFrameName(static_cast<int32_t>(element.body)));
+
+    support_data_element_lcm.num_contact_pts = element.contact_points.cols();
+    eigenToStdVectorOfStdVectors(element.contact_points, support_data_element_lcm.contact_pts);
+
+    for (int i = 0; i < 4; i++) {
+      support_data_element_lcm.support_logic_map[i] = true;
+      support_data_element_lcm.support_surface[i] = element.support_surface[i];
+    }
+    support_data_element_lcm.mu = 1;
+    support_data_element_lcm.use_support_surface = true;
+  }
+
   return qp_input;
 }
 
-
+void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
+{
+  time_ = (double)msg->utime / 1e6;
+}
 
 
 void PlanEval::Start() {
@@ -272,7 +299,8 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
   size_t num_T = plan_.plan.size();
   
   std::vector<double> Ts(num_T);
-  std::vector<Eigen::VectorXd> q_des(num_T); // t steps by n
+  std::vector<Eigen::Vector2d> com_d(num_T);
+  std::vector<Eigen::VectorXd> q_d(num_T); // t steps by n
 
   int dof = robot_.num_velocities;
   
@@ -297,7 +325,7 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
     KinematicsCache<double> cache = robot_.doKinematics(q_, v_);
     
     Ts[t] = t0 + (double)keyframe.utime / 1e6;
-    q_des[t] = q_;
+    q_d[t] = q_;
 
     for (size_t b = 0; b < num_bodies; b++) {
       int id = robot_.findLink(body_names[b])->body_index;
@@ -313,10 +341,28 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
       W = W * x_d[b][t].rot;
       xd_d[b][t].rot = Eigen::Quaterniond(0.5*W.coeffs());
     }
+
+    // get com
+    com_d[t] = robot_.centerOfMass(cache).segment<2>(0);
   }
 
+  // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
+  zmp_traj_ = nWaypointMultiCubicSpline(Ts, com_d);  /// THIS IS NOT CORRECT
+  A_.setZero();
+  A_(0,2) = A_(1,3) = 1;
+  B_.setZero();
+  B_(2,0) = B_(3,1) = 1;
+  C_.setZero();
+  C_(0,0) = C_(1,1) = 1;
+  D_.setZero();
+
+  Qy_ = Eigen::Matrix2d::Identity();
+  R_.setZero();
+
+
+
   // make q splines
-  q_trajs_ = nWaypointMultiCubicSpline(Ts, q_des);
+  q_trajs_ = nWaypointMultiCubicSpline(Ts, q_d);
 
   // make body motion splines
   body_motions_.resize(num_bodies);
@@ -340,8 +386,34 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
 
   // make zmp traj
   
-  // make support
+  // make support, dummy here since we are always in double support
+  std::vector<std::string> support_names;
+  support_names.push_back("leftFoot");
+  support_names.push_back("rightFoot");
+  support_state_.resize(support_names.size());
 
+  for (size_t s = 0; s < support_names.size(); s++) {
+    RigidBodySupportStateElement& support = support_state_[s];
+    support.body = robot_.findLink(support_names[s])->body_index;
+    support.use_contact_surface = true;
+    support.support_surface = Eigen::Vector4d(0,0,1,0);
+
+    // TODO: don't hard code
+    support.contact_points.resize(3,4);
+    double foot_x[2] = {-0.058, 0.172}; 
+    double foot_y[2] = {-0.055, 0.055};
+    double foot_z = -0.09;
+    for (int i = 0; i < 2; i++) {
+      // back left
+      support.contact_points(0, 2*i) = foot_x[i];
+      support.contact_points(1, 2*i) = foot_y[1];
+      support.contact_points(2, 2*i) = foot_z;
+      // back right
+      support.contact_points(0, 2*i+1) = foot_x[i];
+      support.contact_points(1, 2*i+1) = foot_y[0];
+      support.contact_points(2, 2*i+1) = foot_z;
+    }
+  }
 }
 
 
