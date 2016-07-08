@@ -14,6 +14,7 @@ struct SimplePose {
   Eigen::Quaterniond rot;
 };
 
+// poses and vels are task space pose and vel
 PiecewisePolynomial<double> nWaypointCubicCartesianSpline(const std::vector<double> &times, const std::vector<SimplePose> &poses, const std::vector<SimplePose> &vels) {
   assert(times.size() == poses.sizes());
   assert(times.size() == vels.sizes());
@@ -165,8 +166,7 @@ drake::lcmt_qp_controller_input PlanEval::MakeManipQPInput(double cur_time) {
   // zmp data
 
 
-  // make 3 body motion data, pelvis, 2 feet
- 
+
   return qp_input;
 }
 
@@ -237,25 +237,67 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
   has_plan_ = true;
 
   double t0 = plan_.utime / 1e6;
+  size_t num_T = plan_.plan.size();
   
-  std::vector<double> Ts;
-  std::vector<Eigen::VectorXd> q_des; // t steps by n
+  std::vector<double> Ts(num_T);
+  std::vector<Eigen::VectorXd> q_des(num_T); // t steps by n
 
   int dof = robot_.num_velocities;
-  Ts.resize(plan_.plan.size());
-  q_des.resize(plan_.plan.size());
+  
+  // make 3 body motion data, pelvis, 2 feet
+  std::vector<std::string> body_names;
+  body_names.push_back(std::string("pelvis"));
+  body_names.push_back(std::string("leftFoot"));
+  body_names.push_back(std::string("rightFoot"));
+  size_t num_bodies = body_names.size();
 
+  std::vector<std::vector<SimplePose>> x_d(num_bodies);
+  std::vector<std::vector<SimplePose>> xd_d(num_bodies);
+  for (size_t i = 0; i < num_bodies; i++) {
+    x_d[i].resize(num_T);
+    xd_d[i].resize(num_T);
+  }
+   
   // go through set points
-  for (size_t i = 0; i < plan_.plan.size(); i++) {
-    bot_core::robot_state_t &keyframe = plan_.plan[i];
+  for (size_t t = 0; t < num_T; t++) {
+    bot_core::robot_state_t &keyframe = plan_.plan[t];
     KeyframeToState(keyframe, q_, v_);
     KinematicsCache<double> cache = robot_.doKinematics(q_, v_);
     
-    Ts[i] = t0 + (double)keyframe.utime / 1e6;
-    q_des[i] = q_;
+    Ts[t] = t0 + (double)keyframe.utime / 1e6;
+    q_des[t] = q_;
+
+    for (size_t b = 0; b < num_bodies; b++) {
+      int id = robot_.findLink(body_names[b])->body_index;
+      Eigen::Isometry3d pose = robot_.relativeTransform(cache, 0, id);
+      x_d[b][t].lin = pose.translation();
+      x_d[b][t].rot = Eigen::Quaterniond(pose.linear());
+
+      // TODO: fix this (set vel to zero for now)
+      xd_d[b][t].lin = Eigen::Vector3d::Zero();
+      xd_d[b][t].rot = Eigen::Quaterniond::Identity();
+    }
   }
 
+  // make q splines
   q_trajs_ = nWaypointMultiCubicSpline(Ts, q_des);
+
+  // make body motion splines
+  x_trajs_.resize(num_bodies);
+  for (size_t b = 0; b < num_bodies; b++) {
+    x_trajs_[b].body_or_frame_id = robot_.findLink(body_names[b])->body_index; 
+    x_trajs_[b].trajectory = nWaypointCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
+    x_trajs_[b].toe_off_allowed.resize(num_T, false);
+    x_trajs_[b].in_floating_base_nullspace.resize(num_T, false);
+    // TODO: is this true?
+    x_trajs_[b].control_pose_when_in_contact.resize(num_T, true);
+    x_trajs_[b].transform_task_to_world = Eigen::Isometry3d::Identity();
+    x_trajs_[b].xyz_proportional_gain_multiplier = Eigen::Vector3d::Constant(1);
+    x_trajs_[b].xyz_damping_ratio_multiplier = Eigen::Vector3d::Constant(1);
+    x_trajs_[b].exponential_map_proportional_gain_multiplier = 1;
+    x_trajs_[b].exponential_map_damping_ratio_multiplier = 1;
+    x_trajs_[b].weight_multiplier = Eigen::Vector6d::Constant(1);
+  }
 }
 
 
