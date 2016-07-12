@@ -17,6 +17,8 @@
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
 #include "drake/systems/robotInterfaces/BodyMotionData.h"
 
+#include "drake/Path.h"
+
 struct RigidBodySupportStateElement {
   int body;
   Eigen::Matrix3Xd contact_points;
@@ -28,7 +30,7 @@ typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
 
 class GenericPlan {
  public:
-  GenericPlan() : robot_(std::string("/home/sfeng/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf"), DrakeJoint::ROLLPITCHYAW) {
+  GenericPlan() : robot_(Drake::getDrakePath() + std::string("/../../models/val_description/urdf/valkyrie_sim_drake.urdf"), DrakeJoint::ROLLPITCHYAW) {
     // kinematics related init
     q_.resize(robot_.num_positions);
     v_.resize(robot_.num_velocities);

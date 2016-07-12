@@ -5,6 +5,8 @@
 #include "drake/util/lcmUtil.h"
 #include "generate_spline.h"
 
+#include <fstream>
+
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
 };
@@ -179,6 +181,7 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
 
 void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg) {
   std::cout << "committed robot plan handler called\n";
+  std::ofstream out; 
 
   t0_ = (double)msg->utime / 1e6;
   size_t num_T = msg->plan.size();
@@ -235,6 +238,13 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const s
   zmp_traj_ = GeneratePCHIPSpline(Ts, com_d);
   // TODO: find out z
   GenericPlan::SetupLIPM(1.01);
+  /*
+  out.open("zmp_d", std::ofstream::out);
+  for (double t = zmp_traj_.getStartTime(); t <= zmp_traj_.getEndTime(); t+= 0.01) {
+    out << t - zmp_traj_.getStartTime() << " " << zmp_traj_.value(t).transpose() << std::endl;
+  }
+  out.close();
+  */
 
   // make q splines
   q_trajs_ = GenerateCubicSpline(Ts, q_d);
