@@ -1,5 +1,6 @@
 #include "plan_eval.h"
 #include "drake/util/drakeGeometryUtil.h"
+#include "drake/util/drakeUtil.h"
 #include "drake/solvers/qpSpline/splineGeneration.h"
 #include "drake/util/lcmUtil.h"
 #include "generate_spline.h"
@@ -7,7 +8,6 @@
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
 };
- 
 
 static std::string primaryBodyOrFrameName(const std::string& full_body_name);
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
@@ -17,13 +17,26 @@ static Eigen::Vector6d getTaskSpaceJacobianDotTimesV(const RigidBodyTree &r, con
 static Eigen::MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body, const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
 
 
-
-
 drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
+  drake::lcmt_qp_controller_input qp_input;
+  qp_input.be_silent = false;
+  qp_input.timestamp = static_cast<int64_t>(cur_time * 1e6);
+  qp_input.param_set_name = "manip";
+
+  ////////////////////////////////////////
+  // no body wrench data
+  qp_input.num_external_wrenches = 0;
+
+  ////////////////////////////////////////
+  // no joint pd override
+  qp_input.num_joint_pd_overrides = 0;
+
+  ////////////////////////////////////////
+  // make whole_body_data
   auto q_des = q_trajs_.value(cur_time);
-  std::vector<float> q_des_std_vector;
+  std::vector<float> &q_des_std_vector = qp_input.whole_body_data.q_des;
   q_des_std_vector.resize(q_des.size());
-  for(int i = 0; i < q_des.size(); i++){
+  for(int i = 0; i < q_des.size(); i++) {
     q_des_std_vector[i] = static_cast<float>(q_des(i));
   }
   int qtrajSegmentIdx = q_trajs_.getSegmentIndex(cur_time);
@@ -31,22 +44,10 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
   int endSegmentIdx = std::min(2, q_trajs_.getNumberOfSegments() - qtrajSegmentIdx);
   PiecewisePolynomial<double> qtrajSlice = q_trajs_.slice(qtrajSegmentIdx, endSegmentIdx);
 
-  drake::lcmt_qp_controller_input qp_input;
-  qp_input.be_silent = false;
-  qp_input.timestamp = static_cast<int64_t>(cur_time * 1e6);
-  qp_input.num_support_data = 0;
-  qp_input.num_tracked_bodies = 0;
-  qp_input.num_external_wrenches = 0;
-  qp_input.num_joint_pd_overrides = 0;
-
-
-  drake::lcmt_piecewise_polynomial qtrajSplineMsg;
-  encodePiecewisePolynomial(qtrajSlice, qtrajSplineMsg);
-  qp_input.whole_body_data.spline = qtrajSplineMsg;
-  qp_input.whole_body_data.q_des = q_des_std_vector;
+  encodePiecewisePolynomial(qtrajSlice, qp_input.whole_body_data.spline);
   qp_input.whole_body_data.timestamp = 0;
   qp_input.whole_body_data.num_positions = robot_.num_positions;
-  // hack constrained_dofs
+  // TODO: hack constrained_dofs
   qp_input.whole_body_data.constrained_dofs.resize(17);
   for (int i = 0; i < 7; i++) {
     qp_input.whole_body_data.constrained_dofs[i] = 20 + i;
@@ -57,29 +58,58 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
   qp_input.whole_body_data.constrained_dofs[16] = 8;
   qp_input.whole_body_data.num_constrained_dofs = qp_input.whole_body_data.constrained_dofs.size();
 
-  // zmp data
+  ////////////////////////////////////////
+  // make zmp data
+  drake::lcmt_zmp_data &zmp_data_lcm = qp_input.zmp_data;
+  zmp_data_lcm.timestamp = 0;
+  eigenToCArrayOfArrays(A_, zmp_data_lcm.A);
+  eigenToCArrayOfArrays(B_, zmp_data_lcm.B);
+  eigenToCArrayOfArrays(C_, zmp_data_lcm.C);
+  eigenToCArrayOfArrays(D_control_, zmp_data_lcm.D);
+  eigenToCArrayOfArrays(u0_, zmp_data_lcm.u0);
+  eigenToCArrayOfArrays(R_, zmp_data_lcm.R);
+  eigenToCArrayOfArrays(Qy_, zmp_data_lcm.Qy);
+  zmp_data_lcm.s2 = 0;  // never used by the controller
+  zmp_data_lcm.s2dot = 0;
 
-  // body motion data
+  Eigen::Vector2d zmp_d_final = zmp_traj_.value(zmp_traj_.getEndTime());
+  for (size_t i = 0; i < 2; i++) {
+    zmp_data_lcm.x0[i][0] = zmp_d_final[i];
+    zmp_data_lcm.x0[i+2][0] = 0;
+  }
+  Eigen::Vector2d zmp_d = zmp_traj_.value(cur_time);
+  eigenToCArrayOfArrays(zmp_d, zmp_data_lcm.y0);
+
+  // Lyapunov function
+  eigenToCArrayOfArrays(S_, zmp_data_lcm.S);
+  eigenToCArrayOfArrays(s1_, zmp_data_lcm.s1);
+  eigenToCArrayOfArrays(s1_dot_, zmp_data_lcm.s1dot);
+
+  ////////////////////////////////////////
+  // make body motion data
+  qp_input.num_tracked_bodies = body_motions_.size();
+  qp_input.body_motion_data.resize(body_motions_.size());
   for (size_t b = 0; b < body_motions_.size(); b++) {
     const BodyMotionData& body_motion = body_motions_[b];
     int body_or_frame_id = body_motion.getBodyOrFrameId();
-    int body_id = robot_.parseBodyOrFrameID(body_or_frame_id);
+    //int body_id = robot_.parseBodyOrFrameID(body_or_frame_id);
     int body_motion_segment_index = body_motion.findSegmentIndex(cur_time);
-    
+
+    // TODO: swing etc.
     bool is_foot = false;
     if (is_foot) {
-    
+
     }
-    
+
     // extract the right knot points
     PiecewisePolynomial<double> body_motion_trajectory_slice =
       body_motion.getTrajectory().slice(
           body_motion_segment_index,
           std::min(2, body_motion.getTrajectory().getNumberOfSegments() -
-            body_motion_segment_index)); 
-    
+            body_motion_segment_index));
+
     // make lcmt_body_motion_data msg
-    drake::lcmt_body_motion_data body_motion_data_for_support_lcm;
+    drake::lcmt_body_motion_data &body_motion_data_for_support_lcm = qp_input.body_motion_data[b];
     body_motion_data_for_support_lcm.timestamp = 0;
     body_motion_data_for_support_lcm.body_or_frame_name =
         primaryBodyOrFrameName(robot_.getBodyOrFrameName(body_or_frame_id));
@@ -91,7 +121,7 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
         body_motion.isInFloatingBaseNullSpace(body_motion_segment_index);
     body_motion_data_for_support_lcm.control_pose_when_in_contact =
         body_motion.isPoseControlledWhenInContact(body_motion_segment_index);
-    
+
     const Eigen::Isometry3d& transform_task_to_world =
         body_motion.getTransformTaskToWorld();
     Eigen::Vector4d quat_task_to_world = rotmat2quat(transform_task_to_world.linear());
@@ -112,12 +142,11 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
         body_motion.getExponentialMapDampingRatioMultiplier();
     eigenVectorToCArray(body_motion.getWeightMultiplier(),
                         body_motion_data_for_support_lcm.weight_multiplier);
-
-    qp_input.body_motion_data.push_back(body_motion_data_for_support_lcm);
-    qp_input.num_tracked_bodies++; 
   }
 
-  // make support
+  ////////////////////////////////////////
+  // make support data
+  qp_input.num_support_data = support_state_.size();
   qp_input.support_data.resize(support_state_.size());
   for (size_t s = 0; s < support_state_.size(); s++) {
     drake::lcmt_support_data &support_data_element_lcm = qp_input.support_data[s];
@@ -138,41 +167,48 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
     support_data_element_lcm.use_support_surface = true;
   }
 
+  ////////////////////////////////////////
+  // torque alpha filter
+  if (cur_time - t0_ < 0.5)
+    qp_input.torque_alpha_filter = 0.9;
+  else
+    qp_input.torque_alpha_filter = 0.;
+
   return qp_input;
 }
 
 void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg) {
-  printf("handler called\n");
+  std::cout << "committed robot plan handler called\n";
 
-  t0_ = msg->utime / 1e6;
+  t0_ = (double)msg->utime / 1e6;
   size_t num_T = msg->plan.size();
-  
+
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
   std::vector<Eigen::VectorXd> q_d(num_T); // t steps by n
 
-  int dof = robot_.num_velocities;
-  
-  // make 3 body motion data, pelvis, 2 feet
+  // int dof = robot_.num_velocities;
+
+  // TODO: these are hard coded now
   std::vector<std::string> body_names;
   body_names.push_back(std::string("pelvis"));
   body_names.push_back(std::string("leftFoot"));
   body_names.push_back(std::string("rightFoot"));
   size_t num_bodies = body_names.size();
 
-  std::vector<std::vector<SimplePose>> x_d(num_bodies);
-  std::vector<std::vector<SimplePose>> xd_d(num_bodies);
+  std::vector<std::vector<SimplePose<double>>> x_d(num_bodies);
+  std::vector<std::vector<SimplePose<double>>> xd_d(num_bodies);
   for (size_t i = 0; i < num_bodies; i++) {
     x_d[i].resize(num_T);
     xd_d[i].resize(num_T);
   }
-   
+
   // go through set points
   for (size_t t = 0; t < num_T; t++) {
     const bot_core::robot_state_t &keyframe = msg->plan[t];
     KeyframeToState(keyframe, q_, v_);
     KinematicsCache<double> cache = robot_.doKinematics(q_, v_);
-    
+
     Ts[t] = t0_ + (double)keyframe.utime / 1e6;
     q_d[t] = q_;
 
@@ -181,7 +217,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const s
       Eigen::Isometry3d pose = robot_.relativeTransform(cache, 0, id);
       x_d[b][t].lin = pose.translation();
       x_d[b][t].rot = Eigen::Quaterniond(pose.linear());
-      
+
       // TODO offset can be nonzero
       Eigen::Vector6d xd = getTaskSpaceVel(robot_, cache, id, Eigen::Vector3d::Zero());
       xd_d[b][t].lin = xd.segment<3>(3);
@@ -195,31 +231,18 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const s
     com_d[t] = robot_.centerOfMass(cache).segment<2>(0);
   }
 
-  printf("hahaha\n");
   // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
-  zmp_traj_ = GenerateCubicSpline(Ts, com_d);  /// THIS IS NOT CORRECT
+  zmp_traj_ = GeneratePCHIPSpline(Ts, com_d);
+  // TODO: find out z
+  GenericPlan::SetupLIPM(1.01);
 
-  A_.setZero();
-  A_(0,2) = A_(1,3) = 1;
-  B_.setZero();
-  B_(2,0) = B_(3,1) = 1;
-  C_.setZero();
-  C_(0,0) = C_(1,1) = 1;
-  D_.setZero();
-
-  Qy_ = Eigen::Matrix2d::Identity();
-  R_.setZero();
-
-
-
-  printf("hahaha\n");
   // make q splines
   q_trajs_ = GenerateCubicSpline(Ts, q_d);
 
   // make body motion splines
   body_motions_.resize(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
-    body_motions_[b].body_or_frame_id = robot_.findLink(body_names[b])->body_index; 
+    body_motions_[b].body_or_frame_id = robot_.findLink(body_names[b])->body_index;
     body_motions_[b].trajectory = GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
     body_motions_[b].toe_off_allowed.resize(num_T, false);
     body_motions_[b].in_floating_base_nullspace.resize(num_T, false);
@@ -236,8 +259,6 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const s
     body_motions_[b].weight_multiplier = Eigen::Vector6d::Constant(1);
   }
 
-  // make zmp traj
-  
   // make support, dummy here since we are always in double support
   std::vector<std::string> support_names;
   support_names.push_back("leftFoot");
@@ -252,7 +273,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const s
 
     // TODO: don't hard code
     support.contact_points.resize(3,4);
-    double foot_x[2] = {-0.058, 0.172}; 
+    double foot_x[2] = {-0.058, 0.172};
     double foot_y[2] = {-0.055, 0.055};
     double foot_z = -0.09;
     for (int i = 0; i < 2; i++) {
@@ -267,9 +288,9 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const s
     }
   }
 
-  std::cout << "Committed plan proced\n";
+  std::cout << "committed robot plan proced\n";
   has_plan_ = true;
-} 
+}
 
 
 
@@ -295,14 +316,14 @@ void PlanEval::Init() {
   lcm::Subscription* sub;
   sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN", &GenericPlan::HandleCommittedRobotPlan, (GenericPlan*)&plan_);
   sub->setQueueCapacity(1);
-  
+
   sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState, this);
   sub->setQueueCapacity(1);
 }
 
 void PlanEval::ReceiverLoop()
 {
-  printf("PlanEval Receiver thread start: 0x%x\n", std::this_thread::get_id());
+  std::cout << "PlanEval Receiver thread start: " << std::this_thread::get_id() << std::endl;
   while (!receiver_stop_) {
     const double timeout = 0.3;
     bool lcm_ready = WaitForLCM(lcm_handle_, timeout);
@@ -318,12 +339,12 @@ void PlanEval::ReceiverLoop()
 }
 
 void PlanEval::PublisherLoop() {
-  printf("PlanEval Publisher thread start: 0x%x\n", std::this_thread::get_id());
+  std::cout << "PlanEval Publisher thread start: " << std::this_thread::get_id() << std::endl;
 
   while (!publisher_stop_) {
     if (plan_.has_plan()) {
       drake::lcmt_qp_controller_input qp_input = plan_.MakeQPInput(time_);
-      //lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
+      lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
       // sleep
     }
   }
@@ -367,7 +388,7 @@ void PlanEval::Stop() {
 
 
 
-
+// utils
 std::string primaryBodyOrFrameName(const std::string& full_body_name) {
   int i;
   for (i = 0; i < full_body_name.size(); i++) {
@@ -392,7 +413,7 @@ void KeyframeToState(const bot_core::robot_state_t &keyframe, Eigen::VectorXd &q
   quat[0] = keyframe.pose.rotation.w;
   quat[1] = keyframe.pose.rotation.x;
   quat[2] = keyframe.pose.rotation.y;
-  quat[3] = keyframe.pose.rotation.z; 
+  quat[3] = keyframe.pose.rotation.z;
   q.segment<3>(3) = quat2rpy(quat);
 
   v[0] = keyframe.twist.linear_velocity.x;
@@ -410,7 +431,7 @@ void KeyframeToState(const bot_core::robot_state_t &keyframe, Eigen::VectorXd &q
   }
 }
 
- 
+
 
 Eigen::Vector6d getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body_or_frame_id, const Eigen::Vector3d &local_offset)
 {
@@ -420,18 +441,18 @@ Eigen::Vector6d getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<do
   const auto &element = cache.getElement(*(r.bodies[body_idx]));
   Eigen::Vector6d T = element.twist_in_world;
   Eigen::Vector3d pt = element.transform_to_world.translation();
-  
+
   // get the body's task space vel
   Eigen::Vector6d v = T;
-  v.tail<3>() += v.head<3>().cross(pt); 
+  v.tail<3>() += v.head<3>().cross(pt);
 
   // global offset between pt and body
   auto H_world_to_frame = element.transform_to_world * H_body_to_frame;
   Eigen::Isometry3d H_frame_to_pt(Eigen::Isometry3d::Identity());
   H_frame_to_pt.translation() = local_offset;
-  auto H_world_to_pt = H_world_to_frame * H_frame_to_pt; 
+  auto H_world_to_pt = H_world_to_frame * H_frame_to_pt;
   Eigen::Vector3d world_offset = H_world_to_pt.translation() - element.transform_to_world.translation();
-  
+
   // add the linear vel from the body rotation
   v.tail<3>() += v.head<3>().cross(world_offset);
 
@@ -473,14 +494,14 @@ Eigen::Vector6d getTaskSpaceJacobianDotTimesV(const RigidBodyTree &r, const Kine
   Eigen::Vector3d pdot = twist.head<3>().cross(p) + twist.tail<3>();
 
   // each column of J_task Jt = [Jg_omega; Jg_v + Jg_omega.cross(p)]
-  // Jt * v, angular part stays the same, 
-  // linear part = [\dot{Jg_v}v + \dot{Jg_omega}.cross(p) + Jg_omega.cross(rdot)] * v 
+  // Jt * v, angular part stays the same,
+  // linear part = [\dot{Jg_v}v + \dot{Jg_omega}.cross(p) + Jg_omega.cross(rdot)] * v
   //             = [lin of JgdotV + ang of JgdotV.cross(p) + omega.cross(rdot)]
   Eigen::Vector6d Jdv = J_geometric_dot_times_v;
   Jdv.tail<3>() += twist.head<3>().cross(pdot) + J_geometric_dot_times_v.head<3>().cross(p);
 
   return Jdv;
-} 
+}
 
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout) {
   int lcmFd = lcm_handle.getFileno();
@@ -504,4 +525,4 @@ static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout) {
   }
   return (status > 0 && FD_ISSET(lcmFd, &fds));
 }
- 
+

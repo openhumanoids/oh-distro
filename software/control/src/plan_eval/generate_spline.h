@@ -3,13 +3,10 @@
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
 #include "drake/util/drakeGeometryUtil.h"
 
-struct SimplePose {
-  Eigen::Vector3d lin;
-  Eigen::Quaterniond rot;
+template <typename Scalar> struct SimplePose {
+  Eigen::Matrix<Scalar, 3, 1> lin;
+  Eigen::Quaternion<Scalar> rot;
 };
-
-// poses and vels are task space pose and vel
-PiecewisePolynomial<double> GenerateCubicCartesianSpline(const std::vector<double> &times, const std::vector<SimplePose> &poses, const std::vector<SimplePose> &vels);
 
 template <typename Scalar, int rows, int cols> bool CheckSplineInputs(const std::vector<Scalar> &T, const std::vector<Eigen::Matrix<double, rows, cols>> &Y) {
   bool ret = T.size() == Y.size();
@@ -201,4 +198,42 @@ template <typename Scalar, int rows, int cols> PiecewisePolynomial<Scalar> Gener
   return GenerateCubicSpline(T, Y, dydt0, dydt1);
 }
 
+// poses and vels are task space pose and vel
+template <typename Scalar> PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(const std::vector<Scalar> &times, const std::vector<SimplePose<Scalar>> &poses, const std::vector<SimplePose<Scalar>> &vels) {
+  assert(times.size() == poses.sizes());
+  assert(times.size() == vels.sizes());
+  assert(times.size() >= 2);
+
+  size_t T = times.size();
+  std::vector<Eigen::Matrix<Scalar, 6, 1>> expmap(poses.size()), expmap_dot(poses.size());
+  Eigen::Matrix<Scalar, 3, 1> tmp, tmpd;
+  for (size_t t = 0; t < times.size(); t++) {
+    quat2expmapSequence(poses[t].rot.coeffs(), vels[t].rot.coeffs(), tmp, tmpd);
+    // TODO: need to do the closest expmap mumble
+    expmap[t].head(3) = poses[t].lin;
+    expmap[t].tail(3) = tmp;
+    expmap_dot[t].head(3) = vels[t].lin;
+    expmap_dot[t].tail(3) = tmpd;
+  }
+
+  std::vector<Eigen::Matrix<Polynomial<Scalar>, Eigen::Dynamic, Eigen::Dynamic>> polynomials(T-1);
+  // copy drake/util/pchipDeriv.m
+  for (size_t t = 0; t < T-1; t++) {
+    polynomials[t].resize(6, 1);
+    double a = times[t+1] - times[t];
+    double b = a * a;
+    double c = b * a;
+    for (size_t i = 0; i < 6; i++) {
+      double c4 = expmap[t][i];
+      double c3 = expmap_dot[t][i];
+      double c1 = 1. / b * (expmap_dot[t][i] - c3 - 2. / a * (expmap[t+1][i] - c4 -a * c3));
+      double c2 = 1. / b * (expmap[t+1][i] - c4 - a * c3 - c * c1);
+      // constant term comes first
+      Eigen::Matrix<Scalar, 4, 1> coeffs(c4, c3, c2, c1);
+      polynomials[t](i, 0) = Polynomial<Scalar>(coeffs);
+    }
+  }
+
+  return PiecewisePolynomial<Scalar>(polynomials, times);
+}
          
