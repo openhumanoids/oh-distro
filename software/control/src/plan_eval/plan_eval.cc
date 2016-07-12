@@ -2,15 +2,13 @@
 #include "drake/util/drakeGeometryUtil.h"
 #include "drake/solvers/qpSpline/splineGeneration.h"
 #include "drake/util/lcmUtil.h"
+#include "generate_spline.h"
 
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
 };
-struct SimplePose {
-  Eigen::Vector3d lin;
-  Eigen::Quaterniond rot;
-};
  
+
 static std::string primaryBodyOrFrameName(const std::string& full_body_name);
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 static void KeyframeToState(const bot_core::robot_state_t &keyframe, Eigen::VectorXd &q, Eigen::VectorXd &v);
@@ -19,121 +17,9 @@ static Eigen::Vector6d getTaskSpaceJacobianDotTimesV(const RigidBodyTree &r, con
 static Eigen::MatrixXd getTaskSpaceJacobian(const RigidBodyTree &r, const KinematicsCache<double> &cache, int body, const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
 
 
-// poses and vels are task space pose and vel
-PiecewisePolynomial<double> nWaypointCubicCartesianSpline(const std::vector<double> &times, const std::vector<SimplePose> &poses, const std::vector<SimplePose> &vels) {
-  assert(times.size() == poses.sizes());
-  assert(times.size() == vels.sizes());
-  assert(times.size() > 0);
 
-  size_t T = times.size();
-  std::vector<Eigen::Vector6d> expmap(poses.size()), expmap_dot(poses.size());
-  Eigen::Vector3d tmp, tmpd;
-  for (size_t t = 0; t < times.size(); t++) {
-    quat2expmapSequence(poses[t].rot.coeffs(), vels[t].rot.coeffs(), tmp, tmpd);
-    // TODO: need to do the closest expmap mumble
-    expmap[t].segment<3>(0) = poses[t].lin;
-    expmap[t].segment<3>(3) = tmp;
-    expmap_dot[t].segment<3>(0) = vels[t].lin;
-    expmap_dot[t].segment<3>(3) = tmpd;
-  }
 
-  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> polynomials(T-1);
-  // copy drake/util/pchipDeriv.m
-  for (size_t t = 0; t < T-1; t++) {
-    polynomials[t].resize(6, 1);
-    double a = times[t+1] - times[t];
-    double b = a * a;
-    double c = b * a;
-    for (size_t i = 0; i < 6; i++) {
-      double c4 = expmap[t][i];
-      double c3 = expmap_dot[t][i];
-      double c1 = 1. / b * (expmap_dot[t][i] - c3 - 2. / a * (expmap[t+1][i] - c4 -a * c3));
-      double c2 = 1. / b * (expmap[t+1][i] - c4 - a * c3 - c * c1);
-      // figure out the order
-      Eigen::Vector4d coeffs(c1, c2, c3, c4);
-      polynomials[t](i, 0) = Polynomial<double>(coeffs);
-    }
-  }
-
-  return PiecewisePolynomial<double>(polynomials, times);
-}
-
-PiecewisePolynomial<double> nWaypointMultiCubicSpline(const std::vector<double> &times, const std::vector<Eigen::VectorXd> &X) {
-  assert(times.size() == X.sizes());
-  assert(times.size() > 0);
-  assert(X[0].size() > 0);
-
-  size_t dof = X[0].size();
-  size_t T = X.size();
-  std::vector<PiecewisePolynomial<double>> trajs(dof);
-  Eigen::VectorXd tmpX(T-2);
-
-  for (size_t i = 0; i < dof; i++) {
-    double q0 = X[0][i];
-    double q1 = X[T-1][i];
-    double v0 = 0;
-    double v1 = 0;
-    for (size_t t = 1; t < T-1; t++)
-      tmpX[t-1] = X[t][i];
-    trajs[i] = nWaypointCubicSpline(times, q0, v0, q1, v1, tmpX);
-  }
-
-  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> polynomials(T-1);
-  for (size_t t = 0; t < polynomials.size(); t++) {
-    polynomials[t].resize(dof, 1);
-    for (size_t i = 0; i < dof; i++) {
-      polynomials[t](i, 0) = trajs[i].getPolynomial(t);
-    }
-  }
-  return PiecewisePolynomial<double>(polynomials, trajs[0].getSegmentTimes());
-}
-
-void PlanEval::Init() {
-  if (!lcm_handle_.good()) {
-    std::cerr << "ERROR: lcm is not good()" << std::endl;
-    exit(-1);
-  }
-
-  lcm::Subscription* sub;
-  sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN", &PlanEval::HandleCommittedRobotPlan, this);
-  sub->setQueueCapacity(1);
-  
-  sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState, this);
-  sub->setQueueCapacity(1);
-}
-
-void PlanEval::ReceiverLoop()
-{
-  std::cout << "PlanEval Receiver thread start: " << std::this_thread::get_id() << std::endl;
-  while (!receiver_stop_) {
-    const double timeout = 0.3;
-    bool lcm_ready = WaitForLCM(lcm_handle_, timeout);
-
-    if (lcm_ready) {
-      if (lcm_handle_.handle() != 0) {
-        std::cerr << "lcm->handle() returned non-zero\n";
-        exit(-1);
-      }
-    }
-  }
-  std::cout << "PlanEval Receiver thread exit: " << std::this_thread::get_id() << std::endl;
-}
-
-void PlanEval::PublisherLoop() {
-  std::cout << "PlanEval Publisher thread start: " << std::this_thread::get_id() << std::endl;
-  double cur_time = 0;
-
-  while (!publisher_stop_) {
-    if (has_plan_) {
-      drake::lcmt_qp_controller_input qp_input = MakeManipQPInput(time_);
-      lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
-      // sleep
-    }
-  }
-  std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id() << std::endl;
-}
-
-drake::lcmt_qp_controller_input PlanEval::MakeManipQPInput(double cur_time) {
+drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
   auto q_des = q_trajs_.value(cur_time);
   std::vector<float> q_des_std_vector;
   q_des_std_vector.resize(q_des.size());
@@ -255,48 +141,11 @@ drake::lcmt_qp_controller_input PlanEval::MakeManipQPInput(double cur_time) {
   return qp_input;
 }
 
-void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
-{
-  time_ = (double)msg->utime / 1e6;
-}
+void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg) {
+  printf("handler called\n");
 
-
-void PlanEval::Start() {
-  receiver_stop_ = false;
-  if (isReceiverRunning()) {
-    std::cout << "LCM receiver already running.\n";
-  }
-  else {
-    receiver_thread_ = std::thread(&PlanEval::ReceiverLoop, this);
-  }
-
-  publisher_stop_ = false;
-  if (isPublisherRunning()) {
-    std::cout << "LCM publisher already running.\n";
-  }
-  else {
-    publisher_thread_ = std::thread(&PlanEval::PublisherLoop, this);
-  }
-}
-
-void PlanEval::Stop() {
-  receiver_stop_ = true;
-  receiver_thread_.join();
-
-  publisher_stop_ = true;
-  publisher_thread_.join();
-}
-
-
-
-void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg) {
-  plan_lock_.lock();
-  plan_ = *msg;
-  plan_lock_.unlock();
-  has_plan_ = true;
-
-  double t0 = plan_.utime / 1e6;
-  size_t num_T = plan_.plan.size();
+  t0_ = msg->utime / 1e6;
+  size_t num_T = msg->plan.size();
   
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
@@ -320,11 +169,11 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
    
   // go through set points
   for (size_t t = 0; t < num_T; t++) {
-    bot_core::robot_state_t &keyframe = plan_.plan[t];
+    const bot_core::robot_state_t &keyframe = msg->plan[t];
     KeyframeToState(keyframe, q_, v_);
     KinematicsCache<double> cache = robot_.doKinematics(q_, v_);
     
-    Ts[t] = t0 + (double)keyframe.utime / 1e6;
+    Ts[t] = t0_ + (double)keyframe.utime / 1e6;
     q_d[t] = q_;
 
     for (size_t b = 0; b < num_bodies; b++) {
@@ -346,8 +195,10 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
     com_d[t] = robot_.centerOfMass(cache).segment<2>(0);
   }
 
+  printf("hahaha\n");
   // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
-  zmp_traj_ = nWaypointMultiCubicSpline(Ts, com_d);  /// THIS IS NOT CORRECT
+  zmp_traj_ = GenerateCubicSpline(Ts, com_d);  /// THIS IS NOT CORRECT
+
   A_.setZero();
   A_(0,2) = A_(1,3) = 1;
   B_.setZero();
@@ -361,14 +212,15 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
 
 
 
+  printf("hahaha\n");
   // make q splines
-  q_trajs_ = nWaypointMultiCubicSpline(Ts, q_d);
+  q_trajs_ = GenerateCubicSpline(Ts, q_d);
 
   // make body motion splines
   body_motions_.resize(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
     body_motions_[b].body_or_frame_id = robot_.findLink(body_names[b])->body_index; 
-    body_motions_[b].trajectory = nWaypointCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
+    body_motions_[b].trajectory = GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
     body_motions_[b].toe_off_allowed.resize(num_T, false);
     body_motions_[b].in_floating_base_nullspace.resize(num_T, false);
     if (body_names[b].compare("pelvis") == 0)
@@ -414,7 +266,104 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const st
       support.contact_points(2, 2*i+1) = foot_z;
     }
   }
+
+  std::cout << "Committed plan proced\n";
+  has_plan_ = true;
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void PlanEval::Init() {
+  if (!lcm_handle_.good()) {
+    std::cerr << "ERROR: lcm is not good()" << std::endl;
+    exit(-1);
+  }
+
+  lcm::Subscription* sub;
+  sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN", &GenericPlan::HandleCommittedRobotPlan, (GenericPlan*)&plan_);
+  sub->setQueueCapacity(1);
+  
+  sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState, this);
+  sub->setQueueCapacity(1);
 }
+
+void PlanEval::ReceiverLoop()
+{
+  printf("PlanEval Receiver thread start: 0x%x\n", std::this_thread::get_id());
+  while (!receiver_stop_) {
+    const double timeout = 0.3;
+    bool lcm_ready = WaitForLCM(lcm_handle_, timeout);
+
+    if (lcm_ready) {
+      if (lcm_handle_.handle() != 0) {
+        std::cerr << "lcm->handle() returned non-zero\n";
+        exit(-1);
+      }
+    }
+  }
+  std::cout << "PlanEval Receiver thread exit: " << std::this_thread::get_id() << std::endl;
+}
+
+void PlanEval::PublisherLoop() {
+  printf("PlanEval Publisher thread start: 0x%x\n", std::this_thread::get_id());
+
+  while (!publisher_stop_) {
+    if (plan_.has_plan()) {
+      drake::lcmt_qp_controller_input qp_input = plan_.MakeQPInput(time_);
+      //lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
+      // sleep
+    }
+  }
+  std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id() << std::endl;
+}
+
+void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg)
+{
+  time_ = (double)msg->utime / 1e6;
+}
+
+void PlanEval::Start() {
+  receiver_stop_ = false;
+  if (isReceiverRunning()) {
+    std::cout << "LCM receiver already running.\n";
+  }
+  else {
+    receiver_thread_ = std::thread(&PlanEval::ReceiverLoop, this);
+  }
+
+  publisher_stop_ = false;
+  if (isPublisherRunning()) {
+    std::cout << "LCM publisher already running.\n";
+  }
+  else {
+    publisher_thread_ = std::thread(&PlanEval::PublisherLoop, this);
+  }
+
+}
+
+void PlanEval::Stop() {
+  receiver_stop_ = true;
+  receiver_thread_.join();
+
+  publisher_stop_ = true;
+  publisher_thread_.join();
+}
+
+
+
 
 
 
