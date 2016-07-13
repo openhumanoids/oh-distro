@@ -17,6 +17,8 @@
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
 #include "drake/systems/robotInterfaces/BodyMotionData.h"
 
+#include "drake/systems/controllers/QPCommon.h"
+
 #include "drake/Path.h"
 
 struct RigidBodySupportStateElement {
@@ -36,26 +38,25 @@ class GenericPlan {
                                            "valkyrie_sim_drake.urdf"),
                DrakeJoint::ROLLPITCHYAW) {
     // kinematics related init
-    q_.resize(robot_.num_positions);
-    v_.resize(robot_.num_velocities);
-    has_plan_ = false;
+    LoadConfigurationFromYAML(Drake::getDrakePath() + "/../../config/val_mit/control_config_hardware.yaml");
   }
   virtual ~GenericPlan() { ; }
+  virtual void LoadConfigurationFromYAML(const std::string &name);
+  inline double t0() const { return interp_t0_; }
 
   virtual void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
                                         const std::string &channel,
                                         const drc::robot_plan_t *msg) = 0;
   virtual drake::lcmt_qp_controller_input MakeQPInput(double cur_time) = 0;
 
-  inline bool has_plan() const { return has_plan_; }
-  inline double t0() const { return t0_; }
 
  protected:
-  std::atomic<bool> has_plan_;
-  std::atomic<double> t0_;
+  // is set the first time in the publishing / interp loop
+  double interp_t0_ = -1;
 
   // robot for doing kinematics
-  RigidBodyTree robot_;
+  RigidBodyTree robot_; 
+  RobotPropertyCache rpc_;
   Eigen::VectorXd q_;
   Eigen::VectorXd v_;
 
@@ -64,6 +65,9 @@ class GenericPlan {
 
   // spline for zmp
   PiecewisePolynomial<double> zmp_traj_;
+  // TODO this is not the right spline
+  PiecewisePolynomial<double> s1_;
+
   Eigen::Matrix<double, 4, 4> A_;
   Eigen::Matrix<double, 4, 2> B_;
   Eigen::Matrix<double, 2, 4> C_;
@@ -72,7 +76,7 @@ class GenericPlan {
   Eigen::Matrix<double, 2, 2> Qy_, R_;
   Eigen::Matrix<double, 4, 4> S_;
   Eigen::Matrix<double, 2, 4> K_;
-  Eigen::Vector4d s1_;
+  
   Eigen::Vector4d s1_dot_;
   Eigen::Vector2d u0_;
 
@@ -104,7 +108,6 @@ class GenericPlan {
 
     lqr(A_, B_, Q1, R1, N, K_, S_);
 
-    s1_ = Eigen::Vector4d::Zero();
     s1_dot_.setZero();
 
     u0_.setZero();
@@ -121,13 +124,8 @@ class ManipPlan : public GenericPlan {
 
 class PlanEval {
  public:
-  PlanEval() {
-    receiver_stop_ = false;
-    publisher_stop_ = false;
-
-    Init();
-  }
-
+  PlanEval();
+  
   void Start();
   void Stop();
 
@@ -148,14 +146,19 @@ class PlanEval {
   std::mutex plan_lock_;
   std::thread receiver_thread_;
   std::atomic<bool> receiver_stop_;
+  std::atomic<bool> new_plan_;
+  std::shared_ptr<GenericPlan> current_plan_;  
 
   // output
   std::thread publisher_thread_;
   std::atomic<bool> publisher_stop_;
 
-  void Init();
   void ReceiverLoop();
   void PublisherLoop();
+
+  void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
+                                        const std::string &channel,
+                                        const drc::robot_plan_t *msg);
 
   // handle robot state msg
   void HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
