@@ -73,12 +73,12 @@ class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, std::shared_ptr<ResidualDetectorConfig> residualDetectorConfig);
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, ResidualDetectorConfig residualDetectorConfig);
   ~ResidualDetector(){
   }
   void residualThreadLoop();
-  void useFootForce(bool useGeometricJacobian = false);
-  void useFootForceTorque();
+//  void useFootForce(bool useGeometricJacobian = false);
+//  void useFootForceTorque();
   void kinematicChain(std::string linkName, int body_id =-1);
   void testContactFilterRotationMethod(bool useRandom=false);
   void testQP();
@@ -93,17 +93,13 @@ private:
   std::shared_ptr<lcm::LCM> lcm_;
   bool running_;
   bool verbose_;
-  bool useFootForceFlag;
-  bool useFootFTFlag;
   bool newStateAvailable;
   bool newResidualStateAvailable;
   bool newResidualStateAvailableForActiveLink;
   bool foot_FT_6_axis_available;
-  bool useGeometricJacobianFlag;
   int nq;
   int nv;
   double t_prev;
-  BotParam* botparam_;
   std::mutex pointerMutex;
   std::vector<std::string> state_coordinate_names;
   std::string publishChannel;
@@ -114,6 +110,7 @@ private:
   double residualGain;
   ResidualArgs args;
   ResidualDetectorState residual_state;
+  ResidualDetectorConfig residualDetectorConfig;
 //  ResidualDetectorState residual_state_w_forces;
   drc::residual_observer_state_t residual_state_msg;
 

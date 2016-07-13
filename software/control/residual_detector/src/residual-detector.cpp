@@ -7,21 +7,14 @@
 #include <string>
 
 
-#define RESIDUAL_GAIN 20.0;
 #define PUBLISH_CHANNEL "RESIDUAL_OBSERVER_STATE"
 using namespace Eigen;
 
 
 ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-                                   std::shared_ptr<ResidualDetectorConfig> residualDetectorConfig):
+                                   ResidualDetectorConfig residualDetectorConfig):
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
-    useFootForceFlag(false), useFootFTFlag(true), useGeometricJacobianFlag(false){
-
-    // clean this up, very messy at the moment
-    if(residualDetectorConfig->useFootForceTorque){
-      this->useFootForceTorque();
-    }
-
+    residualDetectorConfig(residualDetectorConfig){
 
 //  if (urdfFilename=="none"){
 //    std::cout << "using default urdf" << std::endl;
@@ -43,7 +36,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 //    this->contactFilter.addRobotFromURDF(urdfFilename);
 //  }
 
-  drake_model.addRobotFromURDF(residualDetectorConfig->urdfFilename);
+  drake_model.addRobotFromURDF(this->residualDetectorConfig.urdfFilename);
   // if you want to use quaternions. Normally it defaults to ROLLPITCHYAW, need to override by passing optional args
   // see RigidBodyManipulatorURDF.cpp file for the syntax
   // drake_model.addRobotFromURDFString(model->getURDFString(), ".", DrakeJoint::QUATERNION)
@@ -55,8 +48,8 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   lcm_->subscribe("EXTERNAL_FORCE_TORQUE", &ResidualDetector::onExternalForceTorque, this);
 
   // Initialize the robot property cache
-  YAML::Node control_config = YAML::LoadFile(residualDetectorConfig->control_config_filename);
-  std::ofstream debug_file(residualDetectorConfig->control_config_filename + ".debug.yaml");
+  YAML::Node control_config = YAML::LoadFile(this->residualDetectorConfig.control_config_filename);
+  std::ofstream debug_file(this->residualDetectorConfig.control_config_filename + ".debug.yaml");
   RobotPropertyCache robotPropertyCache = parseKinematicTreeMetadata(control_config["kinematic_tree_metadata"],
                                    drake_model);
 
@@ -112,7 +105,7 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   residual_state.foot_contact_joint_torque = VectorXd::Zero(nq);
 
 
-  this->residualGain = residualDetectorConfig->residualGain;
+  this->residualGain = this->residualDetectorConfig.residualGain;
   this->publishChannel = PUBLISH_CHANNEL;
 
   this->residualGainVector = residualGain*VectorXd::Ones(this->nq);
@@ -126,25 +119,25 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 
 }
 
-void ResidualDetector::useFootForce(bool useGeometricJacobian) {
-  this->publishChannel = this->publishChannel + "_W_FOOT_FORCE";
-  this->useFootForceFlag = true;
-  this->useFootFTFlag = false;
-
-  if (useGeometricJacobian){
-    std::cout << "switching publish channel to use geometric jacobian" << std::endl;
-    this->useGeometricJacobianFlag = true;
-    this->publishChannel = PUBLISH_CHANNEL;
-    this->publishChannel = this->publishChannel + "_W_FOOT_FORCE_GEOMETRIC_JACOBIAN";
-  }
-}
-
-void ResidualDetector::useFootForceTorque() {
-  this->publishChannel = this->publishChannel + "_W_FOOT_FT"; // this actually gets overwritten later . . .
-  this->useFootForceFlag = false;
-  this->useFootFTFlag = true;
-  std::cout << "using foot force torque " << std::endl;
-}
+//void ResidualDetector::useFootForce(bool useGeometricJacobian) {
+//  this->publishChannel = this->publishChannel + "_W_FOOT_FORCE";
+//  this->useFootForceFlag = true;
+//  this->useFootFTFlag = false;
+//
+//  if (useGeometricJacobian){
+//    std::cout << "switching publish channel to use geometric jacobian" << std::endl;
+//    this->useGeometricJacobianFlag = true;
+//    this->publishChannel = PUBLISH_CHANNEL;
+//    this->publishChannel = this->publishChannel + "_W_FOOT_FORCE_GEOMETRIC_JACOBIAN";
+//  }
+//}
+//
+//void ResidualDetector::useFootForceTorque() {
+//  this->publishChannel = this->publishChannel + "_W_FOOT_FT"; // this actually gets overwritten later . . .
+//  this->useFootForceFlag = false;
+//  this->useFootFTFlag = true;
+//  std::cout << "using foot force torque " << std::endl;
+//}
 
 void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
                                     const bot_core::robot_state_t *msg) {
@@ -281,7 +274,7 @@ void ResidualDetector::updateResidualState() {
 //    }
 
     // Compute the joint torques resulting from the foot contact
-    if (this->useFootFTFlag){
+    if (this->residualDetectorConfig.useFootForceTorque){
 //      std::cout << "using Foot FT" << std::endl;
       std::vector<int> v_indices;
       auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, 0, body_id, body_id, true, &v_indices);
@@ -685,12 +678,12 @@ int main( int argc, char* argv[]){
   bool isVerbose = false;
 
   parser.add(atlas_v5, "v5", "atlas_v5", "set robot to atlas_v5");
-  parser.add(valkyrie_v1, "val1", "valkyrie_v1", "set robot to valkyrie v1");
+  parser.add(valkyrie_v1, "val1", "valkyrie_v1", "set robot to valkyrie_v1");
   parser.add(valkyrie_v2, "val2", "valkyrie_v2", "set robot to valkyrie_v2");
   parser.add(isVerbose, "verbose");
   parser.parse();
 
-  std::string configFilename;
+  std::string configFilename; // config from which we will read the options for the residual detector
 
 
   std::string drcBase = std::getenv("DRC_BASE");
@@ -703,11 +696,6 @@ int main( int argc, char* argv[]){
     configFilename = drcBase + "/software/control/residual_detector/config/residual_detector_config_atlas_v5.yaml";
   }
 
-  ResidualDetectorConfig rdConfig= parseConfig(configFilename);
-  std::shared_ptr<ResidualDetectorConfig> residualDetectorConfig(&rdConfig);
-
-  // little bit of testing
-
   // TODO: add support for valkyrie
 
   // initialize LCM
@@ -717,10 +705,10 @@ int main( int argc, char* argv[]){
   }
 
 
-  bool runDetectorLoop = true;
+  ResidualDetectorConfig residualDetectorConfig = parseConfig(configFilename);
   ResidualDetector residualDetector(lcm, isVerbose, residualDetectorConfig);
 
-
+  bool runDetectorLoop = true;
   if (runDetectorLoop){
     std::thread residualThread(&ResidualDetector::residualThreadLoop, &residualDetector);
     std::cout << "started residual thread loop" << std::endl;
