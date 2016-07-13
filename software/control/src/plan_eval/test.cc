@@ -1,8 +1,8 @@
 #include "plan_eval.h"
 
-int main()
-{
+int main() {
   PlanEval pe;
   pe.Start();
-  while(true);
+  while (true)
+    ;
 }

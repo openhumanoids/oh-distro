@@ -30,7 +30,11 @@ typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
 
 class GenericPlan {
  public:
-  GenericPlan() : robot_(Drake::getDrakePath() + std::string("/../../models/val_description/urdf/valkyrie_sim_drake.urdf"), DrakeJoint::ROLLPITCHYAW) {
+  GenericPlan()
+      : robot_(Drake::getDrakePath() + std::string(
+                                           "/../../models/val_description/urdf/"
+                                           "valkyrie_sim_drake.urdf"),
+               DrakeJoint::ROLLPITCHYAW) {
     // kinematics related init
     q_.resize(robot_.num_positions);
     v_.resize(robot_.num_velocities);
@@ -38,8 +42,10 @@ class GenericPlan {
   }
   virtual ~GenericPlan() { ; }
 
-  virtual void HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg) =0;
-  virtual drake::lcmt_qp_controller_input MakeQPInput(double cur_time) =0;
+  virtual void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
+                                        const std::string &channel,
+                                        const drc::robot_plan_t *msg) = 0;
+  virtual drake::lcmt_qp_controller_input MakeQPInput(double cur_time) = 0;
 
   inline bool has_plan() const { return has_plan_; }
   inline double t0() const { return t0_; }
@@ -58,14 +64,14 @@ class GenericPlan {
 
   // spline for zmp
   PiecewisePolynomial<double> zmp_traj_;
-  Eigen::Matrix<double,4,4> A_;
-  Eigen::Matrix<double,4,2> B_;
-  Eigen::Matrix<double,2,4> C_;
-  Eigen::Matrix<double,2,2> D_;
-  Eigen::Matrix<double,2,2> D_control_;
-  Eigen::Matrix<double,2,2> Qy_, R_;
-  Eigen::Matrix<double,4,4> S_;
-  Eigen::Matrix<double,2,4> K_;
+  Eigen::Matrix<double, 4, 4> A_;
+  Eigen::Matrix<double, 4, 2> B_;
+  Eigen::Matrix<double, 2, 4> C_;
+  Eigen::Matrix<double, 2, 2> D_;
+  Eigen::Matrix<double, 2, 2> D_control_;
+  Eigen::Matrix<double, 2, 2> Qy_, R_;
+  Eigen::Matrix<double, 4, 4> S_;
+  Eigen::Matrix<double, 2, 4> K_;
   Eigen::Vector4d s1_;
   Eigen::Vector4d s1_dot_;
   Eigen::Vector2d u0_;
@@ -92,9 +98,9 @@ class GenericPlan {
     Qy_ = Eigen::Matrix2d::Identity();
     R_.setZero();
 
-    Eigen::Matrix<double,4,4> Q1 = C_.transpose() * Qy_ * C_;
-    Eigen::Matrix<double,2,2> R1 = R_ + D_.transpose() * Qy_ * D_;
-    Eigen::Matrix<double,4,2> N = C_.transpose() * Qy_ * D_;
+    Eigen::Matrix<double, 4, 4> Q1 = C_.transpose() * Qy_ * C_;
+    Eigen::Matrix<double, 2, 2> R1 = R_ + D_.transpose() * Qy_ * D_;
+    Eigen::Matrix<double, 4, 2> N = C_.transpose() * Qy_ * D_;
 
     lqr(A_, B_, Q1, R1, N, K_, S_);
 
@@ -107,13 +113,11 @@ class GenericPlan {
 
 class ManipPlan : public GenericPlan {
  public:
-  void HandleCommittedRobotPlan(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::robot_plan_t* msg);
+  void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
+                                const std::string &channel,
+                                const drc::robot_plan_t *msg);
   drake::lcmt_qp_controller_input MakeQPInput(double cur_time);
 };
-
-
-
-
 
 class PlanEval {
  public:
@@ -128,14 +132,17 @@ class PlanEval {
   void Stop();
 
   inline bool isReceiverRunning() const { return receiver_thread_.joinable(); }
-  inline bool isPublisherRunning() const { return publisher_thread_.joinable(); }
+  inline bool isPublisherRunning() const {
+    return publisher_thread_.joinable();
+  }
 
  private:
-  // only working on manip now, need to think about how to switch between manip and walking
+  // only working on manip now, need to think about how to switch between manip
+  // and walking
   ManipPlan plan_;
 
   lcm::LCM lcm_handle_;
-  double time_; ///< from est robot state
+  double time_;  ///< from est robot state
 
   // input
   std::mutex plan_lock_;
@@ -151,5 +158,7 @@ class PlanEval {
   void PublisherLoop();
 
   // handle robot state msg
-  void HandleEstRobotState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::robot_state_t* msg);
+  void HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
+                           const std::string &channel,
+                           const bot_core::robot_state_t *msg);
 };
