@@ -21,6 +21,8 @@
 
 #include "drake/Path.h"
 
+#include "zmp_planner.h"
+
 struct RigidBodySupportStateElement {
   int body;
   Eigen::Matrix3Xd contact_points;
@@ -65,53 +67,13 @@ class GenericPlan {
 
   // spline for zmp
   PiecewisePolynomial<double> zmp_traj_;
-  // TODO this is not the right spline
-  PiecewisePolynomial<double> s1_;
-
-  Eigen::Matrix<double, 4, 4> A_;
-  Eigen::Matrix<double, 4, 2> B_;
-  Eigen::Matrix<double, 2, 4> C_;
-  Eigen::Matrix<double, 2, 2> D_;
-  Eigen::Matrix<double, 2, 2> D_control_;
-  Eigen::Matrix<double, 2, 2> Qy_, R_;
-  Eigen::Matrix<double, 4, 4> S_;
-  Eigen::Matrix<double, 2, 4> K_;
-  
-  Eigen::Vector4d s1_dot_;
-  Eigen::Vector2d u0_;
+  ZMPPlanner zmp_planner_;
 
   // list of tracked bodies
   std::vector<BodyMotionData> body_motions_;
 
   // list of support
   RigidBodySupportState support_state_;
-
-  // setup lipm matrices
-  void SetupLIPM(double height) {
-    A_.setZero();
-    A_.block<2, 2>(0, 2).setIdentity();
-    B_.setZero();
-    B_.block<2, 2>(2, 0).setIdentity();
-    C_.setZero();
-    C_.block<2, 2>(0, 0).setIdentity();
-    D_ = -height / 9.81 * Eigen::Matrix2d::Identity();
-    // TODO: take params
-    D_control_ = D_;
-
-    // TODO: take params
-    Qy_ = Eigen::Matrix2d::Identity();
-    R_.setZero();
-
-    Eigen::Matrix<double, 4, 4> Q1 = C_.transpose() * Qy_ * C_;
-    Eigen::Matrix<double, 2, 2> R1 = R_ + D_.transpose() * Qy_ * D_;
-    Eigen::Matrix<double, 4, 2> N = C_.transpose() * Qy_ * D_;
-
-    lqr(A_, B_, Q1, R1, N, K_, S_);
-
-    s1_dot_.setZero();
-
-    u0_.setZero();
-  }
 };
 
 class ManipPlan : public GenericPlan {

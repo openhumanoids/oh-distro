@@ -40,7 +40,7 @@ PiecewisePolynomial<Scalar> GenerateLinearSpline(
   }
 
   for (int j = 0; j < Y[0].rows(); j++) {
-    for (int k = 0; k < Y[0].rows(); k++) {
+    for (int k = 0; k < Y[0].cols(); k++) {
       for (size_t t = 0; t < N - 1; t++) {
         polynomials[t](j, k) = Polynomial<Scalar>(Eigen::Vector2d(
             Y[t](j, k), (Y[t + 1](j, k) - Y[t](j, k)) / (T[t + 1] - T[t])));

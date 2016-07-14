@@ -98,13 +98,20 @@ target_link_libraries(sf_kin_example RobotStateDriver AtlasCommandDriver FootCon
 target_link_libraries (sf_kin_example ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sf_kin_example)
 
-add_executable(sf_plan_eval plan_eval/test.cc plan_eval/plan_eval.cc)
-set_source_files_properties(plan_eval/test.cc plan_eval/plan_eval.cc PROPERTIES COMPILE_FLAGS -g)
+add_executable(sf_plan_eval plan_eval/test.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc)
+set_source_files_properties(plan_eval/test.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc PROPERTIES COMPILE_FLAGS -g)
 pods_use_pkg_config_packages(sf_plan_eval drake-qp-common drake-control-util drake-side drake-rbm)
 target_link_libraries(sf_plan_eval RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeTrajectories drakeLCMUtil drakePolynomial drakeQPLocomotionPlan drakeYAMLUtil yaml-cpp)
 target_link_libraries (sf_plan_eval ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sf_plan_eval)
- 
+
+add_executable(sf_test_zmp plan_eval/test_zmp.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc)
+set_source_files_properties(plan_eval/test_zmp.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc PROPERTIES COMPILE_FLAGS -g)
+pods_use_pkg_config_packages(sf_test_zmp drake-qp-common drake-control-util drake-side drake-rbm)
+target_link_libraries(sf_test_zmp RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeTrajectories drakeLCMUtil drakePolynomial drakeQPLocomotionPlan drakeYAMLUtil yaml-cpp)
+target_link_libraries (sf_test_zmp ${CMAKE_THREAD_LIBS_INIT})
+pods_install_executables(sf_test_zmp)
+
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
 pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm drake-convex-hull)
 target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver)

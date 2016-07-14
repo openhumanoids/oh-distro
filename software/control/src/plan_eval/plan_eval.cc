@@ -35,8 +35,8 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
 
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     std::cout << it->first.toString() << " foot name: " << robot_.getBodyOrFrameName(it->second) << std::endl;
-  } 
-  
+  }
+
   for (auto it = rpc_.position_indices.legs.begin(); it != rpc_.position_indices.legs.end(); it++) {
     std::cout << it->first.toString() << " leg joints: ";
     for (size_t i = 0; i < it->second.size(); i++)
@@ -113,31 +113,7 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
 
   ////////////////////////////////////////
   // make zmp data
-  drake::lcmt_zmp_data &zmp_data_lcm = qp_input.zmp_data;
-  zmp_data_lcm.timestamp = 0;
-  eigenToCArrayOfArrays(A_, zmp_data_lcm.A);
-  eigenToCArrayOfArrays(B_, zmp_data_lcm.B);
-  eigenToCArrayOfArrays(C_, zmp_data_lcm.C);
-  eigenToCArrayOfArrays(D_control_, zmp_data_lcm.D);
-  eigenToCArrayOfArrays(u0_, zmp_data_lcm.u0);
-  eigenToCArrayOfArrays(R_, zmp_data_lcm.R);
-  eigenToCArrayOfArrays(Qy_, zmp_data_lcm.Qy);
-  zmp_data_lcm.s2 = 0;  // never used by the controller
-  zmp_data_lcm.s2dot = 0;
-
-  Eigen::Vector2d zmp_d_final = zmp_traj_.value(zmp_traj_.getEndTime());
-  for (size_t i = 0; i < 2; i++) {
-    zmp_data_lcm.x0[i][0] = zmp_d_final[i];
-    zmp_data_lcm.x0[i + 2][0] = 0;
-  }
-  Eigen::Vector2d zmp_d = zmp_traj_.value(plan_time);
-  eigenToCArrayOfArrays(zmp_d, zmp_data_lcm.y0);
-
-  // Lyapunov function
-  eigenToCArrayOfArrays(S_, zmp_data_lcm.S);
-  // TODO: this is time varying for the general case. We will say it's slow enough for manip.
-  eigenToCArrayOfArrays(Eigen::Vector4d::Zero(), zmp_data_lcm.s1);
-  eigenToCArrayOfArrays(s1_dot_, zmp_data_lcm.s1dot);
+  qp_input.zmp_data = zmp_planner_.MakeMessage(plan_time);
 
   ////////////////////////////////////////
   // make body motion data
@@ -302,7 +278,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   // drake/examples/ZMP/LinearInvertedPendulum.m
 
   // TODO: find out z
-  GenericPlan::SetupLIPM(1.01);
+  zmp_planner_.Plan(zmp_traj_, 1.01);
 
   // make q splines
   q_trajs_ = GenerateCubicSpline(Ts, q_d);
