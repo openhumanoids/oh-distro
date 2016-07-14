@@ -278,7 +278,9 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   // drake/examples/ZMP/LinearInvertedPendulum.m
 
   // TODO: find out z
-  zmp_planner_.Plan(zmp_traj_, 1.01);
+  Eigen::Vector4d x0(Eigen::Vector4d::Zero());
+  x0.head(2) = com_d[0];
+  zmp_planner_.Plan(zmp_traj_, x0, 1.01);
 
   // make q splines
   q_trajs_ = GenerateCubicSpline(Ts, q_d);

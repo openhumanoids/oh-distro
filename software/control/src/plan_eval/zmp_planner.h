@@ -8,7 +8,7 @@ class ZMPPlanner {
  public:
  //private:
   PiecewisePolynomial<double> zmp_traj_;
-  PiecewisePolynomial<double> com_traj_;
+  ExponentialPlusPiecewisePolynomial<double> com_traj_;
   ExponentialPlusPiecewisePolynomial<double> s1_traj_;
 
   Eigen::Matrix<double, 4, 4> A_;
@@ -23,6 +23,6 @@ class ZMPPlanner {
   Eigen::Vector4d s1_dot_;
   Eigen::Vector2d u0_;
   
-  void Plan(const PiecewisePolynomial<double> &zmp_d, double height);
+  void Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vector4d &x0, double height);
   drake::lcmt_zmp_data MakeMessage(double time) const;
 };

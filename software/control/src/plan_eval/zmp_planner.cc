@@ -1,8 +1,9 @@
 #include "zmp_planner.h"
 #include "drake/util/drakeUtil.h"
 #include <unsupported/Eigen/MatrixFunctions>
+#include <iostream>
 
-void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, double height) {
+void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vector4d &x0, double height) {
   assert(zmp_d.rows() == 2 && zmp_d.cols() == 1);
   assert(zmp_d.getSegmentPolynomialDegree(0) == 4);
 
@@ -33,67 +34,121 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, double height) {
   s1_dot_.setZero();
   u0_.setZero(); 
 
+  // generate s1 traj
   Eigen::Matrix<double, 2, 4> NB = (N.transpose() + B_.transpose() * S_);
   Eigen::Matrix<double, 4, 4> A2 = NB.transpose() * R1i * B_.transpose() - A_.transpose();
   Eigen::Matrix<double, 4, 2> B2 = 2 * (C_.transpose() - NB.transpose() * R1i * D_) * Qy_;
   Eigen::Matrix<double, 4, 4> A2i = A2.inverse();
 
   int n_segments = zmp_d.getNumberOfSegments();
-  Eigen::VectorXd coeff_x, coeff_y;
-  Eigen::Matrix<double, 2, 4> c;
+  Eigen::Vector2d zmp_tf;
   Eigen::Vector4d s1dt;
 
-  // number of segments * number of degree * [x, y, dx, dy]
-  std::vector<std::vector<Eigen::Vector4d>> beta(n_segments);
-  std::vector<std::vector<Eigen::Vector2d>> gamma(n_segments);
+  zmp_tf = zmp_d.value(zmp_d.getEndTime());
+
   Eigen::MatrixXd alpha(4, n_segments);
+  std::vector<Eigen::Matrix<double, 4, 4>> beta(n_segments);
+  std::vector<Eigen::Matrix<double, 2, 4>> gamma(n_segments);
+  std::vector<Eigen::Matrix<double, 2, 4>> c(n_segments);
+  alpha.setZero();
   
   std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> beta_poly(n_segments);
 
   for (int t = n_segments-1; t >= 0; t--) {
-    beta[t].resize(4);
-    gamma[t].resize(4);
-
-    coeff_x = zmp_d.getPolynomial(t, 0, 0).getCoefficients();
-    coeff_y = zmp_d.getPolynomial(t, 1, 0).getCoefficients();
-    c.row(0) = coeff_x;
-    c.row(1) = coeff_y;
-
+    c[t].row(0) = zmp_d.getPolynomial(t, 0, 0).getCoefficients();
+    c[t].row(1) = zmp_d.getPolynomial(t, 1, 0).getCoefficients();
+    /// switch to zbar coord
+    c[t].col(0) -= zmp_tf;
+    
     // degree 4
-    beta[t][3] = -A2i * B2 * c.col(3);
-    gamma[t][3] = R1i * D_ * Qy_ * c.col(3) - 0.5 * R1i * B_.transpose() * beta[t][3];
+    beta[t].col(3) = -A2i * B2 * c[t].col(3);
+    gamma[t].col(3) = R1i * D_ * Qy_ * c[t].col(3) - 0.5 * R1i * B_.transpose() * beta[t].col(3);
+
     for (int d = 2; d >= 0; d--) {
-      beta[t][d] = A2i * (d * beta[t][d+1] - B2 * c.col(d));
-      gamma[t][d] = R1i * D_ * Qy_ * c.col(d) - 0.5 * R1i * B_.transpose() * beta[t][d];
+      beta[t].col(d) = A2i * ((d+1) * beta[t].col(d+1) - B2 * c[t].col(d));
+      gamma[t].col(d) = R1i * D_ * Qy_ * c[t].col(d) - 0.5 * R1i * B_.transpose() * beta[t].col(d);
     }
+
     if (t == n_segments-1) {
       s1dt = Eigen::Vector4d::Zero();
     }
     else {
-      s1dt = alpha.col(t+1) + beta[t+1][0];
+      s1dt = alpha.col(t+1) + beta[t+1].col(0);
     }
     double dt = zmp_d.getDuration(t);
     Eigen::Matrix4d A2exp = A2 * dt;
-    Eigen::Matrix4d squeezed_beta;
-    for (int j = 0; j < 4; j++) {
-      squeezed_beta.col(j) = beta[t][j];
-    }
-
     A2exp = A2exp.exp();
+    
     alpha.col(t) = Eigen::Vector4d(1, dt, dt * dt, dt * dt * dt);
-    alpha.col(t) = s1dt - squeezed_beta * alpha.col(t);
+    alpha.col(t) = s1dt - beta[t] * alpha.col(t);
+
     alpha.col(t) = A2exp.inverse() * alpha.col(t);
 
     // setup the poly part
     beta_poly[t].resize(4,1);
-    for (int d = 0; d < 4; d++) {
-      Eigen::Vector4d tmp(beta[t][0][d], beta[t][1][d], beta[t][2][d], beta[t][3][d]);
-      beta_poly[t](d, 0) = Polynomial<double>(tmp);
+    for (int n = 0; n < 4; n++) {
+      beta_poly[t](n, 0) = Polynomial<double>(beta[t].row(n));
     }
   }
 
   PiecewisePolynomial<double> beta_traj(beta_poly, zmp_d.getSegmentTimes());
   s1_traj_ = ExponentialPlusPiecewisePolynomial<double>(Eigen::Matrix4d::Identity(), A2, alpha, beta_traj);
+
+  // generate com traj
+  Eigen::Matrix<double, 8, 8> Ay, Ayi;
+  Eigen::Matrix<double, 8, 2> By;
+  Ay.block<4, 4>(0, 0) = A_ + B_ * K_;
+  Ay.block<4, 4>(0, 4) = -0.5 * B_ * R1i * B_.transpose();
+  Ay.block<4, 4>(4, 0) = Eigen::Matrix<double, 4, 4>::Zero();
+  Ay.block<4, 4>(4, 4) = A2;
+  Ayi = Ay.inverse();
+  By.block<4, 2>(0, 0) = B_ * R1i * D_ * Qy_;
+  By.block<4, 2>(4, 0) = B2;
+
+  Eigen::MatrixXd a(8, n_segments);
+  a.bottomRows(4) = alpha;
+  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> b_poly(n_segments);
+  
+  // set x0
+  Eigen::Vector4d x = x0;
+  x.head(2) -= zmp_tf;
+  
+  std::vector<Eigen::Matrix<double, 4, 4>> b(n_segments);
+  Eigen::Matrix<double, 8, 1> tmp81;
+  Eigen::Matrix<double, 8, 8> Ayexp;
+  Eigen::Matrix<double, 4, 8> tmp48;
+  for (int t = 0; t < n_segments; t++) {
+    double dt = zmp_d.getDuration(t);
+    b[t].col(3) = -Ayi.topRows(4) * By * c[t].col(3);
+    for (int d = 2; d >= 0; d--) {
+      tmp81.head(4) = b[t].col(d+1);
+      tmp81.tail(4) = beta[t].col(d+1);
+      tmp81 = tmp81 * (d+1);
+      b[t].col(d) = Ayi.topRows(4) * (tmp81 - By * c[t].col(d));
+    }
+
+    a.block<4, 1>(0, t) = x - b[t].col(0);
+    
+    Ayexp = Ay * dt;
+    Ayexp = Ayexp.exp();
+    tmp48.block<4, 4>(0, 0).setIdentity();
+    tmp48.block<4, 4>(0, 4).setZero();
+    x = tmp48 * Ayexp * a.col(t) + b[t] * Eigen::Vector4d(1, dt, dt * dt, dt * dt * dt);
+
+    b[t].block<2, 1>(0, 0) += zmp_tf; /// back to world coord
+
+    // setup poly
+    b_poly[t].resize(2, 1);
+    for (int n = 0; n < 2; n++) {
+      b_poly[t](n, 0) = Polynomial<double>(b[t].row(n));
+    }
+  }
+  
+  Eigen::Matrix<double, 2, 8> tmp28;
+  tmp28.block<2, 2>(0, 0).setIdentity();
+  tmp28.block<2, 6>(0, 2).setZero();
+  PiecewisePolynomial<double> b_traj(b_poly, zmp_d.getSegmentTimes());
+  com_traj_ = ExponentialPlusPiecewisePolynomial<double>(tmp28, Ay, a, b_traj);
 }
 
 drake::lcmt_zmp_data ZMPPlanner::MakeMessage(double plan_time) const {
