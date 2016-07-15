@@ -4,13 +4,6 @@
 #include "drake/util/drakeGeometryUtil.h"
 #include <iostream>
 
-template <typename Scalar>
-struct SimplePose {
-  Eigen::Matrix<Scalar, 3, 1> lin;
-  Eigen::Quaternion<Scalar> rot;
-};
-
-
 template <typename Scalar, int rows, int cols>
 bool CheckSplineInputs(
     const std::vector<Scalar> &T,
@@ -239,8 +232,9 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
 template <typename Scalar>
 PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
     const std::vector<Scalar> &times,
-    const std::vector<SimplePose<Scalar>> &poses,
-    const std::vector<SimplePose<Scalar>> &vels) {
+    const std::vector<Eigen::Matrix<Scalar, 7, 1>> &poses,
+    const std::vector<Eigen::Matrix<Scalar, 7, 1>> &vels,
+    const Eigen::Matrix<Scalar, 4, 1> &rot_cur) {
   assert(times.size() == poses.sizes());
   assert(times.size() == vels.sizes());
   assert(times.size() >= 2);
@@ -255,27 +249,28 @@ PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
   Eigen::Matrix<Scalar, 3, Eigen::Dynamic> exp_dot(3, T);
 
   for (size_t t = 0; t < T; t++) {
-    quat.col(t) = poses[t].rot.coeffs();
-    quat_dot.col(t) = vels[t].rot.coeffs();
+    quat.col(t) = poses[t].tail(4);
+    quat_dot.col(t) = vels[t].tail(4);
   }
   quat2expmapSequence(quat, quat_dot, exp, exp_dot);
 
   for (size_t t = 0; t < times.size(); t++) {
-    expmap[t].head(3) = poses[t].lin;
+    expmap[t].head(3) = poses[t].head(3);
     expmap[t].tail(3) = exp.col(t); // Eigen::Vector3d::Zero();
-    expmap_dot[t].head(3) = vels[t].lin;
+    expmap_dot[t].head(3) = vels[t].head(3);
     expmap_dot[t].tail(3) = exp_dot.col(t);
     
     std::cout << "t " << t << std::endl;
-    std::cout << poses[t].rot.coeffs().transpose() << std::endl;
-    std::cout << expmap[t].tail(3).transpose() << std::endl;
+    std::cout << (poses[t].tail(4)).transpose() << std::endl;
+    std::cout << (expmap[t].tail(3)).transpose() << std::endl;
   }
 
   // need to do the closestExpmap
   for (size_t t = 1; t < times.size(); t++) {
     Eigen::Matrix<Scalar, 3, 1> w_closest;
     Eigen::Matrix<Scalar, 3, 3> dw_closest_dw;
-    Eigen::Matrix<Scalar, 3, 1> w1 = expmap[t - 1].tail(3);
+    Eigen::Matrix<Scalar, 3, 1> w1;
+    w1 = expmap[t - 1].tail(3);
     Eigen::Matrix<Scalar, 3, 1> w2 = expmap[t].tail(3);
     closestExpmap1(w1, w2, w_closest, dw_closest_dw);
     expmap[t].tail(3) = w_closest;

@@ -238,8 +238,8 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
 
   size_t num_bodies = body_names.size();
 
-  std::vector<std::vector<SimplePose<double>>> x_d(num_bodies);
-  std::vector<std::vector<SimplePose<double>>> xd_d(num_bodies);
+  std::vector<std::vector<Eigen::Matrix<double,7,1>>> x_d(num_bodies);
+  std::vector<std::vector<Eigen::Matrix<double,7,1>>> xd_d(num_bodies);
   for (size_t i = 0; i < num_bodies; i++) {
     x_d[i].resize(num_T);
     xd_d[i].resize(num_T);
@@ -247,13 +247,13 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
 
   // generate the current tracked body poses from the estimated robot state
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
-  std::vector<SimplePose<double>> x_est(num_bodies);
+  std::vector<Eigen::Matrix<double,7,1>> x_est(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
     int id = robot_.findLink(body_names[b])->body_index;
     Eigen::Isometry3d pose = robot_.relativeTransform(cache_est, 0, id);
-    x_est[b].lin = pose.translation();
-    x_est[b].rot = Eigen::Quaterniond(pose.linear());
-    std::cout << "b " << b << " " << x_est[b].rot.coeffs().transpose() << std::endl;
+    x_est[b].segment<3>(0) = pose.translation();
+    x_est[b].segment<4>(3) = rotmat2quat(pose.linear());
+    std::cout << "b " << b << " " << x_est[b].segment<4>(3).transpose() << std::endl;
   }
 
   // go through set points
@@ -268,17 +268,16 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     for (size_t b = 0; b < num_bodies; b++) {
       int id = robot_.findLink(body_names[b])->body_index;
       Eigen::Isometry3d pose = robot_.relativeTransform(cache_plan, 0, id);
-      x_d[b][t].lin = pose.translation();
-      x_d[b][t].rot = Eigen::Quaterniond(pose.linear());
+      x_d[b][t].segment<3>(0) = pose.translation();
+      x_d[b][t].segment<4>(3) = rotmat2quat(pose.linear());
 
       // TODO offset can be nonzero
       Eigen::Vector6d xd =
           getTaskSpaceVel(robot_, cache_plan, id, Eigen::Vector3d::Zero());
-      xd_d[b][t].lin = xd.segment<3>(3);
+      xd_d[b][t].segment<3>(0) = xd.segment<3>(3);
       // http://www.euclideanspace.com/physics/kinematics/angularvelocity/QuaternionDifferentiation2.pdf
-      Eigen::Quaterniond W(0, xd[0], xd[1], xd[2]);
-      W = W * x_d[b][t].rot;
-      xd_d[b][t].rot = Eigen::Quaterniond(0.5 * W.coeffs());
+      Eigen::Vector4d W(0, xd[0], xd[1], xd[2]);
+      xd_d[b][t].segment<4>(3) = 0.5 * quatProduct(W, x_d[b][t].segment<4>(3));
     }
 
     // get com
@@ -304,7 +303,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     body_motions_[b].body_or_frame_id =
         robot_.findLink(body_names[b])->body_index;
     body_motions_[b].trajectory =
-        GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
+        GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b], x_est[b].segment<4>(3).eval());
     body_motions_[b].toe_off_allowed.resize(num_T, false);
     body_motions_[b].in_floating_base_nullspace.resize(num_T, false);
     if (body_names[b].compare("pelvis") == 0)
