@@ -1,0 +1,43 @@
+kinematic_tree_metadata:
+  body_names:
+    feet:
+      r: &R_FOOT_NAME rightFoot
+      l: &L_FOOT_NAME leftFoot
+    pelvis: &PELVIS_NAME pelvis
+    hands:
+      r: &R_HAND_NAME rightPalm
+      l: &L_HAND_NAME leftPalm
+
+  joint_group_names:
+    legs:
+      r: [rightHipYaw, rightHipRoll, rightHipPitch, rightKneePitch, rightAnklePitch, rightAnkleRoll]
+      l: [leftHipYaw, leftHipRoll, leftHipPitch, leftKneePitch, leftAnklePitch, leftAnkleRoll]
+    knees:
+      r: rightKneePitch
+      l: leftKneePitch
+    ankles:
+      r: [rightAnklePitch, leftAnkleRoll]
+      l: [leftAnklePitch, rightAnkleRoll]
+    arms:
+      r: [rightShoulderPitch, rightShoulderRoll, rightShoulderYaw, rightElbowPitch, rightForearmYaw, rightWristRoll, rightWristPitch]
+      l: [leftShoulderPitch, leftShoulderRoll, leftShoulderYaw, leftElbowPitch, leftForearmYaw, leftWristRoll, leftWristPitch]
+
+    neck: [lowerNeckPitch]
+    back_bkz: torsoYaw
+    back_bky: torsoPitch
+ 
+foot_contact_offsets:
+  *L_FOOT_NAME :
+    left_toe: {x: 0.172, y: 0.055, z: -0.09}
+    right_toe: {x: 0.172, y: -0.055, z: -0.09}
+    left_heel: {x: -0.058, y: 0.055, z: -0.09}
+    right_heel: {x: -0.058, y: -0.055, z: -0.09}
+  *R_FOOT_NAME :
+    left_toe: {x: 0.172, y: 0.055, z: -0.09}
+    right_toe: {x: 0.172, y: -0.055, z: -0.09}
+    left_heel: {x: -0.058, y: 0.055, z: -0.09}
+    right_heel: {x: -0.058, y: -0.055, z: -0.09}
+
+default_zmp_height: 1.00
+default_mu: 0.7
+ 

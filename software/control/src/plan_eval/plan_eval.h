@@ -52,6 +52,11 @@ class GenericPlan {
 
 
  protected:
+  // some params
+  double default_mu_;
+  double default_zmp_height_;
+  std::map<std::string, Eigen::Matrix3Xd> contact_offsets;
+
   // is set the first time in the publishing / interp loop
   double interp_t0_ = -1;
 

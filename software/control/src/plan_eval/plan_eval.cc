@@ -32,6 +32,11 @@ static Eigen::MatrixXd getTaskSpaceJacobian(
 void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   YAML::Node config = YAML::LoadFile(name);
   rpc_ = parseKinematicTreeMetadata(config["kinematic_tree_metadata"], robot_);
+  
+  std::map<Side, std::string> side_identifiers = {{Side::RIGHT, "r"}, {Side::LEFT, "l"}};
+  for (const auto& side : Side::values)
+    rpc_.hand_ids[side] = robot_.findLinkId(config["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
+  rpc_.pelvis_id = robot_.findLinkId(config["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>());
 
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     std::cout << it->first.toString() << " foot name: " << robot_.getBodyOrFrameName(it->second) << std::endl;
@@ -50,6 +55,27 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
       std::cout << robot_.getPositionName(it->second[i]) << " ";
     std::cout << std::endl;
   }
+
+  // contacts
+  std::string xyz[3] = {"x", "y", "z"};
+  std::string corners[4] = {"left_toe", "right_toe", "left_heel", "right_heel"};
+  for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
+    std::string foot_name = robot_.getBodyOrFrameName(it->second);
+    Eigen::Matrix3Xd contacts(3, 4);
+    for (int n = 0; n < 4; n++) {
+      for (int i = 0; i < 3; i++)
+        contacts(i, n) = config["foot_contact_offsets"][foot_name][corners[n]][xyz[i]].as<double>();
+    }
+    
+    contact_offsets[foot_name] = contacts;
+    std::cout << foot_name << " contacts:\n" << contacts << std::endl;
+  }
+  
+  // default param
+  default_mu_ = get(config, "default_zmp_height").as<double>();
+  default_zmp_height_ = get(config, "default_zmp_height").as<double>();
+  std::cout << "default_zmp_height: " << default_zmp_height_ << std::endl;
+  std::cout << "default_mu: " << default_mu_ << std::endl;
 }
 
 
@@ -198,8 +224,8 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
       support_data_element_lcm.support_logic_map[i] = true;
       support_data_element_lcm.support_surface[i] = element.support_surface[i];
     }
-    // TODO
-    support_data_element_lcm.mu = 0.7;
+    
+    support_data_element_lcm.mu = default_mu_;
     support_data_element_lcm.use_support_surface = true;
   }
 
@@ -231,7 +257,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
 
   // TODO: these are hard coded now
   std::vector<std::string> body_names;
-  body_names.push_back(std::string("pelvis"));
+  body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     body_names.push_back(robot_.getBodyOrFrameName(it->second));
   }
@@ -272,7 +298,6 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
       x_d[b][t].segment<3>(0) = pose.translation();
       x_d[b][t].segment<4>(3) = rotmat2quat(pose.linear());
 
-      // TODO offset can be nonzero
       Eigen::Vector6d xd =
           getTaskSpaceVel(robot_, cache_plan, id, Eigen::Vector3d::Zero());
       xd_d[b][t].segment<3>(0) = xd.segment<3>(3);
@@ -290,10 +315,9 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   // TODO: make traj for s1, and com
   // drake/examples/ZMP/LinearInvertedPendulum.m
 
-  // TODO: find out z
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, 1.01);
+  zmp_planner_.Plan(zmp_traj_, x0, default_zmp_height_);
 
   // make q splines
   q_trajs_ = GenerateCubicSpline(Ts, q_d);
@@ -307,7 +331,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
         GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
     body_motions_[b].toe_off_allowed.resize(num_T, false);
     body_motions_[b].in_floating_base_nullspace.resize(num_T, false);
-    if (body_names[b].compare("pelvis") == 0)
+    if (body_names[b].compare(robot_.getBodyOrFrameName(rpc_.pelvis_id)) == 0)
       body_motions_[b].control_pose_when_in_contact.resize(num_T, true);
     else
       body_motions_[b].control_pose_when_in_contact.resize(num_T, false);
@@ -336,24 +360,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     support.use_contact_surface = true;
     support.support_surface = Eigen::Vector4d(0, 0, 1, 0);
 
-    // TODO: don't hard code
-    support.contact_points.resize(3, 4);
-    //double foot_x[2] = {-0.058, 0.172};
-    //double foot_y[2] = {-0.055, 0.055};
-    //double foot_z = -0.09;
-    double foot_x[2] = {-0.0876, 0.1728};
-    double foot_y[2] = {-0.0626, 0.0626};
-    double foot_z = -0.07645;
-    for (int i = 0; i < 2; i++) {
-      // back left
-      support.contact_points(0, 2 * i) = foot_x[i];
-      support.contact_points(1, 2 * i) = foot_y[1];
-      support.contact_points(2, 2 * i) = foot_z;
-      // back right
-      support.contact_points(0, 2 * i + 1) = foot_x[i];
-      support.contact_points(1, 2 * i + 1) = foot_y[0];
-      support.contact_points(2, 2 * i + 1) = foot_z;
-    }
+    support.contact_points = contact_offsets.at(support_names[s]);
   }
 
   std::cout << "committed robot plan proced\n";
