@@ -233,15 +233,14 @@ template <typename Scalar>
 PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
     const std::vector<Scalar> &times,
     const std::vector<Eigen::Matrix<Scalar, 7, 1>> &poses,
-    const std::vector<Eigen::Matrix<Scalar, 7, 1>> &vels,
-    const Eigen::Matrix<Scalar, 4, 1> &rot_cur) {
+    const std::vector<Eigen::Matrix<Scalar, 7, 1>> &vels) {
   assert(times.size() == poses.sizes());
   assert(times.size() == vels.sizes());
   assert(times.size() >= 2);
 
   size_t T = times.size();
-  std::vector<Eigen::Matrix<Scalar, 6, 1>> expmap(poses.size()),
-      expmap_dot(poses.size());
+  std::vector<Eigen::Matrix<Scalar, 6, 1>> expmap(poses.size());
+  std::vector<Eigen::Matrix<Scalar, 6, 1>> expmap_dot(poses.size());
   
   Eigen::Matrix<Scalar, 4, Eigen::Dynamic> quat(4, T);
   Eigen::Matrix<Scalar, 4, Eigen::Dynamic> quat_dot(4, T);
@@ -256,21 +255,16 @@ PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
 
   for (size_t t = 0; t < times.size(); t++) {
     expmap[t].head(3) = poses[t].head(3);
-    expmap[t].tail(3) = exp.col(t); // Eigen::Vector3d::Zero();
+    expmap[t].tail(3) = exp.col(t);
     expmap_dot[t].head(3) = vels[t].head(3);
     expmap_dot[t].tail(3) = exp_dot.col(t);
-    
-    std::cout << "t " << t << std::endl;
-    std::cout << (poses[t].tail(4)).transpose() << std::endl;
-    std::cout << (expmap[t].tail(3)).transpose() << std::endl;
   }
 
   // need to do the closestExpmap
   for (size_t t = 1; t < times.size(); t++) {
     Eigen::Matrix<Scalar, 3, 1> w_closest;
     Eigen::Matrix<Scalar, 3, 3> dw_closest_dw;
-    Eigen::Matrix<Scalar, 3, 1> w1;
-    w1 = expmap[t - 1].tail(3);
+    Eigen::Matrix<Scalar, 3, 1> w1 = expmap[t - 1].tail(3);
     Eigen::Matrix<Scalar, 3, 1> w2 = expmap[t].tail(3);
     closestExpmap1(w1, w2, w_closest, dw_closest_dw);
     expmap[t].tail(3) = w_closest;

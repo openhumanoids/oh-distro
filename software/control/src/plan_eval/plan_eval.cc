@@ -246,6 +246,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   }
 
   // generate the current tracked body poses from the estimated robot state
+  // maybe useful eventually
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
   std::vector<Eigen::Matrix<double,7,1>> x_est(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
@@ -253,7 +254,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     Eigen::Isometry3d pose = robot_.relativeTransform(cache_est, 0, id);
     x_est[b].segment<3>(0) = pose.translation();
     x_est[b].segment<4>(3) = rotmat2quat(pose.linear());
-    std::cout << "b " << b << " " << x_est[b].segment<4>(3).transpose() << std::endl;
+    std::cout << "cur pose " << body_names[b] << " " << x_est[b].segment<4>(3).transpose() << std::endl;
   }
 
   // go through set points
@@ -303,7 +304,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     body_motions_[b].body_or_frame_id =
         robot_.findLink(body_names[b])->body_index;
     body_motions_[b].trajectory =
-        GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b], x_est[b].segment<4>(3).eval());
+        GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
     body_motions_[b].toe_off_allowed.resize(num_T, false);
     body_motions_[b].in_floating_base_nullspace.resize(num_T, false);
     if (body_names[b].compare("pelvis") == 0)

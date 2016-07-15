@@ -26,19 +26,19 @@ int main() {
   std::cout << "S: " << zmp.S_ << std::endl;
   
   out.open("/home/sfeng/zmp_d");
-  for (double t = Ts[0]; t <= Ts[Ts.size()-1]; t+= 0.01) {
+  for (double t = Ts[0]; t <= Ts[Ts.size()-1] + 5; t+= 0.01) {
     out << t << " " << zmp.zmp_traj_.value(t).transpose() << std::endl;
   }
   out.close();
 
   out.open("/home/sfeng/com");
-  for (double t = Ts[0]; t <= Ts[Ts.size()-1]; t+= 0.01) {
+  for (double t = Ts[0]; t <= Ts[Ts.size()-1] + 5; t+= 0.01) {
     out << t << " " << zmp.com_traj_.value(t).transpose() << std::endl;
   }
   out.close(); 
 
   out.open("/home/sfeng/s1");
-  for (double t = Ts[0]; t <= Ts[Ts.size()-1]; t+= 0.01) {
+  for (double t = Ts[0]; t <= Ts[Ts.size()-1] + 5; t+= 0.01) {
     out << t << " " << zmp.s1_traj_.value(t).transpose() << std::endl;
   }
   out.close();
