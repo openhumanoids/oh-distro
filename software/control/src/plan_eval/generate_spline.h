@@ -2,6 +2,7 @@
 
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
 #include "drake/util/drakeGeometryUtil.h"
+#include <iostream>
 
 template <typename Scalar>
 struct SimplePose {
@@ -247,13 +248,27 @@ PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
   size_t T = times.size();
   std::vector<Eigen::Matrix<Scalar, 6, 1>> expmap(poses.size()),
       expmap_dot(poses.size());
-  Eigen::Matrix<Scalar, 3, 1> tmp, tmpd;
+  
+  Eigen::Matrix<Scalar, 4, Eigen::Dynamic> quat(4, T);
+  Eigen::Matrix<Scalar, 4, Eigen::Dynamic> quat_dot(4, T);
+  Eigen::Matrix<Scalar, 3, Eigen::Dynamic> exp(3, T);
+  Eigen::Matrix<Scalar, 3, Eigen::Dynamic> exp_dot(3, T);
+
+  for (size_t t = 0; t < T; t++) {
+    quat.col(t) = poses[t].rot.coeffs();
+    quat_dot.col(t) = vels[t].rot.coeffs();
+  }
+  quat2expmapSequence(quat, quat_dot, exp, exp_dot);
+
   for (size_t t = 0; t < times.size(); t++) {
-    quat2expmapSequence(poses[t].rot.coeffs(), vels[t].rot.coeffs(), tmp, tmpd);
     expmap[t].head(3) = poses[t].lin;
-    expmap[t].tail(3) = tmp;
+    expmap[t].tail(3) = exp.col(t); // Eigen::Vector3d::Zero();
     expmap_dot[t].head(3) = vels[t].lin;
-    expmap_dot[t].tail(3) = tmpd;
+    expmap_dot[t].tail(3) = exp_dot.col(t);
+    
+    std::cout << "t " << t << std::endl;
+    std::cout << poses[t].rot.coeffs().transpose() << std::endl;
+    std::cout << expmap[t].tail(3).transpose() << std::endl;
   }
 
   // need to do the closestExpmap

@@ -215,7 +215,9 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
 
 void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
                                          const std::string &channel,
-                                         const drc::robot_plan_t *msg) {
+                                         const drc::robot_plan_t *msg,
+                                         const Eigen::VectorXd est_q, 
+                                         const Eigen::VectorXd est_qd) {
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
@@ -325,9 +327,12 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
 
     // TODO: don't hard code
     support.contact_points.resize(3, 4);
-    double foot_x[2] = {-0.058, 0.172};
-    double foot_y[2] = {-0.055, 0.055};
-    double foot_z = -0.09;
+    //double foot_x[2] = {-0.058, 0.172};
+    //double foot_y[2] = {-0.055, 0.055};
+    //double foot_z = -0.09;
+    double foot_x[2] = {-0.0876, 0.1728};
+    double foot_y[2] = {-0.0626, 0.0626};
+    double foot_z = -0.07645;
     for (int i = 0; i < 2; i++) {
       // back left
       support.contact_points(0, 2 * i) = foot_x[i];
@@ -343,32 +348,17 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   std::cout << "committed robot plan proced\n";
 }
 
-PlanEval::PlanEval() {
-  receiver_stop_ = false;
-  publisher_stop_ = false;
-  new_plan_ = false;
-
-  if (!lcm_handle_.good()) {
-    std::cerr << "ERROR: lcm is not good()" << std::endl;
-    exit(-1);
-  }
-
-  lcm::Subscription *sub;
-  sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN",
-      &PlanEval::HandleCommittedRobotPlan, this);
-  sub->setQueueCapacity(1);
-
-  sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
-      this);
-  sub->setQueueCapacity(1);
-}
-
 void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
                                         const std::string &channel,
                                         const drc::robot_plan_t *msg)
 {
-  std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan());
-  new_plan_ptr->HandleCommittedRobotPlan(rbuf, channel, msg);
+  state_lock_.lock();
+  Eigen::VectorXd est_q = est_robot_state_.q;
+  Eigen::VectorXd est_qd = est_robot_state_.qd;
+  state_lock_.unlock();
+
+  std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
+  new_plan_ptr->HandleCommittedRobotPlan(rbuf, channel, msg, est_q, est_qd);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;  
@@ -412,8 +402,12 @@ void PlanEval::PublisherLoop() {
     }
 
     if (has_plan) {
-      drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(time_);
-      lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);      
+      state_lock_.lock();
+      double t_now = est_robot_state_.t;
+      state_lock_.unlock();
+
+      drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(t_now);
+      lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
     }    
   }
   std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id()
@@ -423,7 +417,9 @@ void PlanEval::PublisherLoop() {
 void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
                                    const std::string &channel,
                                    const bot_core::robot_state_t *msg) {
-  time_ = (double)msg->utime / 1e6;
+  state_lock_.lock();
+  state_driver_->decode(msg, &est_robot_state_);
+  state_lock_.unlock();
 }
 
 void PlanEval::Start() {

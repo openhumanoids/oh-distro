@@ -98,8 +98,8 @@ target_link_libraries(sf_kin_example RobotStateDriver AtlasCommandDriver FootCon
 target_link_libraries (sf_kin_example ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sf_kin_example)
 
-add_executable(sf_plan_eval plan_eval/test.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc)
-set_source_files_properties(plan_eval/test.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc PROPERTIES COMPILE_FLAGS -g)
+add_executable(sf_plan_eval plan_eval/run_plan_eval.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc)
+set_source_files_properties(plan_eval/run_plan_eval.cc plan_eval/plan_eval.cc plan_eval/zmp_planner.cc PROPERTIES COMPILE_FLAGS -g)
 pods_use_pkg_config_packages(sf_plan_eval drake-qp-common drake-control-util drake-side drake-rbm)
 target_link_libraries(sf_plan_eval RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeTrajectories drakeLCMUtil drakePolynomial drakeQPLocomotionPlan drakeYAMLUtil yaml-cpp)
 target_link_libraries (sf_plan_eval ${CMAKE_THREAD_LIBS_INIT})

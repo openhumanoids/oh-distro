@@ -20,8 +20,9 @@
 #include "drake/systems/controllers/QPCommon.h"
 
 #include "drake/Path.h"
-
 #include "zmp_planner.h"
+
+#include "../RobotStateDriver.hpp"
 
 struct RigidBodySupportStateElement {
   int body;
@@ -34,13 +35,9 @@ typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
 
 class GenericPlan {
  public:
-  GenericPlan()
-      : robot_(Drake::getDrakePath() + std::string(
-                                           "/../../models/val_description/urdf/"
-                                           "valkyrie_sim_drake.urdf"),
-               DrakeJoint::ROLLPITCHYAW) {
-    // kinematics related init
-    LoadConfigurationFromYAML(Drake::getDrakePath() + "/../../config/val_mit/control_config_hardware.yaml");
+  GenericPlan(const std::string &urdf_name, const std::string &config_name)
+      : robot_(urdf_name, DrakeJoint::ROLLPITCHYAW) {
+    LoadConfigurationFromYAML(config_name);
   }
   virtual ~GenericPlan() { ; }
   virtual void LoadConfigurationFromYAML(const std::string &name);
@@ -48,7 +45,9 @@ class GenericPlan {
 
   virtual void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
                                         const std::string &channel,
-                                        const drc::robot_plan_t *msg) = 0;
+                                        const drc::robot_plan_t *msg,
+                                        const Eigen::VectorXd est_q, 
+                                        const Eigen::VectorXd est_qd) = 0;
   virtual drake::lcmt_qp_controller_input MakeQPInput(double cur_time) = 0;
 
 
@@ -61,6 +60,10 @@ class GenericPlan {
   RobotPropertyCache rpc_;
   Eigen::VectorXd q_;
   Eigen::VectorXd v_;
+
+  // estimated robot state
+  Eigen::VectorXd est_q_;
+  Eigen::VectorXd est_v_;
 
   // splines for joints
   PiecewisePolynomial<double> q_trajs_;
@@ -78,15 +81,58 @@ class GenericPlan {
 
 class ManipPlan : public GenericPlan {
  public:
+  ManipPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
+    ;
+  }
+
   void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
                                 const std::string &channel,
-                                const drc::robot_plan_t *msg);
+                                const drc::robot_plan_t *msg,
+                                const Eigen::VectorXd est_q, 
+                                const Eigen::VectorXd est_qd);
   drake::lcmt_qp_controller_input MakeQPInput(double cur_time);
 };
 
+
+// only working on manip now, need to think about how to switch between manip
+// and walking
 class PlanEval {
  public:
-  PlanEval();
+  PlanEval(const std::string &urdf_name, const std::string &config_name) {
+    // names
+    urdf_name_ = urdf_name;
+    config_name_ = config_name;
+
+    // state decoder stuff
+    RigidBodyTree r(urdf_name);
+    est_robot_state_.q.resize(r.num_positions);
+    est_robot_state_.qd.resize(r.num_velocities);
+    int num_states = r.num_positions + r.num_velocities;
+    std::vector<std::string> state_coordinate_names(num_states);
+    for (int i = 0; i < num_states; i++) {
+      state_coordinate_names[i] = r.getStateName(i);
+    }
+    state_driver_.reset(new RobotStateDriver(state_coordinate_names));
+
+    // threading + lcm
+    receiver_stop_ = false;
+    publisher_stop_ = false;
+    new_plan_ = false;
+
+    if (!lcm_handle_.good()) {
+      std::cerr << "ERROR: lcm is not good()" << std::endl;
+      exit(-1);
+    }
+
+    lcm::Subscription *sub;
+    sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN",
+        &PlanEval::HandleCommittedRobotPlan, this);
+    sub->setQueueCapacity(1);
+
+    sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
+        this);
+    sub->setQueueCapacity(1); 
+  }
   
   void Start();
   void Stop();
@@ -97,12 +143,15 @@ class PlanEval {
   }
 
  private:
-  // only working on manip now, need to think about how to switch between manip
-  // and walking
-  ManipPlan plan_;
+  std::string urdf_name_;
+  std::string config_name_;
 
   lcm::LCM lcm_handle_;
-  double time_;  ///< from est robot state
+  
+  // est robot state
+  std::mutex state_lock_;
+  DrakeRobotState est_robot_state_;
+  std::shared_ptr<RobotStateDriver> state_driver_;
 
   // input
   std::mutex plan_lock_;
