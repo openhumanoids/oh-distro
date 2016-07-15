@@ -216,7 +216,7 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
 void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
                                          const std::string &channel,
                                          const drc::robot_plan_t *msg,
-                                         const Eigen::VectorXd est_q, 
+                                         const Eigen::VectorXd est_q,
                                          const Eigen::VectorXd est_qd) {
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
@@ -245,24 +245,35 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     xd_d[i].resize(num_T);
   }
 
+  // generate the current tracked body poses from the estimated robot state
+  KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
+  std::vector<SimplePose<double>> x_est(num_bodies);
+  for (size_t b = 0; b < num_bodies; b++) {
+    int id = robot_.findLink(body_names[b])->body_index;
+    Eigen::Isometry3d pose = robot_.relativeTransform(cache_est, 0, id);
+    x_est[b].lin = pose.translation();
+    x_est[b].rot = Eigen::Quaterniond(pose.linear());
+    std::cout << "b " << b << " " << x_est[b].rot.coeffs().transpose() << std::endl;
+  }
+
   // go through set points
   for (size_t t = 0; t < num_T; t++) {
     const bot_core::robot_state_t &keyframe = msg->plan[t];
     KeyframeToState(keyframe, q_, v_);
-    KinematicsCache<double> cache = robot_.doKinematics(q_, v_);
+    KinematicsCache<double> cache_plan = robot_.doKinematics(q_, v_);
 
     Ts[t] = (double)keyframe.utime / 1e6;
     q_d[t] = q_;
 
     for (size_t b = 0; b < num_bodies; b++) {
       int id = robot_.findLink(body_names[b])->body_index;
-      Eigen::Isometry3d pose = robot_.relativeTransform(cache, 0, id);
+      Eigen::Isometry3d pose = robot_.relativeTransform(cache_plan, 0, id);
       x_d[b][t].lin = pose.translation();
       x_d[b][t].rot = Eigen::Quaterniond(pose.linear());
 
       // TODO offset can be nonzero
       Eigen::Vector6d xd =
-          getTaskSpaceVel(robot_, cache, id, Eigen::Vector3d::Zero());
+          getTaskSpaceVel(robot_, cache_plan, id, Eigen::Vector3d::Zero());
       xd_d[b][t].lin = xd.segment<3>(3);
       // http://www.euclideanspace.com/physics/kinematics/angularvelocity/QuaternionDifferentiation2.pdf
       Eigen::Quaterniond W(0, xd[0], xd[1], xd[2]);
@@ -271,7 +282,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     }
 
     // get com
-    com_d[t] = robot_.centerOfMass(cache).segment<2>(0);
+    com_d[t] = robot_.centerOfMass(cache_plan).segment<2>(0);
   }
 
   // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
