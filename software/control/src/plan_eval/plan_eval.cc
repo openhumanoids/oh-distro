@@ -256,7 +256,8 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
-  size_t num_T = msg.plan.size() + 1;
+  size_t num_T = msg.plan.size();
+  //size_t num_T = msg.plan.size() + 1;
 
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
@@ -289,6 +290,13 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   }
 
   // generate q_traj first w. cubic spline, which gives velocities.
+  for (size_t t = 0; t < num_T; t++) {
+    const bot_core::robot_state_t &keyframe = msg.plan[t];
+    KeyframeToState(keyframe, q_, v_);
+    Ts[t] = (double)keyframe.utime / 1e6;
+    q_d[t] = q_;
+  } 
+  /*
   Ts[0] = 0;
   q_d[0] = last_q_d;
   for (size_t t = 1; t < num_T; t++) {
@@ -297,6 +305,7 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
     Ts[t] = (double)keyframe.utime / 1e6 + initial_transition_time;
     q_d[t] = q_;
   }
+  */
   // make q, v splines, make sure to set t0 and t1 vel to zero
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(q_d[0].size());
   q_trajs_ = GenerateCubicSpline(Ts, q_d, zero, zero);
