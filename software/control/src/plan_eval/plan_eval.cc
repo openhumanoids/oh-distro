@@ -33,6 +33,11 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   YAML::Node config = YAML::LoadFile(name);
   rpc_ = parseKinematicTreeMetadata(config["kinematic_tree_metadata"], robot_);
 
+  std::map<Side, std::string> side_identifiers = {{Side::RIGHT, "r"}, {Side::LEFT, "l"}};
+  for (const auto& side : Side::values)
+    rpc_.hand_ids[side] = robot_.findLinkId(config["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
+  rpc_.pelvis_id = robot_.findLinkId(config["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>());
+
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     std::cout << it->first.toString() << " foot name: " << robot_.getBodyOrFrameName(it->second) << std::endl;
   }
@@ -50,6 +55,27 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
       std::cout << robot_.getPositionName(it->second[i]) << " ";
     std::cout << std::endl;
   }
+
+  // contacts
+  std::string xyz[3] = {"x", "y", "z"};
+  std::string corners[4] = {"left_toe", "right_toe", "left_heel", "right_heel"};
+  for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
+    std::string foot_name = robot_.getBodyOrFrameName(it->second);
+    Eigen::Matrix3Xd contacts(3, 4);
+    for (int n = 0; n < 4; n++) {
+      for (int i = 0; i < 3; i++)
+        contacts(i, n) = config["foot_contact_offsets"][foot_name][corners[n]][xyz[i]].as<double>();
+    }
+
+    contact_offsets[foot_name] = contacts;
+    std::cout << foot_name << " contacts:\n" << contacts << std::endl;
+  }
+
+  // default param
+  default_mu_ = get(config, "default_zmp_height").as<double>();
+  default_zmp_height_ = get(config, "default_zmp_height").as<double>();
+  std::cout << "default_zmp_height: " << default_zmp_height_ << std::endl;
+  std::cout << "default_mu: " << default_mu_ << std::endl;
 }
 
 
@@ -198,8 +224,8 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
       support_data_element_lcm.support_logic_map[i] = true;
       support_data_element_lcm.support_surface[i] = element.support_surface[i];
     }
-    // TODO
-    support_data_element_lcm.mu = 0.7;
+
+    support_data_element_lcm.mu = default_mu_;
     support_data_element_lcm.use_support_surface = true;
   }
 
@@ -213,15 +239,23 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
   return qp_input;
 }
 
-void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
-                                         const std::string &channel,
-                                         const drc::robot_plan_t *msg,
-                                         const Eigen::VectorXd est_q,
-                                         const Eigen::VectorXd est_qd) {
+Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
+  if (interp_t0_ == -1)
+    interp_t0_ = cur_time;
+  double plan_time = cur_time - interp_t0_;
+
+  return q_trajs_.value(plan_time);
+}
+
+void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+                                         const Eigen::VectorXd &est_q,
+                                         const Eigen::VectorXd &est_qd,
+                                         const Eigen::VectorXd &last_q_d,
+                                         double initial_transition_time) {
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
-  size_t num_T = msg->plan.size();
+  size_t num_T = msg.plan.size();
 
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
@@ -231,7 +265,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
 
   // TODO: these are hard coded now
   std::vector<std::string> body_names;
-  body_names.push_back(std::string("pelvis"));
+  body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     body_names.push_back(robot_.getBodyOrFrameName(it->second));
   }
@@ -246,6 +280,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   }
 
   // generate the current tracked body poses from the estimated robot state
+  // maybe useful eventually
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
   std::vector<Eigen::Matrix<double,7,1>> x_est(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
@@ -253,13 +288,19 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     Eigen::Isometry3d pose = robot_.relativeTransform(cache_est, 0, id);
     x_est[b].segment<3>(0) = pose.translation();
     x_est[b].segment<4>(3) = rotmat2quat(pose.linear());
-    std::cout << "b " << b << " " << x_est[b].segment<4>(3).transpose() << std::endl;
+    std::cout << "cur pose " << body_names[b] << " " << x_est[b].segment<4>(3).transpose() << std::endl;
   }
 
   // go through set points
   for (size_t t = 0; t < num_T; t++) {
-    const bot_core::robot_state_t &keyframe = msg->plan[t];
+    const bot_core::robot_state_t &keyframe = msg.plan[t];
     KeyframeToState(keyframe, q_, v_);
+    // TODO: smooth transition, ignoring the first planned keyframe, using the latest desired instead
+    if (t == 0) {
+      q_ = last_q_d;
+      v_.setZero();
+    }
+
     KinematicsCache<double> cache_plan = robot_.doKinematics(q_, v_);
 
     Ts[t] = (double)keyframe.utime / 1e6;
@@ -271,7 +312,6 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
       x_d[b][t].segment<3>(0) = pose.translation();
       x_d[b][t].segment<4>(3) = rotmat2quat(pose.linear());
 
-      // TODO offset can be nonzero
       Eigen::Vector6d xd =
           getTaskSpaceVel(robot_, cache_plan, id, Eigen::Vector3d::Zero());
       xd_d[b][t].segment<3>(0) = xd.segment<3>(3);
@@ -289,10 +329,9 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   // TODO: make traj for s1, and com
   // drake/examples/ZMP/LinearInvertedPendulum.m
 
-  // TODO: find out z
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, 1.01);
+  zmp_planner_.Plan(zmp_traj_, x0, default_zmp_height_);
 
   // make q splines
   q_trajs_ = GenerateCubicSpline(Ts, q_d);
@@ -303,10 +342,10 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     body_motions_[b].body_or_frame_id =
         robot_.findLink(body_names[b])->body_index;
     body_motions_[b].trajectory =
-        GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b], x_est[b].segment<4>(3).eval());
+        GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
     body_motions_[b].toe_off_allowed.resize(num_T, false);
     body_motions_[b].in_floating_base_nullspace.resize(num_T, false);
-    if (body_names[b].compare("pelvis") == 0)
+    if (body_names[b].compare(robot_.getBodyOrFrameName(rpc_.pelvis_id)) == 0)
       body_motions_[b].control_pose_when_in_contact.resize(num_T, true);
     else
       body_motions_[b].control_pose_when_in_contact.resize(num_T, false);
@@ -335,24 +374,7 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
     support.use_contact_surface = true;
     support.support_surface = Eigen::Vector4d(0, 0, 1, 0);
 
-    // TODO: don't hard code
-    support.contact_points.resize(3, 4);
-    //double foot_x[2] = {-0.058, 0.172};
-    //double foot_y[2] = {-0.055, 0.055};
-    //double foot_z = -0.09;
-    double foot_x[2] = {-0.0876, 0.1728};
-    double foot_y[2] = {-0.0626, 0.0626};
-    double foot_z = -0.07645;
-    for (int i = 0; i < 2; i++) {
-      // back left
-      support.contact_points(0, 2 * i) = foot_x[i];
-      support.contact_points(1, 2 * i) = foot_y[1];
-      support.contact_points(2, 2 * i) = foot_z;
-      // back right
-      support.contact_points(0, 2 * i + 1) = foot_x[i];
-      support.contact_points(1, 2 * i + 1) = foot_y[0];
-      support.contact_points(2, 2 * i + 1) = foot_z;
-    }
+    support.contact_points = contact_offsets.at(support_names[s]);
   }
 
   std::cout << "committed robot plan proced\n";
@@ -365,13 +387,19 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   state_lock_.lock();
   Eigen::VectorXd est_q = est_robot_state_.q;
   Eigen::VectorXd est_qd = est_robot_state_.qd;
+  double cur_time = est_robot_state_.t;
   state_lock_.unlock();
 
   std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
-  new_plan_ptr->HandleCommittedRobotPlan(rbuf, channel, msg, est_q, est_qd);
+  Eigen::VectorXd last_key_frame = est_robot_state_.q;
+  if (current_plan_) {
+    last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
+  }
+  double initial_transition_time = 0;
+  new_plan_ptr->HandleCommittedRobotPlan(*msg, est_q, est_qd, last_key_frame, initial_transition_time);
 
   plan_lock_.lock();
-  current_plan_ = new_plan_ptr;  
+  current_plan_ = new_plan_ptr;
   new_plan_ = true;
   plan_lock_.unlock();
 }
@@ -411,14 +439,15 @@ void PlanEval::PublisherLoop() {
       has_plan = true;
     }
 
-    if (has_plan) {
+    if (has_plan && new_robot_state_) {
       state_lock_.lock();
       double t_now = est_robot_state_.t;
+      new_robot_state_ = false;
       state_lock_.unlock();
 
       drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(t_now);
       lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
-    }    
+    }
   }
   std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id()
             << std::endl;
@@ -429,6 +458,7 @@ void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
                                    const bot_core::robot_state_t *msg) {
   state_lock_.lock();
   state_driver_->decode(msg, &est_robot_state_);
+  new_robot_state_ = true;
   state_lock_.unlock();
 }
 

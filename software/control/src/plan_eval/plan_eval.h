@@ -43,20 +43,26 @@ class GenericPlan {
   virtual void LoadConfigurationFromYAML(const std::string &name);
   inline double t0() const { return interp_t0_; }
 
-  virtual void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
-                                        const std::string &channel,
-                                        const drc::robot_plan_t *msg,
-                                        const Eigen::VectorXd est_q, 
-                                        const Eigen::VectorXd est_qd) = 0;
+  virtual void HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+                                        const Eigen::VectorXd &est_q,
+                                        const Eigen::VectorXd &est_qd,
+                                        const Eigen::VectorXd &last_q_d,
+                                        double initial_transition_time) = 0;
   virtual drake::lcmt_qp_controller_input MakeQPInput(double cur_time) = 0;
 
+  virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
 
  protected:
+  // some params
+  double default_mu_;
+  double default_zmp_height_;
+  std::map<std::string, Eigen::Matrix3Xd> contact_offsets;
+
   // is set the first time in the publishing / interp loop
   double interp_t0_ = -1;
 
   // robot for doing kinematics
-  RigidBodyTree robot_; 
+  RigidBodyTree robot_;
   RobotPropertyCache rpc_;
   Eigen::VectorXd q_;
   Eigen::VectorXd v_;
@@ -85,12 +91,13 @@ class ManipPlan : public GenericPlan {
     ;
   }
 
-  void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
-                                const std::string &channel,
-                                const drc::robot_plan_t *msg,
-                                const Eigen::VectorXd est_q, 
-                                const Eigen::VectorXd est_qd);
+  void HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+                                const Eigen::VectorXd &est_q,
+                                const Eigen::VectorXd &est_qd,
+                                const Eigen::VectorXd &last_q_d,
+                                double initial_transition_time);
   drake::lcmt_qp_controller_input MakeQPInput(double cur_time);
+  Eigen::VectorXd GetLatestKeyFrame(double time);
 };
 
 
@@ -131,9 +138,9 @@ class PlanEval {
 
     sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
         this);
-    sub->setQueueCapacity(1); 
+    sub->setQueueCapacity(1);
   }
-  
+
   void Start();
   void Stop();
 
@@ -147,7 +154,7 @@ class PlanEval {
   std::string config_name_;
 
   lcm::LCM lcm_handle_;
-  
+
   // est robot state
   std::mutex state_lock_;
   DrakeRobotState est_robot_state_;
@@ -158,7 +165,8 @@ class PlanEval {
   std::thread receiver_thread_;
   std::atomic<bool> receiver_stop_;
   std::atomic<bool> new_plan_;
-  std::shared_ptr<GenericPlan> current_plan_;  
+  std::atomic<bool> new_robot_state_;
+  std::shared_ptr<GenericPlan> current_plan_;
 
   // output
   std::thread publisher_thread_;

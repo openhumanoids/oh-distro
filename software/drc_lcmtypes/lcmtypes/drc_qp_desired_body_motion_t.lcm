@@ -1,0 +1,9 @@
+package drc;
+
+struct qp_desired_body_motion_t
+{
+	string body_name;
+	float body_q_d[6];
+	float body_v_d[6];
+	float body_vdot_d[6];
+}

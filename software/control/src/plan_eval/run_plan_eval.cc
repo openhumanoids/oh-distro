@@ -13,7 +13,7 @@ int main(int argc, const char *argv[]) {
     config = std::string(argv[2]);
   } 
   else {
-    config = Drake::getDrakePath() + std::string("/examples/Atlas/config/control_config_sim.yaml");
+    config = Drake::getDrakePath() + std::string("/../../config/atlas_sim_mit/plan_eval_config_atlas.yaml");
     urdf = Drake::getDrakePath() + std::string("/examples/Atlas/urdf/atlas_minimal_contact.urdf");
   }
   PlanEval pe(urdf, config);
