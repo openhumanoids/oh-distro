@@ -337,6 +337,7 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   msg.vref_integrator_state.resize(num_joints);
   msg.q_des.resize(num_joints);
   msg.qd_des.resize(num_joints);
+  msg.qdd_des.resize(num_joints);
   msg.q_ref.resize(num_joints);
   msg.qd_ref.resize(num_joints);
   msg.qdd.resize(num_joints);
@@ -350,14 +351,12 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   msg.desired_body_motions.resize(msg.num_tracked_bodies);
   for (int i = 0; i < msg.num_tracked_bodies; i++) {
     msg.desired_body_motions[i].body_name = qp_output.desired_body_motions[i].name;
-    std::cout << msg.desired_body_motions[i].body_name << std::endl;
     for (int j = 0; j < 6; j++) {
       msg.desired_body_motions[i].body_q_d[j] = qp_output.desired_body_motions[i].body_q_d[j];
       msg.desired_body_motions[i].body_v_d[j] = qp_output.desired_body_motions[i].body_v_d[j];
       msg.desired_body_motions[i].body_vdot_d[j] = qp_output.desired_body_motions[i].body_vdot_d[j];
     }
   }
-  std::cout << "loop2 " << msg.desired_body_motions.size() << "\n";
 
   const QPControllerState& controller_state = solveArgs.pdata->getControllerState();
 
@@ -406,14 +405,12 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
       msg.all_contact_forces[i][j] = qp_output.all_contact_forces[i][j];
     }
   }
-  std::cout << "loop3\n";
 
   // fill in slack
   msg.num_slack = qp_output.slack.size();
   msg.slack.resize(msg.num_slack);
   for (int i = 0; i < qp_output.slack.size(); i++)
     msg.slack[i] = qp_output.slack[i];
-  std::cout << "loop4\n";
 
   // fill in cartesian acc part
   for (size_t i = 0; i < std::min(3, (int)(qp_output.comdd.size())); i++)
@@ -424,7 +421,6 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
     msg.l_footdd[i] = qp_output.footdd[0][i];
   for (int i = 0; i < 6; i++)
     msg.r_footdd[i] = qp_output.footdd[1][i];
-  std::cout << "loop5\n";
   return msg;
 }
 
@@ -539,8 +535,6 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
 */
       int info = solveArgs.pdata->setupAndSolveQP(*qp_input, *robot_state, b_contact_force,
                                                   foot_force_torque_measurements, qp_output, &(*(solveArgs.debug)));
-      std::cout << "loop\n";
-
       if (!isOutputSafe(qp_output)) {
         // First priority is to halt unsafe behavior
         robot_behavior_msg.utime = 0;
@@ -587,15 +581,11 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
         int num_joints = qp_output.q_ref.size();
         drc::controller_state_t controller_state_msg = encodeControllerState(robot_state->t, num_joints,
                                                                              qp_output);
-      std::cout << "loop6\n";
         lcmHandler.LCMHandle->publish(CONTROLLER_STATE_CHANNEL, &controller_state_msg);
-      std::cout << "loop7\n";
 
         bot_core::robot_state_t controller_qdes_msg = encodeControllerQDes(robot_state->t, num_joints, qp_output);
         lcmHandler.LCMHandle->publish("CONTROLLER_Q_DES", &controller_qdes_msg);
-      std::cout << "loop8\n";
       }
-      std::cout << "loop1\n";
     }
   }
 }

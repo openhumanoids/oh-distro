@@ -7,6 +7,7 @@
 #include "drake/util/yaml/yamlUtil.h"
 
 #include <fstream>
+#include <iomanip>
 
 namespace Eigen {
 typedef Matrix<double, 6, 1> Vector6d;
@@ -261,9 +262,6 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   std::vector<Eigen::Vector2d> com_d(num_T);
   std::vector<Eigen::VectorXd> q_d(num_T);  // t steps by n
 
-  // int dof = robot_.num_velocities;
-
-  // TODO: these are hard coded now
   std::vector<std::string> body_names;
   body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
@@ -291,7 +289,7 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
     std::cout << "cur pose " << body_names[b] << " " << x_est[b].segment<4>(3).transpose() << std::endl;
   }
 
-  // go through set points
+  // generate q_traj first w. cubic spline, which gives velocities.
   for (size_t t = 0; t < num_T; t++) {
     const bot_core::robot_state_t &keyframe = msg.plan[t];
     KeyframeToState(keyframe, q_, v_);
@@ -300,11 +298,22 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
       q_ = last_q_d;
       v_.setZero();
     }
-
-    KinematicsCache<double> cache_plan = robot_.doKinematics(q_, v_);
-
     Ts[t] = (double)keyframe.utime / 1e6;
     q_d[t] = q_;
+  }
+  // make q splines
+  q_trajs_ = GenerateCubicSpline(Ts, q_d);
+  auto v_trajs = q_trajs_.derivative();
+
+  // go through Ts again to make trajs for all the cartesian stuff
+  for (size_t t = 0; t < num_T; t++) {
+    q_ = q_trajs_.value(Ts[t]);
+    v_ = v_trajs.value(Ts[t]);
+    if (t == 0 || t == num_T - 1) {
+      v_.setZero();
+    }
+
+    KinematicsCache<double> cache_plan = robot_.doKinematics(q_, v_);
 
     for (size_t b = 0; b < num_bodies; b++) {
       int id = robot_.findLink(body_names[b])->body_index;
@@ -324,6 +333,7 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
     com_d[t] = robot_.centerOfMass(cache_plan).segment<2>(0);
   }
 
+
   // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
   zmp_traj_ = GeneratePCHIPSpline(Ts, com_d);
   // TODO: make traj for s1, and com
@@ -332,9 +342,6 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
   zmp_planner_.Plan(zmp_traj_, x0, default_zmp_height_);
-
-  // make q splines
-  q_trajs_ = GenerateCubicSpline(Ts, q_d);
 
   // make body motion splines
   body_motions_.resize(num_bodies);
@@ -359,6 +366,37 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
     body_motions_[b].exponential_map_damping_ratio_multiplier = 1;
     body_motions_[b].weight_multiplier = Eigen::Vector6d::Constant(1);
   }
+
+  /*
+  // DEBUG
+  out.open("/home/sfeng/x_traj");
+  for (double t = Ts[0] - 0.5; t <= Ts[Ts.size()-1] + 0.5; t += 0.001) {
+    out << t << " " << std::setprecision(9) << body_motions_[0].trajectory.value(t).transpose() << std::endl;
+  }
+  out.close();
+  out.open("/home/sfeng/xd_traj");
+  auto v_traj = body_motions_[0].trajectory.derivative();
+  for (double t = Ts[0] - 0.5; t <= Ts[Ts.size()-1] + 0.5; t += 0.001) {
+    out << t << " " << std::setprecision(9) << v_traj.value(t).transpose() << std::endl;
+  }
+  out.close();
+  out.open("/home/sfeng/set_points");
+  for (int i = 0; i < num_T; i++) {
+    out << Ts[i] << " " << std::setprecision(9) << x_d[0][i].segment<3>(0).transpose() << " " << xd_d[0][i].segment<3>(0).transpose() << std::endl;
+  }
+  out.close();
+
+  out.open("/home/sfeng/q_traj");
+  for (double t = Ts[0] - 0.5; t <= Ts[Ts.size()-1] + 0.5; t += 0.001) {
+    out << t << " " << std::setprecision(9) << q_trajs_.value(t).transpose() << std::endl;
+  }
+  out.close();
+  out.open("/home/sfeng/qd_traj");
+  for (double t = Ts[0] - 0.5; t <= Ts[Ts.size()-1] + 0.5; t += 0.001) {
+    out << t << " " << std::setprecision(9) << v_trajs.value(t).transpose() << std::endl;
+  }
+  out.close();
+  */
 
   // make support, dummy here since we are always in double support
   std::vector<std::string> support_names;

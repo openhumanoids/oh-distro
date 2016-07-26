@@ -225,6 +225,45 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
   return GenerateCubicSpline(T, Y, dydt0, dydt1);
 }
 
+template <typename Scalar, int rows, int cols>
+PiecewisePolynomial<Scalar> GenerateCubicSpline(
+    const std::vector<Scalar> &T,
+    const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y,
+    const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Ydot) {
+  if (!CheckSplineInputs(T, Y) || Y.size() != Ydot.size()) {
+    throw std::runtime_error("invalid spline inputs");
+  }
+
+  size_t N = T.size();
+  std::vector<Eigen::Matrix<Polynomial<Scalar>, Eigen::Dynamic, Eigen::Dynamic>>
+      polynomials(N - 1);
+
+  for (size_t t = 0; t < N - 1; t++) {
+    if (Y[t].rows() != Ydot[t].rows() || Y[t].cols() != Ydot[t].cols()) {
+      throw std::runtime_error("invalid spline inputs");
+    }
+
+    polynomials[t].resize(Y[t].rows(), Y[t].cols());
+    Scalar a = T[t + 1] - T[t];
+    Scalar b = a * a;
+    Scalar c = b * a;
+    for (size_t i = 0; i < Y[t].rows(); i++) {
+      for (size_t j = 0; j < Y[t].cols(); j++) {
+        Scalar c4 = Y[t](i, j);
+        Scalar c3 = Ydot[t](i, j);
+        Scalar c1 = 1. / b * (Ydot[t + 1](i, j) - c3 -
+            2. / a * (Y[t + 1](i, j) - c4 - a * c3));
+        Scalar c2 = 1. / b * (Y[t + 1](i, j) - c4 - a * c3 - c * c1);
+        // constant term comes first
+        Eigen::Matrix<Scalar, 4, 1> coeffs(c4, c3, c2, c1);
+        polynomials[t](i, j) = Polynomial<Scalar>(coeffs);
+      }
+    }
+  }
+
+  return PiecewisePolynomial<Scalar>(polynomials, T);
+}
+
 // poses and vels are task space pose and vel
 // QPLocomotionPlanSettings.m: BodyMotionData.from_body_xyzexp_and_xyzexpdot
 // -> BodyMotionData.m: pchipDeriv
@@ -241,7 +280,7 @@ PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
   size_t T = times.size();
   std::vector<Eigen::Matrix<Scalar, 6, 1>> expmap(poses.size());
   std::vector<Eigen::Matrix<Scalar, 6, 1>> expmap_dot(poses.size());
-  
+
   Eigen::Matrix<Scalar, 4, Eigen::Dynamic> quat(4, T);
   Eigen::Matrix<Scalar, 4, Eigen::Dynamic> quat_dot(4, T);
   Eigen::Matrix<Scalar, 3, Eigen::Dynamic> exp(3, T);
@@ -271,25 +310,5 @@ PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
     expmap_dot[t].tail(3) = dw_closest_dw * expmap_dot[t].tail(3);
   }
 
-  // copy drake/util/pchipDeriv.m
-  std::vector<Eigen::Matrix<Polynomial<Scalar>, Eigen::Dynamic, Eigen::Dynamic>>
-      polynomials(T - 1);
-  for (size_t t = 0; t < T - 1; t++) {
-    polynomials[t].resize(6, 1);
-    Scalar a = times[t + 1] - times[t];
-    Scalar b = a * a;
-    Scalar c = b * a;
-    for (size_t i = 0; i < 6; i++) {
-      Scalar c4 = expmap[t][i];
-      Scalar c3 = expmap_dot[t][i];
-      Scalar c1 = 1. / b * (expmap_dot[t][i] - c3 -
-                            2. / a * (expmap[t + 1][i] - c4 - a * c3));
-      Scalar c2 = 1. / b * (expmap[t + 1][i] - c4 - a * c3 - c * c1);
-      // constant term comes first
-      Eigen::Matrix<Scalar, 4, 1> coeffs(c4, c3, c2, c1);
-      polynomials[t](i, 0) = Polynomial<Scalar>(coeffs);
-    }
-  }
-
-  return PiecewisePolynomial<Scalar>(polynomials, times);
+  return GenerateCubicSpline(times, expmap, expmap_dot);
 }
