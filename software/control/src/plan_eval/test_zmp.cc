@@ -24,7 +24,6 @@ int main() {
   zmp.Plan(zmp_traj_, x0, 1);
 
   std::cout << "S: " << zmp.S_ << std::endl;
-  
   out.open("/home/sfeng/zmp_d");
   for (double t = Ts[0]; t <= Ts[Ts.size()-1]; t+= 0.01) {
     out << t << " " << zmp.zmp_traj_.value(t).transpose() << std::endl;
@@ -35,12 +34,11 @@ int main() {
   for (double t = Ts[0]; t <= Ts[Ts.size()-1]; t+= 0.01) {
     out << t << " " << zmp.com_traj_.value(t).transpose() << std::endl;
   }
-  out.close(); 
+  out.close();
 
   out.open("/home/sfeng/s1");
   for (double t = Ts[0]; t <= Ts[Ts.size()-1]; t+= 0.01) {
     out << t << " " << zmp.s1_traj_.value(t).transpose() << std::endl;
   }
   out.close();
-  
-}                             
+}
