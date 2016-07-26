@@ -1,7 +1,7 @@
 #include "sfRobotState.h"
 #include <iostream>
 
-void sfRobotState::init(const bot_core::robot_state_t &msg) 
+void sfRobotState::init(const bot_core::robot_state_t &msg)
 {
   this->joint_name_to_id.clear();
   for (int i = 0; i < msg.joint_name.size(); i++) {
@@ -28,7 +28,7 @@ void sfRobotState::_fillKinematics(const std::string &name, Isometry3d &pose, Ve
 void sfRobotState::addToLog(Logger &logger) const
 {
   logger.add_datapoint("time", "s", &time);
-  
+
   pelv.addToLog(logger);
   l_foot.addToLog(logger);
   r_foot.addToLog(logger);
@@ -96,7 +96,7 @@ void sfRobotState::parseMsg(const bot_core::robot_state_t &msg)
   Eigen::Isometry3d ft_offset = Translation3d(Vector3d(0.0215646, 0.0, -0.051054)) * AngleAxisd(M_PI, Vector3d::UnitX());
   this->foot_ft_sensor[Side::LEFT] = l_foot.pose * ft_offset;
   this->foot_ft_sensor[Side::RIGHT] = r_foot.pose * ft_offset;
-  
+
   this->footFT_b[Side::LEFT].setZero();
   this->footFT_b[Side::LEFT][3] = msg.force_torque.l_foot_force_x;
   this->footFT_b[Side::LEFT][4] = msg.force_torque.l_foot_force_y;
@@ -124,14 +124,14 @@ void sfRobotState::parseMsg(const bot_core::robot_state_t &msg)
     test.block(0,0,6,6).setZero();
     this->footFT_w_statics[i] = -(test.transpose().fullPivHouseholderQr().solve(this->trq));
   }
-  
+
   // cop
   Vector2d cop_w[2];
   for (int i = 0; i < 2; i++) {
     // cop relative to the ft sensor
     this->cop_b[i][0] = -this->footFT_b[i][1] / this->footFT_b[i][5];
     this->cop_b[i][1] = this->footFT_b[i][0] / this->footFT_b[i][5];
-    
+
     cop_w[i][0] = -this->footFT_w[i][1] / this->footFT_w[i][5] + this->foot_ft_sensor[i].translation()[0];
     cop_w[i][1] = this->footFT_w[i][0] / this->footFT_w[i][5] + this->foot_ft_sensor[i].translation()[1];
   }
@@ -201,13 +201,13 @@ void sfQPState::parseMsg(const drc::controller_state_t &msg, const sfRobotState 
     this->qdd[i] = msg.qdd[i];
     this->trq[i] = msg.u[i]; // first 6 = zero
   }
-  
+
   this->comdd = rs.J_com * this->qdd + rs.Jdv_com;
   this->pelvdd = rs.pelv.J * this->qdd + rs.pelv.Jdv;
   this->torsodd = rs.torso.J * this->qdd + rs.pelv.Jdv;
   for (int i = 0; i < 2; i++)
     this->footdd[i] = rs.foot[i]->J * this->qdd + rs.foot[i]->Jdv;
-  
+
   // TODO: should not hard code this
   Vector3d grf_loc[2];
   for (int i = 0; i < 6; i++) {
@@ -221,7 +221,7 @@ void sfQPState::parseMsg(const drc::controller_state_t &msg, const sfRobotState 
       grf_loc[Side::RIGHT][i] = msg.contact_ref_points[0][i];
   }
 
-  // transform this into the ft sensor location 
+  // transform this into the ft sensor location
   for (int i = 0; i < 2; i++) {
     Isometry3d H(Isometry3d::Identity());
     H.translation() = grf_loc[i] - rs.foot_ft_sensor[i].translation();
@@ -238,30 +238,30 @@ void sfQPState::parseMsg(const drc::controller_state_t &msg, const sfRobotState 
     this->cop_b[i][0] = -this->grf_b[i][1] / this->grf_b[i][5];
     this->cop_b[i][1] = this->grf_b[i][0] / this->grf_b[i][5];
 
-    cop_w[i][0] = -this->grf_w[i][1] / this->grf_w[i][5] + rs.foot_ft_sensor[i].translation()[0]; 
-    cop_w[i][1] = this->grf_w[i][0] / this->grf_w[i][5] + rs.foot_ft_sensor[i].translation()[1]; 
+    cop_w[i][0] = -this->grf_w[i][1] / this->grf_w[i][5] + rs.foot_ft_sensor[i].translation()[0];
+    cop_w[i][1] = this->grf_w[i][0] / this->grf_w[i][5] + rs.foot_ft_sensor[i].translation()[1];
   }
   this->cop_w = (cop_w[Side::LEFT]*this->grf_w[Side::LEFT][5] + cop_w[Side::RIGHT]*this->grf_w[Side::RIGHT][5]) / (this->grf_w[Side::RIGHT][5] + this->grf_w[Side::LEFT][5]);
 
   // input
-  for (int i = 0; i < msg.desired_body_vdots.size(); i++) {
+  for (int i = 0; i < msg.desired_body_motions.size(); i++) {
     // desired acc are in body frame
-    const drc::qp_desired_body_acceleration_t &vdot_d = msg.desired_body_vdots[i];
+    const drc::qp_desired_body_motion_t &vdot_d = msg.desired_body_motions[i];
     if (vdot_d.body_name.compare("pelvis") == 0) {
       for (int j = 0; j < 6; j++)
-        this->pelvdd_d[j] = vdot_d.body_vdot[j];
+        this->pelvdd_d[j] = vdot_d.body_vdot_d[j];
       this->pelvdd_d.head(3) = rs.pelv.pose.linear() * this->pelvdd_d.head(3);
       this->pelvdd_d.tail(3) = rs.pelv.pose.linear() * this->pelvdd_d.tail(3);
     }
     if (vdot_d.body_name.compare("leftFoot") == 0) {
       for (int j = 0; j < 6; j++)
-        this->footdd_d[Side::LEFT][j] = vdot_d.body_vdot[j];
+        this->footdd_d[Side::LEFT][j] = vdot_d.body_vdot_d[j];
       this->footdd_d[Side::LEFT].head(3) = rs.l_foot.pose.linear() * this->footdd_d[Side::LEFT].head(3);
       this->footdd_d[Side::LEFT].tail(3) = rs.l_foot.pose.linear() * this->footdd_d[Side::LEFT].tail(3);
     }
     if (vdot_d.body_name.compare("rightFoot") == 0) {
       for (int j = 0; j < 6; j++)
-        this->footdd_d[Side::RIGHT][j] = vdot_d.body_vdot[j];
+        this->footdd_d[Side::RIGHT][j] = vdot_d.body_vdot_d[j];
       this->footdd_d[Side::RIGHT].head(3) = rs.r_foot.pose.linear() * this->footdd_d[Side::RIGHT].head(3);
       this->footdd_d[Side::RIGHT].tail(3) = rs.r_foot.pose.linear() * this->footdd_d[Side::RIGHT].tail(3);
     }
@@ -283,7 +283,7 @@ void sfQPState::parseMsg(const drc::controller_state_t &msg, const sfRobotState 
     Matrix<double,2,1> r_s = 0.5*(r_2 + B_ls.transpose()*s1);
 
     comdd_d.head(2) = -R_DQyD_ls.inverse() * (N_B*x_bar + r_s);
-    
+
     Matrix<double,1,2> lin = -(C_ls*xlimp-y0).transpose() * Qy * D_ls
       //+ u0.transpose() * R_ls
       - (S*x_bar+0.5*s1).transpose() * B_ls;
@@ -305,7 +305,7 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP_d.com[x]", "m/s2", com_d.data()+0);
   logger.add_datapoint("QP_d.com[y]", "m/s2", com_d.data()+1);
   logger.add_datapoint("QP_d.com[z]", "m/s2", com_d.data()+2);
-  
+
   logger.add_datapoint("QP_d.cop[x]", "m/s2", cop_d.data()+0);
   logger.add_datapoint("QP_d.cop[y]", "m/s2", cop_d.data()+1);
   logger.add_datapoint("QP.cop[x]", "m/s2", cop_w.data()+0);
@@ -322,7 +322,7 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP_d.comdd_d1[x]", "m/s2", comdd_d1.data()+0);
   logger.add_datapoint("QP_d.comdd_d1[y]", "m/s2", comdd_d1.data()+1);
   logger.add_datapoint("QP_d.comdd_d1[z]", "m/s2", comdd_d1.data()+2);
-  
+
   logger.add_datapoint("QP.comdd[x]", "m/s2", comdd.data()+0);
   logger.add_datapoint("QP.comdd[y]", "m/s2", comdd.data()+1);
   logger.add_datapoint("QP.comdd[z]", "m/s2", comdd.data()+2);
@@ -333,7 +333,7 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP_d.pelvdd[wx]", "rad/s2", pelvdd_d.data()+0);
   logger.add_datapoint("QP_d.pelvdd[wy]", "rad/s2", pelvdd_d.data()+1);
   logger.add_datapoint("QP_d.pelvdd[wz]", "rad/s2", pelvdd_d.data()+2);
-  
+
   logger.add_datapoint("QP.pelvdd[x]", "m/s2", pelvdd.data()+3);
   logger.add_datapoint("QP.pelvdd[y]", "m/s2", pelvdd.data()+4);
   logger.add_datapoint("QP.pelvdd[z]", "m/s2", pelvdd.data()+5);
@@ -347,7 +347,7 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP_d.torsodd[wx]", "rad/s2", torsodd_d.data()+0);
   logger.add_datapoint("QP_d.torsodd[wy]", "rad/s2", torsodd_d.data()+1);
   logger.add_datapoint("QP_d.torsodd[wz]", "rad/s2", torsodd_d.data()+2);
-  
+
   logger.add_datapoint("QP.torsodd[x]", "m/s2", torsodd.data()+3);
   logger.add_datapoint("QP.torsodd[y]", "m/s2", torsodd.data()+4);
   logger.add_datapoint("QP.torsodd[z]", "m/s2", torsodd.data()+5);
@@ -361,21 +361,21 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP_d.footdd[L][wx]", "rad/s2", footdd_d[Side::LEFT].data()+0);
   logger.add_datapoint("QP_d.footdd[L][wy]", "rad/s2", footdd_d[Side::LEFT].data()+1);
   logger.add_datapoint("QP_d.footdd[L][wz]", "rad/s2", footdd_d[Side::LEFT].data()+2);
-  
+
   logger.add_datapoint("QP.footdd[L][x]", "m/s2", footdd[Side::LEFT].data()+3);
   logger.add_datapoint("QP.footdd[L][y]", "m/s2", footdd[Side::LEFT].data()+4);
   logger.add_datapoint("QP.footdd[L][z]", "m/s2", footdd[Side::LEFT].data()+5);
   logger.add_datapoint("QP.footdd[L][wx]", "rad/s2", footdd[Side::LEFT].data()+0);
   logger.add_datapoint("QP.footdd[L][wy]", "rad/s2", footdd[Side::LEFT].data()+1);
   logger.add_datapoint("QP.footdd[L][wz]", "rad/s2", footdd[Side::LEFT].data()+2);
-  
+
   logger.add_datapoint("QP_d.footdd[R][x]", "m/s2", footdd_d[Side::RIGHT].data()+3);
   logger.add_datapoint("QP_d.footdd[R][y]", "m/s2", footdd_d[Side::RIGHT].data()+4);
   logger.add_datapoint("QP_d.footdd[R][z]", "m/s2", footdd_d[Side::RIGHT].data()+5);
   logger.add_datapoint("QP_d.footdd[R][wx]", "rad/s2", footdd_d[Side::RIGHT].data()+0);
   logger.add_datapoint("QP_d.footdd[R][wy]", "rad/s2", footdd_d[Side::RIGHT].data()+1);
   logger.add_datapoint("QP_d.footdd[R][wz]", "rad/s2", footdd_d[Side::RIGHT].data()+2);
-  
+
   logger.add_datapoint("QP.footdd[R][x]", "m/s2", footdd[Side::RIGHT].data()+3);
   logger.add_datapoint("QP.footdd[R][y]", "m/s2", footdd[Side::RIGHT].data()+4);
   logger.add_datapoint("QP.footdd[R][z]", "m/s2", footdd[Side::RIGHT].data()+5);
@@ -383,10 +383,10 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP.footdd[R][wy]", "rad/s2", footdd[Side::RIGHT].data()+1);
   logger.add_datapoint("QP.footdd[R][wz]", "rad/s2", footdd[Side::RIGHT].data()+2);
 
-  for (int i = 0; i < qdd.size(); i++) 
+  for (int i = 0; i < qdd.size(); i++)
     logger.add_datapoint("QP.qdd["+rs.robot->getPositionName(i)+"]", "rad/s2", qdd.data()+i);
-  
-  for (int i = 0; i < trq.size(); i++) 
+
+  for (int i = 0; i < trq.size(); i++)
     logger.add_datapoint("QP.trq["+rs.robot->getPositionName(i)+"]", "Nm", trq.data()+i);
 
   logger.add_datapoint("QP.F[L][x]", "N", grf_w[Side::LEFT].data()+3);
@@ -401,7 +401,7 @@ void sfQPState::addToLog(Logger &logger, const sfRobotState &rs) const
   logger.add_datapoint("QP.M[R][x]", "Nm", grf_w[Side::RIGHT].data()+0);
   logger.add_datapoint("QP.M[R][y]", "Nm", grf_w[Side::RIGHT].data()+1);
   logger.add_datapoint("QP.M[R][z]", "Nm", grf_w[Side::RIGHT].data()+2);
-  
+
   logger.add_datapoint("QP.cop_b[L][x]", "m/s2", cop_b[Side::LEFT].data()+0);
   logger.add_datapoint("QP.cop_b[L][y]", "m/s2", cop_b[Side::LEFT].data()+1);
   logger.add_datapoint("QP.cop_b[R][x]", "m/s2", cop_b[Side::RIGHT].data()+0);
@@ -425,18 +425,18 @@ Vector6d getTaskSpaceVel(const RigidBodyTree &r, const KinematicsCache<double> &
   const auto &element = cache.getElement(*(r.bodies[body_idx]));
   Vector6d T = element.twist_in_world;
   Vector3d pt = element.transform_to_world.translation();
-  
+
   // get the body's task space vel
   Vector6d v = T;
-  v.tail<3>() += v.head<3>().cross(pt); 
+  v.tail<3>() += v.head<3>().cross(pt);
 
   // global offset between pt and body
   auto H_world_to_frame = element.transform_to_world * H_body_to_frame;
   Isometry3d H_frame_to_pt(Isometry3d::Identity());
   H_frame_to_pt.translation() = local_offset;
-  auto H_world_to_pt = H_world_to_frame * H_frame_to_pt; 
+  auto H_world_to_pt = H_world_to_frame * H_frame_to_pt;
   Vector3d world_offset = H_world_to_pt.translation() - element.transform_to_world.translation();
-  
+
   // add the linear vel from the body rotation
   v.tail<3>() += v.head<3>().cross(world_offset);
 
@@ -477,13 +477,13 @@ Vector6d getTaskSpaceJacobianDotTimesV(const RigidBodyTree &r, KinematicsCache<d
   Vector3d pdot = twist.head<3>().cross(p) + twist.tail<3>();
 
   // each column of J_task Jt = [Jg_omega; Jg_v + Jg_omega.cross(p)]
-  // Jt * v, angular part stays the same, 
-  // linear part = [\dot{Jg_v}v + \dot{Jg_omega}.cross(p) + Jg_omega.cross(rdot)] * v 
+  // Jt * v, angular part stays the same,
+  // linear part = [\dot{Jg_v}v + \dot{Jg_omega}.cross(p) + Jg_omega.cross(rdot)] * v
   //             = [lin of JgdotV + ang of JgdotV.cross(p) + omega.cross(rdot)]
   Vector6d Jdv = J_geometric_dot_times_v;
   Jdv.tail<3>() += twist.head<3>().cross(pdot) + J_geometric_dot_times_v.head<3>().cross(p);
 
   return Jdv;
 }
- 
+
 

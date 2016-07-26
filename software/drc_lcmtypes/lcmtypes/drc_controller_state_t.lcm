@@ -18,6 +18,7 @@ struct controller_state_t
 
   float q_des[num_joints];
   float qd_des[num_joints];
+  float qdd_des[num_joints];
   float q_ref[num_joints];
   float qd_ref[num_joints];
   float qdd[num_joints];
@@ -27,7 +28,7 @@ struct controller_state_t
   float pelvdd[6];
   float l_footdd[6];
   float r_footdd[6];
-  
+
   float slack[num_slack];
 
   float contact_wrenches[num_active_contact_links][6];
@@ -35,5 +36,5 @@ struct controller_state_t
   float all_contact_points[num_active_contact_points][3];
   float all_contact_forces[num_active_contact_points][3];
 
-  qp_desired_body_acceleration_t desired_body_vdots[num_tracked_bodies];
+  qp_desired_body_motion_t desired_body_motions[num_tracked_bodies];
 }

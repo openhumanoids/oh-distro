@@ -32,7 +32,7 @@ static Eigen::MatrixXd getTaskSpaceJacobian(
 void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   YAML::Node config = YAML::LoadFile(name);
   rpc_ = parseKinematicTreeMetadata(config["kinematic_tree_metadata"], robot_);
-  
+
   std::map<Side, std::string> side_identifiers = {{Side::RIGHT, "r"}, {Side::LEFT, "l"}};
   for (const auto& side : Side::values)
     rpc_.hand_ids[side] = robot_.findLinkId(config["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
@@ -66,11 +66,11 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
       for (int i = 0; i < 3; i++)
         contacts(i, n) = config["foot_contact_offsets"][foot_name][corners[n]][xyz[i]].as<double>();
     }
-    
+
     contact_offsets[foot_name] = contacts;
     std::cout << foot_name << " contacts:\n" << contacts << std::endl;
   }
-  
+
   // default param
   default_mu_ = get(config, "default_zmp_height").as<double>();
   default_zmp_height_ = get(config, "default_zmp_height").as<double>();
@@ -224,7 +224,7 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
       support_data_element_lcm.support_logic_map[i] = true;
       support_data_element_lcm.support_surface[i] = element.support_surface[i];
     }
-    
+
     support_data_element_lcm.mu = default_mu_;
     support_data_element_lcm.use_support_surface = true;
   }
@@ -239,15 +239,23 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
   return qp_input;
 }
 
-void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
-                                         const std::string &channel,
-                                         const drc::robot_plan_t *msg,
-                                         const Eigen::VectorXd est_q,
-                                         const Eigen::VectorXd est_qd) {
+Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
+  if (interp_t0_ == -1)
+    interp_t0_ = cur_time;
+  double plan_time = cur_time - interp_t0_;
+
+  return q_trajs_.value(plan_time);
+}
+
+void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+                                         const Eigen::VectorXd &est_q,
+                                         const Eigen::VectorXd &est_qd,
+                                         const Eigen::VectorXd &last_q_d,
+                                         double initial_transition_time) {
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
-  size_t num_T = msg->plan.size();
+  size_t num_T = msg.plan.size();
 
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
@@ -285,8 +293,14 @@ void ManipPlan::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
 
   // go through set points
   for (size_t t = 0; t < num_T; t++) {
-    const bot_core::robot_state_t &keyframe = msg->plan[t];
+    const bot_core::robot_state_t &keyframe = msg.plan[t];
     KeyframeToState(keyframe, q_, v_);
+    // TODO: smooth transition, ignoring the first planned keyframe, using the latest desired instead
+    if (t == 0) {
+      q_ = last_q_d;
+      v_.setZero();
+    }
+
     KinematicsCache<double> cache_plan = robot_.doKinematics(q_, v_);
 
     Ts[t] = (double)keyframe.utime / 1e6;
@@ -373,13 +387,19 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   state_lock_.lock();
   Eigen::VectorXd est_q = est_robot_state_.q;
   Eigen::VectorXd est_qd = est_robot_state_.qd;
+  double cur_time = est_robot_state_.t;
   state_lock_.unlock();
 
   std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
-  new_plan_ptr->HandleCommittedRobotPlan(rbuf, channel, msg, est_q, est_qd);
+  Eigen::VectorXd last_key_frame = est_robot_state_.q;
+  if (current_plan_) {
+    last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
+  }
+  double initial_transition_time = 0;
+  new_plan_ptr->HandleCommittedRobotPlan(*msg, est_q, est_qd, last_key_frame, initial_transition_time);
 
   plan_lock_.lock();
-  current_plan_ = new_plan_ptr;  
+  current_plan_ = new_plan_ptr;
   new_plan_ = true;
   plan_lock_.unlock();
 }
@@ -419,14 +439,15 @@ void PlanEval::PublisherLoop() {
       has_plan = true;
     }
 
-    if (has_plan) {
+    if (has_plan && new_robot_state_) {
       state_lock_.lock();
       double t_now = est_robot_state_.t;
+      new_robot_state_ = false;
       state_lock_.unlock();
 
       drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(t_now);
       lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
-    }    
+    }
   }
   std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id()
             << std::endl;
@@ -437,6 +458,7 @@ void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
                                    const bot_core::robot_state_t *msg) {
   state_lock_.lock();
   state_driver_->decode(msg, &est_robot_state_);
+  new_robot_state_ = true;
   state_lock_.unlock();
 }
 
