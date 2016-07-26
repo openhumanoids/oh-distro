@@ -256,7 +256,7 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
-  size_t num_T = msg.plan.size();
+  size_t num_T = msg.plan.size() + 1;
 
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
@@ -267,7 +267,6 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     body_names.push_back(robot_.getBodyOrFrameName(it->second));
   }
-
   size_t num_bodies = body_names.size();
 
   std::vector<std::vector<Eigen::Matrix<double,7,1>>> x_d(num_bodies);
@@ -290,28 +289,23 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   }
 
   // generate q_traj first w. cubic spline, which gives velocities.
-  for (size_t t = 0; t < num_T; t++) {
-    const bot_core::robot_state_t &keyframe = msg.plan[t];
+  Ts[0] = 0;
+  q_d[0] = last_q_d;
+  for (size_t t = 1; t < num_T; t++) {
+    const bot_core::robot_state_t &keyframe = msg.plan[t-1];
     KeyframeToState(keyframe, q_, v_);
-    // TODO: smooth transition, ignoring the first planned keyframe, using the latest desired instead
-    if (t == 0) {
-      q_ = last_q_d;
-      v_.setZero();
-    }
-    Ts[t] = (double)keyframe.utime / 1e6;
+    Ts[t] = (double)keyframe.utime / 1e6 + initial_transition_time;
     q_d[t] = q_;
   }
-  // make q splines
-  q_trajs_ = GenerateCubicSpline(Ts, q_d);
+  // make q, v splines, make sure to set t0 and t1 vel to zero
+  Eigen::VectorXd zero = Eigen::VectorXd::Zero(q_d[0].size());
+  q_trajs_ = GenerateCubicSpline(Ts, q_d, zero, zero);
   auto v_trajs = q_trajs_.derivative();
 
   // go through Ts again to make trajs for all the cartesian stuff
   for (size_t t = 0; t < num_T; t++) {
     q_ = q_trajs_.value(Ts[t]);
     v_ = v_trajs.value(Ts[t]);
-    if (t == 0 || t == num_T - 1) {
-      v_.setZero();
-    }
 
     KinematicsCache<double> cache_plan = robot_.doKinematics(q_, v_);
 
@@ -433,7 +427,7 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
   }
-  double initial_transition_time = 0;
+  double initial_transition_time = 0.5;
   new_plan_ptr->HandleCommittedRobotPlan(*msg, est_q, est_qd, last_key_frame, initial_transition_time);
 
   plan_lock_.lock();
