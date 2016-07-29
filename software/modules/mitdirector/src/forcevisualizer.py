@@ -35,7 +35,7 @@ class ForceVisualizer:
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['copVisName'], view=self.view, parent='robot state model')
         # visObj.setProperty('Visible', False)
-        
+
         visObj = vis.updatePolyData(d.getPolyData(), self.options['QPForceVisName'], view=self.view, parent='robot state model')
 
         self.addSubscribers()
@@ -124,40 +124,38 @@ class ForceVisualizer:
         d = DebugData()
         copData = dict()
         totalForce = np.zeros(3)
-        for i, wrench in enumerate(msg.contact_wrenches):
-            
-            footName = ""
+        for contact_output in msg.contact_output:
+            footName = contact_output.body_name
             ftFrameId = 0
             ftFrameToWorld = 0
-            if (i == 0):
+            if (footName == 'leftFoot' or footName == 'l_foot'):
                 footName = "left"
-                ftFrameId = self.nameDict['r_foot']['frameId']
-                ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
-            else:
-                footName = "right"
                 ftFrameId = self.nameDict['l_foot']['frameId']
                 ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
-
+            elif (footName == 'rightFoot' or footName == 'r_foot'):
+                footName = "right"
+                ftFrameId = self.nameDict['r_foot']['frameId']
+                ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
 
             #arrowStart = np.array((msg.contact_ref_points[i][0], msg.contact_ref_points[i][1], msg.contact_ref_points[i][2]))
             arrowStart = ftFrameToWorld.TransformPoint((0,0,0))
-            force = np.array((wrench[3], wrench[4], wrench[5]))
+            force = np.array((contact_output.wrench[3], contact_output.wrench[4], contact_output.wrench[5]))
             arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*force
-            
+
             d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
                            headRadius=self.options['forceArrowHeadRadius'], color=self.options['forceArrowColor'])
 
             # compute cop
             cop = np.zeros(3)
-            cop[0] = -msg.contact_wrenches[i][1] / msg.contact_wrenches[i][5] + msg.contact_ref_points[i][0]
-            cop[1] = msg.contact_wrenches[i][0] / msg.contact_wrenches[i][5] + msg.contact_ref_points[i][1]
-            cop[2] = msg.contact_ref_points[i][2]
+            cop[0] = -contact_output.wrench[1] / contact_output.wrench[5] + contact_output.ref_point[0]
+            cop[1] = contact_output.wrench[0] / contact_output.wrench[5] + contact_output.ref_point[1]
+            cop[2] = contact_output.ref_point[2]
 
-            totalForce += np.array((msg.contact_wrenches[i][3],msg.contact_wrenches[i][4],msg.contact_wrenches[i][5]))
+            totalForce += np.array((contact_output.wrench[3],contact_output.wrench[4],contact_output.wrench[5]))
 
             data = dict()
             data['cop'] = cop
-            data['fz'] = msg.contact_wrenches[i][5]
+            data['fz'] = contact_output.wrench[5]
             copData[footName] = data
 
         cop = np.zeros(3)
@@ -168,7 +166,7 @@ class ForceVisualizer:
 
         bottomFootZVal = -0.09
         if(np.abs(totalForce[2]) > 0.01):
-            cop += bottomFootZVal/totalForce[2]*totalForce 
+            cop += bottomFootZVal/totalForce[2]*totalForce
 
         d.addSphere(cop, radius=0.015)
         vis.updatePolyData(d.getPolyData(), name=self.options['QPForceVisName'], view=self.view,
@@ -181,28 +179,28 @@ class ForceVisualizer:
 
             pelvisJointNames = ['base_x', 'base_y', 'base_z']
             pelvisAcceleration = np.zeros(3)
-    
+
             for idx, name in enumerate(pelvisJointNames):
                 stateIdx = msg.joint_name.index(name)
                 pelvisAcceleration[idx] = msg.qdd[stateIdx]
-    
-    
+
+
             pelvisFrame = self.robotStateModel.getLinkFrame('pelvis')
-    
+
             arrowStart = np.array(pelvisFrame.TransformPoint((0,0,0)))
             arrowEnd = arrowStart + self.options['pelvisArrowLength']*np.linalg.norm(pelvisAcceleration)/self.options['pelvisMagnitudeNormalizer']*pelvisAcceleration
-    
+
             debugData = DebugData()
             debugData.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
                                headRadius=self.options['forceArrowHeadRadius'])
-    
+
             vis.updatePolyData(debugData.getPolyData(), name=self.options['pelvisAccelerationVisName'], view=self.view,
                                parent='robot state model').setProperty('Color', [0,1,0])
 
         if (om.findObjectByName(self.options['QPForceVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
             self.drawQPContactWrench(msg)
-        
-            
+
+
         # print "got controller state message"
         # print "pelvisAcceleration ", pelvisAcceleration
         # print "arrowStart ", arrowStart

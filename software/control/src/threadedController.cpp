@@ -380,29 +380,29 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   }
 
   // fill in the contact wrench stuff
-  msg.num_active_contact_links = qp_output.contact_wrenches.size();
-  msg.num_active_contact_points = qp_output.all_contact_points.size();
+  msg.num_active_contact_links = qp_output.contact_output.size();
+  msg.contact_output.resize(msg.num_active_contact_links);
+  for (size_t i = 0; i < msg.contact_output.size(); i++) {
+    msg.contact_output[i].num_contact_points = qp_output.contact_output[i].contact_points.size();
 
-  msg.contact_wrenches.resize(msg.num_active_contact_links);
-  msg.contact_ref_points.resize(msg.num_active_contact_links);
-  msg.all_contact_points.resize(msg.num_active_contact_points);
-  msg.all_contact_forces.resize(msg.num_active_contact_points);
+    msg.contact_output[i].contact_points.resize(msg.contact_output[i].num_contact_points);
+    msg.contact_output[i].contact_forces.resize(msg.contact_output[i].num_contact_points);
 
-  for (int i = 0; i < msg.num_active_contact_links; i++) {
-    msg.contact_wrenches[i].resize(6);
-    msg.contact_ref_points[i].resize(3);
-    for (int j = 0; j < 6; j++)
-      msg.contact_wrenches[i][j] = qp_output.contact_wrenches[i][j];
-    for (int j = 0; j < 3; j++)
-      msg.contact_ref_points[i][j] = qp_output.contact_ref_points[i][j];
-  }
-
-  for (int i = 0; i < msg.num_active_contact_points; i++) {
-    msg.all_contact_points[i].resize(3);
-    msg.all_contact_forces[i].resize(3);
-    for (int j = 0; j < 3; j++) {
-      msg.all_contact_points[i][j] = qp_output.all_contact_points[i][j];
-      msg.all_contact_forces[i][j] = qp_output.all_contact_forces[i][j];
+    for (size_t j = 0; j < msg.contact_output[i].num_contact_points; j++) {
+      msg.contact_output[i].contact_points[j].resize(3);
+      msg.contact_output[i].contact_forces[j].resize(3);
+      for (size_t k = 0; k < 3; k++) {
+        msg.contact_output[i].contact_points[j][k] = qp_output.contact_output[i].contact_points[j][k];
+        msg.contact_output[i].contact_forces[j][k] = qp_output.contact_output[i].contact_forces[j][k];
+      }
+    }
+    msg.contact_output[i].body_name = qp_output.contact_output[i].body_name;
+    msg.contact_output[i].is_in_world_frame = true;
+    for (size_t k = 0; k < 6; k++) {
+      msg.contact_output[i].wrench[k] = qp_output.contact_output[i].wrench[k];
+    }
+    for (size_t k = 0; k < 3; k++) {
+      msg.contact_output[i].ref_point[k] = qp_output.contact_output[i].ref_point[k];
     }
   }
 
@@ -579,9 +579,12 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
       //publish CONTROLLER_STATE lcm message for debugging purposes
       if (ctrl_opts->publishControllerState) {
         int num_joints = qp_output.q_ref.size();
+        std::cout << "ha\n";
         drc::controller_state_t controller_state_msg = encodeControllerState(robot_state->t, num_joints,
                                                                              qp_output);
+        std::cout << "ha1\n";
         lcmHandler.LCMHandle->publish(CONTROLLER_STATE_CHANNEL, &controller_state_msg);
+        std::cout << "ha2\n";
 
         bot_core::robot_state_t controller_qdes_msg = encodeControllerQDes(robot_state->t, num_joints, qp_output);
         lcmHandler.LCMHandle->publish("CONTROLLER_Q_DES", &controller_qdes_msg);

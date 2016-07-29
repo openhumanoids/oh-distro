@@ -5,7 +5,6 @@ struct controller_state_t
   int64_t timestamp;
   int32_t num_joints;
   int32_t num_active_contact_links;
-  int32_t num_active_contact_points;
   int32_t num_slack;
   int32_t num_tracked_bodies;
 
@@ -31,10 +30,6 @@ struct controller_state_t
 
   float slack[num_slack];
 
-  float contact_wrenches[num_active_contact_links][6];
-  float contact_ref_points[num_active_contact_links][3];
-  float all_contact_points[num_active_contact_points][3];
-  float all_contact_forces[num_active_contact_points][3];
-
+  controller_contact_t contact_output[num_active_contact_links];
   qp_desired_body_motion_t desired_body_motions[num_tracked_bodies];
 }

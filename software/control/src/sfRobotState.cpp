@@ -210,15 +210,19 @@ void sfQPState::parseMsg(const drc::controller_state_t &msg, const sfRobotState 
 
   // TODO: should not hard code this
   Vector3d grf_loc[2];
-  for (int i = 0; i < 6; i++) {
-    this->grf_w[Side::LEFT][i] = msg.contact_wrenches[1][i];
-    if (i < 3)
-      grf_loc[Side::LEFT][i] = msg.contact_ref_points[1][i];
-  }
-  for (int i = 0; i < 6; i++) {
-    this->grf_w[Side::RIGHT][i] = msg.contact_wrenches[0][i];
-    if (i < 3)
-      grf_loc[Side::RIGHT][i] = msg.contact_ref_points[0][i];
+  for (size_t i = 0; i < msg.contact_output.size(); i++) {
+    int side = 0;
+    if (msg.contact_output[i].body_name.compare("leftFoot") == 0)
+      side = 0;
+    else if (msg.contact_output[i].body_name.compare("rightFoot") == 0)
+      side = 1;
+    else
+      continue;
+
+    for (int j = 0; j < 6; j++)
+      this->grf_w[side][j] = msg.contact_output[i].wrench[j];
+    for (int j = 0; j < 3; j++)
+      grf_loc[side][j] = msg.contact_output[i].ref_point[j];
   }
 
   // transform this into the ft sensor location
