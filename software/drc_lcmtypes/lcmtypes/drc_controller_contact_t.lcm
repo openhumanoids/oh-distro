@@ -1,0 +1,15 @@
+package drc;
+
+struct controller_contact_t
+{
+  int64_t timestamp;
+  int32_t num_contact_points;
+  string body_name;
+  boolean is_in_world_frame;
+
+  float wrench[6];
+  float ref_point[3];
+
+  float contact_points[num_contact_points][3];
+  float contact_forces[num_contact_points][3];
+}
