@@ -16,6 +16,9 @@ class RobotStateDriver {
     RobotStateDriver(std::vector<std::string> state_coordinate_names);
     void decode(const bot_core::robot_state_t *msg, DrakeRobotState *state);
     void decodeWithTorque(const bot_core::robot_state_t *msg, DrakeRobotStateWithTorque *state);
+
+    inline const std::map<std::string,int> &get_joint_map() const { return m_joint_map; }
+    inline const std::map<std::string,int> &get_floating_joint_map() const { return m_floating_joint_map; }
 };
 
 
