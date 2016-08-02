@@ -37,6 +37,6 @@ foot_contact_offsets:
     left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
     right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
 
-default_zmp_height: 1.00
+default_zmp_height: 0.8
 default_mu: 0.7
 

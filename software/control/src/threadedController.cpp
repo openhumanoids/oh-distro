@@ -579,12 +579,9 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
       //publish CONTROLLER_STATE lcm message for debugging purposes
       if (ctrl_opts->publishControllerState) {
         int num_joints = qp_output.q_ref.size();
-        std::cout << "ha\n";
         drc::controller_state_t controller_state_msg = encodeControllerState(robot_state->t, num_joints,
                                                                              qp_output);
-        std::cout << "ha1\n";
         lcmHandler.LCMHandle->publish(CONTROLLER_STATE_CHANNEL, &controller_state_msg);
-        std::cout << "ha2\n";
 
         bot_core::robot_state_t controller_qdes_msg = encodeControllerQDes(robot_state->t, num_joints, qp_output);
         lcmHandler.LCMHandle->publish("CONTROLLER_Q_DES", &controller_qdes_msg);
