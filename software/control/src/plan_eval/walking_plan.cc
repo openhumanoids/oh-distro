@@ -74,12 +74,10 @@ void WalkingPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   pelv_knots[1] = pelv1;
   body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
-  printf("make foot traj\n");
   // foot stays the same
   int id = rpc_.foot_ids[Side::LEFT];
   body_motions_[1].body_or_frame_id = id;
   body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, std::vector<Eigen::Vector7d>(num_T, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id))), std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-  printf("make foot traj0\n");
   // make swing up traj for right foot
   id = rpc_.foot_ids[Side::RIGHT];
   MakeDefaultBodyMotionData(body_motions_[2], 3);
@@ -92,11 +90,8 @@ void WalkingPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   std::vector<Eigen::Vector7d> r_foot_d;
   r_foot_d.resize(3, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id)));
   r_foot_d[2][2] += 0.2;
-  printf("make foot traj2\n"); 
   std::vector<Eigen::Vector7d> r_footd_d = std::vector<Eigen::Vector7d>(rightTs.size(), Eigen::Vector7d::Zero());
-  printf("sizes %d %d %d\n", rightTs.size(), r_foot_d.size(), r_footd_d.size());
   body_motions_[2].trajectory = GenerateCubicCartesianSpline(rightTs, r_foot_d, r_footd_d);
-  printf("make foot traj1\n");
 
   // hold arm joints, I am assuming the leg joints will just be ignored..
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());

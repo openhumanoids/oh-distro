@@ -169,11 +169,11 @@ qp_controller_params:
     W_kdot: 0
     Kp_ang: 0
     w_slack: 0.05
-    Jpdotv_multiplier: 1.0
-    slack_limit: 100
+    Jpdotv_multiplier: 0.0
+    slack_limit: 20
     w_grf: 0.00
     mu: 1
-    w_zmp: 1.0
+    w_zmp: 100.0
     w_qdd_delta: 0.0
     Kp_accel: 1.0
     contact_threshold: 0.002
