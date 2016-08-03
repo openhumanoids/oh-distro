@@ -21,7 +21,7 @@ class QPDesiredCartAccInput {
   }
 
   void AddToLog(const std::string &prefix, MRDLogger &logger) const {
-    std::string dim[6] = {std::string("x"), std::string("y"), std::string("z"), std::string("wx"), std::string("wy"), std::string("wz")}
+    std::string dim[6] = {std::string("x"), std::string("y"), std::string("z"), std::string("wx"), std::string("wy"), std::string("wz")};
     for (int i = 0; i < pos.size(); i++)
       logger.AddChannel(prefix + name + std::string("_d[") + dim[i] + std::string("]"), "-", pos.data() + i);
     for (int i = 0; i < vel.size(); i++)
