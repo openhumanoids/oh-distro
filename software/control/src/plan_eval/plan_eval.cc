@@ -25,8 +25,7 @@ void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
   }
-  double initial_transition_time = 0.5;
-  new_plan_ptr->HandleCommittedRobotPlan(*msg, est_q, est_qd, last_key_frame, initial_transition_time);
+  new_plan_ptr->HandleCommittedRobotPlan(*msg, est_q, est_qd, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;

@@ -355,6 +355,7 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
       msg.desired_body_motions[i].body_q_d[j] = qp_output.desired_body_motions[i].body_q_d[j];
       msg.desired_body_motions[i].body_v_d[j] = qp_output.desired_body_motions[i].body_v_d[j];
       msg.desired_body_motions[i].body_vdot_d[j] = qp_output.desired_body_motions[i].body_vdot_d[j];
+      msg.desired_body_motions[i].body_vdot_with_pd[j] = qp_output.desired_body_motions[i].body_vdot_with_pd[j];
     }
   }
 

@@ -17,7 +17,6 @@ void QPIO::ParseZMPInput(const drake::lcmt_qp_controller_input &msg)
   _hasZMPInput = true;
 }
 
-
 void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs)
 {
   // output
@@ -73,26 +72,16 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
 
   // input
   for (int i = 0; i < msg.desired_body_motions.size(); i++) {
-    // desired acc are in body frame
     const drc::qp_desired_body_motion_t &vdot_d = msg.desired_body_motions[i];
-    if (vdot_d.body_name.compare("pelvis") == 0) {
-      for (int j = 0; j < 6; j++)
-        pelvdd_d[j] = vdot_d.body_vdot_d[j];
-      pelvdd_d.head(3) = rs.pelv().pose.linear() * pelvdd_d.head(3);
-      pelvdd_d.tail(3) = rs.pelv().pose.linear() * pelvdd_d.tail(3);
-    }
-    if (vdot_d.body_name.compare("leftFoot") == 0) {
-      for (int j = 0; j < 6; j++)
-        footdd_d[Side::LEFT][j] = vdot_d.body_vdot_d[j];
-      footdd_d[Side::LEFT].head(3) = rs.foot(Side::LEFT).pose.linear() * footdd_d[Side::LEFT].head(3);
-      footdd_d[Side::LEFT].tail(3) = rs.foot(Side::LEFT).pose.linear() * footdd_d[Side::LEFT].tail(3);
-    }
-    if (vdot_d.body_name.compare("rightFoot") == 0) {
-      for (int j = 0; j < 6; j++)
-        footdd_d[Side::RIGHT][j] = vdot_d.body_vdot_d[j];
-      footdd_d[Side::RIGHT].head(3) = rs.foot(Side::RIGHT).pose.linear() * footdd_d[Side::RIGHT].head(3);
-      footdd_d[Side::RIGHT].tail(3) = rs.foot(Side::RIGHT).pose.linear() * footdd_d[Side::RIGHT].tail(3);
-    }
+
+    if (vdot_d.body_name.compare("pelvis") == 0)
+      pelv.ParseMsg(vdot_d);
+    if (vdot_d.body_name.compare("torso") == 0)
+      torso.ParseMsg(vdot_d);
+    if (vdot_d.body_name.compare("leftFoot") == 0)
+      foot[Side::LEFT].ParseMsg(vdot_d);
+    if (vdot_d.body_name.compare("rightFoot") == 0)
+      foot[Side::RIGHT].ParseMsg(vdot_d);
   }
 
   // comdd_d
@@ -155,13 +144,7 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.comdd[y]", "m/s2", comdd.data()+1);
   logger.AddChannel("QP.comdd[z]", "m/s2", comdd.data()+2);
 
-  logger.AddChannel("QP_d.pelvdd[x]", "m/s2", pelvdd_d.data()+3);
-  logger.AddChannel("QP_d.pelvdd[y]", "m/s2", pelvdd_d.data()+4);
-  logger.AddChannel("QP_d.pelvdd[z]", "m/s2", pelvdd_d.data()+5);
-  logger.AddChannel("QP_d.pelvdd[wx]", "rad/s2", pelvdd_d.data()+0);
-  logger.AddChannel("QP_d.pelvdd[wy]", "rad/s2", pelvdd_d.data()+1);
-  logger.AddChannel("QP_d.pelvdd[wz]", "rad/s2", pelvdd_d.data()+2);
-
+  pelv.AddToLog(std::string("QP_d."), logger);
   logger.AddChannel("QP.pelvdd[x]", "m/s2", pelvdd.data()+3);
   logger.AddChannel("QP.pelvdd[y]", "m/s2", pelvdd.data()+4);
   logger.AddChannel("QP.pelvdd[z]", "m/s2", pelvdd.data()+5);
@@ -169,13 +152,7 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.pelvdd[wy]", "rad/s2", pelvdd.data()+1);
   logger.AddChannel("QP.pelvdd[wz]", "rad/s2", pelvdd.data()+2);
 
-  logger.AddChannel("QP_d.torsodd[x]", "m/s2", torsodd_d.data()+3);
-  logger.AddChannel("QP_d.torsodd[y]", "m/s2", torsodd_d.data()+4);
-  logger.AddChannel("QP_d.torsodd[z]", "m/s2", torsodd_d.data()+5);
-  logger.AddChannel("QP_d.torsodd[wx]", "rad/s2", torsodd_d.data()+0);
-  logger.AddChannel("QP_d.torsodd[wy]", "rad/s2", torsodd_d.data()+1);
-  logger.AddChannel("QP_d.torsodd[wz]", "rad/s2", torsodd_d.data()+2);
-
+  torso.AddToLog(std::string("QP_d."), logger);
   logger.AddChannel("QP.torsodd[x]", "m/s2", torsodd.data()+3);
   logger.AddChannel("QP.torsodd[y]", "m/s2", torsodd.data()+4);
   logger.AddChannel("QP.torsodd[z]", "m/s2", torsodd.data()+5);
@@ -183,13 +160,7 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.torsodd[wy]", "rad/s2", torsodd.data()+1);
   logger.AddChannel("QP.torsodd[wz]", "rad/s2", torsodd.data()+2);
 
-  logger.AddChannel("QP_d.footdd[L][x]", "m/s2", footdd_d[Side::LEFT].data()+3);
-  logger.AddChannel("QP_d.footdd[L][y]", "m/s2", footdd_d[Side::LEFT].data()+4);
-  logger.AddChannel("QP_d.footdd[L][z]", "m/s2", footdd_d[Side::LEFT].data()+5);
-  logger.AddChannel("QP_d.footdd[L][wx]", "rad/s2", footdd_d[Side::LEFT].data()+0);
-  logger.AddChannel("QP_d.footdd[L][wy]", "rad/s2", footdd_d[Side::LEFT].data()+1);
-  logger.AddChannel("QP_d.footdd[L][wz]", "rad/s2", footdd_d[Side::LEFT].data()+2);
-
+  foot[Side::LEFT].AddToLog(std::string("QP_d."), logger);
   logger.AddChannel("QP.footdd[L][x]", "m/s2", footdd[Side::LEFT].data()+3);
   logger.AddChannel("QP.footdd[L][y]", "m/s2", footdd[Side::LEFT].data()+4);
   logger.AddChannel("QP.footdd[L][z]", "m/s2", footdd[Side::LEFT].data()+5);
@@ -197,13 +168,7 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.footdd[L][wy]", "rad/s2", footdd[Side::LEFT].data()+1);
   logger.AddChannel("QP.footdd[L][wz]", "rad/s2", footdd[Side::LEFT].data()+2);
 
-  logger.AddChannel("QP_d.footdd[R][x]", "m/s2", footdd_d[Side::RIGHT].data()+3);
-  logger.AddChannel("QP_d.footdd[R][y]", "m/s2", footdd_d[Side::RIGHT].data()+4);
-  logger.AddChannel("QP_d.footdd[R][z]", "m/s2", footdd_d[Side::RIGHT].data()+5);
-  logger.AddChannel("QP_d.footdd[R][wx]", "rad/s2", footdd_d[Side::RIGHT].data()+0);
-  logger.AddChannel("QP_d.footdd[R][wy]", "rad/s2", footdd_d[Side::RIGHT].data()+1);
-  logger.AddChannel("QP_d.footdd[R][wz]", "rad/s2", footdd_d[Side::RIGHT].data()+2);
-
+  foot[Side::LEFT].AddToLog(std::string("QP_d."), logger);
   logger.AddChannel("QP.footdd[R][x]", "m/s2", footdd[Side::RIGHT].data()+3);
   logger.AddChannel("QP.footdd[R][y]", "m/s2", footdd[Side::RIGHT].data()+4);
   logger.AddChannel("QP.footdd[R][z]", "m/s2", footdd[Side::RIGHT].data()+5);

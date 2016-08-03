@@ -25,7 +25,7 @@ kinematic_tree_metadata:
     neck: [lowerNeckPitch]
     back_bkz: torsoYaw
     back_bky: torsoPitch
- 
+
 foot_contact_offsets:
   *L_FOOT_NAME :
     left_toe: {x: 0.172, y: 0.055, z: -0.09}
@@ -38,6 +38,6 @@ foot_contact_offsets:
     left_heel: {x: -0.058, y: 0.055, z: -0.09}
     right_heel: {x: -0.058, y: -0.055, z: -0.09}
 
-default_zmp_height: 1.00
-default_mu: 0.7
- 
+mu: 0.7
+zmp_height: 0.8
+initial_transition_time: 0

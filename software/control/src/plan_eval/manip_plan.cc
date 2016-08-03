@@ -151,13 +151,13 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
       support_data_element_lcm.support_surface[i] = element.support_surface[i];
     }
 
-    support_data_element_lcm.mu = default_mu_;
+    support_data_element_lcm.mu = p_mu_;
     support_data_element_lcm.use_support_surface = true;
   }
 
   ////////////////////////////////////////
   // torque alpha filter
-  if (plan_time < 0.5)
+  if (plan_time < p_initial_transition_time_)
     qp_input.torque_alpha_filter = 0.9;
   else
     qp_input.torque_alpha_filter = 0.;
@@ -176,8 +176,7 @@ Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
 void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
                                          const Eigen::VectorXd &est_q,
                                          const Eigen::VectorXd &est_qd,
-                                         const Eigen::VectorXd &last_q_d,
-                                         double initial_transition_time) {
+                                         const Eigen::VectorXd &last_q_d) {
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
@@ -260,7 +259,7 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
 
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, default_zmp_height_);
+  zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
   // make body motion splines
   body_motions_.resize(num_bodies);

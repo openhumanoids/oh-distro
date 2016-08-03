@@ -92,13 +92,8 @@ target_link_libraries(runDRCInstQP RobotStateDriver AtlasCommandDriver FootConta
 target_link_libraries (runDRCInstQP ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(runDRCInstQP)
 
-add_executable(sf_logging sf_logging/sf_kin_example.cpp sf_logging/sfRobotState.cpp sf_logging/Logger.cpp sf_logging/mrdplot.cpp)
-pods_use_pkg_config_packages(sf_logging drake-qp-common drake-control-util drake-side drake-rbm)
-target_link_libraries(sf_logging RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
-target_link_libraries (sf_logging ${CMAKE_THREAD_LIBS_INIT})
-pods_install_executables(sf_logging)
-
 add_executable(sf_logging1 sf_logging1/sf_logging.cc sf_logging1/humanoid_status.cc sf_logging1/mrd_logger.cc sf_logging1/rigid_body_tree_utils.cc sf_logging1/qp_controller_state.cc)
+set_source_files_properties(sf_logging1 sf_logging1/sf_logging.cc sf_logging1/humanoid_status.cc sf_logging1/mrd_logger.cc sf_logging1/rigid_body_tree_utils.cc sf_logging1/qp_controller_state.cc PROPERTIES COMPILE_FLAGS -g)
 pods_use_pkg_config_packages(sf_logging1 drake-qp-common drake-control-util drake-side drake-rbm)
 target_link_libraries(sf_logging1 RobotStateDriver AtlasCommandDriver FootContactDriver lcm)
 target_link_libraries (sf_logging1 ${CMAKE_THREAD_LIBS_INIT})

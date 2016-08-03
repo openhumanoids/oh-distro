@@ -30,17 +30,17 @@ struct BodyOfInterest {
   /// task space Jd * v
   Vector6d Jdot_times_v;
 
-  void AddToLog(MRDLogger &logger) const {
-    logger.AddChannel(name+"[x]", "m", pose.translation().data());
-    logger.AddChannel(name+"[y]", "m", pose.translation().data()+1);
-    logger.AddChannel(name+"[z]", "m", pose.translation().data()+2);
+  void AddToLog(const std::string &prefix, MRDLogger &logger) const {
+    logger.AddChannel(prefix+name+"[x]", "m", pose.translation().data());
+    logger.AddChannel(prefix+name+"[y]", "m", pose.translation().data()+1);
+    logger.AddChannel(prefix+name+"[z]", "m", pose.translation().data()+2);
 
-    logger.AddChannel(name+"d[x]", "m/s", vel.data()+3);
-    logger.AddChannel(name+"d[y]", "m/s", vel.data()+4);
-    logger.AddChannel(name+"d[z]", "m/s", vel.data()+5);
-    logger.AddChannel(name+"d[wx]", "m/s", vel.data()+0);
-    logger.AddChannel(name+"d[wy]", "m/s", vel.data()+1);
-    logger.AddChannel(name+"d[wz]", "m/s", vel.data()+2);
+    logger.AddChannel(prefix+name+"d[x]", "m/s", vel.data()+3);
+    logger.AddChannel(prefix+name+"d[y]", "m/s", vel.data()+4);
+    logger.AddChannel(prefix+name+"d[z]", "m/s", vel.data()+5);
+    logger.AddChannel(prefix+name+"d[wx]", "m/s", vel.data()+0);
+    logger.AddChannel(prefix+name+"d[wy]", "m/s", vel.data()+1);
+    logger.AddChannel(prefix+name+"d[wz]", "m/s", vel.data()+2);
   }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

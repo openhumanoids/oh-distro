@@ -106,41 +106,42 @@ void HumanoidStatus::Update(double t, const VectorXd& q, const VectorXd& v,
 void HumanoidStatus::AddToLog(MRDLogger &logger) const {
   logger.AddChannel("time", "s", &time_);
 
-  pelv_.AddToLog(logger);
-  foot_[0].AddToLog(logger);
-  foot_[1].AddToLog(logger);
-  torso_.AddToLog(logger);
+  pelv_.AddToLog("RS.", logger);
+  foot_[0].AddToLog("RS.", logger);
+  foot_[1].AddToLog("RS.", logger);
+  torso_.AddToLog("RS.", logger);
 
-  logger.AddChannel("com[x]", "m", com_.data());
-  logger.AddChannel("com[y]", "m", com_.data()+1);
-  logger.AddChannel("com[z]", "m", com_.data()+2);
-  logger.AddChannel("comd[x]", "m/s", comd_.data());
-  logger.AddChannel("comd[y]", "m/s", comd_.data()+1);
-  logger.AddChannel("comd[z]", "m/s", comd_.data()+2);
+  logger.AddChannel("RS.com[x]", "m", com_.data());
+  logger.AddChannel("RS.com[y]", "m", com_.data()+1);
+  logger.AddChannel("RS.com[z]", "m", com_.data()+2);
+  logger.AddChannel("RS.comd[x]", "m/s", comd_.data());
+  logger.AddChannel("RS.comd[y]", "m/s", comd_.data()+1);
+  logger.AddChannel("RS.comd[z]", "m/s", comd_.data()+2);
 
-  logger.AddChannel("cop[x]", "m", cop_.data());
-  logger.AddChannel("cop[y]", "m", cop_.data()+1);
+  logger.AddChannel("RS.cop[x]", "m", cop_.data());
+  logger.AddChannel("RS.cop[y]", "m", cop_.data()+1);
 
-  logger.AddChannel("F_w[L][x]", "N", foot_wrench_in_world_frame_[Side::LEFT].data()+3);
-  logger.AddChannel("F_w[L][y]", "N", foot_wrench_in_world_frame_[Side::LEFT].data()+4);
-  logger.AddChannel("F_w[L][z]", "N", foot_wrench_in_world_frame_[Side::LEFT].data()+5);
-  logger.AddChannel("M_w[L][x]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+0);
-  logger.AddChannel("M_w[L][y]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+1);
-  logger.AddChannel("M_w[L][z]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+1);
+  logger.AddChannel("RS.F_w[L][x]", "N", foot_wrench_in_world_frame_[Side::LEFT].data()+3);
+  logger.AddChannel("RS.F_w[L][y]", "N", foot_wrench_in_world_frame_[Side::LEFT].data()+4);
+  logger.AddChannel("RS.F_w[L][z]", "N", foot_wrench_in_world_frame_[Side::LEFT].data()+5);
+  logger.AddChannel("RS.M_w[L][x]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+0);
+  logger.AddChannel("RS.M_w[L][y]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+1);
+  logger.AddChannel("RS.M_w[L][z]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+1);
 
-  logger.AddChannel("F_w[R][x]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+3);
-  logger.AddChannel("F_w[R][y]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+4);
-  logger.AddChannel("F_w[R][z]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+5);
-  logger.AddChannel("M_w[R][x]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+0);
-  logger.AddChannel("M_w[R][y]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+1);
-  logger.AddChannel("M_w[R][z]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+1);
+  logger.AddChannel("RS.F_w[R][x]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+3);
+  logger.AddChannel("RS.F_w[R][y]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+4);
+  logger.AddChannel("RS.F_w[R][z]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+5);
+  logger.AddChannel("RS.M_w[R][x]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+0);
+  logger.AddChannel("RS.M_w[R][y]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+1);
+  logger.AddChannel("RS.M_w[R][z]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+1);
 
   for (int i = 0; i < position_.size(); i++)
-    logger.AddChannel("q["+robot_->getPositionName(i)+"]", "rad", position_.data()+i);
+    logger.AddChannel("RS.q["+robot_->getPositionName(i)+"]", "rad", position_.data()+i);
   for (int i = 0; i < velocity_.size(); i++)
-    logger.AddChannel("v["+robot_->getPositionName(i)+"]", "rad/s", velocity_.data()+i);
+    logger.AddChannel("RS.v["+robot_->getPositionName(i)+"]", "rad/s", velocity_.data()+i);
+  // TODO: don't hard code this
   for (int i = 0; i < joint_torque_.size(); i++)
-    logger.AddChannel("trq["+robot_->getPositionName(i)+"]", "Nm", joint_torque_.data()+i);
+    logger.AddChannel("RS.trq["+robot_->getPositionName(i+6)+"]", "Nm", joint_torque_.data()+i);
 }
 
 void HumanoidStatus::Init(const bot_core::robot_state_t &msg)
@@ -159,7 +160,7 @@ void HumanoidStatus::ParseMsg(const bot_core::robot_state_t &msg)
   robot_state.qd.resize(robot_->num_velocities);
   state_driver_->decode(&msg, &robot_state);
   auto floating_map = state_driver_->get_floating_joint_map();
-  auto state_map = state_driver_->get_floating_joint_map();
+  auto state_map = state_driver_->get_joint_map();
 
   // extract trq
   for (size_t i = 0; i < msg.joint_effort.size(); i++) {

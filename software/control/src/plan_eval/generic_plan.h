@@ -29,6 +29,9 @@ class GenericPlan {
  public:
   GenericPlan(const std::string &urdf_name, const std::string &config_name)
       : robot_(urdf_name, DrakeJoint::ROLLPITCHYAW) {
+    p_mu_ = 1.;
+    p_zmp_height_ = 0.8;
+    p_initial_transition_time_ = 0.5;
     LoadConfigurationFromYAML(config_name);
   }
   virtual ~GenericPlan() { ; }
@@ -38,8 +41,7 @@ class GenericPlan {
   virtual void HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
                                         const Eigen::VectorXd &est_q,
                                         const Eigen::VectorXd &est_qd,
-                                        const Eigen::VectorXd &last_q_d,
-                                        double initial_transition_time) = 0;
+                                        const Eigen::VectorXd &last_q_d) = 0;
   virtual drake::lcmt_qp_controller_input MakeQPInput(double cur_time) = 0;
 
   virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
@@ -52,8 +54,10 @@ class GenericPlan {
   }; 
 
   // some params
-  double default_mu_;
-  double default_zmp_height_;
+  double p_mu_;
+  double p_zmp_height_;
+  double p_initial_transition_time_;
+  RobotPropertyCache rpc_;
   std::map<int, Eigen::Matrix3Xd> contact_offsets;
 
   // is set the first time in the publishing / interp loop
@@ -61,7 +65,6 @@ class GenericPlan {
 
   // robot for doing kinematics
   RigidBodyTree robot_;
-  RobotPropertyCache rpc_;
   Eigen::VectorXd q_;
   Eigen::VectorXd v_;
 

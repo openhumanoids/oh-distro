@@ -43,11 +43,13 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
     std::cout << foot_name << " contacts:\n" << contacts << std::endl;
   }
 
-  // default param
-  default_mu_ = get(config, "default_zmp_height").as<double>();
-  default_zmp_height_ = get(config, "default_zmp_height").as<double>();
-  std::cout << "default_zmp_height: " << default_zmp_height_ << std::endl;
-  std::cout << "default_mu: " << default_mu_ << std::endl;
+  // other params
+  p_mu_ = get(config, "mu").as<double>();
+  p_zmp_height_ = get(config, "zmp_height").as<double>();
+  p_initial_transition_time_ = get(config, "initial_transition_time").as<double>();
+  std::cout << "p_zmp_height: " << p_zmp_height_ << std::endl;
+  std::cout << "mu: " << p_mu_ << std::endl;
+  std::cout << "initial_transition_time: " << p_initial_transition_time_ << std::endl;
 }
 
 void GenericPlan::MakeSupportState(ContactState cs)

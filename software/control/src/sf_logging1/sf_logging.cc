@@ -223,7 +223,7 @@ int main()
   lcmHandler.Start();
   controlReceiver.InitSubscriptions();
 
-  logger.set_frequency(0.002);
+  logger.set_frequency(500);
 
   while(1) {
     // proc robot state

@@ -3,7 +3,12 @@ package drc;
 struct qp_desired_body_motion_t
 {
 	string body_name;
-	float body_q_d[6];
-	float body_v_d[6];
-	float body_vdot_d[6];
+
+  // these are all in task frame, first 3 are position, second 3 are angular
+	float body_q_d[6]; // the interped pose of the desired traj
+	float body_v_d[6]; // the interped vel of the desired traj
+	float body_vdot_d[6]; // the interped acc of the desired traj
+
+  // these are in task frame, computed with PD + ff acc with the above setpoints.
+  float body_vdot_with_pd[6];
 }

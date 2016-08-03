@@ -3,7 +3,7 @@
 #include <iostream>
 
 // the real max size is MAX_CHANNEL_LENGTH - 1
-#define MAX_CHANNEL_LENGTH      3
+#define MAX_CHANNEL_LENGTH      1000000
 
 size_t MRDLogger::max_size() const {
   return MAX_CHANNEL_LENGTH - 1;
@@ -58,9 +58,9 @@ bool MRDLogger::ReadFromFile(const std::string &name)
     reset();
     in.open(name);
     // read header
-    in >> n_points;
-    in >> n_channels;
     in >> tot;
+    in >> n_channels;
+    in >> n_points;
     in >> _freq;
 
     std::vector<std::string> names(n_channels);
@@ -122,7 +122,7 @@ bool MRDLogger::WriteToFile(const std::string &name) const
   try {
     out.open(name.c_str(), std::ofstream::out);
     // write header
-    out << this->size() << " " << _channels.size() << " " << _channels.size()*_ptEnd << " " << _freq << std::endl;
+    out << this->size()*_channels.size() << " " << _channels.size() << " " << this->size() << " " << _freq << std::endl;
 
     // write names and units
     for (auto it = _outputOrder.begin(); it != _outputOrder.end(); it++) {

@@ -10,8 +10,7 @@
 void WalkingPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
                                 const Eigen::VectorXd &est_q,
                                 const Eigen::VectorXd &est_qd,
-                                const Eigen::VectorXd &last_q_d,
-                                double initial_transition_time) {
+                                const Eigen::VectorXd &last_q_d) {
   // current state
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
   Eigen::Isometry3d feet_pose[2];
@@ -34,7 +33,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   Eigen::Matrix<double,7,1> pelv0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.pelvis_id));
   Eigen::Matrix<double,7,1> pelv1;
   pelv1.segment<3>(0) = com_end_d.translation();
-  pelv1[2] += default_zmp_height_;
+  pelv1[2] += p_zmp_height_;
   pelv1.segment<4>(3) = rotmat2quat(feet_pose[0].linear());
 
   std::cout << "pelv0" << pelv0.transpose() << std::endl;
@@ -55,7 +54,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
   zmp_traj_ = GeneratePCHIPSpline(Ts, com_d);
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, default_zmp_height_);
+  zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
  
   // make pelvis traj, 0 is pelvis,
   body_motions_.resize(3);
@@ -260,7 +259,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(double cur_time) {
       support_data_element_lcm.support_surface[i] = element.support_surface[i];
     }
 
-    support_data_element_lcm.mu = default_mu_;
+    support_data_element_lcm.mu = p_mu_;
     support_data_element_lcm.use_support_surface = true;
   }
   

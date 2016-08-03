@@ -7,6 +7,45 @@ namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
 };
 
+class QPDesiredCartAccInput {
+ public:
+  std::string name;
+  Eigen::Vector6d pos;
+  Eigen::Vector6d vel;
+  Eigen::Vector6d acc;
+  
+  Eigen::Vector6d acc_with_pd;
+
+  QPDesiredCartAccInput(const std::string &n) {
+    name = n;
+  }
+
+  void AddToLog(const std::string &prefix, MRDLogger &logger) const {
+    std::string dim[6] = {std::string("x"), std::string("y"), std::string("z"), std::string("wx"), std::string("wy"), std::string("wz")}
+    for (int i = 0; i < pos.size(); i++)
+      logger.AddChannel(prefix + name + std::string("_d[") + dim[i] + std::string("]"), "-", pos.data() + i);
+    for (int i = 0; i < vel.size(); i++)
+      logger.AddChannel(prefix + name + std::string("d_d[") + dim[i] + std::string("]"), "-", vel.data() + i);
+    for (int i = 0; i < acc.size(); i++)
+      logger.AddChannel(prefix + name + std::string("dd_d[") + dim[i] + std::string("]"), "-", acc.data() + i);
+    for (int i = 0; i < acc_with_pd.size(); i++)
+      logger.AddChannel(prefix + name + std::string("dd_w_pd[") + dim[i] + std::string("]"), "-", acc_with_pd.data() + i);
+  }
+
+  void ParseMsg(const drc::qp_desired_body_motion_t &msg) {
+    if (name.compare(msg.body_name) != 0) {
+      std::cerr << "mismatch name: " << msg.body_name << " " << name << std::endl;
+      return;
+    }
+    for (int i = 0; i < 6; i++) {
+      pos[i] = msg.body_q_d[i];
+      vel[i] = msg.body_v_d[i];
+      acc[i] = msg.body_vdot_d[i];
+      acc_with_pd[i] = msg.body_vdot_with_pd[i];
+    }
+  }
+};
+
 class QPIO {
  public:
   // output
@@ -29,10 +68,11 @@ class QPIO {
   Eigen::Vector3d comdd_d1;
   Eigen::Vector2d cop_d;
 
+  QPDesiredCartAccInput pelv;
+  QPDesiredCartAccInput torso;
+  QPDesiredCartAccInput foot[2];
+
   Eigen::VectorXd qdd_d;
-  Eigen::Vector6d pelvdd_d;
-  Eigen::Vector6d footdd_d[2];
-  Eigen::Vector6d torsodd_d;
 
   void ParseZMPInput(const drake::lcmt_qp_controller_input &msg);
   void ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs);
@@ -47,7 +87,11 @@ class QPIO {
 
   void AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const;
 
-  QPIO() {
+  QPIO() 
+    : pelv(QPDesiredCartAccInput("pelvis")), 
+      torso(QPDesiredCartAccInput("torso")), 
+      foot({QPDesiredCartAccInput("leftFoot"), QPDesiredCartAccInput("rightFoot")})
+  {
     _inited = false;
     _hasZMPInput = false;
   }
