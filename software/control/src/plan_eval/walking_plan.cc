@@ -5,12 +5,12 @@
 #include <fstream>
 #include <iomanip> 
 
-
 // we will hack something up for now.
-void WalkingPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                 const Eigen::VectorXd &est_q,
                                 const Eigen::VectorXd &est_qd,
                                 const Eigen::VectorXd &last_q_d) {
+  const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *)plan_msg;
   // current state
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
   Eigen::Isometry3d feet_pose[2];

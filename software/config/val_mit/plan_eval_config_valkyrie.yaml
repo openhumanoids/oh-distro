@@ -42,3 +42,4 @@ foot_contact_offsets:
 mu: 0.7
 zmp_height: 0.8
 initial_transition_time: 0
+flip_ft: 1

@@ -18,13 +18,16 @@
 #include "qp_controller_state.h"
 #include "drake/Path.h"
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <ctime>
+
 std::mutex pointerMutex;
 std::atomic<bool> hasNewQPIn(false);
 std::atomic<bool> hasNewState(false);
 std::atomic<bool> hasNewQPOut(false);
-
-MRDLogger logger;
-const char *home_dir = NULL;
+bool quit = false;
 
 bot_core::robot_state_t robot_state_msg;
 drake::lcmt_qp_controller_input qp_input_msg;
@@ -201,11 +204,7 @@ class LCMControlReceiver {
 static void sigHandler(int signum)
 {
   std::cout << "CAUGHT SIG " << signum << std::endl;
-  if (signum == SIGINT) {
-    logger.WriteToFile(std::string(home_dir) + std::string("/logs/mrdplot/bal"));
-  }
-  std::cout << "GOODBYE CAPTAIN\n";
-  exit(0);
+  quit = true;
 }
 
 int main(int argc, const char *argv[])
@@ -224,6 +223,9 @@ int main(int argc, const char *argv[])
     config = Drake::getDrakePath() + std::string("/../../config/atlas_sim_mit/plan_eval_config_atlas.yaml");
     urdf = Drake::getDrakePath() + std::string("/examples/Atlas/urdf/atlas_minimal_contact.urdf");
   }
+
+  struct passwd *pw = getpwuid(getuid());
+
   std::cout << "Using urdf: " << urdf << std::endl;
   std::cout << "Using config: " << config << std::endl;
 
@@ -240,9 +242,10 @@ int main(int argc, const char *argv[])
   lcmHandler.Start();
   controlReceiver.InitSubscriptions();
 
+  MRDLogger logger;
   logger.set_frequency(500);
 
-  while(1) {
+  while(!quit) {
     // proc robot state
     if (hasNewState) {
       if (!rs.has_init()) {
@@ -274,6 +277,16 @@ int main(int argc, const char *argv[])
     }
   }
 
-  return 0;
+  std::time_t t = std::time(NULL);
+  char buf[100];
+  std::strftime(buf, sizeof(buf), "%y_%m_%d_%H_%M_%S.mrd", std::localtime(&t));
+  std::string name = std::string(buf);
+  name = std::string(pw->pw_dir) + std::string("/logs/mrdplot/") + name;
+
+  logger.WriteToFile(name);
+  std::cout << "Saved to: " << name << std::endl;
+
+  lcmHandler.Stop();
+
   return 0;
 }

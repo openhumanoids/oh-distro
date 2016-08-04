@@ -9,23 +9,49 @@
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 
 
-void PlanEval::HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
-                                        const std::string &channel,
-                                        const drc::robot_plan_t *msg)
+void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
+                               const std::string &channel,
+                               const drc::robot_plan_t *msg)
 {
+  std::cout << "Makeing Manip plan\n";
+
   state_lock_.lock();
   Eigen::VectorXd est_q = est_robot_state_.q;
   Eigen::VectorXd est_qd = est_robot_state_.qd;
   double cur_time = est_robot_state_.t;
   state_lock_.unlock();
 
-  //std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
   std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
   Eigen::VectorXd last_key_frame = est_robot_state_.q;
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
   }
-  new_plan_ptr->HandleCommittedRobotPlan(*msg, est_q, est_qd, last_key_frame);
+  new_plan_ptr->HandleCommittedRobotPlan(msg, est_q, est_qd, last_key_frame);
+
+  plan_lock_.lock();
+  current_plan_ = new_plan_ptr;
+  new_plan_ = true;
+  plan_lock_.unlock();
+}
+
+void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
+                                 const std::string &channel,
+                                 const drc::walking_plan_request_t *msg)
+{
+  std::cout << "Makeing Walking plan\n";
+
+  state_lock_.lock();
+  Eigen::VectorXd est_q = est_robot_state_.q;
+  Eigen::VectorXd est_qd = est_robot_state_.qd;
+  double cur_time = est_robot_state_.t;
+  state_lock_.unlock();
+
+  std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
+  Eigen::VectorXd last_key_frame = est_robot_state_.q;
+  if (current_plan_) {
+    last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
+  }
+  new_plan_ptr->HandleCommittedRobotPlan(msg, est_q, est_qd, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;

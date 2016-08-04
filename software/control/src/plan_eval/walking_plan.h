@@ -9,7 +9,7 @@ class WalkingPlan : public GenericPlan {
     ;
   }
 
-  void HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+  void HandleCommittedRobotPlan(const void *plan_msg,
                                 const Eigen::VectorXd &est_q,
                                 const Eigen::VectorXd &est_qd,
                                 const Eigen::VectorXd &last_q_d);

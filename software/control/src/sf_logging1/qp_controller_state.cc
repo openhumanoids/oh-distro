@@ -31,43 +31,43 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
   for (int i = 0; i < 2; i++)
     footdd[i] = rs.foot(i).J * qdd + rs.foot(i).Jdot_times_v;
 
-  // TODO: should not hard code this
-  Vector3d grf_loc[2];
+  // update contact ft
+  Vector3d grf_loc[2] = {Vector3d::Zero(), Vector3d::Zero()}; 
+  Vector2d cop_w[2] = {Vector2d::Zero(), Vector2d::Zero()};
+  for (int side = 0; side < 2; side++) {
+    grf_w[side].setZero();
+  }
+  
   for (size_t i = 0; i < msg.contact_output.size(); i++) {
-    int side = 0;
+    int side = Side::LEFT;
     if (msg.contact_output[i].body_name.compare(rs.foot(Side::LEFT).name) == 0)
-      side = 0;
+      side = Side::LEFT;
     else if (msg.contact_output[i].body_name.compare(rs.foot(Side::RIGHT).name) == 0)
-      side = 1;
+      side = Side::RIGHT;
     else
-      continue;
+      continue; 
 
     for (int j = 0; j < 6; j++)
       grf_w[side][j] = msg.contact_output[i].wrench[j];
     for (int j = 0; j < 3; j++)
       grf_loc[side][j] = msg.contact_output[i].ref_point[j];
-  }
 
-  // transform this into the ft sensor location
-  for (int i = 0; i < 2; i++) {
+    // translate this to sensor frame to compute cop in the world frame
     Isometry3d H(Isometry3d::Identity());
-    H.translation() = grf_loc[i] - rs.foot_sensor(i).pose.translation();
+    H.translation() = grf_loc[i] - rs.foot_sensor(side).pose.translation();
 
-    grf_w[i] = transformSpatialForce(H, grf_w[i]);
-  }
+    grf_w[side] = transformSpatialForce(H, grf_w[side]);
+    cop_w[side][0] = -grf_w[side][1] / grf_w[side][5] + rs.foot_sensor(side).pose.translation()[0];
+    cop_w[side][1] = grf_w[side][0] / grf_w[side][5] + rs.foot_sensor(side).pose.translation()[1]; 
 
-  // computes cop
-  Vector2d cop_w[2];
-  for (int i = 0; i < 2; i++) {
-    Isometry3d H = rs.foot_sensor(i).pose.inverse();
+    // compute cop in the sensor frame
+    H = rs.foot_sensor(side).pose.inverse();
     H.translation() = Vector3d::Zero();
-    grf_b[i] = transformSpatialForce(H, grf_w[i]);
-    cop_b[i][0] = -grf_b[i][1] / grf_b[i][5];
-    cop_b[i][1] = grf_b[i][0] / grf_b[i][5];
-
-    cop_w[i][0] = -grf_w[i][1] / grf_w[i][5] + rs.foot_sensor(i).pose.translation()[0];
-    cop_w[i][1] = grf_w[i][0] / grf_w[i][5] + rs.foot_sensor(i).pose.translation()[1];
+    grf_b[side] = transformSpatialForce(H, grf_w[side]);
+    cop_b[side][0] = -grf_b[side][1] / grf_b[side][5];
+    cop_b[side][1] = grf_b[side][0] / grf_b[side][5]; 
   }
+
   this->cop_w = (cop_w[Side::LEFT]*grf_w[Side::LEFT][5] + cop_w[Side::RIGHT]*grf_w[Side::RIGHT][5]) / (grf_w[Side::RIGHT][5] + grf_w[Side::LEFT][5]);
 
   // input
@@ -119,18 +119,18 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
 
 void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
 {
-  logger.AddChannel("QP_d.com[x]", "m/s2", com_d.data()+0);
-  logger.AddChannel("QP_d.com[y]", "m/s2", com_d.data()+1);
-  logger.AddChannel("QP_d.com[z]", "m/s2", com_d.data()+2);
+  logger.AddChannel("QP_d.com[x]", "m", com_d.data()+0);
+  logger.AddChannel("QP_d.com[y]", "m", com_d.data()+1);
+  logger.AddChannel("QP_d.com[z]", "m", com_d.data()+2);
 
-  logger.AddChannel("QP_d.cop[x]", "m/s2", cop_d.data()+0);
-  logger.AddChannel("QP_d.cop[y]", "m/s2", cop_d.data()+1);
-  logger.AddChannel("QP.cop[x]", "m/s2", cop_w.data()+0);
-  logger.AddChannel("QP.cop[y]", "m/s2", cop_w.data()+1);
+  logger.AddChannel("QP_d.cop[x]", "m", cop_d.data()+0);
+  logger.AddChannel("QP_d.cop[y]", "m", cop_d.data()+1);
+  logger.AddChannel("QP.cop[x]", "m", cop_w.data()+0);
+  logger.AddChannel("QP.cop[y]", "m", cop_w.data()+1);
 
-  logger.AddChannel("QP_d.comd[x]", "m/s2", comd_d.data()+0);
-  logger.AddChannel("QP_d.comd[y]", "m/s2", comd_d.data()+1);
-  logger.AddChannel("QP_d.comd[z]", "m/s2", comd_d.data()+2);
+  logger.AddChannel("QP_d.comd[x]", "m/s", comd_d.data()+0);
+  logger.AddChannel("QP_d.comd[y]", "m/s", comd_d.data()+1);
+  logger.AddChannel("QP_d.comd[z]", "m/s", comd_d.data()+2);
 
   logger.AddChannel("QP_d.comdd_d[x]", "m/s2", comdd_d.data()+0);
   logger.AddChannel("QP_d.comdd_d[y]", "m/s2", comdd_d.data()+1);
@@ -168,7 +168,7 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.footdd[L][wy]", "rad/s2", footdd[Side::LEFT].data()+1);
   logger.AddChannel("QP.footdd[L][wz]", "rad/s2", footdd[Side::LEFT].data()+2);
 
-  foot[Side::LEFT].AddToLog(std::string("QP_d."), logger);
+  foot[Side::RIGHT].AddToLog(std::string("QP_d."), logger);
   logger.AddChannel("QP.footdd[R][x]", "m/s2", footdd[Side::RIGHT].data()+3);
   logger.AddChannel("QP.footdd[R][y]", "m/s2", footdd[Side::RIGHT].data()+4);
   logger.AddChannel("QP.footdd[R][z]", "m/s2", footdd[Side::RIGHT].data()+5);
@@ -195,8 +195,8 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.M[R][y]", "Nm", grf_w[Side::RIGHT].data()+1);
   logger.AddChannel("QP.M[R][z]", "Nm", grf_w[Side::RIGHT].data()+2);
 
-  logger.AddChannel("QP.cop_b[L][x]", "m/s2", cop_b[Side::LEFT].data()+0);
-  logger.AddChannel("QP.cop_b[L][y]", "m/s2", cop_b[Side::LEFT].data()+1);
-  logger.AddChannel("QP.cop_b[R][x]", "m/s2", cop_b[Side::RIGHT].data()+0);
-  logger.AddChannel("QP.cop_b[R][y]", "m/s2", cop_b[Side::RIGHT].data()+1);
+  logger.AddChannel("QP.cop_b[L][x]", "m", cop_b[Side::LEFT].data()+0);
+  logger.AddChannel("QP.cop_b[L][y]", "m", cop_b[Side::LEFT].data()+1);
+  logger.AddChannel("QP.cop_b[R][x]", "m", cop_b[Side::RIGHT].data()+0);
+  logger.AddChannel("QP.cop_b[R][y]", "m", cop_b[Side::RIGHT].data()+1);
 }

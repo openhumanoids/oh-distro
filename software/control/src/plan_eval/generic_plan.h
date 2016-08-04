@@ -1,7 +1,7 @@
 #pragma once
 
-#include "drc/robot_plan_t.hpp"
 #include "drake/lcmt_qp_controller_input.hpp"
+#include "bot_core/robot_state_t.hpp"
 
 #include "drake/systems/plants/RigidBodyTree.h"
 #include "drake/systems/plants/KinematicsCache.h"
@@ -10,6 +10,9 @@
 #include "drake/systems/controllers/QPCommon.h"
  
 #include "zmp_planner.h"
+
+#include "drc/robot_plan_t.hpp"
+#include "drc/walking_plan_request_t.hpp"
 
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
@@ -38,7 +41,7 @@ class GenericPlan {
   virtual void LoadConfigurationFromYAML(const std::string &name);
   inline double t0() const { return interp_t0_; }
 
-  virtual void HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+  virtual void HandleCommittedRobotPlan(const void *msg,
                                         const Eigen::VectorXd &est_q,
                                         const Eigen::VectorXd &est_qd,
                                         const Eigen::VectorXd &last_q_d) = 0;

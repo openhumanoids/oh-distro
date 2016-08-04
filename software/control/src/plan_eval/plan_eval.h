@@ -45,7 +45,11 @@ class PlanEval {
 
     lcm::Subscription *sub;
     sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN",
-        &PlanEval::HandleCommittedRobotPlan, this);
+        &PlanEval::HandleManipPlan, this);
+    sub->setQueueCapacity(1);
+    
+    sub = lcm_handle_.subscribe("WALKING_CONTROLLER_PLAN_REQUEST",
+        &PlanEval::HandleWalkingPlan, this);
     sub->setQueueCapacity(1);
 
     sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
@@ -87,9 +91,13 @@ class PlanEval {
   void ReceiverLoop();
   void PublisherLoop();
 
-  void HandleCommittedRobotPlan(const lcm::ReceiveBuffer *rbuf,
-                                        const std::string &channel,
-                                        const drc::robot_plan_t *msg);
+  void HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
+                       const std::string &channel,
+                       const drc::robot_plan_t *msg);
+  
+  void HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
+                       const std::string &channel,
+                       const drc::walking_plan_request_t *msg);
 
   // handle robot state msg
   void HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,

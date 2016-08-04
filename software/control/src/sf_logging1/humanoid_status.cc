@@ -5,22 +5,6 @@ const Vector3d HumanoidStatus::kFootToContactOffset = Vector3d(0, 0, -0.09);
 const Vector3d HumanoidStatus::kFootToSensorOffset =
     Vector3d(0.0215646, 0.0, -0.051054);
 
-/*
-void HumanoidStatus::FillKinematics(const RigidBody& body, Isometry3d* pose,
-                                    Vector6d* vel, MatrixXd* J,
-                                    Vector6d* Jdot_times_v,
-                                    const Vector3d& local_offset) const {
-  *pose = Isometry3d::Identity();
-  pose->translation() = local_offset;
-  *pose = robot_->relativeTransform(cache_, 0, body.body_index) * (*pose);
-
-  *vel = GetTaskSpaceVel(*(robot_), cache_, body, local_offset);
-  *J = GetTaskSpaceJacobian(*(robot_), cache_, body, local_offset);
-  *Jdot_times_v =
-      GetTaskSpaceJacobianDotTimesV(*(robot_), cache_, body, local_offset);
-}
-*/
-
 void HumanoidStatus::Update(double t, const VectorXd& q, const VectorXd& v,
                             const VectorXd& trq, const Vector6d& l_ft,
                             const Vector6d& r_ft, const Matrix3d& rot) {
@@ -49,22 +33,9 @@ void HumanoidStatus::Update(double t, const VectorXd& q, const VectorXd& v,
   comd_ = J_com_ * v;
 
   // body parts
-  /*
-  FillKinematics(*pelv_.body, &pelv_.pose, &pelv_.vel, &pelv_.J,
-                 &pelv_.Jdot_times_v);
-  FillKinematics(*torso_.body, &torso_.pose, &torso_.vel, &torso_.J,
-                 &torso_.Jdot_times_v);
-  */
   pelv_.Update(*robot_, cache_);
   torso_.Update(*robot_, cache_);
   for (int s = 0; s < 2; s++) {
-    /*
-    FillKinematics(*foot_[s].body, &foot_[s].pose, &foot_[s].vel, &foot_[s].J,
-                   &foot_[s].Jdot_times_v, kFootToContactOffset);
-    FillKinematics(*foot_sensor_[s].body, &foot_sensor_[s].pose,
-                   &foot_sensor_[s].vel, &foot_sensor_[s].J,
-                   &foot_sensor_[s].Jdot_times_v, kFootToSensorOffset);
-    */
     foot_[s].Update(*robot_, cache_);
     foot_sensor_[s].Update(*robot_, cache_);
   }
@@ -136,14 +107,14 @@ void HumanoidStatus::AddToLog(MRDLogger &logger) const {
   logger.AddChannel("RS.F_w[L][z]", "N", foot_wrench_in_world_frame_[Side::LEFT].data()+5);
   logger.AddChannel("RS.M_w[L][x]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+0);
   logger.AddChannel("RS.M_w[L][y]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+1);
-  logger.AddChannel("RS.M_w[L][z]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+1);
+  logger.AddChannel("RS.M_w[L][z]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+2);
 
   logger.AddChannel("RS.F_w[R][x]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+3);
   logger.AddChannel("RS.F_w[R][y]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+4);
   logger.AddChannel("RS.F_w[R][z]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+5);
   logger.AddChannel("RS.M_w[R][x]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+0);
   logger.AddChannel("RS.M_w[R][y]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+1);
-  logger.AddChannel("RS.M_w[R][z]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+1);
+  logger.AddChannel("RS.M_w[R][z]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+2);
 
   for (int i = 0; i < position_.size(); i++)
     logger.AddChannel("RS.q["+robot_->getPositionName(i)+"]", "rad", position_.data()+i);
@@ -200,7 +171,9 @@ void HumanoidStatus::ParseMsg(const bot_core::robot_state_t &msg)
   raw_ft[Side::RIGHT][1] = msg.force_torque.r_foot_torque_y;
   raw_ft[Side::RIGHT][2] = msg.force_torque.r_foot_torque_z;
 
-  Matrix3d rot(AngleAxisd(M_PI, Vector3d::UnitX()));
+  Matrix3d rot(Matrix3d::Identity());
+  if (flip_ft_)
+    rot = Matrix3d(AngleAxisd(M_PI, Vector3d::UnitX()));
 
   Update(time, robot_state.q, robot_state.qd, joint_torque_, raw_ft[0], raw_ft[1], rot);
 }

@@ -93,6 +93,10 @@ class HumanoidStatus {
       std::cout << it->first.toString() << " foot name: " << robot_->getBodyOrFrameName(it->second) << std::endl;
     }
 
+    flip_ft_ = false;
+    if (config["flip_ft"].as<int>())
+      flip_ft_ = true;
+
     pelv_.name = config["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>();
     pelv_.body = robot_->findLink(pelv_.name).get();
     pelv_.local_offset.setZero();
@@ -235,6 +239,7 @@ class HumanoidStatus {
 
  private:
   bool inited_;
+  bool flip_ft_;
 
   RobotPropertyCache rpc_;
   std::unique_ptr<RigidBodyTree> robot_;
@@ -280,18 +285,4 @@ class HumanoidStatus {
   Vector6d
       foot_wrench_in_body_frame_[2];  ///< Wrench measured in the body frame
   Vector6d foot_wrench_in_world_frame_[2];  ///< Wrench rotated to world frame
-
-  /**
-   * Computes kinematic related values.
-   * @param body where BodyOfInterest is attached to
-   * @param pose stores the output transformation
-   * @param vel stores the output task space velocity
-   * @param J stores the task space Jacobian
-   * @param Jdot_times_v stores the task space Jacobian_dot * v
-   * @param local_offset offset between point of interest to body origin in
-   * body frame
-   */
-  //void FillKinematics(const RigidBody& body, Isometry3d* pose, Vector6d* vel,
-  //                    MatrixXd* J, Vector6d* Jdot_times_v,
-  //                    const Vector3d& local_offset = Vector3d::Zero()) const;
 };

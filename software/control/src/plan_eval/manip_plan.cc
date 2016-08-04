@@ -173,15 +173,16 @@ Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
   return q_trajs_.value(plan_time);
 }
 
-void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
+void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                          const Eigen::VectorXd &est_q,
                                          const Eigen::VectorXd &est_qd,
                                          const Eigen::VectorXd &last_q_d) {
+  const drc::robot_plan_t *msg = (const drc::robot_plan_t *)plan_msg;
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
-  size_t num_T = msg.plan.size();
-  //size_t num_T = msg.plan.size() + 1;
+  size_t num_T = msg->plan.size();
+  //size_t num_T = msg->plan.size() + 1;
 
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
@@ -215,7 +216,7 @@ void ManipPlan::HandleCommittedRobotPlan(const drc::robot_plan_t &msg,
 
   // generate q_traj first w. cubic spline, which gives velocities.
   for (size_t t = 0; t < num_T; t++) {
-    const bot_core::robot_state_t &keyframe = msg.plan[t];
+    const bot_core::robot_state_t &keyframe = msg->plan[t];
     KeyframeToState(keyframe, q_, v_);
     Ts[t] = (double)keyframe.utime / 1e6;
     q_d[t] = q_;
