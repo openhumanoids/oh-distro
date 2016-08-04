@@ -41,8 +41,8 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
   // make a zmp traj for ds
   int num_T = 2;
-  double ds_duration = 2.;
-  double ss_duration = 2.;
+  double ds_duration = 6.;
+  double ss_duration = 6.;
   std::vector<double> Ts(num_T);
   std::vector<Eigen::Vector2d> com_d(num_T);
   for (int i = 0; i < num_T; i++) {
@@ -115,6 +115,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(double cur_time) {
   if (plan_time >= contact_switching_time_.front()) {
     contact_state_.pop_front();
     contact_switching_time_.pop_front();
+    contact_switch_time_ = cur_time;
   }
   MakeSupportState(contact_state_.front());
 
@@ -265,8 +266,12 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(double cur_time) {
   
   ////////////////////////////////////////
   // torque alpha filter
-  qp_input.torque_alpha_filter = 0.;
-
+  //qp_input.torque_alpha_filter = 0.;
+  if (plan_time < p_initial_transition_time_ || cur_time - contact_switch_time_ < p_initial_transition_time_)
+    qp_input.torque_alpha_filter = 0.9;
+  else
+    qp_input.torque_alpha_filter = 0.; 
+  
   return qp_input;
 }
 

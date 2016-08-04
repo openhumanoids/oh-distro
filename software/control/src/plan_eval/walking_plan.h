@@ -20,5 +20,6 @@ class WalkingPlan : public GenericPlan {
  private:
   std::list<ContactState> contact_state_;
   std::list<double> contact_switching_time_;
+  double contact_switch_time_ = -INFINITY;
 };
 
