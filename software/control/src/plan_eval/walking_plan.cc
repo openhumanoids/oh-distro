@@ -25,7 +25,9 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // shift to middle left foot 
   Eigen::Isometry3d com_end_d(Eigen::Isometry3d::Identity());
   com_end_d.translation() = Eigen::Vector3d(0.04, 0, 0);
-  com_end_d = feet_pose[0] * com_end_d;
+  auto stance_foot = Side::RIGHT;
+  auto swing_foot = Side::LEFT;
+  com_end_d = feet_pose[stance_foot] * com_end_d;
 
   // compute end points for com / pelvis
   Eigen::Vector2d com0 = robot_.centerOfMass(cache_est).segment<2>(0);
@@ -34,7 +36,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   Eigen::Matrix<double,7,1> pelv1;
   pelv1.segment<3>(0) = com_end_d.translation();
   pelv1[2] += p_zmp_height_;
-  pelv1.segment<4>(3) = rotmat2quat(feet_pose[0].linear());
+  pelv1.segment<4>(3) = rotmat2quat(feet_pose[stance_foot].linear());
 
   std::cout << "pelv0" << pelv0.transpose() << std::endl;
   std::cout << "pelv1" << pelv1.transpose() << std::endl;
@@ -66,6 +68,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   for (int i = 0; i < 3; i++)
     MakeDefaultBodyMotionData(body_motions_[i], num_T);
 
+  // pelvis body motion data
   body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
   body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
   std::vector<Eigen::Vector7d> pelv_knots(num_T);
@@ -73,24 +76,26 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   pelv_knots[1] = pelv1;
   body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
-  // foot stays the same
-  int id = rpc_.foot_ids[Side::LEFT];
+  // stance foot body motion data
+  int id = rpc_.foot_ids[stance_foot];
   body_motions_[1].body_or_frame_id = id;
   body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, std::vector<Eigen::Vector7d>(num_T, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id))), std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-  // make swing up traj for right foot
-  id = rpc_.foot_ids[Side::RIGHT];
+  
+
+  // swing foot body motion data make swing up traj for right foot
+  id = rpc_.foot_ids[swing_foot];
   MakeDefaultBodyMotionData(body_motions_[2], 3);
   body_motions_[2].body_or_frame_id = id;
-  std::vector<double> rightTs(3);
-  rightTs[0] = 0;
-  rightTs[1] = ds_duration;
-  rightTs[2] = ss_duration + ds_duration;
+  std::vector<double> swingTs(3);
+  swingTs[0] = 0;
+  swingTs[1] = ds_duration;
+  swingTs[2] = ss_duration + ds_duration;
 
-  std::vector<Eigen::Vector7d> r_foot_d;
-  r_foot_d.resize(3, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id)));
-  r_foot_d[2][2] += 0.2;
-  std::vector<Eigen::Vector7d> r_footd_d = std::vector<Eigen::Vector7d>(rightTs.size(), Eigen::Vector7d::Zero());
-  body_motions_[2].trajectory = GenerateCubicCartesianSpline(rightTs, r_foot_d, r_footd_d);
+  std::vector<Eigen::Vector7d> swing_foot_d;
+  swing_foot_d.resize(3, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id)));
+  swing_foot_d[2][2] += 0.2;
+  std::vector<Eigen::Vector7d> swing_footd_d = std::vector<Eigen::Vector7d>(swingTs.size(), Eigen::Vector7d::Zero());
+  body_motions_[2].trajectory = GenerateCubicCartesianSpline(swingTs, swing_foot_d, swing_footd_d);
 
   // hold arm joints, I am assuming the leg joints will just be ignored..
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
@@ -99,7 +104,10 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // contact state and contact switching time
   contact_state_.clear();
   contact_state_.push_back(DSc);
-  contact_state_.push_back(SSL);
+  if (swing_foot == Side::LEFT)
+    contact_state_.push_back(SSR);
+  else
+    contact_state_.push_back(SSL);
 
   contact_switching_time_.clear();
   contact_switching_time_.push_back(ds_duration);

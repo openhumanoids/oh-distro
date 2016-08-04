@@ -363,7 +363,7 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
 
   for(int i=0; i<num_joints; i++){
     msg.q_integrator_state[i] = controller_state.q_integrator_state(i);
-    msg.vref_integrator_state[i] = qp_output.qd_ref(i);
+    msg.vref_integrator_state[i] = controller_state.vref_integrator_state(i);
     msg.q_des[i] = qp_output.q_des(i);
     msg.qd_des[i] = qp_output.qdot_des(i);
     msg.q_ref[i] = qp_output.q_ref(i);

@@ -72,7 +72,7 @@ actuator_names:
   - rightShoulderYaw
   - rightElbowPitch
   - rightForearmYaw
-  - rightWristRoll
+  - rightWristRoll  
   - rightWristPitch
   - leftShoulderPitch
   - leftShoulderRoll
@@ -85,14 +85,14 @@ actuator_names:
   - rightHipRoll
   - rightHipPitch
   - rightKneePitch
-  - rightAnklePitch
-  - rightAnkleRoll
+  - rightAnklePitchActuator
+  - rightAnkleRollActuator
   - leftHipYaw
   - leftHipRoll
   - leftHipPitch
   - leftKneePitch
-  - leftAnklePitch
-  - leftAnkleRoll
+  - leftAnklePitchActuator
+  - leftAnkleRollActuator
 
 
 
@@ -195,7 +195,7 @@ qp_controller_params:
           ff_qd: 0
           ff_f_d: 1
           ff_const: 0
-          ff_qd_d: 0.4
+          ff_qd_d: 1.0
       upperNeckPitch:
         hardware:
           joint_is_force_controlled: false
@@ -209,8 +209,31 @@ qp_controller_params:
           joint_is_force_controlled: false
           joint_is_position_controlled: true
 
+      rightHipPitch:
+        hardware:
+          ff_qd_d: 1.0
+
+      rightAnklePitchActuator:
+        hardware:
+          ff_qd_d: 1.0
+
+      leftHipPitch:
+        hardware:
+          ff_qd_d: 1.0
+
+      leftAnklePitchActuator:
+        hardware:
+          ff_qd_d: 1.0
+
+
+
 
   base: # automatically inherits from the default =
   standing:
   
   walking:
+    body_specific:
+      *PELVIS_NAME :
+        Kp: {x: 0, y: 0, z: 15, wx: 40, wy: 40, wz: 40}
+        weight: 0.01
+        damping_ratio: 0.3

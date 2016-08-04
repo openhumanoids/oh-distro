@@ -40,6 +40,6 @@ foot_contact_offsets:
     right_heel: {x: -0.058, y: -0.055, z: -0.09}
 
 mu: 0.7
-zmp_height: 1.1
+zmp_height: 1.0
 initial_transition_time: 0
 flip_ft: 1
