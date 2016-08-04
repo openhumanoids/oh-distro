@@ -13,7 +13,7 @@ class QPDesiredCartAccInput {
   Eigen::Vector6d pos;
   Eigen::Vector6d vel;
   Eigen::Vector6d acc;
-  
+
   Eigen::Vector6d acc_with_pd;
 
   QPDesiredCartAccInput(const std::string &n) {
@@ -87,10 +87,10 @@ class QPIO {
 
   void AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const;
 
-  QPIO() 
-    : pelv(QPDesiredCartAccInput("pelvis")), 
-      torso(QPDesiredCartAccInput("torso")), 
-      foot({QPDesiredCartAccInput("leftFoot"), QPDesiredCartAccInput("rightFoot")})
+  QPIO(const HumanoidStatus &rs)
+    : pelv(QPDesiredCartAccInput(rs.pelv().name)),
+      torso(QPDesiredCartAccInput(rs.torso().name)),
+      foot({QPDesiredCartAccInput(rs.foot(Side::LEFT).name), QPDesiredCartAccInput(rs.foot(Side::RIGHT).name)})
   {
     _inited = false;
     _hasZMPInput = false;

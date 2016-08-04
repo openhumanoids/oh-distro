@@ -7,6 +7,7 @@ kinematic_tree_metadata:
     hands:
       r: &R_HAND_NAME rightPalm
       l: &L_HAND_NAME leftPalm
+    torso: &TORSO_NAME torso
 
   joint_group_names:
     legs:

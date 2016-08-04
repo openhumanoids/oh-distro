@@ -16,6 +16,7 @@
 
 #include "humanoid_status.h"
 #include "qp_controller_state.h"
+#include "drake/Path.h"
 
 std::mutex pointerMutex;
 std::atomic<bool> hasNewQPIn(false);
@@ -207,17 +208,33 @@ static void sigHandler(int signum)
   exit(0);
 }
 
-int main()
+int main(int argc, const char *argv[])
 {
+  if (argc != 3 && argc != 1) {
+    std::cerr << "usage: sf_logging1 <urdf_path> <config.yaml>\n";
+    return -1;
+  }
+
+  std::string urdf, config;
+  if (argc == 3) {
+    urdf = std::string(argv[1]);
+    config = std::string(argv[2]);
+  }
+  else {
+    config = Drake::getDrakePath() + std::string("/../../config/atlas_sim_mit/plan_eval_config_atlas.yaml");
+    urdf = Drake::getDrakePath() + std::string("/examples/Atlas/urdf/atlas_minimal_contact.urdf");
+  }
+  std::cout << "Using urdf: " << urdf << std::endl;
+  std::cout << "Using config: " << config << std::endl;
+
   signal(SIGINT, sigHandler);
 
   // start lcm stuff
   LCMHandler lcmHandler;
   LCMControlReceiver controlReceiver(&lcmHandler);
-  home_dir = getenv("HOME");
-  std::string urdf = std::string(home_dir) + std::string("/code/oh-distro-private/software/models/val_description/urdf/valkyrie_sim_drake.urdf");
-  HumanoidStatus rs(std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW)));
-  QPIO qpout;
+
+  HumanoidStatus rs(config, std::unique_ptr<RigidBodyTree>(new RigidBodyTree(urdf, DrakeJoint::ROLLPITCHYAW)));
+  QPIO qp_io(rs);
 
   // start the lcm
   lcmHandler.Start();
@@ -237,21 +254,21 @@ int main()
 
       hasNewState = false;
 
-      if (qpout.has_init() && rs.has_init())
+      if (qp_io.has_init() && rs.has_init())
         logger.SaveData();
     }
     // set qp input
     if (hasNewQPIn) {
-      qpout.ParseZMPInput(qp_input_msg);
+      qp_io.ParseZMPInput(qp_input_msg);
     }
     // proc qp output
     if (hasNewQPOut && rs.has_init()) {
-      if (!qpout.has_init()) {
-        qpout.Init(qp_output_msg);
-        qpout.AddToLog(logger, rs);
+      if (!qp_io.has_init()) {
+        qp_io.Init(qp_output_msg);
+        qp_io.AddToLog(logger, rs);
       }
 
-      qpout.ParseMsg(qp_output_msg, rs);
+      qp_io.ParseMsg(qp_output_msg, rs);
 
       hasNewQPOut = false;
     }

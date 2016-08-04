@@ -35,9 +35,9 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
   Vector3d grf_loc[2];
   for (size_t i = 0; i < msg.contact_output.size(); i++) {
     int side = 0;
-    if (msg.contact_output[i].body_name.compare("leftFoot") == 0)
+    if (msg.contact_output[i].body_name.compare(rs.foot(Side::LEFT).name) == 0)
       side = 0;
-    else if (msg.contact_output[i].body_name.compare("rightFoot") == 0)
+    else if (msg.contact_output[i].body_name.compare(rs.foot(Side::RIGHT).name) == 0)
       side = 1;
     else
       continue;
@@ -74,13 +74,13 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
   for (int i = 0; i < msg.desired_body_motions.size(); i++) {
     const drc::qp_desired_body_motion_t &vdot_d = msg.desired_body_motions[i];
 
-    if (vdot_d.body_name.compare("pelvis") == 0)
+    if (vdot_d.body_name.compare(rs.pelv().name) == 0)
       pelv.ParseMsg(vdot_d);
-    if (vdot_d.body_name.compare("torso") == 0)
+    if (vdot_d.body_name.compare(rs.torso().name) == 0)
       torso.ParseMsg(vdot_d);
-    if (vdot_d.body_name.compare("leftFoot") == 0)
+    if (vdot_d.body_name.compare(rs.foot(Side::LEFT).name) == 0)
       foot[Side::LEFT].ParseMsg(vdot_d);
-    if (vdot_d.body_name.compare("rightFoot") == 0)
+    if (vdot_d.body_name.compare(rs.foot(Side::RIGHT).name) == 0)
       foot[Side::RIGHT].ParseMsg(vdot_d);
   }
 

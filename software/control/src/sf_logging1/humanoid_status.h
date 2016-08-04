@@ -6,6 +6,9 @@
 #include "../RobotStateDriver.hpp"
 #include "bot_core/robot_state_t.hpp"
 
+#include "drake/systems/controllers/QPCommon.h"
+#include "drake/util/yaml/yamlUtil.h"
+
 using namespace Eigen;
 
 /**
@@ -20,6 +23,8 @@ struct BodyOfInterest {
   const RigidBody* body;
 
   Eigen::Isometry3d pose;
+  Vector3d rpy;
+  Vector3d local_offset;
   /// This is the task space velocity, or twist of a frame that has the same
   /// orientation as the world frame, but located at the origin of the body
   /// frame.
@@ -30,10 +35,24 @@ struct BodyOfInterest {
   /// task space Jd * v
   Vector6d Jdot_times_v;
 
+  void Update(const RigidBodyTree &robot, const KinematicsCache<double> &cache) {
+    pose = Isometry3d::Identity();
+    pose.translation() = local_offset;
+    pose = robot.relativeTransform(cache, 0, body->body_index) * pose;
+    rpy = rotmat2rpy(pose.linear());
+
+    vel = GetTaskSpaceVel(robot, cache, *body, local_offset);
+    J = GetTaskSpaceJacobian(robot, cache, *body, local_offset);
+    Jdot_times_v = GetTaskSpaceJacobianDotTimesV(robot, cache, *body, local_offset);
+  }
+
   void AddToLog(const std::string &prefix, MRDLogger &logger) const {
     logger.AddChannel(prefix+name+"[x]", "m", pose.translation().data());
     logger.AddChannel(prefix+name+"[y]", "m", pose.translation().data()+1);
     logger.AddChannel(prefix+name+"[z]", "m", pose.translation().data()+2);
+    logger.AddChannel(prefix+name+"[r]", "rad", rpy.data());
+    logger.AddChannel(prefix+name+"[p]", "rad", rpy.data()+1);
+    logger.AddChannel(prefix+name+"[y]", "rad", rpy.data()+2);
 
     logger.AddChannel(prefix+name+"d[x]", "m/s", vel.data()+3);
     logger.AddChannel(prefix+name+"d[y]", "m/s", vel.data()+4);
@@ -58,25 +77,45 @@ class HumanoidStatus {
   /// Offset from the foot frame to force torque sensor in the foot frame.
   static const Vector3d kFootToSensorOffset;
 
-  explicit HumanoidStatus(std::unique_ptr<RigidBodyTree> robot_in)
+  explicit HumanoidStatus(const std::string &name, std::unique_ptr<RigidBodyTree> robot_in)
       : robot_(std::move(robot_in)), cache_(robot_->bodies) {
-    pelv_.name = std::string("pelvis");
-    pelv_.body = robot_->findLink("pelvis").get();
 
-    torso_.name = std::string("torso");
-    torso_.body = robot_->findLink("torso").get();
+    // load from config file.
+    YAML::Node config = YAML::LoadFile(name);
+    rpc_ = parseKinematicTreeMetadata(config["kinematic_tree_metadata"], *robot_);
 
-    foot_[Side::LEFT].name = std::string("leftFoot");
-    foot_[Side::LEFT].body = robot_->findLink("leftFoot").get();
+    std::map<Side, std::string> side_identifiers = {{Side::LEFT, "l"}, {Side::RIGHT, "r"}};
+    for (const auto& side : Side::values)
+      rpc_.hand_ids[side] = robot_->findLinkId(config["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
+    rpc_.pelvis_id = robot_->findLinkId(config["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>());
 
-    foot_[Side::RIGHT].name = std::string("rightFoot");
-    foot_[Side::RIGHT].body = robot_->findLink("rightFoot").get();
+    for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
+      std::cout << it->first.toString() << " foot name: " << robot_->getBodyOrFrameName(it->second) << std::endl;
+    }
+
+    pelv_.name = config["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>();
+    pelv_.body = robot_->findLink(pelv_.name).get();
+    pelv_.local_offset.setZero();
+
+    torso_.name = config["kinematic_tree_metadata"]["body_names"]["torso"].as<std::string>();
+    torso_.body = robot_->findLink(torso_.name).get();
+    torso_.local_offset.setZero();
+
+    foot_[Side::LEFT].name = config["kinematic_tree_metadata"]["body_names"]["feet"]["l"].as<std::string>();
+    foot_[Side::LEFT].body = robot_->findLink(foot_[Side::LEFT].name).get();
+    foot_[Side::LEFT].local_offset.setZero();
+
+    foot_[Side::RIGHT].name = config["kinematic_tree_metadata"]["body_names"]["feet"]["r"].as<std::string>();
+    foot_[Side::RIGHT].body = robot_->findLink(foot_[Side::RIGHT].name).get();
+    foot_[Side::RIGHT].local_offset.setZero();
 
     foot_sensor_[Side::LEFT].name = std::string("leftFootSensor");
-    foot_sensor_[Side::LEFT].body = robot_->findLink("leftFoot").get();
+    foot_sensor_[Side::LEFT].body = robot_->findLink(foot_[Side::LEFT].name).get();
+    foot_sensor_[Side::LEFT].local_offset = kFootToSensorOffset;
 
     foot_sensor_[Side::RIGHT].name = std::string("rightFootSensor");
-    foot_sensor_[Side::RIGHT].body = robot_->findLink("rightFoot").get();
+    foot_sensor_[Side::RIGHT].body = robot_->findLink(foot_[Side::RIGHT].name).get();
+    foot_sensor_[Side::RIGHT].local_offset = kFootToSensorOffset;
 
     // build map
     body_name_to_id_ = std::unordered_map<std::string, int>();
@@ -197,6 +236,7 @@ class HumanoidStatus {
  private:
   bool inited_;
 
+  RobotPropertyCache rpc_;
   std::unique_ptr<RigidBodyTree> robot_;
   KinematicsCache<double> cache_;
   /// Maps body name to its index
@@ -251,7 +291,7 @@ class HumanoidStatus {
    * @param local_offset offset between point of interest to body origin in
    * body frame
    */
-  void FillKinematics(const RigidBody& body, Isometry3d* pose, Vector6d* vel,
-                      MatrixXd* J, Vector6d* Jdot_times_v,
-                      const Vector3d& local_offset = Vector3d::Zero()) const;
+  //void FillKinematics(const RigidBody& body, Isometry3d* pose, Vector6d* vel,
+  //                    MatrixXd* J, Vector6d* Jdot_times_v,
+  //                    const Vector3d& local_offset = Vector3d::Zero()) const;
 };

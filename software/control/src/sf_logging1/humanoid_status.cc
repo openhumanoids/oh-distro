@@ -5,6 +5,7 @@ const Vector3d HumanoidStatus::kFootToContactOffset = Vector3d(0, 0, -0.09);
 const Vector3d HumanoidStatus::kFootToSensorOffset =
     Vector3d(0.0215646, 0.0, -0.051054);
 
+/*
 void HumanoidStatus::FillKinematics(const RigidBody& body, Isometry3d* pose,
                                     Vector6d* vel, MatrixXd* J,
                                     Vector6d* Jdot_times_v,
@@ -18,6 +19,7 @@ void HumanoidStatus::FillKinematics(const RigidBody& body, Isometry3d* pose,
   *Jdot_times_v =
       GetTaskSpaceJacobianDotTimesV(*(robot_), cache_, body, local_offset);
 }
+*/
 
 void HumanoidStatus::Update(double t, const VectorXd& q, const VectorXd& v,
                             const VectorXd& trq, const Vector6d& l_ft,
@@ -47,16 +49,24 @@ void HumanoidStatus::Update(double t, const VectorXd& q, const VectorXd& v,
   comd_ = J_com_ * v;
 
   // body parts
+  /*
   FillKinematics(*pelv_.body, &pelv_.pose, &pelv_.vel, &pelv_.J,
                  &pelv_.Jdot_times_v);
   FillKinematics(*torso_.body, &torso_.pose, &torso_.vel, &torso_.J,
                  &torso_.Jdot_times_v);
+  */
+  pelv_.Update(*robot_, cache_);
+  torso_.Update(*robot_, cache_);
   for (int s = 0; s < 2; s++) {
+    /*
     FillKinematics(*foot_[s].body, &foot_[s].pose, &foot_[s].vel, &foot_[s].J,
                    &foot_[s].Jdot_times_v, kFootToContactOffset);
     FillKinematics(*foot_sensor_[s].body, &foot_sensor_[s].pose,
                    &foot_sensor_[s].vel, &foot_sensor_[s].J,
                    &foot_sensor_[s].Jdot_times_v, kFootToSensorOffset);
+    */
+    foot_[s].Update(*robot_, cache_);
+    foot_sensor_[s].Update(*robot_, cache_);
   }
 
   // ft sensor
