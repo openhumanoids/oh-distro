@@ -8,6 +8,7 @@
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
 #include "drake/systems/robotInterfaces/BodyMotionData.h"
 #include "drake/systems/controllers/QPCommon.h"
+#include "drake/util/yaml/yamlUtil.h"
  
 #include "zmp_planner.h"
 
@@ -56,6 +57,9 @@ class GenericPlan {
     DSc = 2
   }; 
 
+  // top level yaml config file node
+  YAML::Node config_;
+
   // some params
   double p_mu_;
   double p_zmp_height_;
@@ -88,11 +92,16 @@ class GenericPlan {
   // list of support
   RigidBodySupportState support_state_;
   
-  void MakeSupportState(ContactState cs);
+  
+  RigidBodySupportState MakeDefaultSupportState(ContactState cs) const;
+  BodyMotionData MakeDefaultBodyMotionData(size_t num_segments) const;
+ 
+  // make lcm messages
+  drake::lcmt_support_data EncodeSupportData(const RigidBodySupportStateElement &element) const;
+  drake::lcmt_body_motion_data EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const;
 };
 
 std::string PrimaryBodyOrFrameName(const std::string &full_body_name);
-void MakeDefaultBodyMotionData(BodyMotionData &body_motion_data, size_t num_T);
 Eigen::Matrix<double,7,1> Isometry3dToVector7d(const Eigen::Isometry3d &pose);
 
 void KeyframeToState(const bot_core::robot_state_t &keyframe,

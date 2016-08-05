@@ -94,7 +94,7 @@ class HumanoidStatus {
     }
 
     flip_ft_ = false;
-    if (config["flip_ft"].as<int>())
+    if (config["flip_foot_ft_sensor"].as<int>())
       flip_ft_ = true;
 
     pelv_.name = config["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>();

@@ -151,7 +151,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
   com_traj_ = ExponentialPlusPiecewisePolynomial<double>(tmp28, Ay, a, b_traj);
 }
 
-drake::lcmt_zmp_data ZMPPlanner::MakeMessage(double plan_time) const {
+drake::lcmt_zmp_data ZMPPlanner::EncodeZMPData(double plan_time) const {
   drake::lcmt_zmp_data zmp_data_lcm;
   zmp_data_lcm.timestamp = 0;
   eigenToCArrayOfArrays(A_, zmp_data_lcm.A);

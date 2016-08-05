@@ -21,5 +21,10 @@ class WalkingPlan : public GenericPlan {
   std::list<ContactState> contact_state_;
   std::list<double> contact_switching_time_;
   double contact_switch_time_ = -INFINITY;
+
+  double p_ss_duration_;
+  double p_ds_duration_;
+
+  void LoadConfigurationFromYAML(const std::string &name);
 };
 

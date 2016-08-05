@@ -24,5 +24,5 @@ class ZMPPlanner {
   Eigen::Vector2d u0_;
   
   void Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vector4d &x0, double height);
-  drake::lcmt_zmp_data MakeMessage(double time) const;
+  drake::lcmt_zmp_data EncodeZMPData(double time) const;
 };
