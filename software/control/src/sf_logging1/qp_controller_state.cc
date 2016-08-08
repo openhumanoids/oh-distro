@@ -32,12 +32,12 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
     footdd[i] = rs.foot(i).J * qdd + rs.foot(i).Jdot_times_v;
 
   // update contact ft
-  Vector3d grf_loc[2] = {Vector3d::Zero(), Vector3d::Zero()}; 
+  Vector3d grf_loc[2] = {Vector3d::Zero(), Vector3d::Zero()};
   Vector2d cop_w[2] = {Vector2d::Zero(), Vector2d::Zero()};
   for (int side = 0; side < 2; side++) {
     grf_w[side].setZero();
   }
-  
+
   for (size_t i = 0; i < msg.contact_output.size(); i++) {
     int side = Side::LEFT;
     if (msg.contact_output[i].body_name.compare(rs.foot(Side::LEFT).name) == 0)
@@ -45,7 +45,7 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
     else if (msg.contact_output[i].body_name.compare(rs.foot(Side::RIGHT).name) == 0)
       side = Side::RIGHT;
     else
-      continue; 
+      continue;
 
     for (int j = 0; j < 6; j++)
       grf_w[side][j] = msg.contact_output[i].wrench[j];
@@ -58,14 +58,14 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
 
     grf_w[side] = transformSpatialForce(H, grf_w[side]);
     cop_w[side][0] = -grf_w[side][1] / grf_w[side][5] + rs.foot_sensor(side).pose.translation()[0];
-    cop_w[side][1] = grf_w[side][0] / grf_w[side][5] + rs.foot_sensor(side).pose.translation()[1]; 
+    cop_w[side][1] = grf_w[side][0] / grf_w[side][5] + rs.foot_sensor(side).pose.translation()[1];
 
     // compute cop in the sensor frame
     H = rs.foot_sensor(side).pose.inverse();
     H.translation() = Vector3d::Zero();
     grf_b[side] = transformSpatialForce(H, grf_w[side]);
     cop_b[side][0] = -grf_b[side][1] / grf_b[side][5];
-    cop_b[side][1] = grf_b[side][0] / grf_b[side][5]; 
+    cop_b[side][1] = grf_b[side][0] / grf_b[side][5];
   }
 
   this->cop_w = (cop_w[Side::LEFT]*grf_w[Side::LEFT][5] + cop_w[Side::RIGHT]*grf_w[Side::RIGHT][5]) / (grf_w[Side::RIGHT][5] + grf_w[Side::LEFT][5]);

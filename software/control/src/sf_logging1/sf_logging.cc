@@ -209,19 +209,36 @@ static void sigHandler(int signum)
 
 int main(int argc, const char *argv[])
 {
+  /*
   if (argc != 3 && argc != 1) {
     std::cerr << "usage: sf_logging1 <urdf_path> <config.yaml>\n";
     return -1;
   }
+  */
 
   std::string urdf, config;
   if (argc == 3) {
     urdf = std::string(argv[1]);
     config = std::string(argv[2]);
   }
-  else {
+  else if (argc == 1) {
     config = Drake::getDrakePath() + std::string("/../../config/atlas_sim_mit/plan_eval_config_atlas.yaml");
     urdf = Drake::getDrakePath() + std::string("/examples/Atlas/urdf/atlas_minimal_contact.urdf");
+  }
+  else if (argc == 2) {
+    std::string robot_name = std::string(argv[1]);
+    if (robot_name.compare("atlas") == 0) {
+      config = Drake::getDrakePath() + std::string("/../../config/atlas_sim_mit/plan_eval_config_atlas.yaml");
+      urdf = Drake::getDrakePath() + std::string("/examples/Atlas/urdf/atlas_minimal_contact.urdf");
+    }
+    else if (robot_name.compare("val") == 0 || robot_name.compare("valkyrie") == 0) {
+      config = Drake::getDrakePath() + std::string("/../../config/val_mit/plan_eval_config_valkyrie.yaml");
+      urdf = Drake::getDrakePath() + std::string("/../../models/val_description/urdf/valkyrie_sim_drake.urdf");
+    }
+    else {
+      std::cerr << "usage: \"sf_logging1 atlas\" or sf_logging1 val\n";
+      return -1;
+    }
   }
 
   struct passwd *pw = getpwuid(getuid());
