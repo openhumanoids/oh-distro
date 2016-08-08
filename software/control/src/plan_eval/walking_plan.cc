@@ -3,126 +3,259 @@
 #include "drake/util/lcmUtil.h"
 
 #include <fstream>
-#include <iomanip> 
+#include <iomanip>
+
+inline double avg_angle(double a, double b)
+{
+  double x = fmod(fabs(a-b), 2*M_PI);
+  if (x >= 0 && x <= M_PI)
+    return fmod((a + b) / 2., 2*M_PI);
+  else if (x >= M_PI && x < 1.5*M_PI)
+    return fmod((a + b) / 2., 2*M_PI) + M_PI;
+  else
+    return fmod((a + b) / 2., 2*M_PI) - M_PI;
+}
 
 void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
-  GenericPlan::LoadConfigurationFromYAML(name);
-
   p_ss_duration_ = config_["ss_duration"].as<double>();
   p_ds_duration_ = config_["ds_duration"].as<double>();
-  
+
   std::cout << "p_ss_duration_: " << p_ss_duration_ << std::endl;
   std::cout << "p_ds_duration_: " << p_ds_duration_ << std::endl;
 }
 
-// we will hack something up for now.
-void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
-                                const Eigen::VectorXd &est_q,
-                                const Eigen::VectorXd &est_qd,
-                                const Eigen::VectorXd &last_q_d) {
-  const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *)plan_msg;
+// called on every touch down
+void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd) {
   // current state
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
+
+  Eigen::Vector2d com0, comd0, com1;
+  Eigen::Matrix<double,7,1> pelv0, feet0[2], pelv1;
   Eigen::Isometry3d feet_pose[2];
- 
-  int b = 0;
-  for (const auto& side : Side::values) {
-    int id = rpc_.foot_ids[side];
-    feet_pose[b] = robot_.relativeTransform(cache_est, 0, id);
-    b++;
+
+  com0 = robot_.centerOfMass(cache_est).head(2);
+  comd0 = (robot_.centerOfMassJacobian(cache_est) * est_qd).head(2);
+  pelv0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.pelvis_id));
+  feet_pose[Side::LEFT] = robot_.relativeTransform(cache_est, 0, rpc_.foot_ids.at(Side::LEFT));
+  feet_pose[Side::RIGHT] = robot_.relativeTransform(cache_est, 0, rpc_.foot_ids.at(Side::RIGHT));
+  feet0[Side::LEFT] = Isometry3dToVector7d(feet_pose[Side::LEFT]);
+  feet0[Side::RIGHT] = Isometry3dToVector7d(feet_pose[Side::RIGHT]);
+
+  // reinit body trajs
+  body_motions_.resize(3);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
+
+  // no more steps, go to double support middle
+  if (footstep_plan_.empty()) {
+    int num_T = 2;
+    for (int i = 0; i < 3; i++)
+      body_motions_[i] = MakeDefaultBodyMotionData(num_T);
+
+    // time tape
+    std::vector<double> Ts(num_T);
+    Ts[0] = 0;
+    Ts[1] = p_ds_duration_;
+
+    // com / cop
+    Eigen::Isometry3d mid_stance_foot[2];
+    for (int i = 0; i < 2; i++) {
+      mid_stance_foot[i].linear() = Eigen::Matrix3d::Identity();
+      mid_stance_foot[i].translation() = Eigen::Vector3d(0.04, 0, 0);
+      mid_stance_foot[i] = feet_pose[i] * mid_stance_foot[i];
+    }
+    com1 = (mid_stance_foot[0].translation().head(2) + mid_stance_foot[1].translation().head(2)) / 2.;
+
+    // make zmp
+    std::vector<Eigen::Vector2d> com_knots(num_T);
+    com_knots[0] = com0;
+    com_knots[1] = com1;
+    zmp_traj_ = GeneratePCHIPSpline(Ts, com_knots);
+    Eigen::Vector4d x0(Eigen::Vector4d::Zero());
+    x0.head(2) = com0;
+    // TODO: assuming zero comd?
+    x0.tail(2) = comd0;
+    zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
+
+    // make pelv
+    pelv1.head(3) = (mid_stance_foot[0].translation() + mid_stance_foot[1].translation()) / 2.;
+    pelv1[2] = std::min(mid_stance_foot[0].translation()[2], mid_stance_foot[1].translation()[2]) + p_zmp_height_;
+    Eigen::Vector4d foot_quat[2] = {feet0[0].tail<4>(), feet0[1].tail<4>()};
+    double yaw = avg_angle(quat2rpy(foot_quat[0])[2], quat2rpy(foot_quat[1])[2]);
+    pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
+
+    std::vector<Eigen::Vector7d> pelv_knots(num_T);
+    pelv_knots[0] = pelv0;
+    pelv_knots[1] = pelv1;
+
+    body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
+    body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
+    // TODO: probably need to change val
+    body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+    // make stance foot
+    Side sides[2] = {Side::LEFT, Side::RIGHT};
+    for (int i = 0; i < 2; i++) {
+      std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[i]);
+      body_motions_[1+i].body_or_frame_id = rpc_.foot_ids.at(sides[i]);
+      body_motions_[1+i].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+    }
+  }
+  else {
+    int num_T = 3;
+    for (int i = 0; i < 3; i++)
+      body_motions_[i] = MakeDefaultBodyMotionData(num_T);
+
+    Side stance_foot = Side::LEFT;
+    Side swing_foot = Side::RIGHT;
+    drc::footstep_t &cur_step = footstep_plan_.front();
+    // ssr
+    if (!cur_step.is_right_foot) {
+      stance_foot = Side::RIGHT;
+      swing_foot = Side::LEFT;
+    }
+    // TODO: not right
+    //double p_ss_duration_ = cur_step.params.step_speed;
+    //double p_ds_duration_ = cur_step.params.drake_min_hold_time;
+
+    // time tape
+    std::vector<double> Ts(num_T);
+    Ts[0] = 0;
+    Ts[1] = p_ds_duration_;
+    Ts[2] = p_ss_duration_ + p_ds_duration_;
+
+    // hold arm joints, I am assuming the leg joints will just be ignored..
+    Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
+    q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, est_q), zero, zero);
+
+    // com / cop
+    double zmp_shift_in = cur_step.params.drake_instep_shift;
+    if (stance_foot == Side::LEFT)
+      zmp_shift_in = -zmp_shift_in;
+    Eigen::Isometry3d mid_stance_foot(Eigen::Isometry3d::Identity());
+    mid_stance_foot.translation() = Eigen::Vector3d(0.04, zmp_shift_in, 0);
+    mid_stance_foot = feet_pose[stance_foot.underlying()] * mid_stance_foot;
+    com1 = mid_stance_foot.translation().head(2);
+
+    // make zmp
+    std::vector<Eigen::Vector2d> com_knots(num_T);
+    com_knots[0] = com0;
+    com_knots[1] = com_knots[2] = com1;
+    zmp_traj_ = GeneratePCHIPSpline(Ts, com_knots);
+    Eigen::Vector4d x0(Eigen::Vector4d::Zero());
+    x0.head(2) = com0;
+    // TODO: assuming zero comd?
+    x0.tail(2) = comd0;
+    zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
+
+    // make pelv
+    pelv1.head(3) = mid_stance_foot.translation();
+    pelv1[2] += p_zmp_height_;
+    Eigen::Vector4d foot_quat(feet0[stance_foot.underlying()].tail(4));
+    double yaw = quat2rpy(foot_quat)[2];
+    pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
+
+    std::vector<Eigen::Vector7d> pelv_knots(num_T);
+    pelv_knots[0] = pelv0;
+    pelv_knots[1] = pelv_knots[2] = pelv1;
+
+    body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
+    body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
+    // TODO: probably need to change val
+    body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+    // make stance foot
+    std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[stance_foot.underlying()]);
+    body_motions_[1].body_or_frame_id = rpc_.foot_ids.at(stance_foot);
+    body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+    // make swing foot
+    Eigen::Vector7d swing_touchdown_pose;
+    swing_touchdown_pose(0) = cur_step.pos.translation.x;
+    swing_touchdown_pose(1) = cur_step.pos.translation.y;
+    swing_touchdown_pose(2) = cur_step.pos.translation.z;
+    swing_touchdown_pose(3) = cur_step.pos.rotation.w;
+    swing_touchdown_pose(4) = cur_step.pos.rotation.x;
+    swing_touchdown_pose(5) = cur_step.pos.rotation.y;
+    swing_touchdown_pose(6) = cur_step.pos.rotation.z;
+    swing_touchdown_pose.tail(4).normalize();
+
+    body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
+    body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 2., p_ss_duration_ / 2.);
   }
 
-  // shift to middle left foot 
-  Eigen::Isometry3d com_end_d(Eigen::Isometry3d::Identity());
-  com_end_d.translation() = Eigen::Vector3d(0.04, 0, 0);
-  auto stance_foot = Side::RIGHT;
-  auto swing_foot = Side::LEFT;
-  com_end_d = feet_pose[stance_foot] * com_end_d;
-
-  // compute end points for com / pelvis
-  Eigen::Vector2d com0 = robot_.centerOfMass(cache_est).segment<2>(0);
-  Eigen::Vector2d com1 = com_end_d.translation().segment<2>(0);
-  Eigen::Matrix<double,7,1> pelv0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.pelvis_id));
-  Eigen::Matrix<double,7,1> pelv1;
-  pelv1.segment<3>(0) = com_end_d.translation();
-  pelv1[2] += p_zmp_height_;
-  pelv1.segment<4>(3) = rotmat2quat(feet_pose[stance_foot].linear());
-
-  std::cout << "pelv0" << pelv0.transpose() << std::endl;
-  std::cout << "pelv1" << pelv1.transpose() << std::endl;
-
-  // make a zmp traj for ds
-  int num_T = 2;
-  std::vector<double> Ts(num_T);
-  std::vector<Eigen::Vector2d> com_d(num_T);
-  for (int i = 0; i < num_T; i++) {
-    double a = (double)i / (double)(num_T - 1);
-    Ts[i] = p_ds_duration_ * a;
-    com_d[i] = com0 + a * (com1 - com0);
-    printf("t %g %g %g\n", Ts[i], com_d[i][0], com_d[i][1]);
-  }
-  zmp_traj_ = GeneratePCHIPSpline(Ts, com_d);
-  Eigen::Vector4d x0(Eigen::Vector4d::Zero());
-  x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
- 
-  // make pelvis traj, 0 is pelvis,
-  body_motions_.resize(3);
-  num_T = 2;
-  Ts.resize(num_T);
-  Ts[0] = 0;
-  Ts[1] = p_ds_duration_;
-
-  for (int i = 0; i < 3; i++)
-    body_motions_[i] = MakeDefaultBodyMotionData(num_T);
-
-  // pelvis body motion data
-  body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
-  body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
-  std::vector<Eigen::Vector7d> pelv_knots(num_T);
-  pelv_knots[0] = pelv0;
-  pelv_knots[1] = pelv1;
-  body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-
-  // stance foot body motion data
-  int id = rpc_.foot_ids[stance_foot];
-  body_motions_[1].body_or_frame_id = id;
-  body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, std::vector<Eigen::Vector7d>(num_T, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id))), std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-  
-
-  // swing foot body motion data make swing up traj for right foot
-  id = rpc_.foot_ids[swing_foot];
-  body_motions_[2] = MakeDefaultBodyMotionData(3);
-  body_motions_[2].body_or_frame_id = id;
-  std::vector<double> swingTs(3);
-  swingTs[0] = 0;
-  swingTs[1] = p_ds_duration_;
-  swingTs[2] = p_ss_duration_ + p_ds_duration_;
-
-  std::vector<Eigen::Vector7d> swing_foot_d;
-  swing_foot_d.resize(3, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id)));
-  swing_foot_d[2][2] += 0.2;
-  std::vector<Eigen::Vector7d> swing_footd_d = std::vector<Eigen::Vector7d>(swingTs.size(), Eigen::Vector7d::Zero());
-  body_motions_[2].trajectory = GenerateCubicCartesianSpline(swingTs, swing_foot_d, swing_footd_d);
-
-  // hold arm joints, I am assuming the leg joints will just be ignored..
-  Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
-  q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, est_q), zero, zero);
-
-  // contact state and contact switching time
-  contact_state_.clear();
-  contact_state_.push_back(DSc);
-  if (swing_foot == Side::LEFT)
-    contact_state_.push_back(SSR);
-  else
-    contact_state_.push_back(SSL);
-
-  contact_switching_time_.clear();
-  contact_switching_time_.push_back(p_ds_duration_);
-  contact_switching_time_.push_back(INFINITY);
+  interp_t0_ = -1;
 }
 
-drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(double cur_time) {
+PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d &foot0, const Eigen::Vector7d &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const {
+  int num_T = 4;
+  std::vector<double> swingT(num_T);
+  swingT[0] = 0;
+  swingT[1] = pre_swing_dur;
+  swingT[2] = pre_swing_dur + swing_up_dur;
+  swingT[3] = pre_swing_dur + swing_up_dur + swing_down_dur;
+
+  Eigen::Vector7d swing_mid = foot1;
+  swing_mid.head(3) = (foot0.head(3) + foot1.head(3)) / 2.;
+  swing_mid[2] = std::max(foot1[2], foot0[2]) + mid_z_offset;
+
+  std::vector<Eigen::Vector7d> swing_pose_knots(num_T);
+  std::vector<Eigen::Vector7d> swing_vel_knots(num_T, Eigen::Vector7d::Zero());
+  swing_pose_knots[0] = swing_pose_knots[1] = foot0;
+  swing_pose_knots[2] = swing_mid;
+  swing_pose_knots[3] = foot1;
+  swing_vel_knots[2].head(2) = (foot1.head(2) - foot0.head(2)) / (swing_up_dur + swing_down_dur);
+
+  return GenerateCubicCartesianSpline(swingT, swing_pose_knots, swing_vel_knots);
+}
+
+void WalkingPlan::SetupContactStates() {
+  contact_state_.clear();
+  contact_switching_time_.clear();
+
+  // no more steps
+  if (footstep_plan_.empty()) {
+    contact_switching_time_.push_back(INFINITY);
+    contact_state_.push_back(DSc);
+  }
+  else {
+    // weight transfer
+    contact_state_.push_back(DSc);
+    contact_switching_time_.push_back(p_ds_duration_);
+
+    // ssl
+    if (footstep_plan_.front().is_right_foot)
+      contact_state_.push_back(SSL);
+    else
+      contact_state_.push_back(SSR);
+
+    // TODO: relying on detecting real contact switching from state est??
+    //contact_switching_time_.push_back(INFINITY);
+    contact_switching_time_.push_back(p_ss_duration_ + p_ds_duration_);
+  }
+}
+
+// we will hack something up for now.
+void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
+                                           const DrakeRobotState &est_rs,
+                                           const Eigen::VectorXd &last_q_d) {
+  footstep_plan_.clear();
+  contact_state_.clear();
+  contact_switching_time_.clear();
+
+  const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *)plan_msg;
+  for (size_t i = 0; i < msg->footstep_plan.footsteps.size(); i++) {
+    footstep_plan_.push_back(msg->footstep_plan.footsteps[i]);
+  }
+
+  // generate all cart trajs
+  GenerateTrajs(est_rs.q, est_rs.qd);
+
+  // generate contact switching tape
+  SetupContactStates();
+}
+
+drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &est_rs) {
+  double cur_time = est_rs.t;
+
   if (interp_t0_ == -1)
     interp_t0_ = cur_time;
   double plan_time = cur_time - interp_t0_;
@@ -133,8 +266,23 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(double cur_time) {
     contact_switching_time_.pop_front();
     contact_switch_time_ = cur_time;
   }
+
+  // touch down. need to make new tapes
+  if (contact_state_.empty()) {
+    // dequeue foot steps
+    footstep_plan_.pop_front();
+    GenerateTrajs(est_rs.q, est_rs.qd);
+    SetupContactStates();
+
+    // all tapes assumes 0 sec start, so need to reset clock
+    interp_t0_ = cur_time;
+    plan_time = cur_time - interp_t0_;
+  }
+  // TODO: probably need to reset contact_switch_time_ when all walking is done
+
   support_state_ = MakeDefaultSupportState(contact_state_.front());
 
+  ////////////////////////////////////////
   drake::lcmt_qp_controller_input qp_input;
   qp_input.be_silent = false;
   qp_input.timestamp = static_cast<int64_t>(cur_time * 1e6);
@@ -204,17 +352,17 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(double cur_time) {
   qp_input.num_support_data = support_state_.size();
   qp_input.support_data.resize(qp_input.num_support_data);
   for (size_t i = 0; i < qp_input.support_data.size(); i++)
-    qp_input.support_data[i] = EncodeSupportData(support_state_[i]); 
+    qp_input.support_data[i] = EncodeSupportData(support_state_[i]);
 
-  
+
   ////////////////////////////////////////
   // torque alpha filter
   //qp_input.torque_alpha_filter = 0.;
   if (plan_time < p_initial_transition_time_ || cur_time - contact_switch_time_ < p_initial_transition_time_)
     qp_input.torque_alpha_filter = 0.9;
   else
-    qp_input.torque_alpha_filter = 0.; 
-  
+    qp_input.torque_alpha_filter = 0.;
+
   return qp_input;
 }
 

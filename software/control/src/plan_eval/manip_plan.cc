@@ -5,7 +5,9 @@
 #include <fstream>
 #include <iomanip>
 
-drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(double cur_time) {
+drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs) {
+  double cur_time = est_rs.t;
+
   if (interp_t0_ == -1)
     interp_t0_ = cur_time;
   double plan_time = cur_time - interp_t0_;
@@ -100,8 +102,7 @@ Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
 }
 
 void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
-                                         const Eigen::VectorXd &est_q,
-                                         const Eigen::VectorXd &est_qd,
+                                         const DrakeRobotState &est_rs,
                                          const Eigen::VectorXd &last_q_d) {
   const drc::robot_plan_t *msg = (const drc::robot_plan_t *)plan_msg;
   std::cout << "committed robot plan handler called\n";
@@ -130,7 +131,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
   // generate the current tracked body poses from the estimated robot state
   // maybe useful eventually
-  KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
+  KinematicsCache<double> cache_est = robot_.doKinematics(est_rs.q, est_rs.qd);
   std::vector<Eigen::Matrix<double,7,1>> x_est(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
     int id = robot_.findLink(body_names[b])->body_index;

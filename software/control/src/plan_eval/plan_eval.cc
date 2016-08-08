@@ -5,9 +5,49 @@
 
 #include "manip_plan.h"
 #include "walking_plan.h"
+#include "single_support_plan.h"
 
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 
+PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name) {
+  // names
+  urdf_name_ = urdf_name;
+  config_name_ = config_name;
+
+  // state decoder stuff
+  RigidBodyTree r(urdf_name);
+  est_robot_state_.q.resize(r.num_positions);
+  est_robot_state_.qd.resize(r.num_velocities);
+  int num_states = r.num_positions + r.num_velocities;
+  std::vector<std::string> state_coordinate_names(num_states);
+  for (int i = 0; i < num_states; i++) {
+    state_coordinate_names[i] = r.getStateName(i);
+  }
+  state_driver_.reset(new RobotStateDriver(state_coordinate_names));
+
+  // threading + lcm
+  receiver_stop_ = false;
+  publisher_stop_ = false;
+  new_plan_ = false;
+
+  if (!lcm_handle_.good()) {
+    std::cerr << "ERROR: lcm is not good()" << std::endl;
+    exit(-1);
+  }
+
+  lcm::Subscription *sub;
+  sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN",
+      &PlanEval::HandleManipPlan, this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_.subscribe("WALKING_CONTROLLER_PLAN_REQUEST",
+      &PlanEval::HandleWalkingPlan, this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
+      this);
+  sub->setQueueCapacity(1);
+}
 
 void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
                                const std::string &channel,
@@ -16,17 +56,15 @@ void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
   std::cout << "Makeing Manip plan\n";
 
   state_lock_.lock();
-  Eigen::VectorXd est_q = est_robot_state_.q;
-  Eigen::VectorXd est_qd = est_robot_state_.qd;
-  double cur_time = est_robot_state_.t;
+  DrakeRobotState local_est_rs = est_robot_state_;
   state_lock_.unlock();
 
   std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
   Eigen::VectorXd last_key_frame = est_robot_state_.q;
   if (current_plan_) {
-    last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
+    last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
   }
-  new_plan_ptr->HandleCommittedRobotPlan(msg, est_q, est_qd, last_key_frame);
+  new_plan_ptr->HandleCommittedRobotPlan(msg, local_est_rs, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;
@@ -46,12 +84,13 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
   double cur_time = est_robot_state_.t;
   state_lock_.unlock();
 
+  //std::shared_ptr<GenericPlan> new_plan_ptr(new SingleSupportPlan(urdf_name_, config_name_));
   std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
   Eigen::VectorXd last_key_frame = est_robot_state_.q;
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
   }
-  new_plan_ptr->HandleCommittedRobotPlan(msg, est_q, est_qd, last_key_frame);
+  new_plan_ptr->HandleCommittedRobotPlan(msg, est_robot_state_, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;
@@ -83,6 +122,7 @@ void PlanEval::PublisherLoop() {
 
   std::shared_ptr<GenericPlan> local_ptr;
   bool has_plan = false;
+  DrakeRobotState local_est_rs;
 
   while (!publisher_stop_) {
     if (new_plan_) {
@@ -96,11 +136,11 @@ void PlanEval::PublisherLoop() {
 
     if (has_plan && new_robot_state_) {
       state_lock_.lock();
-      double t_now = est_robot_state_.t;
+      local_est_rs = est_robot_state_;
       new_robot_state_ = false;
       state_lock_.unlock();
 
-      drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(t_now);
+      drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(local_est_rs);
       lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
     }
   }

@@ -9,10 +9,29 @@ bool CheckSplineInputs(
     const std::vector<Scalar> &T,
     const std::vector<Eigen::Matrix<double, rows, cols>> &Y) {
   bool ret = T.size() == Y.size();
+  if (!ret) {
+    std::cerr << "T size doesnt match Y size\n";
+    return ret;
+  }
+
   ret &= (T.size() >= 2);
+  if (!ret) {
+    std::cerr << "T size < 2\n";
+    return ret;
+  }
+
   for (size_t t = 0; t < T.size() - 1; t++) {
     ret &= (Y[t].rows() == Y[t + 1].rows() && Y[t].cols() == Y[t + 1].cols());
+    if (!ret) {
+      std::cerr << "Y dimension is not consistent\n";
+      return ret;
+    }
+    
     ret &= T[t] < T[t + 1];
+    if (!ret) {
+      std::cerr << "T is not strictly increasing " << T[t] << " " << T[t + 1] << std::endl;
+      return ret;
+    }
   }
   return ret;
 }
@@ -231,6 +250,9 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
     const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y,
     const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Ydot) {
   if (!CheckSplineInputs(T, Y) || Y.size() != Ydot.size()) {
+    if (Y.size() != Ydot.size())
+      std::cerr << "Y size doesnt match Ydot size\n";
+
     throw std::runtime_error("invalid spline inputs");
   }
 
@@ -240,6 +262,7 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
 
   for (size_t t = 0; t < N - 1; t++) {
     if (Y[t].rows() != Ydot[t].rows() || Y[t].cols() != Ydot[t].cols()) {
+      std::cerr << "Y dim doesnt match Ydot dim\n";
       throw std::runtime_error("invalid spline inputs");
     }
 

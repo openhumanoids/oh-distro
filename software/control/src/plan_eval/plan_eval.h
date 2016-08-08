@@ -7,8 +7,6 @@
 
 #include <lcm/lcm-cpp.hpp>
 
-#include "bot_core/robot_state_t.hpp"
-
 #include "generic_plan.h"
 #include "drake/Path.h"
 #include "../RobotStateDriver.hpp"
@@ -17,46 +15,7 @@
 // and walking
 class PlanEval {
  public:
-  PlanEval(const std::string &urdf_name, const std::string &config_name) {
-    // names
-    urdf_name_ = urdf_name;
-    config_name_ = config_name;
-
-    // state decoder stuff
-    RigidBodyTree r(urdf_name);
-    est_robot_state_.q.resize(r.num_positions);
-    est_robot_state_.qd.resize(r.num_velocities);
-    int num_states = r.num_positions + r.num_velocities;
-    std::vector<std::string> state_coordinate_names(num_states);
-    for (int i = 0; i < num_states; i++) {
-      state_coordinate_names[i] = r.getStateName(i);
-    }
-    state_driver_.reset(new RobotStateDriver(state_coordinate_names));
-
-    // threading + lcm
-    receiver_stop_ = false;
-    publisher_stop_ = false;
-    new_plan_ = false;
-
-    if (!lcm_handle_.good()) {
-      std::cerr << "ERROR: lcm is not good()" << std::endl;
-      exit(-1);
-    }
-
-    lcm::Subscription *sub;
-    sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN",
-        &PlanEval::HandleManipPlan, this);
-    sub->setQueueCapacity(1);
-    
-    sub = lcm_handle_.subscribe("WALKING_CONTROLLER_PLAN_REQUEST",
-        &PlanEval::HandleWalkingPlan, this);
-    sub->setQueueCapacity(1);
-
-    sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
-        this);
-    sub->setQueueCapacity(1);
-  }
-
+  PlanEval(const std::string &urdf_name, const std::string &config_name);
   void Start();
   void Stop();
 
@@ -94,7 +53,7 @@ class PlanEval {
   void HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
                        const std::string &channel,
                        const drc::robot_plan_t *msg);
-  
+
   void HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                        const std::string &channel,
                        const drc::walking_plan_request_t *msg);

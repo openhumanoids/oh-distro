@@ -43,10 +43,9 @@ class GenericPlan {
   inline double t0() const { return interp_t0_; }
 
   virtual void HandleCommittedRobotPlan(const void *msg,
-                                        const Eigen::VectorXd &est_q,
-                                        const Eigen::VectorXd &est_qd,
+                                        const DrakeRobotState &est_rs,
                                         const Eigen::VectorXd &last_q_d) = 0;
-  virtual drake::lcmt_qp_controller_input MakeQPInput(double cur_time) = 0;
+  virtual drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &est_rs) = 0;
 
   virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
 

@@ -9,10 +9,9 @@ class ManipPlan : public GenericPlan {
   }
 
   void HandleCommittedRobotPlan(const void *msg,
-                                const Eigen::VectorXd &est_q,
-                                const Eigen::VectorXd &est_qd,
+                                const DrakeRobotState &est_rs,
                                 const Eigen::VectorXd &last_q_d);
-  drake::lcmt_qp_controller_input MakeQPInput(double cur_time);
+  drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &est_rs);
   Eigen::VectorXd GetLatestKeyFrame(double time);
 };
 
