@@ -179,7 +179,7 @@ drake::lcmt_qp_controller_input SingleSupportPlan::MakeQPInput(const DrakeRobotS
     qp_input.whole_body_data.constrained_dofs.push_back(rpc_.position_indices.neck[i]);
   // back
   qp_input.whole_body_data.constrained_dofs.push_back(rpc_.position_indices.back_bkz);
-  qp_input.whole_body_data.constrained_dofs.push_back(rpc_.position_indices.back_bky);
+  //qp_input.whole_body_data.constrained_dofs.push_back(rpc_.position_indices.back_bky);
   // add 1 offset to match matlab indexing, for backward compatibility
   for (size_t i = 0; i < qp_input.whole_body_data.num_constrained_dofs; i++)
     qp_input.whole_body_data.constrained_dofs[i]++;

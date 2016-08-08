@@ -84,8 +84,8 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
   double cur_time = est_robot_state_.t;
   state_lock_.unlock();
 
-  //std::shared_ptr<GenericPlan> new_plan_ptr(new SingleSupportPlan(urdf_name_, config_name_));
-  std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
+  std::shared_ptr<GenericPlan> new_plan_ptr(new SingleSupportPlan(urdf_name_, config_name_));
+  //std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
   Eigen::VectorXd last_key_frame = est_robot_state_.q;
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);

@@ -108,12 +108,14 @@ qp_controller_params:
         weight: 0.0
       *PELVIS_NAME :
         Kp: {x: 15, y: 15, z: 15, wx: 40, wy: 40, wz: 40}
-        weight: 0.01
+        weight: 10.0
         damping_ratio: 0.3
       *R_FOOT_NAME :
-        weight: 0.01
+        Kp: {x: 40, y: 40, z: 40, wx: 40, wy: 40, wz: 40}
+        weight: 10.0
       *L_FOOT_NAME :
-        weight: 0.01
+        Kp: {x: 40, y: 40, z: 40, wx: 40, wy: 40, wz: 40}
+        weight: 10.0
     position_specific:
       DEFAULT:
         Kp: 150
@@ -150,6 +152,10 @@ qp_controller_params:
         w_qdd: 0.1
         Kp: 50
         damping_ratio: 0.2
+      torsoPitch:
+        w_qdd: 0.1
+        Kp: 50
+        damping_ratio: 0.2 
       rightKneePitch:
         joint_soft_limits:
           enabled: true
@@ -215,7 +221,7 @@ qp_controller_params:
 
       rightAnklePitchActuator:
         hardware:
-          ff_qd_d: 1.0
+          ff_qd_d: 3.0
 
       leftHipPitch:
         hardware:
@@ -223,17 +229,24 @@ qp_controller_params:
 
       leftAnklePitchActuator:
         hardware:
-          ff_qd_d: 1.0
-
+          ff_qd_d: 3.0
 
 
 
   base: # automatically inherits from the default =
   standing:
-  
+  manip:
   walking:
-    body_specific:
-      *PELVIS_NAME :
-        Kp: {x: 0, y: 0, z: 15, wx: 40, wy: 40, wz: 40}
-        weight: 0.01
-        damping_ratio: 0.3
+    #    body_specific:
+    #  *PELVIS_NAME :
+    #    Kp: {x: 0, y: 0, z: 15, wx: 40, wy: 40, wz: 40}
+    #   weight: 10.0
+    #    damping_ratio: 0.3
+    #  *R_FOOT_NAME :
+    #    Kp: {x: 30, y: 30, z: 30, wx: 30, wy: 30, wz: 30}
+    #    weight: 10.0
+    #    damping_ratio: 0.4
+    #  *L_FOOT_NAME :
+    #    Kp: {x: 30, y: 30, z: 30, wx: 30, wy: 30, wz: 30}
+    #    weight: 10.0
+    #    damping_ratio: 0.4
