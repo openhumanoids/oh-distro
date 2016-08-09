@@ -7,6 +7,7 @@ from director import lcmUtils
 from director import transformUtils
 import bot_core
 import drc as lcmdrc
+import drake as lcmdrake
 
 import numpy as np
 
@@ -24,6 +25,7 @@ class ForceVisualizer:
 
         self.leftInContact = 0
         self.rightInContact = 0
+        self.footContactEstimateMsg = None
         self.initializeOptions()
 
         d = DebugData()
@@ -37,6 +39,8 @@ class ForceVisualizer:
         # visObj.setProperty('Visible', False)
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['QPForceVisName'], view=self.view, parent='robot state model')
+
+        visObj = vis.updatePolyData(d.getPolyData(), self.options['desiredCOPVisName'], view=self.view, parent='robot state model')
 
         self.addSubscribers()
 
@@ -57,30 +61,46 @@ class ForceVisualizer:
 
     def initializeOptions(self):
         self.options = {}
+        self.options['speedLimit'] = 20 # speed limit on redrawing
         self.options['forceMagnitudeNormalizer'] = 600
         self.options['forceArrowLength'] = 0.4
         self.options['forceArrowTubeRadius'] = 0.01
         self.options['forceArrowHeadRadius'] = 0.03
         self.options['forceArrowColor'] = [1,0,0]
-        self.options['estForceVisName'] = 'est foot forces'
+        self.options['estForceVisName'] = 'meas foot forces'
         self.options['pelvisAccelerationVisName'] = 'desired pelvis acceleration'
         self.options['pelvisMagnitudeNormalizer'] = 2.0
         self.options['pelvisArrowLength'] = 0.8
         self.options['QPForceVisName'] = 'QP foot force'
 
-        self.options['copVisName'] = 'cop'
+        self.options['copVisName'] = 'meas cop'
+        self.options['desiredCOPVisName'] = 'desired cop'
+
+        self.options['colors'] = dict()
+        self.options['colors']['plan'] = [1,0,0] # red
+        self.options['colors']['controller'] = [0,1,0] # blue
+        self.options['colors']['measured'] = [0,0,1] # green
 
 
 
     def addSubscribers(self):
 
         # FORCE_TORQUE subscriber
+        # draws measured foot forces, cop etc
         self.forceTorqueSubscriber = lcmUtils.addSubscriber('FORCE_TORQUE', bot_core.six_axis_force_torque_array_t,
                                                             self.onForceTorqueMessage)
-        self.forceTorqueSubscriber.setSpeedLimit(60);
+        self.forceTorqueSubscriber.setSpeedLimit(self.options['speedLimit'])
 
+        # draw
         self.controllerStateSubscriber = lcmUtils.addSubscriber("CONTROLLER_STATE", lcmdrc.controller_state_t, self.onControllerStateMessage)
-        self.controllerStateSubscriber.setSpeedLimit(60)
+        self.controllerStateSubscriber.setSpeedLimit(self.options['speedLimit'])
+
+        # foot contact estimate
+        sub = lcmUtils.addSubscriber('FOOT_CONTACT_ESTIMATE', lcmdrc.foot_contact_estimate_t, self.onFootContactEstimateMsg)
+        sub.setSpeedLimit(self.options['speedLimit'])
+
+        # desiredCOP
+        sub = lcmUtils.addSubscriber('QP_CONTROLLER_INPUT', lcmdrake.lcmt_qp_controller_input, self.extractDesiredCOP)
 
 
     # msg is six_axis_force_torque_array_t
@@ -93,11 +113,13 @@ class ForceVisualizer:
                 self.drawFootForce(footName, msg.sensors[idx], d)
 
             vis.updatePolyData(d.getPolyData(), name=self.options['estForceVisName'], view=self.view,
-                               parent='robot state model').setProperty('Color', [1,0,0])
+                               parent='robot state model').setProperty('Color', self.options['colors']['measured'])
 
 
-        if om.findObjectByName(self.options['copVisName']):
-            self.computeCOP(msg)
+        if (om.findObjectByName(self.options['copVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
+            copInWorld, d = self.computeCOP(msg)
+            vis.updatePolyData(d.getPolyData(), name=self.options['copVisName'], view=self.view,
+                           parent='robot state model').setProperty('Color', self.options['colors']['measured'])
 
 
     # here msg is six_axis_force_torque_t
@@ -116,7 +138,7 @@ class ForceVisualizer:
         forceEndInWorld = np.array(ftFrameToWorld.TransformPoint(scaledForce))
 
         debugData.addArrow(forceStartInWorld, forceEndInWorld, tubeRadius=self.options['forceArrowTubeRadius'],
-                           headRadius=self.options['forceArrowHeadRadius'], color=self.options['forceArrowColor'])
+                           headRadius=self.options['forceArrowHeadRadius'], color=self.options['colors']['measured'])
 
 
     def drawQPContactWrench(self, msg):
@@ -143,7 +165,7 @@ class ForceVisualizer:
             arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*force
 
             d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
-                           headRadius=self.options['forceArrowHeadRadius'], color=self.options['forceArrowColor'])
+                           headRadius=self.options['forceArrowHeadRadius'], color=self.options['colors']['controller'])
 
             # compute cop
             cop = np.zeros(3)
@@ -159,9 +181,12 @@ class ForceVisualizer:
             copData[footName] = data
 
         cop = np.zeros(3)
-        totalForceMag = copData['left']['fz'] + copData['right']['fz']
-        for footName in ("left", "right"):
-            cop += copData[footName]['cop']*copData[footName]['fz']/totalForceMag
+        totalForceMag = 0
+        for key, val in copData.iteritems():
+            totalForceMag += val['fz']
+
+        for key, val in copData.iteritems():
+            cop += val['cop']*val['fz']/totalForceMag
 
 
         bottomFootZVal = -0.09
@@ -170,7 +195,7 @@ class ForceVisualizer:
 
         d.addSphere(cop, radius=0.015)
         vis.updatePolyData(d.getPolyData(), name=self.options['QPForceVisName'], view=self.view,
-                               parent='robot state model').setProperty('Color', [0,0,1])
+                               parent='robot state model').setProperty('Color', self.options['colors']['controller'])
 
     # draw the acceleration of the pelvis that the QP thinks is happening
     def onControllerStateMessage(self, msg):
@@ -195,7 +220,7 @@ class ForceVisualizer:
                                headRadius=self.options['forceArrowHeadRadius'])
 
             vis.updatePolyData(debugData.getPolyData(), name=self.options['pelvisAccelerationVisName'], view=self.view,
-                               parent='robot state model').setProperty('Color', [0,1,0])
+                               parent='robot state model').setProperty('Color', self.options['colors']['controller'])
 
         if (om.findObjectByName(self.options['QPForceVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
             self.drawQPContactWrench(msg)
@@ -217,8 +242,9 @@ class ForceVisualizer:
             copDataList[0]['fz'] + copDataList[1]['fz'])
 
         d.addSphere(copInWorld, radius=0.015)
-        vis.updatePolyData(d.getPolyData(), name='cop', view=self.view,
-                           parent='robot state model').setProperty('Color', [0,1,0])
+
+
+        return copInWorld, d
 
 
     def computeSingleFootCOP(self, footName, msg, d):
@@ -246,6 +272,48 @@ class ForceVisualizer:
 
         copData = {'cop': copInWorld, 'fz': np.linalg.norm(force)}
         return copData
+
+
+
+    # record which foot is in contact
+    def onFootContactEstimateMsg(self, msg):
+        self.footContactEstimateMsg = msg
+
+    # get current average foot height
+    def getAverageFootHeight(self):
+        if self.footContactEstimateMsg is None:
+            return 0
+        footNames = ['l_foot', 'r_foot']
+        footContact = np.array([self.footContactEstimateMsg.left_contact, self.footContactEstimateMsg.right_contact])
+        avgFootHeight = 0
+
+        for idx, name in enumerate(footNames):
+            ftFrameId = self.nameDict[name]['frameId']
+            ftFrameToWorld = self.robotStateModel.getFrameToWorld(self.nameDict['left'])
+            soleHeight = ftFrameToWorld.GetPosition()[2]
+            avgFootHeight += footContact[idx]*soleHeight
+
+
+        avgFootHeight/np.sum(footContact)
+
+        return avgFootHeight
+
+    # computes the desired COP location coming from the qp_input message
+    def extractDesiredCOP(self, qpInputMsg):
+        if (om.findObjectByName(self.options['desiredCOPVisName']).getProperty('Visible')):
+            y0 = qpInputMsg.zmp_data.y0
+            desiredCOP = np.zeros(3)
+            desiredCOP[0] = y0[0][0]
+            desiredCOP[1] = y0[1][0]
+            desiredCOP[2] = self.getAverageFootHeight()
+
+
+            d = DebugData()
+            d.addSphere(desiredCOP, radius=0.015)
+
+            vis.updatePolyData(d.getPolyData(), name=self.options['desiredCOPVisName'], view=self.view,
+                               parent='robot state model').setProperty('Color', self.options['colors']['plan'])
+
 
 
 
