@@ -78,8 +78,8 @@ class ForceVisualizer:
 
         self.options['colors'] = dict()
         self.options['colors']['plan'] = [1,0,0] # red
-        self.options['colors']['controller'] = [0,1,0] # blue
-        self.options['colors']['measured'] = [0,0,1] # green
+        self.options['colors']['controller'] = [0,0,1] # blue
+        self.options['colors']['measured'] = [0,1,0] # green
 
 
 
@@ -289,12 +289,14 @@ class ForceVisualizer:
 
         for idx, name in enumerate(footNames):
             ftFrameId = self.nameDict[name]['frameId']
-            ftFrameToWorld = self.robotStateModel.getFrameToWorld(self.nameDict['left'])
+            ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
             soleHeight = ftFrameToWorld.GetPosition()[2]
             avgFootHeight += footContact[idx]*soleHeight
 
-
-        avgFootHeight/np.sum(footContact)
+        if np.sum(footContact) > 0.1:
+            avgFootHeight = avgFootHeight/np.sum(footContact)
+        else:
+            avgFootHeight = 0
 
         return avgFootHeight
 
