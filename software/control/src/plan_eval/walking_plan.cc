@@ -25,7 +25,7 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
 }
 
 // called on every touch down
-void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd) {
+void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, ContactState cur_contact_state) {
   // current state
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
 
@@ -45,10 +45,10 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   body_motions_.resize(3);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
 
   // figure out the current contact state
-  ContactState cur_contact_state, nxt_contact_state;
-  cur_contact_state = DSc;
-  if (!contact_state_.empty())
-    cur_contact_state = contact_state_.front();
+  ContactState nxt_contact_state;
+  // cur_contact_state = DSc;
+  // if (!contact_state_.empty())
+  //   cur_contact_state = contact_state_.front();
 
   // no more steps, go to double support middle
   if (footstep_plan_.empty()) {
@@ -188,7 +188,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     Eigen::Vector7d swing_touchdown_pose;
     swing_touchdown_pose(0) = cur_step.pos.translation.x;
     swing_touchdown_pose(1) = cur_step.pos.translation.y;
-    swing_touchdown_pose(2) = cur_step.pos.translation.z;
+    swing_touchdown_pose(2) = cur_step.pos.translation.z - 0.02;
     swing_touchdown_pose(3) = cur_step.pos.rotation.w;
     swing_touchdown_pose(4) = cur_step.pos.rotation.x;
     swing_touchdown_pose(5) = cur_step.pos.rotation.y;
@@ -273,7 +273,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   }
 
   // generate all cart trajs
-  GenerateTrajs(est_rs.q, est_rs.qd);
+  GenerateTrajs(est_rs.q, est_rs.qd, DSc);
 
   // generate contact switching tape
   SetupContactStates();
@@ -286,6 +286,9 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     interp_t0_ = cur_time;
   double plan_time = cur_time - interp_t0_;
 
+  assert(!contact_state_.empty());
+  ContactState last_contact_state = contact_state_.front();
+
   // switch contact state tape
   if (plan_time >= contact_switching_time_.front()) {
     contact_state_.pop_front();
@@ -297,7 +300,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   if (contact_state_.empty()) {
     // dequeue foot steps
     footstep_plan_.pop_front();
-    GenerateTrajs(est_rs.q, est_rs.qd);
+    GenerateTrajs(est_rs.q, est_rs.qd, last_contact_state);
     SetupContactStates();
 
     // all tapes assumes 0 sec start, so need to reset clock

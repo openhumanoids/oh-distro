@@ -29,7 +29,7 @@ class WalkingPlan : public GenericPlan {
   double p_ds_duration_;
 
   void LoadConfigurationFromYAML(const std::string &name);
-  void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd);
+  void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, ContactState cur_contact_state);
   void SetupContactStates();
 
   PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const;
