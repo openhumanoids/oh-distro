@@ -22,6 +22,7 @@ namespace Eigen {
 
 struct RigidBodySupportStateElement {
   int body;
+  Side side;
   double total_normal_force_upper_bound;
   double total_normal_force_lower_bound;
   Eigen::Matrix3Xd contact_points;

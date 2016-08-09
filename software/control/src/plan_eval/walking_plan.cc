@@ -5,8 +5,7 @@
 #include <fstream>
 #include <iomanip>
 
-inline double avg_angle(double a, double b)
-{
+inline double avg_angle(double a, double b) {
   double x = fmod(fabs(a-b), 2*M_PI);
   if (x >= 0 && x <= M_PI)
     return fmod((a + b) / 2., 2*M_PI);
@@ -15,6 +14,7 @@ inline double avg_angle(double a, double b)
   else
     return fmod((a + b) / 2., 2*M_PI) - M_PI;
 }
+
 
 void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_ss_duration_ = config_["ss_duration"].as<double>();
@@ -43,6 +43,12 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // reinit body trajs
   body_motions_.resize(3);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
+
+  // figure out the current contact state
+  ContactState cur_contact_state, nxt_contact_state;
+  cur_contact_state = DSc;
+  if (!contact_state_.empty())
+    cur_contact_state = contact_state_.front();
 
   // no more steps, go to double support middle
   if (footstep_plan_.empty()) {
@@ -98,6 +104,12 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
       body_motions_[1+i].body_or_frame_id = rpc_.foot_ids.at(sides[i]);
       body_motions_[1+i].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
     }
+
+    // make weight distribuition
+    std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
+    WL[0](0,0) = get_weight_distribution(cur_contact_state);
+    WL[1](0,0) = get_weight_distribution(DSc);
+    weight_distribution_ = GenerateLinearSpline(Ts, WL);
   }
   else {
     int num_T = 3;
@@ -107,11 +119,14 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     Side stance_foot = Side::LEFT;
     Side swing_foot = Side::RIGHT;
     drc::footstep_t &cur_step = footstep_plan_.front();
+    nxt_contact_state = SSL;
     // ssr
     if (!cur_step.is_right_foot) {
       stance_foot = Side::RIGHT;
       swing_foot = Side::LEFT;
+      nxt_contact_state = SSR;
     }
+
     // TODO: not right
     //double p_ss_duration_ = cur_step.params.step_speed;
     //double p_ds_duration_ = cur_step.params.drake_min_hold_time;
@@ -130,6 +145,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     double zmp_shift_in = cur_step.params.drake_instep_shift;
     if (stance_foot == Side::LEFT)
       zmp_shift_in = -zmp_shift_in;
+    std::cout << stance_foot.underlying() << " " << zmp_shift_in << std::endl;
+
     Eigen::Isometry3d mid_stance_foot(Eigen::Isometry3d::Identity());
     mid_stance_foot.translation() = Eigen::Vector3d(0.04, zmp_shift_in, 0);
     mid_stance_foot = feet_pose[stance_foot.underlying()] * mid_stance_foot;
@@ -180,8 +197,17 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
     body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 2., p_ss_duration_ / 2.);
+
+
+    // make weight distribuition
+    std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
+    WL[0](0,0) = get_weight_distribution(cur_contact_state);
+    WL[1](0,0) = get_weight_distribution(nxt_contact_state);
+    WL[2](0,0) = get_weight_distribution(nxt_contact_state);
+    weight_distribution_ = GenerateLinearSpline(Ts, WL);
   }
 
+  // reset clock
   interp_t0_ = -1;
 }
 
@@ -278,9 +304,23 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     interp_t0_ = cur_time;
     plan_time = cur_time - interp_t0_;
   }
-  // TODO: probably need to reset contact_switch_time_ when all walking is done
 
+  // make contact support data
   support_state_ = MakeDefaultSupportState(contact_state_.front());
+  // interp weight distribution
+  double wl = weight_distribution_.value(plan_time).value();
+  wl = std::min(wl, 1.0);
+  wl = std::max(wl, 0.0);
+  for (size_t s = 0; s < support_state_.size(); s++) {
+    if (support_state_[s].side == Side::LEFT) {
+      support_state_[s].total_normal_force_upper_bound *= wl;
+      support_state_[s].total_normal_force_lower_bound *= wl;
+    }
+    else {
+      support_state_[s].total_normal_force_upper_bound *= (1 - wl);
+      support_state_[s].total_normal_force_lower_bound *= (1 - wl);
+    }
+  }
 
   ////////////////////////////////////////
   drake::lcmt_qp_controller_input qp_input;

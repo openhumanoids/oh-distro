@@ -17,6 +17,8 @@ class WalkingPlan : public GenericPlan {
   Eigen::VectorXd GetLatestKeyFrame(double time) { return Eigen::VectorXd::Zero(robot_.num_positions); }
 
  private:
+  PiecewisePolynomial<double> weight_distribution_;
+
   std::list<drc::footstep_t> footstep_plan_;
 
   std::list<ContactState> contact_state_;
@@ -31,5 +33,16 @@ class WalkingPlan : public GenericPlan {
   void SetupContactStates();
 
   PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const;
+  inline static double get_weight_distribution(ContactState cs) {
+    switch (cs) {
+      case DSc:
+        return 0.5;
+      case SSL:
+        return 1;
+      case SSR:
+        return 0;
+    }
+    return 0.5;
+  }
 };
 

@@ -54,18 +54,23 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
 
 RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) const {
   std::vector<int> support_idx;
+  std::vector<Side> sides;
   switch (cs) {
     case DSc:
       support_idx.push_back(rpc_.foot_ids.at(Side::LEFT));
       support_idx.push_back(rpc_.foot_ids.at(Side::RIGHT));
+      sides.push_back(Side::LEFT);
+      sides.push_back(Side::RIGHT);
       break;
 
     case SSL:
       support_idx.push_back(rpc_.foot_ids.at(Side::LEFT));
+      sides.push_back(Side::LEFT);
       break;
 
     case SSR:
       support_idx.push_back(rpc_.foot_ids.at(Side::RIGHT));
+      sides.push_back(Side::RIGHT);
       break;
 
     default:
@@ -76,7 +81,8 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) cons
 
   for (size_t s = 0; s < support_idx.size(); s++) {
     support_state[s].body = support_idx[s];
-    support_state[s].total_normal_force_upper_bound = 700;
+    support_state[s].side = sides[s];
+    support_state[s].total_normal_force_upper_bound = 1.5 * robot_.getMass() * 9.81;
     support_state[s].total_normal_force_lower_bound = 0;
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
