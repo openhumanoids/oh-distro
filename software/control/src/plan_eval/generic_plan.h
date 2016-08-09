@@ -9,7 +9,7 @@
 #include "drake/systems/robotInterfaces/BodyMotionData.h"
 #include "drake/systems/controllers/QPCommon.h"
 #include "drake/util/yaml/yamlUtil.h"
- 
+
 #include "zmp_planner.h"
 
 #include "drc/robot_plan_t.hpp"
@@ -22,13 +22,15 @@ namespace Eigen {
 
 struct RigidBodySupportStateElement {
   int body;
+  double total_normal_force_upper_bound;
+  double total_normal_force_lower_bound;
   Eigen::Matrix3Xd contact_points;
   bool use_contact_surface;
   Eigen::Vector4d support_surface;
 };
 
 typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
- 
+
 class GenericPlan {
  public:
   GenericPlan(const std::string &urdf_name, const std::string &config_name)
@@ -54,7 +56,7 @@ class GenericPlan {
     SSL = 0,
     SSR = 1,
     DSc = 2
-  }; 
+  };
 
   // top level yaml config file node
   YAML::Node config_;
@@ -90,11 +92,11 @@ class GenericPlan {
 
   // list of support
   RigidBodySupportState support_state_;
-  
-  
+
+
   RigidBodySupportState MakeDefaultSupportState(ContactState cs) const;
   BodyMotionData MakeDefaultBodyMotionData(size_t num_segments) const;
- 
+
   // make lcm messages
   drake::lcmt_support_data EncodeSupportData(const RigidBodySupportStateElement &element) const;
   drake::lcmt_body_motion_data EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const;
@@ -105,15 +107,3 @@ Eigen::Matrix<double,7,1> Isometry3dToVector7d(const Eigen::Isometry3d &pose);
 
 void KeyframeToState(const bot_core::robot_state_t &keyframe,
                             Eigen::VectorXd &q, Eigen::VectorXd &v);
-Eigen::Vector6d getTaskSpaceVel(
-    const RigidBodyTree &r, const KinematicsCache<double> &cache,
-    int body_or_frame_id,
-    const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
-Eigen::Vector6d getTaskSpaceJacobianDotTimesV(
-    const RigidBodyTree &r, const KinematicsCache<double> &cache,
-    int body_or_frame_id,
-    const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
-Eigen::MatrixXd getTaskSpaceJacobian(
-    const RigidBodyTree &r, const KinematicsCache<double> &cache, int body,
-    const Eigen::Vector3d &local_offset = Eigen::Vector3d::Zero());
- 

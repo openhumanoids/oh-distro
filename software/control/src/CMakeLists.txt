@@ -92,19 +92,19 @@ target_link_libraries(runDRCInstQP RobotStateDriver AtlasCommandDriver FootConta
 target_link_libraries (runDRCInstQP ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(runDRCInstQP)
 
-add_executable(sf_logging1 sf_logging1/sf_logging.cc sf_logging1/humanoid_status.cc sf_logging1/mrd_logger.cc sf_logging1/rigid_body_tree_utils.cc sf_logging1/qp_controller_state.cc)
-set_source_files_properties(sf_logging1 sf_logging1/sf_logging.cc sf_logging1/humanoid_status.cc sf_logging1/mrd_logger.cc sf_logging1/rigid_body_tree_utils.cc sf_logging1/qp_controller_state.cc PROPERTIES COMPILE_FLAGS -g)
+add_executable(sf_logging1 sf_logging1/sf_logging.cc sf_logging1/humanoid_status.cc sf_logging1/mrd_logger.cc sf_logging1/qp_controller_state.cc)
+set_source_files_properties(sf_logging1 sf_logging1/sf_logging.cc sf_logging1/humanoid_status.cc sf_logging1/mrd_logger.cc sf_logging1/qp_controller_state.cc PROPERTIES COMPILE_FLAGS -g)
 pods_use_pkg_config_packages(sf_logging1 drake-qp-common drake-control-util drake-side drake-rbm)
 target_link_libraries(sf_logging1 RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeYAMLUtil yaml-cpp)
 target_link_libraries (sf_logging1 ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sf_logging1)
 
 set(PLAN_EVAL_SRC
-  plan_eval/plan_eval.cc 
-  plan_eval/zmp_planner.cc 
-  plan_eval/generic_plan.cc 
-  plan_eval/manip_plan.cc 
-  plan_eval/walking_plan.cc 
+  plan_eval/plan_eval.cc
+  plan_eval/zmp_planner.cc
+  plan_eval/generic_plan.cc
+  plan_eval/manip_plan.cc
+  plan_eval/walking_plan.cc
   plan_eval/single_support_plan.cc)
 
 add_executable(sf_plan_eval plan_eval/run_plan_eval.cc ${PLAN_EVAL_SRC})
