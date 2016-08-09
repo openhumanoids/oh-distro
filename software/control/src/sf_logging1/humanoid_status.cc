@@ -145,7 +145,7 @@ void HumanoidStatus::ParseMsg(const bot_core::robot_state_t &msg)
 
   // extract trq
   for (size_t i = 0; i < msg.joint_effort.size(); i++) {
-    std::string state_name = msg.joint_name[i];
+    const std::string &state_name = msg.joint_name[i];
     // a normal joint
     if (floating_map.find(state_name) == floating_map.end()) {
       auto it = state_map.find(state_name);

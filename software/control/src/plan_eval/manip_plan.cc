@@ -162,13 +162,14 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
     KinematicsCache<double> cache_plan = robot_.doKinematics(q_, v_);
 
     for (size_t b = 0; b < num_bodies; b++) {
-      int id = robot_.findLink(body_names[b])->body_index;
+      const RigidBody *body = robot_.findLink(body_names[b]).get();
+      int id = body->body_index;
       Eigen::Isometry3d pose = robot_.relativeTransform(cache_plan, 0, id);
       x_d[b][t].segment<3>(0) = pose.translation();
       x_d[b][t].segment<4>(3) = rotmat2quat(pose.linear());
 
       Eigen::Vector6d xd =
-          getTaskSpaceVel(robot_, cache_plan, id, Eigen::Vector3d::Zero());
+          GetTaskSpaceVel(robot_, cache_plan, *body, Eigen::Vector3d::Zero());
       xd_d[b][t].segment<3>(0) = xd.segment<3>(3);
       // http://www.euclideanspace.com/physics/kinematics/angularvelocity/QuaternionDifferentiation2.pdf
       Eigen::Vector4d W(0, xd[0], xd[1], xd[2]);

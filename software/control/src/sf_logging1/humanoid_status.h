@@ -1,7 +1,7 @@
 #pragma once
 
 #include "drake/systems/robotInterfaces/Side.h"
-#include "rigid_body_tree_utils.h"
+#include "drake/systems/controllers/controlUtil.h"
 #include "mrd_logger.h"
 #include "../RobotStateDriver.hpp"
 #include "bot_core/robot_state_t.hpp"
