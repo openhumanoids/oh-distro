@@ -42,6 +42,9 @@ class ForceVisualizer:
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['desiredCOPVisName'], view=self.view, parent='robot state model')
 
+
+        self.visObjDict = dict()
+        self.visObjDict['bodyMotion'] = vis.updatePolyData(d.getPolyData(), self.options['bodyMotionVisName'], view=self.view, parent='robot state model')
         self.addSubscribers()
 
 
@@ -72,6 +75,7 @@ class ForceVisualizer:
         self.options['pelvisMagnitudeNormalizer'] = 2.0
         self.options['pelvisArrowLength'] = 0.8
         self.options['QPForceVisName'] = 'QP foot force'
+        self.options['bodyMotionVisName'] = 'Body Motion Data'
 
         self.options['copVisName'] = 'meas cop'
         self.options['desiredCOPVisName'] = 'desired cop'
@@ -226,6 +230,10 @@ class ForceVisualizer:
             self.drawQPContactWrench(msg)
 
 
+        if (om.findObjectByName(self.options['bodyMotionVisName']).getProperty('Visible')):
+            self.drawBodyMotionData(msg.desired_body_motions)
+
+
         # print "got controller state message"
         # print "pelvisAcceleration ", pelvisAcceleration
         # print "arrowStart ", arrowStart
@@ -317,6 +325,22 @@ class ForceVisualizer:
                                parent='robot state model').setProperty('Color', self.options['colors']['plan'])
 
 
+
+    # takes in a qp_desired_body_motion_t message
+    def drawBodyMotionData(self, desired_body_motions):
+        # first remove all existing frames
+        childFrames = self.visObjDict['bodyMotion'].children()
+        for frame in childFrames:
+            om.removeFromObjectModel(frame)
+
+        # add new frames for tracked bodies
+        for bodyMotionData in desired_body_motions:
+            bodyName = bodyMotionData.body_name
+            frameName = bodyName + ' body motion'
+            position = bodyMotionData.body_q_d[0:3]
+            rpy = bodyMotionData.body_q_d[3:6]
+            frame = transformUtils.frameFromPositionAndRPY(position, rpy)
+            vis.showFrame(frame, frameName, view=self.view, parent=self.options['bodyMotionVisName'], scale=0.2)
 
 
 
