@@ -50,9 +50,9 @@ struct BodyOfInterest {
     logger.AddChannel(prefix+name+"[x]", "m", pose.translation().data());
     logger.AddChannel(prefix+name+"[y]", "m", pose.translation().data()+1);
     logger.AddChannel(prefix+name+"[z]", "m", pose.translation().data()+2);
-    logger.AddChannel(prefix+name+"[r]", "rad", rpy.data());
-    logger.AddChannel(prefix+name+"[p]", "rad", rpy.data()+1);
-    logger.AddChannel(prefix+name+"[y]", "rad", rpy.data()+2);
+    logger.AddChannel(prefix+name+"[R]", "rad", rpy.data());
+    logger.AddChannel(prefix+name+"[P]", "rad", rpy.data()+1);
+    logger.AddChannel(prefix+name+"[Y]", "rad", rpy.data()+2);
 
     logger.AddChannel(prefix+name+"d[x]", "m/s", vel.data()+3);
     logger.AddChannel(prefix+name+"d[y]", "m/s", vel.data()+4);

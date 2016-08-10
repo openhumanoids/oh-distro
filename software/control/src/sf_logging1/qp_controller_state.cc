@@ -54,7 +54,7 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
 
     // translate this to sensor frame to compute cop in the world frame
     Isometry3d H(Isometry3d::Identity());
-    H.translation() = grf_loc[i] - rs.foot_sensor(side).pose.translation();
+    H.translation() = grf_loc[side] - rs.foot_sensor(side).pose.translation();
 
     grf_w[side] = transformSpatialForce(H, grf_w[side]);
     cop_w[side][0] = -grf_w[side][1] / grf_w[side][5] + rs.foot_sensor(side).pose.translation()[0];
@@ -68,7 +68,7 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
     cop_b[side][1] = grf_b[side][0] / grf_b[side][5];
   }
 
-  this->cop_w = (cop_w[Side::LEFT]*grf_w[Side::LEFT][5] + cop_w[Side::RIGHT]*grf_w[Side::RIGHT][5]) / (grf_w[Side::RIGHT][5] + grf_w[Side::LEFT][5]);
+  cop = (cop_w[Side::LEFT]*grf_w[Side::LEFT][5] + cop_w[Side::RIGHT]*grf_w[Side::RIGHT][5]) / (grf_w[Side::RIGHT][5] + grf_w[Side::LEFT][5]);
 
   // input
   for (int i = 0; i < msg.desired_body_motions.size(); i++) {
@@ -125,8 +125,8 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
 
   logger.AddChannel("QP_d.cop[x]", "m", cop_d.data()+0);
   logger.AddChannel("QP_d.cop[y]", "m", cop_d.data()+1);
-  logger.AddChannel("QP.cop[x]", "m", cop_w.data()+0);
-  logger.AddChannel("QP.cop[y]", "m", cop_w.data()+1);
+  logger.AddChannel("QP.cop[x]", "m", cop.data()+0);
+  logger.AddChannel("QP.cop[y]", "m", cop.data()+1);
 
   logger.AddChannel("QP_d.comd[x]", "m/s", comd_d.data()+0);
   logger.AddChannel("QP_d.comd[y]", "m/s", comd_d.data()+1);

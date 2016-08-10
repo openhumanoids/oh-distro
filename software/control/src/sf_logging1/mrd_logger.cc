@@ -27,8 +27,11 @@ void MRDLogger::reset()
 
 bool MRDLogger::AddChannel(const std::string &name, const std::string &unit, const void *ptr, LoggerDataType type)
 {
-  if (_channels.find(name) != _channels.end())
+  if (_channels.find(name) != _channels.end()) {
+    std::cout << name << std::endl;
+    throw std::runtime_error("duplicate name");
     return false;
+  }
 
   _channels[name] = DataChannel();
 

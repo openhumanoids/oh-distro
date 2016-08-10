@@ -53,7 +53,7 @@ class QPIO {
   Eigen::VectorXd trq;
   Eigen::Vector6d grf_w[2]; // grf in world frame, at the ft sensor
   Eigen::Vector6d grf_b[2]; // grf in body frame, at the ft sensor
-  Eigen::Vector2d cop_w; // total cop in world
+  Eigen::Vector2d cop; // total cop in world
   Eigen::Vector2d cop_b[2]; // b frame cop for each foot, at the ft sensor
 
   Eigen::Vector3d comdd;
