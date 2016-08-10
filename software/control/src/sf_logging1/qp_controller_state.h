@@ -50,7 +50,9 @@ class QPIO {
  public:
   // output
   Eigen::VectorXd qdd;
+  Eigen::VectorXd qd_integrator;
   Eigen::VectorXd trq;
+
   Eigen::Vector6d grf_w[2]; // grf in world frame, at the ft sensor
   Eigen::Vector6d grf_b[2]; // grf in body frame, at the ft sensor
   Eigen::Vector2d cop; // total cop in world
@@ -72,14 +74,24 @@ class QPIO {
   QPDesiredCartAccInput torso;
   QPDesiredCartAccInput foot[2];
 
+  Eigen::VectorXd q_d;
+  Eigen::VectorXd qd_d;
   Eigen::VectorXd qdd_d;
+  Eigen::VectorXd qdd_d_w_pd;
 
   void ParseZMPInput(const drake::lcmt_qp_controller_input &msg);
   void ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs);
 
   void Init(const drc::controller_state_t &msg) {
     qdd.resize(msg.num_joints);
+    qd_integrator.resize(msg.num_joints);
     trq.resize(msg.num_joints);
+
+    q_d.resize(msg.num_joints);
+    qd_d.resize(msg.num_joints);
+    qdd_d.resize(msg.num_joints);
+    qdd_d_w_pd.resize(msg.num_joints);
+
     _inited = true;
   }
 

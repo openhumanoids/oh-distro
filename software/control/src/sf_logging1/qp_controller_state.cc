@@ -23,6 +23,7 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
   for (int i = 0; i < msg.num_joints; i++) {
     qdd[i] = msg.qdd[i];
     trq[i] = msg.u[i]; // first 6 = zero
+    qd_integrator[i] = msg.vref_integrator_state[i];
   }
 
   comdd = rs.J_com() * qdd + rs.Jdot_times_v_com();
@@ -82,6 +83,13 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
       foot[Side::LEFT].ParseMsg(vdot_d);
     if (vdot_d.body_name.compare(rs.foot(Side::RIGHT).name) == 0)
       foot[Side::RIGHT].ParseMsg(vdot_d);
+  }
+
+  // joint
+  for (int i = 0; i < msg.num_joints; i++) {
+    q_d[i] = msg.q_des[i];
+    qd_d[i] = msg.qd_des[i];
+    qdd_d_w_pd[i] = msg.qdd_des[i];
   }
 
   // comdd_d
@@ -144,6 +152,24 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.comdd[y]", "m/s2", comdd.data()+1);
   logger.AddChannel("QP.comdd[z]", "m/s2", comdd.data()+2);
 
+  logger.AddChannel("QP.F[L][x]", "N", grf_w[Side::LEFT].data()+3);
+  logger.AddChannel("QP.F[L][y]", "N", grf_w[Side::LEFT].data()+4);
+  logger.AddChannel("QP.F[L][z]", "N", grf_w[Side::LEFT].data()+5);
+  logger.AddChannel("QP.M[L][x]", "Nm", grf_w[Side::LEFT].data()+0);
+  logger.AddChannel("QP.M[L][y]", "Nm", grf_w[Side::LEFT].data()+1);
+  logger.AddChannel("QP.M[L][z]", "Nm", grf_w[Side::LEFT].data()+2);
+  logger.AddChannel("QP.F[R][x]", "N", grf_w[Side::RIGHT].data()+3);
+  logger.AddChannel("QP.F[R][y]", "N", grf_w[Side::RIGHT].data()+4);
+  logger.AddChannel("QP.F[R][z]", "N", grf_w[Side::RIGHT].data()+5);
+  logger.AddChannel("QP.M[R][x]", "Nm", grf_w[Side::RIGHT].data()+0);
+  logger.AddChannel("QP.M[R][y]", "Nm", grf_w[Side::RIGHT].data()+1);
+  logger.AddChannel("QP.M[R][z]", "Nm", grf_w[Side::RIGHT].data()+2);
+
+  logger.AddChannel("QP.cop_b[L][x]", "m", cop_b[Side::LEFT].data()+0);
+  logger.AddChannel("QP.cop_b[L][y]", "m", cop_b[Side::LEFT].data()+1);
+  logger.AddChannel("QP.cop_b[R][x]", "m", cop_b[Side::RIGHT].data()+0);
+  logger.AddChannel("QP.cop_b[R][y]", "m", cop_b[Side::RIGHT].data()+1);
+
   pelv.AddToLog(std::string("QP_d."), logger);
   logger.AddChannel("QP.pelvdd[x]", "m/s2", pelvdd.data()+3);
   logger.AddChannel("QP.pelvdd[y]", "m/s2", pelvdd.data()+4);
@@ -177,26 +203,14 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
   logger.AddChannel("QP.footdd[R][wz]", "rad/s2", footdd[Side::RIGHT].data()+2);
 
   for (int i = 0; i < qdd.size(); i++)
+    logger.AddChannel("QP.q_d["+rs.robot().getPositionName(i)+"]", "rad/s2", q_d.data()+i);
+  for (int i = 0; i < qdd.size(); i++)
+    logger.AddChannel("QP.qd_d["+rs.robot().getPositionName(i)+"]", "rad/s2", qd_d.data()+i);
+  for (int i = 0; i < qdd.size(); i++)
+    logger.AddChannel("QP.qdd_d_w_pd["+rs.robot().getPositionName(i)+"]", "rad/s2", qdd_d_w_pd.data()+i);
+  for (int i = 0; i < qdd.size(); i++)
     logger.AddChannel("QP.qdd["+rs.robot().getPositionName(i)+"]", "rad/s2", qdd.data()+i);
 
   for (int i = 0; i < trq.size(); i++)
     logger.AddChannel("QP.trq["+rs.robot().getPositionName(i)+"]", "Nm", trq.data()+i);
-
-  logger.AddChannel("QP.F[L][x]", "N", grf_w[Side::LEFT].data()+3);
-  logger.AddChannel("QP.F[L][y]", "N", grf_w[Side::LEFT].data()+4);
-  logger.AddChannel("QP.F[L][z]", "N", grf_w[Side::LEFT].data()+5);
-  logger.AddChannel("QP.M[L][x]", "Nm", grf_w[Side::LEFT].data()+0);
-  logger.AddChannel("QP.M[L][y]", "Nm", grf_w[Side::LEFT].data()+1);
-  logger.AddChannel("QP.M[L][z]", "Nm", grf_w[Side::LEFT].data()+2);
-  logger.AddChannel("QP.F[R][x]", "N", grf_w[Side::RIGHT].data()+3);
-  logger.AddChannel("QP.F[R][y]", "N", grf_w[Side::RIGHT].data()+4);
-  logger.AddChannel("QP.F[R][z]", "N", grf_w[Side::RIGHT].data()+5);
-  logger.AddChannel("QP.M[R][x]", "Nm", grf_w[Side::RIGHT].data()+0);
-  logger.AddChannel("QP.M[R][y]", "Nm", grf_w[Side::RIGHT].data()+1);
-  logger.AddChannel("QP.M[R][z]", "Nm", grf_w[Side::RIGHT].data()+2);
-
-  logger.AddChannel("QP.cop_b[L][x]", "m", cop_b[Side::LEFT].data()+0);
-  logger.AddChannel("QP.cop_b[L][y]", "m", cop_b[Side::LEFT].data()+1);
-  logger.AddChannel("QP.cop_b[R][x]", "m", cop_b[Side::RIGHT].data()+0);
-  logger.AddChannel("QP.cop_b[R][y]", "m", cop_b[Side::RIGHT].data()+1);
 }
