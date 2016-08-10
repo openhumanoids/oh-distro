@@ -213,4 +213,7 @@ void QPIO::AddToLog(MRDLogger &logger, const HumanoidStatus &rs) const
 
   for (int i = 0; i < trq.size(); i++)
     logger.AddChannel("QP.trq["+rs.robot().getPositionName(i)+"]", "Nm", trq.data()+i);
+
+  for (int i = 0; i < qdd.size(); i++)
+    logger.AddChannel("QP.qd_integrator["+rs.robot().getPositionName(i)+"]", "rad/s", qd_integrator.data()+i);
 }
