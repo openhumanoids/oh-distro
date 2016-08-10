@@ -98,6 +98,22 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
   plan_lock_.unlock();
 }
 
+void PlanEval::HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
+                           const std::string &channel,
+                           const drc::foot_contact_estimate_t *msg)
+{
+  state_lock_.lock();
+  if (msg->left_contact > 0)
+    est_robot_state_.left_foot_contact_state = DrakeRobotState::ContactState::IN_CONTACT;
+  else
+    est_robot_state_.left_foot_contact_state = DrakeRobotState::ContactState::NOT_IN_CONTACT;
+  if (msg->right_contact > 0)
+    est_robot_state_.right_foot_contact_state = DrakeRobotState::ContactState::IN_CONTACT;
+  else
+    est_robot_state_.right_foot_contact_state = DrakeRobotState::ContactState::NOT_IN_CONTACT;
+  state_lock_.unlock();
+}
+
 void PlanEval::ReceiverLoop() {
   std::cout << "PlanEval Receiver thread start: " << std::this_thread::get_id()
             << std::endl;

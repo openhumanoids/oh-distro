@@ -32,7 +32,11 @@ class WalkingPlan : public GenericPlan {
   void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, ContactState cur_contact_state);
   void SetupContactStates();
 
-  PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const;
+  Side getSwingFoot(ContactState currentContactState);
+  bool inSingleSupport();
+  void switchContactState(double cur_time);
+
+    PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const;
   inline static double get_weight_distribution(ContactState cs) {
     switch (cs) {
       case DSc:

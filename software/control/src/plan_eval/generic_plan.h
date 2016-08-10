@@ -14,6 +14,7 @@
 
 #include "drc/robot_plan_t.hpp"
 #include "drc/walking_plan_request_t.hpp"
+#include "drc/foot_contact_estimate_t.hpp"
 
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;

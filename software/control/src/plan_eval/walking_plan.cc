@@ -279,6 +279,36 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   SetupContactStates();
 }
 
+void WalkingPlan::switchContactState(double cur_time){
+  contact_state_.pop_front();
+  contact_switching_time_.pop_front();
+  contact_switch_time_ = cur_time;
+}
+
+
+// tells us whether we are in single support or not
+bool WalkingPlan::inSingleSupport(){
+  ContactState currentContactState = contact_state_.front();
+  if ((currentContactState == ContactState::SSL) || (currentContactState == ContactState::SSR) ){
+    return true;
+  } else {
+    return false;
+  }
+
+}
+
+Side WalkingPlan::getSwingFoot(ContactState currentContactState){
+  if (currentContactState == ContactState::SSL){
+    return Side::RIGHT;
+  } else if (currentContactState == ContactState::SSR){
+    return Side::LEFT;
+  } else{
+    std::cout << "called it with double support, returning LEFT by default " << std::endl;
+    return Side::LEFT;
+  }
+}
+
+
 drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &est_rs) {
   double cur_time = est_rs.t;
 
@@ -294,6 +324,14 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     contact_state_.pop_front();
     contact_switching_time_.pop_front();
     contact_switch_time_ = cur_time;
+  }
+
+  // early contact logic
+  double early_contact_threshold = 0.5;
+  if ((plan_time >= contact_switching_time_.front() - early_contact_threshold) || this->inSingleSupport()){
+    // check that we are currently in single support
+
+
   }
 
   // touch down. need to make new tapes
