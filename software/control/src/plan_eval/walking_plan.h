@@ -30,6 +30,7 @@ class WalkingPlan : public GenericPlan {
   PiecewisePolynomial<double> weight_distribution_;
 
   double contact_switch_time_ = -INFINITY;
+  Eigen::VectorXd init_q_;
 
   double p_lower_z_vel_;
   double p_ss_duration_;

@@ -37,7 +37,8 @@ class GenericPlan {
   enum ContactState {
     SSL = 0,
     SSR = 1,
-    DSc = 2
+    DSc = 2,
+    AIR = 3
   };
  protected:
 

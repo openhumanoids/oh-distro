@@ -10,6 +10,8 @@
 #include "generic_plan.h"
 #include "drake/Path.h"
 #include "../RobotStateDriver.hpp"
+#include "drc/foot_contact_estimate_t.hpp"
+
 
 // only working on manip now, need to think about how to switch between manip
 // and walking
@@ -33,7 +35,7 @@ class PlanEval {
   // est robot state
   std::mutex state_lock_;
   DrakeRobotState est_robot_state_;
-  Eigen::Vector6d est_robot_foot_wrench_[2];
+  bool est_foot_contact_[2];
   std::shared_ptr<RobotStateDriver> state_driver_;
 
   // input
@@ -51,6 +53,7 @@ class PlanEval {
   void ReceiverLoop();
   void PublisherLoop();
 
+  // handle plans
   void HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
                        const std::string &channel,
                        const drc::robot_plan_t *msg);
@@ -63,4 +66,8 @@ class PlanEval {
   void HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
                            const std::string &channel,
                            const bot_core::robot_state_t *msg);
+  
+  void HandleEstContactState(const lcm::ReceiveBuffer *rbuf, 
+                             const std::string &channel,
+                             const drc::foot_contact_estimate_t *msg);
 };

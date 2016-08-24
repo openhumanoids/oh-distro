@@ -28,6 +28,10 @@ group "1.state_mit" {
 }
 
 group "2.plan_and_control" {
+    cmd "contact_monitor" {
+        exec = "drc-contact-monitor -t 50";
+        host = "base";
+    }
 
     cmd "FallDetector" {
       exec = "drc-atlas-fall-detector 1";
@@ -205,6 +209,7 @@ script "1.run_walking_flat" {
     wait ms 1000;
     start group "1.state_mit";
     start cmd "CombinedPlanner";
+    start cmd "contact_monitor";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Walking Flat";
     start cmd "c_plan_eval";

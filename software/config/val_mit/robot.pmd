@@ -55,7 +55,7 @@ group "1.state_mit" {
 
 group "2.plan_and_control" {
     cmd "contact_monitor" {
-        exec = "drc-contact-monitor";
+        exec = "drc-contact-monitor -n -t 100";
         host = "base";
     }
 
@@ -209,6 +209,7 @@ script "normal" {
     wait ms 1000;
     start cmd "drc-state-sync-val on link02";
     start cmd "se-fusion no param server on link02";
+    start cmd "contact_monitor";
     wait ms 1000;
     start cmd "InstQP Val on link02";
     start cmd "CombinedPlanner";

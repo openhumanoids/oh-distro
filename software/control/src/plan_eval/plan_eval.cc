@@ -13,6 +13,7 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   // names
   urdf_name_ = urdf_name;
   config_name_ = config_name;
+  new_robot_state_ = false;
 
   // state decoder stuff
   RigidBodyTree r(urdf_name);
@@ -31,8 +32,7 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   new_plan_ = false;
 
   if (!lcm_handle_.good()) {
-    std::cerr << "ERROR: lcm is not good()" << std::endl;
-    exit(-1);
+    throw std::runtime_error("lcm is not good()");
   }
 
   lcm::Subscription *sub;
@@ -45,6 +45,10 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   sub->setQueueCapacity(1);
 
   sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
+      this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactState,
       this);
   sub->setQueueCapacity(1);
 }
@@ -123,7 +127,7 @@ void PlanEval::PublisherLoop() {
   std::shared_ptr<GenericPlan> local_ptr;
   bool has_plan = false;
   DrakeRobotState local_est_rs;
-  Eigen::Vector6d local_robot_foot_wrench[2];
+  bool local_est_foot_contact[2];
   GenericPlan::ContactState cs = GenericPlan::DSc;
 
   while (!publisher_stop_) {
@@ -139,22 +143,22 @@ void PlanEval::PublisherLoop() {
     if (has_plan && new_robot_state_) {
       state_lock_.lock();
       local_est_rs = est_robot_state_;
-      local_robot_foot_wrench[0] = est_robot_foot_wrench_[0];
-      local_robot_foot_wrench[1] = est_robot_foot_wrench_[1];
+      local_est_foot_contact[0] = est_foot_contact_[0];
+      local_est_foot_contact[1] = est_foot_contact_[1];
       new_robot_state_ = false;
       state_lock_.unlock();
 
-      if (local_robot_foot_wrench[Side::LEFT][5] >= 50) {
-        if (local_robot_foot_wrench[Side::RIGHT][5] >= 50)
+      if (local_est_foot_contact[Side::LEFT]) {
+        if (local_est_foot_contact[Side::RIGHT])
           cs = GenericPlan::DSc;
-        else 
+        else
           cs = GenericPlan::SSL;
       }
       else {
-        if (local_robot_foot_wrench[Side::RIGHT][5] >= 50)
+        if (local_est_foot_contact[Side::RIGHT])
           cs = GenericPlan::SSR;
-        else 
-          throw std::runtime_error("robot flying");
+        else
+          cs = GenericPlan::AIR;
       }
 
       drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(local_est_rs, cs);
@@ -170,22 +174,16 @@ void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
                                    const bot_core::robot_state_t *msg) {
   state_lock_.lock();
   state_driver_->decode(msg, &est_robot_state_);
-  for (int i = 0; i < 6; i++) {
-    est_robot_foot_wrench_[Side::LEFT][3] = msg->force_torque.l_foot_force_x;
-    est_robot_foot_wrench_[Side::LEFT][4] = msg->force_torque.l_foot_force_y;
-    est_robot_foot_wrench_[Side::LEFT][5] = msg->force_torque.l_foot_force_z;
-    est_robot_foot_wrench_[Side::LEFT][0] = msg->force_torque.l_foot_torque_x;
-    est_robot_foot_wrench_[Side::LEFT][1] = msg->force_torque.l_foot_torque_y;
-    est_robot_foot_wrench_[Side::LEFT][2] = msg->force_torque.l_foot_torque_z;
-    
-    est_robot_foot_wrench_[Side::RIGHT][3] = msg->force_torque.r_foot_force_x;
-    est_robot_foot_wrench_[Side::RIGHT][4] = msg->force_torque.r_foot_force_y;
-    est_robot_foot_wrench_[Side::RIGHT][5] = msg->force_torque.r_foot_force_z;
-    est_robot_foot_wrench_[Side::RIGHT][0] = msg->force_torque.r_foot_torque_x;
-    est_robot_foot_wrench_[Side::RIGHT][1] = msg->force_torque.r_foot_torque_y;
-    est_robot_foot_wrench_[Side::RIGHT][2] = msg->force_torque.r_foot_torque_z;
-  }
   new_robot_state_ = true;
+  state_lock_.unlock();
+}
+
+void PlanEval::HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
+                                     const std::string &channel,
+                                     const drc::foot_contact_estimate_t *msg) {
+  state_lock_.lock();
+  est_foot_contact_[Side::LEFT] = msg->left_contact > 0;
+  est_foot_contact_[Side::RIGHT] = msg->right_contact > 0;
   state_lock_.unlock();
 }
 

@@ -141,7 +141,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     // hold arm joints, I am assuming the leg joints will just be ignored..
     Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
-    q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, est_q), zero, zero);
+    q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, init_q_), zero, zero);
 
     // com / cop
     double zmp_shift_in = cur_step.params.drake_instep_shift;
@@ -251,9 +251,12 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
     footstep_plan_.push_back(msg->footstep_plan.footsteps[i]);
   }
 
+  // save the current joint configuration, that's what we are tracking during walking
+  init_q_ = est_rs.q;
+
   // generate all trajs
   GenerateTrajs(est_rs.q, est_rs.qd, DSc);
-  
+
   // constrained DOFs
   constrained_dofs_.clear();
   for (auto it = rpc_.position_indices.arms.begin(); it != rpc_.position_indices.arms.end(); it++) {
@@ -294,7 +297,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         contact_state_.pop_front();
         contact_switch_time_ = cur_time;
         cur_state_ = SWING;
-        std::cout << "Weight transfer -> Swing @ cur_time\n";
+        std::cout << "Weight transfer -> Swing @ " << plan_time << std::endl;
       }
 
       break;
@@ -327,15 +330,15 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         contact_state_.pop_front();
         contact_switch_time_ = cur_time;
         cur_state_ = WEIGHT_TRANSFER;
-        std::cout << "Swing -> Weight transfer @ cur_time\n";
-        
+        std::cout << "Swing -> Weight transfer @ " << plan_time << std::endl;
+
         // dequeue foot steps, generate new trajectories
         footstep_plan_.pop_front();
         GenerateTrajs(est_rs.q, est_rs.qd, planned_cs);
 
         // all tapes assumes 0 sec start, so need to reset clock
         interp_t0_ = cur_time;
-        plan_time = cur_time - interp_t0_; 
+        plan_time = cur_time - interp_t0_;
       }
 
       break;
