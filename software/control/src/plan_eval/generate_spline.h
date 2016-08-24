@@ -6,8 +6,8 @@
 
 template <typename Scalar, int rows, int cols>
 bool CheckSplineInputs(
-    const std::vector<Scalar> &T,
-    const std::vector<Eigen::Matrix<double, rows, cols>> &Y) {
+    const std::vector<double> &T,
+    const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y) {
   bool ret = T.size() == Y.size();
   if (!ret) {
     std::cerr << "T size doesnt match Y size\n";
@@ -26,7 +26,7 @@ bool CheckSplineInputs(
       std::cerr << "Y dimension is not consistent\n";
       return ret;
     }
-    
+
     ret &= T[t] < T[t + 1];
     if (!ret) {
       std::cerr << "T is not strictly increasing " << T[t] << " " << T[t + 1] << std::endl;
@@ -38,8 +38,8 @@ bool CheckSplineInputs(
 
 template <typename Scalar, int rows, int cols>
 PiecewisePolynomial<Scalar> GenerateLinearSpline(
-    const std::vector<Scalar> &T,
-    const std::vector<Eigen::Matrix<double, rows, cols>> &Y) {
+    const std::vector<double> &T,
+    const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y) {
   if (!CheckSplineInputs(T, Y)) {
     throw std::runtime_error("invalid spline inputs");
   }
@@ -66,7 +66,7 @@ PiecewisePolynomial<Scalar> GenerateLinearSpline(
 // copied from matlab source code and wikipedia
 template <typename Scalar, int rows, int cols>
 PiecewisePolynomial<Scalar> GeneratePCHIPSpline(
-    const std::vector<Scalar> &T,
+    const std::vector<double> &T,
     const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y) {
   if (!CheckSplineInputs(T, Y)) {
     throw std::runtime_error("invalid spline inputs");
@@ -81,7 +81,7 @@ PiecewisePolynomial<Scalar> GeneratePCHIPSpline(
       polynomials(N - 1);
   std::vector<Eigen::Matrix<Scalar, rows, cols>> m(N - 1);
   std::vector<Eigen::Matrix<Scalar, rows, cols>> c1(N);
-  std::vector<Scalar> dt(N - 1);
+  std::vector<double> dt(N - 1);
 
   for (size_t t = 0; t < N - 1; t++) {
     dt[t] = T[t + 1] - T[t];
@@ -140,7 +140,7 @@ PiecewisePolynomial<Scalar> GeneratePCHIPSpline(
 
 template <typename Scalar, int rows, int cols>
 PiecewisePolynomial<Scalar> GenerateCubicSpline(
-    const std::vector<Scalar> &T,
+    const std::vector<double> &T,
     const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y,
     const Eigen::Matrix<Scalar, rows, cols> &dydt0,
     const Eigen::Matrix<Scalar, rows, cols> &dydt1) {
@@ -232,7 +232,7 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
 
 template <typename Scalar, int rows, int cols>
 PiecewisePolynomial<Scalar> GenerateCubicSpline(
-    const std::vector<Scalar> &T,
+    const std::vector<double> &T,
     const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y) {
   if (!CheckSplineInputs(T, Y)) {
     throw std::runtime_error("invalid spline inputs");
@@ -244,9 +244,9 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
   return GenerateCubicSpline(T, Y, dydt0, dydt1);
 }
 
-template <typename Scalar> Eigen::Matrix<Scalar, 4, 1> CubicSplineCoeffs(double dt, Scalar y0, Scalar y1, Scalar yd0, Scalar yd1) {
-  Scalar dt2 = dt * dt;
-  Scalar dt3 = dt * dt * dt;
+template <typename Scalar> Eigen::Matrix<Scalar, 4, 1> GetCubicSplineCoeffs(double dt, Scalar y0, Scalar y1, Scalar yd0, Scalar yd1) {
+  double dt2 = dt * dt;
+  double dt3 = dt2 * dt;
   Scalar c4 = y0;
   Scalar c3 = yd0;
   Scalar c1 = 1. / dt2 * (yd1 - c3 -
@@ -257,7 +257,7 @@ template <typename Scalar> Eigen::Matrix<Scalar, 4, 1> CubicSplineCoeffs(double 
 
 template <typename Scalar, int rows, int cols>
 PiecewisePolynomial<Scalar> GenerateCubicSpline(
-    const std::vector<Scalar> &T,
+    const std::vector<double> &T,
     const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y,
     const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Ydot) {
   if (!CheckSplineInputs(T, Y) || Y.size() != Ydot.size()) {
@@ -278,30 +278,11 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
     }
 
     polynomials[t].resize(Y[t].rows(), Y[t].cols());
-    double dt = T[t + 1] - T[t]; 
     for (size_t i = 0; i < Y[t].rows(); i++) {
       for (size_t j = 0; j < Y[t].cols(); j++) {
-        polynomials[t](i, j) = Polynomial<Scalar>(CubicSplineCoeffs(dt, Y[t](i, j), Y[t+1](i, j), Ydot[t](i, j), Ydot[t + 1](i, j)));
+        polynomials[t](i, j) = Polynomial<Scalar>(GetCubicSplineCoeffs(T[t + 1] - T[t], Y[t](i, j), Y[t+1](i, j), Ydot[t](i, j), Ydot[t + 1](i, j)));
       }
     }
-
-    /*
-    Scalar a = T[t + 1] - T[t];
-    Scalar b = a * a;
-    Scalar c = b * a;
-    for (size_t i = 0; i < Y[t].rows(); i++) {
-      for (size_t j = 0; j < Y[t].cols(); j++) {
-        Scalar c4 = Y[t](i, j);
-        Scalar c3 = Ydot[t](i, j);
-        Scalar c1 = 1. / b * (Ydot[t + 1](i, j) - c3 -
-            2. / a * (Y[t + 1](i, j) - c4 - a * c3));
-        Scalar c2 = 1. / b * (Y[t + 1](i, j) - c4 - a * c3 - c * c1);
-        // constant term comes first
-        Eigen::Matrix<Scalar, 4, 1> coeffs(c4, c3, c2, c1);
-        polynomials[t](i, j) = Polynomial<Scalar>(coeffs);
-      }
-    }
-    */
   }
 
   return PiecewisePolynomial<Scalar>(polynomials, T);
@@ -313,7 +294,7 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
 //    -> drake/util/pchipDeriv.m
 template <typename Scalar>
 PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
-    const std::vector<Scalar> &times,
+    const std::vector<double> &times,
     const std::vector<Eigen::Matrix<Scalar, 7, 1>> &poses,
     const std::vector<Eigen::Matrix<Scalar, 7, 1>> &vels) {
   assert(times.size() == poses.sizes());

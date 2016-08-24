@@ -55,6 +55,79 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   std::cout << "p_min_Fz_: " << p_min_Fz_ << std::endl;
 }
 
+drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const {
+  drake::lcmt_qp_controller_input qp_input;
+  qp_input.be_silent = false;
+  qp_input.timestamp = static_cast<int64_t>(real_time * 1e6);
+  qp_input.param_set_name = "walking";
+  qp_input.param_set_name = param_set_name;
+
+  ////////////////////////////////////////
+  // no body wrench data
+  qp_input.num_external_wrenches = 0;
+
+  ////////////////////////////////////////
+  // no joint pd override
+  qp_input.num_joint_pd_overrides = 0;
+
+  ////////////////////////////////////////
+  // make whole_body_data
+  auto q_des = q_trajs_.value(plan_time);
+  std::vector<float> &q_des_std_vector = qp_input.whole_body_data.q_des;
+  q_des_std_vector.resize(q_des.size());
+  for (int i = 0; i < q_des.size(); i++) {
+    q_des_std_vector[i] = static_cast<float>(q_des(i));
+  }
+  int qtrajSegmentIdx = q_trajs_.getSegmentIndex(plan_time);
+  int num_segments =
+      std::min(2, q_trajs_.getNumberOfSegments() - qtrajSegmentIdx);
+  PiecewisePolynomial<double> qtrajSlice =
+      q_trajs_.slice(qtrajSegmentIdx, num_segments);
+  qtrajSlice.shiftRight(interp_t0_);
+
+  encodePiecewisePolynomial(qtrajSlice, qp_input.whole_body_data.spline);
+
+  qp_input.whole_body_data.timestamp = 0;
+  qp_input.whole_body_data.num_positions = robot_.num_positions;
+  
+  // constrained DOFs
+  // add 1 offset to match matlab indexing, for backward compatibility
+  qp_input.whole_body_data.constrained_dofs = constrained_dofs_;
+  for (size_t i = 0; i < constrained_dofs_.size(); i++)
+    qp_input.whole_body_data.constrained_dofs[i]++;
+
+  qp_input.whole_body_data.num_constrained_dofs =
+      qp_input.whole_body_data.constrained_dofs.size();
+
+  ////////////////////////////////////////
+  // encode zmp data
+  qp_input.zmp_data = zmp_planner_.EncodeZMPData(plan_time);
+
+  ////////////////////////////////////////
+  // encode body motion data
+  qp_input.num_tracked_bodies = body_motions_.size();
+  qp_input.body_motion_data.resize(qp_input.num_tracked_bodies);
+  for (size_t b = 0; b < qp_input.body_motion_data.size(); b++)
+    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, body_motions_[b]);
+
+  ////////////////////////////////////////
+  // encode support data
+  qp_input.num_support_data = support_state_.size();
+  qp_input.support_data.resize(qp_input.num_support_data);
+  for (size_t i = 0; i < qp_input.support_data.size(); i++)
+    qp_input.support_data[i] = EncodeSupportData(support_state_[i]);
+
+
+  ////////////////////////////////////////
+  // torque alpha filter
+  if (apply_torque_alpha_filter)
+    qp_input.torque_alpha_filter = 0.9;
+  else
+    qp_input.torque_alpha_filter = 0.; 
+
+  return qp_input;
+}
+
 RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) const {
   std::vector<int> support_idx;
   std::vector<Side> sides;

@@ -78,9 +78,13 @@ class GenericPlan {
   // list of support
   RigidBodySupportState support_state_;
 
+  // list of constrained dof
+  std::vector<int> constrained_dofs_;
 
   RigidBodySupportState MakeDefaultSupportState(ContactState cs) const;
   BodyMotionData MakeDefaultBodyMotionData(size_t num_segments) const;
+
+  drake::lcmt_qp_controller_input MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const;
 
   // make lcm messages
   drake::lcmt_support_data EncodeSupportData(const RigidBodySupportStateElement &element) const;

@@ -18,6 +18,13 @@ class WalkingPlan : public GenericPlan {
   Eigen::VectorXd GetLatestKeyFrame(double time) { return Eigen::VectorXd::Zero(robot_.num_positions); }
 
  private:
+  enum WalkingState {
+    WEIGHT_TRANSFER,
+    SWING
+  };
+
+  WalkingState cur_state_;
+
   std::list<drc::footstep_t> footstep_plan_;
   std::list<std::pair<ContactState, double>> contact_state_;
   PiecewisePolynomial<double> weight_distribution_;
@@ -30,7 +37,6 @@ class WalkingPlan : public GenericPlan {
 
   void LoadConfigurationFromYAML(const std::string &name);
   void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, ContactState cur_contact_state);
-  void SetupContactStates();
 
   PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const;
   inline static double get_weight_distribution(ContactState cs) {
