@@ -33,6 +33,7 @@ class PlanEval {
   // est robot state
   std::mutex state_lock_;
   DrakeRobotState est_robot_state_;
+  Eigen::Vector6d est_robot_foot_wrench_[2];
   std::shared_ptr<RobotStateDriver> state_driver_;
 
   // input

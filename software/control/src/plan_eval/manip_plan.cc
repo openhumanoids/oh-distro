@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iomanip>
 
-drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs) {
+drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs, ContactState cs) {
   double cur_time = est_rs.t;
 
   if (interp_t0_ == -1)

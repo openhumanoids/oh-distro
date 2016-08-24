@@ -121,6 +121,13 @@ target_link_libraries(sf_test_zmp RobotStateDriver AtlasCommandDriver FootContac
 target_link_libraries (sf_test_zmp ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(sf_test_zmp)
 
+add_executable(sf_hack_traj plan_eval/hack_traj.cc ${PLAN_EVAL_SRC})
+set_source_files_properties(plan_eval/hack_traj.cc ${PLAN_EVAL_SRC} PROPERTIES COMPILE_FLAGS -g)
+pods_use_pkg_config_packages(sf_hack_traj drake-qp-common drake-control-util drake-side drake-rbm)
+target_link_libraries(sf_hack_traj RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeTrajectories drakeLCMUtil drakePolynomial drakeQPLocomotionPlan drakeYAMLUtil yaml-cpp)
+target_link_libraries (sf_hack_traj ${CMAKE_THREAD_LIBS_INIT})
+pods_install_executables(sf_hack_traj) 
+
 add_library(AtlasFallDetector SHARED AtlasFallDetector.cpp)
 pods_use_pkg_config_packages(AtlasFallDetector lcmtypes_drc_lcmtypes lcm drake-convex-hull)
 target_link_libraries(AtlasFallDetector drakeRBM RobotStateDriver)

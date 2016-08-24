@@ -244,6 +244,17 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
   return GenerateCubicSpline(T, Y, dydt0, dydt1);
 }
 
+template <typename Scalar> Eigen::Matrix<Scalar, 4, 1> CubicSplineCoeffs(double dt, Scalar y0, Scalar y1, Scalar yd0, Scalar yd1) {
+  Scalar dt2 = dt * dt;
+  Scalar dt3 = dt * dt * dt;
+  Scalar c4 = y0;
+  Scalar c3 = yd0;
+  Scalar c1 = 1. / dt2 * (yd1 - c3 -
+      2. / dt * (y1 - c4 - dt * c3));
+  Scalar c2 = 1. / dt2 * (y1 - c4 - dt * c3 - dt3 * c1);
+  return Eigen::Matrix<Scalar, 4, 1>(c4, c3, c2, c1);
+}
+
 template <typename Scalar, int rows, int cols>
 PiecewisePolynomial<Scalar> GenerateCubicSpline(
     const std::vector<Scalar> &T,
@@ -267,6 +278,14 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
     }
 
     polynomials[t].resize(Y[t].rows(), Y[t].cols());
+    double dt = T[t + 1] - T[t]; 
+    for (size_t i = 0; i < Y[t].rows(); i++) {
+      for (size_t j = 0; j < Y[t].cols(); j++) {
+        polynomials[t](i, j) = Polynomial<Scalar>(CubicSplineCoeffs(dt, Y[t](i, j), Y[t+1](i, j), Ydot[t](i, j), Ydot[t + 1](i, j)));
+      }
+    }
+
+    /*
     Scalar a = T[t + 1] - T[t];
     Scalar b = a * a;
     Scalar c = b * a;
@@ -282,6 +301,7 @@ PiecewisePolynomial<Scalar> GenerateCubicSpline(
         polynomials[t](i, j) = Polynomial<Scalar>(coeffs);
       }
     }
+    */
   }
 
   return PiecewisePolynomial<Scalar>(polynomials, T);

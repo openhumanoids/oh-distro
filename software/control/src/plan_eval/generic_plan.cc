@@ -47,9 +47,12 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_mu_ = get(config_, "mu").as<double>();
   p_zmp_height_ = get(config_, "zmp_height").as<double>();
   p_initial_transition_time_ = get(config_, "initial_transition_time").as<double>();
+  p_min_Fz_ = get(config_, "min_Fz").as<double>();
+
   std::cout << "p_zmp_height: " << p_zmp_height_ << std::endl;
   std::cout << "mu: " << p_mu_ << std::endl;
   std::cout << "initial_transition_time: " << p_initial_transition_time_ << std::endl;
+  std::cout << "p_min_Fz_: " << p_min_Fz_ << std::endl;
 }
 
 RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) const {
@@ -74,8 +77,7 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) cons
       break;
 
     default:
-      std::cerr << "not a valid contact state\n";
-      exit(-1);
+      throw std::runtime_error("not a valid contact state");
   }
   RigidBodySupportState support_state(support_idx.size());
 
@@ -83,7 +85,7 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) cons
     support_state[s].body = support_idx[s];
     support_state[s].side = sides[s];
     support_state[s].total_normal_force_upper_bound = 1.5 * robot_.getMass() * 9.81;
-    support_state[s].total_normal_force_lower_bound = 0;
+    support_state[s].total_normal_force_lower_bound = p_min_Fz_;
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
 

@@ -2,6 +2,7 @@
 
 #include "generic_plan.h"
 #include <list>
+#include <utility>
 
 class WalkingPlan : public GenericPlan {
  public:
@@ -12,19 +13,18 @@ class WalkingPlan : public GenericPlan {
   void HandleCommittedRobotPlan(const void *plan_msg,
                                 const DrakeRobotState &rs,
                                 const Eigen::VectorXd &last_q_d);
-  drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &rs);
+  drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &rs, ContactState cs);
 
   Eigen::VectorXd GetLatestKeyFrame(double time) { return Eigen::VectorXd::Zero(robot_.num_positions); }
 
  private:
+  std::list<drc::footstep_t> footstep_plan_;
+  std::list<std::pair<ContactState, double>> contact_state_;
   PiecewisePolynomial<double> weight_distribution_;
 
-  std::list<drc::footstep_t> footstep_plan_;
-
-  std::list<ContactState> contact_state_;
-  std::list<double> contact_switching_time_;
   double contact_switch_time_ = -INFINITY;
 
+  double p_lower_z_vel_;
   double p_ss_duration_;
   double p_ds_duration_;
 
