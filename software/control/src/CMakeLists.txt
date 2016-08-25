@@ -104,8 +104,8 @@ set(PLAN_EVAL_SRC
   plan_eval/zmp_planner.cc
   plan_eval/generic_plan.cc
   plan_eval/manip_plan.cc
-  plan_eval/walking_plan.cc
-  plan_eval/single_support_plan.cc)
+  plan_eval/walking_plan.cc)
+  #plan_eval/single_support_plan.cc)
 
 add_executable(sf_plan_eval plan_eval/run_plan_eval.cc ${PLAN_EVAL_SRC})
 set_source_files_properties(plan_eval/run_plan_eval.cc ${PLAN_EVAL_SRC} PROPERTIES COMPILE_FLAGS -g)

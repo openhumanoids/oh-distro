@@ -128,41 +128,33 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
   return qp_input;
 }
 
-RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) const {
-  std::vector<int> support_idx;
-  std::vector<Side> sides;
-  switch (cs) {
-    case DSc:
-      support_idx.push_back(rpc_.foot_ids.at(Side::LEFT));
-      support_idx.push_back(rpc_.foot_ids.at(Side::RIGHT));
-      sides.push_back(Side::LEFT);
-      sides.push_back(Side::RIGHT);
-      break;
+RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &cs) const {
+  int s = 0;
+  const std::list<ContactState::ContactBody> all_contacts = cs.bodies_in_contact();
+  RigidBodySupportState support_state(all_contacts.size());
+  for (auto it = all_contacts.begin(); it != all_contacts.end(); it++) {
+    int body_idx;
+    if (*it == ContactState::PELVIS)
+      body_idx = rpc_.pelvis_id;
+    else if (*it == ContactState::L_FOOT)
+      body_idx = rpc_.foot_ids.at(Side::LEFT);
+    else if (*it == ContactState::R_FOOT)
+      body_idx = rpc_.foot_ids.at(Side::RIGHT);
+    else if (*it == ContactState::L_HAND)
+      body_idx = rpc_.hand_ids.at(Side::LEFT);
+    else if (*it == ContactState::R_HAND)
+      body_idx = rpc_.hand_ids.at(Side::RIGHT);
+    else
+      throw std::runtime_error("UNKNOW BODY in contact");
 
-    case SSL:
-      support_idx.push_back(rpc_.foot_ids.at(Side::LEFT));
-      sides.push_back(Side::LEFT);
-      break;
-
-    case SSR:
-      support_idx.push_back(rpc_.foot_ids.at(Side::RIGHT));
-      sides.push_back(Side::RIGHT);
-      break;
-
-    default:
-      throw std::runtime_error("not a valid contact state");
-  }
-  RigidBodySupportState support_state(support_idx.size());
-
-  for (size_t s = 0; s < support_idx.size(); s++) {
-    support_state[s].body = support_idx[s];
-    support_state[s].side = sides[s];
+    support_state[s].body = body_idx;
     support_state[s].total_normal_force_upper_bound = 1.5 * robot_.getMass() * 9.81;
     support_state[s].total_normal_force_lower_bound = p_min_Fz_;
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
 
-    support_state[s].contact_points = contact_offsets.at(support_idx[s]);
+    support_state[s].contact_points = contact_offsets.at(body_idx); 
+    s++;
   }
 
   return support_state;

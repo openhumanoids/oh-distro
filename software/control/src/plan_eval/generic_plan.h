@@ -14,6 +14,7 @@
 
 #include "drc/robot_plan_t.hpp"
 #include "drc/walking_plan_request_t.hpp"
+#include "drc/foot_contact_estimate_t.hpp"
 
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
@@ -22,7 +23,6 @@ namespace Eigen {
 
 struct RigidBodySupportStateElement {
   int body;
-  Side side;
   double total_normal_force_upper_bound;
   double total_normal_force_lower_bound;
   Eigen::Matrix3Xd contact_points;
@@ -34,12 +34,14 @@ typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
 
 class GenericPlan {
  public:
+  /*
   enum ContactState {
-    SSL = 0,
-    SSR = 1,
-    DSc = 2,
-    AIR = 3
+    AIR = 0,
+    SSL = 1,
+    SSR = 2,
+    DSc = 3,
   };
+  */
  protected:
 
   // top level yaml config file node
@@ -82,7 +84,7 @@ class GenericPlan {
   // list of constrained dof
   std::vector<int> constrained_dofs_;
 
-  RigidBodySupportState MakeDefaultSupportState(ContactState cs) const;
+  RigidBodySupportState MakeDefaultSupportState(const ContactState &cs) const;
   BodyMotionData MakeDefaultBodyMotionData(size_t num_segments) const;
 
   drake::lcmt_qp_controller_input MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const;
@@ -105,7 +107,7 @@ class GenericPlan {
   virtual void HandleCommittedRobotPlan(const void *msg,
                                         const DrakeRobotState &est_rs,
                                         const Eigen::VectorXd &last_q_d) = 0;
-  virtual drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &est_rs, ContactState cs) = 0;
+  virtual drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &est_rs) = 0;
 
   virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
 };

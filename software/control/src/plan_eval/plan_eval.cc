@@ -81,25 +81,42 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                                  const drc::walking_plan_request_t *msg)
 {
   std::cout << "Makeing Walking plan\n";
-
+  
+  DrakeRobotState local_est_rs;
   state_lock_.lock();
-  Eigen::VectorXd est_q = est_robot_state_.q;
-  Eigen::VectorXd est_qd = est_robot_state_.qd;
-  double cur_time = est_robot_state_.t;
+  local_est_rs = est_robot_state_;
   state_lock_.unlock();
 
   //std::shared_ptr<GenericPlan> new_plan_ptr(new SingleSupportPlan(urdf_name_, config_name_));
   std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
-  Eigen::VectorXd last_key_frame = est_robot_state_.q;
+  Eigen::VectorXd last_key_frame = local_est_rs.q;
   if (current_plan_) {
-    last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
+    last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
   }
-  new_plan_ptr->HandleCommittedRobotPlan(msg, est_robot_state_, last_key_frame);
+  new_plan_ptr->HandleCommittedRobotPlan(msg, local_est_rs, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;
   new_plan_ = true;
   plan_lock_.unlock();
+}
+
+void PlanEval::HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
+                           const std::string &channel,
+                           const drc::foot_contact_estimate_t *msg)
+{
+  state_lock_.lock();
+  if (msg->left_contact > 0)
+    est_robot_state_.contact_state.set_contact(ContactState::L_FOOT);
+  else
+    est_robot_state_.contact_state.remove_contact(ContactState::L_FOOT);
+
+  if (msg->right_contact > 0)
+    est_robot_state_.contact_state.set_contact(ContactState::R_FOOT);
+  else
+    est_robot_state_.contact_state.remove_contact(ContactState::R_FOOT);
+
+  state_lock_.unlock();
 }
 
 void PlanEval::ReceiverLoop() {
@@ -127,8 +144,6 @@ void PlanEval::PublisherLoop() {
   std::shared_ptr<GenericPlan> local_ptr;
   bool has_plan = false;
   DrakeRobotState local_est_rs;
-  bool local_est_foot_contact[2];
-  GenericPlan::ContactState cs = GenericPlan::DSc;
 
   while (!publisher_stop_) {
     if (new_plan_) {
@@ -143,25 +158,10 @@ void PlanEval::PublisherLoop() {
     if (has_plan && new_robot_state_) {
       state_lock_.lock();
       local_est_rs = est_robot_state_;
-      local_est_foot_contact[0] = est_foot_contact_[0];
-      local_est_foot_contact[1] = est_foot_contact_[1];
       new_robot_state_ = false;
       state_lock_.unlock();
 
-      if (local_est_foot_contact[Side::LEFT]) {
-        if (local_est_foot_contact[Side::RIGHT])
-          cs = GenericPlan::DSc;
-        else
-          cs = GenericPlan::SSL;
-      }
-      else {
-        if (local_est_foot_contact[Side::RIGHT])
-          cs = GenericPlan::SSR;
-        else
-          cs = GenericPlan::AIR;
-      }
-
-      drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(local_est_rs, cs);
+      drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(local_est_rs);
       lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
     }
   }
@@ -175,15 +175,6 @@ void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
   state_lock_.lock();
   state_driver_->decode(msg, &est_robot_state_);
   new_robot_state_ = true;
-  state_lock_.unlock();
-}
-
-void PlanEval::HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
-                                     const std::string &channel,
-                                     const drc::foot_contact_estimate_t *msg) {
-  state_lock_.lock();
-  est_foot_contact_[Side::LEFT] = msg->left_contact > 0;
-  est_foot_contact_[Side::RIGHT] = msg->right_contact > 0;
   state_lock_.unlock();
 }
 

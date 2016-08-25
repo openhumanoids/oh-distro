@@ -15,6 +15,15 @@ inline double avg_angle(double a, double b) {
     return fmod((a + b) / 2., 2*M_PI) - M_PI;
 }
 
+double WalkingPlan::get_weight_distribution(const ContactState &cs) {
+  if (cs.is_in_contact(ContactState::L_FOOT) && cs.is_in_contact(ContactState::R_FOOT))
+    return 0.5;
+  if (cs.is_in_contact(ContactState::L_FOOT) && !cs.is_in_contact(ContactState::R_FOOT))
+    return 1;
+  if (!cs.is_in_contact(ContactState::L_FOOT) && cs.is_in_contact(ContactState::R_FOOT))
+    return 0;
+  return 0.5;
+}
 
 void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_ss_duration_ = config_["ss_duration"].as<double>();
@@ -27,7 +36,7 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
 }
 
 // called on every touch down
-void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, ContactState planned_cs) {
+void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &planned_cs) {
   // current state
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
 
@@ -47,7 +56,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   body_motions_.resize(3);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
 
   // figure out the current contact state
-  ContactState nxt_contact_state;
+  ContactState nxt_contact_state = ContactState::DS();
 
   // no more steps, go to double support middle
   if (footstep_plan_.empty()) {
@@ -106,12 +115,12 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     // make weight distribuition
     std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
     WL[0](0,0) = get_weight_distribution(planned_cs);
-    WL[1](0,0) = get_weight_distribution(DSc);
+    WL[1](0,0) = get_weight_distribution(ContactState::DS());
     weight_distribution_ = GenerateLinearSpline(Ts, WL);
 
     // setup contact_state tape
     contact_state_.clear();
-    contact_state_.push_back(std::pair<ContactState, double>(DSc, INFINITY));
+    contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
   }
   else {
     int num_T = 3;
@@ -120,13 +129,13 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     Side stance_foot = Side::LEFT;
     Side swing_foot = Side::RIGHT;
+    nxt_contact_state = ContactState::SSL();
     drc::footstep_t &cur_step = footstep_plan_.front();
-    nxt_contact_state = SSL;
     // ssr
     if (!cur_step.is_right_foot) {
       stance_foot = Side::RIGHT;
       swing_foot = Side::LEFT;
-      nxt_contact_state = SSR;
+      nxt_contact_state = ContactState::SSR();
     }
 
     // TODO: change to vel
@@ -207,7 +216,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     // setup contact state
     contact_state_.clear();
-    contact_state_.push_back(std::pair<ContactState, double>(DSc, p_ds_duration_));
+    contact_state_.push_back(std::pair<ContactState, double>(ContactState::DS(), p_ds_duration_));
     contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, p_ss_duration_ + p_ds_duration_));
   }
 
@@ -255,7 +264,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   init_q_ = est_rs.q;
 
   // generate all trajs
-  GenerateTrajs(est_rs.q, est_rs.qd, DSc);
+  GenerateTrajs(est_rs.q, est_rs.qd, ContactState::DS());
 
   // constrained DOFs
   constrained_dofs_.clear();
@@ -273,10 +282,12 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
 }
 
-drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &est_rs, ContactState est_cs) {
-  if (contact_state_.empty())
-    throw std::runtime_error("contact state queue is empty");
+void WalkingPlan::SwitchContactState(double cur_time) {
+  contact_state_.pop_front();
+  contact_switch_time_ = cur_time;
+}
 
+drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &est_rs) {
   static double last_time = 0;
   double cur_time = est_rs.t;
   double dt = std::min(cur_time - last_time, 1.0);
@@ -286,16 +297,22 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     interp_t0_ = cur_time;
 
   double plan_time = cur_time - interp_t0_;
-  ContactState planned_cs = contact_state_.front().first;
-  double planned_contact_swith_time = contact_state_.front().second;
+
+  // can't use reference for this one because ref becomes invalid when queue pops
+  const ContactState planned_cs = cur_planned_contact_state();
+  const ContactState &est_cs = est_rs.contact_state;
+  double planned_contact_swith_time = cur_planned_contact_swith_time();
+
+  printf("plan time %g (pl %d pr %d) (el %d er %d)\n", plan_time,
+    planned_cs.is_in_contact(ContactState::L_FOOT), planned_cs.is_in_contact(ContactState::R_FOOT),
+    est_cs.is_in_contact(ContactState::L_FOOT), est_cs.is_in_contact(ContactState::R_FOOT));
 
   // state machine part
   switch (cur_state_) {
     case WEIGHT_TRANSFER:
       if (plan_time >= planned_contact_swith_time) {
         // change contact
-        contact_state_.pop_front();
-        contact_switch_time_ = cur_time;
+        SwitchContactState(cur_time);
         cur_state_ = SWING;
         std::cout << "Weight transfer -> Swing @ " << plan_time << std::endl;
       }
@@ -325,10 +342,11 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       }
 
       // check for touch down only after half swing
-      if (plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_ && est_cs == DSc) {
+      if (plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_ &&
+          est_cs.is_in_contact(ContactState::L_FOOT) &&
+          est_cs.is_in_contact(ContactState::R_FOOT)) {
         // change contact
-        contact_state_.pop_front();
-        contact_switch_time_ = cur_time;
+        SwitchContactState(cur_time);
         cur_state_ = WEIGHT_TRANSFER;
         std::cout << "Swing -> Weight transfer @ " << plan_time << std::endl;
 
@@ -347,7 +365,6 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       throw std::runtime_error("Unknown walking state");
   }
 
-
   // make contact support data
   support_state_ = MakeDefaultSupportState(contact_state_.front().first);
   // interp weight distribution
@@ -356,11 +373,12 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   wl = std::max(wl, 0.0);
 
   for (size_t s = 0; s < support_state_.size(); s++) {
-    if (support_state_[s].side == Side::LEFT) {
+    // only foot
+    if (support_state_[s].body == rpc_.foot_ids.at(Side::LEFT)) {
       support_state_[s].total_normal_force_upper_bound *= wl;
       support_state_[s].total_normal_force_lower_bound = p_min_Fz_;
     }
-    else {
+    else if (support_state_[s].body == rpc_.foot_ids.at(Side::RIGHT)) {
       support_state_[s].total_normal_force_upper_bound *= (1 - wl);
       support_state_[s].total_normal_force_lower_bound = p_min_Fz_;
     }

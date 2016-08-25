@@ -35,7 +35,6 @@ class PlanEval {
   // est robot state
   std::mutex state_lock_;
   DrakeRobotState est_robot_state_;
-  bool est_foot_contact_[2];
   std::shared_ptr<RobotStateDriver> state_driver_;
 
   // input
@@ -66,8 +65,7 @@ class PlanEval {
   void HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
                            const std::string &channel,
                            const bot_core::robot_state_t *msg);
-  
-  void HandleEstContactState(const lcm::ReceiveBuffer *rbuf, 
+  void HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
                              const std::string &channel,
                              const drc::foot_contact_estimate_t *msg);
 };

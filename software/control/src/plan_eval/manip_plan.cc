@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iomanip>
 
-drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs, ContactState cs) {
+drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs) {
   double cur_time = est_rs.t;
 
   if (interp_t0_ == -1)
@@ -127,7 +127,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   }
 
   // make support, dummy here since we are always in double support
-  support_state_ = MakeDefaultSupportState(DSc);
+  support_state_ = MakeDefaultSupportState(ContactState::DS());
 
   // constrained DOFs
   // TODO: this is not true for dragging hands around
