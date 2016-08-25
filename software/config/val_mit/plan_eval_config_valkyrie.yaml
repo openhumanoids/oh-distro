@@ -39,12 +39,12 @@ foot_contact_offsets:
     left_heel: {x: -0.058, y: 0.055, z: -0.09}
     right_heel: {x: -0.058, y: -0.055, z: -0.09}
 
-mu: 0.7
-zmp_height: 1.0
+mu: 1
+zmp_height: 0.95
 initial_transition_time: 0
 flip_foot_ft_sensor: 1
 ss_duration: 6.0
 ds_duration: 6.0
 
-min_Fz: 100
+min_Fz: 60
 lower_z_vel: -0.01
