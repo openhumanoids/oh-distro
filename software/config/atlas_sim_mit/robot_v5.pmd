@@ -28,6 +28,10 @@ group "1.state_mit" {
 }
 
 group "2.plan_and_control" {
+    cmd "contact_monitor" {
+        exec = "drc-contact-monitor -t 50";
+        host = "base";
+    }
 
     cmd "FallDetector" {
       exec = "drc-atlas-fall-detector 1";
@@ -50,7 +54,7 @@ group "2.plan_and_control" {
         exec = "sf_plan_eval ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf ${DRC_BASE}/software/config/atlas_sim_mit/plan_eval_config_atlas.yaml";
         host = "base";
         stop_signal = 15;
-    } 
+    }
 
     cmd "InstQPBothHands" {
         exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/drake/drake/examples/Atlas/config/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_robotiq_weight.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
@@ -205,9 +209,10 @@ script "1.run_walking_flat" {
     wait ms 1000;
     start group "1.state_mit";
     start cmd "CombinedPlanner";
+    start cmd "contact_monitor";
     start group "5.maps";
     start cmd "drakeAtlasSimulation Walking Flat";
-    start cmd "PlanEval";
+    start cmd "c_plan_eval";
     start cmd "InstQP";
     start cmd "FallDetector";
     start cmd "director";

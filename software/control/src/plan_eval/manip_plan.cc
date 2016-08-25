@@ -12,85 +12,8 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &es
     interp_t0_ = cur_time;
   double plan_time = cur_time - interp_t0_;
 
-  drake::lcmt_qp_controller_input qp_input;
-  qp_input.be_silent = false;
-  qp_input.timestamp = static_cast<int64_t>(cur_time * 1e6);
-  qp_input.param_set_name = "manip";
-
-  ////////////////////////////////////////
-  // no body wrench data
-  qp_input.num_external_wrenches = 0;
-
-  ////////////////////////////////////////
-  // no joint pd override
-  qp_input.num_joint_pd_overrides = 0;
-
-  ////////////////////////////////////////
-  // make whole_body_data
-  auto q_des = q_trajs_.value(plan_time);
-  std::vector<float> &q_des_std_vector = qp_input.whole_body_data.q_des;
-  q_des_std_vector.resize(q_des.size());
-  for (int i = 0; i < q_des.size(); i++) {
-    q_des_std_vector[i] = static_cast<float>(q_des(i));
-  }
-  int qtrajSegmentIdx = q_trajs_.getSegmentIndex(plan_time);
-  int num_segments =
-      std::min(2, q_trajs_.getNumberOfSegments() - qtrajSegmentIdx);
-  PiecewisePolynomial<double> qtrajSlice =
-      q_trajs_.slice(qtrajSegmentIdx, num_segments);
-  qtrajSlice.shiftRight(interp_t0_);
-
-  encodePiecewisePolynomial(qtrajSlice, qp_input.whole_body_data.spline);
-
-  qp_input.whole_body_data.timestamp = 0;
-  qp_input.whole_body_data.num_positions = robot_.num_positions;
-
-  // constrained DOFs
-  // arms
-  for (auto it = rpc_.position_indices.arms.begin(); it != rpc_.position_indices.arms.end(); it++) {
-    const std::vector<int> &indices = it->second;
-    for (size_t i = 0; i < indices.size(); i++)
-      qp_input.whole_body_data.constrained_dofs.push_back(indices[i]);
-  }
-  // neck
-  for (size_t i = 0; i < rpc_.position_indices.neck.size(); i++)
-    qp_input.whole_body_data.constrained_dofs.push_back(rpc_.position_indices.neck[i]);
-  // back
-  qp_input.whole_body_data.constrained_dofs.push_back(rpc_.position_indices.back_bkz);
-  //qp_input.whole_body_data.constrained_dofs.push_back(rpc_.position_indices.back_bky);
-  // add 1 offset to match matlab indexing, for backward compatibility
-  for (size_t i = 0; i < qp_input.whole_body_data.num_constrained_dofs; i++)
-    qp_input.whole_body_data.constrained_dofs[i]++;
-
-  qp_input.whole_body_data.num_constrained_dofs =
-      qp_input.whole_body_data.constrained_dofs.size();
-
-  ////////////////////////////////////////
-  // encode zmp data
-  qp_input.zmp_data = zmp_planner_.EncodeZMPData(plan_time);
-
-  ////////////////////////////////////////
-  // encode body motion data
-  qp_input.num_tracked_bodies = body_motions_.size();
-  qp_input.body_motion_data.resize(qp_input.num_tracked_bodies);
-  for (size_t b = 0; b < qp_input.body_motion_data.size(); b++)
-    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, body_motions_[b]);
-
-  ////////////////////////////////////////
-  // encode support data
-  qp_input.num_support_data = support_state_.size();
-  qp_input.support_data.resize(qp_input.num_support_data);
-  for (size_t i = 0; i < qp_input.support_data.size(); i++)
-    qp_input.support_data[i] = EncodeSupportData(support_state_[i]);
-
-  ////////////////////////////////////////
-  // torque alpha filter
-  if (plan_time < p_initial_transition_time_)
-    qp_input.torque_alpha_filter = 0.9;
-  else
-    qp_input.torque_alpha_filter = 0.;
-
-  return qp_input;
+  bool apply_torque_alpha_filter = plan_time < p_initial_transition_time_;
+  return MakeDefaultQPInput(cur_time, plan_time, "manip", apply_torque_alpha_filter);
 }
 
 Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
@@ -204,7 +127,23 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   }
 
   // make support, dummy here since we are always in double support
-  support_state_ = MakeDefaultSupportState(DSc);
+  support_state_ = MakeDefaultSupportState(ContactState::DS());
+
+  // constrained DOFs
+  // TODO: this is not true for dragging hands around
+  constrained_dofs_.clear();
+  for (auto it = rpc_.position_indices.arms.begin(); it != rpc_.position_indices.arms.end(); it++) {
+    const std::vector<int> &indices = it->second;
+    for (size_t i = 0; i < indices.size(); i++)
+      constrained_dofs_.push_back(indices[i]);
+  }
+  // neck
+  for (size_t i = 0; i < rpc_.position_indices.neck.size(); i++)
+    constrained_dofs_.push_back(rpc_.position_indices.neck[i]);
+  // back
+  constrained_dofs_.push_back(rpc_.position_indices.back_bkz);
+  //constrained_dofs_.push_back(rpc_.position_indices.back_bky);
+
   std::cout << "committed robot plan proced\n";
 }
 

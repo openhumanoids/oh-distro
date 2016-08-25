@@ -209,6 +209,7 @@ script "normal" {
     wait ms 1000;
     start cmd "drc-state-sync-val on link02";
     start cmd "se-fusion no param server on link02";
+    start cmd "contact_monitor";
     wait ms 1000;
     start cmd "contact_monitor";
     start cmd "c_plan_eval";

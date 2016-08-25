@@ -13,6 +13,7 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   // names
   urdf_name_ = urdf_name;
   config_name_ = config_name;
+  new_robot_state_ = false;
 
   // state decoder stuff
   RigidBodyTree r(urdf_name);
@@ -31,8 +32,7 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   new_plan_ = false;
 
   if (!lcm_handle_.good()) {
-    std::cerr << "ERROR: lcm is not good()" << std::endl;
-    exit(-1);
+    throw std::runtime_error("lcm is not good()");
   }
 
   lcm::Subscription *sub;
@@ -45,6 +45,10 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   sub->setQueueCapacity(1);
 
   sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
+      this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactState,
       this);
   sub->setQueueCapacity(1);
 }
@@ -77,25 +81,42 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                                  const drc::walking_plan_request_t *msg)
 {
   std::cout << "Makeing Walking plan\n";
-
+  
+  DrakeRobotState local_est_rs;
   state_lock_.lock();
-  Eigen::VectorXd est_q = est_robot_state_.q;
-  Eigen::VectorXd est_qd = est_robot_state_.qd;
-  double cur_time = est_robot_state_.t;
+  local_est_rs = est_robot_state_;
   state_lock_.unlock();
 
   //std::shared_ptr<GenericPlan> new_plan_ptr(new SingleSupportPlan(urdf_name_, config_name_));
   std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
-  Eigen::VectorXd last_key_frame = est_robot_state_.q;
+  Eigen::VectorXd last_key_frame = local_est_rs.q;
   if (current_plan_) {
-    last_key_frame = current_plan_->GetLatestKeyFrame(cur_time);
+    last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
   }
-  new_plan_ptr->HandleCommittedRobotPlan(msg, est_robot_state_, last_key_frame);
+  new_plan_ptr->HandleCommittedRobotPlan(msg, local_est_rs, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;
   new_plan_ = true;
   plan_lock_.unlock();
+}
+
+void PlanEval::HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
+                           const std::string &channel,
+                           const drc::foot_contact_estimate_t *msg)
+{
+  state_lock_.lock();
+  if (msg->left_contact > 0)
+    est_robot_state_.contact_state.set_contact(ContactState::L_FOOT);
+  else
+    est_robot_state_.contact_state.remove_contact(ContactState::L_FOOT);
+
+  if (msg->right_contact > 0)
+    est_robot_state_.contact_state.set_contact(ContactState::R_FOOT);
+  else
+    est_robot_state_.contact_state.remove_contact(ContactState::R_FOOT);
+
+  state_lock_.unlock();
 }
 
 void PlanEval::ReceiverLoop() {

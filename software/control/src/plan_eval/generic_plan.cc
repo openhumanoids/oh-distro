@@ -47,47 +47,114 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_mu_ = get(config_, "mu").as<double>();
   p_zmp_height_ = get(config_, "zmp_height").as<double>();
   p_initial_transition_time_ = get(config_, "initial_transition_time").as<double>();
+  p_min_Fz_ = get(config_, "min_Fz").as<double>();
+
   std::cout << "p_zmp_height: " << p_zmp_height_ << std::endl;
   std::cout << "mu: " << p_mu_ << std::endl;
   std::cout << "initial_transition_time: " << p_initial_transition_time_ << std::endl;
+  std::cout << "p_min_Fz_: " << p_min_Fz_ << std::endl;
 }
 
-RigidBodySupportState GenericPlan::MakeDefaultSupportState(ContactState cs) const {
-  std::vector<int> support_idx;
-  std::vector<Side> sides;
-  switch (cs) {
-    case DSc:
-      support_idx.push_back(rpc_.foot_ids.at(Side::LEFT));
-      support_idx.push_back(rpc_.foot_ids.at(Side::RIGHT));
-      sides.push_back(Side::LEFT);
-      sides.push_back(Side::RIGHT);
-      break;
+drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const {
+  drake::lcmt_qp_controller_input qp_input;
+  qp_input.be_silent = false;
+  qp_input.timestamp = static_cast<int64_t>(real_time * 1e6);
+  qp_input.param_set_name = "walking";
+  qp_input.param_set_name = param_set_name;
 
-    case SSL:
-      support_idx.push_back(rpc_.foot_ids.at(Side::LEFT));
-      sides.push_back(Side::LEFT);
-      break;
+  ////////////////////////////////////////
+  // no body wrench data
+  qp_input.num_external_wrenches = 0;
 
-    case SSR:
-      support_idx.push_back(rpc_.foot_ids.at(Side::RIGHT));
-      sides.push_back(Side::RIGHT);
-      break;
+  ////////////////////////////////////////
+  // no joint pd override
+  qp_input.num_joint_pd_overrides = 0;
 
-    default:
-      std::cerr << "not a valid contact state\n";
-      exit(-1);
+  ////////////////////////////////////////
+  // make whole_body_data
+  auto q_des = q_trajs_.value(plan_time);
+  std::vector<float> &q_des_std_vector = qp_input.whole_body_data.q_des;
+  q_des_std_vector.resize(q_des.size());
+  for (int i = 0; i < q_des.size(); i++) {
+    q_des_std_vector[i] = static_cast<float>(q_des(i));
   }
-  RigidBodySupportState support_state(support_idx.size());
+  int qtrajSegmentIdx = q_trajs_.getSegmentIndex(plan_time);
+  int num_segments =
+      std::min(2, q_trajs_.getNumberOfSegments() - qtrajSegmentIdx);
+  PiecewisePolynomial<double> qtrajSlice =
+      q_trajs_.slice(qtrajSegmentIdx, num_segments);
+  qtrajSlice.shiftRight(interp_t0_);
 
-  for (size_t s = 0; s < support_idx.size(); s++) {
-    support_state[s].body = support_idx[s];
-    support_state[s].side = sides[s];
+  encodePiecewisePolynomial(qtrajSlice, qp_input.whole_body_data.spline);
+
+  qp_input.whole_body_data.timestamp = 0;
+  qp_input.whole_body_data.num_positions = robot_.num_positions;
+  
+  // constrained DOFs
+  // add 1 offset to match matlab indexing, for backward compatibility
+  qp_input.whole_body_data.constrained_dofs = constrained_dofs_;
+  for (size_t i = 0; i < constrained_dofs_.size(); i++)
+    qp_input.whole_body_data.constrained_dofs[i]++;
+
+  qp_input.whole_body_data.num_constrained_dofs =
+      qp_input.whole_body_data.constrained_dofs.size();
+
+  ////////////////////////////////////////
+  // encode zmp data
+  qp_input.zmp_data = zmp_planner_.EncodeZMPData(plan_time);
+
+  ////////////////////////////////////////
+  // encode body motion data
+  qp_input.num_tracked_bodies = body_motions_.size();
+  qp_input.body_motion_data.resize(qp_input.num_tracked_bodies);
+  for (size_t b = 0; b < qp_input.body_motion_data.size(); b++)
+    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, body_motions_[b]);
+
+  ////////////////////////////////////////
+  // encode support data
+  qp_input.num_support_data = support_state_.size();
+  qp_input.support_data.resize(qp_input.num_support_data);
+  for (size_t i = 0; i < qp_input.support_data.size(); i++)
+    qp_input.support_data[i] = EncodeSupportData(support_state_[i]);
+
+
+  ////////////////////////////////////////
+  // torque alpha filter
+  if (apply_torque_alpha_filter)
+    qp_input.torque_alpha_filter = 0.9;
+  else
+    qp_input.torque_alpha_filter = 0.; 
+
+  return qp_input;
+}
+
+RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &cs) const {
+  int s = 0;
+  const std::list<ContactState::ContactBody> all_contacts = cs.bodies_in_contact();
+  RigidBodySupportState support_state(all_contacts.size());
+  for (auto it = all_contacts.begin(); it != all_contacts.end(); it++) {
+    int body_idx;
+    if (*it == ContactState::PELVIS)
+      body_idx = rpc_.pelvis_id;
+    else if (*it == ContactState::L_FOOT)
+      body_idx = rpc_.foot_ids.at(Side::LEFT);
+    else if (*it == ContactState::R_FOOT)
+      body_idx = rpc_.foot_ids.at(Side::RIGHT);
+    else if (*it == ContactState::L_HAND)
+      body_idx = rpc_.hand_ids.at(Side::LEFT);
+    else if (*it == ContactState::R_HAND)
+      body_idx = rpc_.hand_ids.at(Side::RIGHT);
+    else
+      throw std::runtime_error("UNKNOW BODY in contact");
+
+    support_state[s].body = body_idx;
     support_state[s].total_normal_force_upper_bound = 1.5 * robot_.getMass() * 9.81;
-    support_state[s].total_normal_force_lower_bound = 0;
+    support_state[s].total_normal_force_lower_bound = p_min_Fz_;
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
 
-    support_state[s].contact_points = contact_offsets.at(support_idx[s]);
+    support_state[s].contact_points = contact_offsets.at(body_idx); 
+    s++;
   }
 
   return support_state;
