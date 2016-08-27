@@ -29,7 +29,7 @@ group "1.state_mit" {
     cmd "drc-state-sync-val (pinned) on link02" {
         exec = "drc-state-sync-val -pinned";
         host = "link02";
-    }    
+    }
 
     cmd "se-fusion" {
         exec = "se-fusion";
@@ -55,7 +55,7 @@ group "1.state_mit" {
 
 group "2.plan_and_control" {
     cmd "contact_monitor" {
-        exec = "drc-contact-monitor -n -t 60";
+        exec = "drc-contact-monitor -n -t 30";
         host = "base";
     }
 
@@ -69,13 +69,13 @@ group "2.plan_and_control" {
         host = "base";
         stop_signal = 15;
     }
-    
+
     cmd "c_plan_eval" {
         exec = "sf_plan_eval ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf ${DRC_BASE}/software/config/val_mit/plan_eval_config_valkyrie.yaml";
         host = "base";
         stop_signal = 15;
-    } 
- 
+    }
+
     cmd "InstQP Val on link02" {
         exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -pub";
         host = "link02";
@@ -144,7 +144,7 @@ group "6.streaming"{
     }
 
     cmd "robot streaming with controller fixed base force control" {
-        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController --fixedBase --forceControl"; 
+        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController --fixedBase --forceControl";
         host = "base";
     }
 }
@@ -214,6 +214,6 @@ script "normal" {
     start cmd "contact_monitor";
     start cmd "c_plan_eval";
     start cmd "InstQP Val on link02";
-    start cmd "CombinedPlanner";    
+    start cmd "CombinedPlanner";
 }
 

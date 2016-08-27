@@ -72,7 +72,7 @@ actuator_names:
   - rightShoulderYaw
   - rightElbowPitch
   - rightForearmYaw
-  - rightWristRoll  
+  - rightWristRoll
   - rightWristPitch
   - leftShoulderPitch
   - leftShoulderRoll
@@ -108,19 +108,19 @@ qp_controller_params:
         weight: 0.0
       *PELVIS_NAME :
         Kp: {x: 15, y: 15, z: 15, wx: 40, wy: 40, wz: 40}
-        weight: 10.0
+        weight: 1.0
         damping_ratio: 0.3
       *R_FOOT_NAME :
-        Kp: {x: 40, y: 40, z: 40, wx: 40, wy: 40, wz: 40}
-        weight: 10.0
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
+        weight: 1.0
       *L_FOOT_NAME :
-        Kp: {x: 40, y: 40, z: 40, wx: 40, wy: 40, wz: 40}
-        weight: 10.0
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
+        weight: 1.0
     position_specific:
       DEFAULT:
         Kp: 150
         damping_ratio: 0.2
-        w_qdd: 0.001 
+        w_qdd: 0.001
         integrator:
           gain: 1.75
           clamp: 0.1
@@ -155,7 +155,7 @@ qp_controller_params:
       torsoPitch:
         w_qdd: 0.1
         Kp: 50
-        damping_ratio: 0.2 
+        damping_ratio: 0.2
       rightKneePitch:
         joint_soft_limits:
           enabled: true
@@ -201,7 +201,7 @@ qp_controller_params:
           ff_qd: 0
           ff_f_d: 1
           ff_const: 0
-          ff_qd_d: 1.0
+          ff_qd_d: 2.0
       upperNeckPitch:
         hardware:
           joint_is_force_controlled: false
@@ -217,19 +217,19 @@ qp_controller_params:
 
       rightHipPitch:
         hardware:
-          ff_qd_d: 1.0
+          ff_qd_d: 2.0
 
       rightAnklePitchActuator:
         hardware:
-          ff_qd_d: 3.0
+          ff_qd_d: 5.0
 
       leftHipPitch:
         hardware:
-          ff_qd_d: 1.0
+          ff_qd_d: 2.0
 
       leftAnklePitchActuator:
         hardware:
-          ff_qd_d: 3.0
+          ff_qd_d: 5.0
 
 
 

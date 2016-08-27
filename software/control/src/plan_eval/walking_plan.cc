@@ -303,10 +303,6 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   const ContactState &est_cs = est_rs.contact_state;
   double planned_contact_swith_time = cur_planned_contact_swith_time();
 
-  printf("plan time %g (pl %d pr %d) (el %d er %d)\n", plan_time,
-    planned_cs.is_in_contact(ContactState::L_FOOT), planned_cs.is_in_contact(ContactState::R_FOOT),
-    est_cs.is_in_contact(ContactState::L_FOOT), est_cs.is_in_contact(ContactState::R_FOOT));
-
   // state machine part
   switch (cur_state_) {
     case WEIGHT_TRANSFER:
