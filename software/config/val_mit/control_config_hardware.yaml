@@ -201,7 +201,7 @@ qp_controller_params:
           ff_qd: 0
           ff_f_d: 1
           ff_const: 0
-          ff_qd_d: 2.0
+          ff_qd_d: 1.0
       upperNeckPitch:
         hardware:
           joint_is_force_controlled: false
@@ -215,23 +215,60 @@ qp_controller_params:
           joint_is_force_controlled: false
           joint_is_position_controlled: true
 
-      rightHipPitch:
+      waistPitchActuator:
         hardware:
           ff_qd_d: 2.0
 
-      rightAnklePitchActuator:
+      waistRollActuator:
         hardware:
-          ff_qd_d: 5.0
+          ff_qd_d: 2.0
+
+      leftHipYaw:
+        hardware:
+          ff_qd_d: 2.0
+
+      leftHipRoll:
+        hardware:
+          ff_qd_d: 2.0
 
       leftHipPitch:
         hardware:
-          ff_qd_d: 2.0
+          ff_qd_d: 5.0
+
+      leftKneePitch:
+        hardware:
+          ff_qd_d: 10.0
 
       leftAnklePitchActuator:
         hardware:
           ff_qd_d: 5.0
 
+      leftAnkleRollActuator:
+        hardware:
+          ff_qd_d: 2.0
+      rightHipYaw:
+        hardware:
+          ff_qd_d: 2.0
 
+      rightHipRoll:
+        hardware:
+          ff_qd_d: 2.0
+
+      rightHipPitch:
+        hardware:
+          ff_qd_d: 5.0
+
+      rightKneePitch:
+        hardware:
+          ff_qd_d: 10.0
+
+      rightAnklePitchActuator:
+        hardware:
+          ff_qd_d: 5.0
+
+      rightAnkleRollActuator:
+        hardware:
+          ff_qd_d: 2.0
 
   base: # automatically inherits from the default =
   standing:

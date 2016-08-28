@@ -55,13 +55,13 @@ class WalkingPlan : public GenericPlan {
     else if (contact_state == ContactState::SSR)
       return Side::RIGHT;
     else
-      throw std::runtime_error("no stance foot in double support or in air."); 
+      throw std::runtime_error("no stance foot in double support or in air.");
   }
 
   inline bool is_single_support(ContactState contact_state) const {
     return (contact_state == ContactState::SSL || contact_state == ContactState::SSR);
   }
-  
+
   inline bool is_double_support(ContactState contact_state) const {
     return (contact_state == ContactState::DSc);
   }
@@ -81,8 +81,8 @@ class WalkingPlan : public GenericPlan {
 
   void SwitchContactState(double cur_time);
 
-  PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const;
-  
+  PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const;
+
   static double get_weight_distribution(const ContactState &cs);
 };
 

@@ -43,8 +43,8 @@ mu: 1
 zmp_height: 1
 initial_transition_time: 0.5
 flip_foot_ft_sensor: 1
-ss_duration: 6.0
-ds_duration: 6.0
+ss_duration: 4.0
+ds_duration: 4.0
 
 min_Fz: 30
 lower_z_vel: -0.01

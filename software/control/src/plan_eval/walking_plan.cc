@@ -205,7 +205,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     swing_touchdown_pose.tail(4).normalize();
 
     body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-    body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 2., p_ss_duration_ / 2.);
+    //body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 2., p_ss_duration_ / 2.);
+    body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
 
     // make weight distribuition
     std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
@@ -224,13 +225,14 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   interp_t0_ = -1;
 }
 
-PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d &foot0, const Eigen::Vector7d &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_down_dur) const {
-  int num_T = 4;
+PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d &foot0, const Eigen::Vector7d &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const {
+  int num_T = 5;
   std::vector<double> swingT(num_T);
   swingT[0] = 0;
   swingT[1] = pre_swing_dur;
   swingT[2] = pre_swing_dur + swing_up_dur;
-  swingT[3] = pre_swing_dur + swing_up_dur + swing_down_dur;
+  swingT[3] = pre_swing_dur + swing_up_dur + swing_transfer_dur;
+  swingT[4] = pre_swing_dur + swing_up_dur + swing_transfer_dur + swing_down_dur;
 
   Eigen::Vector7d swing_mid = foot1;
   swing_mid.head(3) = (foot0.head(3) + foot1.head(3)) / 2.;
@@ -240,7 +242,10 @@ PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d
   std::vector<Eigen::Vector7d> swing_vel_knots(num_T, Eigen::Vector7d::Zero());
   swing_pose_knots[0] = swing_pose_knots[1] = foot0;
   swing_pose_knots[2] = swing_mid;
+  // right above the touchdown pose, only increase z
   swing_pose_knots[3] = foot1;
+  swing_pose_knots[3][2] = swing_mid[2];
+  swing_pose_knots[4] = foot1;
   swing_vel_knots[2].head(2) = (foot1.head(2) - foot0.head(2)) / (swing_up_dur + swing_down_dur);
 
   return GenerateCubicCartesianSpline(swingT, swing_pose_knots, swing_vel_knots);
