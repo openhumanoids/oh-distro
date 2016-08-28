@@ -51,6 +51,7 @@ class GenericPlan {
   double p_mu_;
   double p_zmp_height_;
   double p_initial_transition_time_;
+  double p_transition_trq_alpha_filter_;
   double p_min_Fz_;
 
   RobotPropertyCache rpc_;
@@ -91,7 +92,7 @@ class GenericPlan {
 
   // make lcm messages
   drake::lcmt_support_data EncodeSupportData(const RigidBodySupportStateElement &element) const;
-  drake::lcmt_body_motion_data EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const; 
+  drake::lcmt_body_motion_data EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const;
  public:
   GenericPlan(const std::string &urdf_name, const std::string &config_name)
       : robot_(urdf_name, DrakeJoint::ROLLPITCHYAW) {

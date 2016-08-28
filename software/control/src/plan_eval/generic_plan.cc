@@ -47,11 +47,13 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_mu_ = get(config_, "mu").as<double>();
   p_zmp_height_ = get(config_, "zmp_height").as<double>();
   p_initial_transition_time_ = get(config_, "initial_transition_time").as<double>();
+  p_transition_trq_alpha_filter_ = get(config_, "transition_trq_alpha_filter").as<double>();
   p_min_Fz_ = get(config_, "min_Fz").as<double>();
 
   std::cout << "p_zmp_height: " << p_zmp_height_ << std::endl;
   std::cout << "mu: " << p_mu_ << std::endl;
   std::cout << "initial_transition_time: " << p_initial_transition_time_ << std::endl;
+  std::cout << "transition_trq_alpha_filter: " << p_transition_trq_alpha_filter_ << std::endl;
   std::cout << "p_min_Fz_: " << p_min_Fz_ << std::endl;
 }
 
@@ -89,7 +91,7 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
 
   qp_input.whole_body_data.timestamp = 0;
   qp_input.whole_body_data.num_positions = robot_.num_positions;
-  
+
   // constrained DOFs
   // add 1 offset to match matlab indexing, for backward compatibility
   qp_input.whole_body_data.constrained_dofs = constrained_dofs_;
@@ -121,9 +123,9 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
   ////////////////////////////////////////
   // torque alpha filter
   if (apply_torque_alpha_filter)
-    qp_input.torque_alpha_filter = 0.9;
+    qp_input.torque_alpha_filter = p_transition_trq_alpha_filter_;
   else
-    qp_input.torque_alpha_filter = 0.; 
+    qp_input.torque_alpha_filter = 0.;
 
   return qp_input;
 }
@@ -153,7 +155,7 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &c
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
 
-    support_state[s].contact_points = contact_offsets.at(body_idx); 
+    support_state[s].contact_points = contact_offsets.at(body_idx);
     s++;
   }
 

@@ -32,6 +32,7 @@ class WalkingPlan : public GenericPlan {
   double contact_switch_time_ = -INFINITY;
   Eigen::VectorXd init_q_;
 
+  double p_pre_weight_transfer_scale_;
   double p_lower_z_vel_;
   double p_ss_duration_;
   double p_ds_duration_;

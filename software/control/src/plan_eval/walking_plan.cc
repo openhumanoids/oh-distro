@@ -29,6 +29,9 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_ss_duration_ = config_["ss_duration"].as<double>();
   p_ds_duration_ = config_["ds_duration"].as<double>();
   p_lower_z_vel_ = config_["lower_z_vel"].as<double>();
+  p_pre_weight_transfer_scale_ = config_["pre_weight_transfer_scale"].as<double>();
+  p_pre_weight_transfer_scale_ = std::min(0.5, p_pre_weight_transfer_scale_);
+  p_pre_weight_transfer_scale_ = std::max(0.0, p_pre_weight_transfer_scale_);
 
   std::cout << "p_lower_z_vel_: " << p_lower_z_vel_ << std::endl;
   std::cout << "p_ss_duration_: " << p_ss_duration_ << std::endl;
@@ -60,14 +63,18 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // no more steps, go to double support middle
   if (footstep_plan_.empty()) {
-    int num_T = 2;
+    // 0: the current configuration
+    // 1: start of weight tranfer
+    // 2: end of weight transfer
+    int num_T = 3;
     for (int i = 0; i < 3; i++)
       body_motions_[i] = MakeDefaultBodyMotionData(num_T);
 
     // time tape
     std::vector<double> Ts(num_T);
     Ts[0] = 0;
-    Ts[1] = p_ds_duration_;
+    Ts[1] = p_pre_weight_transfer_scale_ * p_ds_duration_;
+    Ts[2] = p_ds_duration_;
 
     // com / cop
     Eigen::Isometry3d mid_stance_foot[2];
@@ -81,7 +88,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     // make zmp
     std::vector<Eigen::Vector2d> com_knots(num_T);
     com_knots[0] = com0;
-    com_knots[1] = com1;
+    com_knots[1] = com0;
+    com_knots[2] = com1;
     zmp_traj_ = GeneratePCHIPSpline(Ts, com_knots);
     Eigen::Vector4d x0(Eigen::Vector4d::Zero());
     x0.head(2) = com0;
@@ -98,7 +106,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     std::vector<Eigen::Vector7d> pelv_knots(num_T);
     pelv_knots[0] = pelv0;
-    pelv_knots[1] = pelv1;
+    pelv_knots[1] = pelv0;
+    pelv_knots[2] = pelv1;
 
     body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
     body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
@@ -115,7 +124,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     // make weight distribuition
     std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
     WL[0](0,0) = get_weight_distribution(planned_cs);
-    WL[1](0,0) = get_weight_distribution(ContactState::DS());
+    WL[1](0,0) = get_weight_distribution(planned_cs);
+    WL[2](0,0) = get_weight_distribution(ContactState::DS());
     weight_distribution_ = GenerateLinearSpline(Ts, WL);
 
     // setup contact_state tape
@@ -123,7 +133,13 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
   }
   else {
-    int num_T = 3;
+    // 0: the current configuration
+    // 1: start of weight tranfer
+    // 2: end of weight transfer
+    // 3: swing phase
+    int num_T = 4;
+
+    /// 0 is pelvis, 1 is stance foot, 2 is swing foot
     for (int i = 0; i < 3; i++)
       body_motions_[i] = MakeDefaultBodyMotionData(num_T);
 
@@ -145,17 +161,22 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     // time tape
     std::vector<double> Ts(num_T);
     Ts[0] = 0;
-    Ts[1] = p_ds_duration_;
-    Ts[2] = p_ss_duration_ + p_ds_duration_;
+    Ts[1] = p_pre_weight_transfer_scale_ * p_ds_duration_;
+    Ts[2] = p_ds_duration_;
+    Ts[3] = p_ss_duration_ + p_ds_duration_;
 
-    // hold arm joints, I am assuming the leg joints will just be ignored..
+    // hold all joints. I am assuming the leg joints will just be ignored in the qp..
     Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
     q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, init_q_), zero, zero);
 
     // com / cop
     double zmp_shift_in = cur_step.params.drake_instep_shift;
-    if (stance_foot == Side::LEFT)
+    if (stance_foot == Side::LEFT) {
       zmp_shift_in = -zmp_shift_in;
+      // TODO HACK:
+      // shift zmp inward for ssl..
+      zmp_shift_in -= 0.02;
+    }
 
     Eigen::Isometry3d mid_stance_foot(Eigen::Isometry3d::Identity());
     mid_stance_foot.translation() = Eigen::Vector3d(0.04, zmp_shift_in, 0);
@@ -165,7 +186,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     // make zmp
     std::vector<Eigen::Vector2d> com_knots(num_T);
     com_knots[0] = com0;
-    com_knots[1] = com_knots[2] = com1;
+    com_knots[1] = com0;
+    com_knots[2] = com_knots[3] = com1;
     zmp_traj_ = GeneratePCHIPSpline(Ts, com_knots);
     Eigen::Vector4d x0(Eigen::Vector4d::Zero());
     x0.head(2) = com0;
@@ -182,13 +204,16 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     std::vector<Eigen::Vector7d> pelv_knots(num_T);
     pelv_knots[0] = pelv0;
-    pelv_knots[1] = pelv_knots[2] = pelv1;
+    pelv_knots[1] = pelv0;
+    pelv_knots[2] = pelv_knots[3] = pelv1;
 
     body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
     body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
     body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
-    // make stance foot
+    // make stance foot.
+    // This is not quite right, since the touchdown foot pose will change after solid contact.
+    // Assume the QP will not try to control pose for the contact feet.
     std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[stance_foot.underlying()]);
     body_motions_[1].body_or_frame_id = rpc_.foot_ids.at(stance_foot);
     body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
@@ -205,14 +230,14 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     swing_touchdown_pose.tail(4).normalize();
 
     body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-    //body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 2., p_ss_duration_ / 2.);
     body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
 
     // make weight distribuition
     std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
     WL[0](0,0) = get_weight_distribution(planned_cs);
-    WL[1](0,0) = get_weight_distribution(nxt_contact_state);
+    WL[1](0,0) = get_weight_distribution(planned_cs);
     WL[2](0,0) = get_weight_distribution(nxt_contact_state);
+    WL[3](0,0) = get_weight_distribution(nxt_contact_state);
     weight_distribution_ = GenerateLinearSpline(Ts, WL);
 
     // setup contact state
@@ -220,6 +245,10 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     contact_state_.push_back(std::pair<ContactState, double>(ContactState::DS(), p_ds_duration_));
     contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, p_ss_duration_ + p_ds_duration_));
   }
+
+  // pelvis Z weight multiplier
+  // This is really dumb, but the multipler is ang then pos, check instQP.
+  body_motions_[0].weight_multiplier[5] = 10;
 
   // reset clock
   interp_t0_ = -1;

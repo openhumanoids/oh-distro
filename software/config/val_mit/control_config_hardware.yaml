@@ -108,14 +108,14 @@ qp_controller_params:
         weight: 0.0
       *PELVIS_NAME :
         Kp: {x: 15, y: 15, z: 15, wx: 40, wy: 40, wz: 40}
-        weight: 1.0
+        weight: 1
         damping_ratio: 0.3
       *R_FOOT_NAME :
         Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
-        weight: 1.0
+        weight: 0.1
       *L_FOOT_NAME :
         Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
-        weight: 1.0
+        weight: 0.1
     position_specific:
       DEFAULT:
         Kp: 150
@@ -241,11 +241,12 @@ qp_controller_params:
 
       leftAnklePitchActuator:
         hardware:
-          ff_qd_d: 5.0
+          ff_qd_d: 3.0
 
       leftAnkleRollActuator:
         hardware:
-          ff_qd_d: 2.0
+          ff_qd_d: 3.0
+
       rightHipYaw:
         hardware:
           ff_qd_d: 2.0
@@ -264,11 +265,11 @@ qp_controller_params:
 
       rightAnklePitchActuator:
         hardware:
-          ff_qd_d: 5.0
+          ff_qd_d: 3.0
 
       rightAnkleRollActuator:
         hardware:
-          ff_qd_d: 2.0
+          ff_qd_d: 3.0
 
   base: # automatically inherits from the default =
   standing:
