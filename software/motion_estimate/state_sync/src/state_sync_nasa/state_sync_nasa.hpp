@@ -96,6 +96,8 @@ class state_sync_nasa{
     // joint velocity filter
     std::shared_ptr<EstimateTools::AlphaFilter> joint_vel_filter_;
     Eigen::VectorXd raw_vel_, filtered_vel_;
+    double default_alpha_;
+    std::map<std::string, double> override_alpha_;
 
     void publishRobotState(int64_t utime_in, const  bot_core::six_axis_force_torque_array_t& msg);
     void appendJoints(bot_core::robot_state_t& msg_out, Joints joints);

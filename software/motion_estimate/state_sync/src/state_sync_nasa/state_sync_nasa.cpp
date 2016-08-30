@@ -20,11 +20,11 @@ std::vector<std::string> jointNames;
 void assignJointsStruct( Joints &joints ){
   joints.velocity.assign( joints.name.size(), 0);
   joints.position.assign( joints.name.size(), 0);
-  joints.effort.assign( joints.name.size(), 0);  
+  joints.effort.assign( joints.name.size(), 0);
 }
 
 void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
-                     int64_t utime, void* user) {  
+                     int64_t utime, void* user) {
   state_sync_nasa& sync = *((state_sync_nasa*)user);
   sync.setBotParam(new_botparam);
 }
@@ -73,7 +73,7 @@ state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
   lcm::Subscription* sub4 = lcm_->subscribe("NECK_STATE",&state_sync_nasa::neckStateHandler,this);  // Provided when NeckController is running
   force_torque_init_ = false;
 
-  
+
   bool use_short_queue = true;
   if (use_short_queue){
     sub0->setQueueCapacity(1);
@@ -129,7 +129,24 @@ state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
       alpha = 1;
     }
     std::cout << "Using alpha = " << alpha << std::endl;
-    joint_vel_filter_.reset(new EstimateTools::AlphaFilter(alpha));
+
+    char** alpha_names = bot_param_get_str_array_alloc(botparam_, "state_estimator.legodo.joint_vel_overrides_joints");
+    if (alpha_names != NULL) {
+      int n_alpha = 0;
+      while(alpha_names[n_alpha])
+        n_alpha++;
+      std::cout << n_alpha;
+      double override_alphas[n_alpha];
+      if (n_alpha != bot_param_get_array_len(botparam_, "state_estimator.legodo.joint_vel_overrides_alpha")) {
+        fprintf(stderr, "Error: state_estimator.legodo.joint_vel_overrides_alpha length doesn't match state_estimator.legodo.joint_vel_overrides_joints\n");
+        exit(1);
+      }
+      bot_param_get_double_array_or_fail(botparam_, "state_estimator.legodo.joint_vel_overrides_alpha", &override_alphas[0], n_alpha);
+      for (int i = 0; i < n_alpha; i++) {
+        override_alpha_[alpha_names[i]] = override_alphas[i];
+      }
+      bot_param_str_array_free(alpha_names);
+    }
   }
   else {
     std::cout << "Low pass filtering jiont velocity: Not Using\n";
@@ -149,22 +166,22 @@ void state_sync_nasa::setPoseToZero(PoseT &pose){
 // TODO: perhaps make this more careful with more checks?
 void checkJointLengths(size_t previous_size , size_t incoming_size, std::string channel){
   if ( incoming_size != previous_size ){
-    std::cout << "ERROR: Number of joints in " << channel << "[" << incoming_size 
-              << "] does not match previous [" << previous_size << "]\n"; 
+    std::cout << "ERROR: Number of joints in " << channel << "[" << incoming_size
+              << "] does not match previous [" << previous_size << "]\n";
     exit(-1);
-  }  
+  }
 }
 
 void state_sync_nasa::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::six_axis_force_torque_array_t* msg){
   force_torque_ = *msg;
-  force_torque_init_ = true; 
+  force_torque_init_ = true;
 }
 
 void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
   if (!force_torque_init_){
     std::cout << "FORCE_TORQUE not received yet, not publishing EST_ROBOT_STATE =========================\n";
-    return;    
-  }   
+    return;
+  }
 
   //checkJointLengths(core_robot_joints_.position.size(),  msg->joint_position.size(), channel);
   core_robot_joints_.position = msg->joint_position;
@@ -175,6 +192,24 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
 
   // low pass filter velocity
   if (cl_cfg_->use_joint_velocity_low_pass) {
+    // actually make a lp filter on the first tick, just because I don't know what the order of joints will be in the real msg until I see one.
+    if (joint_vel_filter_.get() == NULL) {
+      Eigen::VectorXd alphas(core_robot_joints_.name.size());
+      std::cout << "size of vel " << alphas.size() << std::endl;
+      for (size_t i = 0; i < alphas.size(); i++) {
+        std::map<std::string, double>::const_iterator it = override_alpha_.find(core_robot_joints_.name[i]);
+        if (it != override_alpha_.end()) {
+          std::cout << it->first << " " << i << " " << it->second << std::endl;
+          alphas(i) = it->second;
+        }
+        else {
+          alphas(i) = default_alpha_;
+        }
+      }
+      joint_vel_filter_.reset(new EstimateTools::AlphaFilter(alphas));
+    }
+
+    // initialize
     if (raw_vel_.size() != core_robot_joints_.velocity.size()) {
       raw_vel_.resize(core_robot_joints_.velocity.size());
       filtered_vel_.resize(core_robot_joints_.velocity.size());
@@ -227,7 +262,7 @@ Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
   Eigen::Isometry3d pose_iso;
   pose_iso.setIdentity();
   pose_iso.translation()  << pose.pos[0], pose.pos[1] , pose.pos[2];
-  Eigen::Quaterniond quat = Eigen::Quaterniond(pose.orientation[0], pose.orientation[1], 
+  Eigen::Quaterniond quat = Eigen::Quaterniond(pose.orientation[0], pose.orientation[1],
                                                pose.orientation[2], pose.orientation[3]);
   pose_iso.rotate(quat);
   return pose_iso;
@@ -268,7 +303,7 @@ void state_sync_nasa::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std:
     Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodybdi * localmit_to_bodymit.inverse();
 
     bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_pronto_.utime );
-    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);    
+    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);
   }
 
   // If using the IHMC estimate, then publish it to the rest of the system as POSE_BODY
@@ -280,7 +315,7 @@ void state_sync_nasa::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std:
 
 // Returns false if the pose is old or hasn't appeared yet
 bool state_sync_nasa::insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT pose){
-  
+
   msg.pose.translation.x = pose.pos[0];
   msg.pose.translation.y = pose.pos[1];
   msg.pose.translation.z = pose.pos[2];
@@ -289,7 +324,7 @@ bool state_sync_nasa::insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT
   msg.pose.rotation.y = pose.orientation[2];
   msg.pose.rotation.z = pose.orientation[3];
 
-  // Both incoming velocities (from PoseT) are assumed to be in body frame, 
+  // Both incoming velocities (from PoseT) are assumed to be in body frame,
   // convention is for EST_ROBOT_STATE to be in local frame
   // convert here:
   Eigen::Matrix3d R = Eigen::Matrix3d( Eigen::Quaterniond( pose.orientation[0], pose.orientation[1], pose.orientation[2],pose.orientation[3] ));
@@ -305,12 +340,12 @@ bool state_sync_nasa::insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT
   msg.twist.angular_velocity.x = rot_vel_local[0];
   msg.twist.angular_velocity.y = rot_vel_local[1];
   msg.twist.angular_velocity.z = rot_vel_local[2];
-  
-  return true;  
+
+  return true;
 }
 
 void state_sync_nasa::publishRobotState(int64_t utime_in,  const  bot_core::six_axis_force_torque_array_t& force_torque_msg){
-  
+
   bot_core::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
 
@@ -331,11 +366,11 @@ void state_sync_nasa::publishRobotState(int64_t utime_in,  const  bot_core::six_
   robot_state_msg.twist.angular_velocity.z = 0;
 
   // Joint States:
-  appendJoints(robot_state_msg, core_robot_joints_);  
-  
+  appendJoints(robot_state_msg, core_robot_joints_);
+
   //std::cout << robot_state_msg.joint_name.size() << " Number of Joints\n";
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
-  
+
   // Limb Sensor states
   bot_core::force_torque_t force_torque_convert;
   if (force_torque_msg.sensors.size() >= 2) {
@@ -371,7 +406,7 @@ void state_sync_nasa::publishRobotState(int64_t utime_in,  const  bot_core::six_
   }
 
   robot_state_msg.force_torque = force_torque_convert;
-  
+
   if ( insertPoseInRobotState(robot_state_msg, pose_pronto_) ){
     lcm_->publish( cl_cfg_->output_channel, &robot_state_msg);
   }
@@ -404,9 +439,11 @@ float state_sync_nasa::clampJointToJointLimits(std::string joint_name,
 
     if ((joint_position + lower_limit) > tolerance ||
         (joint_position - upper_limit) > tolerance) {
-      std::cerr << "WARNING: " << joint_name << " deviates >"
-                << clamping_tolerance_in_degrees_
-                << "deg from joint limits, not clamping" << std::endl;
+
+      //std::cerr << "WARNING: " << joint_name << " deviates >"
+      //          << clamping_tolerance_in_degrees_
+      //          << "deg from joint limits, not clamping" << std::endl;
+
       return joint_position;
     } else {
       return clamp(joint_position, lower_limit, upper_limit);
