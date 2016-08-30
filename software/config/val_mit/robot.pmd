@@ -157,7 +157,7 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "director -c robot.cfg --director_config ${DRC_BASE}/software/models/val_description/director_config.json";
+    exec = "mit-director";
     host = "base";
 }
 

@@ -183,7 +183,7 @@ qp_controller_params:
     w_qdd_delta: 0.0
     Kp_accel: 1.0
     contact_threshold: 0.002
-    useTorqueAlphaFilter: False
+    useTorqueAlphaFilter: True
     min_knee_angle: 0.7
     center_of_mass_observer:
       enabled: false

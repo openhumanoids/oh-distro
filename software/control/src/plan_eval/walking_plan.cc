@@ -416,8 +416,15 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     support_state_[s].total_normal_force_upper_bound = std::max(support_state_[s].total_normal_force_upper_bound, support_state_[s].total_normal_force_lower_bound);
   }
 
-  // make qp input
+  // apply the trq alpha filter at contact switch
   bool apply_torque_alpha_filter = (plan_time < p_initial_transition_time_) || (cur_time - contact_switch_time_ < p_initial_transition_time_);
+  // apply the trq alpha filter around the starting at com push off.
+  double time_from_weight_transfer = plan_time - p_pre_weight_transfer_scale_ * p_ds_duration_;
+  if (cur_state_ == WEIGHT_TRANSFER && time_from_weight_transfer >= -0.05 && time_from_weight_transfer < p_initial_transition_time_) {
+    apply_torque_alpha_filter = true;
+  }
+
+  // make qp input
   return MakeDefaultQPInput(cur_time, plan_time, "walking", apply_torque_alpha_filter);
 }
 

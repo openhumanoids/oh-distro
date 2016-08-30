@@ -42,7 +42,7 @@ foot_contact_offsets:
 mu: 1
 zmp_height: 1
 initial_transition_time: 0.2
-transition_trq_alpha_filter: 0.95
+transition_trq_alpha_filter: 0.9
 flip_foot_ft_sensor: 1
 
 ss_duration: 2.0

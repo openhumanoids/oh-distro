@@ -10,7 +10,7 @@ import drc as lcmdrc
 import drake as lcmdrake
 
 import numpy as np
-
+Z_FOOT = 0.035
 
 class ForceVisualizer:
 
@@ -298,7 +298,7 @@ class ForceVisualizer:
         for idx, name in enumerate(footNames):
             ftFrameId = self.nameDict[name]['frameId']
             ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
-            soleHeight = ftFrameToWorld.GetPosition()[2]
+            soleHeight = ftFrameToWorld.GetPosition()[2] - Z_FOOT
             avgFootHeight += footContact[idx]*soleHeight
 
         if np.sum(footContact) > 0.1:
