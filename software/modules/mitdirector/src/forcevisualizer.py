@@ -10,7 +10,13 @@ import drc as lcmdrc
 import drake as lcmdrake
 
 import numpy as np
+
+
+# some useful constants
 Z_FOOT = 0.035
+EPSILON = 0.1
+BOTTOM_FOOT_Z_VAL = -0.09
+EPSILON_CONTACT_FORCE = 3.0
 
 class ForceVisualizer:
 
@@ -39,6 +45,8 @@ class ForceVisualizer:
         # visObj.setProperty('Visible', False)
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['QPForceVisName'], view=self.view, parent='robot state model')
+
+        visObj = vis.updatePolyData(d.getPolyData(), self.options['contactPointsVisName'], view=self.view, parent='robot state model')
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['desiredCOPVisName'], view=self.view, parent='robot state model')
 
@@ -76,6 +84,7 @@ class ForceVisualizer:
         self.options['pelvisArrowLength'] = 0.8
         self.options['QPForceVisName'] = 'QP foot force'
         self.options['bodyMotionVisName'] = 'Body Motion Data'
+        self.options['contactPointsVisName'] = 'Contact Points'
 
         self.options['copVisName'] = 'meas cop'
         self.options['desiredCOPVisName'] = 'desired cop'
@@ -84,6 +93,7 @@ class ForceVisualizer:
         self.options['colors']['plan'] = [1,0,0] # red
         self.options['colors']['controller'] = [0,0,1] # blue
         self.options['colors']['measured'] = [0,1,0] # green
+        self.options['colors']['contactPoints'] = [ 0.58039216,  0, 0.82745098] # purple
 
 
 
@@ -166,12 +176,18 @@ class ForceVisualizer:
             #arrowStart = np.array((msg.contact_ref_points[i][0], msg.contact_ref_points[i][1], msg.contact_ref_points[i][2]))
             arrowStart = ftFrameToWorld.TransformPoint((0,0,0))
             force = np.array((contact_output.wrench[3], contact_output.wrench[4], contact_output.wrench[5]))
+
+            # skip if the force is pretty small
+            if (np.linalg.norm(force) < EPSILON):
+                continue
+
             arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*force
 
             d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
                            headRadius=self.options['forceArrowHeadRadius'], color=self.options['colors']['controller'])
 
             # compute cop
+            # this is already in world frame . . . ?
             cop = np.zeros(3)
             cop[0] = -contact_output.wrench[1] / contact_output.wrench[5] + contact_output.ref_point[0]
             cop[1] = contact_output.wrench[0] / contact_output.wrench[5] + contact_output.ref_point[1]
@@ -184,6 +200,11 @@ class ForceVisualizer:
             data['fz'] = contact_output.wrench[5]
             copData[footName] = data
 
+            # this is the individual foot COP coming from the QP
+            # project it down to the bottom of the foot
+            singleFootCOP = cop + BOTTOM_FOOT_Z_VAL/force[2]*force
+            d.addSphere(singleFootCOP, radius=0.01)
+
         cop = np.zeros(3)
         totalForceMag = 0
         for key, val in copData.iteritems():
@@ -193,13 +214,53 @@ class ForceVisualizer:
             cop += val['cop']*val['fz']/totalForceMag
 
 
-        bottomFootZVal = -0.09
+        # need to project down to the base of the foot basically
         if(np.abs(totalForce[2]) > 0.01):
-            cop += bottomFootZVal/totalForce[2]*totalForce
+            cop += BOTTOM_FOOT_Z_VAL/totalForce[2]*totalForce
 
         d.addSphere(cop, radius=0.015)
         vis.updatePolyData(d.getPolyData(), name=self.options['QPForceVisName'], view=self.view,
                                parent='robot state model').setProperty('Color', self.options['colors']['controller'])
+
+
+    def drawQPContactPointsAndForces(self, msg, drawContactPoints=True, drawContactForces=False):
+
+        d = DebugData()
+
+        # everything is in world frame, so shouldn't need to do too much to draw it
+        for contact_output in msg.contact_output:
+            footName = contact_output.body_name
+            ftFrameId = 0
+            ftFrameToWorld = 0
+            if (footName == 'leftFoot' or footName == 'l_foot'):
+                footName = "left"
+                ftFrameId = self.nameDict['l_foot']['frameId']
+                ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
+            elif (footName == 'rightFoot' or footName == 'r_foot'):
+                footName = "right"
+                ftFrameId = self.nameDict['r_foot']['frameId']
+                ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
+
+
+            contactPointArray = np.array(contact_output.contact_points)
+            contactForceArray = np.array(contact_output.contact_forces)
+
+            for idx in xrange(0, contact_output.num_contact_points):
+                contactPointInWorld = contactPointArray[idx,:]
+                contactForceInWorld = contactForceArray[idx,:]
+
+                if drawContactPoints:
+                    d.addSphere(contactPointInWorld, radius=0.01, color=self.options['colors']['contactPoints'])
+
+                if drawContactForces and np.linalg.norm(contactForceInWorld > EPSILON_CONTACT_FORCE):
+                    arrowStart = contactPointInWorld
+                    arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*contactForceInWorld
+
+                    d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
+                               headRadius=self.options['forceArrowHeadRadius'], color=self.options['colors']['controller'])
+
+        vis.updatePolyData(d.getPolyData(), name=self.options['contactPointsVisName'], view=self.view,
+                           parent=' robot state model').setProperty('Color', self.options['colors']['contactPoints'])
 
     # draw the acceleration of the pelvis that the QP thinks is happening
     def onControllerStateMessage(self, msg):
@@ -234,12 +295,17 @@ class ForceVisualizer:
             self.drawBodyMotionData(msg.desired_body_motions)
 
 
+        if (om.findObjectByName(self.options['contactPointsVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
+            self.drawQPContactPointsAndForces(msg, drawContactPoints=True, drawContactForces=True)
+
+
         # print "got controller state message"
         # print "pelvisAcceleration ", pelvisAcceleration
         # print "arrowStart ", arrowStart
         # print "arrowEnd ", arrowEnd
 
 
+    # computes the COP from the force torque measurement???
     def computeCOP(self, msg):
         d = DebugData()
         copDataList = []
