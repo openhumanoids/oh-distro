@@ -17,22 +17,22 @@ using namespace std;
 /////////////////////////////////////
 
 void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
-                     int64_t utime, void* user) {  
+                     int64_t utime, void* user) {
   state_sync& sync = *((state_sync*)user);
   sync.setBotParam(new_botparam);
   sync.setEncodersFromParam();
 }
 
-state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
+state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
                        boost::shared_ptr<CommandLineConfig> &cl_cfg_):
                        lcm_(lcm_), cl_cfg_(cl_cfg_){
 
-  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
 
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 1); // 1 means keep updated, 0 would ignore updates
   bot_param_add_update_subscriber(botparam_,
                                   onParamChangeSync, this);
-   
+
   /// Subscribe to required signals
   //lcm::Subscription* sub0 = lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this); // depricated
   lcm::Subscription* sub0 = lcm_->subscribe("CORE_ROBOT_STATE",&state_sync::coreRobotHandler,this);
@@ -40,26 +40,26 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   force_torque_init_ = false;
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub2 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);
-  lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
+  lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);
   lcm::Subscription* sub5 = lcm_->subscribe("POSE_BODY_ALT",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
   lcm::Subscription* sub6 = lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
   lcm::Subscription* sub7 = lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);
-  
+
   bool use_short_queue = true;
   if (use_short_queue){
     sub0->setQueueCapacity(1);
     sub1->setQueueCapacity(1);
-    sub2->setQueueCapacity(1); 
-    sub4->setQueueCapacity(1); 
-    sub5->setQueueCapacity(1); 
-    sub6->setQueueCapacity(1); 
+    sub2->setQueueCapacity(1);
+    sub4->setQueueCapacity(1);
+    sub5->setQueueCapacity(1);
+    sub6->setQueueCapacity(1);
     sub7->setQueueCapacity(1);
   }
 
   setPoseToZero(pose_BDI_);
   setPoseToZero(pose_MIT_);
- 
-  
+
+
   /// 3. Using Pots or Encoders:
   cl_cfg_->use_encoder_joint_sensors = bot_param_get_boolean_or_fail(botparam_, "control.encoder_offsets.active" );
   std::cout << "use_encoder_joint_sensors: " << cl_cfg_->use_encoder_joint_sensors << "\n";
@@ -138,8 +138,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   }else if(joint_filter_type == "backlash"){
     cl_cfg_->use_joint_backlash_filter = true;
   }// else none
-  
-  
+
+
   if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter){
     // Shared params:
     double process_noise_pos = bot_param_get_double_or_fail(botparam_, "control.filtering.joints.process_noise_pos" );
@@ -174,7 +174,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     }
 
   }
-  
+
   /// 5. Floating Base Filtering
   string rotation_rate_filter_type = bot_param_get_str_or_fail(botparam_, "control.filtering.rotation_rate.type" );
   if (rotation_rate_filter_type == "alpha" ){// alpha filter on rotation rates
@@ -183,11 +183,11 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     rotation_rate_alpha_filter_ = new EstimateTools::AlphaFilter (alpha_rotation_rate);
     std::cout << "Using Rotation Rate Alpha filter with " << alpha_rotation_rate << "\n";
   }
-  
+
   /// 6. neck joint filtering
   double neck_alpha = 0.97;
   neck_alpha_filter_ = new EstimateTools::AlphaFilter (neck_alpha);
-  
+
   utime_prev_ = 0;
 }
 
@@ -201,7 +201,7 @@ void state_sync::setPoseToZero(PoseT &pose){
 }
 
 void state_sync::setEncodersFromParam() {
-  
+
   std::string str = "State Sync: refreshing offsets (from param)";
   std::cout << str << std::endl;
   // display system status message in viewer
@@ -211,23 +211,23 @@ void state_sync::setEncodersFromParam() {
   stat_msg.importance = stat_msg.VERY_IMPORTANT;
   stat_msg.frequency = stat_msg.LOW_FREQUENCY;
   stat_msg.value = str;
-  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);  
-  
-  int n_indices = bot_param_get_array_len (botparam_, "control.encoder_offsets.index");  
-  int n_offsets = bot_param_get_array_len (botparam_, "control.encoder_offsets.value");  
+  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);
+
+  int n_indices = bot_param_get_array_len (botparam_, "control.encoder_offsets.index");
+  int n_offsets = bot_param_get_array_len (botparam_, "control.encoder_offsets.value");
   std::cout << n_indices << " indices and " << n_offsets << " offsets\n";
   if (n_indices != n_offsets){
     std::cout << "n_indices is now n_offsets, not updating\n";
     return;
   }
-    
+
   double offsets_in[n_indices];
   int indices_in[n_offsets];
-  bot_param_get_int_array_or_fail(botparam_, "control.encoder_offsets.index", &indices_in[0], n_indices);  
-  bot_param_get_double_array_or_fail(botparam_, "control.encoder_offsets.value", &offsets_in[0], n_offsets);  
+  bot_param_get_int_array_or_fail(botparam_, "control.encoder_offsets.index", &indices_in[0], n_indices);
+  bot_param_get_double_array_or_fail(botparam_, "control.encoder_offsets.value", &offsets_in[0], n_offsets);
   std::vector<double> indices(indices_in, indices_in + n_indices);
   std::vector<double> offsets(offsets_in, offsets_in + n_offsets);
-  
+
   extra_offsettable_joint_indices_.clear();
   for (size_t i=0; i < indices.size() ; i++){
     // encoder_joint_offsets_[jindex] = offset;
@@ -240,7 +240,7 @@ void state_sync::setEncodersFromParam() {
       extra_offsettable_joint_indices_.push_back(indices[i]);
     }
   }
-  std::cout << "Finished updating encoder offsets (from param)\n";  
+  std::cout << "Finished updating encoder offsets (from param)\n";
 }
 
 void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::utime_t* msg) {
@@ -263,7 +263,7 @@ void state_sync::enableEncoders(bool enable) {
     str = "State Sync: disabling encoders.";
   }
   stat_msg.value = str;
-  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);   
+  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);
 
   use_encoder_[Atlas::JOINT_R_ARM_SHZ] = enable;
   use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
@@ -292,12 +292,12 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   head_joints_.position = msg->joint_position;
   head_joints_.velocity = msg->joint_velocity;
   head_joints_.effort = msg->joint_effort;
-  
+
   if (cl_cfg_->standalone_head){
     bot_core::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }
-  
+
 }
 
 void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
@@ -305,11 +305,11 @@ void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   left_hand_joints_.position = msg->joint_position;
   left_hand_joints_.velocity = msg->joint_velocity;
   left_hand_joints_.effort = msg->joint_effort;
-  
+
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
     bot_core::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
-  }  
+  }
 }
 
 void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
@@ -317,11 +317,11 @@ void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   right_hand_joints_.position = msg->joint_position;
   right_hand_joints_.velocity = msg->joint_velocity;
   right_hand_joints_.effort = msg->joint_effort;
-  
+
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
     bot_core::six_axis_force_torque_array_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
-  }    
+  }
 }
 
 
@@ -335,8 +335,8 @@ int64_t _timestamp_now(){
 void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity){
   //int64_t tic = _timestamp_now();
   double t = (double) utime*1E-6;
-  
-  
+
+
   for (size_t i=0; i <  filter_idx_.size(); i++){
     double x_filtered;
     double x_dot_filtered;
@@ -348,36 +348,36 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
     joint_position[ filter_idx_[i] ] = x_filtered;
     joint_velocity[ filter_idx_[i] ] = x_dot_filtered;
   }
-  
+
   // filter neck
   Eigen::VectorXd neck_state = Eigen::VectorXd::Zero(2);
   neck_state(0) = joint_position[Atlas::JOINT_NECK_AY];
   neck_state(1) = joint_velocity[Atlas::JOINT_NECK_AY];
   Eigen::VectorXd filtered_neck_state = Eigen::VectorXd::Zero(2);
-  
+
   neck_alpha_filter_->processSample(neck_state, filtered_neck_state);
 
   joint_position[Atlas::JOINT_NECK_AY] = filtered_neck_state(0);
   joint_velocity[Atlas::JOINT_NECK_AY] = filtered_neck_state(1);
-  
-  
+
+
   //int64_t toc = _timestamp_now();
   //double dtime = (toc-tic)*1E-6;
-  //std::cout << dtime << " end\n";   
+  //std::cout << dtime << " end\n";
 }
 
 
 void state_sync::forceTorqueHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::six_axis_force_torque_array_t* msg){
   force_torque_ = *msg;
-  force_torque_init_ = true; 
+  force_torque_init_ = true;
 }
 
 
 void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::joint_state_t* msg){
   if (!force_torque_init_){
     std::cout << "FORCE_TORQUE not received yet, not publishing EST_ROBOT_STATE =========================\n";
-    return;    
-  }  
+    return;
+  }
 
   std::vector <float> mod_positions;
   mod_positions = msg->joint_position;
@@ -386,15 +386,15 @@ void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   core_robot_joints_.name = msg->joint_name;  // added recently
   core_robot_joints_.velocity = msg->joint_velocity;
   core_robot_joints_.effort = msg->joint_effort;
-  
-  
-  // Overwrite the actuator joint positions and velocities with the after-transmission 
+
+
+  // Overwrite the actuator joint positions and velocities with the after-transmission
   // sensor values for the ARMS ONLY (first exposed in v2.7.0 of BDI's API)
   // NB: this assumes that they are provided at the same rate as ATLAS_STATE
   if (cl_cfg_->use_encoder_joint_sensors ){
     if (core_robot_joints_.position.size() == core_robot_joints_out_.position.size()   ){
       if (core_robot_joints_.velocity.size() == core_robot_joints_out_.velocity.size()   ){
-        for (int i=0; i < core_robot_joints_out_.position.size() ; i++ ) { 
+        for (int i=0; i < core_robot_joints_out_.position.size() ; i++ ) {
 
           if (use_encoder_[i]) {
             core_robot_joints_.position[i] = core_robot_joints_out_.position[i];
@@ -423,8 +423,8 @@ void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::str
               message << "State Sync: Joint '" << ATLAS_JOINT_NAMES[i] << "' encoder might need calibration :)";
               stat_msg.value = message.str();
 
-              lcm_->publish(("SYSTEM_STATUS"), &stat_msg); 
-              std::cout << message.str() << std::endl; 
+              lcm_->publish(("SYSTEM_STATUS"), &stat_msg);
+              std::cout << message.str() << std::endl;
             }
 
             */
@@ -442,7 +442,7 @@ void state_sync::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std::str
       core_robot_joints_.position[idx] -= 2*M_PI;
     }
   }
-  
+
   if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  core_robot_joints_ filtering here
     filterJoints(msg->utime, core_robot_joints_.position, core_robot_joints_.velocity);
   }
@@ -482,7 +482,7 @@ Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
   Eigen::Isometry3d pose_iso;
   pose_iso.setIdentity();
   pose_iso.translation()  << pose.pos[0], pose.pos[1] , pose.pos[2];
-  Eigen::Quaterniond quat = Eigen::Quaterniond(pose.orientation[0], pose.orientation[1], 
+  Eigen::Quaterniond quat = Eigen::Quaterniond(pose.orientation[0], pose.orientation[1],
                                                pose.orientation[2], pose.orientation[3]);
   pose_iso.rotate(quat);
   return pose_iso;
@@ -495,7 +495,7 @@ void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   pose_BDI_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
   pose_BDI_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
   pose_BDI_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
-  pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
+  pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
 }
 
 void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
@@ -504,7 +504,7 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   pose_MIT_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
   pose_MIT_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
   pose_MIT_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
-  pose_MIT_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
+  pose_MIT_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
 
   // If State sync has received POSE_BODY_ALT and POSE_BODY, we must be running our own estimator
   // So there will be a difference between these, so publish this for things like walking footstep transformations
@@ -518,7 +518,7 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
     Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodybdi * localmit_to_bodymit.inverse();
 
     bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_MIT_.utime );
-    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);    
+    lcm_->publish("LOCAL_TO_LOCAL_ALT", &localmit_to_localbdi_msg);
   }
 
 }
@@ -532,7 +532,7 @@ bool state_sync::insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT pose
   //  std::cout << "haven't received pelvis pose, refusing to publish ERS\n";
   //  return false;
   //}
-  
+
   msg.pose.translation.x = pose.pos[0];
   msg.pose.translation.y = pose.pos[1];
   msg.pose.translation.z = pose.pos[2];
@@ -541,7 +541,7 @@ bool state_sync::insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT pose
   msg.pose.rotation.y = pose.orientation[2];
   msg.pose.rotation.z = pose.orientation[3];
 
-  // Both incoming velocities (from PoseT) are assumed to be in body frame, 
+  // Both incoming velocities (from PoseT) are assumed to be in body frame,
   // convention is for EST_ROBOT_STATE to be in local frame
   // convert here:
   Eigen::Matrix3d R = Eigen::Matrix3d( Eigen::Quaterniond( pose.orientation[0], pose.orientation[1], pose.orientation[2],pose.orientation[3] ));
@@ -550,23 +550,23 @@ bool state_sync::insertPoseInRobotState(bot_core::robot_state_t& msg, PoseT pose
   msg.twist.linear_velocity.y = lin_vel_local[1];
   msg.twist.linear_velocity.z = lin_vel_local[2];
 
-  
+
   ///////////// Rotation Rate Alpha Filter ///////////////////////////////
   Eigen::VectorXd rr_prefiltered(3), rr_filtered(3);
   rr_prefiltered << pose.rotation_rate[0], pose.rotation_rate[1], pose.rotation_rate[2] ;
   if ( cl_cfg_->use_rotation_rate_alpha_filter){
     rotation_rate_alpha_filter_->processSample(rr_prefiltered, rr_filtered    );
   }else{
-    rr_filtered = rr_prefiltered; 
+    rr_filtered = rr_prefiltered;
   }
   ////////////////////////////////////////////////////////
-  
+
   Eigen::Vector3d rot_vel_local = R*Eigen::Vector3d ( rr_filtered[0], rr_filtered[1], rr_filtered[2] );
   msg.twist.angular_velocity.x = rot_vel_local[0];
   msg.twist.angular_velocity.y = rot_vel_local[1];
   msg.twist.angular_velocity.z = rot_vel_local[2];
-  
-  return true;  
+
+  return true;
 }
 
 bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
@@ -575,7 +575,7 @@ bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
   //  std::cout << "haven't received pelvis pose, refusing to populated pose_t\n";
   //  return false;
   //}
-  
+
   msg.utime = pose.utime;
   msg.pos[0] = pose.pos[0];
   msg.pos[1] = pose.pos[1];
@@ -588,21 +588,21 @@ bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
   msg.vel[0] = pose.vel[0];
   msg.vel[1] = pose.vel[1];
   msg.vel[2] = pose.vel[2];
-  
+
   msg.rotation_rate[0] = pose.rotation_rate[0];
   msg.rotation_rate[1] = pose.rotation_rate[1];
   msg.rotation_rate[2] = pose.rotation_rate[2];
-  
+
   msg.accel[0] = pose.accel[0];
   msg.accel[1] = pose.accel[1];
   msg.accel[2] = pose.accel[2];
-  
-  return true;  
+
+  return true;
 }
 
 
 void state_sync::publishRobotState(int64_t utime_in,  const  bot_core::six_axis_force_torque_array_t& force_torque_msg){
-  
+
   bot_core::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
 
@@ -623,15 +623,15 @@ void state_sync::publishRobotState(int64_t utime_in,  const  bot_core::six_axis_
   robot_state_msg.twist.angular_velocity.z = 0;
 
   // Joint States:
-  appendJoints(robot_state_msg, core_robot_joints_);  
+  appendJoints(robot_state_msg, core_robot_joints_);
   appendJoints(robot_state_msg, head_joints_);
-  
+
   appendJoints(robot_state_msg, left_hand_joints_);
   appendJoints(robot_state_msg, right_hand_joints_);
 
   //std::cout << robot_state_msg.joint_name.size() << " Number of Joints\n";
   robot_state_msg.num_joints = robot_state_msg.joint_name.size();
-  
+
   // Limb Sensor states
   bot_core::force_torque_t force_torque_convert;
   if (force_torque_msg.sensors.size() == 4) {
@@ -659,11 +659,11 @@ void state_sync::publishRobotState(int64_t utime_in,  const  bot_core::six_axis_
   }
 
   robot_state_msg.force_torque = force_torque_convert;
-  
+
   // std::cout << "sending " << robot_state_msg.num_joints << " joints\n";
 
   if (cl_cfg_->simulation_mode){ // to be deprecated..
-    lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
+    lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);
   }
 
   if (cl_cfg_->bdi_motion_estimate){
@@ -695,7 +695,7 @@ void state_sync::appendJoints(bot_core::robot_state_t& msg_out, Joints joints){
 
 int
 main(int argc, char ** argv){
-  boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );  
+  boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg->standalone_head, "l", "standalone_head","Standalone Head");
   opt.add(cl_cfg->standalone_hand, "f", "standalone_hand","Standalone Hand");
@@ -705,14 +705,14 @@ main(int argc, char ** argv){
   opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
   opt.add(cl_cfg->atlas_version, "a", "atlas_version", "Atlas version to use");
   opt.parse();
-  
+
   std::cout << "standalone_head: " << cl_cfg->standalone_head << "\n";
   std::cout << "publish_pose_body: " << cl_cfg->publish_pose_body << "\n";
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
-    return 1;  
-  
+    return 1;
+
   state_sync app(lcm, cl_cfg);
   while(0 == lcm->handle());
   return 0;

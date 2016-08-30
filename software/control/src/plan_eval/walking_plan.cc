@@ -250,6 +250,10 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   // This is really dumb, but the multipler is ang then pos, check instQP.
   body_motions_[0].weight_multiplier[5] = 10;
 
+  // don't track x and y position of the pelvis
+  body_motions_[0].weight_multiplier[4] = 0;
+  body_motions_[0].weight_multiplier[3] = 0; 
+
   // reset clock
   interp_t0_ = -1;
 }

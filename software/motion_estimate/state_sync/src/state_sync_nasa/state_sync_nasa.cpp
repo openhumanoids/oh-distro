@@ -122,30 +122,32 @@ state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
   cl_cfg_->use_joint_velocity_low_pass = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.joint_vel_alpha_filter" );
   if (cl_cfg_->use_joint_velocity_low_pass) {
     std::cout << "Low pass filtering jiont velocity: Using\n";
-    double alpha = 1.;
-    int stats = bot_param_get_double(botparam_, "state_estimator.legodo.joint_vel_alpha", &alpha);
+    int stats = bot_param_get_double(botparam_, "state_estimator.legodo.joint_vel_break_freq", &default_freq_);
     if (stats) {
-      std::cout << "Cannot find param state_estimator.legodo.joint_vel_alpha\n";
-      alpha = 1;
+      std::cout << "Cannot find param state_estimator.legodo.joint_vel_break_freq\n";
+      default_freq_ = INFINITY;
     }
-    std::cout << "Using alpha = " << alpha << std::endl;
+    std::cout << "Using break frequency  = " << default_freq_ << std::endl;
 
-    char** alpha_names = bot_param_get_str_array_alloc(botparam_, "state_estimator.legodo.joint_vel_overrides_joints");
-    if (alpha_names != NULL) {
-      int n_alpha = 0;
-      while(alpha_names[n_alpha])
-        n_alpha++;
-      std::cout << n_alpha;
-      double override_alphas[n_alpha];
-      if (n_alpha != bot_param_get_array_len(botparam_, "state_estimator.legodo.joint_vel_overrides_alpha")) {
-        fprintf(stderr, "Error: state_estimator.legodo.joint_vel_overrides_alpha length doesn't match state_estimator.legodo.joint_vel_overrides_joints\n");
+    char** freq_names = bot_param_get_str_array_alloc(botparam_, "state_estimator.legodo.joint_vel_override_joints");
+    if (freq_names != NULL) {
+      int n_freq = 0;
+      while(freq_names[n_freq])
+        n_freq++;
+      std::cout << n_freq;
+      std::vector<double> freqs(n_freq);
+      if (n_freq != bot_param_get_array_len(botparam_, "state_estimator.legodo.joint_vel_override_break_freq")) {
+        fprintf(stderr, "Error: state_estimator.legodo.joint_vel_override_break_freq length doesn't match state_estimator.legodo.joint_vel_overrides_joints\n");
         exit(1);
       }
-      bot_param_get_double_array_or_fail(botparam_, "state_estimator.legodo.joint_vel_overrides_alpha", &override_alphas[0], n_alpha);
-      for (int i = 0; i < n_alpha; i++) {
-        override_alpha_[alpha_names[i]] = override_alphas[i];
+      bot_param_get_double_array_or_fail(botparam_, "state_estimator.legodo.joint_vel_override_break_freq", &freqs[0], n_freq);
+      for (int i = 0; i < n_freq; i++) {
+        override_freq_[freq_names[i]] = freqs[i];
       }
-      bot_param_str_array_free(alpha_names);
+      bot_param_str_array_free(freq_names);
+    }
+    else {
+      printf("No override break frequency.\n");
     }
   }
   else {
@@ -193,20 +195,24 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
   // low pass filter velocity
   if (cl_cfg_->use_joint_velocity_low_pass) {
     // actually make a lp filter on the first tick, just because I don't know what the order of joints will be in the real msg until I see one.
-    if (joint_vel_filter_.get() == NULL) {
-      Eigen::VectorXd alphas(core_robot_joints_.name.size());
-      std::cout << "size of vel " << alphas.size() << std::endl;
-      for (size_t i = 0; i < alphas.size(); i++) {
-        std::map<std::string, double>::const_iterator it = override_alpha_.find(core_robot_joints_.name[i]);
-        if (it != override_alpha_.end()) {
+    if (joint_vel_filter_.empty()) {
+      // Eigen::VectorXd alphas(core_robot_joints_.name.size());
+      // std::cout << "size of vel " << alphas.size() << std::endl;
+      int num_joints = core_robot_joints_.name.size();
+      double breakFrequencyInHz;
+
+      for (size_t i = 0; i < num_joints; i++) {
+        std::map<std::string, double>::const_iterator it = override_freq_.find(core_robot_joints_.name[i]);
+        if (it != override_freq_.end()) {
           std::cout << it->first << " " << i << " " << it->second << std::endl;
-          alphas(i) = it->second;
+          breakFrequencyInHz = it->second;
         }
         else {
-          alphas(i) = default_alpha_;
+          breakFrequencyInHz = default_freq_;
         }
+
+        joint_vel_filter_.push_back(EstimateTools::SingleAlphaFilter(breakFrequencyInHz));
       }
-      joint_vel_filter_.reset(new EstimateTools::AlphaFilter(alphas));
     }
 
     // initialize
@@ -214,9 +220,13 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
       raw_vel_.resize(core_robot_joints_.velocity.size());
       filtered_vel_.resize(core_robot_joints_.velocity.size());
     }
-    for (int i = 0; i < core_robot_joints_.velocity.size(); i++)
+
+
+    double timeInSeconds = msg->utime/1e6;
+    for (int i = 0; i < core_robot_joints_.velocity.size(); i++){
       raw_vel_[i] = core_robot_joints_.velocity[i];
-    joint_vel_filter_->processSample(raw_vel_, filtered_vel_);
+      filtered_vel_[i] = joint_vel_filter_[i].processSample(raw_vel_[i], timeInSeconds);
+    }
 
     for (int i = 0; i < core_robot_joints_.velocity.size(); i++)
       core_robot_joints_.velocity[i] = filtered_vel_[i];
