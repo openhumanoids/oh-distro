@@ -241,11 +241,11 @@ qp_controller_params:
 
       leftAnklePitchActuator:
         hardware:
-          ff_qd_d: 3.0
+          ff_qd_d: 2.0
 
       leftAnkleRollActuator:
         hardware:
-          ff_qd_d: 3.0
+          ff_qd_d: 2.0
 
       rightHipYaw:
         hardware:
@@ -265,11 +265,11 @@ qp_controller_params:
 
       rightAnklePitchActuator:
         hardware:
-          ff_qd_d: 3.0
+          ff_qd_d: 2.0
 
       rightAnkleRollActuator:
         hardware:
-          ff_qd_d: 3.0
+          ff_qd_d: 2.0
 
   base: # automatically inherits from the default =
   standing:

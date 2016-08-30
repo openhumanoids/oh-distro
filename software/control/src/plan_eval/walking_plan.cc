@@ -231,6 +231,9 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
     body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
+    // increase weights for swing foot xy tracking
+    body_motions_[2].weight_multiplier[4] = 15;
+    body_motions_[2].weight_multiplier[3] = 15;
 
     // make weight distribuition
     std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
@@ -248,11 +251,11 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // pelvis Z weight multiplier
   // This is really dumb, but the multipler is ang then pos, check instQP.
-  body_motions_[0].weight_multiplier[5] = 10;
+  body_motions_[0].weight_multiplier[5] = 15;
 
   // don't track x and y position of the pelvis
   body_motions_[0].weight_multiplier[4] = 0;
-  body_motions_[0].weight_multiplier[3] = 0; 
+  body_motions_[0].weight_multiplier[3] = 0;
 
   // reset clock
   interp_t0_ = -1;
