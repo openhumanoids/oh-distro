@@ -59,7 +59,7 @@ void HumanoidStatus::Update(double t, const VectorXd& q, const VectorXd& v,
   double Fz[2];
   for (int i = 0; i < 2; i++) {
     Fz[i] = foot_wrench_in_world_frame_[i][5];
-    if (fabs(Fz[i]) < 1e-3) {
+    if (fabs(Fz[i]) < 1) {
       cop_in_body_frame_[i][0] = 0;
       cop_in_body_frame_[i][1] = 0;
       cop_w[i][0] = foot_sensor_[i].pose.translation()[0];
@@ -109,12 +109,18 @@ void HumanoidStatus::AddToLog(MRDLogger &logger) const {
   logger.AddChannel("RS.M_w[L][y]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+1);
   logger.AddChannel("RS.M_w[L][z]", "Nm", foot_wrench_in_world_frame_[Side::LEFT].data()+2);
 
+  logger.AddChannel("RS.cop_body[L][x]", "m", cop_in_body_frame_[Side::LEFT].data()+0);
+  logger.AddChannel("RS.cop_body[L][y]", "m", cop_in_body_frame_[Side::LEFT].data()+1);
+
   logger.AddChannel("RS.F_w[R][x]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+3);
   logger.AddChannel("RS.F_w[R][y]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+4);
   logger.AddChannel("RS.F_w[R][z]", "N", foot_wrench_in_world_frame_[Side::RIGHT].data()+5);
   logger.AddChannel("RS.M_w[R][x]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+0);
   logger.AddChannel("RS.M_w[R][y]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+1);
   logger.AddChannel("RS.M_w[R][z]", "Nm", foot_wrench_in_world_frame_[Side::RIGHT].data()+2);
+
+  logger.AddChannel("RS.cop_body[R][x]", "m", cop_in_body_frame_[Side::RIGHT].data()+0);
+  logger.AddChannel("RS.cop_body[R][y]", "m", cop_in_body_frame_[Side::RIGHT].data()+1);
 
   for (int i = 0; i < position_.size(); i++)
     logger.AddChannel("RS.q["+robot_->getPositionName(i)+"]", "rad", position_.data()+i);

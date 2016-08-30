@@ -37,6 +37,7 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
   Vector2d cop_w[2] = {Vector2d::Zero(), Vector2d::Zero()};
   for (int side = 0; side < 2; side++) {
     grf_w[side].setZero();
+    cop_b[side].setZero();
   }
 
   for (size_t i = 0; i < msg.contact_output.size(); i++) {
