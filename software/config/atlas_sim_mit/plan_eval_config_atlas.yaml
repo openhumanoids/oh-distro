@@ -49,4 +49,7 @@ ds_duration: 2.0
 pre_weight_transfer_scale: 0.3
 min_Fz: 100
 lower_z_vel: -0.1
-
+swing_foot_xy_weight_mulitplier: 1.0
+pelvis_z_weight_mulitplier: 1.0
+left_foot_zmp_in_shift: 0.0
+right_foot_zmp_in_shift: 0.0

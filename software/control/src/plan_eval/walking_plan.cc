@@ -33,9 +33,19 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_pre_weight_transfer_scale_ = std::min(0.5, p_pre_weight_transfer_scale_);
   p_pre_weight_transfer_scale_ = std::max(0.0, p_pre_weight_transfer_scale_);
 
+  p_swing_foot_xy_weight_mulitplier_ = config_["swing_foot_xy_weight_mulitplier"].as<double>();
+  p_pelvis_z_weight_mulitplier_ = config_["pelvis_z_weight_mulitplier"].as<double>();
+  p_left_foot_zmp_in_shift_ = config_["left_foot_zmp_in_shift"].as<double>();
+  p_right_foot_zmp_in_shift_ = config_["right_foot_zmp_in_shift"].as<double>();
+
   std::cout << "p_lower_z_vel_: " << p_lower_z_vel_ << std::endl;
   std::cout << "p_ss_duration_: " << p_ss_duration_ << std::endl;
   std::cout << "p_ds_duration_: " << p_ds_duration_ << std::endl;
+
+  std::cout << "p_swing_foot_xy_weight_mulitplier_: " << p_swing_foot_xy_weight_mulitplier_ << std::endl;
+  std::cout << "p_pelvis_z_weight_mulitplier_: " << p_pelvis_z_weight_mulitplier_ << std::endl;
+  std::cout << "p_left_foot_zmp_in_shift_: " << p_left_foot_zmp_in_shift_ << std::endl;
+  std::cout << "p_right_foot_zmp_in_shift_: " << p_right_foot_zmp_in_shift_ << std::endl;
 }
 
 // called on every touch down
@@ -175,7 +185,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
       zmp_shift_in = -zmp_shift_in;
       // TODO HACK:
       // shift zmp inward for ssl..
-      zmp_shift_in -= 0.02;
+      zmp_shift_in -= 0.015;
     }
 
     Eigen::Isometry3d mid_stance_foot(Eigen::Isometry3d::Identity());
@@ -251,7 +261,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // pelvis Z weight multiplier
   // This is really dumb, but the multipler is ang then pos, check instQP.
-  body_motions_[0].weight_multiplier[5] = 15;
+  body_motions_[0].weight_multiplier[5] = 5;
 
   // don't track x and y position of the pelvis
   body_motions_[0].weight_multiplier[4] = 0;

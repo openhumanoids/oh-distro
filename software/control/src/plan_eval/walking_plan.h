@@ -37,6 +37,11 @@ class WalkingPlan : public GenericPlan {
   double p_ss_duration_;
   double p_ds_duration_;
 
+  double p_swing_foot_xy_weight_mulitplier_;
+  double p_pelvis_z_weight_mulitplier_;
+  double p_left_foot_zmp_in_shift_;
+  double p_right_foot_zmp_in_shift_;
+
   void LoadConfigurationFromYAML(const std::string &name);
   void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
 
