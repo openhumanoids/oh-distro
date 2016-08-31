@@ -71,7 +71,7 @@ group "2.plan_and_control" {
     }
 
     cmd "c_plan_eval" {
-        exec = "sf_plan_eval ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf ${DRC_BASE}/software/config/val_mit/plan_eval_config_valkyrie.yaml";
+        exec = "c_plan_eval ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf ${DRC_BASE}/software/config/val_mit/plan_eval_config_valkyrie.yaml";
         host = "base";
         stop_signal = 15;
     }

@@ -107,12 +107,12 @@ set(PLAN_EVAL_SRC
   plan_eval/walking_plan.cc)
   #plan_eval/single_support_plan.cc)
 
-add_executable(sf_plan_eval plan_eval/run_plan_eval.cc ${PLAN_EVAL_SRC})
+add_executable(c_plan_eval plan_eval/run_plan_eval.cc ${PLAN_EVAL_SRC})
 set_source_files_properties(plan_eval/run_plan_eval.cc ${PLAN_EVAL_SRC} PROPERTIES COMPILE_FLAGS -g)
-pods_use_pkg_config_packages(sf_plan_eval drake-qp-common drake-control-util drake-side drake-rbm)
-target_link_libraries(sf_plan_eval RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeTrajectories drakeLCMUtil drakePolynomial drakeQPLocomotionPlan drakeYAMLUtil yaml-cpp)
-target_link_libraries (sf_plan_eval ${CMAKE_THREAD_LIBS_INIT})
-pods_install_executables(sf_plan_eval)
+pods_use_pkg_config_packages(c_plan_eval drake-qp-common drake-control-util drake-side drake-rbm)
+target_link_libraries(c_plan_eval RobotStateDriver AtlasCommandDriver FootContactDriver lcm drakeTrajectories drakeLCMUtil drakePolynomial drakeQPLocomotionPlan drakeYAMLUtil yaml-cpp)
+target_link_libraries (c_plan_eval ${CMAKE_THREAD_LIBS_INIT})
+pods_install_executables(c_plan_eval)
 
 add_executable(sf_test_zmp plan_eval/test_zmp.cc ${PLAN_EVAL_SRC})
 set_source_files_properties(plan_eval/test_zmp.cc ${PLAN_EVAL_SRC} PROPERTIES COMPILE_FLAGS -g)
