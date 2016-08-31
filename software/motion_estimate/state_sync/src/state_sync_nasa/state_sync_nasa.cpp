@@ -10,6 +10,9 @@
 #include <sys/time.h>
 #include <algorithm>
 
+#include <estimate_tools/single_alpha_filter.hpp>
+#include <estimate_tools/velocity_backlash_filter.h>
+
 
 using namespace std;
 #define DO_TIMING_PROFILE FALSE
@@ -149,6 +152,14 @@ state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
     else {
       printf("No override break frequency.\n");
     }
+
+    // Parse whether or not to use backlash filter
+    use_backlash_filter_ = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.joint_vel_backlash_filter");
+    backlash_filter_slop_time_ = bot_param_get_double_or_fail(botparam_, "state_estimator.legodo.joint_vel_backlash_filter_slop_time");
+
+    if(use_backlash_filter_){
+      std::cout << "Using backlash filter with slop time of " << backlash_filter_slop_time_ << " seconds" << std::endl;
+    }
   }
   else {
     std::cout << "Low pass filtering jiont velocity: Not Using\n";
@@ -211,7 +222,19 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
           breakFrequencyInHz = default_freq_;
         }
 
-        joint_vel_filter_.push_back(EstimateTools::SingleAlphaFilter(breakFrequencyInHz));
+        // construct the actual filter.
+        std::unique_ptr<EstimateTools::SimpleFilter> filterPtr;
+
+        if(use_backlash_filter_){ // use a backlash filter together with alpha filter
+          filterPtr = std::unique_ptr<EstimateTools::SimpleFilter>(new EstimateTools::VelocityBacklashAlphaFilter(breakFrequencyInHz, backlash_filter_slop_time_));
+        } else{
+          // just use a simple alpha filter
+          filterPtr = std::unique_ptr<EstimateTools::SimpleFilter>(new EstimateTools::SingleAlphaFilter(breakFrequencyInHz));
+        }
+
+        // add this filter to the joint_vel_filter_ vector
+        // need to do std::move since it's a unique ptr
+        joint_vel_filter_.push_back(std::move(filterPtr));
       }
     }
 
@@ -225,7 +248,7 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
     double timeInSeconds = msg->utime/1e6;
     for (int i = 0; i < core_robot_joints_.velocity.size(); i++){
       raw_vel_[i] = core_robot_joints_.velocity[i];
-      filtered_vel_[i] = joint_vel_filter_[i].processSample(raw_vel_[i], timeInSeconds);
+      filtered_vel_[i] = joint_vel_filter_[i]->processSample(timeInSeconds, raw_vel_[i]);
     }
 
     for (int i = 0; i < core_robot_joints_.velocity.size(); i++)

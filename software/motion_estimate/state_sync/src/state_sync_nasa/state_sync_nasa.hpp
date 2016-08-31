@@ -23,7 +23,7 @@
 
 #include <pronto_utils/pronto_math.hpp>
 #include <estimate_tools/torque_adjustment.hpp>
-#include <estimate_tools/single_alpha_filter.hpp>
+#include <estimate_tools/SimpleFilter.h>
 
 struct Joints {
   std::vector<float> position;
@@ -94,10 +94,12 @@ class state_sync_nasa{
     // Torque Adjustment:
     EstimateTools::TorqueAdjustment* torque_adjustment_;
     // joint velocity filter
-    std::vector<EstimateTools::SingleAlphaFilter> joint_vel_filter_;
+    std::vector<std::unique_ptr<EstimateTools::SimpleFilter>> joint_vel_filter_;
     Eigen::VectorXd raw_vel_, filtered_vel_;
     double default_freq_;
     std::map<std::string, double> override_freq_;
+    bool use_backlash_filter_ = false;
+    double backlash_filter_slop_time_;
 
     void publishRobotState(int64_t utime_in, const  bot_core::six_axis_force_torque_array_t& msg);
     void appendJoints(bot_core::robot_state_t& msg_out, Joints joints);
