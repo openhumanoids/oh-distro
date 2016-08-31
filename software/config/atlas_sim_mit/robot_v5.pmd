@@ -51,7 +51,7 @@ group "2.plan_and_control" {
     }
 
     cmd "c_plan_eval" {
-        exec = "sf_plan_eval ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf ${DRC_BASE}/software/config/atlas_sim_mit/plan_eval_config_atlas.yaml";
+        exec = "c_plan_eval ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf ${DRC_BASE}/software/config/atlas_sim_mit/plan_eval_config_atlas.yaml";
         host = "base";
         stop_signal = 15;
     }
