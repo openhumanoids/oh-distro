@@ -49,6 +49,8 @@ class PlanEval {
   std::thread publisher_thread_;
   std::atomic<bool> publisher_stop_;
 
+  PlanStatus current_plan_status_;
+
   void ReceiverLoop();
   void PublisherLoop();
 
@@ -65,7 +67,10 @@ class PlanEval {
   void HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
                            const std::string &channel,
                            const bot_core::robot_state_t *msg);
+
   void HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
                              const std::string &channel,
                              const drc::foot_contact_estimate_t *msg);
+
+  void publishPlanStatus(PlanStatus plan_status);
 };

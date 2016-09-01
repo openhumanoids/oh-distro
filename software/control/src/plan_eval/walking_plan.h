@@ -8,6 +8,7 @@ class WalkingPlan : public GenericPlan {
  public:
   WalkingPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
     LoadConfigurationFromYAML(config_name);
+    plan_status_.planType = PlanType::WALKING;
   }
 
   void HandleCommittedRobotPlan(const void *plan_msg,

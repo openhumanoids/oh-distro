@@ -65,6 +65,12 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
+    cmd "c_plan_eval" {
+        exec = "c_plan_eval ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf ${DRC_BASE}/software/config/val_mit/plan_eval_config_valkyrie.yaml";
+        host = "localhost";
+        stop_signal = 15;
+    }
+
     cmd "InstQP Val" {
         exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -pub";
         host = "localhost";

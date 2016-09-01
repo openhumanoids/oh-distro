@@ -6,6 +6,7 @@
 #include "manip_plan.h"
 #include "walking_plan.h"
 #include "single_support_plan.h"
+#include "drc/plan_status_t.hpp"
 
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 
@@ -80,7 +81,7 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                                  const std::string &channel,
                                  const drc::walking_plan_request_t *msg)
 {
-  std::cout << "Makeing Walking plan\n";
+  std::cout << "Making Walking plan\n";
   
   DrakeRobotState local_est_rs;
   state_lock_.lock();
@@ -163,10 +164,58 @@ void PlanEval::PublisherLoop() {
 
       drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(local_est_rs);
       lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
+
+      // publish the plan status
+      current_plan_status_ = local_ptr->getPlanStatus();
+      this->publishPlanStatus(current_plan_status_);
     }
   }
   std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id()
             << std::endl;
+}
+
+// publish the status of the plan
+void PlanEval::publishPlanStatus(PlanStatus plan_status) {
+
+  drc::plan_status_t msg;
+
+  switch(plan_status.executionStatus){
+    case (PlanExecutionStatus::UNKNOWN):
+      msg.execution_status = msg.EXECUTION_STATUS_EXECUTING;
+      break;
+
+    case (PlanExecutionStatus::EXECUTING):
+      msg.execution_status = msg.EXECUTION_STATUS_EXECUTING;
+      break;
+
+    case (PlanExecutionStatus::FINISHED):
+      msg.execution_status = msg.EXECUTION_STATUS_FINISHED;
+      break;
+  }
+
+  switch(plan_status.planType){
+    case (PlanType::UNKNOWN):
+      msg.plan_type = msg.UNKNOWN;
+      break;
+
+    case (PlanType::STANDING):
+      msg.plan_type = msg.STANDING;
+      break;
+
+    case (PlanType::WALKING):
+      msg.plan_type = msg.WALKING;
+      break;
+
+    case (PlanType::BRACING):
+      msg.plan_type = msg.BRACING;
+      break;
+
+    case (PlanType::RECOVERING):
+      msg.plan_type = msg.RECOVERING;
+      break;
+  }
+
+  lcm_handle_.publish("PLAN_STATUS", &msg);
 }
 
 void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,

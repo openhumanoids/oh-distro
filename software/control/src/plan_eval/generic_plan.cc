@@ -259,7 +259,9 @@ drake::lcmt_body_motion_data GenericPlan::EncodeBodyMotionData(double plan_time,
 }
 
 
-
+PlanStatus GenericPlan::getPlanStatus() {
+  return plan_status_;
+}
 
 
 

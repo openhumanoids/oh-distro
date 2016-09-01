@@ -32,6 +32,25 @@ struct RigidBodySupportStateElement {
 
 typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
 
+enum class PlanExecutionStatus{
+  UNKNOWN,
+  EXECUTING,
+  FINISHED,
+};
+
+enum class PlanType{
+  UNKNOWN,
+  STANDING,
+  WALKING,
+  BRACING,
+  RECOVERING,
+};
+
+struct PlanStatus {
+  PlanExecutionStatus executionStatus;
+  PlanType planType;
+};
+
 class GenericPlan {
  public:
   /*
@@ -59,6 +78,9 @@ class GenericPlan {
 
   // is set the first time in the publishing / interp loop
   double interp_t0_ = -1;
+
+  // the plan status
+  PlanStatus plan_status_;
 
   // robot for doing kinematics
   RigidBodyTree robot_;
@@ -100,6 +122,7 @@ class GenericPlan {
     p_zmp_height_ = 0.8;
     p_initial_transition_time_ = 0.5;
     LoadConfigurationFromYAML(config_name);
+
   }
   virtual ~GenericPlan() { ; }
   virtual void LoadConfigurationFromYAML(const std::string &name);
@@ -111,6 +134,8 @@ class GenericPlan {
   virtual drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &est_rs) = 0;
 
   virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
+
+  PlanStatus getPlanStatus();
 };
 
 std::string PrimaryBodyOrFrameName(const std::string &full_body_name);

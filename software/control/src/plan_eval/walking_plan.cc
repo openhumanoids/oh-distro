@@ -300,6 +300,8 @@ PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d
 void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                            const DrakeRobotState &est_rs,
                                            const Eigen::VectorXd &last_q_d) {
+
+
   // state machine
   cur_state_ = WEIGHT_TRANSFER;
 
@@ -348,6 +350,13 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     interp_t0_ = cur_time;
 
   double plan_time = cur_time - interp_t0_;
+
+  // update the plan status depending on whether or not we are finished
+  if (footstep_plan_.empty() && (plan_time > p_ds_duration_)){
+    plan_status_.executionStatus = PlanExecutionStatus::FINISHED;
+  } else{
+    plan_status_.executionStatus = PlanExecutionStatus::EXECUTING;
+  }
 
   // can't use reference for this one because ref becomes invalid when queue pops
   const ContactState planned_cs = cur_planned_contact_state();
