@@ -8,7 +8,7 @@
 #include "single_support_plan.h"
 #include "drc/plan_status_t.hpp"
 
-double PLAN_STATUS_RATE_LIMIT_HZ  = 1;
+double PLAN_STATUS_RATE_LIMIT_HZ  = 3;
 
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 
