@@ -19,7 +19,7 @@ class SimpleWalking:
         self.startWalkingGoalFrame = None
         self.endWalkingGoalFrame = None
         self.initializeOptions()
-        self.currentState = 'forwards' # can only be forwards or backwards
+        self.currentState = 'backwards' # can only be forwards or backwards
 
         self.timer = timercallback.TimerCallback(targetFps=0.5, callback=self.callback)
 
@@ -37,7 +37,7 @@ class SimpleWalking:
 
     def initializeOptions(self):
         self.options = dict()
-        self.options['walkingDistance'] = 1.5
+        self.options['walkingDistance'] = 0.5
 
     # get and save a frame between feet
     def initialize(self):
@@ -96,4 +96,4 @@ class SimpleWalking:
         if (planFinished):
             print "making a new walking plan"
             self.switchState()
-            self.planWalking()
+            self.planWalking(direction=self.currentState)
