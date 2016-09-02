@@ -3,12 +3,18 @@
 #include "generic_plan.h"
 #include <list>
 #include <utility>
+#include <lcm/lcm-cpp.hpp>
 
 class WalkingPlan : public GenericPlan {
  public:
   WalkingPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
     LoadConfigurationFromYAML(config_name);
     plan_status_.planType = PlanType::WALKING;
+
+    // check the lcm handle initialization was good
+    if (!lcm_handle_.good()) {
+      throw std::runtime_error("lcm is not good()");
+    }
   }
 
   void HandleCommittedRobotPlan(const void *plan_msg,
@@ -23,6 +29,8 @@ class WalkingPlan : public GenericPlan {
     WEIGHT_TRANSFER,
     SWING
   };
+
+  lcm::LCM lcm_handle_;
 
   WalkingState cur_state_;
 
@@ -42,6 +50,8 @@ class WalkingPlan : public GenericPlan {
   double p_pelvis_z_weight_mulitplier_;
   double p_left_foot_zmp_in_shift_;
   double p_right_foot_zmp_in_shift_;
+
+  bool have_tared_swing_leg_ft_ = false;
 
   void LoadConfigurationFromYAML(const std::string &name);
   void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
@@ -87,6 +97,8 @@ class WalkingPlan : public GenericPlan {
   }
 
   void SwitchContactState(double cur_time);
+
+  void TareSwingLegForceTorque();
 
   PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const;
 

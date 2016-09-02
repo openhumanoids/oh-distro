@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <drc/string_t.hpp>
 
 inline double avg_angle(double a, double b) {
   double x = fmod(fabs(a-b), 2*M_PI);
@@ -338,6 +339,27 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
 void WalkingPlan::SwitchContactState(double cur_time) {
   contact_state_.pop_front();
   contact_switch_time_ = cur_time;
+
+  //reset the tare FT flag
+  have_tared_swing_leg_ft_ = false;
+}
+
+void WalkingPlan::TareSwingLegForceTorque() {
+  drc::string_t msg;
+
+  const ContactState planned_cs = cur_planned_contact_state();
+
+  if (planned_cs.is_in_contact(ContactState::ContactBody::L_FOOT)){
+    msg.data = 'right';
+  } else if (planned_cs.is_in_contact(ContactState::ContactBody::R_FOOT)){
+    msg.data = 'left';
+  } else {
+    std::cout << "neither right or left foot is in contact, not sending tare FT message" << std::endl;
+    return;
+  }
+
+  lcm_handle_.publish("TARE_FOOT_SENSORS", &msg);
+  have_tared_swing_leg_ft_ = true;
 }
 
 drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &est_rs) {
@@ -397,6 +419,11 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         body_motions_[2].trajectory.setPolynomialMatrixBlock(last_knots, last_idx);
       }
 
+      // tare the FT sensor during swing
+      if (plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_ && !have_tared_swing_leg_ft_){
+        this->TareSwingLegForceTorque();
+      }
+
       // check for touch down only after half swing
       if (plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_ &&
           est_cs.is_in_contact(ContactState::L_FOOT) &&
@@ -413,6 +440,9 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         // all tapes assumes 0 sec start, so need to reset clock
         interp_t0_ = cur_time;
         plan_time = cur_time - interp_t0_;
+
+
+
       }
 
       break;
