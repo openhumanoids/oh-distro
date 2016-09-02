@@ -4,6 +4,7 @@ __author__ = 'manuelli'
 import valkyriedriver
 import valkyriedriverpanel
 import forcevisualizer
+import simplewalking
 
 from director import tasklaunchpanel
 from director import applogic
@@ -21,6 +22,8 @@ def startup(robotSystem, globalsDict=None):
     atlasPanelAction = applogic.getToolBarActions()['ActionAtlasDriverPanel']
     applogic.getMainWindow().panelToolBar().removeAction(atlasPanelAction)
 
+    simpleWalking = simplewalking.SimpleWalking(robotSystem, valkyrieDriver)
+
     # add a new task panel
     #exampleTaskPanel = exampletaskpanel.ExampleTaskPanel(robotSystem)
     #tasklaunchpanel.panel.addTaskPanel('Example Task', exampleTaskPanel.widget)
@@ -30,5 +33,6 @@ def startup(robotSystem, globalsDict=None):
         globalsDict['valkyrieDriver'] = valkyrieDriver
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
         globalsDict['forceVisualizer'] = forceVisualizer
+        globalsDict['simpleWalking'] = simpleWalking
 
         # add new task panel to global dict

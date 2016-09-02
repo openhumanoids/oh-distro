@@ -45,6 +45,9 @@ class ValkyrieDriver(object):
         self.lastAtlasBatteryDataMessage = None
         self.lastAtlasElectricArmStatusMessage = None
         self.lastControllerRateMessage = None
+
+        self.lastLCM2ROSControlStatusMessage = None
+        self.lastPlanStatusMsg = None
         self.maxPressureHistory = deque([0.0], 10)
         self.averageRecentMaxPressure = 0.0
         self._setupSubscriptions()
@@ -56,6 +59,7 @@ class ValkyrieDriver(object):
         self._controllerStatusMap = None
 
     def _setupSubscriptions(self):
+        print "setting up valkyrie driver subscriptions"
         lcmUtils.addSubscriber('PLAN_EXECUTION_STATUS', lcmdrc.plan_status_t, self.onControllerStatus)
         lcmUtils.addSubscriber('CONTROLLER_RATE', lcmdrc.message_rate_t, self.onControllerRate)
         sub = lcmUtils.addSubscriber('ATLAS_STATUS', atlas.status_t, self.onAtlasStatus)
@@ -63,14 +67,21 @@ class ValkyrieDriver(object):
         sub = lcmUtils.addSubscriber('ATLAS_STATE_EXTRA', atlas.state_extra_t, self.onAtlasStateExtra)
         sub.setSpeedLimit(5)
 
-        sub = lcmUtils.addSubscriber('LCM2ROSCONTROL_STATUS', self.onLCM2ROSCONTROLStatus)
+        sub = lcmUtils.addSubscriber('LCM2ROSCONTROL_STATUS', bot_core.system_status_t, self.onLCM2ROSCONTROLStatus)
         sub.setSpeedLimit(60)
+
+        sub = lcmUtils.addSubscriber('PLAN_STATUS', lcmdrc.plan_status_t, self.onPlanStatus)
+        sub.setSpeedLimit(5)
 
     def onAtlasStatus(self, message):
         self.lastAtlasStatusMessage = message
 
     def onLCM2ROSCONTROLStatus(self, message):
         self.lastLCM2ROSControlStatusMessage = message
+
+    def onPlanStatus(self,msg):
+        self.lastPlanStatusMsg = msg
+        pass
 
     def onControllerStatus(self, message):
         self.lastControllerStatusMessage = message
