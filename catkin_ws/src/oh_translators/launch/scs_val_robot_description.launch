@@ -1,9 +1,0 @@
-<launch>
-  <param name="use_sim_time" value="true"/>
-  <arg name="description_model" default="$(find val_description)/urdf/valkyrie_sim.urdf" />
-  <param name="/valkyrie/robot_description" textfile="$(arg description_model)" />
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" >
-    <remap from="joint_states" to="/ihmc_ros/valkyrie/output/joint_states" />
-    <remap from="robot_description" to="/valkyrie/robot_description" />
-  </node>
-</launch>
