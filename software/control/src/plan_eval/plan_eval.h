@@ -11,6 +11,7 @@
 #include "drake/Path.h"
 #include "../RobotStateDriver.hpp"
 #include "drc/foot_contact_estimate_t.hpp"
+#include "utils/rate_limiter.h"
 
 
 // only working on manip now, need to think about how to switch between manip
@@ -50,6 +51,7 @@ class PlanEval {
   std::atomic<bool> publisher_stop_;
 
   PlanStatus current_plan_status_;
+  RateLimiter plan_status_rate_limiter_;
 
   void ReceiverLoop();
   void PublisherLoop();

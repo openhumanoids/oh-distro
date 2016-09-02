@@ -8,6 +8,8 @@
 #include "single_support_plan.h"
 #include "drc/plan_status_t.hpp"
 
+double PLAN_STATUS_RATE_LIMIT_HZ  = 1;
+
 static bool WaitForLCM(lcm::LCM &lcm_handle, double timeout);
 
 PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name) {
@@ -31,6 +33,7 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   receiver_stop_ = false;
   publisher_stop_ = false;
   new_plan_ = false;
+  plan_status_rate_limiter_.setSpeedLimit(PLAN_STATUS_RATE_LIMIT_HZ);
 
   if (!lcm_handle_.good()) {
     throw std::runtime_error("lcm is not good()");
@@ -176,6 +179,11 @@ void PlanEval::PublisherLoop() {
 
 // publish the status of the plan
 void PlanEval::publishPlanStatus(PlanStatus plan_status) {
+
+  // only publish if the rate limiter says ok
+  if (!plan_status_rate_limiter_.tick()){
+    return;
+  }
 
   drc::plan_status_t msg;
 
