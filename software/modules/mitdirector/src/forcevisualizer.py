@@ -34,21 +34,25 @@ class ForceVisualizer:
         self.footContactEstimateMsg = None
         self.initializeOptions()
 
+        # they are hidden by default
         d = DebugData()
         visObj = vis.updatePolyData(d.getPolyData(), self.options['estForceVisName'], view=self.view, parent='robot state model')
-        # visObj.setProperty('Visible', False)
+        visObj.setProperty('Visible', False)
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['pelvisAccelerationVisName'], view=self.view, parent='robot state model')
-        # visObj.setProperty('Visible', False)
+        visObj.setProperty('Visible', False)
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['copVisName'], view=self.view, parent='robot state model')
-        # visObj.setProperty('Visible', False)
+        visObj.setProperty('Visible', False)
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['QPForceVisName'], view=self.view, parent='robot state model')
+        visObj.setProperty('Visible', False)
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['contactPointsVisName'], view=self.view, parent='robot state model')
+        visObj.setProperty('Visible', False)
 
         visObj = vis.updatePolyData(d.getPolyData(), self.options['desiredCOPVisName'], view=self.view, parent='robot state model')
+        visObj.setProperty('Visible', False)
 
 
         self.visObjDict = dict()
@@ -115,6 +119,7 @@ class ForceVisualizer:
 
         # desiredCOP
         sub = lcmUtils.addSubscriber('QP_CONTROLLER_INPUT', lcmdrake.lcmt_qp_controller_input, self.extractDesiredCOP)
+        sub.setSpeedLimit(self.options['speedLimit'])
 
 
     # msg is six_axis_force_torque_array_t
