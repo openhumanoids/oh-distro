@@ -416,7 +416,8 @@ class ValkyrieDriver(object):
 
     # for valkyrie
     def sendTareFT(self):
-        msg = bot_core.utime_t()
+        msg = bot_core.string_t()
+        msg.data = "both"
         lcmUtils.publish("TARE_FOOT_SENSORS", msg)
 
     # for valkyrie
