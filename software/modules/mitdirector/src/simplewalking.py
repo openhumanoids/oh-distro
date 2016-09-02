@@ -21,7 +21,7 @@ class SimpleWalking:
         self.initializeOptions()
         self.currentState = 'forwards' # can only be forwards or backwards
 
-        self.timer = timercallback.TimerCallback(targetFps=1, callback=self.callback)
+        self.timer = timercallback.TimerCallback(targetFps=0.5, callback=self.callback)
 
     def switchState(self):
         if self.currentState == 'forwards':
