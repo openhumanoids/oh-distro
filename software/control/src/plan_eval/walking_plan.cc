@@ -349,16 +349,20 @@ void WalkingPlan::TareSwingLegForceTorque() {
 
   const ContactState planned_cs = cur_planned_contact_state();
 
+  // need to tare the opposite foot of the one that is in contact
   if (planned_cs.is_in_contact(ContactState::ContactBody::L_FOOT)){
+    std::cout << "sending tare RIGHT FT message" << std::endl;
     msg.data = 'right';
   } else if (planned_cs.is_in_contact(ContactState::ContactBody::R_FOOT)){
+    std::cout << "sending tare LEFT FT message" << std::endl;
     msg.data = 'left';
   } else {
     std::cout << "neither right or left foot is in contact, not sending tare FT message" << std::endl;
     return;
   }
 
-  lcm_handle_.publish("TARE_FOOT_SENSORS", &msg);
+  // first test it out without actually publishing
+//  lcm_handle_.publish("TARE_FOOT_SENSORS", &msg);
   have_tared_swing_leg_ft_ = true;
 }
 
@@ -419,8 +423,8 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         body_motions_[2].trajectory.setPolynomialMatrixBlock(last_knots, last_idx);
       }
 
-      // tare the FT sensor during swing
-      if (plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_ && !have_tared_swing_leg_ft_){
+      // tare the FT sensor during swing if we haven't already
+      if ((plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_) && !have_tared_swing_leg_ft_){
         this->TareSwingLegForceTorque();
       }
 
