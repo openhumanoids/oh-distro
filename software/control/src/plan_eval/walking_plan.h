@@ -48,8 +48,8 @@ class WalkingPlan : public GenericPlan {
 
   double p_swing_foot_xy_weight_mulitplier_;
   double p_pelvis_z_weight_mulitplier_;
-  double p_left_foot_zmp_in_shift_;
-  double p_right_foot_zmp_in_shift_;
+  double p_left_foot_zmp_y_shift_;
+  double p_right_foot_zmp_y_shift_;
 
   bool have_tared_swing_leg_ft_ = false;
 

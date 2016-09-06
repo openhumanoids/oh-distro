@@ -36,8 +36,8 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
 
   p_swing_foot_xy_weight_mulitplier_ = config_["swing_foot_xy_weight_mulitplier"].as<double>();
   p_pelvis_z_weight_mulitplier_ = config_["pelvis_z_weight_mulitplier"].as<double>();
-  p_left_foot_zmp_in_shift_ = config_["left_foot_zmp_in_shift"].as<double>();
-  p_right_foot_zmp_in_shift_ = config_["right_foot_zmp_in_shift"].as<double>();
+  p_left_foot_zmp_y_shift_ = config_["left_foot_zmp_y_shift"].as<double>();
+  p_right_foot_zmp_y_shift_ = config_["right_foot_zmp_y_shift"].as<double>();
 
   std::cout << "p_lower_z_vel_: " << p_lower_z_vel_ << std::endl;
   std::cout << "p_ss_duration_: " << p_ss_duration_ << std::endl;
@@ -45,8 +45,8 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
 
   std::cout << "p_swing_foot_xy_weight_mulitplier_: " << p_swing_foot_xy_weight_mulitplier_ << std::endl;
   std::cout << "p_pelvis_z_weight_mulitplier_: " << p_pelvis_z_weight_mulitplier_ << std::endl;
-  std::cout << "p_left_foot_zmp_in_shift_: " << p_left_foot_zmp_in_shift_ << std::endl;
-  std::cout << "p_right_foot_zmp_in_shift_: " << p_right_foot_zmp_in_shift_ << std::endl;
+  std::cout << "p_left_foot_zmp_y_shift_: " << p_left_foot_zmp_y_shift_ << std::endl;
+  std::cout << "p_right_foot_zmp_y_shift_: " << p_right_foot_zmp_y_shift_ << std::endl;
 }
 
 // called on every touch down
@@ -181,16 +181,20 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, init_q_), zero, zero);
 
     // com / cop
-    double zmp_shift_in = cur_step.params.drake_instep_shift;
-    if (stance_foot == Side::LEFT) {
-      zmp_shift_in = -zmp_shift_in;
-      // TODO HACK:
-      // shift zmp inward for ssl..
-      zmp_shift_in -= 0.015;
-    }
+    double zmp_shift_in = p_left_foot_zmp_y_shift_;
+    if (stance_foot == Side::RIGHT)
+      zmp_shift_in = p_right_foot_zmp_y_shift_;
+
+    Eigen::Vector3d avg_contact_offset(Eigen::Vector3d::Zero());
+    const Eigen::Matrix3Xd &offsets = contact_offsets.find(rpc_.foot_ids.at(stance_foot))->second;
+    for (int i = 0; i < offsets.cols(); i++)
+      avg_contact_offset += offsets.col(i);
+    avg_contact_offset = avg_contact_offset / offsets.cols();
+    // offset y on in body frame
+    avg_contact_offset[1] += zmp_shift_in;
 
     Eigen::Isometry3d mid_stance_foot(Eigen::Isometry3d::Identity());
-    mid_stance_foot.translation() = Eigen::Vector3d(0.04, zmp_shift_in, 0);
+    mid_stance_foot.translation() = avg_contact_offset;
     mid_stance_foot = feet_pose[stance_foot.underlying()] * mid_stance_foot;
     com1 = mid_stance_foot.translation().head(2);
 
@@ -208,7 +212,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
     // make pelv
     pelv1.head(3) = mid_stance_foot.translation();
-    pelv1[2] += p_zmp_height_;
+    pelv1[2] += p_zmp_height_ - avg_contact_offset[2]; ///< This offset the pelv z relative to ankle.
     Eigen::Vector4d foot_quat(feet0[stance_foot.underlying()].tail(4));
     double yaw = quat2rpy(foot_quat)[2];
     pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
@@ -229,6 +233,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     body_motions_[1].body_or_frame_id = rpc_.foot_ids.at(stance_foot);
     body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
+    /*
     // make swing foot
     Eigen::Vector7d swing_touchdown_pose;
     swing_touchdown_pose(0) = cur_step.pos.translation.x;
@@ -245,6 +250,12 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     // increase weights for swing foot xy tracking
     body_motions_[2].weight_multiplier[4] = 15;
     body_motions_[2].weight_multiplier[3] = 15;
+    */
+
+    // swing foot traj will be planned at liftoff
+    std::vector<Eigen::Vector7d> swing_knots(num_T, feet0[swing_foot.underlying()]);
+    body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
+    body_motions_[2].trajectory = GenerateCubicCartesianSpline(Ts, swing_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
     // make weight distribuition
     std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
@@ -393,6 +404,29 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   switch (cur_state_) {
     case WEIGHT_TRANSFER:
       if (plan_time >= planned_contact_swith_time) {
+        // replace the swing up segment with a new one that starts from the current foot pose.
+        drc::footstep_t &cur_step = footstep_plan_.front();
+        Side swing_foot = cur_step.is_right_foot ? Side::RIGHT : Side::LEFT;
+
+        KinematicsCache<double> cache = robot_.doKinematics(est_rs.q, est_rs.qd);
+        Eigen::Isometry3d swing_foot0 = robot_.relativeTransform(cache, 0, rpc_.foot_ids.at(swing_foot));
+
+        Eigen::Vector7d swing_touchdown_pose;
+        swing_touchdown_pose(0) = cur_step.pos.translation.x;
+        swing_touchdown_pose(1) = cur_step.pos.translation.y;
+        swing_touchdown_pose(2) = cur_step.pos.translation.z;
+        swing_touchdown_pose(3) = cur_step.pos.rotation.w;
+        swing_touchdown_pose(4) = cur_step.pos.rotation.x;
+        swing_touchdown_pose(5) = cur_step.pos.rotation.y;
+        swing_touchdown_pose(6) = cur_step.pos.rotation.z;
+        swing_touchdown_pose.tail(4).normalize();
+
+        body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
+        body_motions_[2].trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
+        // increase weights for swing foot xy tracking
+        body_motions_[2].weight_multiplier[4] = 15;
+        body_motions_[2].weight_multiplier[3] = 15;
+
         // change contact
         SwitchContactState(cur_time);
         cur_state_ = SWING;
@@ -429,6 +463,8 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       }
 
       // check for touch down only after half swing
+      // if we are in contact switch to the double support contact state and
+      // plan/re-plan all trajectories (i.e. zmp, body motion, foot swing etc.)
       if (plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_ &&
           est_cs.is_in_contact(ContactState::L_FOOT) &&
           est_cs.is_in_contact(ContactState::R_FOOT)) {
@@ -444,9 +480,6 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         // all tapes assumes 0 sec start, so need to reset clock
         interp_t0_ = cur_time;
         plan_time = cur_time - interp_t0_;
-
-
-
       }
 
       break;
