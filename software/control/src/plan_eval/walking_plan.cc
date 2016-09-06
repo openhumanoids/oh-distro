@@ -352,17 +352,17 @@ void WalkingPlan::TareSwingLegForceTorque() {
   // need to tare the opposite foot of the one that is in contact
   if (planned_cs.is_in_contact(ContactState::ContactBody::L_FOOT)){
     std::cout << "sending tare RIGHT FT message" << std::endl;
-    msg.data = 'right';
+    msg.data = "right";
   } else if (planned_cs.is_in_contact(ContactState::ContactBody::R_FOOT)){
     std::cout << "sending tare LEFT FT message" << std::endl;
-    msg.data = 'left';
+    msg.data = "left";
   } else {
     std::cout << "neither right or left foot is in contact, not sending tare FT message" << std::endl;
     return;
   }
 
   // first test it out without actually publishing
-//  lcm_handle_.publish("TARE_FOOT_SENSORS", &msg);
+ lcm_handle_.publish("TARE_FOOT_SENSORS", &msg);
   have_tared_swing_leg_ft_ = true;
 }
 
