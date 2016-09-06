@@ -44,6 +44,7 @@ class SimpleWalking:
         self.startWalkingGoalFrame = self.robotSystem.footstepsDriver.getFeetMidPoint(self.robotSystem.robotStateModel)
         self.endWalkingGoalFrame = transformUtils.copyFrame(self.startWalkingGoalFrame)
 
+        self.endWalkingGoalFrame.PreMultiply() # move it in thd x-direction of startWalkingGoalFrame
         self.endWalkingGoalFrame.Translate(self.options['walkingDistance'],0,0)
 
 

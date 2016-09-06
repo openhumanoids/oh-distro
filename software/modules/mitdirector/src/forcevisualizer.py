@@ -57,6 +57,7 @@ class ForceVisualizer:
 
         self.visObjDict = dict()
         self.visObjDict['bodyMotion'] = vis.updatePolyData(d.getPolyData(), self.options['bodyMotionVisName'], view=self.view, parent='robot state model')
+        self.visObjDict['bodyMotion'].setProperty('Visible', False)
         self.addSubscribers()
 
 
