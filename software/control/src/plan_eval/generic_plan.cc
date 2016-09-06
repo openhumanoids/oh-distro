@@ -9,6 +9,7 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   for (const auto& side : Side::values)
     rpc_.hand_ids[side] = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
   rpc_.pelvis_id = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>());
+  rpc_.torso_id = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["torso"].as<std::string>());
 
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     std::cout << it->first.toString() << " foot name: " << robot_.getBodyOrFrameName(it->second) << std::endl;

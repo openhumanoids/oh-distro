@@ -56,6 +56,11 @@ class WalkingPlan : public GenericPlan {
   void LoadConfigurationFromYAML(const std::string &name);
   void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
 
+  inline BodyMotionData& get_pelvis_body_motion_data() { return body_motions_[0]; }
+  inline BodyMotionData& get_torso_body_motion_data() { return body_motions_[1]; }
+  inline BodyMotionData& get_stance_foot_body_motion_data() { return body_motions_[2]; }
+  inline BodyMotionData& get_swing_foot_body_motion_data() { return body_motions_[3]; }
+
   /*
   Side GetSwingFoot(ContactState contact_state) const {
     if (contact_state == ContactState::SSL)

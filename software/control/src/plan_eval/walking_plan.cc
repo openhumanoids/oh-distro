@@ -55,19 +55,21 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
 
   Eigen::Vector2d com0, comd0, com1;
-  Eigen::Matrix<double,7,1> pelv0, feet0[2], pelv1;
+  Eigen::Matrix<double,7,1> pelv0, feet0[2], pelv1, torso0, torso1;
   Eigen::Isometry3d feet_pose[2];
 
   com0 = robot_.centerOfMass(cache_est).head(2);
   comd0 = (robot_.centerOfMassJacobian(cache_est) * est_qd).head(2);
   pelv0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.pelvis_id));
+  torso0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.torso_id));
+
   feet_pose[Side::LEFT] = robot_.relativeTransform(cache_est, 0, rpc_.foot_ids.at(Side::LEFT));
   feet_pose[Side::RIGHT] = robot_.relativeTransform(cache_est, 0, rpc_.foot_ids.at(Side::RIGHT));
   feet0[Side::LEFT] = Isometry3dToVector7d(feet_pose[Side::LEFT]);
   feet0[Side::RIGHT] = Isometry3dToVector7d(feet_pose[Side::RIGHT]);
 
   // reinit body trajs
-  body_motions_.resize(3);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
+  body_motions_.resize(4);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
 
   // figure out the current contact state
   ContactState nxt_contact_state = ContactState::DS();
@@ -78,7 +80,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     // 1: start of weight tranfer
     // 2: end of weight transfer
     int num_T = 3;
-    for (int i = 0; i < 3; i++)
+    for (size_t i = 0; i < body_motions_.size(); i++)
       body_motions_[i] = MakeDefaultBodyMotionData(num_T);
 
     // time tape
@@ -104,7 +106,6 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     zmp_traj_ = GeneratePCHIPSpline(Ts, com_knots);
     Eigen::Vector4d x0(Eigen::Vector4d::Zero());
     x0.head(2) = com0;
-    // TODO: assuming zero comd?
     x0.tail(2) = comd0;
     zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
@@ -120,16 +121,31 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     pelv_knots[1] = pelv0;
     pelv_knots[2] = pelv1;
 
-    body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
-    body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
-    body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+    BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
+    pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
+    pelvis_BMD.control_pose_when_in_contact.resize(num_T, true);
+    pelvis_BMD.trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+    // make torso
+    torso1 = pelv1; // the position doesn't matter, we only track orientation
+    Eigen::AngleAxisd torso_rot = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+    torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY());
+    torso1.tail(4) = rotmat2quat(torso_rot.toRotationMatrix());
+
+    std::vector<Eigen::Vector7d> torso_knots(num_T);
+    torso_knots[0] = torso0;
+    torso_knots[1] = torso0;
+    torso_knots[2] = torso1;
+    BodyMotionData &torso_BMD = get_torso_body_motion_data();
+    torso_BMD.body_or_frame_id = rpc_.torso_id;
+    torso_BMD.trajectory = GenerateCubicCartesianSpline(Ts, torso_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
     // make stance foot
     Side sides[2] = {Side::LEFT, Side::RIGHT};
     for (int i = 0; i < 2; i++) {
       std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[i]);
-      body_motions_[1+i].body_or_frame_id = rpc_.foot_ids.at(sides[i]);
-      body_motions_[1+i].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+      body_motions_[2+i].body_or_frame_id = rpc_.foot_ids.at(sides[i]);
+      body_motions_[2+i].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
     }
 
     // make weight distribuition
@@ -151,7 +167,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     int num_T = 4;
 
     /// 0 is pelvis, 1 is stance foot, 2 is swing foot
-    for (int i = 0; i < 3; i++)
+    for (size_t i = 0; i < body_motions_.size(); i++)
       body_motions_[i] = MakeDefaultBodyMotionData(num_T);
 
     Side stance_foot = Side::LEFT;
@@ -221,41 +237,37 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     pelv_knots[0] = pelv0;
     pelv_knots[1] = pelv0;
     pelv_knots[2] = pelv_knots[3] = pelv1;
+    BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
+    pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
+    pelvis_BMD.control_pose_when_in_contact.resize(num_T, true);
+    pelvis_BMD.trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
-    body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
-    body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
-    body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+    // make torso
+    torso1 = pelv1; // the position doesn't matter, we only track orientation
+    Eigen::AngleAxisd torso_rot = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()); // yaw
+    torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()); // pitch
+    torso1.tail(4) = rotmat2quat(torso_rot.toRotationMatrix());
+    std::vector<Eigen::Vector7d> torso_knots(num_T);
+    torso_knots[0] = torso0;
+    torso_knots[1] = torso0;
+    torso_knots[2] = torso_knots[3] = torso1;
+    BodyMotionData &torso_BMD = get_torso_body_motion_data();
+    torso_BMD.body_or_frame_id = rpc_.torso_id;
+    torso_BMD.trajectory = GenerateCubicCartesianSpline(Ts, torso_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
     // make stance foot.
     // This is not quite right, since the touchdown foot pose will change after solid contact.
     // Assume the QP will not try to control pose for the contact feet.
     std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[stance_foot.underlying()]);
-    body_motions_[1].body_or_frame_id = rpc_.foot_ids.at(stance_foot);
-    body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-
-    /*
-    // make swing foot
-    Eigen::Vector7d swing_touchdown_pose;
-    swing_touchdown_pose(0) = cur_step.pos.translation.x;
-    swing_touchdown_pose(1) = cur_step.pos.translation.y;
-    swing_touchdown_pose(2) = cur_step.pos.translation.z;
-    swing_touchdown_pose(3) = cur_step.pos.rotation.w;
-    swing_touchdown_pose(4) = cur_step.pos.rotation.x;
-    swing_touchdown_pose(5) = cur_step.pos.rotation.y;
-    swing_touchdown_pose(6) = cur_step.pos.rotation.z;
-    swing_touchdown_pose.tail(4).normalize();
-
-    body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-    body_motions_[2].trajectory = GenerateSwingTraj(feet0[swing_foot.underlying()], swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
-    // increase weights for swing foot xy tracking
-    body_motions_[2].weight_multiplier[4] = 15;
-    body_motions_[2].weight_multiplier[3] = 15;
-    */
+    BodyMotionData &stance_BMD = get_stance_foot_body_motion_data();
+    stance_BMD.body_or_frame_id = rpc_.foot_ids.at(stance_foot);
+    stance_BMD.trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
     // swing foot traj will be planned at liftoff
     std::vector<Eigen::Vector7d> swing_knots(num_T, feet0[swing_foot.underlying()]);
-    body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-    body_motions_[2].trajectory = GenerateCubicCartesianSpline(Ts, swing_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+    BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
+    swing_BMD.body_or_frame_id = rpc_.foot_ids.at(swing_foot);
+    swing_BMD.trajectory = GenerateCubicCartesianSpline(Ts, swing_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
     // make weight distribuition
     std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
@@ -273,11 +285,14 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // pelvis Z weight multiplier
   // This is really dumb, but the multipler is ang then pos, check instQP.
-  body_motions_[0].weight_multiplier[5] = 5;
-
+  get_pelvis_body_motion_data().weight_multiplier[5] = 5;
   // don't track x and y position of the pelvis
-  body_motions_[0].weight_multiplier[4] = 0;
-  body_motions_[0].weight_multiplier[3] = 0;
+  get_pelvis_body_motion_data().weight_multiplier[4] = 0;
+  get_pelvis_body_motion_data().weight_multiplier[3] = 0;
+
+  // don't track xyz of the torso
+  for (int i = 3; i < 6; i++)
+    get_torso_body_motion_data().weight_multiplier[i] = 0;
 
   // reset clock
   interp_t0_ = -1;
@@ -342,7 +357,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   for (size_t i = 0; i < rpc_.position_indices.neck.size(); i++)
     constrained_dofs_.push_back(rpc_.position_indices.neck[i]);
   // back
-  constrained_dofs_.push_back(rpc_.position_indices.back_bkz);
+  //constrained_dofs_.push_back(rpc_.position_indices.back_bkz);
   //constrained_dofs_.push_back(rpc_.position_indices.back_bky);
 
 }
@@ -421,11 +436,12 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         swing_touchdown_pose(6) = cur_step.pos.rotation.z;
         swing_touchdown_pose.tail(4).normalize();
 
-        body_motions_[2].body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-        body_motions_[2].trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
+        BodyMotionData& swing_BMD = get_swing_foot_body_motion_data();
+        swing_BMD.body_or_frame_id = rpc_.foot_ids.at(swing_foot);
+        swing_BMD.trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
         // increase weights for swing foot xy tracking
-        body_motions_[2].weight_multiplier[4] = 15;
-        body_motions_[2].weight_multiplier[3] = 15;
+        swing_BMD.weight_multiplier[4] = 15;
+        swing_BMD.weight_multiplier[3] = 15;
 
         // change contact
         SwitchContactState(cur_time);
@@ -438,15 +454,15 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     case SWING:
       // hack the swing traj if we are past the planned touchdown time
       if (plan_time >= planned_contact_swith_time) {
-        // swing trajectory is always idx 2..
-        int last_idx = body_motions_[2].trajectory.getNumberOfSegments() - 1;
-        Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic> last_knots = body_motions_[2].trajectory.getPolynomialMatrix(last_idx);
+        BodyMotionData& swing_BMD = get_swing_foot_body_motion_data();
+        int last_idx = swing_BMD.trajectory.getNumberOfSegments() - 1;
+        Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic> last_knots = swing_BMD.trajectory.getPolynomialMatrix(last_idx);
 
         // hack the z position and velocity only
-        double t0 = body_motions_[2].trajectory.getStartTime(last_idx);
-        double t1 = body_motions_[2].trajectory.getEndTime(last_idx);
-        double z0 = body_motions_[2].trajectory.value(t0)(2,0);
-        double z1 = body_motions_[2].trajectory.value(t1)(2,0) + p_lower_z_vel_ * dt;
+        double t0 = swing_BMD.trajectory.getStartTime(last_idx);
+        double t1 = swing_BMD.trajectory.getEndTime(last_idx);
+        double z0 = swing_BMD.trajectory.value(t0)(2,0);
+        double z1 = swing_BMD.trajectory.value(t1)(2,0) + p_lower_z_vel_ * dt;
         double v0 = 0;
         double v1 = p_lower_z_vel_;
         Eigen::Vector4d new_z_coeffs = GetCubicSplineCoeffs(t1-t0, z0, z1, v0, v1);
@@ -454,7 +470,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         // first one is position
         Polynomial<double> new_z(new_z_coeffs);
         last_knots(2,0) = new_z;
-        body_motions_[2].trajectory.setPolynomialMatrixBlock(last_knots, last_idx);
+        swing_BMD.trajectory.setPolynomialMatrixBlock(last_knots, last_idx);
       }
 
       // tare the FT sensor during swing if we haven't already

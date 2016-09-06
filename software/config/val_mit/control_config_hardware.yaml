@@ -7,6 +7,7 @@ kinematic_tree_metadata:
     hands:
       r: &R_HAND_NAME rightPalm
       l: &L_HAND_NAME leftPalm
+    torso: &TORSO_NAME torso
 
   joint_group_names:
     legs:
@@ -118,6 +119,7 @@ qp_controller_params:
         Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
         damping_ratio: 0.5
+
     position_specific:
       DEFAULT:
         Kp: 150
@@ -278,6 +280,18 @@ qp_controller_params:
   standing:
   manip:
   walking:
+    body_specific:
+      *TORSO_NAME :
+        Kp: {x: 0, y: 0, z: 0, wx: 30, wy: 30, wz: 30}
+        weight: 0.1
+        damping_ratio: 0.5
+
+    position_specific:
+      torsoRoll:
+        w_qdd: 0.01
+      torsoPitch:
+        w_qdd: 0.01
+
     #    body_specific:
     #  *PELVIS_NAME :
     #    Kp: {x: 0, y: 0, z: 15, wx: 40, wy: 40, wz: 40}
