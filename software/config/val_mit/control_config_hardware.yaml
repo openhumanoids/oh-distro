@@ -113,9 +113,11 @@ qp_controller_params:
       *R_FOOT_NAME :
         Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
+        damping_ratio: 0.3
       *L_FOOT_NAME :
         Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
+        damping_ratio: 0.3
     position_specific:
       DEFAULT:
         Kp: 150
