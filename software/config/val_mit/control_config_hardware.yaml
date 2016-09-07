@@ -291,3 +291,24 @@ qp_controller_params:
     #    Kp: {x: 30, y: 30, z: 30, wx: 30, wy: 30, wz: 30}
     #    weight: 10.0
     #    damping_ratio: 0.4
+  NoIntegrator:
+    position_specific:
+      DEFAULT:
+        Kp: 150
+        damping_ratio: 0.2
+        w_qdd: 0.001
+        integrator:
+          gain: 1.75
+          clamp: 0.0 # set the clamp to 0
+        qdd_bounds:
+          min: -100
+          max: 100
+        joint_soft_limits:
+          enabled: false
+          lb: -.inf
+          ub: .inf
+          kp: 150
+          damping_ratio: 0.6
+          weight: 1e-5
+          disable_when_body_in_support: ""
+          k_logistic: 20
