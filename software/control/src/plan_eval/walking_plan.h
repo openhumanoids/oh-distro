@@ -48,13 +48,18 @@ class WalkingPlan : public GenericPlan {
 
   double p_swing_foot_xy_weight_mulitplier_;
   double p_pelvis_z_weight_mulitplier_;
-  double p_left_foot_zmp_in_shift_;
-  double p_right_foot_zmp_in_shift_;
+  double p_left_foot_zmp_y_shift_;
+  double p_right_foot_zmp_y_shift_;
 
   bool have_tared_swing_leg_ft_ = false;
 
   void LoadConfigurationFromYAML(const std::string &name);
   void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
+
+  inline BodyMotionData& get_pelvis_body_motion_data() { return body_motions_[0]; }
+  inline BodyMotionData& get_torso_body_motion_data() { return body_motions_[1]; }
+  inline BodyMotionData& get_stance_foot_body_motion_data() { return body_motions_[2]; }
+  inline BodyMotionData& get_swing_foot_body_motion_data() { return body_motions_[3]; }
 
   /*
   Side GetSwingFoot(ContactState contact_state) const {
