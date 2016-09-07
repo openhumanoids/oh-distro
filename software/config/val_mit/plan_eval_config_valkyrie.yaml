@@ -47,8 +47,8 @@ transition_trq_alpha_filter: 0.9
 flip_foot_ft_sensor: 1
 
 # walking
-ss_duration: 2.0
-ds_duration: 2.0
+ss_duration: 1.5
+ds_duration: 1.5
 pre_weight_transfer_scale: 0.3
 min_Fz: 5
 lower_z_vel: -0.1

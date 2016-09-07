@@ -101,6 +101,10 @@ class WalkingPlan : public GenericPlan {
     return contact_state_.front().second;
   }
 
+  Eigen::Vector2d Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const;
+
+  PiecewisePolynomial<double> PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot) const;
+
   void SwitchContactState(double cur_time);
 
   void TareSwingLegForceTorque();
