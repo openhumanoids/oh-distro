@@ -13,7 +13,7 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &es
   double plan_time = cur_time - interp_t0_;
 
   bool apply_torque_alpha_filter = plan_time < p_initial_transition_time_;
-  return MakeDefaultQPInput(cur_time, plan_time, "manip", apply_torque_alpha_filter);
+  return MakeDefaultQPInput(cur_time, plan_time, param_set_name_, apply_torque_alpha_filter);
 }
 
 Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
@@ -30,6 +30,9 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   const drc::robot_plan_t *msg = (const drc::robot_plan_t *)plan_msg;
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
+
+  // record the param set name to use
+  param_set_name_ = msg->param_set;
 
   size_t num_T = msg->plan.size();
   //size_t num_T = msg->plan.size() + 1;

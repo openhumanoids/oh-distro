@@ -13,5 +13,7 @@ class ManipPlan : public GenericPlan {
                                 const Eigen::VectorXd &last_q_d);
   drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &est_rs);
   Eigen::VectorXd GetLatestKeyFrame(double time);
+
+  std::string param_set_name_;
 };
 

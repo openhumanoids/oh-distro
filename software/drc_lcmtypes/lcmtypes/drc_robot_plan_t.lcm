@@ -7,6 +7,7 @@ struct robot_plan_t
   int32_t num_states;
   bot_core.robot_state_t plan[num_states]; // each individual state is also timed.
   int32_t plan_info[num_states];  // info about the plan state, typically snopt_info value
+  string param_set;
   
   // Decoupling hand states from robot state as atlas api deals with them separately.
   // Also drake expects robot joints excluding hand joints. 
