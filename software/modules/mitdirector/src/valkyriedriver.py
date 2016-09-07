@@ -2,6 +2,7 @@ import os
 import vtkAll as vtk
 import math
 import numpy as np
+import functools
 from collections import deque
 
 from director import transformUtils
@@ -537,14 +538,17 @@ class ValkyrieDriver(object):
         # delayTask.run()
 
         print "finished making servo plan"
-        s = SingleShotCallback(self.commitLastPlan, timeDelay=3.0)
+        s = SingleShotCallback(functools.partial(self.commitLastPlan, paramSet='NoIntegrator'), timeDelay=3.0)
 
 
-    def commitLastPlan(self):
+    def commitLastPlan(self, paramSet=None):
+
+        if paramSet is None:
+            paramSet='manip'
 
         print "trying to commit plan"
         plan = self.robotSystem.manipPlanner.lastManipPlan
-        self.robotSystem.manipPlanner.commitManipPlan(plan, paramSet='NoIntegrator')
+        self.robotSystem.manipPlanner.commitManipPlan(plan, paramSet=paramSet)
         print "plan committed"
 
 
