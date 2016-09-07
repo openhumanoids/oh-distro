@@ -42,7 +42,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>438</width>
+        <width>450</width>
         <height>980</height>
        </rect>
       </property>
@@ -61,16 +61,16 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QPushButton" name="calibrateEncodersButton">
+               <widget class="QPushButton" name="servoButton">
                 <property name="text">
-                 <string>Encoders</string>
+                 <string>Servo</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="prepButton">
+               <widget class="QPushButton" name="standPrepButton">
                 <property name="text">
-                 <string>Prep</string>
+                 <string>Stand Prep</string>
                 </property>
                </widget>
               </item>
@@ -90,9 +90,9 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="combinedStandButton">
+             <widget class="QPushButton" name="standButton">
               <property name="text">
-               <string>Combined Stand</string>
+               <string>Stand</string>
               </property>
              </widget>
             </item>
@@ -427,20 +427,6 @@
                    </property>
                   </widget>
                  </item>
-                 <item>
-                  <widget class="QPushButton" name="standButton">
-                   <property name="text">
-                    <string>BDI Stand</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="mitStandButton">
-                   <property name="text">
-                    <string>MIT Stand</string>
-                   </property>
-                  </widget>
-                 </item>
                 </layout>
                </item>
                <item>
@@ -463,9 +449,9 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="standPrepButton">
+                  <widget class="QPushButton" name="standPrepModeButton">
                    <property name="text">
-                    <string>Stand Prep</string>
+                    <string>Stand Prep Mode</string>
                    </property>
                   </widget>
                  </item>

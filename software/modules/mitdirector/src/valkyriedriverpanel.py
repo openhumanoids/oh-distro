@@ -42,18 +42,17 @@ class ValkyrieDriverPanel(object):
 
         self.widget.setWindowTitle('Valkyrie Driver Panel')
         self.ui.initNavButton.connect('clicked()', self.onInitNav)
-        self.ui.calibrateEncodersButton.connect('clicked()', self.onCalibrateEncoders)
-        self.ui.prepButton.connect('clicked()', self.onPrep)
         self.ui.initNavButton.connect('clicked()', self.onInitNav)
-        self.ui.combinedStandButton.connect('clicked()', self.onCombinedStand)
+        self.ui.standButton.connect('clicked()', self.onStand)
         self.ui.stopButton.connect('clicked()', self.onStop)
+        self.ui.servoButton.connect('clicked()', self.onServo)
         self.ui.freezeButton.connect('clicked()', self.onValkyrieFreeze)
-
+        self.ui.standPrepButton.connect('clicked()', self.onStandPrep)
 
         self.ui.tareFTButton.connect('clicked()', self.onTareFT)
         self.ui.forceControlButton.connect('clicked()', self.onForceControl)
         self.ui.positionControlButton.connect('clicked()', self.onPositionControl)
-        self.ui.standPrepButton.connect('clicked()', self.onStandPrep)
+        self.ui.standPrepModeButton.connect('clicked()', self.onStandPrepMode)
 
 
         self.updateTimer = TimerCallback(targetFps=5)
@@ -61,17 +60,6 @@ class ValkyrieDriverPanel(object):
         self.updatePanelValkyrie()
         self.updateTimer.start()
 
-
-    def updatePanelAtlas(self):
-        self.updateBehaviorLabel()
-        self.updateControllerStatusLabel()
-        self.updateRecoveryEnabledLabel()
-        self.updateBracingEnabledLabel()
-        self.updateBatteryStatusLabel()
-        self.updateStatus()
-        self.updateButtons()
-        self.updateElectricArmStatus()
-        self.driver.updateCombinedStandLogic()
 
     def updatePanelValkyrie(self):
         self.updateValkyrieLCM2ROSControlLabel()
@@ -97,74 +85,11 @@ class ValkyrieDriverPanel(object):
     def updateBracingEnabledLabel(self):
         self.ui.bracingEnabledLabel.text = self.driver.getBracingEnabledStatus() or '<unknown>'
 
-    def updateStatus(self):
-        self.ui.inletPressure.value = self.driver.getCurrentInletPressure()
-        self.ui.supplyPressure.value = self.driver.getCurrentSupplyPressure()
-        self.ui.returnPressure.value = self.driver.getCurrentReturnPressure()
-        self.ui.airSumpPressure.value = self.driver.getCurrentAirSumpPressure()
-        self.ui.pumpRpm.value =  self.driver.getCurrentPumpRpm()
-        self.ui.maxActuatorPressure.value = self.driver.getMaxActuatorPressure()
-
-    def getElectricArmCheckBoxes(self):
-        return [self.ui.armCheck1,
-                  self.ui.armCheck2,
-                  self.ui.armCheck3,
-                  self.ui.armCheck4,
-                  self.ui.armCheck5,
-                  self.ui.armCheck6]
-
-    def setupElectricArmCheckBoxes(self):
-        for check in self.getElectricArmCheckBoxes():
-            check.connect('clicked()', self.onEnableElectricArmChecked)
-
-    def updateElectricArmStatus(self):
-
-        temps = [self.ui.armTemp1,
-                  self.ui.armTemp2,
-                  self.ui.armTemp3,
-                  self.ui.armTemp4,
-                  self.ui.armTemp5,
-                  self.ui.armTemp6]
-
-        for i, check in enumerate(self.getElectricArmCheckBoxes()):
-            enabled = self.driver.getElectricArmEnabledStatus(i)
-            check.setText('yes' if enabled else 'no')
-
-        for i, temp in enumerate(temps):
-            temp.setValue(self.driver.getElectricArmTemperature(i))
-
-    def updateButtons(self):
-
-        behavior = self.driver.getCurrentBehaviorName()
-        behaviorIsFreeze = behavior == 'freeze'
-
-        self.ui.calibrateNullBiasButton.setEnabled(behaviorIsFreeze)
-        self.ui.calibrateElectricArmsButton.setEnabled(behaviorIsFreeze)
-        self.ui.calibrateEncodersButton.setEnabled(behaviorIsFreeze)
-        self.ui.prepButton.setEnabled(behaviorIsFreeze)
-        self.ui.standButton.setEnabled(behavior in ('prep', 'stand', 'user', 'manip', 'step', 'walk'))
-        self.ui.mitStandButton.setEnabled(behavior=='user')
-        self.ui.manipButton.setEnabled(behavior in ('stand', 'manip'))
-        self.ui.userButton.setEnabled(behavior is not None)
-
-    def onEnableElectricArmChecked(self):
-        enabledState = [bool(check.checked) for check in self.getElectricArmCheckBoxes()]
-        self.driver.sendElectricArmEnabledState(enabledState)
-
     def onFreeze(self):
         self.driver.sendFreezeCommand()
 
     def onStop(self):
         self.driver.sendStopCommand()
-
-    def onCalibrateEncoders(self):
-        self.driver.sendCalibrateEncodersCommand()
-
-    def onCalibrateNullBias(self):
-        self.driver.sendCalibrateNullBiasCommand()
-
-    def onCalibrateElectricArms(self):
-        self.driver.sendCalibrateElectricArmsCommand()
 
     def onInitNav(self):
         self.driver.sendInitAtZero()
@@ -172,27 +97,14 @@ class ValkyrieDriverPanel(object):
     def onTareFT(self):
         self.driver.sendTareFT()
 
-    def onPrep(self):
-        self.driver.sendPrepCommand()
+    def onServo(self):
+        self.driver.sendServoPlan()
+
+    def onStandPrep(self):
+        self.driver.sendStandPrepPlan()
 
     def onStand(self):
-        self.driver.sendStandCommand()
-
-    def onCombinedStand(self):
-        self.driver.sendCombinedStandCommand()
-
-    def onMITStand(self):
-        self.driver.sendMITStandCommand()
-
-    def onManip(self):
-        self.driver.sendManipCommand()
-
-    def onUser(self):
-        self.driver.sendUserCommand()
-
-    def sendCustomPressure(self):
-        self.driver.sendDesiredPumpPsi(self.ui.customPumpPressure.value)
-
+        self.driver.sendStandPlan()
 
     # valkyrie specific
     def onForceControl(self):
@@ -201,7 +113,7 @@ class ValkyrieDriverPanel(object):
     def onPositionControl(self):
         self.driver.sendPositionControlCommand(self.ui.transitionTimeSpinBox.value)
 
-    def onStandPrep(self):
+    def onStandPrepMode(self):
         self.driver.sendStandPrepCommand(self.ui.transitionTimeSpinBox.value)
 
     def onValkyrieFreeze(self):

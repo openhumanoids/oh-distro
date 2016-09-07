@@ -14,7 +14,7 @@ from director import teleoppanel
 def startup(robotSystem, globalsDict=None):
     rs = robotSystem
 
-    valkyrieDriver = valkyriedriver.ValkyrieDriver()
+    valkyrieDriver = valkyriedriver.ValkyrieDriver(robotSystem)
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
     forceVisualizer = forcevisualizer.ForceVisualizer(robotSystem, applogic.getDRCView())
 

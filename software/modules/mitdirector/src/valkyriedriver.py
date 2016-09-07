@@ -7,6 +7,8 @@ from collections import deque
 from director import transformUtils
 from director import lcmUtils
 from director.timercallback import TimerCallback
+from director.timercallback import SingleShotCallback
+
 from director import objectmodel as om
 from director import visualization as vis
 from director import applogic as app
@@ -14,6 +16,7 @@ from director.debugVis import DebugData
 from director import ioUtils
 from director.simpletimer import SimpleTimer
 from director.utime import getUtime
+import director.tasks.robottasks as rt
 import time
 
 import drc as lcmdrc
@@ -38,8 +41,10 @@ class SystemStatusListener(object):
 
 class ValkyrieDriver(object):
 
-    def __init__(self):
+    def __init__(self, robotSystem):
 
+
+        self.robotSystem = robotSystem
         self.lastAtlasStatusMessage = None
         self.lastControllerStatusMessage = None
         self.lastAtlasBatteryDataMessage = None
@@ -416,12 +421,14 @@ class ValkyrieDriver(object):
 
     # for valkyrie
     def sendTareFT(self):
+        print "sending tare force torque"
         msg = lcmdrc.string_t()
         msg.data = "both"
         lcmUtils.publish("TARE_FOOT_SENSORS", msg)
 
     # for valkyrie
-    def sendForceControlCommand(self, transitionTime):
+    def sendForceControlCommand(self, transitionTime=1.0):
+        print "sending FORCE CONTROL command to LCM2ROSControl"
         msg = lcmdrc.behavior_transition_t()
         msg.behavior = 2
         msg.transition_duration_s = transitionTime
@@ -432,14 +439,16 @@ class ValkyrieDriver(object):
 
 
     # for valkyrie
-    def sendPositionControlCommand(self, transitionTime):
+    def sendPositionControlCommand(self, transitionTime=0.1):
+        print "sending POSITION CONTROL command to LCM2ROSControl"
         msg = lcmdrc.behavior_transition_t()
         msg.behavior = 1
         msg.transition_duration_s = transitionTime
         lcmUtils.publish("ROBOT_BEHAVIOR", msg)
 
     # for valkyrie
-    def sendStandPrepCommand(self, transitionTime):
+    def sendStandPrepCommand(self, transitionTime=0.1):
+        print "sending STAND PREP command to LCM2ROSControl"
         msg = lcmdrc.behavior_transition_t()
         msg.behavior = 3
         msg.transition_duration_s = transitionTime
@@ -514,6 +523,53 @@ class ValkyrieDriver(object):
         msg.desired = pelvisParams
 
         lcmUtils.publish('ATLAS_MANIPULATE_PARAMS', msg)
+
+
+    def sendServoPlan(self):
+        q = self.getPlanningStartPose()
+        q_final = np.copy(q)
+        q_final[0] += 0.1
+        self.sendPositionControlCommand(0.1)
+        self.robotSystem.ikPlanner.computePostureGoal(q,q_final,feetOnGround=False) # this will end up sending message
+
+        # # put a time delay here, maybe like 3 seconds
+        # delayTask = rt.DelayTask(delayTime=2.0)
+        # delayTask.run()
+
+        print "finished making servo plan"
+        s = SingleShotCallback(self.commitLastPlan, timeDelay=3.0)
+
+
+    def commitLastPlan(self):
+
+        print "trying to commit plan"
+        plan = self.robotSystem.manipPlanner.lastManipPlan
+        self.robotSystem.manipPlanner.commitManipPlan(plan, paramSet='NoIntegrator')
+        print "plan committed"
+
+
+    def sendStandPrepPlan(self):
+        self.sendTareFT()
+        startPose = self.getPlanningStartPose()
+        endPose = self.robotSystem.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'stand prep')
+        self.robotSystem.ikPlanner.computePostureGoal(startPose, endPose, feetOnGround=False)
+
+        print "finished making servo plan"
+        s1 = SingleShotCallback(self.commitLastPlan, timeDelay=2.0)
+        s2 = SingleShotCallback(self.sendStandPrepCommand, timeDelay=6.0)
+        # s3 = SingleShotCallback(self.sendTareFT, timeDelay=6.0)
+
+    def getPlanningStartPose(self):
+        return self.robotSystem.robotStateJointController.q
+
+
+    def sendStandPlan(self):
+        q = self.getPlanningStartPose()
+        self.robotSystem.ikPlanner.computeStandPlan(q)
+        s = SingleShotCallback(self.commitLastPlan, timeDelay=2.0)
+        s1 = SingleShotCallback(self.sendForceControlCommand, timeDelay=4.0)
+
+
 
 
 
