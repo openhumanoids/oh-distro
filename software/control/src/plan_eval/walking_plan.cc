@@ -94,211 +94,159 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   // reinit body trajs
   body_motions_.resize(4);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
 
-  // figure out the current contact state
-  ContactState nxt_contact_state = ContactState::DS();
-
-  // no more steps, go to double support middle
-  if (footstep_plan_.empty()) {
-    // 0: the current configuration
-    // 1: start of weight tranfer
-    // 2: end of weight transfer
-    int num_T = 3;
-    for (size_t i = 0; i < body_motions_.size(); i++)
-      body_motions_[i] = MakeDefaultBodyMotionData(num_T);
-
-    // time tape
-    std::vector<double> Ts(num_T);
-    Ts[0] = 0;
-    Ts[1] = p_pre_weight_transfer_scale_ * p_ds_duration_;
-    Ts[2] = p_ds_duration_;
-
-    // com / cop
-    Eigen::Isometry3d mid_stance_foot[2];
-    for (int i = 0; i < 2; i++) {
-      mid_stance_foot[i].linear() = Eigen::Matrix3d::Identity();
-      mid_stance_foot[i].translation() = Eigen::Vector3d(0.04, 0, 0);
-      mid_stance_foot[i] = feet_pose[i] * mid_stance_foot[i];
-    }
-    zmp_d1 = (mid_stance_foot[0].translation().head(2) + mid_stance_foot[1].translation().head(2)) / 2.;
-
-    // make zmp
-    std::vector<Eigen::Vector2d> zmp_knots(num_T);
-    zmp_d0 = com0;
-    zmp_knots[0] = zmp_d0;
-    zmp_knots[1] = zmp_d0;
-    zmp_knots[2] = zmp_d1;
-    zmp_traj_ = GeneratePCHIPSpline(Ts, zmp_knots);
-    zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
-
-    // make pelv
-    pelv1.head(3) = (mid_stance_foot[0].translation() + mid_stance_foot[1].translation()) / 2.;
-    pelv1[2] = std::min(mid_stance_foot[0].translation()[2], mid_stance_foot[1].translation()[2]) + p_zmp_height_;
-    Eigen::Vector4d foot_quat[2] = {feet0[0].tail<4>(), feet0[1].tail<4>()};
-    double yaw = avg_angle(quat2rpy(foot_quat[0])[2], quat2rpy(foot_quat[1])[2]);
-    pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
-
-    std::vector<Eigen::Vector7d> pelv_knots(num_T);
-    pelv_knots[0] = pelv0;
-    pelv_knots[1] = pelv0;
-    pelv_knots[2] = pelv1;
-
-    BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
-    pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
-    pelvis_BMD.control_pose_when_in_contact.resize(num_T, true);
-    pelvis_BMD.trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-
-    // make torso
-    torso1 = pelv1; // the position doesn't matter, we only track orientation
-    Eigen::AngleAxisd torso_rot = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-    torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY());
-    torso1.tail(4) = rotmat2quat(torso_rot.toRotationMatrix());
-
-    std::vector<Eigen::Vector7d> torso_knots(num_T);
-    torso_knots[0] = torso0;
-    torso_knots[1] = torso0;
-    torso_knots[2] = torso1;
-    BodyMotionData &torso_BMD = get_torso_body_motion_data();
-    torso_BMD.body_or_frame_id = rpc_.torso_id;
-    torso_BMD.trajectory = GenerateCubicCartesianSpline(Ts, torso_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-
-    // make stance foot
-    Side sides[2] = {Side::LEFT, Side::RIGHT};
-    for (int i = 0; i < 2; i++) {
-      std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[i]);
-      body_motions_[2+i].body_or_frame_id = rpc_.foot_ids.at(sides[i]);
-      body_motions_[2+i].trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
-    }
-
-    // make weight distribuition
-    std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
-    WL[0](0,0) = get_weight_distribution(planned_cs);
-    WL[1](0,0) = get_weight_distribution(planned_cs);
-    WL[2](0,0) = get_weight_distribution(ContactState::DS());
-    weight_distribution_ = GenerateLinearSpline(Ts, WL);
-
-    // setup contact_state tape
-    contact_state_.clear();
-    contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
+  // 0: start of weight tranfer
+  // 1: end of weight transfer
+  // 2: swing phase
+  if (planned_cs.is_in_contact(ContactState::L_FOOT) && planned_cs.is_in_contact(ContactState::R_FOOT) && footstep_plan_.empty()) {
+    throw std::runtime_error("Should not call generate trajectory from rest with empty steps");
   }
+
+  Side nxt_stance_foot;
+  Side nxt_swing_foot;
+  ContactState nxt_contact_state;
+  // empty queue, going to double support at the center
+  if (footstep_plan_.empty()) {
+    // these aren't meaningful anymore
+    nxt_stance_foot = Side::LEFT;
+    nxt_swing_foot = Side::RIGHT;
+    nxt_contact_state = ContactState::DS();
+  }
+  // single support right
   else {
-    // 0: start of weight tranfer
-    // 1: end of weight transfer
-    // 2: swing phase
-    int num_T = 3;
-
-    /// 0 is pelvis, 1 is torso, 2 is stance foot, 3 is swing foot
-    for (size_t i = 0; i < body_motions_.size(); i++)
-      body_motions_[i] = MakeDefaultBodyMotionData(num_T);
-
-    Side stance_foot = Side::LEFT;
-    Side swing_foot = Side::RIGHT;
-    nxt_contact_state = ContactState::SSL();
-    drc::footstep_t &cur_step = footstep_plan_.front();
-    // single support right
-    if (!cur_step.is_right_foot) {
-      stance_foot = Side::RIGHT;
-      swing_foot = Side::LEFT;
+    if (footstep_plan_.front().is_right_foot) {
+      nxt_stance_foot = Side::LEFT;
+      nxt_swing_foot = Side::RIGHT;
+      nxt_contact_state = ContactState::SSL();
+    }
+    else {
+      nxt_stance_foot = Side::RIGHT;
+      nxt_swing_foot = Side::LEFT;
       nxt_contact_state = ContactState::SSR();
     }
+  }
 
-    // TODO: change to vel
-    //double p_ss_duration_ = cur_step.params.step_speed;
-    //double p_ds_duration_ = cur_step.params.drake_min_hold_time;
+  // make zmp
+  int num_look_ahead = 3;
 
-    // time tape
-    std::vector<double> Ts(num_T);
-    Ts[0] = 0;
-    Ts[1] = p_ds_duration_;
-    Ts[2] = p_ss_duration_ + p_ds_duration_;
-
-    // hold all joints. I am assuming the leg joints will just be ignored in the qp..
-    Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
-    q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, init_q_), zero, zero);
-
-    // make zmp
-    int num_look_ahead = 3;
-
-    // figure out the desired zmps
-    std::vector<Eigen::Vector2d> desired_zmps;
-    desired_zmps.push_back(Footstep2DesiredZMP(stance_foot, feet_pose[stance_foot.underlying()])); // the touchdoen foot xy position
-
-    for (const auto &msg : footstep_plan_) {
-      Eigen::Isometry3d footstep;
-      footstep.translation() = Eigen::Vector3d(msg.pos.translation.x, msg.pos.translation.y, msg.pos.translation.z);
-      Eigen::Quaterniond rot(msg.pos.rotation.w, msg.pos.rotation.x, msg.pos.rotation.y, msg.pos.rotation.z);
-      footstep.linear() = Eigen::Matrix3d(rot.normalized());
-      Side side = msg.is_right_foot ? Side::RIGHT : Side::LEFT;
-
-      desired_zmps.push_back(Footstep2DesiredZMP(side, footstep));
-    }
-
-    // figure out where we want the desired zmp for NOW
-    if (planned_cs.is_in_contact(ContactState::L_FOOT) && planned_cs.is_in_contact(ContactState::R_FOOT)) {
-      zmp_d0 = (Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]) + Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT])) / 2.;
-    }
-    else if (planned_cs.is_in_contact(ContactState::L_FOOT)) {
-      zmp_d0 = Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]);
+  // figure out the desired zmps
+  std::vector<Eigen::Vector2d> desired_zmps;
+  // the foot that we want to shift weight to
+  if (footstep_plan_.empty()) {
+    // figure out which foot we just put down
+    if (planned_cs.is_in_contact(ContactState::L_FOOT)) {
+      desired_zmps.push_back(Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT]));
     }
     else if (planned_cs.is_in_contact(ContactState::R_FOOT)) {
-      zmp_d0 = Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT]);
+      desired_zmps.push_back(Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]));
     }
     else {
       throw std::runtime_error("robot flying.");
     }
+  }
+  else {
+    desired_zmps.push_back(Footstep2DesiredZMP(nxt_stance_foot, feet_pose[nxt_stance_foot.underlying()]));
+  }
 
-    zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0);
-    zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
+  for (const auto &msg : footstep_plan_) {
+    Eigen::Isometry3d footstep;
+    footstep.translation() = Eigen::Vector3d(msg.pos.translation.x, msg.pos.translation.y, msg.pos.translation.z);
+    Eigen::Quaterniond rot(msg.pos.rotation.w, msg.pos.rotation.x, msg.pos.rotation.y, msg.pos.rotation.z);
+    footstep.linear() = Eigen::Matrix3d(rot.normalized());
+    Side side = msg.is_right_foot ? Side::RIGHT : Side::LEFT;
 
-    // make pelv
-    pelv1.head(2) = zmp_d0;
-    pelv1[2] = p_zmp_height_ + feet_pose[stance_foot.underlying()].translation()[2]; ///< This offset the pelv z relative to ankle.
-    Eigen::Vector4d foot_quat(feet0[stance_foot.underlying()].tail(4));
-    double yaw = quat2rpy(foot_quat)[2];
-    pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
+    desired_zmps.push_back(Footstep2DesiredZMP(side, footstep));
+  }
 
-    std::vector<Eigen::Vector7d> pelv_knots(num_T);
-    pelv_knots[0] = pelv0;
-    pelv_knots[1] = pelv_knots[2] = pelv1;
-    BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
-    pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
-    pelvis_BMD.control_pose_when_in_contact.resize(num_T, true);
-    pelvis_BMD.trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+  // figure out where we want the desired zmp for NOW
+  // current contact state is double support
+  if (planned_cs.is_in_contact(ContactState::L_FOOT) && planned_cs.is_in_contact(ContactState::R_FOOT)) {
+    zmp_d0 = (Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]) + Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT])) / 2.;
+  }
+  // single support left
+  else if (planned_cs.is_in_contact(ContactState::L_FOOT)) {
+    zmp_d0 = Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]);
+  }
+  // single support right
+  else if (planned_cs.is_in_contact(ContactState::R_FOOT)) {
+    zmp_d0 = Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT]);
+  }
+  else {
+    throw std::runtime_error("robot flying.");
+  }
 
-    // make torso
-    torso1 = pelv1; // the position doesn't matter, we only track orientation
-    Eigen::AngleAxisd torso_rot = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()); // yaw
-    torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()); // pitch
-    torso1.tail(4) = rotmat2quat(torso_rot.toRotationMatrix());
-    std::vector<Eigen::Vector7d> torso_knots(num_T);
-    torso_knots[0] = torso0;
-    torso_knots[1] = torso_knots[2] = torso1;
-    BodyMotionData &torso_BMD = get_torso_body_motion_data();
-    torso_BMD.body_or_frame_id = rpc_.torso_id;
-    torso_BMD.trajectory = GenerateCubicCartesianSpline(Ts, torso_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+  zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0);
+  zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
-    // make stance foot.
-    // This is not quite right, since the touchdown foot pose will change after solid contact.
-    // Assume the QP will not try to control pose for the contact feet.
-    std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[stance_foot.underlying()]);
-    BodyMotionData &stance_BMD = get_stance_foot_body_motion_data();
-    stance_BMD.body_or_frame_id = rpc_.foot_ids.at(stance_foot);
-    stance_BMD.trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+  // time tape for body motion data and joint trajectories
+  int num_T = 3;
+  std::vector<double> Ts(num_T);
+  Ts[0] = 0;
+  Ts[1] = p_ds_duration_;
+  Ts[2] = p_ss_duration_ + p_ds_duration_;
 
-    // swing foot traj will be planned at liftoff
-    std::vector<Eigen::Vector7d> swing_knots(num_T, feet0[swing_foot.underlying()]);
-    BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
-    swing_BMD.body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-    swing_BMD.trajectory = GenerateCubicCartesianSpline(Ts, swing_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+  /// Initialize body motion data
+  for (size_t i = 0; i < body_motions_.size(); i++)
+    body_motions_[i] = MakeDefaultBodyMotionData(num_T);
 
-    // make weight distribuition
-    std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
-    WL[0](0,0) = get_weight_distribution(planned_cs);
-    WL[1](0,0) = get_weight_distribution(nxt_contact_state);
-    WL[2](0,0) = get_weight_distribution(nxt_contact_state);
-    weight_distribution_ = GenerateLinearSpline(Ts, WL);
+  // hold all joints. I am assuming the leg joints will just be ignored in the qp..
+  Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
+  q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(num_T, init_q_), zero, zero);
 
-    // setup contact state
-    contact_state_.clear();
+  // make pelv
+  pelv1.head(2) = zmp_d0;
+  pelv1[2] = p_zmp_height_ + feet_pose[nxt_stance_foot.underlying()].translation()[2]; ///< This offset the pelv z relative to ankle.
+  Eigen::Vector4d foot_quat(feet0[nxt_stance_foot.underlying()].tail(4));
+  double yaw = quat2rpy(foot_quat)[2];
+  pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
+
+  std::vector<Eigen::Vector7d> pelv_knots(num_T);
+  pelv_knots[0] = pelv0;
+  pelv_knots[1] = pelv_knots[2] = pelv1;
+  BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
+  pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
+  pelvis_BMD.control_pose_when_in_contact.resize(num_T, true);
+  pelvis_BMD.trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+  // make torso
+  torso1 = pelv1; // the position doesn't matter, we only track orientation
+  Eigen::AngleAxisd torso_rot = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()); // yaw
+  torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()); // pitch
+  torso1.tail(4) = rotmat2quat(torso_rot.toRotationMatrix());
+  std::vector<Eigen::Vector7d> torso_knots(num_T);
+  torso_knots[0] = torso0;
+  torso_knots[1] = torso_knots[2] = torso1;
+  BodyMotionData &torso_BMD = get_torso_body_motion_data();
+  torso_BMD.body_or_frame_id = rpc_.torso_id;
+  torso_BMD.trajectory = GenerateCubicCartesianSpline(Ts, torso_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+  // make stance foot.
+  // This is not quite right, since the touchdown foot pose might change after solid contact.
+  // Assume the QP will not try to control pose for the contact feet.
+  std::vector<Eigen::Vector7d> stance_knots(num_T, feet0[nxt_stance_foot.underlying()]);
+  BodyMotionData &stance_BMD = get_stance_foot_body_motion_data();
+  stance_BMD.body_or_frame_id = rpc_.foot_ids.at(nxt_stance_foot);
+  stance_BMD.trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+  // swing foot traj will be planned at liftoff
+  std::vector<Eigen::Vector7d> swing_knots(num_T, feet0[nxt_swing_foot.underlying()]);
+  BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
+  swing_BMD.body_or_frame_id = rpc_.foot_ids.at(nxt_swing_foot);
+  swing_BMD.trajectory = GenerateCubicCartesianSpline(Ts, swing_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+
+  // make weight distribuition
+  std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
+  WL[0](0,0) = get_weight_distribution(planned_cs);
+  WL[1](0,0) = get_weight_distribution(nxt_contact_state);
+  WL[2](0,0) = get_weight_distribution(nxt_contact_state);
+  weight_distribution_ = GenerateLinearSpline(Ts, WL);
+
+  // setup contact state
+  contact_state_.clear();
+  // run out of step, we will never transition into single support
+  if (footstep_plan_.empty()) {
+    contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
+  }
+  else {
     contact_state_.push_back(std::pair<ContactState, double>(ContactState::DS(), p_ds_duration_));
     contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, p_ss_duration_ + p_ds_duration_));
   }
@@ -413,6 +361,9 @@ void WalkingPlan::TareSwingLegForceTorque() {
 }
 
 PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot) const {
+  if (zmp_d.size() < 1)
+    throw std::runtime_error("zmp_d traj must have size >= 1");
+
   std::vector<double> zmp_T; // double support weight transfer, followed by single support
   std::vector<Eigen::Vector2d> zmp_knots;
 

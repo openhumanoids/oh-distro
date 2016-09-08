@@ -51,7 +51,7 @@ ss_duration: 1.5
 ds_duration: 1.5
 pre_weight_transfer_scale: 0.3
 min_Fz: 5
-lower_z_vel: -0.1
+lower_z_vel: -0.15
 swing_foot_xy_weight_mulitplier: 15.0
 pelvis_z_weight_mulitplier: 5.0
 left_foot_zmp_y_shift: -0.01
