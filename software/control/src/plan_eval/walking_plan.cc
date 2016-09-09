@@ -97,7 +97,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   // 0: start of weight tranfer
   // 1: end of weight transfer
   // 2: swing phase
-  if (planned_cs.is_in_contact(ContactState::L_FOOT) && planned_cs.is_in_contact(ContactState::R_FOOT) && footstep_plan_.empty()) {
+  if (planned_cs.is_double_support() && footstep_plan_.empty()) {
     throw std::runtime_error("Should not call generate trajectory from rest with empty steps");
   }
 
@@ -133,15 +133,12 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   // the foot that we want to shift weight to
   if (footstep_plan_.empty()) {
     // figure out which foot we just put down
-    if (planned_cs.is_in_contact(ContactState::L_FOOT)) {
+    if (planned_cs.is_single_support_left())
       desired_zmps.push_back(Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT]));
-    }
-    else if (planned_cs.is_in_contact(ContactState::R_FOOT)) {
+    else if (planned_cs.is_single_support_right())
       desired_zmps.push_back(Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]));
-    }
-    else {
+    else
       throw std::runtime_error("robot flying.");
-    }
   }
   else {
     desired_zmps.push_back(Footstep2DesiredZMP(nxt_stance_foot, feet_pose[nxt_stance_foot.underlying()]));
@@ -159,15 +156,15 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // figure out where we want the desired zmp for NOW
   // current contact state is double support
-  if (planned_cs.is_in_contact(ContactState::L_FOOT) && planned_cs.is_in_contact(ContactState::R_FOOT)) {
+  if (planned_cs.is_double_support()) {
     zmp_d0 = (Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]) + Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT])) / 2.;
   }
   // single support left
-  else if (planned_cs.is_in_contact(ContactState::L_FOOT)) {
+  else if (planned_cs.is_single_support_left()) {
     zmp_d0 = Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]);
   }
   // single support right
-  else if (planned_cs.is_in_contact(ContactState::R_FOOT)) {
+  else if (planned_cs.is_single_support_right()) {
     zmp_d0 = Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT]);
   }
   else {
@@ -242,7 +239,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // setup contact state
   contact_state_.clear();
-  // run out of step, we will never transition into single support
+  // run out of step, set transition tape's time to inf
   if (footstep_plan_.empty()) {
     contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
   }
@@ -407,7 +404,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   double plan_time = cur_time - interp_t0_;
 
   // update the plan status depending on whether or not we are finished
-  if (footstep_plan_.empty() && (plan_time > p_ds_duration_)){
+  if (footstep_plan_.empty() && (plan_time > p_ds_duration_)) {
     plan_status_.executionStatus = PlanExecutionStatus::FINISHED;
   } else{
     plan_status_.executionStatus = PlanExecutionStatus::EXECUTING;
@@ -420,14 +417,14 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 
   bool late_touchdown = false;
 
+  drc::footstep_t &cur_step = footstep_plan_.front();
+  Side swing_foot = cur_step.is_right_foot ? Side::RIGHT : Side::LEFT;
+
   // state machine part
   switch (cur_state_) {
     case WEIGHT_TRANSFER:
       if (plan_time >= planned_contact_swith_time) {
         // replace the swing up segment with a new one that starts from the current foot pose.
-        drc::footstep_t &cur_step = footstep_plan_.front();
-        Side swing_foot = cur_step.is_right_foot ? Side::RIGHT : Side::LEFT;
-
         KinematicsCache<double> cache = robot_.doKinematics(est_rs.q, est_rs.qd);
         Eigen::Isometry3d swing_foot0 = robot_.relativeTransform(cache, 0, rpc_.foot_ids.at(swing_foot));
 
@@ -481,7 +478,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       }
 
       // tare the FT sensor during swing if we haven't already
-      if ((plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_) && !have_tared_swing_leg_ft_){
+      if ((plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_) && !have_tared_swing_leg_ft_) {
         this->TareSwingLegForceTorque();
       }
 
@@ -489,8 +486,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       // if we are in contact switch to the double support contact state and
       // plan/re-plan all trajectories (i.e. zmp, body motion, foot swing etc.)
       if (plan_time >= planned_contact_swith_time - 0.5 * p_ss_duration_ &&
-          est_cs.is_in_contact(ContactState::L_FOOT) &&
-          est_cs.is_in_contact(ContactState::R_FOOT)) {
+          est_cs.is_foot_in_contact(swing_foot)) {
         // change contact
         SwitchContactState(cur_time);
         cur_state_ = WEIGHT_TRANSFER;
@@ -511,7 +507,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   }
 
   // make contact support data
-  support_state_ = MakeDefaultSupportState(contact_state_.front().first);
+  support_state_ = MakeDefaultSupportState(cur_planned_contact_state());
   // interp weight distribution
   double wl = weight_distribution_.value(plan_time).value();
   wl = std::min(wl, 1.0);
