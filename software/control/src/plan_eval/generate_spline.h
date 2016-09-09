@@ -297,8 +297,8 @@ PiecewisePolynomial<Scalar> GenerateCubicCartesianSpline(
     const std::vector<double> &times,
     const std::vector<Eigen::Matrix<Scalar, 7, 1>> &poses,
     const std::vector<Eigen::Matrix<Scalar, 7, 1>> &vels) {
-  assert(times.size() == poses.sizes());
-  assert(times.size() == vels.sizes());
+  assert(times.size() == poses.size());
+  assert(times.size() == vels.size());
   assert(times.size() >= 2);
 
   size_t T = times.size();
