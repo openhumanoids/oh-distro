@@ -125,6 +125,9 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     }
   }
 
+  bool is_first_step = planned_cs.is_double_support();
+  double wait_period_before_weight_shift = is_first_step ? 1.0 : 0.0;
+
   // make zmp
   int num_look_ahead = 3;
 
@@ -171,15 +174,15 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     throw std::runtime_error("robot flying.");
   }
 
-  zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0);
+  zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, wait_period_before_weight_shift);
   zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
   // time tape for body motion data and joint trajectories
   int num_T = 3;
   std::vector<double> Ts(num_T);
   Ts[0] = 0;
-  Ts[1] = p_ds_duration_;
-  Ts[2] = p_ss_duration_ + p_ds_duration_;
+  Ts[1] = wait_period_before_weight_shift + p_ds_duration_;
+  Ts[2] = wait_period_before_weight_shift + p_ss_duration_ + p_ds_duration_;
 
   /// Initialize body motion data
   for (size_t i = 0; i < body_motions_.size(); i++)
@@ -244,8 +247,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
   }
   else {
-    contact_state_.push_back(std::pair<ContactState, double>(ContactState::DS(), p_ds_duration_));
-    contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, p_ss_duration_ + p_ds_duration_));
+    contact_state_.push_back(std::pair<ContactState, double>(ContactState::DS(), Ts[1]));
+    contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, Ts[2]));
   }
 
   // pelvis Z weight multiplier
@@ -285,6 +288,7 @@ PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d
   swing_pose_knots[3][2] = swing_mid[2];
   swing_pose_knots[4] = foot1;
   swing_vel_knots[2].head(2) = (foot1.head(2) - foot0.head(2)) / (swing_up_dur + swing_down_dur);
+  swing_vel_knots[4][2] = p_lower_z_vel_;
 
   return GenerateCubicCartesianSpline(swingT, swing_pose_knots, swing_vel_knots);
 }
@@ -357,7 +361,7 @@ void WalkingPlan::TareSwingLegForceTorque() {
   have_tared_swing_leg_ft_ = true;
 }
 
-PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot) const {
+PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot, double time_before_weight_shift) const {
   if (zmp_d.size() < 1)
     throw std::runtime_error("zmp_d traj must have size >= 1");
 
@@ -370,23 +374,26 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Ve
   zmp_knots.push_back(current_mid_stance_foot);
   zmp_T.push_back(cur_time);
 
+  if (time_before_weight_shift > 0)
+    cur_time += time_before_weight_shift;
+
   for (int i = 0; i < min_size; i++) {
-    cur_time = zmp_T.back();
     // add a double support phase
+    cur_time += p_ds_duration_;
     // last step, need to stop in the middle
     if (i == min_size - 1) {
       zmp_knots.push_back((zmp_knots.back() + zmp_d[i]) / 2.);
-      zmp_T.push_back(cur_time + p_ds_duration_);
+      zmp_T.push_back(cur_time);
     }
     else {
       zmp_knots.push_back(zmp_d[i]);
-      zmp_T.push_back(cur_time + p_ds_duration_);
+      zmp_T.push_back(cur_time);
     }
 
     // add a single support phase
-    cur_time = zmp_T.back();
+    cur_time += p_ss_duration_;
     zmp_knots.push_back(zmp_knots.back());
-    zmp_T.push_back(cur_time + p_ss_duration_);
+    zmp_T.push_back(cur_time);
   }
 
   return GeneratePCHIPSpline(zmp_T, zmp_knots);
@@ -428,22 +435,17 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         KinematicsCache<double> cache = robot_.doKinematics(est_rs.q, est_rs.qd);
         Eigen::Isometry3d swing_foot0 = robot_.relativeTransform(cache, 0, rpc_.foot_ids.at(swing_foot));
 
-        Eigen::Vector7d swing_touchdown_pose;
-        swing_touchdown_pose(0) = cur_step.pos.translation.x;
-        swing_touchdown_pose(1) = cur_step.pos.translation.y;
-        swing_touchdown_pose(2) = cur_step.pos.translation.z;
-        swing_touchdown_pose(3) = cur_step.pos.rotation.w;
-        swing_touchdown_pose(4) = cur_step.pos.rotation.x;
-        swing_touchdown_pose(5) = cur_step.pos.rotation.y;
-        swing_touchdown_pose(6) = cur_step.pos.rotation.z;
-        swing_touchdown_pose.tail(4).normalize();
+        Eigen::Vector7d swing_touchdown_pose = bot_core_pose2pose(cur_step.pos);
+        // TODO: THIS IS A HACK
+        swing_touchdown_pose[2] -= 0.02;
 
         BodyMotionData& swing_BMD = get_swing_foot_body_motion_data();
         swing_BMD.body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-        swing_BMD.trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose, cur_step.params.step_height, p_ds_duration_, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
+        swing_BMD.trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose, cur_step.params.step_height, plan_time, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
         // increase weights for swing foot xy tracking
         swing_BMD.weight_multiplier[4] = 15;
         swing_BMD.weight_multiplier[3] = 15;
+        swing_BMD.weight_multiplier[5] = 15;
 
         // change contact
         SwitchContactState(cur_time);
@@ -492,13 +494,15 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         cur_state_ = WEIGHT_TRANSFER;
         std::cout << "Swing -> Weight transfer @ " << plan_time << std::endl;
 
-        // dequeue foot steps, generate new trajectories
+        // dequeue foot steps
         footstep_plan_.pop_front();
+        // generate new trajectories
         GenerateTrajs(est_rs.q, est_rs.qd, planned_cs);
 
         // all tapes assumes 0 sec start, so need to reset clock
         interp_t0_ = cur_time;
         plan_time = cur_time - interp_t0_;
+        late_touchdown = false;
       }
       break;
 

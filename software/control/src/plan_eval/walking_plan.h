@@ -61,6 +61,19 @@ class WalkingPlan : public GenericPlan {
   inline BodyMotionData& get_stance_foot_body_motion_data() { return body_motions_[2]; }
   inline BodyMotionData& get_swing_foot_body_motion_data() { return body_motions_[3]; }
 
+  inline Eigen::Vector7d bot_core_pose2pose(const bot_core::position_3d_t &p) const {
+    Eigen::Vector7d pose;
+    pose[0] = p.translation.x;
+    pose[1] = p.translation.y;
+    pose[2] = p.translation.z;
+    pose[3] = p.rotation.w;
+    pose[4] = p.rotation.x;
+    pose[5] = p.rotation.y;
+    pose[6] = p.rotation.z;
+    pose.tail(4).normalize();
+    return pose;
+  }
+
   inline const ContactState &cur_planned_contact_state() const {
     if (contact_state_.empty())
       throw std::runtime_error("empty planned contact_state");
@@ -74,7 +87,7 @@ class WalkingPlan : public GenericPlan {
   }
 
   Eigen::Vector2d Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const;
-  PiecewisePolynomial<double> PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot) const;
+  PiecewisePolynomial<double> PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot, double time_before_weight_shift) const;
   void SwitchContactState(double cur_time);
   void TareSwingLegForceTorque();
   PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const;
