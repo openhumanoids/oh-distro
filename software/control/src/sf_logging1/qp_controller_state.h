@@ -123,4 +123,7 @@ class QPIO {
   Eigen::Matrix<double,4,4> S;
   Eigen::Matrix<double,4,1> s1;
   Eigen::Matrix<double,4,1> s1dot;
+
+  Eigen::Matrix<double,2,1> com;
+  Eigen::Matrix<double,2,1> comd;
 };

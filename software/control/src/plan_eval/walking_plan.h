@@ -41,8 +41,12 @@ class WalkingPlan : public GenericPlan {
   double contact_switch_time_ = -INFINITY;
   Eigen::VectorXd init_q_;
 
+
+  // these are all parameters, hence they are prefixed with a p
   double p_pre_weight_transfer_scale_;
-  double p_lower_z_vel_;
+  double p_extend_swing_foot_down_z_vel_;
+  double p_swing_foot_touchdown_z_vel_;
+  double p_swing_foot_touchdown_z_offset_;
   double p_ss_duration_;
   double p_ds_duration_;
 

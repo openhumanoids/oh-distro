@@ -14,6 +14,9 @@ void QPIO::ParseZMPInput(const drake::lcmt_qp_controller_input &msg)
   S = Map<const Matrix<double, 4, 4, RowMajor>>(&msg.zmp_data.S[0][0]);
   s1 = Map<const Matrix<double, 4, 1>>(&msg.zmp_data.s1[0][0]);
   s1dot = Map<const Matrix<double, 4, 1>>(&msg.zmp_data.s1dot[0][0]);
+
+  com = Map<const Matrix<double, 2, 1>>(&msg.zmp_data.com[0][0]);
+  comd = Map<const Matrix<double, 2, 1>>(&msg.zmp_data.com[2][0]);
   _hasZMPInput = true;
 }
 
@@ -115,9 +118,9 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
       - (S*x_bar+0.5*s1).transpose() * B_ls;
     comdd_d1.head(2) = R_DQyD_ls.inverse() * lin.transpose();
 
-    com_d.head(2) = x0.head(2);
-    comd_d.head(2) = x0.tail(2);
     cop_d = y0;
+    com_d.head(2) = com;
+    comd_d.head(2) = comd;
   }
   else {
     com_d.setZero();

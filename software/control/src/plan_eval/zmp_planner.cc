@@ -2,6 +2,7 @@
 #include "drake/util/drakeUtil.h"
 #include <unsupported/Eigen/MatrixFunctions>
 #include <iostream>
+#include <fstream>
 
 void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vector4d &x0, double height) {
   assert(zmp_d.rows() == 2 && zmp_d.cols() == 1);
@@ -32,7 +33,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
   K_ = -K_;
 
   s1_dot_.setZero();
-  u0_.setZero(); 
+  u0_.setZero();
 
   // generate s1 traj
   Eigen::Matrix<double, 2, 4> NB = (N.transpose() + B_.transpose() * S_);
@@ -51,7 +52,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
   std::vector<Eigen::Matrix<double, 2, 4>> gamma(n_segments);
   std::vector<Eigen::Matrix<double, 2, 4>> c(n_segments);
   alpha.setZero();
-  
+
   std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> beta_poly(n_segments);
 
   for (int t = n_segments-1; t >= 0; t--) {
@@ -59,7 +60,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
     c[t].row(1) = zmp_d.getPolynomial(t, 1, 0).getCoefficients();
     /// switch to zbar coord
     c[t].col(0) -= zmp_tf;
-    
+
     // degree 4
     beta[t].col(3) = -A2i * B2 * c[t].col(3);
     gamma[t].col(3) = R1i * D_ * Qy_ * c[t].col(3) - 0.5 * R1i * B_.transpose() * beta[t].col(3);
@@ -78,7 +79,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
     double dt = zmp_d.getDuration(t);
     Eigen::Matrix4d A2exp = A2 * dt;
     A2exp = A2exp.exp();
-    
+
     alpha.col(t) = Eigen::Vector4d(1, dt, dt * dt, dt * dt * dt);
     alpha.col(t) = s1dt - beta[t] * alpha.col(t);
 
@@ -108,11 +109,11 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
   Eigen::MatrixXd a(8, n_segments);
   a.bottomRows(4) = alpha;
   std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> b_poly(n_segments);
-  
+
   // set x0
   Eigen::Vector4d x = x0;
   x.head(2) -= zmp_tf;
-  
+
   std::vector<Eigen::Matrix<double, 4, 4>> b(n_segments);
   Eigen::Matrix<double, 8, 1> tmp81;
   Eigen::Matrix<double, 8, 8> Ayexp;
@@ -128,7 +129,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
     }
 
     a.block<4, 1>(0, t) = x - b[t].col(0);
-    
+
     Ayexp = Ay * dt;
     Ayexp = Ayexp.exp();
     tmp48.block<4, 4>(0, 0).setIdentity();
@@ -143,12 +144,13 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
       b_poly[t](n, 0) = Polynomial<double>(b[t].row(n));
     }
   }
-  
+
   Eigen::Matrix<double, 2, 8> tmp28;
   tmp28.block<2, 2>(0, 0).setIdentity();
   tmp28.block<2, 6>(0, 2).setZero();
   PiecewisePolynomial<double> b_traj(b_poly, zmp_d.getSegmentTimes());
   com_traj_ = ExponentialPlusPiecewisePolynomial<double>(tmp28, Ay, a, b_traj);
+  comd_traj_ = com_traj_.derivative();
 }
 
 drake::lcmt_zmp_data ZMPPlanner::EncodeZMPData(double plan_time) const {
@@ -171,12 +173,28 @@ drake::lcmt_zmp_data ZMPPlanner::EncodeZMPData(double plan_time) const {
   }
   Eigen::Vector2d zmp_d = zmp_traj_.value(plan_time);
   eigenToCArrayOfArrays(zmp_d, zmp_data_lcm.y0);
-  
+
   // Lyapunov function
   eigenToCArrayOfArrays(S_, zmp_data_lcm.S);
   Eigen::Vector4d s1 = s1_traj_.value(plan_time);
   eigenToCArrayOfArrays(s1, zmp_data_lcm.s1);
   eigenToCArrayOfArrays(s1_dot_, zmp_data_lcm.s1dot);
-   
+
+  // nominal com and comd
+  Eigen::Vector2d com_d = com_traj_.value(plan_time);
+  Eigen::Vector2d comd_d = comd_traj_.value(plan_time);
+  for (int i = 0; i < 2; i++) {
+    zmp_data_lcm.com[i][0] = com_d[i];
+    zmp_data_lcm.com[i + 2][0] = comd_d[i];
+  }
+
   return zmp_data_lcm;
+}
+
+void ZMPPlanner::WriteToFile(const std::string &name, double dt) const {
+  std::ofstream out;
+  out.open(name);
+  for (double t = 0; t < com_traj_.getEndTime(); t += dt)
+    out << t << " " << com_traj_.value(t).transpose() << " " << comd_traj_.value(t).transpose() << " " << zmp_traj_.value(t).transpose() << std::endl;
+  out.close();
 }
