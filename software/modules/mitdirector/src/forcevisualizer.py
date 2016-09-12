@@ -96,6 +96,7 @@ class ForceVisualizer:
 
         self.options['colors'] = dict()
         self.options['colors']['plan'] = [1,0,0] # red
+        self.options['colors']['plannedZMP'] = [1,1,0] # yellow
         self.options['colors']['controller'] = [0,0,1] # blue
         self.options['colors']['measured'] = [0,1,0] # green
         self.options['colors']['contactPoints'] = [ 0.58039216,  0, 0.82745098] # purple
@@ -394,7 +395,7 @@ class ForceVisualizer:
             d.addSphere(desiredCOP, radius=0.015)
 
             vis.updatePolyData(d.getPolyData(), name=self.options['desiredCOPVisName'], view=self.view,
-                               parent='robot state model').setProperty('Color', self.options['colors']['plan'])
+                               parent='robot state model').setProperty('Color', self.options['colors']['plannedZMP'])
 
 
 
