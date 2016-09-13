@@ -23,6 +23,8 @@ struct controller_state_t
   float qdd[num_joints];
   float u[num_joints];
 
+  float comdd_des[3];
+
   float comdd[3];
   float pelvdd[6];
   float l_footdd[6];

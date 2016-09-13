@@ -97,6 +97,9 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
   }
 
   // comdd_d
+  comdd_d[0] = msg.comdd_des[0];
+  comdd_d[1] = msg.comdd_des[1];
+
   if (_hasZMPInput) {
     Vector4d xlimp, x_bar;
     Matrix2d R_DQyD_ls = R_ls + D_ls.transpose() * Qy * D_ls;
@@ -111,10 +114,10 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
     Matrix<double,2,1> r_2 = -2*D_ls.transpose()*Qy*y_d_bar;
     Matrix<double,2,1> r_s = 0.5*(r_2 + B_ls.transpose()*s1);
 
-    comdd_d.head(2) = -R_DQyD_ls.inverse() * (N_B*x_bar + r_s);
+    //comdd_d.head(2) = -R_DQyD_ls.inverse() * (N_B*x_bar + r_s);
 
     Matrix<double,1,2> lin = -(C_ls*xlimp-y0).transpose() * Qy * D_ls
-      //+ u0.transpose() * R_ls
+      + u0.transpose() * R_ls
       - (S*x_bar+0.5*s1).transpose() * B_ls;
     comdd_d1.head(2) = R_DQyD_ls.inverse() * lin.transpose();
 
@@ -125,7 +128,6 @@ void QPIO::ParseMsg(const drc::controller_state_t &msg, const HumanoidStatus &rs
   else {
     com_d.setZero();
     comd_d.setZero();
-    comdd_d.setZero();
   }
 }
 
