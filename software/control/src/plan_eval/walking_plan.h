@@ -10,6 +10,7 @@ class WalkingPlan : public GenericPlan {
   WalkingPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
     LoadConfigurationFromYAML(config_name);
     plan_status_.planType = PlanType::WALKING;
+    step_count_ = 0;
 
     // check the lcm handle initialization was good
     if (!lcm_handle_.good()) {
@@ -51,11 +52,14 @@ class WalkingPlan : public GenericPlan {
   double p_ds_duration_;
 
   double p_swing_foot_xy_weight_mulitplier_;
+  double p_swing_foot_z_weight_mulitplier_;
   double p_pelvis_z_weight_mulitplier_;
   double p_left_foot_zmp_y_shift_;
   double p_right_foot_zmp_y_shift_;
 
   bool have_tared_swing_leg_ft_ = false;
+
+  int step_count_;
 
   void LoadConfigurationFromYAML(const std::string &name);
   void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);

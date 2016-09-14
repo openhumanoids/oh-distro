@@ -37,6 +37,7 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_pre_weight_transfer_scale_ = std::max(0.0, p_pre_weight_transfer_scale_);
 
   p_swing_foot_xy_weight_mulitplier_ = config_["swing_foot_xy_weight_mulitplier"].as<double>();
+  p_swing_foot_z_weight_mulitplier_ = config_["swing_foot_z_weight_mulitplier"].as<double>();
   p_pelvis_z_weight_mulitplier_ = config_["pelvis_z_weight_mulitplier"].as<double>();
   p_left_foot_zmp_y_shift_ = config_["left_foot_zmp_y_shift"].as<double>();
   p_right_foot_zmp_y_shift_ = config_["right_foot_zmp_y_shift"].as<double>();
@@ -46,6 +47,7 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   std::cout << "p_ds_duration_: " << p_ds_duration_ << std::endl;
 
   std::cout << "p_swing_foot_xy_weight_mulitplier_: " << p_swing_foot_xy_weight_mulitplier_ << std::endl;
+  std::cout << "p_swing_foot_z_weight_mulitplier_: " << p_swing_foot_z_weight_mulitplier_ << std::endl;
   std::cout << "p_pelvis_z_weight_mulitplier_: " << p_pelvis_z_weight_mulitplier_ << std::endl;
   std::cout << "p_left_foot_zmp_y_shift_: " << p_left_foot_zmp_y_shift_ << std::endl;
   std::cout << "p_right_foot_zmp_y_shift_: " << p_right_foot_zmp_y_shift_ << std::endl;
@@ -129,8 +131,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   bool is_first_step = planned_cs.is_double_support();
   double wait_period_before_weight_shift = 0;
-  if (is_first_step && p_ds_duration_ < 1.5)
-    wait_period_before_weight_shift = 1.5 - p_ds_duration_;
+  if (is_first_step && p_ds_duration_ < 2)
+    wait_period_before_weight_shift = 2 - p_ds_duration_;
 
   // make zmp
   int num_look_ahead = 3;
@@ -181,6 +183,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, wait_period_before_weight_shift);
   zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
+  // Save zmp trajs to a files
   //static int step_ctr = 0;
   //std::string file_name = std::string("/home/val/zmp_d") + std::to_string(step_ctr);
   //step_ctr++;
@@ -192,6 +195,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   Ts[0] = 0;
   Ts[1] = wait_period_before_weight_shift + p_ds_duration_;
   Ts[2] = wait_period_before_weight_shift + p_ss_duration_ + p_ds_duration_;
+
+  std::cout << "Ts[1] " << Ts[1] << std::endl;
 
   /// Initialize body motion data
   for (size_t i = 0; i < body_motions_.size(); i++)
@@ -262,7 +267,7 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   // pelvis Z weight multiplier
   // This is really dumb, but the multipler is ang then pos, check instQP.
-  get_pelvis_body_motion_data().weight_multiplier[5] = 5;
+  get_pelvis_body_motion_data().weight_multiplier[5] = p_pelvis_z_weight_mulitplier_;
   // don't track x and y position of the pelvis
   get_pelvis_body_motion_data().weight_multiplier[4] = 0;
   get_pelvis_body_motion_data().weight_multiplier[3] = 0;
@@ -327,9 +332,11 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   contact_state_.clear();
 
   const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *)plan_msg;
-  for (size_t i = 0; i < msg->footstep_plan.footsteps.size(); i++) {
+  if (msg->footstep_plan.footsteps.size() <= 2)
+    throw std::runtime_error("too few number of steps.");
+
+  for (size_t i = 2; i < msg->footstep_plan.footsteps.size(); i++)
     footstep_plan_.push_back(msg->footstep_plan.footsteps[i]);
-  }
 
   // save the current joint configuration, that's what we are tracking during walking
   init_q_ = est_rs.q;
@@ -347,10 +354,6 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // neck
   for (size_t i = 0; i < rpc_.position_indices.neck.size(); i++)
     constrained_dofs_.push_back(rpc_.position_indices.neck[i]);
-  // back
-  //constrained_dofs_.push_back(rpc_.position_indices.back_bkz);
-  //constrained_dofs_.push_back(rpc_.position_indices.back_bky);
-
 }
 
 void WalkingPlan::SwitchContactState(double cur_time) {
@@ -383,7 +386,7 @@ void WalkingPlan::TareSwingLegForceTorque() {
   have_tared_swing_leg_ft_ = true;
 }
 
-PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot, double time_before_weight_shift) const {
+PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot, double time_before_first_weight_shift) const {
   if (zmp_d.size() < 1)
     throw std::runtime_error("zmp_d traj must have size >= 1");
 
@@ -396,8 +399,12 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Ve
   zmp_knots.push_back(current_mid_stance_foot);
   zmp_T.push_back(cur_time);
 
-  if (time_before_weight_shift > 0)
-    cur_time += time_before_weight_shift;
+  if (time_before_first_weight_shift > 0) {
+    cur_time += time_before_first_weight_shift;
+    // hold current place for sometime for the first step
+    //zmp_knots.push_back(current_mid_stance_foot);
+    //zmp_T.push_back(cur_time);
+  }
 
   for (int i = 0; i < min_size; i++) {
     // add a double support phase
@@ -416,6 +423,11 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Ve
     cur_time += p_ss_duration_;
     zmp_knots.push_back(zmp_knots.back());
     zmp_T.push_back(cur_time);
+  }
+
+  for (size_t i = 0; i < zmp_T.size(); i++) {
+    std::cout << "t: " << zmp_T[i] << std::endl;
+    std::cout << zmp_knots[i] << std::endl;
   }
 
   return GeneratePCHIPSpline(zmp_T, zmp_knots);
@@ -467,9 +479,9 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         swing_BMD.body_or_frame_id = rpc_.foot_ids.at(swing_foot);
         swing_BMD.trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose, cur_step.params.step_height, plan_time, p_ss_duration_ / 3., p_ss_duration_ / 3., p_ss_duration_ / 3.);
         // increase weights for swing foot xy tracking
-        swing_BMD.weight_multiplier[4] = 15;
-        swing_BMD.weight_multiplier[3] = 15;
-        swing_BMD.weight_multiplier[5] = 15;
+        swing_BMD.weight_multiplier[3] = p_swing_foot_xy_weight_mulitplier_;
+        swing_BMD.weight_multiplier[4] = p_swing_foot_xy_weight_mulitplier_;
+        swing_BMD.weight_multiplier[5] = p_swing_foot_z_weight_mulitplier_;
 
         // change contact
         SwitchContactState(cur_time);
@@ -520,6 +532,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 
         // dequeue foot steps
         footstep_plan_.pop_front();
+        step_count_++;
         // generate new trajectories
         GenerateTrajs(est_rs.q, est_rs.qd, planned_cs);
 

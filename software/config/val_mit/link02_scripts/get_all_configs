@@ -1,0 +1,28 @@
+# left leg
+./get_configs pelvis left_leg_j1 output
+./get_configs left_leg j2 output
+./get_configs left_leg j3 output
+./get_configs left_leg j4 output
+./get_configs left_leg ankle/left_actuator output
+./get_configs left_leg ankle/right_actuator output
+# right leg
+./get_configs pelvis right_leg_j1 output
+./get_configs right_leg j2 output
+./get_configs right_leg j3 output
+./get_configs right_leg j4 output
+./get_configs right_leg ankle/left_actuator output
+./get_configs right_leg ankle/right_actuator output
+# left arm
+./get_configs trunk left_arm_j1 output
+./get_configs left_arm j2 output
+./get_configs left_arm j3 output
+./get_configs left_arm j4 output
+# right arm
+./get_configs trunk right_arm_j1 output
+./get_configs right_arm j2 output
+./get_configs right_arm j3 output
+./get_configs right_arm j4 output
+# spine
+./get_configs pelvis waist output
+./get_configs trunk left_actuator output
+./get_configs trunk right_actuator output

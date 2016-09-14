@@ -1,0 +1,6 @@
+turboStream -c $1 -n $2 config > a
+echo "----------------------------------------" >> $3
+echo "Getting config values for node/$1/$2" >> $3
+echo "" >> $3
+tail -n +4 a >> $3
+echo "" >> $3
