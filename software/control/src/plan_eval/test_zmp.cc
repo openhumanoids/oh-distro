@@ -20,7 +20,8 @@ int main() {
   zmp_d.push_back(Eigen::Vector2d(0.8, 0.1));
 
   Eigen::Vector4d x0(0, 1, 0, 0);
-  PiecewisePolynomial<double> zmp_traj_ = GeneratePCHIPSpline(Ts, zmp_d);
+  Eigen::Vector2d zero(Eigen::Vector2d::Zero());
+  PiecewisePolynomial<double> zmp_traj_ = GeneratePCHIPSpline(Ts, zmp_d, zero, zero);
   zmp.Plan(zmp_traj_, x0, 1);
 
   std::cout << "S: " << zmp.S_ << std::endl;

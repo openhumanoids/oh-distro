@@ -38,18 +38,24 @@ foot_contact_offsets:
     left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
     right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
 
+# shared by manip and walking
 mu: 0.7
 zmp_height: 0.8
 initial_transition_time: 0.2
-transition_trq_alpha_filter: 0.9
+transition_trq_alpha_filter: 0.
 flip_foot_ft_sensor: 0
 
-ss_duration: 1.0
-ds_duration: 0.5
+# walking
+ss_duration: 0.5
+ds_duration: 0.2
 pre_weight_transfer_scale: 0.3
-min_Fz: 100
-lower_z_vel: -0.1
+min_Fz: 50
+extend_foot_down_z_vel: -0.1
+swing_touchdown_z_vel: -0.1
+swing_touchdown_z_offset: -0.05
+
 swing_foot_xy_weight_mulitplier: 1.0
+swing_foot_z_weight_mulitplier: 1.0
 pelvis_z_weight_mulitplier: 1.0
 left_foot_zmp_y_shift: 0.0
-right_foot_zmp_y_shift: 0.0
+right_foot_zmp_y_shift: -0.0

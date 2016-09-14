@@ -67,7 +67,9 @@ PiecewisePolynomial<Scalar> GenerateLinearSpline(
 template <typename Scalar, int rows, int cols>
 PiecewisePolynomial<Scalar> GeneratePCHIPSpline(
     const std::vector<double> &T,
-    const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y) {
+    const std::vector<Eigen::Matrix<Scalar, rows, cols>> &Y,
+    const Eigen::Matrix<Scalar, rows, cols> &dY0,
+    const Eigen::Matrix<Scalar, rows, cols> &dY1) {
   if (!CheckSplineInputs(T, Y)) {
     throw std::runtime_error("invalid spline inputs");
   }
@@ -102,7 +104,11 @@ PiecewisePolynomial<Scalar> GeneratePCHIPSpline(
       }
 
       // fix end points' slopes
-      c1[0](j, k) = ((2 * dt[0] + dt[1]) * m[0](j, k) - dt[0] * m[1](j, k)) /
+      int n = N - 1;
+      c1[0](j, k) = dY0(j, k);
+      c1[n](j, k) = dY1(j, k);
+      /*
+        ((2 * dt[0] + dt[1]) * m[0](j, k) - dt[0] * m[1](j, k)) /
                     (dt[0] + dt[1]);
       if (c1[0](j, k) * m[0](j, k) <= 0)
         c1[0](j, k) = 0;
@@ -110,7 +116,6 @@ PiecewisePolynomial<Scalar> GeneratePCHIPSpline(
                abs(c1[0](j, k)) > abs(3 * m[0](j, k)))
         c1[0](j, k) = 3 * m[0](j, k);
 
-      int n = N - 1;
       c1[n](j, k) = ((2 * dt[n - 1] + dt[n - 2]) * m[n - 1](j, k) -
                      dt[n - 1] * m[n - 2](j, k)) /
                     (dt[n - 1] + dt[n - 2]);
@@ -119,6 +124,7 @@ PiecewisePolynomial<Scalar> GeneratePCHIPSpline(
       else if (m[n - 1](j, k) * m[n - 2](j, k) <= 0 &&
                abs(c1[n](j, k)) > abs(3 * m[n - 1](j, k)))
         c1[n](j, k) = 3 * m[n - 1](j, k);
+      */
 
       for (size_t t = 0; t < N - 1; t++) {
         Eigen::Vector4d coeffs;

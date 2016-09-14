@@ -108,7 +108,8 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
 
   // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
-  zmp_traj_ = GeneratePCHIPSpline(Ts, com_d);
+  Eigen::Vector2d zero2(Eigen::Vector2d::Zero());
+  zmp_traj_ = GeneratePCHIPSpline(Ts, com_d, zero2, zero2);
   // TODO: make traj for s1, and com
   // drake/examples/ZMP/LinearInvertedPendulum.m
 

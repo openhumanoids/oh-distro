@@ -30,7 +30,7 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_ss_duration_ = config_["ss_duration"].as<double>();
   p_ds_duration_ = config_["ds_duration"].as<double>();
   p_extend_swing_foot_down_z_vel_ = config_["extend_foot_down_z_vel"].as<double>();
-  p_swing_foot_touchdown_z_vel_ = config_["touchdown_z_vel"].as<double>();
+  p_swing_foot_touchdown_z_vel_ = config_["swing_touchdown_z_vel"].as<double>();
   p_swing_foot_touchdown_z_offset_ = config_["swing_touchdown_z_offset"].as<double>();
   p_pre_weight_transfer_scale_ = config_["pre_weight_transfer_scale"].as<double>();
   p_pre_weight_transfer_scale_ = std::min(0.5, p_pre_weight_transfer_scale_);
@@ -184,10 +184,10 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
   // Save zmp trajs to a files
-  //static int step_ctr = 0;
-  //std::string file_name = std::string("/home/val/zmp_d") + std::to_string(step_ctr);
-  //step_ctr++;
-  //zmp_planner_.WriteToFile(file_name, 0.01);
+  static int step_ctr = 0;
+  std::string file_name = std::string("/home/siyuanfeng/zmp_d") + std::to_string(step_ctr);
+  step_ctr++;
+  zmp_planner_.WriteToFile(file_name, 0.01);
 
   // time tape for body motion data and joint trajectories
   int num_T = 3;
@@ -247,13 +247,6 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   swing_BMD.body_or_frame_id = rpc_.foot_ids.at(nxt_swing_foot);
   swing_BMD.trajectory = GenerateCubicCartesianSpline(Ts, swing_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
-  // make weight distribuition
-  std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
-  WL[0](0,0) = get_weight_distribution(planned_cs);
-  WL[1](0,0) = get_weight_distribution(nxt_contact_state);
-  WL[2](0,0) = get_weight_distribution(nxt_contact_state);
-  weight_distribution_ = GenerateCubicSpline(Ts, WL);
-
   // setup contact state
   contact_state_.clear();
   // run out of step, set transition tape's time to inf
@@ -264,6 +257,14 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
     contact_state_.push_back(std::pair<ContactState, double>(ContactState::DS(), Ts[1]));
     contact_state_.push_back(std::pair<ContactState, double>(nxt_contact_state, Ts[2]));
   }
+
+  // make weight distribuition
+  std::vector<Eigen::Matrix<double,1,1>> WL(num_T);
+  WL[0](0,0) = get_weight_distribution(planned_cs);
+  WL[1](0,0) = get_weight_distribution(nxt_contact_state);
+  WL[2](0,0) = get_weight_distribution(nxt_contact_state);
+  Ts[0] = wait_period_before_weight_shift;
+  weight_distribution_ = GenerateCubicSpline(Ts, WL);
 
   // pelvis Z weight multiplier
   // This is really dumb, but the multipler is ang then pos, check instQP.
@@ -402,8 +403,8 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Ve
   if (time_before_first_weight_shift > 0) {
     cur_time += time_before_first_weight_shift;
     // hold current place for sometime for the first step
-    //zmp_knots.push_back(current_mid_stance_foot);
-    //zmp_T.push_back(cur_time);
+    zmp_knots.push_back(current_mid_stance_foot);
+    zmp_T.push_back(cur_time);
   }
 
   for (int i = 0; i < min_size; i++) {
@@ -425,12 +426,8 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Ve
     zmp_T.push_back(cur_time);
   }
 
-  for (size_t i = 0; i < zmp_T.size(); i++) {
-    std::cout << "t: " << zmp_T[i] << std::endl;
-    std::cout << zmp_knots[i] << std::endl;
-  }
-
-  return GeneratePCHIPSpline(zmp_T, zmp_knots);
+  Eigen::Vector2d zero = Eigen::Vector2d::Zero();
+  return GeneratePCHIPSpline(zmp_T, zmp_knots, zero, zero);
 }
 
 drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &est_rs) {
@@ -507,7 +504,8 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         double z1 = swing_BMD.trajectory.value(t1)(2,0) + p_extend_swing_foot_down_z_vel_ * dt;
         double v0 = 0;
         double v1 = p_extend_swing_foot_down_z_vel_;
-        Eigen::Vector4d new_z_coeffs = GetCubicSplineCoeffs(t1-t0, z0, z1, v0, v1);
+        //Eigen::Vector4d new_z_coeffs = GetCubicSplineCoeffs(t1-t0, z0, z1, v0, v1);
+        Eigen::Vector4d new_z_coeffs(z0, v1, 0, 0);
 
         // first one is position
         Polynomial<double> new_z(new_z_coeffs);
