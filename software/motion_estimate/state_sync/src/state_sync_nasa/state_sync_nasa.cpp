@@ -203,12 +203,6 @@ void state_sync_nasa::coreRobotHandler(const lcm::ReceiveBuffer* rbuf, const std
   core_robot_joints_.velocity = msg->joint_velocity;
   core_robot_joints_.effort = msg->joint_effort;
 
-  // HACK left hip roll, to have a -1.5deg offset, probably due to bad calibrate
-  for (size_t i = 0; i < msg->joint_name.size(); i++) {
-    if (msg->joint_name[i].compare("leftHipRoll") == 0)
-      core_robot_joints_.position[i] += toRad(-1.);
-  }
-
   // low pass filter velocity
   if (cl_cfg_->use_joint_velocity_low_pass) {
     // actually make a lp filter on the first tick, just because I don't know what the order of joints will be in the real msg until I see one.
