@@ -183,11 +183,13 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
   zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, wait_period_before_weight_shift);
   zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
+  /*
   // Save zmp trajs to a files
   static int step_ctr = 0;
   std::string file_name = std::string("/home/siyuanfeng/zmp_d") + std::to_string(step_ctr);
   step_ctr++;
   zmp_planner_.WriteToFile(file_name, 0.01);
+  */
 
   // time tape for body motion data and joint trajectories
   int num_T = 3;
@@ -511,6 +513,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         Polynomial<double> new_z(new_z_coeffs);
         last_knots(2,0) = new_z;
         swing_BMD.trajectory.setPolynomialMatrixBlock(last_knots, last_idx);
+        swing_BMD.trajectory.setEndTime(100000.);
       }
 
       // tare the FT sensor during swing if we haven't already
