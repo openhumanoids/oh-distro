@@ -4,14 +4,26 @@
 
 #include <ConciseArgs>
 
+#include <sched.h>
+
 int main(int argc, char** argv) {
+  // set CPU
+  cpu_set_t mask;
+  CPU_ZERO(&mask);
+  // 2 is the cpu number, starts from zero. On link02, cpu2 seems to have nothing running on it.
+  CPU_SET(2, &mask);
+  int result = sched_setaffinity(0, sizeof(mask), &mask);
+  if (result != 0) {
+    throw std::runtime_error("can't run on CPU 2.");
+  }
+
   const char* drc_path = std::getenv("DRC_BASE");
   if (!drc_path) {
     throw std::runtime_error("environment variable DRC_BASE is not set");
   }
   std::string urdf = std::string(drc_path) + "/software/models/atlas_v5/model_minimal_contact.urdf";
   std::string urdf_mods;
-  std::string command_channel = "ATLAS_COMMAND"; 
+  std::string command_channel = "ATLAS_COMMAND";
   std::string behavior_channel = "ATLAS_BEHAVIOR_COMMAND";
   std::string control_config_filename = std::string(drc_path) + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
   bool fixedBase = false;
@@ -54,7 +66,7 @@ int main(int argc, char** argv) {
   std::cout << "\t Command channel: " << command_channel << std::endl;
   std::cout << "\t Behavior channel: " << behavior_channel << std::endl;
   std::cout << "\t Max Infocount: " << max_infocount << std::endl;
-  
+
   std::shared_ptr<ThreadedControllerOptions> ctrl_opts (new ThreadedControllerOptions());
   ctrl_opts->atlas_command_channel = command_channel;
   ctrl_opts->robot_behavior_channel = behavior_channel;
