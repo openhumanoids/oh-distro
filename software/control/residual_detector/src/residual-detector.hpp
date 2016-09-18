@@ -74,6 +74,7 @@ struct ResidualDetectorConfig{
 
 struct CommandLineOptions{
   bool useControllerFootForceTorque;
+  bool publishOnDebugChannel;
 };
 
 class ResidualDetector{

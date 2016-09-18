@@ -157,6 +157,10 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   this->residualGain = this->residualDetectorConfig.residualGain;
   this->publishChannel = PUBLISH_CHANNEL;
 
+  if (this->commandLineOptions.publishOnDebugChannel){
+    this->publishChannel += "_DEBUG";
+  }
+
   this->residualGainVector = residualGain*VectorXd::Ones(this->nq);
 
   this->foot_FT_6_axis_available = false;
@@ -784,14 +788,17 @@ ResidualDetectorConfig parseConfig(std::string filename){
 int main( int argc, char* argv[]){
 
 
+  // setup the structure to parse the command line options
   ConciseArgs parser(argc, argv);
   CommandLineOptions commandLineOptions;
   commandLineOptions.useControllerFootForceTorque = false;
+  commandLineOptions.publishOnDebugChannel = false;
   bool atlas_v5 = false;
   bool val = false;
   bool valkyrie_v1 = false;
   bool valkyrie_v2 = false;
   bool isVerbose = false;
+  
 
   parser.add(atlas_v5, "v5", "atlas_v5", "set robot to atlas_v5");
   parser.add(val, "val", "valkyrie", "set robot to valkyrie");
@@ -800,6 +807,9 @@ int main( int argc, char* argv[]){
   parser.add(isVerbose, "verbose");
   parser.add(commandLineOptions.useControllerFootForceTorque, "useControllerForceTorque", "useControllerForceTorque",
   "use the controllers force torque instead of measured");
+
+  parser.add(commandLineOptions.publishOnDebugChannel, "debug", "publishOnDebugChannel",
+  "publish on debug channel, adds _DEBUG to channel name");
   parser.parse();
 
   std::string configFilename; // config from which we will read the options for the residual detector
