@@ -41,7 +41,7 @@ foot_contact_offsets:
 
 # shared by manip and walking
 mu: 1
-zmp_height: 1.0
+zmp_height: 0.97
 initial_transition_time: 0.2
 transition_trq_alpha_filter: 0.9
 flip_foot_ft_sensor: 1
@@ -51,12 +51,12 @@ ss_duration: 2.0
 ds_duration: 2.0
 pre_weight_transfer_scale: 0.3
 min_Fz: 5
-extend_foot_down_z_vel: -0.1
-swing_touchdown_z_vel: -0.1
-swing_touchdown_z_offset: -0.05
+extend_foot_down_z_vel: -0.05
+swing_touchdown_z_vel: -0.
+swing_touchdown_z_offset: -0.0
 
 swing_foot_xy_weight_mulitplier: 15.0
 swing_foot_z_weight_mulitplier: 15.0
 pelvis_z_weight_mulitplier: 5.0
-left_foot_zmp_y_shift: 0.03
+left_foot_zmp_y_shift: 0.02
 right_foot_zmp_y_shift: -0.01
