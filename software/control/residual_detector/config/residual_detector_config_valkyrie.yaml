@@ -2,10 +2,12 @@ robot_data:
   urdf: /software/models/val_description/urdf/valkyrie_sim_drake.urdf
   robot_type: val
   control_config_filename: /software/config/val_mit/control_config_hardware.yaml
+  leftFootName: leftFoot
+  rightFootName: rightFoot
   leftFootFTFrameName: l_foot_force_torque
   rightFootFTFrameName: r_foot_force_torque
   
 
 residual_detector:
   useFootForceTorque: true
-  gain: 20.0
+  gain: 1.0
