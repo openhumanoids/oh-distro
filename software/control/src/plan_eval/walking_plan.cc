@@ -131,8 +131,8 @@ void WalkingPlan::GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::Vecto
 
   bool is_first_step = planned_cs.is_double_support();
   double wait_period_before_weight_shift = 0;
-  if (is_first_step && p_ds_duration_ < 2)
-    wait_period_before_weight_shift = 2 - p_ds_duration_;
+  if (is_first_step)
+    wait_period_before_weight_shift = 2;
 
   // make zmp
   int num_look_ahead = 3;
@@ -507,7 +507,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         double v0 = 0;
         double v1 = p_extend_swing_foot_down_z_vel_;
         //Eigen::Vector4d new_z_coeffs = GetCubicSplineCoeffs(t1-t0, z0, z1, v0, v1);
-        Eigen::Vector4d new_z_coeffs(z0, v1, 0, 0);
+        Eigen::Vector4d new_z_coeffs(z0 + (z1 - z0 - v1 * (t1 -t0)), v1, 0, 0);
 
         // first one is position
         Polynomial<double> new_z(new_z_coeffs);
