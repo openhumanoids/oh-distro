@@ -63,8 +63,8 @@ struct ResidualDetectorConfig{
   std::string robotType;
   std::string urdfFilename;
   std::string control_config_filename;
-  std::string leftFootName;
-  std::string rightFootName;
+  std::string leftFootFTFrameName;
+  std::string rightFootFTFrameName;
   double residualGain;
   bool useFootForceTorque;
 };
@@ -116,6 +116,7 @@ private:
 
 
   std::map<Side, int> foot_body_ids;
+  std::map<Side, int> foot_force_torque_frame_ids;
   typedef DrakeJoint::AutoDiffFixedMaxSize AutoDiffFixedMaxSize;
   std::shared_ptr<KinematicsCache<AutoDiffFixedMaxSize>> cache;
   std::shared_ptr<KinematicsCache<double>> cacheTypeDouble;

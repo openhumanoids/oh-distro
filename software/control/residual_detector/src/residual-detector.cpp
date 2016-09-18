@@ -80,8 +80,37 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   state_driver.reset(new RobotStateDriver(this->state_coordinate_names));
 
 
-  this->foot_body_ids[Side::LEFT] = drake_model.findLinkId("l_foot");
-  this->foot_body_ids[Side::RIGHT] = drake_model.findLinkId("r_foot");
+  // this->foot_body_ids[Side::LEFT] = drake_model.findLinkId("l_foot");
+  // this->foot_body_ids[Side::RIGHT] = drake_model.findLinkId("r_foot");
+
+  // figure out the left and right FT frame ids
+
+  // either it is a frame or it is a link
+  int frameId;
+  std::shared_ptr<RigidBodyFrame> leftFTFrame = drake_model.findFrame(this->residualDetectorConfig.leftFootFTFrameName);
+
+  // in this case the frame wasn't found, so it must be a link
+  if (leftFTFrame == nullptr){
+    frameId = drake_model.findLinkId(this->residualDetectorConfig.leftFootFTFrameName);
+  }
+  else{
+    frameId = leftFTFrame->frame_index;
+  }
+  this->foot_force_torque_frame_ids[Side::LEFT] = frameId;
+
+
+  // do the same for the right
+  std::shared_ptr<RigidBodyFrame> rightFTFrame = drake_model.findFrame(this->residualDetectorConfig.rightFootFTFrameName);
+
+  // in this case the frame wasn't found, so it must be a link
+  if (leftFTFrame == nullptr){
+    frameId = drake_model.findLinkId(this->residualDetectorConfig.rightFootFTFrameName);
+  }
+  else{
+    frameId = rightFTFrame->frame_index;
+  }
+
+  this->foot_force_torque_frame_ids[Side::RIGHT] = frameId;
 
   this->args.b_contact_force[Side::LEFT] = false;
   this->args.b_contact_force[Side::RIGHT] = false;
@@ -162,10 +191,10 @@ void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::s
 
   const bot_core::force_torque_t& force_torque = msg->force_torque;
 
-  this->args.foot_force_torque_measurement[Side::LEFT].frame_idx = this->foot_body_ids[Side::LEFT];
+  this->args.foot_force_torque_measurement[Side::LEFT].frame_idx = this->foot_force_torque_frame_ids[Side::LEFT];
   this->args.foot_force_torque_measurement[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
 
-  this->args.foot_force_torque_measurement[Side::RIGHT].frame_idx = this->foot_body_ids[Side::RIGHT];
+  this->args.foot_force_torque_measurement[Side::RIGHT].frame_idx = this->foot_force_torque_frame_ids[Side::RIGHT];
   this->args.foot_force_torque_measurement[Side::RIGHT].wrench << force_torque.r_foot_torque_x, force_torque.r_foot_torque_y, 0.0, 0.0, 0.0, force_torque.r_foot_force_z;
 
 
@@ -189,7 +218,11 @@ void ResidualDetector::onFootForceTorque(const lcm::ReceiveBuffer *rbuf, const s
 
   std::unique_lock<std::mutex> lck(pointerMutex);
   this->foot_FT_6_axis_available = true;
+
+  this->args.foot_ft_meas_6_axis[Side::LEFT].frame_idx = this->foot_force_torque_frame_ids[Side::LEFT];
   this->args.foot_ft_meas_6_axis[Side::LEFT].wrench << msg->l_foot_torque[0], msg->l_foot_torque[1], msg->l_foot_torque[2], msg->l_foot_force[0], msg->l_foot_force[1], msg->l_foot_force[2];
+
+  this->args.foot_ft_meas_6_axis[Side::RIGHT].frame_idx = this->foot_force_torque_frame_ids[Side::RIGHT];
   this->args.foot_ft_meas_6_axis[Side::RIGHT].wrench << msg->r_foot_torque[0], msg->r_foot_torque[1], msg->r_foot_torque[2], msg->r_foot_force[0], msg->r_foot_force[1], msg->r_foot_force[2];
   lck.unlock();
 }
@@ -255,7 +288,7 @@ void ResidualDetector::updateResidualState() {
 
   for (const auto& side_force: foot_force_torque_measurement){
     const Side& side = side_force.first;
-    int body_id = this->foot_body_ids[side];
+    int frame_or_body_id = side_force.second.frame_idx; // the frame at which that ForceTorque is measured
 
     if (this->verbose_){
       if (b_contact_force.at(side)){
@@ -277,7 +310,7 @@ void ResidualDetector::updateResidualState() {
     if (this->residualDetectorConfig.useFootForceTorque){
 //      std::cout << "using Foot FT" << std::endl;
       std::vector<int> v_indices;
-      auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, 0, body_id, body_id, true, &v_indices);
+      auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, 0, frame_or_body_id, frame_or_body_id, true, &v_indices);
       footJacobian = autoDiffToValueMatrix(footJacobian_autodiff);
       const Vector6d &wrench = side_force.second.wrench;
       VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
@@ -294,8 +327,8 @@ void ResidualDetector::updateResidualState() {
         std::cout << "v_indices.size()" << v_indices.size() << std::endl;
         std::cout << "footJacobian.cols() " << footJacobian.cols() << std::endl;
         std::cout << "footJacobian.rows() " << footJacobian.rows() << std::endl;
-        std::cout << "body_id " << body_id << std::endl;
-        std::cout << "body_id lookup " << drake_model.findLinkId("l_foot") << std::endl;
+        std::cout << "body_id " << frame_or_body_id << std::endl;
+        // std::cout << "body_id lookup " << drake_model.findLinkId("l_foot") << std::endl;
       }
 
     }
@@ -656,8 +689,8 @@ ResidualDetectorConfig parseConfig(std::string filename){
   config.urdfFilename = drcBase + robot_data["urdf"].as<std::string>();
   config.robotType = robot_data["robot_type"].as<std::string>();
   config.control_config_filename = drcBase + robot_data["control_config_filename"].as<std::string>();
-  config.leftFootName = robot_data["leftFootName"].as<std::string>();
-  config.rightFootName = robot_data["rightFootName"].as<std::string>();
+  config.leftFootFTFrameName = robot_data["leftFootFTFrameName"].as<std::string>();
+  config.rightFootFTFrameName = robot_data["rightFootFTFrameName"].as<std::string>();
 
 
   // parse residual detector specific stuff
@@ -672,12 +705,14 @@ int main( int argc, char* argv[]){
 
 
   ConciseArgs parser(argc, argv);
-  bool atlas_v5 = true;
+  bool atlas_v5 = false;
+  bool val = false;
   bool valkyrie_v1 = false;
   bool valkyrie_v2 = false;
   bool isVerbose = false;
 
   parser.add(atlas_v5, "v5", "atlas_v5", "set robot to atlas_v5");
+  parser.add(val, "val", "valkyrie", "set robot to valkyrie");
   parser.add(valkyrie_v1, "val1", "valkyrie_v1", "set robot to valkyrie_v1");
   parser.add(valkyrie_v2, "val2", "valkyrie_v2", "set robot to valkyrie_v2");
   parser.add(isVerbose, "verbose");
@@ -688,12 +723,14 @@ int main( int argc, char* argv[]){
 
   std::string drcBase = std::getenv("DRC_BASE");
 
-  if(!atlas_v5){
-    throw std::invalid_argument("currently only support atlas_v5, pass -v5 or --atlas_v5 args");
-  }
-
   if (atlas_v5){
+    std::cout << "using atlas_v5 robot " << std::endl;
     configFilename = drcBase + "/software/control/residual_detector/config/residual_detector_config_atlas_v5.yaml";
+  } else if (val){
+    std::cout << "using valkyrie robot" << std::endl;
+    configFilename = drcBase + "/software/control/residual_detector/config/residual_detector_config_valkyrie.yaml";
+  } else{
+    throw std::invalid_argument("currently only support atlas_v5, pass -v5 or val, pass -val");
   }
 
   // TODO: add support for valkyrie
