@@ -15,6 +15,7 @@
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/foot_force_torque_t.hpp"
 #include "lcmtypes/drc/residual_observer_state_t.hpp"
+#include "lcmtypes/drc/controller_state_t.hpp"
 #include "lcmtypes/drake/lcmt_external_force_torque.hpp"
 #include <bot_param/param_client.h>
 #include <lcm/lcm-cpp.hpp>
@@ -63,17 +64,24 @@ struct ResidualDetectorConfig{
   std::string robotType;
   std::string urdfFilename;
   std::string control_config_filename;
+  std::string leftFootName;
+  std::string rightFootName;
   std::string leftFootFTFrameName;
   std::string rightFootFTFrameName;
   double residualGain;
   bool useFootForceTorque;
 };
 
+struct CommandLineOptions{
+  bool useControllerFootForceTorque;
+};
+
 class ResidualDetector{
 
 public:
   // forward declaration
-  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, ResidualDetectorConfig residualDetectorConfig);
+  ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_, ResidualDetectorConfig residualDetectorConfig,
+  CommandLineOptions commandLineOptions);
   ~ResidualDetector(){
   }
   void residualThreadLoop();
@@ -100,6 +108,7 @@ private:
   int nq;
   int nv;
   double t_prev;
+  CommandLineOptions commandLineOptions;
   std::mutex pointerMutex;
   std::vector<std::string> state_coordinate_names;
   std::string publishChannel;
@@ -114,9 +123,10 @@ private:
 //  ResidualDetectorState residual_state_w_forces;
   drc::residual_observer_state_t residual_state_msg;
 
-
+  std::map<Side, ForceTorqueMeasurement> foot_ft_meas_6_axis_zeros; // all zeros
   std::map<Side, int> foot_body_ids;
   std::map<Side, int> foot_force_torque_frame_ids;
+  std::map<std::string, Side> footNames;
   typedef DrakeJoint::AutoDiffFixedMaxSize AutoDiffFixedMaxSize;
   std::shared_ptr<KinematicsCache<AutoDiffFixedMaxSize>> cache;
   std::shared_ptr<KinematicsCache<double>> cacheTypeDouble;
@@ -129,6 +139,7 @@ private:
   void onFootContact(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_contact_estimate_t* msg);
   void onFootForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::foot_force_torque_t* msg);
   void onExternalForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drake::lcmt_external_force_torque* msg);
+  void onControllerState(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::controller_state_t* msg);
   void updateResidualState();
   void publishResidualState(std::string publish_channel, const ResidualDetectorState &);
 //  void computeContactFilter(bool publishMostLikely, bool publishAll=false);
