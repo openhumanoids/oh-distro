@@ -6,7 +6,9 @@ joints = ['base_x', 'base_y', 'base_z', 'r_leg_kny', 'l_leg_kny', 'l_leg_hpy', '
 base_joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw'];
 
 l_leg_joints = ["leftHipYaw", "leftHipRoll", "leftHipPitch", "leftKneePitch", "leftAnklePitch", "leftAnkleRoll"]
-joints = base_joints + l_leg_joints
+
+r_leg_joints = ["rightHipYaw", "rightHipRoll", "rightHipPitch", "rightKneePitch", "rightAnklePitch", "rightAnkleRoll"]
+joints = base_joints + r_leg_joints
 # joints = ['base_x','base_y','base_z','base_roll', 'base_pitch', 'base_yaw']
 # joints = ['base_z','base_roll', 'base_pitch', 'base_yaw']
 # joints = ['base_x','base_z','base_roll', 'base_pitch', 'l_leg_kny']
@@ -45,15 +47,12 @@ addSignals('RESIDUAL_OBSERVER_STATE', msg.utime, msg.residual, joints, keyLookup
 #     addSignals(channel, msg.utime, msg.implied_residual, joints_w_dot, keyLookup=vel_names)
 
 
-addPlot(timeWindow=10, yLimits=[-2,10])
-addSignal('CONTACT_FILTER_POINT_ESTIMATE', msg.utime, msg.logLikelihood, label="squared error")
+addPlot(timeWindow=10, yLimits=[-50,50])
+addSignals('RESIDUAL_OBSERVER_STATE_DEBUG', msg.utime, msg.residual, joints, keyLookup=names)
 
 
 
 
-
-addPlot(timeWindow=10, yLimits=[0, 4])
-addSignal('CONTACT_FILTER_POINT_ESTIMATE', msg.utime, msg.num_contact_points, label="num contact points")
 
 
 
