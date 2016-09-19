@@ -184,6 +184,7 @@ qp_controller_params:
     w_grf: 0.00
     mu: 1
     w_zmp: 5.0
+    w_z_trq: 1e-1
     w_comdd_delta: 1.0
     w_qdd_delta: 0.0
     Kp_accel: 1.0

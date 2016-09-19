@@ -504,7 +504,6 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         double t1 = swing_BMD.trajectory.getEndTime(last_idx);
         double z0 = swing_BMD.trajectory.value(t0)(2,0);
         double z1 = swing_BMD.trajectory.value(t1)(2,0) + p_extend_swing_foot_down_z_vel_ * dt;
-        double v0 = 0;
         double v1 = p_extend_swing_foot_down_z_vel_;
         //Eigen::Vector4d new_z_coeffs = GetCubicSplineCoeffs(t1-t0, z0, z1, v0, v1);
         Eigen::Vector4d new_z_coeffs(z0 + (z1 - z0 - v1 * (t1 -t0)), v1, 0, 0);
