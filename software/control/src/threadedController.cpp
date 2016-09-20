@@ -373,6 +373,16 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
     msg.joint_name[i] = state_coordinate_names_shared[i];
   }
 
+  msg.num_active_ineq = controller_state.active_ineq.size();
+  msg.active_ineq_name.resize(msg.num_active_ineq);
+  msg.active_ineq_val.resize(msg.num_active_ineq);
+  int ctr = 0;
+  for (std::set<std::pair<double,std::string>>::const_iterator it = controller_state.active_ineq.begin(); it != controller_state.active_ineq.end(); it++) {
+    msg.active_ineq_name[ctr] = it->second;
+    msg.active_ineq_val[ctr] = it->first;
+    ctr++;
+  }
+
   msg.comdd_des[0] = qp_output.comdd_d[0];
   msg.comdd_des[1] = qp_output.comdd_d[1];
 

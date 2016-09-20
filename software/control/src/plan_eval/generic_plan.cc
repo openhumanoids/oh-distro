@@ -151,7 +151,7 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &c
       throw std::runtime_error("UNKNOW BODY in contact");
 
     support_state[s].body = body_idx;
-    support_state[s].total_normal_force_upper_bound = 1.5 * robot_.getMass() * 9.81;
+    support_state[s].total_normal_force_upper_bound = 3 * robot_.getMass() * 9.81;
     support_state[s].total_normal_force_lower_bound = p_min_Fz_;
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
