@@ -569,14 +569,14 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   }
 
   // apply the trq alpha filter at contact switch
-  bool apply_torque_alpha_filter = (plan_time < p_initial_transition_time_) || (cur_time - contact_switch_time_ < p_initial_transition_time_);
+  bool apply_torque_alpha_filter = false; // (plan_time < p_initial_transition_time_) || (cur_time - contact_switch_time_ < p_initial_transition_time_);
 
   // make qp input
   drake::lcmt_qp_controller_input qp_input = MakeDefaultQPInput(cur_time, plan_time, "walking", apply_torque_alpha_filter);
 
   // late touch down logic
-  if (late_touchdown)
-    qp_input.zmp_data = zmp_planner_.EncodeZMPData(planned_contact_swith_time);
+  //if (late_touchdown)
+  //  qp_input.zmp_data = zmp_planner_.EncodeZMPData(planned_contact_swith_time);
 
   return qp_input;
 }

@@ -24,6 +24,8 @@
 #include <pronto_utils/pronto_math.hpp>
 #include <estimate_tools/torque_adjustment.hpp>
 #include <estimate_tools/SimpleFilter.h>
+#include <estimate_tools/single_alpha_filter.hpp>
+
 
 struct Joints {
   std::vector<float> position;
@@ -94,6 +96,7 @@ class state_sync_nasa{
     // Torque Adjustment:
     EstimateTools::TorqueAdjustment* torque_adjustment_;
     // joint velocity filter
+    std::vector<EstimateTools::SingleAlphaFilter> pose_vel_filter_;
     std::vector<std::unique_ptr<EstimateTools::SimpleFilter>> joint_vel_filter_;
     Eigen::VectorXd raw_vel_, filtered_vel_;
     double default_freq_;

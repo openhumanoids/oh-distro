@@ -164,6 +164,13 @@ state_sync_nasa::state_sync_nasa(std::shared_ptr<lcm::LCM> &lcm_,
   else {
     std::cout << "Low pass filtering jiont velocity: Not Using\n";
   }
+
+
+  double pelvis_linear_vel_break_frequency_in_hz = bot_param_get_double_or_fail(botparam_, "state_estimator.legodo.pelvis_linear_vel_alpha_filter_break_frequency");
+
+  for(int i = 0; i < 3; i++){
+    pose_vel_filter_.push_back(EstimateTools::SingleAlphaFilter(pelvis_linear_vel_break_frequency_in_hz));
+  }
 }
 
 void state_sync_nasa::setPoseToZero(PoseT &pose){
@@ -313,7 +320,14 @@ void state_sync_nasa::poseIHMCHandler(const lcm::ReceiveBuffer* rbuf, const std:
 void state_sync_nasa::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   pose_pronto_.utime = msg->utime;
   pose_pronto_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
-  pose_pronto_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+
+
+  // filter the pelvis linear velocity
+  double t = msg->utime/1e6;
+  for(int i = 0; i < 3; i++){
+    pose_pronto_.vel(i) = pose_vel_filter_[i].processSample(t, msg->vel[i]);
+  }
+
   pose_pronto_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
   pose_pronto_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
   pose_pronto_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );
