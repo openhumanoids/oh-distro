@@ -181,10 +181,11 @@ qp_controller_params:
     w_slack: 20.0
     Jpdotv_multiplier: 0.0
     slack_limit: 20
-    w_grf: 0.00
+    w_grf: 1e-6
     mu: 1
-    w_zmp: 5.0
-    w_z_trq: 1e-1
+    w_zmp: 7.5
+    comdd_alpha: 0.0
+    w_z_trq: 0
     w_comdd_delta: 1.0
     w_qdd_delta: 0.0
     Kp_accel: 1.0

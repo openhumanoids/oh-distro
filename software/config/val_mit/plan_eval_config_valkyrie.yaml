@@ -58,5 +58,5 @@ swing_touchdown_z_offset: -0.02
 swing_foot_xy_weight_mulitplier: 15.0
 swing_foot_z_weight_mulitplier: 15.0
 pelvis_z_weight_mulitplier: 5.0
-left_foot_zmp_y_shift: 0.01
+left_foot_zmp_y_shift: 0.02
 right_foot_zmp_y_shift: -0.01

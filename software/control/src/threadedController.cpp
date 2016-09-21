@@ -419,6 +419,11 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
     for (size_t k = 0; k < 3; k++) {
       msg.contact_output[i].ref_point[k] = qp_output.contact_output[i].ref_point[k];
     }
+
+    msg.contact_output[i].num_basis = qp_output.contact_output[i].basis.size();
+    msg.contact_output[i].basis.resize(msg.contact_output[i].num_basis);
+    for (size_t k = 0; k < msg.contact_output[i].num_basis; k++)
+      msg.contact_output[i].basis[k] = qp_output.contact_output[i].basis[k];
   }
 
   // fill in slack

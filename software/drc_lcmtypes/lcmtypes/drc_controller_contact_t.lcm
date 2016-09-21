@@ -12,4 +12,7 @@ struct controller_contact_t
 
   float contact_points[num_contact_points][3];
   float contact_forces[num_contact_points][3];
+
+  int32_t num_basis;
+  float basis[num_basis];
 }
