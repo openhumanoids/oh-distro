@@ -29,15 +29,15 @@ kinematic_tree_metadata:
 
 foot_contact_offsets:
   *L_FOOT_NAME :
-    left_toe: {x: 0.17, y: 0.05, z: -0.09}
-    right_toe: {x: 0.17, y: -0.05, z: -0.09}
-    left_heel: {x: -0.05, y: 0.05, z: -0.09}
-    right_heel: {x: -0.05, y: -0.05, z: -0.09}
+    left_toe: {x: 0.15, y: 0.055, z: -0.09}
+    right_toe: {x: 0.15, y: -0.055, z: -0.09}
+    left_heel: {x: -0.05, y: 0.055, z: -0.09}
+    right_heel: {x: -0.05, y: -0.055, z: -0.09}
   *R_FOOT_NAME :
-    left_toe: {x: 0.17, y: 0.05, z: -0.09}
-    right_toe: {x: 0.17, y: -0.05, z: -0.09}
-    left_heel: {x: -0.05, y: 0.05, z: -0.09}
-    right_heel: {x: -0.05, y: -0.05, z: -0.09}
+    left_toe: {x: 0.15, y: 0.055, z: -0.09}
+    right_toe: {x: 0.15, y: -0.055, z: -0.09}
+    left_heel: {x: -0.05, y: 0.055, z: -0.09}
+    right_heel: {x: -0.05, y: -0.055, z: -0.09}
 
 # shared by manip and walking
 mu: 1

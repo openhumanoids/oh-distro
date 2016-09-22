@@ -102,7 +102,7 @@ qp_controller_params:
     body_specific:
       DEFAULT:
         Kp: {x: 12, y: 12, z: 12, wx: 12, wy: 12, wz: 12}
-        damping_ratio: 0.7
+        damping_ratio: {x: 0.7, y: 0.7, z: 0.7, wx: 0.7, wy: 0.7, wz: 0.7}
         accel_bounds:
           min: {x: -100, y: -100, z: -100, wx: -50, wy: -50, wz: -50}
           max: {x: 100, y: 100, z: 100, wx: 50, wy: 50, wz: 50}
@@ -110,20 +110,20 @@ qp_controller_params:
       *PELVIS_NAME :
         Kp: {x: 15, y: 15, z: 15, wx: 40, wy: 40, wz: 40}
         weight: 1
-        damping_ratio: 0.5
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
       *R_FOOT_NAME :
         Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
-        damping_ratio: 0.3
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
       *L_FOOT_NAME :
         Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
-        damping_ratio: 0.3
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
 
     position_specific:
       DEFAULT:
         Kp: 150
-        damping_ratio: 0.4
+        damping_ratio: 0.7
         w_qdd: 0.001
         integrator:
           gain: 1.75
@@ -237,10 +237,12 @@ qp_controller_params:
         hardware:
           torque_alpha_filter_break_frequency_hz: 15.0
           ff_qd_d: 2.0
+          ff_const: -2.0
 
       leftHipRoll:
         hardware:
           ff_qd_d: 2.0
+          ff_const: 5.0
 
       leftHipPitch:
         hardware:
@@ -249,6 +251,7 @@ qp_controller_params:
       leftKneePitch:
         hardware:
           ff_qd_d: 10.0
+          ff_const: -30.0
 
       leftAnklePitchActuator:
         hardware:
@@ -264,18 +267,22 @@ qp_controller_params:
         hardware:
           torque_alpha_filter_break_frequency_hz: 15.0
           ff_qd_d: 2.0
+          ff_const: 2.0
 
       rightHipRoll:
         hardware:
           ff_qd_d: 2.0
+          ff_const: -5.0
 
       rightHipPitch:
         hardware:
           ff_qd_d: 5.0
+          ff_const: -10.0
 
       rightKneePitch:
         hardware:
           ff_qd_d: 10.0
+          ff_const: -30.0
 
       rightAnklePitchActuator:
         hardware:
@@ -295,19 +302,19 @@ qp_controller_params:
       *TORSO_NAME :
         Kp: {x: 0, y: 0, z: 0, wx: 30, wy: 30, wz: 30}
         weight: 0.1
-        damping_ratio: 0.5
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
       *PELVIS_NAME :
         Kp: {x: 0, y: 0, z: 15, wx: 40, wy: 40, wz: 40}
         weight: 1
-        damping_ratio: 0.7
+        damping_ratio: {x: 0.7, y: 0.7, z: 0.7, wx: 0.7, wy: 0.7, wz: 0.7}
       *R_FOOT_NAME :
-        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
+        Kp: {x: 40, y: 40, z: 40, wx: 80, wy: 80, wz: 40}
         weight: 0.1
-        damping_ratio: 0.3
+        damping_ratio: {x: 0.3, y: 0.3, z: 0.3, wx: 0.7, wy: 0.7, wz: 0.7}
       *L_FOOT_NAME :
-        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
+        Kp: {x: 40, y: 40, z: 40, wx: 80, wy: 80, wz: 40}
         weight: 0.1
-        damping_ratio: 0.3
+        damping_ratio: {x: 0.3, y: 0.3, z: 0.3, wx: 0.7, wy: 0.7, wz: 0.7}
 
     position_specific:
       torsoRoll:
@@ -315,19 +322,6 @@ qp_controller_params:
       torsoPitch:
         w_qdd: 0.01
 
-    #    body_specific:
-    #  *PELVIS_NAME :
-    #    Kp: {x: 0, y: 0, z: 15, wx: 40, wy: 40, wz: 40}
-    #   weight: 10.0
-    #    damping_ratio: 0.3
-    #  *R_FOOT_NAME :
-    #    Kp: {x: 30, y: 30, z: 30, wx: 30, wy: 30, wz: 30}
-    #    weight: 10.0
-    #    damping_ratio: 0.4
-    #  *L_FOOT_NAME :
-    #    Kp: {x: 30, y: 30, z: 30, wx: 30, wy: 30, wz: 30}
-    #    weight: 10.0
-    #    damping_ratio: 0.4
   NoIntegrator:
     position_specific:
       DEFAULT:
