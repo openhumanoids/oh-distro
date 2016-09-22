@@ -29,34 +29,34 @@ kinematic_tree_metadata:
 
 foot_contact_offsets:
   *L_FOOT_NAME :
-    left_toe: {x: 0.172, y: 0.055, z: -0.09}
-    right_toe: {x: 0.172, y: -0.055, z: -0.09}
-    left_heel: {x: -0.058, y: 0.055, z: -0.09}
-    right_heel: {x: -0.058, y: -0.055, z: -0.09}
+    left_toe: {x: 0.17, y: 0.05, z: -0.09}
+    right_toe: {x: 0.17, y: -0.05, z: -0.09}
+    left_heel: {x: -0.05, y: 0.05, z: -0.09}
+    right_heel: {x: -0.05, y: -0.05, z: -0.09}
   *R_FOOT_NAME :
-    left_toe: {x: 0.172, y: 0.055, z: -0.09}
-    right_toe: {x: 0.172, y: -0.055, z: -0.09}
-    left_heel: {x: -0.058, y: 0.055, z: -0.09}
-    right_heel: {x: -0.058, y: -0.055, z: -0.09}
+    left_toe: {x: 0.17, y: 0.05, z: -0.09}
+    right_toe: {x: 0.17, y: -0.05, z: -0.09}
+    left_heel: {x: -0.05, y: 0.05, z: -0.09}
+    right_heel: {x: -0.05, y: -0.05, z: -0.09}
 
 # shared by manip and walking
 mu: 1
-zmp_height: 0.97
+zmp_height: 0.97 # measured from the soles of feet
 initial_transition_time: 0.2
 transition_trq_alpha_filter: 0.9
 flip_foot_ft_sensor: 1
 
 # walking
-ss_duration: 1.25
+pelvis_height: 0.97 # measured from the ankles
+ss_duration: 1
 ds_duration: 0.5
-pre_weight_transfer_scale: 0.3
 min_Fz: 5
-extend_foot_down_z_vel: -0.05
-swing_touchdown_z_vel: -0.05
-swing_touchdown_z_offset: -0.02
+extend_foot_down_z_vel: -0.06
+swing_touchdown_z_vel: -0.06
+swing_touchdown_z_offset: -0.03
 
 swing_foot_xy_weight_mulitplier: 15.0
 swing_foot_z_weight_mulitplier: 15.0
 pelvis_z_weight_mulitplier: 5.0
-left_foot_zmp_y_shift: 0.025
-right_foot_zmp_y_shift: -0.01
+left_foot_zmp_y_shift: 0.0
+right_foot_zmp_y_shift: 0.01

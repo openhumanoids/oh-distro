@@ -9,6 +9,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
   assert(zmp_d.getSegmentPolynomialDegree(0) == 4);
 
   zmp_traj_ = zmp_d;
+  zmpd_traj_ = zmp_traj_.derivative();
 
   A_.setZero();
   A_.block<2, 2>(0, 2).setIdentity();

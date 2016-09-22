@@ -42,9 +42,9 @@ class WalkingPlan : public GenericPlan {
   double contact_switch_time_ = -INFINITY;
   Eigen::VectorXd init_q_;
 
-
   // these are all parameters, hence they are prefixed with a p
-  double p_pre_weight_transfer_scale_;
+  double p_pelvis_height_;
+
   double p_extend_swing_foot_down_z_vel_;
   double p_swing_foot_touchdown_z_vel_;
   double p_swing_foot_touchdown_z_offset_;
@@ -62,7 +62,7 @@ class WalkingPlan : public GenericPlan {
   int step_count_;
 
   void LoadConfigurationFromYAML(const std::string &name);
-  void GenerateTrajs(const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
+  void GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
 
   inline BodyMotionData& get_pelvis_body_motion_data() { return body_motions_[0]; }
   inline BodyMotionData& get_torso_body_motion_data() { return body_motions_[1]; }
@@ -95,7 +95,7 @@ class WalkingPlan : public GenericPlan {
   }
 
   Eigen::Vector2d Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const;
-  PiecewisePolynomial<double> PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &current_mid_stance_foot, double time_before_weight_shift) const;
+  PiecewisePolynomial<double> PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &zmp_d0, const Eigen::Vector2d &zmpd_d0, double time_before_weight_shift) const;
   void SwitchContactState(double cur_time);
   void TareSwingLegForceTorque();
   PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const;

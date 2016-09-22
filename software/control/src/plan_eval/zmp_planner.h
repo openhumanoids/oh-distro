@@ -8,6 +8,7 @@ class ZMPPlanner {
  public:
  //private:
   PiecewisePolynomial<double> zmp_traj_;
+  PiecewisePolynomial<double> zmpd_traj_;
   ExponentialPlusPiecewisePolynomial<double> com_traj_;
   ExponentialPlusPiecewisePolynomial<double> comd_traj_;
   ExponentialPlusPiecewisePolynomial<double> s1_traj_;
@@ -26,5 +27,22 @@ class ZMPPlanner {
 
   void Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vector4d &x0, double height);
   drake::lcmt_zmp_data EncodeZMPData(double time) const;
+
   void WriteToFile(const std::string &name, double dt) const;
+
+  inline Eigen::Vector2d GetDesiredZMP(double time) const {
+    return zmp_traj_.value(time);
+  }
+
+  inline Eigen::Vector2d GetDesiredZMPd(double time) const {
+    return zmpd_traj_.value(time);
+  }
+
+  inline Eigen::Vector2d GetNominalCOM(double time) const {
+    return com_traj_.value(time);
+  }
+
+  inline Eigen::Vector2d GetNominalCOMd(double time) const {
+    return comd_traj_.value(time);
+  }
 };

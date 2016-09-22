@@ -123,7 +123,7 @@ qp_controller_params:
     position_specific:
       DEFAULT:
         Kp: 150
-        damping_ratio: 0.2
+        damping_ratio: 0.4
         w_qdd: 0.001
         integrator:
           gain: 1.75
@@ -184,13 +184,12 @@ qp_controller_params:
     w_grf: 1e-6
     mu: 1
     w_zmp: 7.5
-    comdd_alpha: 0.0
     comdd_alpha_break_frequency_hz: 10.0
     w_z_trq: 0
-    w_comdd_delta: 1.0
     w_qdd_delta: 0.0
-    Kp_accel: 1.0
-    ankle_torque_alpha: 0.7
+    Kp_accel: 0.1
+    ankle_torque_alpha: 0.8
+    torque_alpha_filter_break_frequency_hz: &TORQUE_BREAK_FREQ 15.0 # just internal for now
     contact_threshold: 0.002
     useTorqueAlphaFilter: True
     min_knee_angle: 0.7
@@ -204,6 +203,7 @@ qp_controller_params:
           joint_is_force_controlled: true
           joint_is_position_controlled: false
           maxDeltaPerSecond: 100.0
+          torque_alpha_filter_break_frequency_hz: -1.0 # will ignore it if is negative
           k_f_p: 0
           k_q_p: 0
           k_q_i: 0
@@ -235,6 +235,7 @@ qp_controller_params:
 
       leftHipYaw:
         hardware:
+          torque_alpha_filter_break_frequency_hz: 15.0
           ff_qd_d: 2.0
 
       leftHipRoll:
@@ -251,14 +252,17 @@ qp_controller_params:
 
       leftAnklePitchActuator:
         hardware:
+          torque_alpha_filter_break_frequency_hz: 15.0
           ff_qd_d: 2.0
 
       leftAnkleRollActuator:
         hardware:
+          torque_alpha_filter_break_frequency_hz: 15.0
           ff_qd_d: 2.0
 
       rightHipYaw:
         hardware:
+          torque_alpha_filter_break_frequency_hz: 15.0
           ff_qd_d: 2.0
 
       rightHipRoll:
@@ -275,11 +279,13 @@ qp_controller_params:
 
       rightAnklePitchActuator:
         hardware:
+          torque_alpha_filter_break_frequency_hz: 15.0
           ff_qd_d: 2.0
 
       rightAnkleRollActuator:
         hardware:
           ff_qd_d: 2.0
+          torque_alpha_filter_break_frequency_hz: 15.0
 
   base: # automatically inherits from the default =
   standing:
@@ -293,7 +299,15 @@ qp_controller_params:
       *PELVIS_NAME :
         Kp: {x: 0, y: 0, z: 15, wx: 40, wy: 40, wz: 40}
         weight: 1
-        damping_ratio: 0.5
+        damping_ratio: 0.7
+      *R_FOOT_NAME :
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
+        weight: 0.1
+        damping_ratio: 0.3
+      *L_FOOT_NAME :
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
+        weight: 0.1
+        damping_ratio: 0.3
 
     position_specific:
       torsoRoll:

@@ -52,15 +52,6 @@ struct PlanStatus {
 };
 
 class GenericPlan {
- public:
-  /*
-  enum ContactState {
-    AIR = 0,
-    SSL = 1,
-    SSR = 2,
-    DSc = 3,
-  };
-  */
  protected:
 
   // top level yaml config file node
