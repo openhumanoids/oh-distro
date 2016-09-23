@@ -5,9 +5,15 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   config_ = YAML::LoadFile(name);
   rpc_ = parseKinematicTreeMetadata(config_["kinematic_tree_metadata"], robot_);
 
-  std::map<Side, std::string> side_identifiers = {{Side::LEFT, "l"}, {Side::RIGHT, "r"}};
-  for (const auto& side : Side::values)
-    rpc_.hand_ids[side] = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
+
+  // commented out by Lucas Manuelli, the arm mass sims model has no hands,
+  // was causing issues
+  // std::map<Side, std::string> side_identifiers = {{Side::LEFT, "l"}, {Side::RIGHT, "r"}};
+  // for (const auto& side : Side::values)
+  //   rpc_.hand_ids[side] = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
+
+
+
   rpc_.pelvis_id = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>());
   rpc_.torso_id = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["torso"].as<std::string>());
 
