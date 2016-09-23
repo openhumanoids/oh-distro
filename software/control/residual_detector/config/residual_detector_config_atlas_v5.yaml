@@ -2,8 +2,8 @@ robot_data:
   urdf: /software/models/atlas_v5/model_LR_RR.urdf
   robot_type: atlas_v5
   control_config_filename: /software/drake/drake/examples/Atlas/config/control_config_sim.yaml
-  leftFootName: l_foot
-  rightFootName: r_foot
+  leftFootFTFrameName: l_foot_force_torque
+  rightFooFTFrameName: r_foot_force_torque
 
 residual_detector:
   useFootForceTorque: true

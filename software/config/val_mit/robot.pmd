@@ -119,27 +119,23 @@ group "5.maps" {
     }
 }
 
-group "6.streaming"{
+group "6.residual"{
 
-    cmd "robot streaming no controller" {
-        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robot";
+    cmd "residual-detector" {
+        exec = "drc-residual-detector -val";
         host = "base";
     }
 
-    cmd "robot streaming with controller" {
-        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController";
+    cmd "residual-detector w/ QP Forces" {
+        exec = "drc-residual-detector -val -useControllerForceTorque";
         host = "base";
     }
 
-    cmd "base streaming" {
-        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --base";
+    cmd "residual-detector w/ QP Forces on debug channel" {
+        exec = "drc-residual-detector -val -useControllerForceTorque -debug";
         host = "base";
     }
-
-    cmd "robot streaming with controller fixed base force control" {
-        exec = "directorPython ${DRC_BASE}/software/modules/mitdirector/src/testAtlasCommand.py --robotWithController --fixedBase --forceControl";
-        host = "base";
-    }
+    
 }
 
 
