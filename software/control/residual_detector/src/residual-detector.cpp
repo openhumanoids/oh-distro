@@ -12,9 +12,9 @@ using namespace Eigen;
 
 
 ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
-                                   ResidualDetectorConfig residualDetectorConfig):
+                                   ResidualDetectorConfig residualDetectorConfig, CommandLineOptions commandLineOptions):
     lcm_(lcm_), verbose_(verbose_), newStateAvailable(false), newResidualStateAvailable(false),
-    residualDetectorConfig(residualDetectorConfig){
+    residualDetectorConfig(residualDetectorConfig), commandLineOptions(commandLineOptions){
 
 //  if (urdfFilename=="none"){
 //    std::cout << "using default urdf" << std::endl;
@@ -42,9 +42,17 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   // drake_model.addRobotFromURDFString(model->getURDFString(), ".", DrakeJoint::QUATERNION)
   drake_model.compile();
 
+
+  // setup subscribers
   lcm_->subscribe("EST_ROBOT_STATE", &ResidualDetector::onRobotState, this);
   lcm_->subscribe("FOOT_CONTACT_ESTIMATE", &ResidualDetector::onFootContact, this);
-  lcm_->subscribe("FOOT_FORCE_TORQUE", &ResidualDetector::onFootForceTorque, this);
+
+  if (commandLineOptions.useControllerFootForceTorque){
+    lcm_->subscribe("CONTROLLER_STATE", &ResidualDetector::onControllerState, this);
+  }else{
+    lcm_->subscribe("FOOT_FORCE_TORQUE", &ResidualDetector::onFootForceTorque, this);
+  }
+
   lcm_->subscribe("EXTERNAL_FORCE_TORQUE", &ResidualDetector::onExternalForceTorque, this);
 
   // Initialize the robot property cache
@@ -80,8 +88,49 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
   state_driver.reset(new RobotStateDriver(this->state_coordinate_names));
 
 
-  this->foot_body_ids[Side::LEFT] = drake_model.findLinkId("l_foot");
-  this->foot_body_ids[Side::RIGHT] = drake_model.findLinkId("r_foot");
+  // this->foot_body_ids[Side::LEFT] = drake_model.findLinkId("l_foot");
+  // this->foot_body_ids[Side::RIGHT] = drake_model.findLinkId("r_foot");
+
+  // figure out the left and right FT frame ids
+
+  // either it is a frame or it is a link
+  int frameId;
+  std::shared_ptr<RigidBodyFrame> leftFTFrame = drake_model.findFrame(this->residualDetectorConfig.leftFootFTFrameName);
+
+  // in this case the frame wasn't found, so it must be a link
+  if (leftFTFrame == nullptr){
+    frameId = drake_model.findLinkId(this->residualDetectorConfig.leftFootFTFrameName);
+  }
+  else{
+    frameId = leftFTFrame->frame_index;
+  }
+  this->foot_force_torque_frame_ids[Side::LEFT] = frameId;
+
+
+  // do the same for the right
+  std::shared_ptr<RigidBodyFrame> rightFTFrame = drake_model.findFrame(this->residualDetectorConfig.rightFootFTFrameName);
+
+  // in this case the frame wasn't found, so it must be a link
+  if (leftFTFrame == nullptr){
+    frameId = drake_model.findLinkId(this->residualDetectorConfig.rightFootFTFrameName);
+  }
+  else{
+    frameId = rightFTFrame->frame_index;
+  }
+
+  this->foot_force_torque_frame_ids[Side::RIGHT] = frameId;
+
+  footNames[this->residualDetectorConfig.leftFootName] = Side::LEFT;
+  footNames[this->residualDetectorConfig.rightFootName] = Side::RIGHT;
+
+  ForceTorqueMeasurement ftMeasurement;
+  ftMeasurement.wrench = Eigen::Matrix<double, 6, 1>::Zero();
+
+  ftMeasurement.frame_idx = drake_model.findLinkId(this->residualDetectorConfig.leftFootName);
+  foot_ft_meas_6_axis_zeros[Side::LEFT] = ftMeasurement;
+
+  ftMeasurement.frame_idx = drake_model.findLinkId(this->residualDetectorConfig.rightFootName);
+  foot_ft_meas_6_axis_zeros[Side::RIGHT] = ftMeasurement;
 
   this->args.b_contact_force[Side::LEFT] = false;
   this->args.b_contact_force[Side::RIGHT] = false;
@@ -107,6 +156,10 @@ ResidualDetector::ResidualDetector(std::shared_ptr<lcm::LCM> &lcm_, bool verbose
 
   this->residualGain = this->residualDetectorConfig.residualGain;
   this->publishChannel = PUBLISH_CHANNEL;
+
+  if (this->commandLineOptions.publishOnDebugChannel){
+    this->publishChannel += "_DEBUG";
+  }
 
   this->residualGainVector = residualGain*VectorXd::Ones(this->nq);
 
@@ -162,10 +215,10 @@ void ResidualDetector::onRobotState(const lcm::ReceiveBuffer *rbuf, const std::s
 
   const bot_core::force_torque_t& force_torque = msg->force_torque;
 
-  this->args.foot_force_torque_measurement[Side::LEFT].frame_idx = this->foot_body_ids[Side::LEFT];
+  this->args.foot_force_torque_measurement[Side::LEFT].frame_idx = this->foot_force_torque_frame_ids[Side::LEFT];
   this->args.foot_force_torque_measurement[Side::LEFT].wrench << force_torque.l_foot_torque_x, force_torque.l_foot_torque_y, 0.0, 0.0, 0.0, force_torque.l_foot_force_z;
 
-  this->args.foot_force_torque_measurement[Side::RIGHT].frame_idx = this->foot_body_ids[Side::RIGHT];
+  this->args.foot_force_torque_measurement[Side::RIGHT].frame_idx = this->foot_force_torque_frame_ids[Side::RIGHT];
   this->args.foot_force_torque_measurement[Side::RIGHT].wrench << force_torque.r_foot_torque_x, force_torque.r_foot_torque_y, 0.0, 0.0, 0.0, force_torque.r_foot_force_z;
 
 
@@ -189,9 +242,48 @@ void ResidualDetector::onFootForceTorque(const lcm::ReceiveBuffer *rbuf, const s
 
   std::unique_lock<std::mutex> lck(pointerMutex);
   this->foot_FT_6_axis_available = true;
+
+  this->args.foot_ft_meas_6_axis[Side::LEFT].frame_idx = this->foot_force_torque_frame_ids[Side::LEFT];
   this->args.foot_ft_meas_6_axis[Side::LEFT].wrench << msg->l_foot_torque[0], msg->l_foot_torque[1], msg->l_foot_torque[2], msg->l_foot_force[0], msg->l_foot_force[1], msg->l_foot_force[2];
+
+  this->args.foot_ft_meas_6_axis[Side::RIGHT].frame_idx = this->foot_force_torque_frame_ids[Side::RIGHT];
   this->args.foot_ft_meas_6_axis[Side::RIGHT].wrench << msg->r_foot_torque[0], msg->r_foot_torque[1], msg->r_foot_torque[2], msg->r_foot_force[0], msg->r_foot_force[1], msg->r_foot_force[2];
   lck.unlock();
+}
+
+
+void ResidualDetector::onControllerState(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
+                                         const drc::controller_state_t *msg) {
+
+
+//  std::cout << "got controller state msg " << std::endl;
+//
+//  std::cout << "footNames.count(leftFoot)" << this->footNames.count("leftFoot") << std::endl;
+
+  std::string body_name;
+  std::map<Side, ForceTorqueMeasurement> foot_ft_meas_6_axis_temp = this->foot_ft_meas_6_axis_zeros; // should be a copy constructor here
+  for (auto & contact_output: msg->contact_output){
+//    std::cout << "body name " << contact_output.body_name << std::endl;
+    if(this->footNames.count(contact_output.body_name) > 0){
+
+
+
+//      std::cout << "got controller state FT for " << contact_output.body_name << std::endl;
+//      std::vector<double> wrenchVector(contact_output.wrench.begin(), contact_output.wrench.end());
+      Eigen::Matrix<double, 6, 1> wrenchMatrix;
+      wrenchMatrix << contact_output.wrench[0], contact_output.wrench[1], contact_output.wrench[2],
+          contact_output.wrench[3], contact_output.wrench[4], contact_output.wrench[5];
+      Side footSide = this->footNames.at(contact_output.body_name);
+      foot_ft_meas_6_axis_temp[footSide].wrench = wrenchMatrix;
+    }
+  }
+
+  // copy it over to the shared data location
+  std::unique_lock<std::mutex> lck(pointerMutex);
+  this->foot_FT_6_axis_available = true;
+  this->args.foot_ft_meas_6_axis = foot_ft_meas_6_axis_temp;
+  lck.unlock();
+
 }
 
 void ResidualDetector::onExternalForceTorque(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
@@ -255,7 +347,28 @@ void ResidualDetector::updateResidualState() {
 
   for (const auto& side_force: foot_force_torque_measurement){
     const Side& side = side_force.first;
-    int body_id = this->foot_body_ids[side];
+    int frame_or_body_id = side_force.second.frame_idx; // the frame at which that ForceTorque is measured
+
+    Vector6d wrench = side_force.second.wrench;
+    // will be same as frame_or_body_id if we are using measured force, otherwise will be expressed in world if coming
+    // from CONTROLLER_STATE
+    int expressed_in_frame_or_body_id;
+    if(this->commandLineOptions.useControllerFootForceTorque){
+      expressed_in_frame_or_body_id = frame_or_body_id; // this is world
+
+      // need to rotate the wrench back to body frame
+      // need to be careful with autodiff here
+      auto worldToFootTransform_autodiff = this->drake_model.relativeTransform(*cache, frame_or_body_id, 0);
+      auto rotationMatrix = autoDiffToValueMatrix(worldToFootTransform_autodiff.linear());
+      Vector6d wrenchInBodyFrame = Vector6d::Zero();
+
+      wrenchInBodyFrame.head<3>() = rotationMatrix*wrench.head<3>();
+      wrenchInBodyFrame.tail<3>() = rotationMatrix*wrench.tail<3>();
+
+      wrench = wrenchInBodyFrame;
+    }else{
+      expressed_in_frame_or_body_id = frame_or_body_id;
+    }
 
     if (this->verbose_){
       if (b_contact_force.at(side)){
@@ -277,7 +390,7 @@ void ResidualDetector::updateResidualState() {
     if (this->residualDetectorConfig.useFootForceTorque){
 //      std::cout << "using Foot FT" << std::endl;
       std::vector<int> v_indices;
-      auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, 0, body_id, body_id, true, &v_indices);
+      auto footJacobian_autodiff = this->drake_model.geometricJacobian(*cache, 0, frame_or_body_id, expressed_in_frame_or_body_id, true, &v_indices);
       footJacobian = autoDiffToValueMatrix(footJacobian_autodiff);
       const Vector6d &wrench = side_force.second.wrench;
       VectorXd joint_torque_at_v_indices = footJacobian.transpose() * wrench;
@@ -294,8 +407,9 @@ void ResidualDetector::updateResidualState() {
         std::cout << "v_indices.size()" << v_indices.size() << std::endl;
         std::cout << "footJacobian.cols() " << footJacobian.cols() << std::endl;
         std::cout << "footJacobian.rows() " << footJacobian.rows() << std::endl;
-        std::cout << "body_id " << body_id << std::endl;
-        std::cout << "body_id lookup " << drake_model.findLinkId("l_foot") << std::endl;
+        std::cout << "body_id " << frame_or_body_id << std::endl;
+        std::cout << "expressed in " << expressed_in_frame_or_body_id << std::endl;
+        // std::cout << "body_id lookup " << drake_model.findLinkId("l_foot") << std::endl;
       }
 
     }
@@ -366,18 +480,18 @@ void ResidualDetector::updateResidualState() {
   this->residual_state.foot_contact_joint_torque = foot_ft_to_joint_torques[Side::LEFT] + foot_ft_to_joint_torques[Side::RIGHT];
 
 
-
-  if (this->verbose_){
-    double Hz = 1/dt;
-    std::cout << "residual update running at " << Hz << std::endl;
-//    std::cout << "torque " << this->residual_state.torque << std::endl;
-
-    std::cout << "gamma " << this->residual_state.gamma << std::endl;
-    std::cout << "alpha " << alpha << std::endl;
-    std::cout << "residual " << this->residual_state.r << std::endl;
-    std::cout << "integral_new " << integral_new << std::endl;
-    std::cout << "dt " << dt << std::endl;
-  }
+//
+//  if (this->verbose_){
+//    double Hz = 1/dt;
+//    std::cout << "residual update running at " << Hz << std::endl;
+////    std::cout << "torque " << this->residual_state.torque << std::endl;
+//
+//    std::cout << "gamma " << this->residual_state.gamma << std::endl;
+//    std::cout << "alpha " << alpha << std::endl;
+//    std::cout << "residual " << this->residual_state.r << std::endl;
+//    std::cout << "integral_new " << integral_new << std::endl;
+//    std::cout << "dt " << dt << std::endl;
+//  }
 
   //publish over LCM
   this->publishResidualState(this->publishChannel, this->residual_state);
@@ -656,8 +770,11 @@ ResidualDetectorConfig parseConfig(std::string filename){
   config.urdfFilename = drcBase + robot_data["urdf"].as<std::string>();
   config.robotType = robot_data["robot_type"].as<std::string>();
   config.control_config_filename = drcBase + robot_data["control_config_filename"].as<std::string>();
+
   config.leftFootName = robot_data["leftFootName"].as<std::string>();
   config.rightFootName = robot_data["rightFootName"].as<std::string>();
+  config.leftFootFTFrameName = robot_data["leftFootFTFrameName"].as<std::string>();
+  config.rightFootFTFrameName = robot_data["rightFootFTFrameName"].as<std::string>();
 
 
   // parse residual detector specific stuff
@@ -671,16 +788,28 @@ ResidualDetectorConfig parseConfig(std::string filename){
 int main( int argc, char* argv[]){
 
 
+  // setup the structure to parse the command line options
   ConciseArgs parser(argc, argv);
-  bool atlas_v5 = true;
+  CommandLineOptions commandLineOptions;
+  commandLineOptions.useControllerFootForceTorque = false;
+  commandLineOptions.publishOnDebugChannel = false;
+  bool atlas_v5 = false;
+  bool val = false;
   bool valkyrie_v1 = false;
   bool valkyrie_v2 = false;
   bool isVerbose = false;
+  
 
   parser.add(atlas_v5, "v5", "atlas_v5", "set robot to atlas_v5");
+  parser.add(val, "val", "valkyrie", "set robot to valkyrie");
   parser.add(valkyrie_v1, "val1", "valkyrie_v1", "set robot to valkyrie_v1");
   parser.add(valkyrie_v2, "val2", "valkyrie_v2", "set robot to valkyrie_v2");
   parser.add(isVerbose, "verbose");
+  parser.add(commandLineOptions.useControllerFootForceTorque, "useControllerForceTorque", "useControllerForceTorque",
+  "use the controllers force torque instead of measured");
+
+  parser.add(commandLineOptions.publishOnDebugChannel, "debug", "publishOnDebugChannel",
+  "publish on debug channel, adds _DEBUG to channel name");
   parser.parse();
 
   std::string configFilename; // config from which we will read the options for the residual detector
@@ -688,12 +817,14 @@ int main( int argc, char* argv[]){
 
   std::string drcBase = std::getenv("DRC_BASE");
 
-  if(!atlas_v5){
-    throw std::invalid_argument("currently only support atlas_v5, pass -v5 or --atlas_v5 args");
-  }
-
   if (atlas_v5){
+    std::cout << "using atlas_v5 robot " << std::endl;
     configFilename = drcBase + "/software/control/residual_detector/config/residual_detector_config_atlas_v5.yaml";
+  } else if (val){
+    std::cout << "using valkyrie robot" << std::endl;
+    configFilename = drcBase + "/software/control/residual_detector/config/residual_detector_config_valkyrie.yaml";
+  } else{
+    throw std::invalid_argument("currently only support atlas_v5, pass -v5 or val, pass -val");
   }
 
   // TODO: add support for valkyrie
@@ -706,7 +837,7 @@ int main( int argc, char* argv[]){
 
 
   ResidualDetectorConfig residualDetectorConfig = parseConfig(configFilename);
-  ResidualDetector residualDetector(lcm, isVerbose, residualDetectorConfig);
+  ResidualDetector residualDetector(lcm, isVerbose, residualDetectorConfig, commandLineOptions);
 
   bool runDetectorLoop = true;
   if (runDetectorLoop){
