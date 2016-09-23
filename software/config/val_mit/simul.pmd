@@ -71,17 +71,25 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
+    cmd "c_plan_eval w arm mass sims" {
+        exec = "c_plan_eval ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_arm_mass_sims.urdf ${DRC_BASE}/software/config/val_mit/plan_eval_config_valkyrie_arm_mass_sims.yaml";
+        host = "localhost";
+        stop_signal = 15;
+    }
+
     cmd "InstQP Val" {
         exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -pub";
         host = "localhost";
         stop_signal = 15;
     }
 
-    cmd "InstQP Val Fixed Base" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -fb -pub";
+    cmd "InstQP Val w arm mass sims" {
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_arm_mass_sims.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware_arm_mass_sims.yaml -lc ROBOT_COMMAND -pub";
         host = "localhost";
         stop_signal = 15;
     }
+
+
 
 
     cmd "CombinedPlanner" {
