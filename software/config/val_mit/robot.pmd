@@ -82,7 +82,7 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
-    cmd "InstQP Val" {
+    cmd "InstQP Val on link02" {
         exec = "runDRCInstQP -u ${DRC_BASE}/software/models/val_description/urdf/valkyrie_sim_drake.urdf -c ${DRC_BASE}/software/config/val_mit/control_config_hardware.yaml -lc ROBOT_COMMAND -pub";
         host = "link02";
         stop_signal = 15;
@@ -126,16 +126,16 @@ group "6.residual"{
         host = "base";
     }
 
-    cmd "residual-detector w/ QP Forces" {
+    cmd "residual-detector with QP Forces" {
         exec = "drc-residual-detector -val -useControllerForceTorque";
         host = "base";
     }
 
-    cmd "residual-detector w/ QP Forces on debug channel" {
+    cmd "residual-detector with QP Forces on debug channel" {
         exec = "drc-residual-detector -val -useControllerForceTorque -debug";
         host = "base";
     }
-    
+
 }
 
 
