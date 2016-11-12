@@ -1,0 +1,4 @@
+#!/bin/bash
+
+director -v5 --startup $DRC_BASE/software/modules/mitdirector/src/runstartupatlas.py
+

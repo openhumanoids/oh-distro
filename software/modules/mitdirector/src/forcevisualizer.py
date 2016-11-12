@@ -10,29 +10,27 @@ import drc as lcmdrc
 import drake as lcmdrake
 
 import numpy as np
-
+import yaml
 
 # some useful constants
-Z_FOOT = 0.035
 EPSILON = 0.1
-BOTTOM_FOOT_Z_VAL = -0.09
 EPSILON_CONTACT_FORCE = 3.0
 
 class ForceVisualizer:
 
-    def __init__(self, robotSystem, view):
+    def __init__(self, robotSystem, view, configFilename):
 
         self.robotStateModel = robotSystem.robotStateModel
         self.robotStateJointController = robotSystem.robotStateJointController
         self.robotSystem = robotSystem
         self.view = view
-        self.rFootFtFrameId = self.robotStateModel.model.findFrameID("r_foot_force_torque")
-        self.lFootFtFrameId = self.robotStateModel.model.findFrameID("l_foot_force_torque")
+
 
         self.leftInContact = 0
         self.rightInContact = 0
         self.footContactEstimateMsg = None
         self.initializeOptions()
+        self.loadConfig(configFilename)
 
         # they are hidden by default
         d = DebugData()
@@ -62,23 +60,42 @@ class ForceVisualizer:
 
 
         # setup a dict to keep track of the names we will need
+        # probably want to store this in a config file so it can work with Atlas as well as Val
         lFootDict = {}
-        lFootDict['frameId'] = self.robotStateModel.model.findFrameID("l_foot_force_torque")
         lFootDict['visName'] = 'l_foot_force_est'
 
         rFootDict = {}
-        rFootDict['frameId'] = self.robotStateModel.model.findFrameID("r_foot_force_torque")
         rFootDict['visName'] = 'r_foot_force_est'
+
+        # special logic for handling FT frames. Valkyrie's is just specified as a named frame in the urdf
+        # for Atlas it is just the foot frame
+        if (self.config['robotType'] == 'Atlas'):
+            lFootDict['FT_frame_id'] = self.robotStateModel.model.findLinkID(self.config['leftFoot']['linkName'])
+            rFootDict['FT_frame_id'] = self.robotStateModel.model.findLinkID(self.config['rightFoot']['linkName'])
+
+        elif (self.config['robotType'] == 'Valkyrie'):
+            lFootDict['FT_frame_id'] = self.robotStateModel.model.findFrameID(self.config['leftFoot']['forceTorqueFrameName'])
+            rFootDict['FT_frame_id'] = self.robotStateModel.model.findFrameID(self.config['rightFoot']['forceTorqueFrameName'])
+
+        else:
+            raise ValueError('robotType in config file must be either Atlas or Valkyrie')
+
 
 
         self.nameDict = {}
         self.nameDict['l_foot'] = lFootDict
         self.nameDict['r_foot'] = rFootDict
 
+        # changes for getting this to work on Atlas
+        # Everything coming from the QP should be able to stay the same.
+        # The foot names and force/torque frames are probably different
+        # Also contact points are different, but I think these come from the QP directly
+        # so they should be ok
+
     def initializeOptions(self):
         self.options = {}
         self.options['speedLimit'] = 20 # speed limit on redrawing
-        self.options['forceMagnitudeNormalizer'] = 600
+        # self.options['forceMagnitudeNormalizer'] = 600
         self.options['forceArrowLength'] = 0.4
         self.options['forceArrowTubeRadius'] = 0.01
         self.options['forceArrowHeadRadius'] = 0.03
@@ -103,12 +120,19 @@ class ForceVisualizer:
 
 
 
+    def loadConfig(self, configFilename):
+        stream = file(configFilename)
+        self.config = yaml.load(stream)
+
     def addSubscribers(self):
 
         # FORCE_TORQUE subscriber
         # draws measured foot forces, cop etc
-        self.forceTorqueSubscriber = lcmUtils.addSubscriber('FORCE_TORQUE', bot_core.six_axis_force_torque_array_t,
-                                                            self.onForceTorqueMessage)
+
+        # force torque message has different names on Atlas and Val
+        self.forceTorqueSubscriber = lcmUtils.addSubscriber("FORCE_TORQUE", bot_core.six_axis_force_torque_array_t,
+                                                                self.onForceTorqueMessage)
+
         self.forceTorqueSubscriber.setSpeedLimit(self.options['speedLimit'])
 
         # draw
@@ -130,8 +154,12 @@ class ForceVisualizer:
         if (om.findObjectByName(self.options['estForceVisName']).getProperty('Visible') and self.robotStateJointController.lastRobotStateMessage):
             d = DebugData()
 
-            for idx, footName in enumerate(msg.names):
-                self.drawFootForce(footName, msg.sensors[idx], d)
+            for idx, sensorName in enumerate(msg.names):
+                sensorName = str(sensorName)
+
+                # only draw the forces for feet sensors, i.e. ignore hands etc.
+                if sensorName in self.nameDict:
+                    self.drawFootForce(sensorName, msg.sensors[idx], d)
 
             vis.updatePolyData(d.getPolyData(), name=self.options['estForceVisName'], view=self.view,
                                parent='robot state model').setProperty('Color', self.options['colors']['measured'])
@@ -147,11 +175,11 @@ class ForceVisualizer:
     def drawFootForce(self, footName, msg, debugData):
         force = np.array(msg.force)
         forceNorm = np.linalg.norm(force)
-        scaledForce = self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*force
+        scaledForce = self.options['forceArrowLength']/self.config['ForceMagnitudeNormalizer']*force
         torque = np.array(msg.moment)
 
         visName = self.nameDict[footName]['visName']
-        ftFrameId = self.nameDict[footName]['frameId']
+        ftFrameId = self.nameDict[footName]['FT_frame_id']
 
         ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
 
@@ -173,13 +201,16 @@ class ForceVisualizer:
             ftFrameToWorld = 0
             if (footName == 'leftFoot' or footName == 'l_foot'):
                 footName = "left"
-                ftFrameId = self.nameDict['l_foot']['frameId']
+                ftFrameId = self.nameDict['l_foot']['FT_frame_id']
                 ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
             elif (footName == 'rightFoot' or footName == 'r_foot'):
                 footName = "right"
-                ftFrameId = self.nameDict['r_foot']['frameId']
+                ftFrameId = self.nameDict['r_foot']['FT_frame_id']
                 ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
 
+
+            # this wrench is really expressed at ref_point. Since we want this to match with the FT frame we draw it at
+            # that point instead
             #arrowStart = np.array((msg.contact_ref_points[i][0], msg.contact_ref_points[i][1], msg.contact_ref_points[i][2]))
             arrowStart = ftFrameToWorld.TransformPoint((0,0,0))
             force = np.array((contact_output.wrench[3], contact_output.wrench[4], contact_output.wrench[5]))
@@ -188,13 +219,13 @@ class ForceVisualizer:
             if (np.linalg.norm(force) < EPSILON):
                 continue
 
-            arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*force
+            arrowEnd = arrowStart + self.options['forceArrowLength']/self.config['ForceMagnitudeNormalizer']*force
 
             d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
                            headRadius=self.options['forceArrowHeadRadius'], color=self.options['colors']['controller'])
 
             # compute cop
-            # this is already in world frame . . . ?
+            # this is already in world frame
             cop = np.zeros(3)
             cop[0] = -contact_output.wrench[1] / contact_output.wrench[5] + contact_output.ref_point[0]
             cop[1] = contact_output.wrench[0] / contact_output.wrench[5] + contact_output.ref_point[1]
@@ -209,7 +240,7 @@ class ForceVisualizer:
 
             # this is the individual foot COP coming from the QP
             # project it down to the bottom of the foot
-            singleFootCOP = cop + BOTTOM_FOOT_Z_VAL/force[2]*force
+            singleFootCOP = cop + self.config['FOOT_FRAME_TO_SOLE_DIST']/force[2]*force
             d.addSphere(singleFootCOP, radius=0.01)
 
         cop = np.zeros(3)
@@ -223,7 +254,7 @@ class ForceVisualizer:
 
         # need to project down to the base of the foot basically
         if(np.abs(totalForce[2]) > 0.01):
-            cop += BOTTOM_FOOT_Z_VAL/totalForce[2]*totalForce
+            cop += self.config['FOOT_FRAME_TO_SOLE_DIST']/totalForce[2]*totalForce
 
         d.addSphere(cop, radius=0.015)
         vis.updatePolyData(d.getPolyData(), name=self.options['QPForceVisName'], view=self.view,
@@ -241,11 +272,11 @@ class ForceVisualizer:
             ftFrameToWorld = 0
             if (footName == 'leftFoot' or footName == 'l_foot'):
                 footName = "left"
-                ftFrameId = self.nameDict['l_foot']['frameId']
+                ftFrameId = self.nameDict['l_foot']['FT_frame_id']
                 ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
             elif (footName == 'rightFoot' or footName == 'r_foot'):
                 footName = "right"
-                ftFrameId = self.nameDict['r_foot']['frameId']
+                ftFrameId = self.nameDict['r_foot']['FT_frame_id']
                 ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
 
 
@@ -261,7 +292,7 @@ class ForceVisualizer:
 
                 if drawContactForces and np.linalg.norm(contactForceInWorld > EPSILON_CONTACT_FORCE):
                     arrowStart = contactPointInWorld
-                    arrowEnd = arrowStart + self.options['forceArrowLength']/self.options['forceMagnitudeNormalizer']*contactForceInWorld
+                    arrowEnd = arrowStart + self.options['forceArrowLength']/self.config['ForceMagnitudeNormalizer']*contactForceInWorld
 
                     d.addArrow(arrowStart, arrowEnd, tubeRadius=self.options['forceArrowTubeRadius'],
                                headRadius=self.options['forceArrowHeadRadius'], color=self.options['colors']['controller'])
@@ -316,8 +347,10 @@ class ForceVisualizer:
     def computeCOP(self, msg):
         d = DebugData()
         copDataList = []
-        for idx, footName in enumerate(msg.names):
-            copDataList.append(self.computeSingleFootCOP(footName, msg.sensors[idx], d))
+        for idx, sensorName in enumerate(msg.names):
+            sensorName = str(sensorName)
+            if sensorName in self.nameDict:
+                copDataList.append(self.computeSingleFootCOP(sensorName, msg.sensors[idx], d))
 
         copInWorld = (copDataList[0]['cop']*copDataList[0]['fz'] + copDataList[1]['cop']*copDataList[1]['fz'])/(
             copDataList[0]['fz'] + copDataList[1]['fz'])
@@ -338,13 +371,12 @@ class ForceVisualizer:
 
         x = -msg.moment[1]/force[2]
         y = msg.moment[0]/force[2]
-        z_foot = 0.035
-        alpha = z_foot/force[2]
+        alpha = self.config['FT_FRAME_TO_SOLE_DIST']/force[2]
 
         cop = np.array((x,y,0))
         cop = cop + alpha*force
 
-        ftFrameId = self.nameDict[footName]['frameId']
+        ftFrameId = self.nameDict[footName]['FT_frame_id']
         ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
 
         copInWorld = np.array(ftFrameToWorld.TransformPoint(cop))
@@ -369,9 +401,11 @@ class ForceVisualizer:
         avgFootHeight = 0
 
         for idx, name in enumerate(footNames):
-            ftFrameId = self.nameDict[name]['frameId']
+            ftFrameId = self.nameDict[name]['FT_frame_id']
             ftFrameToWorld = self.robotStateModel.getFrameToWorld(ftFrameId)
-            soleHeight = ftFrameToWorld.GetPosition()[2] - Z_FOOT
+
+            solePoint = ftFrameToWorld.TransformPoint((0,0,self.config['FT_FRAME_TO_SOLE_DIST']))
+            soleHeight = solePoint[2]
             avgFootHeight += footContact[idx]*soleHeight
 
         if np.sum(footContact) > 0.1:
