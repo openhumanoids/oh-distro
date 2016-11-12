@@ -368,13 +368,25 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 
         % if we are really getting 6-axis FT data from the sim, then publish it using the
         % drc_foot_force_torque message
-        foot_force_torque_msg = drc.foot_force_torque_t();
-        foot_force_torque_msg.l_foot_force = left_ankle_ft_state(1:3);
-        foot_force_torque_msg.l_foot_torque = left_ankle_ft_state(4:6);
+        force_torque_msg = bot_core.six_axis_force_torque_array_t();
+        force_torque_msg.utime = t*1000*1000;
+        force_torque_msg.num_sensors = 4;
 
-        foot_force_torque_msg.r_foot_force = right_ankle_ft_state(1:3);
-        foot_force_torque_msg.r_foot_torque = right_ankle_ft_state(4:6);
-        obj.lc.publish('FOOT_FORCE_TORQUE', foot_force_torque_msg);
+        sensorArray = javaArray('bot_core.six_axis_force_torque_t', force_torque_msg.num_sensors);
+        for i=1:4
+          sensorArray(i) = bot_core.six_axis_force_torque_t();
+        end
+
+        force_torque_msg.names = ['l_foot';'r_foot';'l_hand';'r_hand'];
+
+        sensorArray(1).force = left_ankle_ft_state(1:3);
+        sensorArray(1).moment = left_ankle_ft_state(4:6);
+
+        sensorArray(2).force = right_ankle_ft_state(1:3);
+        sensorArray(2).moment = right_ankle_ft_state(4:6);
+        
+        force_torque_msg.sensors = sensorArray;
+        obj.lc.publish('FORCE_TORQUE', force_torque_msg);
 
 
       else
