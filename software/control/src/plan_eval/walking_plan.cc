@@ -26,6 +26,15 @@ double WalkingPlan::get_weight_distribution(const ContactState &cs) {
   return 0.5;
 }
 
+Eigen::Isometry3d WalkingPlan::FootstepMsgToPose(drc::footstep_t msg){
+  Eigen::Isometry3d footstep;
+  footstep.translation() = Eigen::Vector3d(msg.pos.translation.x, msg.pos.translation.y, msg.pos.translation.z);
+  Eigen::Quaterniond rot(msg.pos.rotation.w, msg.pos.rotation.x, msg.pos.rotation.y, msg.pos.rotation.z);
+  footstep.linear() = Eigen::Matrix3d(rot.normalized());
+
+  return footstep;
+}
+
 void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   p_pelvis_height_ = config_["pelvis_height"].as<double>();
   p_ss_duration_ = config_["ss_duration"].as<double>();
@@ -102,6 +111,9 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
   Side nxt_stance_foot;
   Side nxt_swing_foot;
+  Eigen::Isometry3d nxt_stance_foot_pose;
+  Eigen::Isometry3d nxt_swing_foot_pose;
+
   ContactState nxt_contact_state;
   // empty queue, going to double support at the center
   if (footstep_plan_.empty()) {
@@ -109,9 +121,13 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
     nxt_stance_foot = Side::LEFT;
     nxt_swing_foot = Side::RIGHT;
     nxt_contact_state = ContactState::DS();
+
+    // if there isn't a next swing foot, i.e. this is the end of the plan, then this doesn't really matter
+    // this is used in generating pelvis trajectory
+    nxt_swing_foot_pose = feet_pose[nxt_swing_foot.underlying()];
   }
-  // single support right
   else {
+    // single support right
     if (footstep_plan_.front().is_right_foot) {
       nxt_stance_foot = Side::LEFT;
       nxt_swing_foot = Side::RIGHT;
@@ -122,20 +138,32 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
       nxt_swing_foot = Side::LEFT;
       nxt_contact_state = ContactState::SSR();
     }
-  }
 
+    nxt_swing_foot_pose = this->FootstepMsgToPose(footstep_plan_.front());
+  }
+  nxt_stance_foot_pose = feet_pose[nxt_stance_foot.underlying()];
+
+  // wait before the weight shift if this is the first step
   bool is_first_step = planned_cs.is_double_support();
   double wait_period_before_weight_shift = 0;
   if (is_first_step)
     wait_period_before_weight_shift = 2;
 
   // make zmp
+  // this determines how many steps we should be looking ahead
   int num_look_ahead = 3;
 
   // figure out the desired zmps
+  // presumably these are just the center of the feet, maybe with a bit of offsets hacked in
   std::vector<Eigen::Vector2d> desired_zmps;
+
+
+
   // the foot that we want to shift weight to
   if (footstep_plan_.empty()) {
+
+
+    // note there is special logic inside planZMP to detect if it's the final footstep or not
     // figure out which foot we just put down
     if (planned_cs.is_single_support_left())
       desired_zmps.push_back(Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT]));
@@ -182,7 +210,14 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
     throw std::runtime_error("robot flying.");
   }
 
+
+  // plan the zmp trajectory
   zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, zmpd_d0, wait_period_before_weight_shift);
+
+  // solve the LQR problem for tracking the zmp_traj_
+  // note, what we are controlling is the pelvis height, this indirectly affects the zmp_height
+  // ensure that in the config file the zmp_height and pelvis_height are consistent.
+  // Essentially zmp_height should correspond to com height when pelvis is at given location
   // this is not quite right, since we are controlling the pelvis height, rather than com height
   zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
 
@@ -195,9 +230,14 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   */
 
   // time tape for body motion data and joint trajectories
+  // This function is only getting called when we make contact (or in the initial timestep)
+  // These tapes last until the next touchdown event
   std::vector<double> Ts(2);
   Ts[0] = 0;
   Ts[1] = wait_period_before_weight_shift + p_ss_duration_ + p_ds_duration_;
+
+
+  // for pelvis stuff should add another knot point at time = wait_period_before_weight_shift + p_ss_duration_ (this is just before liftoff)
 
   /// Initialize body motion data
   for (size_t i = 0; i < body_motions_.size(); i++)
@@ -207,25 +247,36 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
   q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(Ts.size(), init_q_), zero, zero);
 
-  // make pelv
-  pelv1.head(2) = zmp_traj_.value(zmp_traj_.getEndTime());
-  pelv1[2] = p_pelvis_height_ + feet_pose[nxt_stance_foot.underlying()].translation()[2]; ///< This offset the pelv z relative to ankle.
-  Eigen::Vector4d foot_quat(feet0[nxt_stance_foot.underlying()].tail(4));
-  double yaw = quat2rpy(foot_quat)[2];
-  pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
-
-  std::vector<Eigen::Vector7d> pelv_knots(Ts.size());
-  pelv_knots[0] = pelv0;
-  pelv_knots[1] = pelv1;
+//  // make pelv
+//  pelv1.head(2) = zmp_traj_.value(zmp_traj_.getEndTime());
+//
+//  ///< This offset the pelv z relative to foot frame
+//  pelv1[2] = p_pelvis_height_ + feet_pose[nxt_stance_foot.underlying()].translation()[2];
+//  Eigen::Vector4d foot_quat(feet0[nxt_stance_foot.underlying()].tail(4));
+//  double yaw = quat2rpy(foot_quat)[2];
+//  pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
+//
+//  std::vector<Eigen::Vector7d> pelv_knots(Ts.size());
+//  pelv_knots[0] = pelv0;
+//  pelv_knots[1] = pelv1;
   BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
   pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
-  pelvis_BMD.control_pose_when_in_contact.resize(Ts.size(), true);
-  pelvis_BMD.trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
+
+  int num_knots_in_pelvis_traj = 3;
+  pelvis_BMD.control_pose_when_in_contact.resize(num_knots_in_pelvis_traj, true);
+  double liftoff_time = wait_period_before_weight_shift + p_ss_duration_;
+  double next_liftoff_time = wait_period_before_weight_shift + p_ss_duration_ + p_ds_duration_;
+  pelvis_BMD.trajectory = this->GeneratePelvisTraj(cache_est, p_pelvis_height_, liftoff_time, next_liftoff_time,
+  nxt_stance_foot_pose, nxt_swing_foot_pose);
 
   // make torso
-  torso1 = pelv1; // the position doesn't matter, we only track orientation
+  Eigen::Vector4d foot_quat(feet0[nxt_stance_foot.underlying()].tail(4));
+  double yaw = quat2rpy(foot_quat)[2];
+  torso1 = torso0; // this is just so that plotting looks reasonable
   Eigen::AngleAxisd torso_rot = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()); // yaw
-  torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()); // pitch
+
+  // not sure what this line is doing
+  torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()); // pitch, set to zero currently
   torso1.tail(4) = rotmat2quat(torso_rot.toRotationMatrix());
   std::vector<Eigen::Vector7d> torso_knots(Ts.size());
   torso_knots[0] = torso0;
@@ -242,7 +293,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   stance_BMD.body_or_frame_id = rpc_.foot_ids.at(nxt_stance_foot);
   stance_BMD.trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
 
-  // swing foot traj will be planned at liftoff
+  // swing foot traj will be planned at liftoff . . .
   std::vector<Eigen::Vector7d> swing_knots(Ts.size(), feet0[nxt_swing_foot.underlying()]);
   BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
   swing_BMD.body_or_frame_id = rpc_.foot_ids.at(nxt_swing_foot);
@@ -277,7 +328,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   weight_distribution_ = GenerateCubicSpline(Ts, WL);
 
   // pelvis Z weight multiplier
-  // This is really dumb, but the multipler is ang then pos, check instQP.
+  // This is really dumb, but the multiplier is ang then pos, check instQP.
   get_pelvis_body_motion_data().weight_multiplier[5] = p_pelvis_z_weight_mulitplier_;
   // don't track x and y position of the pelvis
   get_pelvis_body_motion_data().weight_multiplier[4] = 0;
@@ -288,9 +339,11 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
     get_torso_body_motion_data().weight_multiplier[i] = 0;
 
   // reset clock
-  interp_t0_ = -1;
+  interp_t0_ = -1; // what does this do exactly?
 }
 
+
+// This is called whenever the foot lifts off . . .
 PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d &foot0, const Eigen::Vector7d &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const {
   double z_height_mid_swing = std::max(foot1[2], foot0[2]) + mid_z_offset;
   int num_T = 5;
@@ -346,6 +399,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   if (msg->footstep_plan.footsteps.size() <= 2)
     throw std::runtime_error("too few number of steps.");
 
+  // remove the first two footsteps as they are just in the current footstep locations
   for (size_t i = 2; i < msg->footstep_plan.footsteps.size(); i++)
     footstep_plan_.push_back(msg->footstep_plan.footsteps[i]);
 
@@ -539,7 +593,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         std::cout << "Swing -> Weight transfer @ " << plan_time << std::endl;
 
         // dequeue foot steps
-        footstep_plan_.pop_front();
+        footstep_plan_.pop_front(); // this could potentially be empty after this pop if it's the last step
         step_count_++;
         // generate new trajectories
         GenerateTrajs(plan_time, est_rs.q, est_rs.qd, planned_cs);
@@ -590,3 +644,44 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 }
 
 
+PiecewisePolynomial<double> WalkingPlan::GeneratePelvisTraj(KinematicsCache<double> cache,
+                                                            double &pelvis_height_above_sole, double &liftoff_time,
+                                                            double &next_liftoff_time,
+                                                            Eigen::Isometry3d nxt_stance_foot_pose,
+                                                            Eigen::Isometry3d nxt_swing_foot_pose) {
+
+  std::vector<double> Ts(3);
+  Ts[0] = 0;
+  Ts[1] = liftoff_time;
+  Ts[2] = next_liftoff_time;
+
+  // there will be three knot points
+  std::vector<Eigen::Matrix<double,7,1>> pelvis_pose_vec(3);
+  pelvis_pose_vec[0] = Isometry3dToVector7d(robot_.relativeTransform(cache, 0, rpc_.pelvis_id));
+
+  // need to adjust z-height on poses 1 and 2;
+  pelvis_pose_vec[1][2] = nxt_stance_foot_pose.translation()[2] + pelvis_height_above_sole;
+  Eigen::Vector4d foot_quat1(Isometry3dToVector7d(nxt_stance_foot_pose).tail(4));
+  double yaw1 = quat2rpy(foot_quat1)[2];
+  pelvis_pose_vec[1].tail(4) = rpy2quat(Eigen::Vector3d(0,0,yaw1));
+
+
+  pelvis_pose_vec[2][2] = nxt_swing_foot_pose.translation()[2] + pelvis_height_above_sole;
+  Eigen::Vector4d foot_quat2(Isometry3dToVector7d(nxt_swing_foot_pose).tail(4));
+  double yaw2 = quat2rpy(foot_quat2)[2];
+  pelvis_pose_vec[2].tail(4) = rpy2quat(Eigen::Vector3d(0,0,yaw2));
+
+  // need to create velocities, should be zero everywhere
+  std::vector<Eigen::Vector7d> velocities = std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero());
+  PiecewisePolynomial<double> pelvisTraj = GenerateCubicCartesianSpline(Ts, pelvis_pose_vec, velocities);
+
+
+
+  // some debugging stuff
+  std::cout << "pelvis heights " << pelvis_pose_vec[0][2] << " " << pelvis_pose_vec[1][2] << " " << pelvis_pose_vec[2][2] << std::endl;
+//  std::cout << "Ts " << Ts << std::endl;
+  std::cout << "next stance foot height " << nxt_stance_foot_pose.translation()[2] << std::endl;
+
+
+  return pelvisTraj;
+}

@@ -50,6 +50,7 @@ class WalkingPlan : public GenericPlan {
   double p_swing_foot_touchdown_z_offset_;
   double p_ss_duration_;
   double p_ds_duration_;
+  double p_pelvis_height_transition_time_;
 
   double p_swing_foot_xy_weight_mulitplier_;
   double p_swing_foot_z_weight_mulitplier_;
@@ -94,11 +95,15 @@ class WalkingPlan : public GenericPlan {
     return contact_state_.front().second;
   }
 
+  static Eigen::Isometry3d FootstepMsgToPose(drc::footstep_t msg);
   Eigen::Vector2d Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const;
   PiecewisePolynomial<double> PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &zmp_d0, const Eigen::Vector2d &zmpd_d0, double time_before_weight_shift) const;
   void SwitchContactState(double cur_time);
   void TareSwingLegForceTorque();
   PiecewisePolynomial<double> GenerateSwingTraj(const Eigen::Matrix<double, 7, 1> &foot0, const Eigen::Matrix<double, 7, 1> &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const;
+  PiecewisePolynomial<double> GeneratePelvisTraj(KinematicsCache<double> cache, double & pelvis_height_above_sole,
+                                                 double& liftoff_time, double & next_liftoff_time, Eigen::Isometry3d nxt_stance_foot_pose,
+  Eigen::Isometry3d nxt_swing_foot_pose);
   static double get_weight_distribution(const ContactState &cs);
 };
 
