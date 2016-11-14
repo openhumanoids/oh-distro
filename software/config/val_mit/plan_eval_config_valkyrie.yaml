@@ -26,6 +26,7 @@ kinematic_tree_metadata:
     neck: [lowerNeckPitch]
     back_bkz: torsoYaw
     back_bky: torsoPitch
+    back_bkx: torsoRoll
 
 foot_contact_offsets:
   *L_FOOT_NAME :
@@ -54,6 +55,11 @@ min_Fz: 5
 extend_foot_down_z_vel: -0.06
 swing_touchdown_z_vel: -0.06
 swing_touchdown_z_offset: -0.03
+
+constrainBackJoints:
+  back_bkx: false
+  back_bky: false
+  back_bkz: false
 
 swing_foot_xy_weight_mulitplier: 15.0
 swing_foot_z_weight_mulitplier: 15.0

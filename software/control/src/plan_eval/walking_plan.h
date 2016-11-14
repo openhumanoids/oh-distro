@@ -5,6 +5,14 @@
 #include <utility>
 #include <lcm/lcm-cpp.hpp>
 
+
+// should really get all the walking specific params into one place rather than littered around in different places
+struct WalkingParams{
+  bool constrain_back_bkx;
+  bool constrain_back_bky;
+  bool constrain_back_bkz;
+};
+
 class WalkingPlan : public GenericPlan {
  public:
   WalkingPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
@@ -34,6 +42,7 @@ class WalkingPlan : public GenericPlan {
   lcm::LCM lcm_handle_;
 
   WalkingState cur_state_;
+  WalkingParams walking_params_;
 
   std::list<drc::footstep_t> footstep_plan_;
   std::list<std::pair<ContactState, double>> contact_state_;
@@ -50,7 +59,6 @@ class WalkingPlan : public GenericPlan {
   double p_swing_foot_touchdown_z_offset_;
   double p_ss_duration_;
   double p_ds_duration_;
-  double p_pelvis_height_transition_time_;
 
   double p_swing_foot_xy_weight_mulitplier_;
   double p_swing_foot_z_weight_mulitplier_;

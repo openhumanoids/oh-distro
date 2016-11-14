@@ -58,6 +58,17 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   std::cout << "p_pelvis_z_weight_mulitplier_: " << p_pelvis_z_weight_mulitplier_ << std::endl;
   std::cout << "p_left_foot_zmp_y_shift_: " << p_left_foot_zmp_y_shift_ << std::endl;
   std::cout << "p_right_foot_zmp_y_shift_: " << p_right_foot_zmp_y_shift_ << std::endl;
+
+
+  // Lucas Manuelli: load some walking specific parameters
+  YAML::Node constrainBackJoints_config = config_["constrainBackJoints"];
+  walking_params_.constrain_back_bkx = constrainBackJoints_config["back_bkx"].as<bool>();
+  walking_params_.constrain_back_bky = constrainBackJoints_config["back_bky"].as<bool>();
+  walking_params_.constrain_back_bkz = constrainBackJoints_config["back_bkz"].as<bool>();
+
+  std::cout << "constrain_back_bkx" << walking_params_.constrain_back_bkx << std::endl;
+  std::cout << "constrain_back_bky" << walking_params_.constrain_back_bky << std::endl;
+  std::cout << "constrain_back_bkz" << walking_params_.constrain_back_bkz << std::endl;
 }
 
 Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const {
@@ -419,6 +430,14 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // neck
   for (size_t i = 0; i < rpc_.position_indices.neck.size(); i++)
     constrained_dofs_.push_back(rpc_.position_indices.neck[i]);
+
+  // right now only support constraining the bky and bkz, not bkx
+  if(walking_params_.constrain_back_bky){
+    constrained_dofs_.push_back(rpc_.position_indices.back_bky);
+  }
+  if(walking_params_.constrain_back_bkz){
+    constrained_dofs_.push_back(rpc_.position_indices.back_bkz);
+  }
 }
 
 void WalkingPlan::SwitchContactState(double cur_time) {
