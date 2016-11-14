@@ -176,7 +176,7 @@ qp_controller_params:
       delta_max: 10
     integrator:
       eta: 0.0
-    W_kdot: 0
+    W_kdot: 0 # this is for angular momentum
     Kp_ang: 0
     w_slack: 20.0
     Jpdotv_multiplier: 0.0
