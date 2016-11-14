@@ -52,7 +52,7 @@ ds_duration: 0.5
 pre_weight_transfer_scale: 0.3 # what does this actually do?
 min_Fz: 50
 extend_foot_down_z_vel: -0.05
-swing_touchdown_z_vel: -0.01
+swing_touchdown_z_vel: 0.0
 swing_touchdown_z_offset: 0.0
 
 swing_foot_xy_weight_mulitplier: 1.0
