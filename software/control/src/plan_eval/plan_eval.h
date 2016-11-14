@@ -12,6 +12,7 @@
 #include "../RobotStateDriver.hpp"
 #include "drc/foot_contact_estimate_t.hpp"
 #include "utils/rate_limiter.h"
+#include "bot_core/utime_t.hpp"
 
 
 // only working on manip now, need to think about how to switch between manip
@@ -36,6 +37,7 @@ class PlanEval {
   // est robot state
   std::mutex state_lock_;
   DrakeRobotState est_robot_state_;
+  bot_core::robot_state_t est_robot_state_msg_;
   std::shared_ptr<RobotStateDriver> state_driver_;
 
   // input
@@ -60,6 +62,10 @@ class PlanEval {
   void HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
                        const std::string &channel,
                        const drc::robot_plan_t *msg);
+
+  void HandleDefaultManipPlan(const lcm::ReceiveBuffer *rbuf, const std::string &channel, const bot_core::utime_t *msg);
+
+  void MakeManipPlan(const drc::robot_plan_t *msg);
 
   void HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                        const std::string &channel,

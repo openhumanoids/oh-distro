@@ -55,6 +55,10 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   sub = lcm_handle_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactState,
       this);
   sub->setQueueCapacity(1);
+
+  sub = lcm_handle_.subscribe("START_MIT_STAND", &PlanEval::HandleDefaultManipPlan,
+      this);
+  sub->setQueueCapacity(1);
 }
 
 void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
@@ -62,13 +66,32 @@ void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
                                const drc::robot_plan_t *msg)
 {
   std::cout << "Makeing Manip plan\n";
+  this->MakeManipPlan(msg);
+  // state_lock_.lock();
+  // DrakeRobotState local_est_rs = est_robot_state_;
+  // state_lock_.unlock();
 
+  // std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
+  // Eigen::VectorXd last_key_frame = local_robot_state_.q;
+  // if (current_plan_) {
+  //   last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
+  // }
+  // new_plan_ptr->HandleCommittedRobotPlan(msg, local_est_rs, last_key_frame);
+
+  // plan_lock_.lock();
+  // current_plan_ = new_plan_ptr;
+  // new_plan_ = true;
+  // plan_lock_.unlock();
+}
+
+
+void PlanEval::MakeManipPlan(const drc::robot_plan_t *msg){
   state_lock_.lock();
   DrakeRobotState local_est_rs = est_robot_state_;
   state_lock_.unlock();
 
   std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
-  Eigen::VectorXd last_key_frame = est_robot_state_.q;
+  Eigen::VectorXd last_key_frame = local_est_rs.q;
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
   }
@@ -78,6 +101,33 @@ void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
   current_plan_ = new_plan_ptr;
   new_plan_ = true;
   plan_lock_.unlock();
+}
+
+void PlanEval::HandleDefaultManipPlan(const lcm::ReceiveBuffer *rbuf, const std::string &channel, const bot_core::utime_t *msg){
+  std::cout << "Making manip plan from current state" << std::endl;
+
+
+
+  state_lock_.lock();
+  bot_core::robot_state_t local_robot_state_msg = est_robot_state_msg_;
+  DrakeRobotState local_est_rs = est_robot_state_;
+  state_lock_.unlock();
+
+  // create a "fake" robot_plan_t internally
+  drc::robot_plan_t plan_msg;
+
+  plan_msg.num_states = 2;
+  plan_msg.plan.resize(2);
+  plan_msg.plan[0] = local_robot_state_msg;
+  plan_msg.plan[1] = local_robot_state_msg;
+
+  // make the plan last one second, so we adjust the utime of the second keyframe
+  plan_msg.plan[1].utime = local_robot_state_msg.utime + 1e6;
+
+  plan_msg.plan_info.resize(2);
+  plan_msg.param_set = "manip";
+
+  this->MakeManipPlan(&plan_msg);
 }
 
 void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
@@ -232,6 +282,7 @@ void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
   state_lock_.lock();
   state_driver_->decode(msg, &est_robot_state_);
   new_robot_state_ = true;
+  est_robot_state_msg_ = *msg; // copy the msg in case we need it later
   state_lock_.unlock();
 }
 
