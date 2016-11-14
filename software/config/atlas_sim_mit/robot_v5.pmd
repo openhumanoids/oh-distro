@@ -29,7 +29,7 @@ group "1.state_mit" {
 
 group "2.plan_and_control" {
     cmd "contact_monitor" {
-        exec = "drc-contact-monitor -t 50";
+        exec = "drc-contact-monitor -t 20";
         host = "base";
     }
 
@@ -45,7 +45,7 @@ group "2.plan_and_control" {
     }
 
     cmd "InstQP" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/drake/drake/examples/Atlas/config/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas_sim_mit/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
         host = "base";
         stop_signal = 15;
     }
@@ -57,7 +57,7 @@ group "2.plan_and_control" {
     }
 
     cmd "InstQPBothHands" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/drake/drake/examples/Atlas/config/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_robotiq_weight.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas_sim_mit/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_robotiq_weight.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
         host = "base";
         stop_signal = 15;
     }
@@ -99,7 +99,7 @@ cmd "pose-util" {
 }
 
 cmd "director" {
-    exec = "director -c robot.cfg -v5";
+    exec = "mit-director-atlas";
     host = "base";
 }
 

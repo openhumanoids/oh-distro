@@ -40,22 +40,38 @@ foot_contact_offsets:
 
 # shared by manip and walking
 mu: 0.7
-zmp_height: 0.8
+zmp_height: 1.0 # note we may need to turn this down
 initial_transition_time: 0.2
-transition_trq_alpha_filter: 0.
+transition_trq_alpha_filter: 0.0
 flip_foot_ft_sensor: 0
 
 # walking
-ss_duration: 0.5
-ds_duration: 0.2
-pre_weight_transfer_scale: 0.3
+pelvis_height: 0.75 # measured as height from ankles
+ss_duration: 1.0
+ds_duration: 0.5
+pre_weight_transfer_scale: 0.3 # what does this actually do?
 min_Fz: 50
-extend_foot_down_z_vel: -0.1
-swing_touchdown_z_vel: -0.1
-swing_touchdown_z_offset: -0.05
+extend_foot_down_z_vel: -0.05
+swing_touchdown_z_vel: -0.01
+swing_touchdown_z_offset: 0.0
 
 swing_foot_xy_weight_mulitplier: 1.0
 swing_foot_z_weight_mulitplier: 1.0
 pelvis_z_weight_mulitplier: 1.0
 left_foot_zmp_y_shift: 0.0
 right_foot_zmp_y_shift: -0.0
+
+
+
+# FOR DEBUGGING PURPOSES
+# this is currently just copied over from Atlas.m where default walking params are
+nominal_LIP_COM_height: 0.8 # nominal height used to construct D_ls for our linear inverted pendulum model, this is D_control
+
+# the actual com height during walking, i.e. com height given that
+# the pelvis is at 0.83 is something like 1.08
+
+# I think that c_plan_eval uses the real COM height
+
+# copied from Atlas.m
+pelvis_height_above_foot_sole: 0.83 # this is D_control
+
