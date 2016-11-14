@@ -65,15 +65,15 @@ qp_controller_params:
         accel_bounds:
           min: {x: -100, y: -100, z: -100, wx: -50, wy: -50, wz: -50}
           max: {x: 100, y: 100, z: 100, wx: 50, wy: 50, wz: 50}
-        weight: 0.0
+        weight: 0.01
       pelvis:
         Kp: {x: 150, y: 150, z: 150, wx: 200, wy: 200, wz: 200}
-        weight: 0.01
+        weight: 1
         damping_ratio: {x: 0.6, y: 0.6, z: 0.6, wx: 0.6, wy: 0.6, wz: 0.6}
       *R_FOOT_NAME :
-        weight: 0.01
+        weight: 0.1
       *L_FOOT_NAME :
-        weight: 0.01
+        weight: 0.1
     position_specific:
       DEFAULT:
         Kp: 150
@@ -127,12 +127,12 @@ qp_controller_params:
       eta: 0.0
     W_kdot: 0
     Kp_ang: 0
-    w_slack: 0.05
+    w_slack: 20.0
     Jpdotv_multiplier: 1.0
     slack_limit: 100
     w_grf: 0.00
     mu: 1
-    w_zmp: 100.0
+    w_zmp: 10.0 # weight on achieving desired COM acceleration
     comdd_alpha_break_frequency_hz: 100.0
     w_z_trq: 0.0
     w_qdd_delta: 0.0
@@ -177,18 +177,18 @@ qp_controller_params:
         weight: 0.001
       pelvis:
         Kp: {x: 0, y: 0, z: 150, wx: 200, wy: 200, wz: 200}
-        weight: 0.075
+        weight: 1.0
       *R_FOOT_NAME :
         Kp: {x: 100, y: 100, z: 100, wx: 150, wy: 150, wz: 150}
         damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
-        weight: 0.001
+        weight: 0.1
       *L_FOOT_NAME :
         Kp: {x: 100, y: 100, z: 100, wx: 150, wy: 150, wz: 150}
         damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
-        weight: 0.001
+        weight: 0.1
       utorso:
         Kp: {x: 0, y: 0, z: 0, wx: 200, wy: 200, wz: 200}
-        weight: 0.075
+        weight: 0.1
     position_specific:
       DEFAULT:
         w_qdd: 0

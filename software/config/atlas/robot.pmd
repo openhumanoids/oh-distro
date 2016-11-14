@@ -55,26 +55,14 @@ group "02.plan_and_control" {
       host = "atlas2";
     }
 
-    cmd "BasePlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = BasePlanner(); p.run();\"";
-       host = "base";
-       stop_signal = 15;
-    }
-
-    cmd "RemotePlanner" {
-       exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} matlab -nosplash -nodesktop -r \"addpath_control; p = RemotePlanner(); p.run();\"'";
-       host = "atlas1";
-       stop_signal = 15;
-    }
-
-    cmd "PlanEval" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runDRCPlanEval(0, struct('hands', 'robotiq_weight_only')); \"";
+    cmd "c_plan_eval" {
+        exec = "c_plan_eval ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf ${DRC_BASE}/software/config/atlas_sim_mit/plan_eval_config_atlas.yaml";
         host = "atlas2";
         stop_signal = 15;
     }
 
     cmd "InstQP" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/drake/drake/examples/Atlas/config/control_config_hardware.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_robotiq_weight.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas_sim_mit/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
         host = "atlas2";
         stop_signal = 15;
     }
@@ -282,8 +270,8 @@ script "1.power_on" {
 script "2.stop_clean" {
     stop cmd "atlas-off";
     stop cmd "atlas-high";
-    stop cmd "PlanEval";
     stop cmd "InstQP";
+    stop cmd "c_plan_eval";
     stop cmd "fusion";
     stop cmd "state-sync";
     stop group "10.Driving";
@@ -291,28 +279,9 @@ script "2.stop_clean" {
     start cmd "atlas-off";
     start cmd "state-sync";
     start cmd "fusion";
-    start cmd "PlanEval";
+    start cmd "c_plan_eval";
     start cmd "InstQP";
     start cmd "PressureControl";
 
 }
 
-
-script "3.Start Streaming" {
-    stop cmd "PlanEval";
-    stop cmd "PressureControl";
-    stop cmd "sa-right";
-    start cmd "April Tags";
-    start cmd "Streaming Robot Side with Driving Gains";
-    start cmd "sa-right-high-rate";
-}
-
-script "4.Stop Streaming" {
-    stop group "10.Driving";
-    start cmd "PlanEval";
-    stop group "01.state_mit";
-    wait ms 2000;
-    start group "01.state_mit";
-    start cmd "PressureControl";
-    start cmd "sa-right";
-}

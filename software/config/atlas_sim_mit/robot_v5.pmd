@@ -29,7 +29,7 @@ group "1.state_mit" {
 
 group "2.plan_and_control" {
     cmd "contact_monitor" {
-        exec = "drc-contact-monitor -t 20";
+        exec = "drc-contact-monitor -t 5";
         host = "base";
     }
 
