@@ -409,14 +409,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % See if we just passed our publish-timestep for 
       % the foot contact state message, publish if so (and if
       % we're publishing ground truth anyway)
-      if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
-        foot_contact_est = drc.foot_contact_estimate_t();
-        foot_contact_est.utime = t*1000*1000;
-        foot_contact_est.left_contact = left_ankle_ft_state(3) > 500;
-        foot_contact_est.right_contact = right_ankle_ft_state(3) > 500;
-        foot_contact_est.detection_method = 0;
-        obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
-      end
+      % if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
+      %   foot_contact_est = drc.foot_contact_estimate_t();
+      %   foot_contact_est.utime = t*1000*1000;
+      %   foot_contact_est.left_contact = left_ankle_ft_state(3) > 500;
+      %   foot_contact_est.right_contact = right_ankle_ft_state(3) > 500;
+      %   foot_contact_est.detection_method = 0;
+      %   obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
+      % end
       
       % What needs to go out:
       num_dofs = length([atlas_state; right_hand_state; left_hand_state]) / 2;
