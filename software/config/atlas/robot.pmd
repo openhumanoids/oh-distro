@@ -55,6 +55,12 @@ group "02.plan_and_control" {
       host = "atlas2";
     }
 
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner([],5); p.run();\"";
+       host = "base";
+       stop_signal = 15;
+    }
+
     cmd "c_plan_eval" {
         exec = "c_plan_eval ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf ${DRC_BASE}/software/config/atlas_sim_mit/plan_eval_config_atlas.yaml";
         host = "atlas2";
@@ -62,8 +68,14 @@ group "02.plan_and_control" {
     }
 
     cmd "InstQP" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas_sim_mit/control_config_sim.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas/control_config_hardware_alternate.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
         host = "atlas2";
+        stop_signal = 15;
+    }
+
+    cmd "InstQP on localhost" {
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas/control_config_hardware.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
+        host = "localhost";
         stop_signal = 15;
     }
 
