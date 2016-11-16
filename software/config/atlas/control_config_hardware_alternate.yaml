@@ -71,9 +71,13 @@ qp_controller_params:
         weight: 1
         damping_ratio: {x: 0.6, y: 0.6, z: 0.6, wx: 0.6, wy: 0.6, wz: 0.6}
       *R_FOOT_NAME :
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
       *L_FOOT_NAME :
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
     position_specific:
       DEFAULT:
         Kp: 0
@@ -195,19 +199,19 @@ qp_controller_params:
     W_kdot: 0
     Kp_ang: 0
     w_slack: 20.0
-    Jpdotv_multiplier: 1.0
+    Jpdotv_multiplier: 0.0
     slack_limit: 100
     w_grf: 0.00
     mu: 1
-    w_zmp: 10.0 # weight on achieving desired COM acceleration
-    comdd_alpha_break_frequency_hz: 100.0
+    w_zmp: 7.5 # weight on achieving desired COM acceleration
+    comdd_alpha_break_frequency_hz: 10.0 # this is for COM acceleration coming from ZMP tracking
     w_z_trq: 0.0
     w_qdd_delta: 0.0
-    Kp_accel: 1.0
-    ankle_torque_alpha: 0.0
+    Kp_accel: 0.1
+    ankle_torque_alpha: 0.0 # not used anymore
     torque_alpha_filter_break_frequency_hz: &TORQUE_BREAK_FREQ 15.0 # just internal for now
     contact_threshold: 0.002    
-    useTorqueAlphaFilter: False
+    useTorqueAlphaFilter: True
     min_knee_angle: 0.7
     center_of_mass_observer:
       enabled: false

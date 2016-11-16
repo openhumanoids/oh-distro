@@ -9,6 +9,8 @@ import simplewalking
 from director import tasklaunchpanel
 from director import applogic
 from director import teleoppanel
+from director import lcmUtils
+import drc as lcmdrc
 import os
 
 
@@ -50,6 +52,8 @@ def startupAtlas(robotSystem, globalsDict=None):
     configFilename = 'atlas_director_vis_config.yaml'
     fullConfigFilename = os.getenv('DRC_BASE') + '/software/modules/mitdirector/config/' + configFilename
     forceVisualizer = forcevisualizer.ForceVisualizer(robotSystem, applogic.getDRCView(), fullConfigFilename)
+    startupPlanner = StartupPlanner(robotSystem)
+
 
     # add a new task panel
     #exampleTaskPanel = exampletaskpanel.ExampleTaskPanel(robotSystem)
@@ -58,5 +62,19 @@ def startupAtlas(robotSystem, globalsDict=None):
 
     if globalsDict is not None:
         globalsDict['forceVisualizer'] = forceVisualizer
+        globalsDict['startupPlanner'] = startupPlanner
 
         # add new task panel to global dict
+
+
+class StartupPlanner:
+    def __init__(self, robotSystem):
+        self.robotSystem = robotSystem
+        lcmUtils.addSubscriber("START_MIT_STAND", lcmdrc.utime_t, self.executeManipPlanFromCurrentPose)
+
+    def executeManipPlanFromCurrentPose(self, msg):
+        q = self.robotSystem.robotStateJointController.q
+        plan = self.robotSystem.ikPlanner.computePostureGoal(q,q)
+        self.robotSystem.manipPlanner.commitManipPlan(plan)
+
+        return plan
