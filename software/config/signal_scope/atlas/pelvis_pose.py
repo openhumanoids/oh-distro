@@ -35,10 +35,17 @@ def myFunction(msg):
 	rpy = transformUtils.quaternionToRollPitchYaw(quat)
 	return msg.utime, rpy[2]
 
+def myFunctionBDI(msg):
+	quat = numpy.array([msg.orientation[0], msg.orientation[1], msg.orientation[2], msg.orientation[3]])
+	rpy = transformUtils.quaternionToRollPitchYaw(quat)
+	return msg.utime, rpy[2]
+
 # position plot
-addPlot(timeWindow=15, yLimits=[-1.5, 1.5])
+addPlot(timeWindow=7, yLimits=[-1.5, 1.5])
 
 addSignalFunction('EST_ROBOT_STATE', myFunction)
+addSignalFunction('POSE_BDI', myFunctionBDI)
+
 
 
 
