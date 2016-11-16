@@ -56,9 +56,9 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
       this);
   sub->setQueueCapacity(1);
 
-  sub = lcm_handle_.subscribe("START_MIT_STAND", &PlanEval::HandleDefaultManipPlan,
-      this);
-  sub->setQueueCapacity(1);
+  // sub = lcm_handle_.subscribe("START_MIT_STAND", &PlanEval::HandleDefaultManipPlan,
+  //     this);
+  // sub->setQueueCapacity(1);
 }
 
 void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
@@ -103,32 +103,34 @@ void PlanEval::MakeManipPlan(const drc::robot_plan_t *msg){
   plan_lock_.unlock();
 }
 
-void PlanEval::HandleDefaultManipPlan(const lcm::ReceiveBuffer *rbuf, const std::string &channel, const bot_core::utime_t *msg){
-  std::cout << "Making manip plan from current state" << std::endl;
+
+// there is a bug in this, doesn't work
+// void PlanEval::HandleDefaultManipPlan(const lcm::ReceiveBuffer *rbuf, const std::string &channel, const bot_core::utime_t *msg){
+//   std::cout << "Making manip plan from current state" << std::endl;
 
 
 
-  state_lock_.lock();
-  bot_core::robot_state_t local_robot_state_msg = est_robot_state_msg_;
-  DrakeRobotState local_est_rs = est_robot_state_;
-  state_lock_.unlock();
+//   state_lock_.lock();
+//   bot_core::robot_state_t local_robot_state_msg = est_robot_state_msg_;
+//   DrakeRobotState local_est_rs = est_robot_state_;
+//   state_lock_.unlock();
 
-  // create a "fake" robot_plan_t internally
-  drc::robot_plan_t plan_msg;
+//   // create a "fake" robot_plan_t internally
+//   drc::robot_plan_t plan_msg;
 
-  plan_msg.num_states = 2;
-  plan_msg.plan.resize(2);
-  plan_msg.plan[0] = local_robot_state_msg;
-  plan_msg.plan[1] = local_robot_state_msg;
+//   plan_msg.num_states = 2;
+//   plan_msg.plan.resize(2);
+//   plan_msg.plan[0] = local_robot_state_msg;
+//   plan_msg.plan[1] = local_robot_state_msg;
 
-  // make the plan last one second, so we adjust the utime of the second keyframe
-  plan_msg.plan[1].utime = local_robot_state_msg.utime + 1e6;
+//   // make the plan last one second, so we adjust the utime of the second keyframe
+//   plan_msg.plan[1].utime = local_robot_state_msg.utime + 1e6;
 
-  plan_msg.plan_info.resize(2);
-  plan_msg.param_set = "manip";
+//   plan_msg.plan_info.resize(2);
+//   plan_msg.param_set = "manip";
 
-  this->MakeManipPlan(&plan_msg);
-}
+//   this->MakeManipPlan(&plan_msg);
+// }
 
 void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                                  const std::string &channel,

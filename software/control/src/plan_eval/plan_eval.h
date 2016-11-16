@@ -63,7 +63,7 @@ class PlanEval {
                        const std::string &channel,
                        const drc::robot_plan_t *msg);
 
-  void HandleDefaultManipPlan(const lcm::ReceiveBuffer *rbuf, const std::string &channel, const bot_core::utime_t *msg);
+  // void HandleDefaultManipPlan(const lcm::ReceiveBuffer *rbuf, const std::string &channel, const bot_core::utime_t *msg);
 
   void MakeManipPlan(const drc::robot_plan_t *msg);
 
