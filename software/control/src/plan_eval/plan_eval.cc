@@ -20,8 +20,11 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
 
   // state decoder stuff
   RigidBodyTree r(urdf_name);
-  est_robot_state_.q.resize(r.num_positions);
-  est_robot_state_.qd.resize(r.num_velocities);
+  est_robot_state_receiver_.q.resize(r.num_positions);
+  est_robot_state_receiver_.qd.resize(r.num_velocities);
+
+  est_robot_state_publisher_.q.resize(r.num_positions);
+  est_robot_state_publisher_.qd.resize(r.num_velocities);
   int num_states = r.num_positions + r.num_velocities;
   std::vector<std::string> state_coordinate_names(num_states);
   for (int i = 0; i < num_states; i++) {
@@ -35,26 +38,40 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   new_plan_ = false;
   plan_status_rate_limiter_.setSpeedLimit(PLAN_STATUS_RATE_LIMIT_HZ);
 
-  if (!lcm_handle_.good()) {
+  if (!lcm_handle_receiver_.good()) {
     throw std::runtime_error("lcm is not good()");
   }
 
-  lcm::Subscription *sub;
-  sub = lcm_handle_.subscribe("COMMITTED_ROBOT_PLAN",
-      &PlanEval::HandleManipPlan, this);
-  sub->setQueueCapacity(1);
+  if (!lcm_handle_publisher_.good()) {
+    throw std::runtime_error("lcm is not good()");
+  }
 
-  sub = lcm_handle_.subscribe("WALKING_CONTROLLER_PLAN_REQUEST",
-      &PlanEval::HandleWalkingPlan, this);
-  sub->setQueueCapacity(1);
+//  lcm::Subscription *sub;
+//  sub = lcm_handle_receiver_.subscribe("COMMITTED_ROBOT_PLAN",
+//      &PlanEval::HandleManipPlan, this);
+//  sub->setQueueCapacity(1);
+//
+//  sub = lcm_handle_receiver_.subscribe("WALKING_CONTROLLER_PLAN_REQUEST",
+//      &PlanEval::HandleWalkingPlan, this);
+//  sub->setQueueCapacity(1);
+//
+//  sub = lcm_handle_receiver_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotStateReceiverLoop,
+//      this);
+//  sub->setQueueCapacity(1);
+//
+//  sub = lcm_handle_receiver_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactStateReceiverLoop,
+//                                        this);
+//  sub->setQueueCapacity(1);
 
-  sub = lcm_handle_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotState,
-      this);
-  sub->setQueueCapacity(1);
 
-  sub = lcm_handle_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactState,
-      this);
-  sub->setQueueCapacity(1);
+//  // the publisher and receiver each have their own lcm handles
+//  sub = lcm_handle_publisher_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotStatePublisherLoop,
+//                                       this);
+//  sub->setQueueCapacity(1);
+//
+//  sub = lcm_handle_publisher_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactStatePublisherLoop,
+//      this);
+//  sub->setQueueCapacity(1);
 
   // sub = lcm_handle_.subscribe("START_MIT_STAND", &PlanEval::HandleDefaultManipPlan,
   //     this);
@@ -66,6 +83,7 @@ void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
                                const drc::robot_plan_t *msg)
 {
   std::cout << "Makeing Manip plan\n";
+  std::cout << " received plan at " << msg->utime*1.0/1e6 << std::endl;
   this->MakeManipPlan(msg);
   // state_lock_.lock();
   // DrakeRobotState local_est_rs = est_robot_state_;
@@ -86,16 +104,16 @@ void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
 
 
 void PlanEval::MakeManipPlan(const drc::robot_plan_t *msg){
-  state_lock_.lock();
-  DrakeRobotState local_est_rs = est_robot_state_;
-  state_lock_.unlock();
+//  state_lock_.lock();
+//  DrakeRobotState local_est_rs = est_robot_state_receiver_;
+//  state_lock_.unlock();
 
   std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
-  Eigen::VectorXd last_key_frame = local_est_rs.q;
+  Eigen::VectorXd last_key_frame = est_robot_state_receiver_.q;
   if (current_plan_) {
-    last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
+    last_key_frame = current_plan_->GetLatestKeyFrame(est_robot_state_receiver_.t);
   }
-  new_plan_ptr->HandleCommittedRobotPlan(msg, local_est_rs, last_key_frame);
+  new_plan_ptr->HandleCommittedRobotPlan(msg, est_robot_state_receiver_, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;
@@ -138,18 +156,18 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
 {
   std::cout << "Making Walking plan\n";
   
-  DrakeRobotState local_est_rs;
-  state_lock_.lock();
-  local_est_rs = est_robot_state_;
-  state_lock_.unlock();
+//  DrakeRobotState local_est_rs;
+//  state_lock_.lock();
+//  local_est_rs = est_robot_state_;
+//  state_lock_.unlock();
 
   //std::shared_ptr<GenericPlan> new_plan_ptr(new SingleSupportPlan(urdf_name_, config_name_));
   std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
-  Eigen::VectorXd last_key_frame = local_est_rs.q;
+  Eigen::VectorXd last_key_frame = est_robot_state_receiver_.q;
   if (current_plan_) {
-    last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
+    last_key_frame = current_plan_->GetLatestKeyFrame(est_robot_state_receiver_.t);
   }
-  new_plan_ptr->HandleCommittedRobotPlan(msg, local_est_rs, last_key_frame);
+  new_plan_ptr->HandleCommittedRobotPlan(msg, est_robot_state_receiver_, last_key_frame);
 
   plan_lock_.lock();
   current_plan_ = new_plan_ptr;
@@ -157,33 +175,71 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
   plan_lock_.unlock();
 }
 
-void PlanEval::HandleEstContactState(const lcm::ReceiveBuffer *rbuf,
+void PlanEval::HandleEstContactStateReceiverLoop(const lcm::ReceiveBuffer *rbuf,
                            const std::string &channel,
                            const drc::foot_contact_estimate_t *msg)
 {
-  state_lock_.lock();
+//  state_lock_.lock();
   if (msg->left_contact > 0)
-    est_robot_state_.contact_state.set_contact(ContactState::L_FOOT);
+    est_robot_state_receiver_.contact_state.set_contact(ContactState::L_FOOT);
   else
-    est_robot_state_.contact_state.remove_contact(ContactState::L_FOOT);
+    est_robot_state_receiver_.contact_state.remove_contact(ContactState::L_FOOT);
 
   if (msg->right_contact > 0)
-    est_robot_state_.contact_state.set_contact(ContactState::R_FOOT);
+    est_robot_state_receiver_.contact_state.set_contact(ContactState::R_FOOT);
   else
-    est_robot_state_.contact_state.remove_contact(ContactState::R_FOOT);
+    est_robot_state_receiver_.contact_state.remove_contact(ContactState::R_FOOT);
 
-  state_lock_.unlock();
+//  state_lock_.unlock();
+}
+
+void PlanEval::HandleEstContactStatePublisherLoop(const lcm::ReceiveBuffer *rbuf,
+                                                 const std::string &channel,
+                                                 const drc::foot_contact_estimate_t *msg)
+{
+//  state_lock_.lock();
+  if (msg->left_contact > 0)
+    est_robot_state_receiver_.contact_state.set_contact(ContactState::L_FOOT);
+  else
+    est_robot_state_receiver_.contact_state.remove_contact(ContactState::L_FOOT);
+
+  if (msg->right_contact > 0)
+    est_robot_state_receiver_.contact_state.set_contact(ContactState::R_FOOT);
+  else
+    est_robot_state_receiver_.contact_state.remove_contact(ContactState::R_FOOT);
+
+//  state_lock_.unlock();
 }
 
 void PlanEval::ReceiverLoop() {
+
+  // setup all the subscriptions
+  lcm::Subscription *sub;
+  sub = lcm_handle_receiver_.subscribe("COMMITTED_ROBOT_PLAN",
+                                       &PlanEval::HandleManipPlan, this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_receiver_.subscribe("WALKING_CONTROLLER_PLAN_REQUEST",
+                                       &PlanEval::HandleWalkingPlan, this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_receiver_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotStateReceiverLoop,
+                                       this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_receiver_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactStateReceiverLoop,
+                                       this);
+  sub->setQueueCapacity(1);
+
+
   std::cout << "PlanEval Receiver thread start: " << std::this_thread::get_id()
             << std::endl;
   while (!receiver_stop_) {
     const double timeout = 0.3;
-    bool lcm_ready = WaitForLCM(lcm_handle_, timeout);
+    bool lcm_ready = WaitForLCM(lcm_handle_receiver_, timeout);
 
     if (lcm_ready) {
-      if (lcm_handle_.handle() != 0) {
+      if (lcm_handle_receiver_.handle() != 0) {
         std::cerr << "lcm->handle() returned non-zero\n";
         exit(-1);
       }
@@ -194,6 +250,16 @@ void PlanEval::ReceiverLoop() {
 }
 
 void PlanEval::PublisherLoop() {
+  lcm::Subscription *sub;
+  // the publisher and receiver each have their own lcm handles
+  sub = lcm_handle_publisher_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotStatePublisherLoop,
+                                        this);
+  sub->setQueueCapacity(1);
+
+  sub = lcm_handle_publisher_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactStatePublisherLoop,
+                                        this);
+  sub->setQueueCapacity(1);
+
   std::cout << "PlanEval Publisher thread start: " << std::this_thread::get_id()
             << std::endl;
 
@@ -202,28 +268,41 @@ void PlanEval::PublisherLoop() {
   DrakeRobotState local_est_rs;
 
   while (!publisher_stop_) {
-    if (new_plan_) {
-      plan_lock_.lock();
-      local_ptr = current_plan_;
-      new_plan_ = false;
-      plan_lock_.unlock();
+    const double timeout = 0.3;
+    bool lcm_ready = WaitForLCM(lcm_handle_publisher_, timeout);
 
-      has_plan = true;
+    if (lcm_ready) {
+      if (lcm_handle_publisher_.handle() != 0) {
+        std::cerr << "lcm->handle() returned non-zero\n";
+        exit(-1);
+      }
+
+      if (new_plan_) {
+        plan_lock_.lock();
+        local_ptr = current_plan_;
+        new_plan_ = false;
+        new_robot_state_publisher_loop_ = false; // wait for the next robot state to come in so we don't use an old one by accident
+        plan_lock_.unlock();
+        has_plan = true;
+      }
+
+      if (has_plan && new_robot_state_publisher_loop_) {
+//      state_lock_.lock();
+//      local_est_rs = est_robot_state_publisher_;
+//      new_robot_state_ = false;
+//      state_lock_.unlock();
+        new_robot_state_publisher_loop_ = false;
+
+        drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(est_robot_state_publisher_);
+        lcm_handle_publisher_.publish("QP_CONTROLLER_INPUT", &qp_input);
+
+        // publish the plan status
+        current_plan_status_ = local_ptr->getPlanStatus();
+        this->publishPlanStatus(current_plan_status_);
+      }
     }
 
-    if (has_plan && new_robot_state_) {
-      state_lock_.lock();
-      local_est_rs = est_robot_state_;
-      new_robot_state_ = false;
-      state_lock_.unlock();
 
-      drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(local_est_rs);
-      lcm_handle_.publish("QP_CONTROLLER_INPUT", &qp_input);
-
-      // publish the plan status
-      current_plan_status_ = local_ptr->getPlanStatus();
-      this->publishPlanStatus(current_plan_status_);
-    }
   }
   std::cout << "PlanEval Publisher thread exit: " << std::this_thread::get_id()
             << std::endl;
@@ -275,17 +354,28 @@ void PlanEval::publishPlanStatus(PlanStatus plan_status) {
       break;
   }
 
-  lcm_handle_.publish("PLAN_STATUS", &msg);
+  lcm_handle_publisher_.publish("PLAN_STATUS", &msg);
 }
 
-void PlanEval::HandleEstRobotState(const lcm::ReceiveBuffer *rbuf,
+void PlanEval::HandleEstRobotStateReceiverLoop(const lcm::ReceiveBuffer *rbuf,
                                    const std::string &channel,
                                    const bot_core::robot_state_t *msg) {
-  state_lock_.lock();
-  state_driver_->decode(msg, &est_robot_state_);
-  new_robot_state_ = true;
-  est_robot_state_msg_ = *msg; // copy the msg in case we need it later
-  state_lock_.unlock();
+//  state_lock_.lock();
+  state_driver_->decode(msg, &est_robot_state_receiver_);
+  new_robot_state_receiver_loop_ = true;
+//  est_robot_state_msg_ = *msg; // copy the msg in case we need it later
+//  std::cout << "got an est robot state msg, t = " << msg->utime/1e6 << std::endl;
+//  state_lock_.unlock();
+}
+
+void PlanEval::HandleEstRobotStatePublisherLoop(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
+                                                const bot_core::robot_state_t *msg){
+//  state_lock_.lock();
+  state_driver_->decode(msg, &est_robot_state_publisher_);
+  new_robot_state_publisher_loop_ = true;
+//  est_robot_state_msg_ = *msg; // copy the msg in case we need it later
+//  std::cout << "got an est robot state msg, t = " << msg->utime/1e6 << std::endl;
+//  state_lock_.unlock();
 }
 
 void PlanEval::Start() {
