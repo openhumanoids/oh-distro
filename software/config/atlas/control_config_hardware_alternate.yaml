@@ -439,9 +439,9 @@ qp_controller_params:
       neck_ay:
         w_qdd: 0
       back_bkx:
-        w_qdd: 0.001
+        w_qdd: 0.1
         Kp: 50
-        damping_ratio: 0.5
+        damping_ratio: 0.3
       r_leg_hpz: {w_qdd: 1e-6, damping_ratio: 0.5}
       r_leg_hpx: {w_qdd: 1e-6, damping_ratio: 0.5}
       r_leg_hpy: {w_qdd: 1e-6, damping_ratio: 0.5}
