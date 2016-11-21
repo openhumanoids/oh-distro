@@ -68,7 +68,7 @@ group "02.plan_and_control" {
     }
 
     cmd "InstQP" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas/control_config_hardware_alternate.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
+        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas/control_config_hardware.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
         host = "atlas2";
         stop_signal = 15;
     }
