@@ -1,5 +1,6 @@
 #include "walking_plan.h"
 #include "generate_spline.h"
+#include "time.h"
 #include "drake/util/lcmUtil.h"
 
 #include <fstream>
@@ -65,6 +66,7 @@ void WalkingPlan::LoadConfigurationFromYAML(const std::string &name) {
   walking_params_.constrain_back_bkx = constrainBackJoints_config["back_bkx"].as<bool>();
   walking_params_.constrain_back_bky = constrainBackJoints_config["back_bky"].as<bool>();
   walking_params_.constrain_back_bkz = constrainBackJoints_config["back_bkz"].as<bool>();
+  walking_params_.use_force_bounds = config_["use_force_bounds"].as<bool>();
 
   std::cout << "constrain_back_bkx" << walking_params_.constrain_back_bkx << std::endl;
   std::cout << "constrain_back_bky" << walking_params_.constrain_back_bky << std::endl;
@@ -92,6 +94,9 @@ Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(Side side, const Eigen::Isometr
 // called on every touch down
 void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &planned_cs) {
   // current state
+
+  clock_t start_clock_time = clock();
+
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
 
   Eigen::Vector2d com0, comd0;
@@ -351,6 +356,10 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
   // reset clock
   interp_t0_ = -1; // what does this do exactly?
+
+
+  float elapsedTimeInSeconds = ((float) (clock() - start_clock_time))/CLOCKS_PER_SEC;
+  std::cout << "Generate Trajs took " << elapsedTimeInSeconds << " seconds \n";
 }
 
 
@@ -636,17 +645,27 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   wl = std::max(wl, 0.0);
 
   for (size_t s = 0; s < support_state_.size(); s++) {
-    // only foot
-    if (support_state_[s].body == rpc_.foot_ids.at(Side::LEFT)) {
-      support_state_[s].total_normal_force_upper_bound *= wl;
-      support_state_[s].total_normal_force_lower_bound = p_min_Fz_;
-    }
-    else if (support_state_[s].body == rpc_.foot_ids.at(Side::RIGHT)) {
-      support_state_[s].total_normal_force_upper_bound *= (1 - wl);
-      support_state_[s].total_normal_force_lower_bound = p_min_Fz_;
+
+    if (walking_params_.use_force_bounds){
+      // only foot
+      if (support_state_[s].body == rpc_.foot_ids.at(Side::LEFT)) {
+        // in making the default support state this is set to 3 times the robot's mass
+        support_state_[s].total_normal_force_upper_bound *= wl;
+        support_state_[s].total_normal_force_lower_bound = p_min_Fz_;
+      }
+      else if (support_state_[s].body == rpc_.foot_ids.at(Side::RIGHT)) {
+        support_state_[s].total_normal_force_upper_bound *= (1 - wl);
+        support_state_[s].total_normal_force_lower_bound = p_min_Fz_;
+      }
+
+      support_state_[s].total_normal_force_upper_bound = std::max(support_state_[s].total_normal_force_upper_bound, support_state_[s].total_normal_force_lower_bound);
+    } else{
+      support_state_[s].total_normal_force_lower_bound = 0;
+      // the upper bound is already set to 3 times the robot's weight in the MakeDefaultSupportState method
     }
 
-    support_state_[s].total_normal_force_upper_bound = std::max(support_state_[s].total_normal_force_upper_bound, support_state_[s].total_normal_force_lower_bound);
+
+
   }
 
   // apply the trq alpha filter at contact switch

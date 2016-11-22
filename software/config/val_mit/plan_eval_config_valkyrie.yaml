@@ -52,6 +52,7 @@ pelvis_height: 0.97 # measured from the ankles
 ss_duration: 1
 ds_duration: 0.5
 min_Fz: 5
+use_force_bounds: True
 extend_foot_down_z_vel: -0.06
 swing_touchdown_z_vel: -0.06
 swing_touchdown_z_offset: -0.03

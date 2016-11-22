@@ -199,14 +199,14 @@ void PlanEval::HandleEstContactStatePublisherLoop(const lcm::ReceiveBuffer *rbuf
 {
 //  state_lock_.lock();
   if (msg->left_contact > 0)
-    est_robot_state_receiver_.contact_state.set_contact(ContactState::L_FOOT);
+    est_robot_state_publisher_.contact_state.set_contact(ContactState::L_FOOT);
   else
-    est_robot_state_receiver_.contact_state.remove_contact(ContactState::L_FOOT);
+    est_robot_state_publisher_.contact_state.remove_contact(ContactState::L_FOOT);
 
   if (msg->right_contact > 0)
-    est_robot_state_receiver_.contact_state.set_contact(ContactState::R_FOOT);
+    est_robot_state_publisher_.contact_state.set_contact(ContactState::R_FOOT);
   else
-    est_robot_state_receiver_.contact_state.remove_contact(ContactState::R_FOOT);
+    est_robot_state_publisher_.contact_state.remove_contact(ContactState::R_FOOT);
 
 //  state_lock_.unlock();
 }

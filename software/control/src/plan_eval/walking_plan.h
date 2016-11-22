@@ -11,6 +11,7 @@ struct WalkingParams{
   bool constrain_back_bkx;
   bool constrain_back_bky;
   bool constrain_back_bkz;
+  bool use_force_bounds;
 };
 
 class WalkingPlan : public GenericPlan {

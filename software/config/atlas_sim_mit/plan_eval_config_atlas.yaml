@@ -52,6 +52,7 @@ ss_duration: 1.0
 ds_duration: 0.5
 pre_weight_transfer_scale: 0.3 # what does this actually do?
 min_Fz: 50
+use_force_bounds: True
 extend_foot_down_z_vel: -0.05
 swing_touchdown_z_vel: 0.0
 swing_touchdown_z_offset: 0.0
