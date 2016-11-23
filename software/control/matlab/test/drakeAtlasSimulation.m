@@ -213,7 +213,6 @@ xstar_complete(1:length(xstar)) = xstar;
 xstar_complete = r_complete.resolveConstraints(xstar_complete);
 r_complete = r_complete.setInitialState(xstar_complete);
 
-disp('sending execute nominal plan message');
 
 
 
@@ -300,7 +299,8 @@ while(~done)
     warning(S);
   end
   try
-    sendExecuteNominalPlanMessage(lcmHandle);
+    disp('sending MIT stand message');
+    sendMITStand(lcmHandle);
     options.gui_control_interface = true;
     simulate(sys,[0.0,Inf], xstar_complete, options);
   catch err
@@ -340,8 +340,7 @@ end
 
 % publishes a trigger message to get the director to call planNominal and publish that plan
 % need this so that we can take over from the dummy controller that initially is running, i.e. should just be able to have zeros instead of the dummy controller
-function sendExecuteNominalPlanMessage(lcmHandle)
-  msg = drc.string_t();
-  msg.data = 'publish';
-  lcmHandle.publish('EXECUTE_NOMINAL_PLAN', msg);
+function sendMITStand(lcmHandle)
+  msg = drc.utime_t();
+  lcmHandle.publish('START_MIT_STAND', msg);
 end
