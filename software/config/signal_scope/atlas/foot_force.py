@@ -46,6 +46,19 @@ def getFootForce(msg, side="l_foot"):
 
 	return msg.timestamp, normalForce
 
+# this should be QP_CONTROLLER_INPUT msg
+def getFootZForceBound(msg, side="l_foot"):
+	zForceBound = 0
+
+	for support_data in msg.support_data:
+		bodyName = str(support_data.body_name)
+
+		if (bodyName == side):
+			zForceBound = support_data.total_normal_force_upper_bound
+
+
+	return msg.timestamp, zForceBound
+
 
 # foot forces
 addPlot(timeWindow=time_window, yLimits=[0, 1000])
@@ -55,6 +68,12 @@ addSignal('FORCE_TORQUE', msg.utime, msg.sensors[1].force[2]) # right foot
 
 addSignalFunction("CONTROLLER_STATE", functools.partial(getFootForce, side='l_foot'))
 addSignalFunction("CONTROLLER_STATE", functools.partial(getFootForce, side='r_foot'))
+
+
+# plot the force bounds
+addSignalFunction("QP_CONTROLLER_INPUT", functools.partial(getFootZForceBound, side='l_foot'))
+
+addSignalFunction("QP_CONTROLLER_INPUT", functools.partial(getFootZForceBound, side='r_foot'))
 
 
 # foot contact estimate

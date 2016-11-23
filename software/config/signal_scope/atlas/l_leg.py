@@ -33,7 +33,7 @@ RGB_tuples_v3 = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_v3)
 # velocity plot
 addPlot(timeWindow=time_window, yLimits=[-2, 2])
 
-addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_velocity, joints, keyLookup=jn, colors=RGB_tuples_v3)
+addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_v3)
 
 
 # effort plot
@@ -42,4 +42,10 @@ addPlot(timeWindow=time_window, yLimits=[-200,200])
 # addSignals('CONTROLLER_STATE', msg.timestamp, msg.u, joints, keyLookup=jn,colors=RGB_tuples_dark)
 
 addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_v3)
+
+
+# addSignals('ATLAS_COMMAND', msg.utime, msg.effort, joints, keyLookup=jns, colors=RGB_tuples_v3)
+
+
+
 
