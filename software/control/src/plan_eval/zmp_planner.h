@@ -11,6 +11,7 @@ class ZMPPlanner {
   PiecewisePolynomial<double> zmpd_traj_;
   ExponentialPlusPiecewisePolynomial<double> com_traj_;
   ExponentialPlusPiecewisePolynomial<double> comd_traj_;
+  ExponentialPlusPiecewisePolynomial<double> comdd_traj_; // this is essentially the feedforward/nominal control input coming from lqr solution
   ExponentialPlusPiecewisePolynomial<double> s1_traj_;
 
   Eigen::Matrix<double, 4, 4> A_;

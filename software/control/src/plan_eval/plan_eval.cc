@@ -299,6 +299,10 @@ void PlanEval::PublisherLoop() {
         // publish the plan status
         current_plan_status_ = local_ptr->getPlanStatus();
         this->publishPlanStatus(current_plan_status_);
+
+        // publish plan eval debug msg
+        drc::plan_eval_debug_t debug_msg = local_ptr->EncodeDebugData();
+        lcm_handle_publisher_.publish("PLAN_EVAL_DEBUG", &debug_msg);
       }
     }
 

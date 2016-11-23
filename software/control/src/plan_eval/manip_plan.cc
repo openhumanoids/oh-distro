@@ -13,6 +13,10 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &es
   double plan_time = cur_time - interp_t0_;
 
   bool apply_torque_alpha_filter = plan_time < p_initial_transition_time_;
+
+  // record some debug data
+  this->RecordDefaultDebugData(plan_time);
+  debug_data_.plan_type = "manip";
   return MakeDefaultQPInput(cur_time, plan_time, param_set_name_, apply_torque_alpha_filter);
 }
 

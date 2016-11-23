@@ -152,6 +152,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
   PiecewisePolynomial<double> b_traj(b_poly, zmp_d.getSegmentTimes());
   com_traj_ = ExponentialPlusPiecewisePolynomial<double>(tmp28, Ay, a, b_traj);
   comd_traj_ = com_traj_.derivative();
+  comdd_traj_ = comd_traj_.derivative(); // this is essentially the feedforward/nominal control input coming from lqr solution
 }
 
 drake::lcmt_zmp_data ZMPPlanner::EncodeZMPData(double plan_time) const {

@@ -678,6 +678,10 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   //if (late_touchdown)
   //  qp_input.zmp_data = zmp_planner_.EncodeZMPData(planned_contact_swith_time);
 
+  // record some debug data
+  this->RecordDefaultDebugData(plan_time);
+  debug_data_.plan_type = "walking";
+
   return qp_input;
 }
 
