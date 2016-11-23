@@ -147,9 +147,10 @@ void GenericPlan::RecordDefaultDebugData(double & plan_time){
   debug_data_.comdd_des = zmp_planner_.comdd_traj_.value(plan_time);
 }
 
-drc::plan_eval_debug_t GenericPlan::EncodeDebugData(){
+drc::plan_eval_debug_t GenericPlan::EncodeDebugData(double & real_time){
   drc::plan_eval_debug_t msg;
   msg.plan_type = debug_data_.plan_type;
+  msg.timestamp = static_cast<int64_t>(real_time * 1e6);
   for (int i = 0; i < 2; i++){
     msg.com_des[i] = debug_data_.com_des[i];
     msg.comdot_des[i] = debug_data_.comd_des[i];

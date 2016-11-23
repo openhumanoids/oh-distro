@@ -144,7 +144,7 @@ class GenericPlan {
   PlanStatus getPlanStatus();
 
   // converts the DebugDataStruct into a message
-  drc::plan_eval_debug_t EncodeDebugData();
+  drc::plan_eval_debug_t EncodeDebugData(double & real_time);
 
 
 };

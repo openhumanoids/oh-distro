@@ -301,7 +301,7 @@ void PlanEval::PublisherLoop() {
         this->publishPlanStatus(current_plan_status_);
 
         // publish plan eval debug msg
-        drc::plan_eval_debug_t debug_msg = local_ptr->EncodeDebugData();
+        drc::plan_eval_debug_t debug_msg = local_ptr->EncodeDebugData(est_robot_state_publisher_.t);
         lcm_handle_publisher_.publish("PLAN_EVAL_DEBUG", &debug_msg);
       }
     }
