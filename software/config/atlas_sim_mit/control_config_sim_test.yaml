@@ -67,13 +67,17 @@ qp_controller_params:
           max: {x: 100, y: 100, z: 100, wx: 50, wy: 50, wz: 50}
         weight: 0.01
       pelvis:
-        Kp: {x: 150, y: 150, z: 150, wx: 200, wy: 200, wz: 200}
+        Kp: {x: 15, y: 15, z: 15, wx: 40, wy: 40, wz: 40}
         weight: 1
         damping_ratio: {x: 0.6, y: 0.6, z: 0.6, wx: 0.6, wy: 0.6, wz: 0.6}
       *R_FOOT_NAME :
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
       *L_FOOT_NAME :
+        Kp: {x: 40, y: 40, z: 40, wx: 60, wy: 60, wz: 40}
         weight: 0.1
+        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
     position_specific:
       DEFAULT:
         Kp: 150
@@ -133,7 +137,7 @@ qp_controller_params:
     w_grf: 0.00
     mu: 1
     w_zmp: 10.0 # weight on achieving desired COM acceleration
-    comdd_alpha_break_frequency_hz: 10.0
+    comdd_alpha_break_frequency_hz: 100.0
     w_z_trq: 0.0
     w_qdd_delta: 0.0
     Kp_accel: 1.0
@@ -176,18 +180,16 @@ qp_controller_params:
       DEFAULT:
         weight: 0.001
       pelvis:
-        Kp: {x: 0, y: 0, z: 150, wx: 200, wy: 200, wz: 200}
+        Kp: {x: 0, y: 0, z: 20, wx: 20, wy: 20, wz: 20}
+        damping_ratio: {x: 0.6, y: 0.6, z: 0.6, wx: 0.6, wy: 0.6, wz: 0.6}
         weight: 1.0
       *R_FOOT_NAME :
-        Kp: {x: 100, y: 100, z: 100, wx: 150, wy: 150, wz: 150}
-        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
+        Kp: {x: 48, y: 48, z: 48, wx: 48, wy: 48, wz: 48}
+        damping_ratio: {x: 0.8, y: 0.8, z: 0.8, wx: 0.8, wy: 0.8, wz: 0.8}
         weight: 0.1
       *L_FOOT_NAME :
-        Kp: {x: 100, y: 100, z: 100, wx: 150, wy: 150, wz: 150}
-        damping_ratio: {x: 0.5, y: 0.5, z: 0.5, wx: 0.5, wy: 0.5, wz: 0.5}
-        weight: 0.1
-      utorso:
-        Kp: {x: 0, y: 0, z: 0, wx: 200, wy: 200, wz: 200}
+        Kp: {x: 48, y: 48, z: 48, wx: 48, wy: 48, wz: 48}
+        damping_ratio: {x: 0.8, y: 0.8, z: 0.8, wx: 0.8, wy: 0.8, wz: 0.8}
         weight: 0.1
     position_specific:
       DEFAULT:
