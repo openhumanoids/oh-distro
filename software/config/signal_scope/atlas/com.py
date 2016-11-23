@@ -15,6 +15,8 @@ joints = ['l_arm_shx']
 jn = msg.joint_name
 jns = msg.joint_names
 
+time_window = 5
+
 N = len(joints)
 HSV_tuples =      [(0., 1.0, 1.0),(0.15, 1.0, 1.0), (0.3, 1.0, 1.0), (0.45, 1.0, 1.0), (0.6, 1.0, 1.0), (0.75, 1.0, 1.0), (0.9, 1.0, 1.0)]
 HSV_tuples_dark = [(0., 1.0, 0.5),(0.15, 1.0, 0.5), (0.3, 1.0, 0.5), (0.45, 1.0, 0.5), (0.6, 1.0, 0.5), (0.75, 1.0, 0.5), (0.9, 1.0, 0.5)]
@@ -28,12 +30,15 @@ RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 RGB_tuples_dark = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_dark)
 RGB_tuples_v3 = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_v3)
 
+keys = [0,1]
+
 # position plot
-addPlot(timeWindow=15, yLimits=[-1.5, 1.5])
-addSignals('ATLAS_COMMAND', msg.utime, msg.position, joints, keyLookup=jns, colors=RGB_tuples)
-addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_v3)
+addPlot(timeWindow=time_window, yLimits=[-2, 2])
 
-addSignals('CONTROLLER_STATE', msg.timestamp, msg.q_des, joints, keyLookup=jn,colors=RGB_tuples_dark)
+addSignals('PLAN_EVAL_DEBUG', msg.timestamp, msg.com_des, keys);
+addSignals('PLAN_EVAL_DEBUG', msg.timestamp, msg.comdot_des, keys);
 
-addSignal('QP_CONTROLLER_INPUT', msg.timestamp, msg.whole_body_data.q_des[16])
 
+addPlot(timeWindow = time_window)
+addSignals('PLAN_EVAL_DEBUG', msg.timestamp, msg.comddot_des, keys);
+addSignals('CONTROLLER_STATE', msg.timestamp, msg.comdd_des, keys)

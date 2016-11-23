@@ -1,5 +1,6 @@
 import numpy
 import colorsys
+import functools
 
 # joints to plot
 joints = ["rightHipYaw", "rightHipRoll", "rightHipPitch", "rightKneePitch", "rightAnklePitch", "rightAnkleRoll"]
@@ -15,6 +16,8 @@ joints = ['l_arm_shx']
 jn = msg.joint_name
 jns = msg.joint_names
 
+time_window = 2
+
 N = len(joints)
 HSV_tuples =      [(0., 1.0, 1.0),(0.15, 1.0, 1.0), (0.3, 1.0, 1.0), (0.45, 1.0, 1.0), (0.6, 1.0, 1.0), (0.75, 1.0, 1.0), (0.9, 1.0, 1.0)]
 HSV_tuples_dark = [(0., 1.0, 0.5),(0.15, 1.0, 0.5), (0.3, 1.0, 0.5), (0.45, 1.0, 0.5), (0.6, 1.0, 0.5), (0.75, 1.0, 0.5), (0.9, 1.0, 0.5)]
@@ -28,12 +31,34 @@ RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 RGB_tuples_dark = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_dark)
 RGB_tuples_v3 = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples_v3)
 
-# position plot
-addPlot(timeWindow=15, yLimits=[-1.5, 1.5])
-addSignals('ATLAS_COMMAND', msg.utime, msg.position, joints, keyLookup=jns, colors=RGB_tuples)
-addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_position, joints, keyLookup=jn, colors=RGB_tuples_v3)
 
-addSignals('CONTROLLER_STATE', msg.timestamp, msg.q_des, joints, keyLookup=jn,colors=RGB_tuples_dark)
+# msg should be the CONTROLLER_STATE message
+def getFootForce(msg, side="l_foot"):
+	normalForce = 0 # this is the default
 
-addSignal('QP_CONTROLLER_INPUT', msg.timestamp, msg.whole_body_data.q_des[16])
+	contact_output_vec = msg.contact_output
 
+	for contactData in contact_output_vec:
+		bodyName = str(contactData.body_name)
+
+		if (bodyName == side):
+			normalForce = contactData.wrench[5]
+
+	return msg.timestamp, normalForce
+
+
+# foot forces
+addPlot(timeWindow=time_window, yLimits=[0, 1000])
+
+addSignal('FORCE_TORQUE', msg.utime, msg.sensors[0].force[2]) # left foot
+addSignal('FORCE_TORQUE', msg.utime, msg.sensors[1].force[2]) # right foot
+
+addSignalFunction("CONTROLLER_STATE", functools.partial(getFootForce, side='l_foot'))
+addSignalFunction("CONTROLLER_STATE", functools.partial(getFootForce, side='r_foot'))
+
+
+# foot contact estimate
+addPlot(timeWindow=time_window, yLimits=[0,1.5])
+
+addSignal("FOOT_CONTACT_ESTIMATE", msg.utime, msg.left_contact)
+addSignal("FOOT_CONTACT_ESTIMATE", msg.utime, msg.right_contact)
