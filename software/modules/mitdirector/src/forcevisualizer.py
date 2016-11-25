@@ -130,6 +130,7 @@ class ForceVisualizer:
         # draws measured foot forces, cop etc
 
         # force torque message has different names on Atlas and Val
+        # problem, this isn't published for Atlas, all the info is inside EST_ROBOT_STATE
         self.forceTorqueSubscriber = lcmUtils.addSubscriber("FORCE_TORQUE", bot_core.six_axis_force_torque_array_t,
                                                                 self.onForceTorqueMessage)
 
@@ -146,6 +147,12 @@ class ForceVisualizer:
         # desiredCOP
         sub = lcmUtils.addSubscriber('QP_CONTROLLER_INPUT', lcmdrake.lcmt_qp_controller_input, self.extractDesiredCOP)
         sub.setSpeedLimit(self.options['speedLimit'])
+
+        # alternate thing for getting force-torque info from EST_ROBOT_STATE
+        sub = lcmUtils.addSubscriber('EST_ROBOT_STATE', bot_core.robot_state_t, self.onEstRobotState)
+        sub.setSpeedLimit(self.options['speedLimit'])
+
+
 
 
     # msg is six_axis_force_torque_array_t
@@ -169,6 +176,34 @@ class ForceVisualizer:
             copInWorld, d = self.computeCOP(msg)
             vis.updatePolyData(d.getPolyData(), name=self.options['copVisName'], view=self.view,
                            parent='robot state model').setProperty('Color', self.options['colors']['measured'])
+
+
+    def onEstRobotState(self, msg):
+
+
+        if ( not (om.findObjectByName(self.options['estForceVisName']).getProperty('Visible') or
+         om.findObjectByName(self.options['copVisName']).getProperty('Visible')) ):
+            return
+
+
+        # basically just recreate force torque msg
+        forceTorqueMsg = bot_core.six_axis_force_torque_array_t()
+        forceTorqueMsg.num_sensors = 2
+        forceTorqueMsg.names = ['l_foot', 'r_foot']
+
+        leftFootMsg = bot_core.six_axis_force_torque_t()
+        rightFootMsg = bot_core.six_axis_force_torque_t()
+
+        leftFootMsg.force = np.array([msg.force_torque.l_foot_force_x, msg.force_torque.l_foot_force_y, msg.force_torque.l_foot_force_z])
+        leftFootMsg.moment = np.array([msg.force_torque.l_foot_torque_x, msg.force_torque.l_foot_torque_y, msg.force_torque.l_foot_torque_z])
+
+        rightFootMsg.force = np.array([msg.force_torque.r_foot_force_x, msg.force_torque.r_foot_force_y, msg.force_torque.r_foot_force_z])
+        rightFootMsg.moment = np.array([msg.force_torque.r_foot_torque_x, msg.force_torque.r_foot_torque_y, msg.force_torque.r_foot_torque_z])
+
+        forceTorqueMsg.sensors = [leftFootMsg, rightFootMsg]
+
+        self.onForceTorqueMessage(forceTorqueMsg)
+
 
 
     # here msg is six_axis_force_torque_t
