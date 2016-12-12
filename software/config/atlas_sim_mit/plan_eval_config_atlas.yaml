@@ -48,10 +48,10 @@ flip_foot_ft_sensor: 0
 
 # walking
 pelvis_height: 0.75 # measured as height from ankles
-ss_duration: 1.0
-ds_duration: 0.5
+ss_duration: 1.5
+ds_duration: 1.0
 pre_weight_transfer_scale: 0.3 # what does this actually do?
-min_Fz: 50
+min_Fz: 5.0
 use_force_bounds: True
 extend_foot_down_z_vel: -0.05
 swing_touchdown_z_vel: 0.0
