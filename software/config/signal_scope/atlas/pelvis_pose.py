@@ -40,11 +40,27 @@ def myFunctionBDI(msg):
 	rpy = transformUtils.quaternionToRollPitchYaw(quat)
 	return msg.utime, rpy[2]
 
+
+
+
 # position plot
 addPlot(timeWindow=7, yLimits=[-1.5, 1.5])
 
 addSignalFunction('EST_ROBOT_STATE', myFunction)
+addSignalFunction('EST_ROBOT_STATE_1', myFunction)
+addSignalFunction('EST_ROBOT_STATE_ORIGINAL', myFunction)
+addSignalFunction('POSE_BODY', myFunctionBDI)
 addSignalFunction('POSE_BDI', myFunctionBDI)
+
+
+# velocity plot
+addPlot(timeWindow=7, yLimits=[-1.5, 1.5])
+addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
+addSignal('POSE_BODY_ORIGINAL', msg.utime, msg.rotation_rate[2])
+addSignal('POSE_BDI', msg.utime, msg.rotation_rate[2])
+
+
+
 
 
 
