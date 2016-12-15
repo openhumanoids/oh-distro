@@ -149,8 +149,8 @@ class ForceVisualizer:
         sub.setSpeedLimit(self.options['speedLimit'])
 
         # alternate thing for getting force-torque info from EST_ROBOT_STATE
-        sub = lcmUtils.addSubscriber('EST_ROBOT_STATE', bot_core.robot_state_t, self.onEstRobotState)
-        sub.setSpeedLimit(self.options['speedLimit'])
+        # sub = lcmUtils.addSubscriber('EST_ROBOT_STATE', bot_core.robot_state_t, self.onEstRobotState)
+        # sub.setSpeedLimit(self.options['speedLimit'])
 
 
 
