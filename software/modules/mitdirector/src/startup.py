@@ -5,6 +5,7 @@ import valkyriedriver
 import valkyriedriverpanel
 import forcevisualizer
 import simplewalking
+import LCMTuner
 
 from director import tasklaunchpanel
 from director import applogic
@@ -19,6 +20,8 @@ def startupValkyrie(robotSystem, globalsDict=None):
 
     valkyrieDriver = valkyriedriver.ValkyrieDriver(robotSystem)
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
+
+    lcmTuner = LCMTuner.LCMTuner(robotSystem)
 
 
 
@@ -42,6 +45,7 @@ def startupValkyrie(robotSystem, globalsDict=None):
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
         globalsDict['forceVisualizer'] = forceVisualizer
         globalsDict['simpleWalking'] = simpleWalking
+        globalsDict['lcmTuner'] = lcmTuner
 
         # add new task panel to global dict
 
