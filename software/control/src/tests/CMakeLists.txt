@@ -24,3 +24,9 @@ target_link_libraries(drc-testDrakeBulletCollisions boost_system)
 pods_use_pkg_config_packages(drc-testDrakeBulletCollisions lcm 
   bot2-lcmgl-client drake-rbm drake-geometry-util)
 pods_install_executables(drc-testDrakeBulletCollisions)
+
+
+# test LCM tuner
+add_executable(drc-testLCMTuner testLCMTuner.cpp)
+pods_use_pkg_config_packages(drc-testLCMTuner lcm drc-utils)
+pods_install_executables(drc-testLCMTuner)
