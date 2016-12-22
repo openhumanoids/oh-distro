@@ -20,7 +20,9 @@ pods_install_headers(
   ThreadSafeQueue.hpp
   RansacGeneric.hpp
   PointConvert.h
+  LCMTuner.hpp
   DESTINATION drc_utils)
+
 
 # make the library public
 pods_install_libraries(drc-utils)
