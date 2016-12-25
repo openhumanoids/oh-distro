@@ -21,9 +21,6 @@ def startupValkyrie(robotSystem, globalsDict=None):
     valkyrieDriver = valkyriedriver.ValkyrieDriver(robotSystem)
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
 
-    lcmTuner = LCMTuner.LCMTuner(robotSystem)
-
-
 
     configFilename = 'valkyrie_director_vis_config.yaml'
     fullConfigFilename = os.getenv('DRC_BASE') + '/software/modules/mitdirector/config/' + configFilename
@@ -45,7 +42,6 @@ def startupValkyrie(robotSystem, globalsDict=None):
         globalsDict['valkyrieDriverPanel'] = valkyrieDriverPanel
         globalsDict['forceVisualizer'] = forceVisualizer
         globalsDict['simpleWalking'] = simpleWalking
-        globalsDict['lcmTuner'] = lcmTuner
 
         # add new task panel to global dict
 
