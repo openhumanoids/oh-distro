@@ -243,10 +243,9 @@ namespace LCMTuner_namespace{
                              const drc::lcm_tuner_setter_t* msg){
 
 
-            std::cout << "got an lcm_tuner_setter msg " << std::endl;
             // ignore if the message is not addressed to this tuner
             if (msg->tuner_name != this->name){
-                std::cout << " the name in the message doesn't match, returning" << std::endl;
+//                std::cout << " the name in the message doesn't match, returning" << std::endl;
                 return;
             }
 
