@@ -1,0 +1,14 @@
+robotType: Atlas
+
+leftFoot:
+  linkName: l_foot
+  forceTorqueFrameName: l_foot
+
+rightFoot:
+  linkName: r_foot
+  forceTorqueFrameName: r_foot
+
+FOOT_FRAME_TO_SOLE_DIST: -0.076
+FT_FRAME_TO_SOLE_DIST: -0.076
+ForceMagnitudeNormalizer: 800
+

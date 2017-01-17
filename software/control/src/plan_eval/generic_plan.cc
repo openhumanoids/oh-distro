@@ -134,7 +134,30 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
   else
     qp_input.torque_alpha_filter = 0.;
 
+
   return qp_input;
+}
+
+
+// records some default debug data
+void GenericPlan::RecordDefaultDebugData(double & plan_time){
+  // store the zmp_data into the DebugStruct
+  debug_data_.com_des = zmp_planner_.com_traj_.value(plan_time);
+  debug_data_.comd_des = zmp_planner_.comd_traj_.value(plan_time);
+  debug_data_.comdd_des = zmp_planner_.comdd_traj_.value(plan_time);
+}
+
+drc::plan_eval_debug_t GenericPlan::EncodeDebugData(double & real_time){
+  drc::plan_eval_debug_t msg;
+  msg.plan_type = debug_data_.plan_type;
+  msg.timestamp = static_cast<int64_t>(real_time * 1e6);
+  for (int i = 0; i < 2; i++){
+    msg.com_des[i] = debug_data_.com_des[i];
+    msg.comdot_des[i] = debug_data_.comd_des[i];
+    msg.comddot_des[i] = debug_data_.comdd_des[i];
+  }
+
+  return msg;
 }
 
 RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &cs) const {

@@ -386,6 +386,9 @@ drc::controller_state_t encodeControllerState(double t, int num_joints, const QP
   msg.comdd_des[0] = qp_output.comdd_d[0];
   msg.comdd_des[1] = qp_output.comdd_d[1];
 
+  msg.comdd_des_unfiltered[0] = qp_output.comdd_des_unfiltered[0];
+  msg.comdd_des_unfiltered[1] = qp_output.comdd_des_unfiltered[1];
+
   //Inputs are in a different order, need to deal with that
   int num_inputs = drake_input_to_robot_state.size();
   int robot_state_idx;

@@ -1,0 +1,14 @@
+robotType: Valkyrie
+
+leftFoot:
+  linkName: leftFoot
+  forceTorqueFrameName: l_foot_force_torque
+
+rightFoot:
+  linkName: r_foot
+  forceTorqueFrameName: r_foot_force_torque
+
+FOOT_FRAME_TO_SOLE_DIST: -0.09
+FT_FRAME_TO_SOLE_DIST: 0.035
+
+ForceMagnitudeNormalizer: 600

@@ -64,6 +64,8 @@ options.hand_right = getHandString(right_hand);
 options.hand_left = getHandString(left_hand);
 options.external_force = use_external_force;
 
+lcmHandle = lcm.lcm.LCM.getSingleton();
+
 
 
 
@@ -211,6 +213,9 @@ xstar_complete(1:length(xstar)) = xstar;
 xstar_complete = r_complete.resolveConstraints(xstar_complete);
 r_complete = r_complete.setInitialState(xstar_complete);
 
+
+
+
 done = 0;
 while(~done)
   % mass est
@@ -294,6 +299,8 @@ while(~done)
     warning(S);
   end
   try
+    disp('sending MIT stand message');
+    sendMITStand(lcmHandle);
     options.gui_control_interface = true;
     simulate(sys,[0.0,Inf], xstar_complete, options);
   catch err
@@ -329,4 +336,11 @@ function handDriver = getHandDriver(hand_id, r_complete, handedness, options)
       handDriver = [];
       disp('unexpected hand type, should be {1, 2, 3}')
   end
+end
+
+% publishes a trigger message to get the director to call planNominal and publish that plan
+% need this so that we can take over from the dummy controller that initially is running, i.e. should just be able to have zeros instead of the dummy controller
+function sendMITStand(lcmHandle)
+  msg = drc.utime_t();
+  lcmHandle.publish('START_MIT_STAND', msg);
 end

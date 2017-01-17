@@ -1,0 +1,10 @@
+package drc;
+
+struct plan_eval_debug_t
+{
+  int64_t timestamp;
+  string plan_type;
+  float com_des[2];
+  float comdot_des[2];
+  float comddot_des[2];
+}

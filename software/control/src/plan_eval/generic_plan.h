@@ -15,6 +15,8 @@
 #include "drc/robot_plan_t.hpp"
 #include "drc/walking_plan_request_t.hpp"
 #include "drc/foot_contact_estimate_t.hpp"
+#include "drc/plan_eval_debug_t.hpp"
+
 
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
@@ -51,6 +53,13 @@ struct PlanStatus {
   PlanType planType;
 };
 
+struct DebugData{
+  std::string plan_type;
+  Eigen::Vector2d com_des;
+  Eigen::Vector2d comd_des;
+  Eigen::Vector2d comdd_des;
+};
+
 class GenericPlan {
  protected:
 
@@ -72,6 +81,7 @@ class GenericPlan {
 
   // the plan status
   PlanStatus plan_status_;
+  DebugData debug_data_;
 
   // robot for doing kinematics
   RigidBodyTree robot_;
@@ -106,6 +116,11 @@ class GenericPlan {
   // make lcm messages
   drake::lcmt_support_data EncodeSupportData(const RigidBodySupportStateElement &element) const;
   drake::lcmt_body_motion_data EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const;
+
+  // stores some default debug information in debug_data_ field.
+  // It is recommenede to call this method from inside the plan's MakeQPInput method
+  // Child classes can also overload this message to provide specific plan information
+  void RecordDefaultDebugData(double & plan_time);
  public:
   GenericPlan(const std::string &urdf_name, const std::string &config_name)
       : robot_(urdf_name, DrakeJoint::ROLLPITCHYAW) {
@@ -127,6 +142,11 @@ class GenericPlan {
   virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
 
   PlanStatus getPlanStatus();
+
+  // converts the DebugDataStruct into a message
+  drc::plan_eval_debug_t EncodeDebugData(double & real_time);
+
+
 };
 
 std::string PrimaryBodyOrFrameName(const std::string &full_body_name);
