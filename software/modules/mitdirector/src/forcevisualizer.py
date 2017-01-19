@@ -52,6 +52,12 @@ class ForceVisualizer:
         visObj = vis.updatePolyData(d.getPolyData(), self.options['desiredCOPVisName'], view=self.view, parent='robot state model')
         visObj.setProperty('Visible', False)
 
+        visObj = vis.updatePolyData(d.getPolyData(), self.options['desiredCOMVisName'], view=self.view, parent='robot state model')
+        visObj.setProperty('Visible', True)
+
+        visObj = vis.updatePolyData(d.getPolyData(), self.options['actualCOMVisName'], view=self.view, parent='robot state model')
+        visObj.setProperty('Visible', True)
+
 
         self.visObjDict = dict()
         self.visObjDict['bodyMotion'] = vis.updatePolyData(d.getPolyData(), self.options['bodyMotionVisName'], view=self.view, parent='robot state model')
@@ -110,10 +116,14 @@ class ForceVisualizer:
 
         self.options['copVisName'] = 'meas cop'
         self.options['desiredCOPVisName'] = 'desired cop'
+        self.options['desiredCOMVisName'] = 'desired com'
+        self.options['actualCOMVisName'] = 'com actual'
 
         self.options['colors'] = dict()
         self.options['colors']['plan'] = [1,0,0] # red
         self.options['colors']['plannedZMP'] = [1,1,0] # yellow
+        self.options['colors']['plannedCOM'] = [245/255.0,145/255.0,0] # orange
+        self.options['colors']['actualCOM'] = [1,0,0] # red
         self.options['colors']['controller'] = [0,0,1] # blue
         self.options['colors']['measured'] = [0,1,0] # green
         self.options['colors']['contactPoints'] = [ 0.58039216,  0, 0.82745098] # purple
@@ -146,6 +156,10 @@ class ForceVisualizer:
 
         # desiredCOP
         sub = lcmUtils.addSubscriber('QP_CONTROLLER_INPUT', lcmdrake.lcmt_qp_controller_input, self.extractDesiredCOP)
+        sub.setSpeedLimit(self.options['speedLimit'])
+
+        # desiredCOM
+        sub = lcmUtils.addSubscriber('PLAN_EVAL_DEBUG', lcmdrc.plan_eval_debug_t, self.onPlanEvalDebug)
         sub.setSpeedLimit(self.options['speedLimit'])
 
         # alternate thing for getting force-torque info from EST_ROBOT_STATE
@@ -204,6 +218,9 @@ class ForceVisualizer:
 
         self.onForceTorqueMessage(forceTorqueMsg)
 
+    def onPlanEvalDebug(self, msg):
+        if (om.findObjectByName(self.options['desiredCOMVisName']).getProperty('Visible')):
+            self.drawDesiredCOM(msg)
 
 
     # here msg is six_axis_force_torque_t
@@ -421,11 +438,24 @@ class ForceVisualizer:
         copData = {'cop': copInWorld, 'fz': np.linalg.norm(force)}
         return copData
 
+    def drawMeasuredCOM(self):
+        d = DebugData()
+        com = np.array(self.robotStateModel.model.getCenterOfMass())
+        com[2] = self.getAverageFootHeight();
+        d.addSphere(com, radius=0.015)
+
+        vis.updatePolyData(d.getPolyData(), name=self.options['actualCOMVisName'], view=self.view,
+                               parent='robot state model').setProperty('Color', self.options['colors']['actualCOM'])
+
 
 
     # record which foot is in contact
     def onFootContactEstimateMsg(self, msg):
         self.footContactEstimateMsg = msg
+
+        if (om.findObjectByName(self.options['actualCOMVisName']).getProperty('Visible')):
+            self.drawMeasuredCOM()
+
 
     # get current average foot height
     def getAverageFootHeight(self):
@@ -467,6 +497,21 @@ class ForceVisualizer:
                                parent='robot state model').setProperty('Color', self.options['colors']['plannedZMP'])
 
 
+    # msg should be a plan eval debug message
+    def drawDesiredCOM(self, msg):
+
+        com_des = np.zeros(3)
+        com_des[0:2] = np.array(msg.com_des)
+        com_des[2] = self.getAverageFootHeight()
+
+        d = DebugData()
+        # boxDim = 0.03*np.ones(3)
+        # d.addCube(boxDim, com_des)
+
+        d.addSphere(com_des, radius=0.015)
+
+        vis.updatePolyData(d.getPolyData(), name=self.options['desiredCOMVisName'], view=self.view,
+                               parent='robot state model').setProperty('Color', self.options['colors']['plannedCOM'])
 
     # takes in a qp_desired_body_motion_t message
     def drawBodyMotionData(self, desired_body_motions):
