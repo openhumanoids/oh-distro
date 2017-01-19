@@ -5,6 +5,7 @@ import valkyriedriver
 import valkyriedriverpanel
 import forcevisualizer
 import simplewalking
+import LCMTuner
 
 from director import tasklaunchpanel
 from director import applogic
@@ -19,7 +20,6 @@ def startupValkyrie(robotSystem, globalsDict=None):
 
     valkyrieDriver = valkyriedriver.ValkyrieDriver(robotSystem)
     valkyrieDriverPanel = valkyriedriverpanel.init(valkyrieDriver)
-
 
 
     configFilename = 'valkyrie_director_vis_config.yaml'

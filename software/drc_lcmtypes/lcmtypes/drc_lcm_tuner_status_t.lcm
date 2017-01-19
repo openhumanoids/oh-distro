@@ -1,0 +1,12 @@
+package drc;
+
+struct lcm_tuner_status_t
+{
+  int64_t timestamp;
+  string tuner_name;
+  int16_t num_vars;
+  string var_names[num_vars];
+  float current_val[num_vars];
+  float min_val[num_vars];
+  float max_val[num_vars];
+}

@@ -1,0 +1,10 @@
+package drc;
+
+struct lcm_tuner_setter_t
+{
+  int64_t timestamp;
+  string tuner_name;
+  int16_t num_vars;
+  string var_names[num_vars];
+  float values[num_vars];
+}
