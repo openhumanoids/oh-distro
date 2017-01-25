@@ -1,3 +1,5 @@
+
+
 import numpy
 import colorsys
 from director import transformUtils
@@ -41,17 +43,11 @@ def myFunctionBDI(msg):
 	return msg.utime, rpy[2]
 
 
+def plotUtime(msg):
+	return msg.utime/1e6
 
-def poseY(msg):
-	rotation = msg.pose.rotation
-	quat = numpy.array([rotation.w, rotation.x, rotation.y, rotation.z])
-	rpy = transformUtils.quaternionToRollPitchYaw(quat)
-	return msg.utime, rpy[1]
-
-def poseYBDI(msg):
-	quat = numpy.array([msg.orientation[0], msg.orientation[1], msg.orientation[2], msg.orientation[3]])
-	rpy = transformUtils.quaternionToRollPitchYaw(quat)
-	return msg.utime, rpy[1]
+def plotTimestamp(msg):
+	return msg.timestamp/1e6
 
 
 
@@ -59,36 +55,14 @@ def poseYBDI(msg):
 # position plot
 addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
 
-addSignalFunction('EST_ROBOT_STATE', myFunction)
-# addSignalFunction('EST_ROBOT_STATE_1', myFunction)
-addSignalFunction('EST_ROBOT_STATE_ORIGINAL', myFunction)
-addSignalFunction('POSE_BODY', myFunctionBDI)
-addSignalFunction('POSE_BDI', myFunctionBDI)
+addSignal('FOOT_CONTACT_ESTIMATE', msg.utime, msg.left_contact)
+addSignal('FOOT_CONTACT_ESTIMATE', msg.utime, msg.right_contact)
 
-addSignalFunction('EST_ROBOT_STATE', poseY)
-addSignalFunction('POSE_BDI', poseYBDI)
-
-
-# velocity plot
-addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
-addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
-addSignal('POSE_BODY_ORIGINAL', msg.utime, msg.rotation_rate[2])
-
-addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.z)
-addSignal('POSE_BDI', msg.utime, msg.rotation_rate[2])
-
-
-addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.y)
-addSignal('POSE_BDI', msg.utime, msg.rotation_rate[1])
 
 addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
-addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.linear_velocity.x)
-addSignal('POSE_BDI', msg.utime, msg.vel[0])
+addSignal('CONTROLLER_STATE', msg.timestamp, msg.qpInfo)
 
 
-
-
-
-
-
-
+addPlot(timeWindow=5, yLimits=[0, 1500])
+addSignal('EST_ROBOT_STATE', msg.utime, msg.force_torque.l_foot_force_z)
+addSignal('EST_ROBOT_STATE', msg.utime, msg.force_torque.r_foot_force_z)

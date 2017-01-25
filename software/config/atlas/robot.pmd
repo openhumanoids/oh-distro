@@ -73,12 +73,6 @@ group "02.plan_and_control" {
         stop_signal = 15;
     }
 
-    cmd "InstQP on localhost" {
-        exec = "runDRCInstQP -u ${DRC_BASE}/software/drake/drake/examples/Atlas/urdf/atlas_minimal_contact.urdf -c ${DRC_BASE}/software/config/atlas/control_config_hardware.yaml -um ${DRC_BASE}/software/drake/drake/examples/Atlas/config/urdf_modifications_no_hands.yaml -lc ATLAS_COMMAND -lb ATLAS_BEHAVIOR_COMMAND -pub";
-        host = "localhost";
-        stop_signal = 15;
-    }
-
     cmd "PressureControl" {
         exec = "bash -c 'LCM_DEFAULT_URL=${LCM_URL_DRC_ATLAS_1_2} drc-atlas-pressure-monitor'";
         host = "atlas1";
