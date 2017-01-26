@@ -214,6 +214,13 @@ group "11.Video" {
     }
 }
 
+group "12.Debug" {
+   cmd "state-sync" {
+        exec = "drc-state-sync-atlas -a5 -b";
+        host = "localhost";
+    }
+}
+
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
     host = "atlas2";
