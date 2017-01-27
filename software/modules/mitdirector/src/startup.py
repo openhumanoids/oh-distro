@@ -54,6 +54,8 @@ def startupAtlas(robotSystem, globalsDict=None):
     forceVisualizer = forcevisualizer.ForceVisualizer(robotSystem, applogic.getDRCView(), fullConfigFilename)
     startupPlanner = StartupPlanner(robotSystem)
 
+    simpleWalking = simplewalking.SimpleWalking(robotSystem)
+
 
     # add a new task panel
     #exampleTaskPanel = exampletaskpanel.ExampleTaskPanel(robotSystem)
@@ -63,6 +65,7 @@ def startupAtlas(robotSystem, globalsDict=None):
     if globalsDict is not None:
         globalsDict['forceVisualizer'] = forceVisualizer
         globalsDict['startupPlanner'] = startupPlanner
+        globalsDict['simpleWalking'] = simpleWalking
 
         # add new task panel to global dict
 

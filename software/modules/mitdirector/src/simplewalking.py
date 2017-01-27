@@ -3,18 +3,21 @@ __author__ = 'manuelli'
 import time
 
 from director import transformUtils
+from director import lcmUtils
+import drc as lcmdrc
 from director import frameupdater
 from director import visualization as vis
 import vtkAll as vtk
 from director import timercallback
+from director.simpletimer import SimpleTimer
 
 
 
 class SimpleWalking:
 
-    def __init__(self, robotSystem_, valkyrieDriver):
+    def __init__(self, robotSystem_, valkyrieDriver=None):
         self.robotSystem = robotSystem_
-        self.valkyrieDriver = valkyrieDriver
+        # self.valkyrieDriver = valkyrieDriver
 
         self.startWalkingGoalFrame = None
         self.endWalkingGoalFrame = None
@@ -22,6 +25,13 @@ class SimpleWalking:
         self.currentState = 'backwards' # can only be forwards or backwards
 
         self.timer = timercallback.TimerCallback(targetFps=0.5, callback=self.callback)
+
+        self.lastPlanStatusMsg = None
+        sub = lcmUtils.addSubscriber('PLAN_STATUS', lcmdrc.plan_status_t, self.onPlanStatus)
+        sub.setSpeedLimit(5)
+
+        self.simpleTimer = SimpleTimer()
+
 
     def switchState(self):
         if self.currentState == 'forwards':
@@ -38,6 +48,7 @@ class SimpleWalking:
     def initializeOptions(self):
         self.options = dict()
         self.options['walkingDistance'] = 0.5
+        self.options['sleepTimeAfterMakingPlan'] = 5.0
 
     # get and save a frame between feet
     def initialize(self):
@@ -50,6 +61,8 @@ class SimpleWalking:
 
         vis.updateFrame(self.startWalkingGoalFrame, 'start walking goal frame', scale=0.2)
         vis.updateFrame(self.endWalkingGoalFrame, 'end walking goal frame', scale=0.2)
+
+        self.currentState = 'backwards'
 
 
     def planWalking(self, direction='forwards'):
@@ -73,13 +86,17 @@ class SimpleWalking:
 
         # commit the footstep plan
         self.robotSystem.footstepsDriver.commitFootstepPlan(footstepPlan)
+        self.simpleTimer = SimpleTimer()
 
 
 
     def checkIfCurrentPlanFinished(self):
+        if self.simpleTimer.elapsed() < self.options['sleepTimeAfterMakingPlan']:
+            return False;
+
         planFinished = False
 
-        planStatusMsg = self.valkyrieDriver.lastPlanStatusMsg
+        planStatusMsg = self.lastPlanStatusMsg
 
         if planStatusMsg is None:
             return True
@@ -93,8 +110,13 @@ class SimpleWalking:
     def callback(self):
         # check to see if current plan is finished, or there is no plan
         planFinished = self.checkIfCurrentPlanFinished()
+        sleepTimeElapsed = (self.simpleTimer.elapsed() > self.options['sleepTimeAfterMakingPlan']) 
 
-        if (planFinished):
+        if (planFinished and sleepTimeElapsed):
             print "making a new walking plan"
             self.switchState()
             self.planWalking(direction=self.currentState)
+
+
+    def onPlanStatus(self,msg):
+        self.lastPlanStatusMsg = msg
