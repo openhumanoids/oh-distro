@@ -19,7 +19,7 @@ group "01.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync-atlas -a5";
+        exec = "drc-state-sync-atlas -a5 -p";
         host = "atlas2";
     }
     cmd "fusion" {
@@ -219,6 +219,13 @@ group "12.Debug" {
         exec = "drc-state-sync-atlas -a5 -b";
         host = "localhost";
     }
+
+    cmd "fusion no param server" {
+        exec = "se-fusion -v -U atlas_v5/model_LR_RR.urdf -P atlas/robot.cfg ";
+        host = "localhost";
+    }
+
+
 }
 
 cmd "atlas-off" {
