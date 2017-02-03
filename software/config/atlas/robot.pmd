@@ -228,6 +228,16 @@ group "12.Debug" {
 
 }
 
+group "13.Vicon" {
+   cmd "Vicon Tracker LCM Translator" {
+        exec = "$DRC_BASE/software/externals/vicon/pod-build/bin/vicon-client-segments 192.168.10.1";
+        host = "localhost";
+    }
+
+
+
+}
+
 cmd "atlas-off" {
     exec = "drc-atlas -p off";
     host = "atlas2";
