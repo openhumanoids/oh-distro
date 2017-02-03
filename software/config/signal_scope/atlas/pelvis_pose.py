@@ -1,4 +1,5 @@
 import numpy
+import numpy as np
 import colorsys
 from director import transformUtils
 
@@ -53,37 +54,67 @@ def poseYBDI(msg):
 	rpy = transformUtils.quaternionToRollPitchYaw(quat)
 	return msg.utime, rpy[1]
 
+# msg is POSE_BODY_ALT coming from BDI
+def velInBodyFrame(msg):
+	quat = numpy.array([msg.orientation[0], msg.orientation[1], msg.orientation[2], msg.orientation[3]])
+
+	vel_in_world = np.array([msg.vel[0],msg.vel[1],msg.vel[2]])
+
+	pose_hack = np.array([0,0,0])
+
+	T_body_to_world = transformUtils.transformFromPose(pose_hack, quat)
+	T_world_to_body = T_body_to_world.GetLinearInverse()
+
+	vel_in_body = T_world_to_body.TransformVector(vel_in_world)
+
+	return vel_in_body
 
 
+def x_velInBodyFrame(msg):
+	vel_in_body = velInBodyFrame(msg)
+	return msg.utime, vel_in_body[0]
+
+
+
+
+
+bdi_pose_channel = "POSE_BODY_ALT"
 
 # position plot
 addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
 
 addSignalFunction('EST_ROBOT_STATE', myFunction)
-# addSignalFunction('EST_ROBOT_STATE_1', myFunction)
-addSignalFunction('EST_ROBOT_STATE_ORIGINAL', myFunction)
-addSignalFunction('POSE_BODY', myFunctionBDI)
-addSignalFunction('POSE_BDI', myFunctionBDI)
+addSignal('EST_ROBOT_STATE', msg.utime, msg.pose.translation.x);
 
-addSignalFunction('EST_ROBOT_STATE', poseY)
-addSignalFunction('POSE_BDI', poseYBDI)
+# addSignalFunction('EST_ROBOT_STATE_1', myFunction)
+# addSignalFunction('EST_ROBOT_STATE_ORIGINAL', myFunction)
+addSignalFunction('POSE_BODY', myFunctionBDI)
+addSignalFunction(bdi_pose_channel, myFunctionBDI)
+
+# addSignalFunction('EST_ROBOT_STATE', poseY)
+# addSignalFunction(pose_body_alt, poseYBDI)
 
 
 # velocity plot
 addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
-addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
-addSignal('POSE_BODY_ORIGINAL', msg.utime, msg.rotation_rate[2])
+#addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
+#addSignal('POSE_BODY_ORIGINAL', msg.utime, msg.rotation_rate[2])
 
 addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.z)
-addSignal('POSE_BDI', msg.utime, msg.rotation_rate[2])
+addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
 
 
-addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.y)
-addSignal('POSE_BDI', msg.utime, msg.rotation_rate[1])
+# addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.y)
+# addSignal('POSE_BDI', msg.utime, msg.rotation_rate[1])
 
 addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
-addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.linear_velocity.x)
-addSignal('POSE_BDI', msg.utime, msg.vel[0])
+# addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.linear_velocity.x)
+addSignal('POSE_BODY', msg.utime, msg.vel[0])
+addSignal(bdi_pose_channel, msg.utime, msg.vel[0])
+#addSignalFunction(bdi_pose_channel, x_velInBodyFrame)
+
+
+
 
 
 

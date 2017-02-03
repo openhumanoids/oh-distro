@@ -9,7 +9,7 @@ left_arm_joints = ['l_arm_shz','l_arm_shx','l_arm_ely','l_arm_elx','l_arm_uwy',
 
 
 left_leg_joints = ['l_leg_hpz','l_leg_hpx','l_leg_hpy','l_leg_kny','l_leg_aky','l_leg_akx']
-left_leg_joints = ['l_leg_hpz','l_leg_kny','l_leg_aky', 'back_bkz', 'r_leg_aky']
+left_leg_joints = ['l_leg_hpz','l_leg_kny','l_leg_aky', 'r_leg_hpz','r_leg_kny','r_leg_aky']
 
 joints = left_leg_joints
 
@@ -49,7 +49,7 @@ addSignals('EST_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn,
 
 # addSignals('CORE_ROBOT_STATE', msg.utime, msg.joint_effort, joints, keyLookup=jn, colors=RGB_tuples_dark)
 
-addSignals('ATLAS_COMMAND', msg.utime, msg.effort, joints, keyLookup=jns, colors=RGB_tuples)
+# addSignals('ATLAS_COMMAND', msg.utime, msg.effort, joints, keyLookup=jns, colors=RGB_tuples)
 
 
 

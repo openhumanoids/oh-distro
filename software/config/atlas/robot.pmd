@@ -19,7 +19,7 @@ group "01.state_mit" {
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync-atlas -a5";
+        exec = "drc-state-sync-atlas -a5 -p";
         host = "atlas2";
     }
     cmd "fusion" {
@@ -212,6 +212,30 @@ group "11.Video" {
         exec = "drc-video-decode -c CAMERA_LEFT -i CAMERA_LEFT_STREAM -o CAMERA_LEFT_DECODED";
         host = "base";
     }
+}
+
+group "12.Debug" {
+   cmd "state-sync" {
+        exec = "drc-state-sync-atlas -a5 -b";
+        host = "localhost";
+    }
+
+    cmd "fusion no param server" {
+        exec = "se-fusion -v -U atlas_v5/model_LR_RR.urdf -P atlas/robot.cfg ";
+        host = "localhost";
+    }
+
+
+}
+
+group "13.Vicon" {
+   cmd "Vicon Tracker LCM Translator" {
+        exec = "$DRC_BASE/software/externals/vicon/pod-build/bin/vicon-client-segments 192.168.10.1";
+        host = "localhost";
+    }
+
+
+
 }
 
 cmd "atlas-off" {
