@@ -51,14 +51,7 @@ class GenericPlan {
   PiecewisePolynomial<double> q_trajs_;
 
   // spline for zmp
-  PiecewisePolynomial<double> zmp_traj_;
   ZMPPlanner zmp_planner_;
-
-  // list of tracked bodies
-  std::vector<BodyMotionData> body_motions_;
-
-  // list of support
-  RigidBodySupportState support_state_;
 
   // list of constrained dof
   std::vector<int> constrained_dofs_;

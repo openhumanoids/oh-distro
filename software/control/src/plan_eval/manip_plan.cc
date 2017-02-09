@@ -114,29 +114,29 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
   // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
   Eigen::Vector2d zero2(Eigen::Vector2d::Zero());
-  zmp_traj_ = GeneratePCHIPSpline(Ts, com_d, zero2, zero2);
+  generic_plan_state_.zmp_traj = GeneratePCHIPSpline(Ts, com_d, zero2, zero2);
   // TODO: make traj for s1, and com
   // drake/examples/ZMP/LinearInvertedPendulum.m
 
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, generic_plan_config_.zmp_height);
+  zmp_planner_.Plan(generic_plan_state_.zmp_traj, x0, generic_plan_config_.zmp_height);
 
   // make body motion splines
-  body_motions_.resize(num_bodies);
+  generic_plan_state_.body_motions.resize(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
-    body_motions_[b] = MakeDefaultBodyMotionData(num_T);
+    generic_plan_state_.body_motions[b] = MakeDefaultBodyMotionData(num_T);
 
-    body_motions_[b].body_or_frame_id =
+    generic_plan_state_.body_motions[b].body_or_frame_id =
         robot_.findLink(body_names[b])->body_index;
-    body_motions_[b].trajectory =
+    generic_plan_state_.body_motions[b].trajectory =
         GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
     if (body_names[b].compare(robot_.getBodyOrFrameName(rpc_.pelvis_id)) == 0)
-      body_motions_[b].control_pose_when_in_contact.resize(num_T, true);
+      generic_plan_state_.body_motions[b].control_pose_when_in_contact.resize(num_T, true);
   }
 
   // make support, dummy here since we are always in double support
-  support_state_ = MakeDefaultSupportState(ContactState::DS());
+  generic_plan_state_.support_state = MakeDefaultSupportState(ContactState::DS());
 
   // constrained DOFs
   // TODO: this is not true for dragging hands around

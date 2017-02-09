@@ -80,7 +80,7 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   generic_plan_config_.walking_plan_config = walking_plan_config;
 
   std::cout << "finished parsing plan eval config " << std::endl;
-  
+
 }
 
 drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const {
@@ -133,17 +133,17 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
 
   ////////////////////////////////////////
   // encode body motion data
-  qp_input.num_tracked_bodies = body_motions_.size();
+  qp_input.num_tracked_bodies = generic_plan_state_.body_motions.size();
   qp_input.body_motion_data.resize(qp_input.num_tracked_bodies);
   for (size_t b = 0; b < qp_input.body_motion_data.size(); b++)
-    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, body_motions_[b]);
+    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, generic_plan_state_.body_motions[b]);
 
   ////////////////////////////////////////
   // encode support data
-  qp_input.num_support_data = support_state_.size();
+  qp_input.num_support_data = generic_plan_state_.support_state.size();
   qp_input.support_data.resize(qp_input.num_support_data);
   for (size_t i = 0; i < qp_input.support_data.size(); i++)
-    qp_input.support_data[i] = EncodeSupportData(support_state_[i]);
+    qp_input.support_data[i] = EncodeSupportData(generic_plan_state_.support_state[i]);
 
 
   ////////////////////////////////////////

@@ -93,7 +93,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   feet0[Side::RIGHT] = Isometry3dToVector7d(feet_pose[Side::RIGHT]);
 
   // reinit body trajs
-  body_motions_.resize(4);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
+  generic_plan_state_.body_motions.resize(4);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
 
   if (planned_cs.is_double_support() && walking_plan_state_.footstep_plan.empty()) {
     throw std::runtime_error("Should not call generate trajectory from rest with empty steps");
@@ -202,14 +202,14 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
 
   // plan the zmp trajectory
-  zmp_traj_ = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, zmpd_d0, wait_period_before_weight_shift);
+  generic_plan_state_.zmp_traj = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, zmpd_d0, wait_period_before_weight_shift);
 
-  // solve the LQR problem for tracking the zmp_traj_
+  // solve the LQR problem for tracking the generic_plan_state_.zmp_traj
   // note, what we are controlling is the pelvis height, this indirectly affects the zmp_height
   // ensure that in the config file the zmp_height and pelvis_height are consistent.
   // Essentially zmp_height should correspond to com height when pelvis is at given location
   // this is not quite right, since we are controlling the pelvis height, rather than com height
-  zmp_planner_.Plan(zmp_traj_, x0, generic_plan_config_.zmp_height);
+  zmp_planner_.Plan(generic_plan_state_.zmp_traj, x0, generic_plan_config_.zmp_height);
 
   /*
   // Save zmp trajs to a files
@@ -230,15 +230,15 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   // for pelvis stuff should add another knot point at time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration (this is just before liftoff)
 
   /// Initialize body motion data
-  for (size_t i = 0; i < body_motions_.size(); i++)
-    body_motions_[i] = MakeDefaultBodyMotionData(Ts.size());
+  for (size_t i = 0; i < generic_plan_state_.body_motions.size(); i++)
+    generic_plan_state_.body_motions[i] = MakeDefaultBodyMotionData(Ts.size());
 
   // hold all joints. I am assuming the leg joints will just be ignored in the qp..
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
   q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(Ts.size(), init_q_), zero, zero);
 
 //  // make pelv
-//  pelv1.head(2) = zmp_traj_.value(zmp_traj_.getEndTime());
+//  pelv1.head(2) = generic_plan_state_.zmp_traj.value(generic_plan_state_.zmp_traj.getEndTime());
 //
 //  ///< This offset the pelv z relative to foot frame
 //  pelv1[2] = generic_plan_config_.walking_plan_config.pelvis_height + feet_pose[nxt_stance_foot.underlying()].translation()[2];
@@ -611,33 +611,31 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   }
 
   // make contact support data
-  support_state_ = MakeDefaultSupportState(cur_planned_contact_state());
+  generic_plan_state_.support_state = MakeDefaultSupportState(cur_planned_contact_state());
   // interp weight distribution
   double wl = weight_distribution_.value(plan_time).value();
   wl = std::min(wl, 1.0);
   wl = std::max(wl, 0.0);
 
-  for (size_t s = 0; s < support_state_.size(); s++) {
+  for (size_t s = 0; s < generic_plan_state_.support_state.size(); s++) {
 
     if (generic_plan_config_.walking_plan_config.use_force_bounds){
       // only foot
-      if (support_state_[s].body == rpc_.foot_ids.at(Side::LEFT)) {
+      if (generic_plan_state_.support_state[s].body == rpc_.foot_ids.at(Side::LEFT)) {
         // in making the default support state this is set to 3 times the robot's mass
-        support_state_[s].total_normal_force_upper_bound *= wl;
-        support_state_[s].total_normal_force_lower_bound = generic_plan_config_.walking_plan_config.min_Fz;
+        generic_plan_state_.support_state[s].total_normal_force_upper_bound *= wl;
+        generic_plan_state_.support_state[s].total_normal_force_lower_bound = generic_plan_config_.walking_plan_config.min_Fz;
       }
-      else if (support_state_[s].body == rpc_.foot_ids.at(Side::RIGHT)) {
-        support_state_[s].total_normal_force_upper_bound *= (1 - wl);
-        support_state_[s].total_normal_force_lower_bound = generic_plan_config_.walking_plan_config.min_Fz;
+      else if (generic_plan_state_.support_state[s].body == rpc_.foot_ids.at(Side::RIGHT)) {
+        generic_plan_state_.support_state[s].total_normal_force_upper_bound *= (1 - wl);
+        generic_plan_state_.support_state[s].total_normal_force_lower_bound = generic_plan_config_.walking_plan_config.min_Fz;
       }
 
-      support_state_[s].total_normal_force_upper_bound = std::max(support_state_[s].total_normal_force_upper_bound, support_state_[s].total_normal_force_lower_bound);
+      generic_plan_state_.support_state[s].total_normal_force_upper_bound = std::max(generic_plan_state_.support_state[s].total_normal_force_upper_bound, generic_plan_state_.support_state[s].total_normal_force_lower_bound);
     } else{
-      support_state_[s].total_normal_force_lower_bound = 0;
+      generic_plan_state_.support_state[s].total_normal_force_lower_bound = 0;
       // the upper bound is already set to 3 times the robot's weight in the MakeDefaultSupportState method
     }
-
-
 
   }
 

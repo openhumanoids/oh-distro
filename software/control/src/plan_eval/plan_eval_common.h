@@ -9,6 +9,11 @@
 #include "drake/systems/plants/KinematicsCache.h"
 #include "drake/systems/controllers/QPCommon.h"
 #include "drake/util/yaml/yamlUtil.h"
+#include "drake/systems/robotInterfaces/BodyMotionData.h"
+#include "drake/systems/trajectories/PiecewisePolynomial.h"
+
+
+
 
 namespace Eigen {
   typedef Matrix<double, 6, 1> Vector6d;
@@ -125,6 +130,10 @@ struct DebugData{
 struct GenericPlanState{
   double plan_start_time = -1;
   PlanStatus plan_status;
+  RigidBodySupportState support_state;
+  std::vector<BodyMotionData> body_motions;
+  PiecewisePolynomial<double> zmp_traj;
+
 };
 
 }

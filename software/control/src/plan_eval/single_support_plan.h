@@ -22,7 +22,7 @@ class SingleSupportPlan : public GenericPlan {
   double contact_switch_time_ = -INFINITY;
 
   double p_ss_duration_;
-  double p_ds_duration_;
+  double generic_plan_config_.walking_plan_config.ds_duration;
 
   void LoadConfigurationFromYAML(const std::string &name);
 };

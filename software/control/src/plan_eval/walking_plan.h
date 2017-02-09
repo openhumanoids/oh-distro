@@ -65,10 +65,10 @@ class WalkingPlan : public GenericPlan {
 
   void GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
 
-  inline BodyMotionData& get_pelvis_body_motion_data() { return body_motions_[0]; }
-  inline BodyMotionData& get_torso_body_motion_data() { return body_motions_[1]; }
-  inline BodyMotionData& get_stance_foot_body_motion_data() { return body_motions_[2]; }
-  inline BodyMotionData& get_swing_foot_body_motion_data() { return body_motions_[3]; }
+  inline BodyMotionData& get_pelvis_body_motion_data() { return generic_plan_state_.body_motions[0]; }
+  inline BodyMotionData& get_torso_body_motion_data() { return generic_plan_state_.body_motions[1]; }
+  inline BodyMotionData& get_stance_foot_body_motion_data() { return generic_plan_state_.body_motions[2]; }
+  inline BodyMotionData& get_swing_foot_body_motion_data() { return generic_plan_state_.body_motions[3]; }
 
   inline Eigen::Vector7d bot_core_pose2pose(const bot_core::position_3d_t &p) const {
     Eigen::Vector7d pose;
