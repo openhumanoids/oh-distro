@@ -17,50 +17,7 @@
 #include "drc/foot_contact_estimate_t.hpp"
 #include "drc/plan_eval_debug_t.hpp"
 
-
-namespace Eigen {
-  typedef Matrix<double, 6, 1> Vector6d;
-  typedef Matrix<double, 7, 1> Vector7d;
-};
-
-struct RigidBodySupportStateElement {
-  int body;
-  double total_normal_force_upper_bound;
-  double total_normal_force_lower_bound;
-  Eigen::Matrix3Xd contact_points;
-  bool use_contact_surface;
-  Eigen::Vector4d support_surface;
-};
-
-typedef std::vector<RigidBodySupportStateElement> RigidBodySupportState;
-
-enum class PlanExecutionStatus{
-  UNKNOWN,
-  EXECUTING,
-  FINISHED,
-};
-
-enum class PlanType{
-  UNKNOWN,
-  STANDING,
-  WALKING,
-  BRACING,
-  RECOVERING,
-};
-
-struct PlanStatus {
-  PlanExecutionStatus executionStatus;
-  PlanType planType;
-};
-
-struct DebugData{
-  std::string plan_type;
-  Eigen::Vector2d com_des;
-  Eigen::Vector2d comd_des;
-  Eigen::Vector2d comdd_des;
-};
-
-
+// see plan_eval_common.h for type definitions
 using namespace plan_eval;
 class GenericPlan {
  protected:
@@ -68,15 +25,15 @@ class GenericPlan {
   // top level yaml config file node
   YAML::Node config_;
   GenericPlanConfig generic_plan_config_;
-
   RobotPropertyCache rpc_;
-  std::map<int, Eigen::Matrix3Xd> contact_offsets;
 
-  // is set the first time in the publishing / interp loop
-  double interp_t0_ = -1;
+  // all the state of GenericPlan is contained here
+  GenericPlanState generic_plan_state_;
 
   // the plan status
   PlanStatus plan_status_;
+
+  //Debugging data
   DebugData debug_data_;
 
   // robot for doing kinematics
@@ -119,6 +76,8 @@ class GenericPlan {
   // It is recommenede to call this method from inside the plan's MakeQPInput method
   // Child classes can also overload this message to provide specific plan information
   void RecordDefaultDebugData(double & plan_time);
+
+
  public:
   GenericPlan(const std::string &urdf_name, const std::string &config_name)
       : robot_(urdf_name, DrakeJoint::ROLLPITCHYAW) {
@@ -126,7 +85,7 @@ class GenericPlan {
   }
   virtual ~GenericPlan() { ; }
   virtual void LoadConfigurationFromYAML(const std::string &name);
-  inline double t0() const { return interp_t0_; }
+  inline double t0() const { return generic_plan_state_.plan_start_time; }
 
   virtual void HandleCommittedRobotPlan(const void *msg,
                                         const DrakeRobotState &est_rs,
@@ -135,12 +94,11 @@ class GenericPlan {
 
   virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
 
+  void SimpleTest();
   PlanStatus getPlanStatus();
 
   // converts the DebugDataStruct into a message
   drc::plan_eval_debug_t EncodeDebugData(double & real_time);
-
-
 };
 
 std::string PrimaryBodyOrFrameName(const std::string &full_body_name);

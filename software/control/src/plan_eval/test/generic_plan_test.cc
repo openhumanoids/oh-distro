@@ -6,6 +6,7 @@
 #include "control/walking_plan.h"
 #include "control/manip_plan.h"
 #include "drake/Path.h"
+#include "../utils/simple_timer.h"
 
 #include <string>
 
@@ -29,6 +30,12 @@ int main(int argc, const char *argv[]) {
 
 //  ManipPlan manip_plan = ManipPlan(urdf, config);
 //  WalkingPlan walking_plan = WalkingPlan(urdf, config)
-
+  using namespace plan_eval_utils;
+  SimpleTimer simple_timer = plan_eval_utils::SimpleTimer();
+  simple_timer.Start();
   std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf, config));
+  std::chrono::milliseconds elapsed_time = simple_timer.Elapsed();
+  std::cout << "elapsed time in ms = " << elapsed_time.count() << std::endl;
+
+  new_plan_ptr->SimpleTest();
 }

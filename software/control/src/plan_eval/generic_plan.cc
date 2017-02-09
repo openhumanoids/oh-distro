@@ -10,26 +10,47 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   config_ = YAML::LoadFile(name);
   rpc_ = parseKinematicTreeMetadata(config_["kinematic_tree_metadata"], robot_);
 
+  // parse the pelvis and torso ID, this is turned off by default in parseKinematicTreeMetadata
+  std::string pelvis_name = config_["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>();
+  std::string torso_name = config_["kinematic_tree_metadata"]["body_names"]["torso"].as<std::string>();
+  rpc_.pelvis_id = robot_.findLinkId(pelvis_name);
+  rpc_.torso_id = robot_.findLinkId(torso_name);
+
+  std::cout << "parsed kinematic tree metadata " << std::endl;
+
   // Parse contact point information
   // right now we only have contact points on the feet
   GenericPlanConfig generic_plan_config;
   YAML::Node foot_contact_points_config = config_["contact_points"]["foot_contact_points"];
   std::vector<Side> side_list = {Side::LEFT, Side::RIGHT};
-  for(auto & side: side_list){
+  std::map<Side, ContactState::ContactBody> side_to_contact_body_map;
+  side_to_contact_body_map[Side::LEFT] = ContactState::ContactBody::L_FOOT;
+  side_to_contact_body_map[Side::RIGHT] = ContactState::ContactBody::R_FOOT;
+
+  for(auto & it: side_to_contact_body_map){
+    Side side = it.first;
+    ContactState::ContactBody contact_body = it.second;
     std::string side_string = side.toString();
     YAML::Node single_foot_contact_points_config = foot_contact_points_config[side_string];
-    generic_plan_config.foot_contact_point_data[side] = FootContactPointData(single_foot_contact_points_config);
+
+    // TODO (manuelli): this is getting stored in two places at once, needs to be fixed
+    // gets stored in two places at once
+    generic_plan_config_.foot_contact_point_data[side] = std::shared_ptr<FootContactPointData>(new FootContactPointData(foot_contact_points_config[side_string]));
+    generic_plan_config_.contact_point_data[contact_body] = std::shared_ptr<FootContactPointData>(new FootContactPointData(foot_contact_points_config[side_string]));;
+
+
+    std::cout << "generic_plan_config_.contact_point_data[contact_body].getAllContactPoints().size() " << generic_plan_config_.contact_point_data.at(contact_body)->getAllContactPoints().size() << std::endl;
   }
 
   std::cout << "parsing general params " << std::endl;
 
   // parse general params
   YAML::Node general_params_node = config_["general"];
-  generic_plan_config.mu = general_params_node["mu"].as<double>();
-  generic_plan_config.zmp_height = general_params_node["zmp_height"].as<double>();
-  generic_plan_config.initial_transition_time = general_params_node["initial_transition_time"].as<double>();
-  generic_plan_config.transition_trq_alpha_filter = general_params_node["transition_trq_alpha_filter"].as<double>();
-  generic_plan_config.flip_foot_ft_sensor = general_params_node["flip_foot_ft_sensor"].as<bool>();
+  generic_plan_config_.mu = general_params_node["mu"].as<double>();
+  generic_plan_config_.zmp_height = general_params_node["zmp_height"].as<double>();
+  generic_plan_config_.initial_transition_time = general_params_node["initial_transition_time"].as<double>();
+  generic_plan_config_.transition_trq_alpha_filter = general_params_node["transition_trq_alpha_filter"].as<double>();
+  generic_plan_config_.flip_foot_ft_sensor = general_params_node["flip_foot_ft_sensor"].as<bool>();
 
   std::cout << "parsing walking params" << std::endl;
   // parse walking params
@@ -56,13 +77,10 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   walking_plan_config.constrain_back_bkz = walking_params_node["constrainBackJoints"]["back_bkz"].as<bool>();
 
   // save walking params into general config
-  generic_plan_config.walking_plan_config = walking_plan_config;
-  this->generic_plan_config_ = generic_plan_config;
+  generic_plan_config_.walking_plan_config = walking_plan_config;
 
   std::cout << "finished parsing plan eval config " << std::endl;
-
-
-
+  
 }
 
 drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const {
@@ -93,7 +111,7 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
       std::min(2, q_trajs_.getNumberOfSegments() - qtrajSegmentIdx);
   PiecewisePolynomial<double> qtrajSlice =
       q_trajs_.slice(qtrajSegmentIdx, num_segments);
-  qtrajSlice.shiftRight(interp_t0_);
+  qtrajSlice.shiftRight(generic_plan_state_.plan_start_time);
 
   encodePiecewisePolynomial(qtrajSlice, qp_input.whole_body_data.spline);
 
@@ -161,24 +179,29 @@ drc::plan_eval_debug_t GenericPlan::EncodeDebugData(double & real_time){
   return msg;
 }
 
-RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &cs) const {
+RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &cs) const{
+
   int s = 0;
   const std::list<ContactState::ContactBody> all_contacts = cs.bodies_in_contact();
   RigidBodySupportState support_state(all_contacts.size());
-  for (auto it = all_contacts.begin(); it != all_contacts.end(); it++) {
+  for (const auto & contact_body: all_contacts) {
     int body_idx;
-    if (*it == ContactState::PELVIS)
+    if (contact_body == ContactState::PELVIS)
       body_idx = rpc_.pelvis_id;
-    else if (*it == ContactState::L_FOOT)
+    else if (contact_body == ContactState::L_FOOT)
       body_idx = rpc_.foot_ids.at(Side::LEFT);
-    else if (*it == ContactState::R_FOOT)
+    else if (contact_body == ContactState::R_FOOT)
       body_idx = rpc_.foot_ids.at(Side::RIGHT);
-    else if (*it == ContactState::L_HAND)
+    else if (contact_body == ContactState::L_HAND)
       body_idx = rpc_.hand_ids.at(Side::LEFT);
-    else if (*it == ContactState::R_HAND)
+    else if (contact_body == ContactState::R_HAND)
       body_idx = rpc_.hand_ids.at(Side::RIGHT);
     else
-      throw std::runtime_error("UNKNOW BODY in contact");
+      throw std::runtime_error("UNKNOWN BODY in contact");
+
+    // contact_body is of type ContactState::ContactBody
+    // us at() instead of [] so this can be a const method
+    const std::shared_ptr<ContactPointData> & contact_point_data = generic_plan_config_.contact_point_data.at(contact_body);
 
     support_state[s].body = body_idx;
     support_state[s].total_normal_force_upper_bound = 3 * robot_.getMass() * 9.81;
@@ -186,7 +209,7 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &c
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
 
-    support_state[s].contact_points = contact_offsets.at(body_idx);
+    support_state[s].contact_points = contact_point_data->getAllContactPoints();
     s++;
   }
 
@@ -246,7 +269,7 @@ drake::lcmt_body_motion_data GenericPlan::EncodeBodyMotionData(double plan_time,
         segment_index,
         std::min(2, body_motion.getTrajectory().getNumberOfSegments() -
           segment_index));
-  body_motion_trajectory_slice.shiftRight(interp_t0_);
+  body_motion_trajectory_slice.shiftRight(generic_plan_state_.plan_start_time);
 
   // make message
   drake::lcmt_body_motion_data msg;
@@ -292,6 +315,17 @@ drake::lcmt_body_motion_data GenericPlan::EncodeBodyMotionData(double plan_time,
 
 PlanStatus GenericPlan::getPlanStatus() {
   return plan_status_;
+}
+
+void GenericPlan::SimpleTest() {
+  for(auto & it: generic_plan_config_.contact_point_data){
+    std::cout << "contact_point_data key " << it.first << std::endl;
+    Eigen::Matrix3Xd contact_pts = it.second->getAllContactPoints();
+    std::cout << "contact_pts.size() " << contact_pts.size() << std::endl;
+  }
+
+  std::cout << "making default support state " << std::endl;
+  this->MakeDefaultSupportState(ContactState::DS());
 }
 
 

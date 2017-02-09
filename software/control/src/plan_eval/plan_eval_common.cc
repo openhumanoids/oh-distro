@@ -45,12 +45,12 @@ FootContactPointData::FootContactPointData(YAML::Node node) {
 }
 
 // return all contact points matrix
-Eigen::Matrix3Xd FootContactPointData::getAllContactPoints() {
+Eigen::Matrix3Xd FootContactPointData::getAllContactPoints() const{
   return this->all_contact_points_;
 }
 
 // return toe contact points matrix
-Eigen::Matrix3Xd FootContactPointData::getToeContactPoints() {
+Eigen::Matrix3Xd FootContactPointData::getToeContactPoints() const{
   return this->toe_contact_points_;
 }
 }

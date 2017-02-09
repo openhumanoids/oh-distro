@@ -39,17 +39,7 @@ foot_contact_offsets:
     left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
     right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
 
-foot_contact_offsets:
-  *L_FOOT_NAME :
-    left_toe: {x: 0.1728, y: 0.0626, z: -0.07645}
-    right_toe: {x: 0.1728, y: -0.0626, z: -0.07645}
-    left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
-    right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
-  *R_FOOT_NAME :
-    left_toe: {x: 0.1728, y: 0.0626, z: -0.07645}
-    right_toe: {x: 0.1728, y: -0.0626, z: -0.07645}
-    left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
-    right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
+
 
 # shared by manip and walking
 # put general label here

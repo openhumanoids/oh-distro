@@ -6,6 +6,7 @@
 #include "manip_plan.h"
 #include "walking_plan.h"
 #include "drc/plan_status_t.hpp"
+#include "utils/simple_timer.h"
 
 double PLAN_STATUS_RATE_LIMIT_HZ  = 3;
 
@@ -44,37 +45,6 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   if (!lcm_handle_publisher_.good()) {
     throw std::runtime_error("lcm is not good()");
   }
-
-//  lcm::Subscription *sub;
-//  sub = lcm_handle_receiver_.subscribe("COMMITTED_ROBOT_PLAN",
-//      &PlanEval::HandleManipPlan, this);
-//  sub->setQueueCapacity(1);
-//
-//  sub = lcm_handle_receiver_.subscribe("WALKING_CONTROLLER_PLAN_REQUEST",
-//      &PlanEval::HandleWalkingPlan, this);
-//  sub->setQueueCapacity(1);
-//
-//  sub = lcm_handle_receiver_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotStateReceiverLoop,
-//      this);
-//  sub->setQueueCapacity(1);
-//
-//  sub = lcm_handle_receiver_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactStateReceiverLoop,
-//                                        this);
-//  sub->setQueueCapacity(1);
-
-
-//  // the publisher and receiver each have their own lcm handles
-//  sub = lcm_handle_publisher_.subscribe("EST_ROBOT_STATE", &PlanEval::HandleEstRobotStatePublisherLoop,
-//                                       this);
-//  sub->setQueueCapacity(1);
-//
-//  sub = lcm_handle_publisher_.subscribe("FOOT_CONTACT_ESTIMATE", &PlanEval::HandleEstContactStatePublisherLoop,
-//      this);
-//  sub->setQueueCapacity(1);
-
-  // sub = lcm_handle_.subscribe("START_MIT_STAND", &PlanEval::HandleDefaultManipPlan,
-  //     this);
-  // sub->setQueueCapacity(1);
 }
 
 void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
@@ -84,21 +54,6 @@ void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
   std::cout << "Makeing Manip plan\n";
   std::cout << " received plan at " << msg->utime*1.0/1e6 << std::endl;
   this->MakeManipPlan(msg);
-  // state_lock_.lock();
-  // DrakeRobotState local_est_rs = est_robot_state_;
-  // state_lock_.unlock();
-
-  // std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
-  // Eigen::VectorXd last_key_frame = local_robot_state_.q;
-  // if (current_plan_) {
-  //   last_key_frame = current_plan_->GetLatestKeyFrame(local_est_rs.t);
-  // }
-  // new_plan_ptr->HandleCommittedRobotPlan(msg, local_est_rs, last_key_frame);
-
-  // plan_lock_.lock();
-  // current_plan_ = new_plan_ptr;
-  // new_plan_ = true;
-  // plan_lock_.unlock();
 }
 
 
@@ -106,6 +61,10 @@ void PlanEval::MakeManipPlan(const drc::robot_plan_t *msg){
 //  state_lock_.lock();
 //  DrakeRobotState local_est_rs = est_robot_state_receiver_;
 //  state_lock_.unlock();
+
+  using namespace plan_eval_utils;
+  SimpleTimer simple_timer;
+  simple_timer.Start();
 
   std::shared_ptr<GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
   Eigen::VectorXd last_key_frame = est_robot_state_receiver_.q;
@@ -118,49 +77,21 @@ void PlanEval::MakeManipPlan(const drc::robot_plan_t *msg){
   current_plan_ = new_plan_ptr;
   new_plan_ = true;
   plan_lock_.unlock();
+
+  std::cout << "handling manip plan took " << simple_timer.Elapsed().count() << " ms" << std::endl;
 }
 
-
-// there is a bug in this, doesn't work
-// void PlanEval::HandleDefaultManipPlan(const lcm::ReceiveBuffer *rbuf, const std::string &channel, const bot_core::utime_t *msg){
-//   std::cout << "Making manip plan from current state" << std::endl;
-
-
-
-//   state_lock_.lock();
-//   bot_core::robot_state_t local_robot_state_msg = est_robot_state_msg_;
-//   DrakeRobotState local_est_rs = est_robot_state_;
-//   state_lock_.unlock();
-
-//   // create a "fake" robot_plan_t internally
-//   drc::robot_plan_t plan_msg;
-
-//   plan_msg.num_states = 2;
-//   plan_msg.plan.resize(2);
-//   plan_msg.plan[0] = local_robot_state_msg;
-//   plan_msg.plan[1] = local_robot_state_msg;
-
-//   // make the plan last one second, so we adjust the utime of the second keyframe
-//   plan_msg.plan[1].utime = local_robot_state_msg.utime + 1e6;
-
-//   plan_msg.plan_info.resize(2);
-//   plan_msg.param_set = "manip";
-
-//   this->MakeManipPlan(&plan_msg);
-// }
 
 void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                                  const std::string &channel,
                                  const drc::walking_plan_request_t *msg)
 {
   std::cout << "Making Walking plan\n";
-  
-//  DrakeRobotState local_est_rs;
-//  state_lock_.lock();
-//  local_est_rs = est_robot_state_;
-//  state_lock_.unlock();
 
-  //std::shared_ptr<GenericPlan> new_plan_ptr(new SingleSupportPlan(urdf_name_, config_name_));
+  using namespace plan_eval_utils;
+  SimpleTimer simple_timer;
+  simple_timer.Start();
+
   std::shared_ptr<GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
   Eigen::VectorXd last_key_frame = est_robot_state_receiver_.q;
   if (current_plan_) {
@@ -172,6 +103,8 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
   current_plan_ = new_plan_ptr;
   new_plan_ = true;
   plan_lock_.unlock();
+
+  std::cout << "handling walking plan took " << simple_timer.Elapsed().count() << " ms" << std::endl;
 }
 
 void PlanEval::HandleEstContactStateReceiverLoop(const lcm::ReceiveBuffer *rbuf,

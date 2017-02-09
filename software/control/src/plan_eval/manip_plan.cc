@@ -8,9 +8,9 @@
 drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs) {
   double cur_time = est_rs.t;
 
-  if (interp_t0_ == -1)
-    interp_t0_ = cur_time;
-  double plan_time = cur_time - interp_t0_;
+  if (generic_plan_state_.plan_start_time == -1)
+    generic_plan_state_.plan_start_time = cur_time;
+  double plan_time = cur_time - generic_plan_state_.plan_start_time;
 
   bool apply_torque_alpha_filter = plan_time < generic_plan_config_.initial_transition_time;
 
@@ -21,9 +21,9 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &es
 }
 
 Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
-  if (interp_t0_ == -1)
-    interp_t0_ = cur_time;
-  double plan_time = cur_time - interp_t0_;
+  if (generic_plan_state_.plan_start_time == -1)
+    generic_plan_state_.plan_start_time = cur_time;
+  double plan_time = cur_time - generic_plan_state_.plan_start_time;
 
   return q_trajs_.value(plan_time);
 }
@@ -48,6 +48,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   std::vector<std::string> body_names;
   body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
+    std::cout << "ManipPlan: foot_ids = " << it->second << std::endl;
     body_names.push_back(robot_.getBodyOrFrameName(it->second));
   }
   size_t num_bodies = body_names.size();

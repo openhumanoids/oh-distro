@@ -14,14 +14,32 @@ struct WalkingParams{
   bool use_force_bounds;
 };
 
+// seems redundant with ContactState which can be
+// SSL, SSR, or DS
+enum WalkingState {
+  WEIGHT_TRANSFER,
+  SWING
+};
+
+// State that is specific to the walking planner, and doesn't fit in GenericPlanState
+// everything stateful about the walking planner should be contained here
+struct WalkingPlanState{
+  WalkingState walking_state;
+  std::list<drc::footstep_t> footstep_plan;
+  std::list<std::pair<ContactState, double>> contact_state;
+  double contact_switch_time = -INFINITY;
+  bool have_tared_swing_leg_ft = false;
+  int step_count;
+};
+
 class WalkingPlan : public GenericPlan {
  public:
   WalkingPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
 
     // this is the version in walking_plan.cc, NOT the one in generic_plan.cc
 //    this->LoadConfigurationFromYAML(config_name);
-    plan_status_.planType = PlanType::WALKING;
-    step_count_ = 0;
+    generic_plan_state_.plan_status.planType = PlanType::WALKING;
+    walking_plan_state_.step_count = 0;
 
     // check the lcm handle initialization was good
     if (!lcm_handle_.good()) {
@@ -37,28 +55,13 @@ class WalkingPlan : public GenericPlan {
   Eigen::VectorXd GetLatestKeyFrame(double time) { return Eigen::VectorXd::Zero(robot_.num_positions); }
 
  private:
-  enum WalkingState {
-    WEIGHT_TRANSFER,
-    SWING
-  };
 
   lcm::LCM lcm_handle_;
 
-  WalkingState cur_state_;
-  WalkingParams walking_params_;
+  WalkingPlanState walking_plan_state_;
 
-  std::list<drc::footstep_t> footstep_plan_;
-  std::list<std::pair<ContactState, double>> contact_state_;
   PiecewisePolynomial<double> weight_distribution_;
-
-  double contact_switch_time_ = -INFINITY;
   Eigen::VectorXd init_q_;
-
-  // these are all parameters, hence they are prefixed with a p
-  // should really all be collected into one place rather than littered about.
-  bool have_tared_swing_leg_ft_ = false;
-
-  int step_count_;
 
   void GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
 
@@ -81,15 +84,15 @@ class WalkingPlan : public GenericPlan {
   }
 
   inline const ContactState &cur_planned_contact_state() const {
-    if (contact_state_.empty())
+    if (walking_plan_state_.contact_state.empty())
       throw std::runtime_error("empty planned contact_state");
-    return contact_state_.front().first;
+    return walking_plan_state_.contact_state.front().first;
   }
 
   inline double cur_planned_contact_swith_time() const {
-    if (contact_state_.empty())
+    if (walking_plan_state_.contact_state.empty())
       throw std::runtime_error("empty planned contact_state");
-    return contact_state_.front().second;
+    return walking_plan_state_.contact_state.front().second;
   }
 
   static Eigen::Isometry3d FootstepMsgToPose(drc::footstep_t msg);
