@@ -2,66 +2,67 @@
 #include "drake/util/lcmUtil.h"
 
 void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
+
+
+  // create the robot property cache
+  std::cout << "in function GenericPlan::LoadConfigurationFromYAML" << std::endl;
+  std::cout << "-------------" << std::endl;
   config_ = YAML::LoadFile(name);
   rpc_ = parseKinematicTreeMetadata(config_["kinematic_tree_metadata"], robot_);
 
-
-  // commented out by Lucas Manuelli, the arm mass sims model has no hands,
-  // was causing issues
-  // std::map<Side, std::string> side_identifiers = {{Side::LEFT, "l"}, {Side::RIGHT, "r"}};
-  // for (const auto& side : Side::values)
-  //   rpc_.hand_ids[side] = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["hands"][side_identifiers[side]].as<std::string>());
-
-
-
-  rpc_.pelvis_id = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["pelvis"].as<std::string>());
-  rpc_.torso_id = robot_.findLinkId(config_["kinematic_tree_metadata"]["body_names"]["torso"].as<std::string>());
-
-  for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
-    std::cout << it->first.toString() << " foot name: " << robot_.getBodyOrFrameName(it->second) << std::endl;
+  // Parse contact point information
+  // right now we only have contact points on the feet
+  GenericPlanConfig generic_plan_config;
+  YAML::Node foot_contact_points_config = config_["contact_points"]["foot_contact_points"];
+  std::vector<Side> side_list = {Side::LEFT, Side::RIGHT};
+  for(auto & side: side_list){
+    std::string side_string = side.toString();
+    YAML::Node single_foot_contact_points_config = foot_contact_points_config[side_string];
+    generic_plan_config.foot_contact_point_data[side] = FootContactPointData(single_foot_contact_points_config);
   }
 
-  for (auto it = rpc_.position_indices.legs.begin(); it != rpc_.position_indices.legs.end(); it++) {
-    std::cout << it->first.toString() << " leg joints: ";
-    for (size_t i = 0; i < it->second.size(); i++)
-      std::cout << robot_.getPositionName(it->second[i]) << " ";
-    std::cout << std::endl;
-  }
+  std::cout << "parsing general params " << std::endl;
 
-  for (auto it = rpc_.position_indices.arms.begin(); it != rpc_.position_indices.arms.end(); it++) {
-    std::cout << it->first.toString() << " arm joints: ";
-    for (size_t i = 0; i < it->second.size(); i++)
-      std::cout << robot_.getPositionName(it->second[i]) << " ";
-    std::cout << std::endl;
-  }
+  // parse general params
+  YAML::Node general_params_node = config_["general"];
+  generic_plan_config.mu = general_params_node["mu"].as<double>();
+  generic_plan_config.zmp_height = general_params_node["zmp_height"].as<double>();
+  generic_plan_config.initial_transition_time = general_params_node["initial_transition_time"].as<double>();
+  generic_plan_config.transition_trq_alpha_filter = general_params_node["transition_trq_alpha_filter"].as<double>();
+  generic_plan_config.flip_foot_ft_sensor = general_params_node["flip_foot_ft_sensor"].as<bool>();
 
-  // contacts
-  std::string xyz[3] = {"x", "y", "z"};
-  std::string corners[4] = {"left_toe", "right_toe", "left_heel", "right_heel"};
-  for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
-    std::string foot_name = robot_.getBodyOrFrameName(it->second);
-    Eigen::Matrix3Xd contacts(3, 4);
-    for (int n = 0; n < 4; n++) {
-      for (int i = 0; i < 3; i++)
-        contacts(i, n) = config_["foot_contact_offsets"][foot_name][corners[n]][xyz[i]].as<double>();
-    }
+  std::cout << "parsing walking params" << std::endl;
+  // parse walking params
+  WalkingPlanConfig walking_plan_config;
+  YAML::Node walking_params_node = config_["walking"];
 
-    contact_offsets[it->second] = contacts;
-    std::cout << foot_name << " contacts:\n" << contacts << std::endl;
-  }
+  walking_plan_config.pelvis_height = walking_params_node["pelvis_height"].as<double>();
+  walking_plan_config.ss_duration = walking_params_node["ss_duration"].as<double>();
+  walking_plan_config.ds_duration = walking_params_node["ds_duration"].as<double>();
+  walking_plan_config.pre_weight_transfer_scale = walking_params_node["pre_weight_transfer_scale"].as<double>();
+  walking_plan_config.min_Fz = walking_params_node["min_Fz"].as<double>();
+  walking_plan_config.use_force_bounds = walking_params_node["use_force_bounds"].as<bool>();
+  walking_plan_config.extend_foot_down_z_vel = walking_params_node["extend_foot_down_z_vel"].as<double>();
+  walking_plan_config.swing_foot_touchdown_z_vel = walking_params_node["swing_touchdown_z_vel"].as<double>();
+  walking_plan_config.swing_foot_touchdown_z_offset = walking_params_node["swing_touchdown_z_offset"].as<double>();
+  walking_plan_config.swing_foot_xy_weight_multiplier = walking_params_node["swing_foot_xy_weight_multiplier"].as<double>();
+  walking_plan_config.swing_foot_z_weight_multiplier = walking_params_node["swing_foot_z_weight_multiplier"].as<double>();
+  walking_plan_config.pelvis_z_weight_multiplier = walking_params_node["pelvis_z_weight_multiplier"].as<double>();
+  walking_plan_config.left_foot_zmp_y_shift = walking_params_node["left_foot_zmp_y_shift"].as<double>();
+  walking_plan_config.right_foot_zmp_y_shift = walking_params_node["right_foot_zmp_y_shift"].as<double>();
 
-  // other params
-  p_mu_ = get(config_, "mu").as<double>();
-  p_zmp_height_ = get(config_, "zmp_height").as<double>();
-  p_initial_transition_time_ = get(config_, "initial_transition_time").as<double>();
-  p_transition_trq_alpha_filter_ = get(config_, "transition_trq_alpha_filter").as<double>();
-  p_min_Fz_ = get(config_, "min_Fz").as<double>();
+  walking_plan_config.constrain_back_bkx = walking_params_node["constrainBackJoints"]["back_bkx"].as<bool>();
+  walking_plan_config.constrain_back_bky = walking_params_node["constrainBackJoints"]["back_bky"].as<bool>();
+  walking_plan_config.constrain_back_bkz = walking_params_node["constrainBackJoints"]["back_bkz"].as<bool>();
 
-  std::cout << "p_zmp_height: " << p_zmp_height_ << std::endl;
-  std::cout << "mu: " << p_mu_ << std::endl;
-  std::cout << "initial_transition_time: " << p_initial_transition_time_ << std::endl;
-  std::cout << "transition_trq_alpha_filter: " << p_transition_trq_alpha_filter_ << std::endl;
-  std::cout << "p_min_Fz_: " << p_min_Fz_ << std::endl;
+  // save walking params into general config
+  generic_plan_config.walking_plan_config = walking_plan_config;
+  this->generic_plan_config_ = generic_plan_config;
+
+  std::cout << "finished parsing plan eval config " << std::endl;
+
+
+
 }
 
 drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const {
@@ -130,7 +131,7 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
   ////////////////////////////////////////
   // torque alpha filter
   if (apply_torque_alpha_filter)
-    qp_input.torque_alpha_filter = p_transition_trq_alpha_filter_;
+    qp_input.torque_alpha_filter = generic_plan_config_.transition_trq_alpha_filter;
   else
     qp_input.torque_alpha_filter = 0.;
 
@@ -181,7 +182,7 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &c
 
     support_state[s].body = body_idx;
     support_state[s].total_normal_force_upper_bound = 3 * robot_.getMass() * 9.81;
-    support_state[s].total_normal_force_lower_bound = p_min_Fz_;
+    support_state[s].total_normal_force_lower_bound = generic_plan_config_.walking_plan_config.min_Fz;
     support_state[s].use_contact_surface = true;
     support_state[s].support_surface = Eigen::Vector4d(0, 0, 1, 0);
 
@@ -229,7 +230,7 @@ drake::lcmt_support_data GenericPlan::EncodeSupportData(const RigidBodySupportSt
     msg.support_surface[i] = element.support_surface[i];
   }
 
-  msg.mu = p_mu_;
+  msg.mu = this->generic_plan_config_.mu;
   msg.use_support_surface = true;
 
   return msg;

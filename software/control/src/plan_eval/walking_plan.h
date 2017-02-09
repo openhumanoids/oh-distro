@@ -17,7 +17,9 @@ struct WalkingParams{
 class WalkingPlan : public GenericPlan {
  public:
   WalkingPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
-    LoadConfigurationFromYAML(config_name);
+
+    // this is the version in walking_plan.cc, NOT the one in generic_plan.cc
+//    this->LoadConfigurationFromYAML(config_name);
     plan_status_.planType = PlanType::WALKING;
     step_count_ = 0;
 
@@ -53,25 +55,11 @@ class WalkingPlan : public GenericPlan {
   Eigen::VectorXd init_q_;
 
   // these are all parameters, hence they are prefixed with a p
-  double p_pelvis_height_;
-
-  double p_extend_swing_foot_down_z_vel_;
-  double p_swing_foot_touchdown_z_vel_;
-  double p_swing_foot_touchdown_z_offset_;
-  double p_ss_duration_;
-  double p_ds_duration_;
-
-  double p_swing_foot_xy_weight_mulitplier_;
-  double p_swing_foot_z_weight_mulitplier_;
-  double p_pelvis_z_weight_mulitplier_;
-  double p_left_foot_zmp_y_shift_;
-  double p_right_foot_zmp_y_shift_;
-
+  // should really all be collected into one place rather than littered about.
   bool have_tared_swing_leg_ft_ = false;
 
   int step_count_;
 
-  void LoadConfigurationFromYAML(const std::string &name);
   void GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &cur_contact_state);
 
   inline BodyMotionData& get_pelvis_body_motion_data() { return body_motions_[0]; }

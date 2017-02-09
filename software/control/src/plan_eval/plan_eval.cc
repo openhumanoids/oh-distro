@@ -5,7 +5,6 @@
 
 #include "manip_plan.h"
 #include "walking_plan.h"
-#include "single_support_plan.h"
 #include "drc/plan_status_t.hpp"
 
 double PLAN_STATUS_RATE_LIMIT_HZ  = 3;
@@ -287,10 +286,6 @@ void PlanEval::PublisherLoop() {
       }
 
       if (has_plan && new_robot_state_publisher_loop_) {
-//      state_lock_.lock();
-//      local_est_rs = est_robot_state_publisher_;
-//      new_robot_state_ = false;
-//      state_lock_.unlock();
         new_robot_state_publisher_loop_ = false;
 
         drake::lcmt_qp_controller_input qp_input = local_ptr->MakeQPInput(est_robot_state_publisher_);

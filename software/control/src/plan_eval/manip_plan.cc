@@ -12,7 +12,7 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &es
     interp_t0_ = cur_time;
   double plan_time = cur_time - interp_t0_;
 
-  bool apply_torque_alpha_filter = plan_time < p_initial_transition_time_;
+  bool apply_torque_alpha_filter = plan_time < generic_plan_config_.initial_transition_time;
 
   // record some debug data
   this->RecordDefaultDebugData(plan_time);
@@ -119,7 +119,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
+  zmp_planner_.Plan(zmp_traj_, x0, generic_plan_config_.zmp_height);
 
   // make body motion splines
   body_motions_.resize(num_bodies);

@@ -9,7 +9,7 @@
 #include "drake/systems/robotInterfaces/BodyMotionData.h"
 #include "drake/systems/controllers/QPCommon.h"
 #include "drake/util/yaml/yamlUtil.h"
-
+#include "plan_eval_common.h"
 #include "zmp_planner.h"
 
 #include "drc/robot_plan_t.hpp"
@@ -60,18 +60,14 @@ struct DebugData{
   Eigen::Vector2d comdd_des;
 };
 
+
+using namespace plan_eval;
 class GenericPlan {
  protected:
 
   // top level yaml config file node
   YAML::Node config_;
-
-  // some params
-  double p_mu_;
-  double p_zmp_height_;
-  double p_initial_transition_time_;
-  double p_transition_trq_alpha_filter_;
-  double p_min_Fz_;
+  GenericPlanConfig generic_plan_config_;
 
   RobotPropertyCache rpc_;
   std::map<int, Eigen::Matrix3Xd> contact_offsets;
@@ -84,6 +80,8 @@ class GenericPlan {
   DebugData debug_data_;
 
   // robot for doing kinematics
+  // should make this a shared ptr, not an object.
+  // otherwise you can't default initialize it
   RigidBodyTree robot_;
   Eigen::VectorXd q_;
   Eigen::VectorXd v_;
@@ -124,11 +122,7 @@ class GenericPlan {
  public:
   GenericPlan(const std::string &urdf_name, const std::string &config_name)
       : robot_(urdf_name, DrakeJoint::ROLLPITCHYAW) {
-    p_mu_ = 1.;
-    p_zmp_height_ = 0.8;
-    p_initial_transition_time_ = 0.5;
     LoadConfigurationFromYAML(config_name);
-
   }
   virtual ~GenericPlan() { ; }
   virtual void LoadConfigurationFromYAML(const std::string &name);

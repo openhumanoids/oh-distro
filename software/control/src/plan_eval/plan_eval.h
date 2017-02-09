@@ -15,8 +15,6 @@
 #include "bot_core/utime_t.hpp"
 
 
-// only working on manip now, need to think about how to switch between manip
-// and walking
 class PlanEval {
  public:
   PlanEval(const std::string &urdf_name, const std::string &config_name);
