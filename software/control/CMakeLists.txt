@@ -52,7 +52,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   endif()
 endif()
 
-include_directories(${INCLUDE_INSTALL_PATH})
+#include_directories(${INCLUDE_INSTALL_PATH})
 
 add_subdirectory(src)
 
