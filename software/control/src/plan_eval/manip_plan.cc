@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iomanip>
 
+namespace plan_eval {
+
 drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs) {
   double cur_time = est_rs.t;
 
@@ -31,7 +33,7 @@ Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
 void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                          const DrakeRobotState &est_rs,
                                          const Eigen::VectorXd &last_q_d) {
-  const drc::robot_plan_t *msg = (const drc::robot_plan_t *)plan_msg;
+  const drc::robot_plan_t *msg = (const drc::robot_plan_t *) plan_msg;
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
@@ -42,10 +44,10 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   //size_t num_T = msg->plan.size() + 1;
 
   std::vector<double> Ts(num_T);
-  std::vector<Eigen::Vector2d> com_d(num_T);
-  std::vector<Eigen::VectorXd> q_d(num_T);  // t steps by n
+  std::vector <Eigen::Vector2d> com_d(num_T);
+  std::vector <Eigen::VectorXd> q_d(num_T);  // t steps by n
 
-  std::vector<std::string> body_names;
+  std::vector <std::string> body_names;
   body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     std::cout << "ManipPlan: foot_ids = " << it->second << std::endl;
@@ -53,8 +55,8 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   }
   size_t num_bodies = body_names.size();
 
-  std::vector<std::vector<Eigen::Matrix<double,7,1>>> x_d(num_bodies);
-  std::vector<std::vector<Eigen::Matrix<double,7,1>>> xd_d(num_bodies);
+  std::vector <std::vector<Eigen::Matrix<double, 7, 1>>> x_d(num_bodies);
+  std::vector <std::vector<Eigen::Matrix<double, 7, 1>>> xd_d(num_bodies);
   for (size_t i = 0; i < num_bodies; i++) {
     x_d[i].resize(num_T);
     xd_d[i].resize(num_T);
@@ -63,7 +65,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // generate the current tracked body poses from the estimated robot state
   // maybe useful eventually
   KinematicsCache<double> cache_est = robot_.doKinematics(est_rs.q, est_rs.qd);
-  std::vector<Eigen::Matrix<double,7,1>> x_est(num_bodies);
+  std::vector <Eigen::Matrix<double, 7, 1>> x_est(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
     int id = robot_.findLink(body_names[b])->body_index;
     Eigen::Isometry3d pose = robot_.relativeTransform(cache_est, 0, id);
@@ -76,7 +78,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   for (size_t t = 0; t < num_T; t++) {
     const bot_core::robot_state_t &keyframe = msg->plan[t];
     KeyframeToState(keyframe, q_, v_);
-    Ts[t] = (double)keyframe.utime / 1e6;
+    Ts[t] = (double) keyframe.utime / 1e6;
     q_d[t] = q_;
   }
 
@@ -155,4 +157,4 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
   std::cout << "committed robot plan proced\n";
 }
-
+}// plan_eval

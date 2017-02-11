@@ -4,26 +4,30 @@
 
 #include <chrono>
 
-namespace plan_eval_utils{
+namespace plan_eval {
+namespace utils {
+class SimpleTimer {
 
-  class SimpleTimer{
+public:
+  std::chrono::time_point <std::chrono::system_clock> start_time_;
 
-  public:
-    std::chrono::time_point<std::chrono::system_clock> start_time_;
-    SimpleTimer(){};
-    void Start(){
-      start_time_ = std::chrono::system_clock::now();
-    }
+  SimpleTimer() {};
 
-    std::chrono::milliseconds Elapsed(){
-      std::chrono::milliseconds elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_time_);
+  void Start() {
+    start_time_ = std::chrono::system_clock::now();
+  }
 
-      return elapsed_time;
-    }
+  std::chrono::milliseconds Elapsed() {
+    std::chrono::milliseconds elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now() - start_time_);
 
-    void PrintElapsedTime(){
-      std::chrono::milliseconds elapsed_time = this->Elapsed();
-      std::cout << "elapsed time in ms = " << elapsed_time.count() << std::endl;
-    }
-  };
-}
+    return elapsed_time;
+  }
+
+  void PrintElapsedTime() {
+    std::chrono::milliseconds elapsed_time = this->Elapsed();
+    std::cout << "elapsed time in ms = " << elapsed_time.count() << std::endl;
+  }
+};
+}// utils
+}// plan_eval

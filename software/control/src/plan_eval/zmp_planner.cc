@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 
+namespace plan_eval {
 void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vector4d &x0, double height) {
   assert(zmp_d.rows() == 2 && zmp_d.cols() == 1);
   assert(zmp_d.getSegmentPolynomialDegree(0) == 4);
@@ -49,14 +50,14 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
   zmp_tf = zmp_d.value(zmp_d.getEndTime());
 
   Eigen::MatrixXd alpha(4, n_segments);
-  std::vector<Eigen::Matrix<double, 4, 4>> beta(n_segments);
-  std::vector<Eigen::Matrix<double, 2, 4>> gamma(n_segments);
-  std::vector<Eigen::Matrix<double, 2, 4>> c(n_segments);
+  std::vector <Eigen::Matrix<double, 4, 4>> beta(n_segments);
+  std::vector <Eigen::Matrix<double, 2, 4>> gamma(n_segments);
+  std::vector <Eigen::Matrix<double, 2, 4>> c(n_segments);
   alpha.setZero();
 
-  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> beta_poly(n_segments);
+  std::vector < Eigen::Matrix < Polynomial < double > , Eigen::Dynamic, Eigen::Dynamic >> beta_poly(n_segments);
 
-  for (int t = n_segments-1; t >= 0; t--) {
+  for (int t = n_segments - 1; t >= 0; t--) {
     c[t].row(0) = zmp_d.getPolynomial(t, 0, 0).getCoefficients();
     c[t].row(1) = zmp_d.getPolynomial(t, 1, 0).getCoefficients();
     /// switch to zbar coord
@@ -67,15 +68,14 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
     gamma[t].col(3) = R1i * D_ * Qy_ * c[t].col(3) - 0.5 * R1i * B_.transpose() * beta[t].col(3);
 
     for (int d = 2; d >= 0; d--) {
-      beta[t].col(d) = A2i * ((d+1) * beta[t].col(d+1) - B2 * c[t].col(d));
+      beta[t].col(d) = A2i * ((d + 1) * beta[t].col(d + 1) - B2 * c[t].col(d));
       gamma[t].col(d) = R1i * D_ * Qy_ * c[t].col(d) - 0.5 * R1i * B_.transpose() * beta[t].col(d);
     }
 
-    if (t == n_segments-1) {
+    if (t == n_segments - 1) {
       s1dt = Eigen::Vector4d::Zero();
-    }
-    else {
-      s1dt = alpha.col(t+1) + beta[t+1].col(0);
+    } else {
+      s1dt = alpha.col(t + 1) + beta[t + 1].col(0);
     }
     double dt = zmp_d.getDuration(t);
     Eigen::Matrix4d A2exp = A2 * dt;
@@ -87,7 +87,7 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
     alpha.col(t) = A2exp.inverse() * alpha.col(t);
 
     // setup the poly part
-    beta_poly[t].resize(4,1);
+    beta_poly[t].resize(4, 1);
     for (int n = 0; n < 4; n++) {
       beta_poly[t](n, 0) = Polynomial<double>(beta[t].row(n));
     }
@@ -109,13 +109,13 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
 
   Eigen::MatrixXd a(8, n_segments);
   a.bottomRows(4) = alpha;
-  std::vector<Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic>> b_poly(n_segments);
+  std::vector < Eigen::Matrix < Polynomial < double > , Eigen::Dynamic, Eigen::Dynamic >> b_poly(n_segments);
 
   // set x0
   Eigen::Vector4d x = x0;
   x.head(2) -= zmp_tf;
 
-  std::vector<Eigen::Matrix<double, 4, 4>> b(n_segments);
+  std::vector <Eigen::Matrix<double, 4, 4>> b(n_segments);
   Eigen::Matrix<double, 8, 1> tmp81;
   Eigen::Matrix<double, 8, 8> Ayexp;
   Eigen::Matrix<double, 4, 8> tmp48;
@@ -123,9 +123,9 @@ void ZMPPlanner::Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vec
     double dt = zmp_d.getDuration(t);
     b[t].col(3) = -Ayi.topRows(4) * By * c[t].col(3);
     for (int d = 2; d >= 0; d--) {
-      tmp81.head(4) = b[t].col(d+1);
-      tmp81.tail(4) = beta[t].col(d+1);
-      tmp81 = tmp81 * (d+1);
+      tmp81.head(4) = b[t].col(d + 1);
+      tmp81.tail(4) = beta[t].col(d + 1);
+      tmp81 = tmp81 * (d + 1);
       b[t].col(d) = Ayi.topRows(4) * (tmp81 - By * c[t].col(d));
     }
 
@@ -197,6 +197,8 @@ void ZMPPlanner::WriteToFile(const std::string &name, double dt) const {
   std::ofstream out;
   out.open(name);
   for (double t = 0; t < com_traj_.getEndTime(); t += dt)
-    out << t << " " << com_traj_.value(t).transpose() << " " << comd_traj_.value(t).transpose() << " " << zmp_traj_.value(t).transpose() << std::endl;
+    out << t << " " << com_traj_.value(t).transpose() << " " << comd_traj_.value(t).transpose() << " "
+        << zmp_traj_.value(t).transpose() << std::endl;
   out.close();
 }
+}//plan_eval

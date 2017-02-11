@@ -1,6 +1,8 @@
 #include "generic_plan.h"
 #include "drake/util/lcmUtil.h"
 
+namespace plan_eval {
+
 void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
 
 
@@ -22,12 +24,12 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   // right now we only have contact points on the feet
   GenericPlanConfig generic_plan_config;
   YAML::Node foot_contact_points_config = config_["contact_points"]["foot_contact_points"];
-  std::vector<Side> side_list = {Side::LEFT, Side::RIGHT};
-  std::map<Side, ContactState::ContactBody> side_to_contact_body_map;
+  std::vector <Side> side_list = {Side::LEFT, Side::RIGHT};
+  std::map <Side, ContactState::ContactBody> side_to_contact_body_map;
   side_to_contact_body_map[Side::LEFT] = ContactState::ContactBody::L_FOOT;
   side_to_contact_body_map[Side::RIGHT] = ContactState::ContactBody::R_FOOT;
 
-  for(auto & it: side_to_contact_body_map){
+  for (auto &it: side_to_contact_body_map) {
     Side side = it.first;
     ContactState::ContactBody contact_body = it.second;
     std::string side_string = side.toString();
@@ -35,11 +37,14 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
 
     // TODO (manuelli): this is getting stored in two places at once, needs to be fixed
     // gets stored in two places at once
-    generic_plan_config_.foot_contact_point_data[side] = std::shared_ptr<FootContactPointData>(new FootContactPointData(foot_contact_points_config[side_string]));
-    generic_plan_config_.contact_point_data[contact_body] = std::shared_ptr<FootContactPointData>(new FootContactPointData(foot_contact_points_config[side_string]));;
+    generic_plan_config_.foot_contact_point_data[side] = std::shared_ptr<FootContactPointData>(
+        new FootContactPointData(foot_contact_points_config[side_string]));
+    generic_plan_config_.contact_point_data[contact_body] = std::shared_ptr<FootContactPointData>(
+        new FootContactPointData(foot_contact_points_config[side_string]));;
 
 
-    std::cout << "generic_plan_config_.contact_point_data[contact_body].getAllContactPoints().size() " << generic_plan_config_.contact_point_data.at(contact_body)->getAllContactPoints().size() << std::endl;
+    std::cout << "generic_plan_config_.contact_point_data[contact_body].getAllContactPoints().size() "
+              << generic_plan_config_.contact_point_data.at(contact_body)->getAllContactPoints().size() << std::endl;
   }
 
   std::cout << "parsing general params " << std::endl;
@@ -83,7 +88,9 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
 
 }
 
-drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const {
+drake::lcmt_qp_controller_input
+GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name,
+                                bool apply_torque_alpha_filter) const {
   drake::lcmt_qp_controller_input qp_input;
   qp_input.be_silent = false;
   qp_input.timestamp = static_cast<int64_t>(real_time * 1e6);
@@ -159,18 +166,18 @@ drake::lcmt_qp_controller_input GenericPlan::MakeDefaultQPInput(double real_time
 
 
 // records some default debug data
-void GenericPlan::RecordDefaultDebugData(double & plan_time){
+void GenericPlan::RecordDefaultDebugData(double &plan_time) {
   // store the zmp_data into the DebugStruct
   debug_data_.com_des = zmp_planner_.com_traj_.value(plan_time);
   debug_data_.comd_des = zmp_planner_.comd_traj_.value(plan_time);
   debug_data_.comdd_des = zmp_planner_.comdd_traj_.value(plan_time);
 }
 
-drc::plan_eval_debug_t GenericPlan::EncodeDebugData(double & real_time){
+drc::plan_eval_debug_t GenericPlan::EncodeDebugData(double &real_time) {
   drc::plan_eval_debug_t msg;
   msg.plan_type = debug_data_.plan_type;
   msg.timestamp = static_cast<int64_t>(real_time * 1e6);
-  for (int i = 0; i < 2; i++){
+  for (int i = 0; i < 2; i++) {
     msg.com_des[i] = debug_data_.com_des[i];
     msg.comdot_des[i] = debug_data_.comd_des[i];
     msg.comddot_des[i] = debug_data_.comdd_des[i];
@@ -179,12 +186,12 @@ drc::plan_eval_debug_t GenericPlan::EncodeDebugData(double & real_time){
   return msg;
 }
 
-RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &cs) const{
+RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &cs) const {
 
   int s = 0;
-  const std::list<ContactState::ContactBody> all_contacts = cs.bodies_in_contact();
+  const std::list <ContactState::ContactBody> all_contacts = cs.bodies_in_contact();
   RigidBodySupportState support_state(all_contacts.size());
-  for (const auto & contact_body: all_contacts) {
+  for (const auto &contact_body: all_contacts) {
     int body_idx;
     if (contact_body == ContactState::PELVIS)
       body_idx = rpc_.pelvis_id;
@@ -201,7 +208,8 @@ RigidBodySupportState GenericPlan::MakeDefaultSupportState(const ContactState &c
 
     // contact_body is of type ContactState::ContactBody
     // us at() instead of [] so this can be a const method
-    const std::shared_ptr<ContactPointData> & contact_point_data = generic_plan_config_.contact_point_data.at(contact_body);
+    const std::shared_ptr <ContactPointData> &contact_point_data = generic_plan_config_.contact_point_data.at(
+        contact_body);
 
     support_state[s].body = body_idx;
     support_state[s].total_normal_force_upper_bound = 3 * robot_.getMass() * 9.81;
@@ -224,9 +232,9 @@ BodyMotionData GenericPlan::MakeDefaultBodyMotionData(size_t num_segments) const
   body_motion.control_pose_when_in_contact.resize(num_segments, false);
   body_motion.transform_task_to_world = Eigen::Isometry3d::Identity();
   body_motion.xyz_proportional_gain_multiplier =
-    Eigen::Vector3d::Constant(1);
+      Eigen::Vector3d::Constant(1);
   body_motion.xyz_damping_ratio_multiplier =
-    Eigen::Vector3d::Constant(1);
+      Eigen::Vector3d::Constant(1);
   body_motion.exponential_map_proportional_gain_multiplier = 1;
   body_motion.exponential_map_damping_ratio_multiplier = 1;
   body_motion.weight_multiplier = Eigen::Vector6d::Constant(1);
@@ -243,7 +251,7 @@ drake::lcmt_support_data GenericPlan::EncodeSupportData(const RigidBodySupportSt
 
   msg.num_contact_pts = element.contact_points.cols();
   eigenToStdVectorOfStdVectors(element.contact_points,
-      msg.contact_pts);
+                               msg.contact_pts);
 
   msg.total_normal_force_upper_bound = element.total_normal_force_upper_bound;
   msg.total_normal_force_lower_bound = element.total_normal_force_lower_bound;
@@ -259,55 +267,56 @@ drake::lcmt_support_data GenericPlan::EncodeSupportData(const RigidBodySupportSt
   return msg;
 }
 
-drake::lcmt_body_motion_data GenericPlan::EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const {
+drake::lcmt_body_motion_data
+GenericPlan::EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const {
   int body_or_frame_id = body_motion.getBodyOrFrameId();
   int segment_index = body_motion.findSegmentIndex(plan_time);
 
   // extract the right knot points
   PiecewisePolynomial<double> body_motion_trajectory_slice =
-    body_motion.getTrajectory().slice(
-        segment_index,
-        std::min(2, body_motion.getTrajectory().getNumberOfSegments() -
-          segment_index));
+      body_motion.getTrajectory().slice(
+          segment_index,
+          std::min(2, body_motion.getTrajectory().getNumberOfSegments() -
+                      segment_index));
   body_motion_trajectory_slice.shiftRight(generic_plan_state_.plan_start_time);
 
   // make message
   drake::lcmt_body_motion_data msg;
   msg.timestamp = 0;
   msg.body_or_frame_name =
-    PrimaryBodyOrFrameName(robot_.getBodyOrFrameName(body_or_frame_id));
+      PrimaryBodyOrFrameName(robot_.getBodyOrFrameName(body_or_frame_id));
 
   // encode traj
   encodePiecewisePolynomial(body_motion_trajectory_slice,
-      msg.spline);
+                            msg.spline);
 
   msg.in_floating_base_nullspace =
-    body_motion.isInFloatingBaseNullSpace(segment_index);
+      body_motion.isInFloatingBaseNullSpace(segment_index);
   msg.control_pose_when_in_contact =
-    body_motion.isPoseControlledWhenInContact(segment_index);
+      body_motion.isPoseControlledWhenInContact(segment_index);
 
   const Eigen::Isometry3d &transform_task_to_world =
-    body_motion.getTransformTaskToWorld();
+      body_motion.getTransformTaskToWorld();
   Eigen::Vector4d quat_task_to_world =
-    rotmat2quat(transform_task_to_world.linear());
+      rotmat2quat(transform_task_to_world.linear());
   Eigen::Vector3d translation_task_to_world =
-    transform_task_to_world.translation();
+      transform_task_to_world.translation();
   eigenVectorToCArray(quat_task_to_world,
-      msg.quat_task_to_world);
+                      msg.quat_task_to_world);
   eigenVectorToCArray(
       translation_task_to_world,
       msg.translation_task_to_world);
   eigenVectorToCArray(body_motion.getXyzProportionalGainMultiplier(),
-      msg.xyz_kp_multiplier);
+                      msg.xyz_kp_multiplier);
   eigenVectorToCArray(
       body_motion.getXyzDampingRatioMultiplier(),
       msg.xyz_damping_ratio_multiplier);
   msg.expmap_kp_multiplier =
-    body_motion.getExponentialMapProportionalGainMultiplier();
+      body_motion.getExponentialMapProportionalGainMultiplier();
   msg.expmap_damping_ratio_multiplier =
-    body_motion.getExponentialMapDampingRatioMultiplier();
+      body_motion.getExponentialMapDampingRatioMultiplier();
   eigenVectorToCArray(body_motion.getWeightMultiplier(),
-      msg.weight_multiplier);
+                      msg.weight_multiplier);
 
   return msg;
 }
@@ -318,7 +327,7 @@ PlanStatus GenericPlan::getPlanStatus() {
 }
 
 void GenericPlan::SimpleTest() {
-  for(auto & it: generic_plan_config_.contact_point_data){
+  for (auto &it: generic_plan_config_.contact_point_data) {
     std::cout << "contact_point_data key " << it.first << std::endl;
     Eigen::Matrix3Xd contact_pts = it.second->getAllContactPoints();
     std::cout << "contact_pts.size() " << contact_pts.size() << std::endl;
@@ -327,7 +336,6 @@ void GenericPlan::SimpleTest() {
   std::cout << "making default support state " << std::endl;
   this->MakeDefaultSupportState(ContactState::DS());
 }
-
 
 
 // utils
@@ -342,8 +350,8 @@ std::string PrimaryBodyOrFrameName(const std::string &full_body_name) {
   return full_body_name.substr(0, i);
 }
 
-Eigen::Matrix<double,7,1> Isometry3dToVector7d(const Eigen::Isometry3d &pose) {
-  Eigen::Matrix<double,7,1> ret;
+Eigen::Matrix<double, 7, 1> Isometry3dToVector7d(const Eigen::Isometry3d &pose) {
+  Eigen::Matrix<double, 7, 1> ret;
   ret.segment<3>(0) = pose.translation();
   ret.segment<4>(3) = rotmat2quat(pose.linear());
   return ret;
@@ -379,4 +387,4 @@ void KeyframeToState(const bot_core::robot_state_t &keyframe,
     v[i + 6] = keyframe.joint_velocity[i];
   }
 }
-
+}// plan_eval

@@ -18,9 +18,10 @@
 #include "drc/plan_eval_debug_t.hpp"
 
 // see plan_eval_common.h for type definitions
-using namespace plan_eval;
+namespace plan_eval {
+
 class GenericPlan {
- protected:
+protected:
 
   // top level yaml config file node
   YAML::Node config_;
@@ -57,45 +58,56 @@ class GenericPlan {
   std::vector<int> constrained_dofs_;
 
   RigidBodySupportState MakeDefaultSupportState(const ContactState &cs) const;
+
   BodyMotionData MakeDefaultBodyMotionData(size_t num_segments) const;
 
-  drake::lcmt_qp_controller_input MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name, bool apply_torque_alpha_filter) const;
+  drake::lcmt_qp_controller_input
+  MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name,
+                     bool apply_torque_alpha_filter) const;
 
   // make lcm messages
   drake::lcmt_support_data EncodeSupportData(const RigidBodySupportStateElement &element) const;
+
   drake::lcmt_body_motion_data EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const;
 
   // stores some default debug information in debug_data_ field.
   // It is recommenede to call this method from inside the plan's MakeQPInput method
   // Child classes can also overload this message to provide specific plan information
-  void RecordDefaultDebugData(double & plan_time);
+  void RecordDefaultDebugData(double &plan_time);
 
 
- public:
+public:
   GenericPlan(const std::string &urdf_name, const std::string &config_name)
       : robot_(urdf_name, DrakeJoint::ROLLPITCHYAW) {
     LoadConfigurationFromYAML(config_name);
   }
+
   virtual ~GenericPlan() { ; }
+
   virtual void LoadConfigurationFromYAML(const std::string &name);
+
   inline double t0() const { return generic_plan_state_.plan_start_time; }
 
   virtual void HandleCommittedRobotPlan(const void *msg,
                                         const DrakeRobotState &est_rs,
                                         const Eigen::VectorXd &last_q_d) = 0;
+
   virtual drake::lcmt_qp_controller_input MakeQPInput(const DrakeRobotState &est_rs) = 0;
 
   virtual Eigen::VectorXd GetLatestKeyFrame(double time) = 0;
 
   void SimpleTest();
+
   PlanStatus getPlanStatus();
 
   // converts the DebugDataStruct into a message
-  drc::plan_eval_debug_t EncodeDebugData(double & real_time);
+  drc::plan_eval_debug_t EncodeDebugData(double &real_time);
 };
 
 std::string PrimaryBodyOrFrameName(const std::string &full_body_name);
-Eigen::Matrix<double,7,1> Isometry3dToVector7d(const Eigen::Isometry3d &pose);
+
+Eigen::Matrix<double, 7, 1> Isometry3dToVector7d(const Eigen::Isometry3d &pose);
 
 void KeyframeToState(const bot_core::robot_state_t &keyframe,
-                            Eigen::VectorXd &q, Eigen::VectorXd &v);
+                     Eigen::VectorXd &q, Eigen::VectorXd &v);
+}// plan_eval

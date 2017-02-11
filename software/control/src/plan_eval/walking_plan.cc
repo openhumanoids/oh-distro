@@ -7,14 +7,18 @@
 #include <iomanip>
 #include <drc/string_t.hpp>
 
+
+namespace plan_eval {
+
+
 inline double avg_angle(double a, double b) {
-  double x = fmod(fabs(a-b), 2*M_PI);
+  double x = fmod(fabs(a - b), 2 * M_PI);
   if (x >= 0 && x <= M_PI)
-    return fmod((a + b) / 2., 2*M_PI);
-  else if (x >= M_PI && x < 1.5*M_PI)
-    return fmod((a + b) / 2., 2*M_PI) + M_PI;
+    return fmod((a + b) / 2., 2 * M_PI);
+  else if (x >= M_PI && x < 1.5 * M_PI)
+    return fmod((a + b) / 2., 2 * M_PI) + M_PI;
   else
-    return fmod((a + b) / 2., 2*M_PI) - M_PI;
+    return fmod((a + b) / 2., 2 * M_PI) - M_PI;
 }
 
 double WalkingPlan::get_weight_distribution(const ContactState &cs) {
@@ -27,7 +31,7 @@ double WalkingPlan::get_weight_distribution(const ContactState &cs) {
   return 0.5;
 }
 
-Eigen::Isometry3d WalkingPlan::FootstepMsgToPose(drc::footstep_t msg){
+Eigen::Isometry3d WalkingPlan::FootstepMsgToPose(drc::footstep_t msg) {
   Eigen::Isometry3d footstep;
   footstep.translation() = Eigen::Vector3d(msg.pos.translation.x, msg.pos.translation.y, msg.pos.translation.z);
   Eigen::Quaterniond rot(msg.pos.rotation.w, msg.pos.rotation.x, msg.pos.rotation.y, msg.pos.rotation.z);
@@ -42,11 +46,10 @@ Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(Side side, const Eigen::Isometr
   // figure out foot contact offset and contact points
   double zmp_shift_in;
   ContactState::ContactBody contact_body;
-  if (side == Side::LEFT){
+  if (side == Side::LEFT) {
     zmp_shift_in = generic_plan_config_.walking_plan_config.left_foot_zmp_y_shift;
     contact_body = ContactState::ContactBody::L_FOOT;
-  }
-  else{
+  } else {
     zmp_shift_in = generic_plan_config_.walking_plan_config.right_foot_zmp_y_shift;
     contact_body = ContactState::ContactBody::R_FOOT;
   }
@@ -66,7 +69,8 @@ Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(Side side, const Eigen::Isometr
 }
 
 // called on every touch down
-void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd, const ContactState &planned_cs) {
+void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd,
+                                const ContactState &planned_cs) {
   // current state
 
   clock_t start_clock_time = clock();
@@ -75,7 +79,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
   Eigen::Vector2d com0, comd0;
   Eigen::Vector2d zmp_d0, zmpd_d0;
-  Eigen::Matrix<double,7,1> pelv0, feet0[2], pelv1, torso0, torso1;
+  Eigen::Matrix<double, 7, 1> pelv0, feet0[2], pelv1, torso0, torso1;
   Eigen::Isometry3d feet_pose[2];
 
   com0 = robot_.centerOfMass(cache_est).head(2);
@@ -115,15 +119,13 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
     // if there isn't a next swing foot, i.e. this is the end of the plan, then this doesn't really matter
     // this is used in generating pelvis trajectory
     nxt_swing_foot_pose = feet_pose[nxt_swing_foot.underlying()];
-  }
-  else {
+  } else {
     // single support right
     if (walking_plan_state_.footstep_plan.front().is_right_foot) {
       nxt_stance_foot = Side::LEFT;
       nxt_swing_foot = Side::RIGHT;
       nxt_contact_state = ContactState::SSL();
-    }
-    else {
+    } else {
       nxt_stance_foot = Side::RIGHT;
       nxt_swing_foot = Side::LEFT;
       nxt_contact_state = ContactState::SSR();
@@ -145,7 +147,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
   // figure out the desired zmps
   // presumably these are just the center of the feet, maybe with a bit of offsets hacked in
-  std::vector<Eigen::Vector2d> desired_zmps;
+  std::vector <Eigen::Vector2d> desired_zmps;
 
 
 
@@ -161,8 +163,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
       desired_zmps.push_back(Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]));
     else
       throw std::runtime_error("robot flying.");
-  }
-  else {
+  } else {
     desired_zmps.push_back(Footstep2DesiredZMP(nxt_stance_foot, feet_pose[nxt_stance_foot.underlying()]));
   }
 
@@ -179,30 +180,31 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   // figure out where we want the desired zmp for NOW
   // current contact state is double support
   if (planned_cs.is_double_support()) {
-    zmp_d0 = (Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]) + Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT])) / 2.;
+    zmp_d0 = (Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]) +
+              Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT])) / 2.;
     zmpd_d0.setZero();
   }
-  // single support left
+    // single support left
   else if (planned_cs.is_single_support_left()) {
     //zmp_d0 = Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]);
     //zmpd_d0.setZero();
     zmp_d0 = zmp_planner_.GetDesiredZMP(plan_time);
     zmpd_d0 = zmp_planner_.GetDesiredZMPd(plan_time);
   }
-  // single support right
+    // single support right
   else if (planned_cs.is_single_support_right()) {
     //zmp_d0 = Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT]);
     //zmpd_d0.setZero();
     zmp_d0 = zmp_planner_.GetDesiredZMP(plan_time);
     zmpd_d0 = zmp_planner_.GetDesiredZMPd(plan_time);
-  }
-  else {
+  } else {
     throw std::runtime_error("robot flying.");
   }
 
 
   // plan the zmp trajectory
-  generic_plan_state_.zmp_traj = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, zmpd_d0, wait_period_before_weight_shift);
+  generic_plan_state_.zmp_traj = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, zmpd_d0,
+                                             wait_period_before_weight_shift);
 
   // solve the LQR problem for tracking the generic_plan_state_.zmp_traj
   // note, what we are controlling is the pelvis height, this indirectly affects the zmp_height
@@ -224,7 +226,8 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   // These tapes last until the next touchdown event
   std::vector<double> Ts(2);
   Ts[0] = 0;
-  Ts[1] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration + generic_plan_config_.walking_plan_config.ds_duration;
+  Ts[1] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration +
+          generic_plan_config_.walking_plan_config.ds_duration;
 
 
   // for pelvis stuff should add another knot point at time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration (this is just before liftoff)
@@ -255,9 +258,11 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   int num_knots_in_pelvis_traj = 3;
   pelvis_BMD.control_pose_when_in_contact.resize(num_knots_in_pelvis_traj, true);
   double liftoff_time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration;
-  double next_liftoff_time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration + generic_plan_config_.walking_plan_config.ds_duration;
-  pelvis_BMD.trajectory = this->GeneratePelvisTraj(cache_est, generic_plan_config_.walking_plan_config.pelvis_height, liftoff_time, next_liftoff_time,
-  nxt_stance_foot_pose, nxt_swing_foot_pose);
+  double next_liftoff_time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration +
+                             generic_plan_config_.walking_plan_config.ds_duration;
+  pelvis_BMD.trajectory = this->GeneratePelvisTraj(cache_est, generic_plan_config_.walking_plan_config.pelvis_height,
+                                                   liftoff_time, next_liftoff_time,
+                                                   nxt_stance_foot_pose, nxt_swing_foot_pose);
 
   // make torso
   Eigen::Vector4d foot_quat(feet0[nxt_stance_foot.underlying()].tail(4));
@@ -268,26 +273,29 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   // not sure what this line is doing
   torso_rot = torso_rot * Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()); // pitch, set to zero currently
   torso1.tail(4) = rotmat2quat(torso_rot.toRotationMatrix());
-  std::vector<Eigen::Vector7d> torso_knots(Ts.size());
+  std::vector <Eigen::Vector7d> torso_knots(Ts.size());
   torso_knots[0] = torso0;
   torso_knots[1] = torso1;
   BodyMotionData &torso_BMD = get_torso_body_motion_data();
   torso_BMD.body_or_frame_id = rpc_.torso_id;
-  torso_BMD.trajectory = GenerateCubicCartesianSpline(Ts, torso_knots, std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
+  torso_BMD.trajectory = GenerateCubicCartesianSpline(Ts, torso_knots,
+                                                      std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
 
   // make stance foot.
   // This is not quite right, since the touchdown foot pose might change after solid contact.
   // Assume the QP will not try to control pose for the contact feet.
-  std::vector<Eigen::Vector7d> stance_knots(Ts.size(), feet0[nxt_stance_foot.underlying()]);
+  std::vector <Eigen::Vector7d> stance_knots(Ts.size(), feet0[nxt_stance_foot.underlying()]);
   BodyMotionData &stance_BMD = get_stance_foot_body_motion_data();
   stance_BMD.body_or_frame_id = rpc_.foot_ids.at(nxt_stance_foot);
-  stance_BMD.trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
+  stance_BMD.trajectory = GenerateCubicCartesianSpline(Ts, stance_knots, std::vector<Eigen::Vector7d>(Ts.size(),
+                                                                                                      Eigen::Vector7d::Zero()));
 
   // swing foot traj will be planned at liftoff . . .
-  std::vector<Eigen::Vector7d> swing_knots(Ts.size(), feet0[nxt_swing_foot.underlying()]);
+  std::vector <Eigen::Vector7d> swing_knots(Ts.size(), feet0[nxt_swing_foot.underlying()]);
   BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
   swing_BMD.body_or_frame_id = rpc_.foot_ids.at(nxt_swing_foot);
-  swing_BMD.trajectory = GenerateCubicCartesianSpline(Ts, swing_knots, std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
+  swing_BMD.trajectory = GenerateCubicCartesianSpline(Ts, swing_knots,
+                                                      std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
 
   // setup contact state
   walking_plan_state_.contact_state.clear();
@@ -298,22 +306,22 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   Ts.resize(3);
   Ts[0] = 0;
   Ts[1] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
-  Ts[2] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration + generic_plan_config_.walking_plan_config.ds_duration;
+  Ts[2] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration +
+          generic_plan_config_.walking_plan_config.ds_duration;
   std::cout << "lift off time " << Ts[1] << std::endl;
   // run out of step, set transition tape's time to inf
   if (walking_plan_state_.footstep_plan.empty()) {
     walking_plan_state_.contact_state.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
-  }
-  else {
+  } else {
     walking_plan_state_.contact_state.push_back(std::pair<ContactState, double>(ContactState::DS(), Ts[1]));
     walking_plan_state_.contact_state.push_back(std::pair<ContactState, double>(nxt_contact_state, Ts[2]));
   }
 
   // make weight distribuition
-  std::vector<Eigen::Matrix<double,1,1>> WL(Ts.size());
-  WL[0](0,0) = get_weight_distribution(planned_cs);
-  WL[1](0,0) = get_weight_distribution(nxt_contact_state);
-  WL[2](0,0) = get_weight_distribution(nxt_contact_state);
+  std::vector <Eigen::Matrix<double, 1, 1>> WL(Ts.size());
+  WL[0](0, 0) = get_weight_distribution(planned_cs);
+  WL[1](0, 0) = get_weight_distribution(nxt_contact_state);
+  WL[2](0, 0) = get_weight_distribution(nxt_contact_state);
   Ts[0] = wait_period_before_weight_shift;
   weight_distribution_ = GenerateCubicSpline(Ts, WL);
 
@@ -332,13 +340,16 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   generic_plan_state_.plan_start_time = -1; // what does this do exactly?
 
 
-  float elapsedTimeInSeconds = ((float) (clock() - start_clock_time))/CLOCKS_PER_SEC;
+  float elapsedTimeInSeconds = ((float) (clock() - start_clock_time)) / CLOCKS_PER_SEC;
   std::cout << "Generate Trajs took " << elapsedTimeInSeconds << " seconds \n";
 }
 
 
 // This is called whenever the foot lifts off . . .
-PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d &foot0, const Eigen::Vector7d &foot1, double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur, double swing_down_dur) const {
+PiecewisePolynomial<double>
+WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d &foot0, const Eigen::Vector7d &foot1, double mid_z_offset,
+                               double pre_swing_dur, double swing_up_dur, double swing_transfer_dur,
+                               double swing_down_dur) const {
   double z_height_mid_swing = std::max(foot1[2], foot0[2]) + mid_z_offset;
   int num_T = 5;
   std::vector<double> swingT(num_T);
@@ -348,8 +359,8 @@ PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d
   swingT[3] = pre_swing_dur + swing_up_dur + swing_transfer_dur;
   swingT[4] = pre_swing_dur + swing_up_dur + swing_transfer_dur + swing_down_dur;
 
-  std::vector<Eigen::Vector7d> swing_pose_knots(num_T);
-  std::vector<Eigen::Vector7d> swing_vel_knots(num_T, Eigen::Vector7d::Zero());
+  std::vector <Eigen::Vector7d> swing_pose_knots(num_T);
+  std::vector <Eigen::Vector7d> swing_vel_knots(num_T, Eigen::Vector7d::Zero());
   swing_pose_knots[0] = swing_pose_knots[1] = foot0;
 
   // xy will be set later
@@ -362,8 +373,8 @@ PiecewisePolynomial<double> WalkingPlan::GenerateSwingTraj(const Eigen::Vector7d
 
   // helper method to figure out x,y velocity at midpoint
   std::vector<double> T_xy = {0, swing_up_dur + swing_transfer_dur};
-  std::vector<Eigen::Vector2d> xy_pos = {foot0.head(2) , foot1.head(2)};
-  std::vector<Eigen::Vector2d> xy_vel(2, Eigen::Vector2d::Zero());
+  std::vector <Eigen::Vector2d> xy_pos = {foot0.head(2), foot1.head(2)};
+  std::vector <Eigen::Vector2d> xy_vel(2, Eigen::Vector2d::Zero());
 
   auto xy_spline = GenerateCubicSpline(T_xy, xy_pos, xy_vel);
   auto xy_spline_deriv = xy_spline.derivative();
@@ -383,19 +394,27 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                            const Eigen::VectorXd &last_q_d) {
 
 
+  // set plan time to zero
+  this->generic_plan_state_.plan_time = 0;
+
   // state machine
   walking_plan_state_.walking_state = WEIGHT_TRANSFER;
 
   walking_plan_state_.footstep_plan.clear();
   walking_plan_state_.contact_state.clear();
 
-  const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *)plan_msg;
+  const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *) plan_msg;
   if (msg->footstep_plan.footsteps.size() <= 2)
     throw std::runtime_error("too few number of steps.");
 
   // remove the first two footsteps as they are just in the current footstep locations
   for (size_t i = 2; i < msg->footstep_plan.footsteps.size(); i++)
     walking_plan_state_.footstep_plan.push_back(msg->footstep_plan.footsteps[i]);
+
+  const std::vector<drc::footstep_t> & footstep_msgs_original = msg->footstep_plan.footsteps;
+  std::vector<drc::footstep_t> footstep_msgs = std::vector<drc::footstep_t>(footstep_msgs_original.begin() + 2, footstep_msgs_original.end());
+
+  walking_plan_state_.footstep_plan_ptr.reset(new FootstepPlan(footstep_msgs));
 
   // save the current joint configuration, that's what we are tracking during walking
   init_q_ = est_rs.q;
@@ -415,10 +434,10 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
     constrained_dofs_.push_back(rpc_.position_indices.neck[i]);
 
   // right now only support constraining the bky and bkz, not bkx
-  if(generic_plan_config_.walking_plan_config.constrain_back_bky){
+  if (generic_plan_config_.walking_plan_config.constrain_back_bky) {
     constrained_dofs_.push_back(rpc_.position_indices.back_bky);
   }
-  if(generic_plan_config_.walking_plan_config.constrain_back_bkz){
+  if (generic_plan_config_.walking_plan_config.constrain_back_bkz) {
     constrained_dofs_.push_back(rpc_.position_indices.back_bkz);
   }
 }
@@ -436,10 +455,10 @@ void WalkingPlan::TareSwingLegForceTorque() {
   const ContactState planned_cs = cur_planned_contact_state();
 
   // need to tare the opposite foot of the one that is in contact
-  if (planned_cs.is_in_contact(ContactState::ContactBody::L_FOOT)){
+  if (planned_cs.is_in_contact(ContactState::ContactBody::L_FOOT)) {
     std::cout << "sending tare RIGHT FT message" << std::endl;
     msg.data = "right";
-  } else if (planned_cs.is_in_contact(ContactState::ContactBody::R_FOOT)){
+  } else if (planned_cs.is_in_contact(ContactState::ContactBody::R_FOOT)) {
     std::cout << "sending tare LEFT FT message" << std::endl;
     msg.data = "left";
   } else {
@@ -452,14 +471,16 @@ void WalkingPlan::TareSwingLegForceTorque() {
   walking_plan_state_.have_tared_swing_leg_ft = true;
 }
 
-PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &zmp_d0, const Eigen::Vector2d &zmpd_d0, double time_before_first_weight_shift) const {
+PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector <Eigen::Vector2d> &zmp_d, int num_of_zmp_knots,
+                                                     const Eigen::Vector2d &zmp_d0, const Eigen::Vector2d &zmpd_d0,
+                                                     double time_before_first_weight_shift) const {
   if (zmp_d.size() < 1)
     throw std::runtime_error("zmp_d traj must have size >= 1");
 
   std::vector<double> zmp_T; // double support weight transfer, followed by single support
-  std::vector<Eigen::Vector2d> zmp_knots;
+  std::vector <Eigen::Vector2d> zmp_knots;
 
-  int min_size = std::min(num_of_zmp_knots, (int)zmp_d.size());
+  int min_size = std::min(num_of_zmp_knots, (int) zmp_d.size());
 
   double cur_time = 0;
   zmp_knots.push_back(zmp_d0);
@@ -479,8 +500,7 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector<Eigen::Ve
     if (i == min_size - 1) {
       zmp_knots.push_back((zmp_knots.back() + zmp_d[i]) / 2.);
       zmp_T.push_back(cur_time);
-    }
-    else {
+    } else {
       zmp_knots.push_back(zmp_d[i]);
       zmp_T.push_back(cur_time);
     }
@@ -506,10 +526,13 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 
   double plan_time = cur_time - generic_plan_state_.plan_start_time;
 
+  // update plan time
+  this->generic_plan_state_.plan_time = cur_time - generic_plan_state_.plan_start_time;
+
   // update the plan status depending on whether or not we are finished
   if (walking_plan_state_.footstep_plan.empty() && (plan_time > generic_plan_config_.walking_plan_config.ds_duration)) {
     generic_plan_state_.plan_status.executionStatus = PlanExecutionStatus::FINISHED;
-  } else{
+  } else {
     generic_plan_state_.plan_status.executionStatus = PlanExecutionStatus::EXECUTING;
   }
 
@@ -537,9 +560,13 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         // TODO: THIS IS A HACK
         swing_touchdown_pose[2] += generic_plan_config_.walking_plan_config.swing_foot_touchdown_z_offset;
 
-        BodyMotionData& swing_BMD = get_swing_foot_body_motion_data();
+        BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
         swing_BMD.body_or_frame_id = rpc_.foot_ids.at(swing_foot);
-        swing_BMD.trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose, cur_step.params.step_height, plan_time, generic_plan_config_.walking_plan_config.ss_duration / 3., generic_plan_config_.walking_plan_config.ss_duration / 3., generic_plan_config_.walking_plan_config.ss_duration / 3.);
+        swing_BMD.trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose,
+                                                 cur_step.params.step_height, plan_time,
+                                                 generic_plan_config_.walking_plan_config.ss_duration / 3.,
+                                                 generic_plan_config_.walking_plan_config.ss_duration / 3.,
+                                                 generic_plan_config_.walking_plan_config.ss_duration / 3.);
         // increase weights for swing foot xy tracking
         swing_BMD.weight_multiplier[3] = generic_plan_config_.walking_plan_config.swing_foot_xy_weight_multiplier;
         swing_BMD.weight_multiplier[4] = generic_plan_config_.walking_plan_config.swing_foot_xy_weight_multiplier;
@@ -548,6 +575,8 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         // change contact
         SwitchContactState(cur_time);
         walking_plan_state_.walking_state = SWING;
+
+        walking_plan_state_.next_contact_switch_time = cur_time + generic_plan_config_.walking_plan_config.ss_duration;
         std::cout << "Weight transfer -> Swing @ " << plan_time << std::endl;
       }
 
@@ -558,28 +587,31 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       if (plan_time >= planned_contact_swith_time) {
         late_touchdown = true;
 
-        BodyMotionData& swing_BMD = get_swing_foot_body_motion_data();
+        BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
         int last_idx = swing_BMD.trajectory.getNumberOfSegments() - 1;
-        Eigen::Matrix<Polynomial<double>, Eigen::Dynamic, Eigen::Dynamic> last_knots = swing_BMD.trajectory.getPolynomialMatrix(last_idx);
+        Eigen::Matrix<Polynomial < double>, Eigen::Dynamic,
+            Eigen::Dynamic > last_knots = swing_BMD.trajectory.getPolynomialMatrix(last_idx);
 
         // hack the z position and velocity only
         double t0 = swing_BMD.trajectory.getStartTime(last_idx);
         double t1 = swing_BMD.trajectory.getEndTime(last_idx);
-        double z0 = swing_BMD.trajectory.value(t0)(2,0);
-        double z1 = swing_BMD.trajectory.value(t1)(2,0) + generic_plan_config_.walking_plan_config.extend_foot_down_z_vel * dt;
+        double z0 = swing_BMD.trajectory.value(t0)(2, 0);
+        double z1 =
+            swing_BMD.trajectory.value(t1)(2, 0) + generic_plan_config_.walking_plan_config.extend_foot_down_z_vel * dt;
         double v1 = generic_plan_config_.walking_plan_config.extend_foot_down_z_vel;
         //Eigen::Vector4d new_z_coeffs = GetCubicSplineCoeffs(t1-t0, z0, z1, v0, v1);
-        Eigen::Vector4d new_z_coeffs(z0 + (z1 - z0 - v1 * (t1 -t0)), v1, 0, 0);
+        Eigen::Vector4d new_z_coeffs(z0 + (z1 - z0 - v1 * (t1 - t0)), v1, 0, 0);
 
         // first one is position
         Polynomial<double> new_z(new_z_coeffs);
-        last_knots(2,0) = new_z;
+        last_knots(2, 0) = new_z;
         swing_BMD.trajectory.setPolynomialMatrixBlock(last_knots, last_idx);
         swing_BMD.trajectory.setEndTime(100000.);
       }
 
       // tare the FT sensor during swing if we haven't already
-      if ((plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration) && !walking_plan_state_.have_tared_swing_leg_ft) {
+      if ((plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration) &&
+          !walking_plan_state_.have_tared_swing_leg_ft) {
         this->TareSwingLegForceTorque();
       }
 
@@ -596,10 +628,13 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         // dequeue foot steps
         walking_plan_state_.footstep_plan.pop_front(); // this could potentially be empty after this pop if it's the last step
         walking_plan_state_.step_count++;
+
+        walking_plan_state_.footstep_plan_ptr->incrementCounter();
         // generate new trajectories
         GenerateTrajs(plan_time, est_rs.q, est_rs.qd, planned_cs);
 
         // all tapes assumes 0 sec start, so need to reset clock
+        // TODO (manuelli) we should only ever set this one, this is REALLY bad
         generic_plan_state_.plan_start_time = cur_time;
         plan_time = cur_time - generic_plan_state_.plan_start_time;
         late_touchdown = false;
@@ -619,20 +654,21 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 
   for (size_t s = 0; s < generic_plan_state_.support_state.size(); s++) {
 
-    if (generic_plan_config_.walking_plan_config.use_force_bounds){
+    if (generic_plan_config_.walking_plan_config.use_force_bounds) {
       // only foot
       if (generic_plan_state_.support_state[s].body == rpc_.foot_ids.at(Side::LEFT)) {
         // in making the default support state this is set to 3 times the robot's mass
         generic_plan_state_.support_state[s].total_normal_force_upper_bound *= wl;
         generic_plan_state_.support_state[s].total_normal_force_lower_bound = generic_plan_config_.walking_plan_config.min_Fz;
-      }
-      else if (generic_plan_state_.support_state[s].body == rpc_.foot_ids.at(Side::RIGHT)) {
+      } else if (generic_plan_state_.support_state[s].body == rpc_.foot_ids.at(Side::RIGHT)) {
         generic_plan_state_.support_state[s].total_normal_force_upper_bound *= (1 - wl);
         generic_plan_state_.support_state[s].total_normal_force_lower_bound = generic_plan_config_.walking_plan_config.min_Fz;
       }
 
-      generic_plan_state_.support_state[s].total_normal_force_upper_bound = std::max(generic_plan_state_.support_state[s].total_normal_force_upper_bound, generic_plan_state_.support_state[s].total_normal_force_lower_bound);
-    } else{
+      generic_plan_state_.support_state[s].total_normal_force_upper_bound = std::max(
+          generic_plan_state_.support_state[s].total_normal_force_upper_bound,
+          generic_plan_state_.support_state[s].total_normal_force_lower_bound);
+    } else {
       generic_plan_state_.support_state[s].total_normal_force_lower_bound = 0;
       // the upper bound is already set to 3 times the robot's weight in the MakeDefaultSupportState method
     }
@@ -643,7 +679,8 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   bool apply_torque_alpha_filter = false; // (plan_time < generic_plan_config_.initial_transition_time) || (cur_time - walking_plan_state_.contact_switch_time < generic_plan_config_.initial_transition_time);
 
   // make qp input
-  drake::lcmt_qp_controller_input qp_input = MakeDefaultQPInput(cur_time, plan_time, "walking", apply_torque_alpha_filter);
+  drake::lcmt_qp_controller_input qp_input = MakeDefaultQPInput(cur_time, plan_time, "walking",
+                                                                apply_torque_alpha_filter);
 
   // late touch down logic
   //if (late_touchdown)
@@ -669,32 +706,34 @@ PiecewisePolynomial<double> WalkingPlan::GeneratePelvisTraj(KinematicsCache<doub
   Ts[2] = next_liftoff_time;
 
   // there will be three knot points
-  std::vector<Eigen::Matrix<double,7,1>> pelvis_pose_vec(3);
+  std::vector <Eigen::Matrix<double, 7, 1>> pelvis_pose_vec(3);
   pelvis_pose_vec[0] = Isometry3dToVector7d(robot_.relativeTransform(cache, 0, rpc_.pelvis_id));
 
   // need to adjust z-height on poses 1 and 2;
   pelvis_pose_vec[1][2] = nxt_stance_foot_pose.translation()[2] + pelvis_height_above_sole;
   Eigen::Vector4d foot_quat1(Isometry3dToVector7d(nxt_stance_foot_pose).tail(4));
   double yaw1 = quat2rpy(foot_quat1)[2];
-  pelvis_pose_vec[1].tail(4) = rpy2quat(Eigen::Vector3d(0,0,yaw1));
+  pelvis_pose_vec[1].tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw1));
 
 
   pelvis_pose_vec[2][2] = nxt_swing_foot_pose.translation()[2] + pelvis_height_above_sole;
   Eigen::Vector4d foot_quat2(Isometry3dToVector7d(nxt_swing_foot_pose).tail(4));
   double yaw2 = quat2rpy(foot_quat2)[2];
-  pelvis_pose_vec[2].tail(4) = rpy2quat(Eigen::Vector3d(0,0,yaw2));
+  pelvis_pose_vec[2].tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw2));
 
   // need to create velocities, should be zero everywhere
-  std::vector<Eigen::Vector7d> velocities = std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero());
+  std::vector <Eigen::Vector7d> velocities = std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero());
   PiecewisePolynomial<double> pelvisTraj = GenerateCubicCartesianSpline(Ts, pelvis_pose_vec, velocities);
 
 
 
   // some debugging stuff
-  std::cout << "pelvis heights " << pelvis_pose_vec[0][2] << " " << pelvis_pose_vec[1][2] << " " << pelvis_pose_vec[2][2] << std::endl;
+  std::cout << "pelvis heights " << pelvis_pose_vec[0][2] << " " << pelvis_pose_vec[1][2] << " "
+            << pelvis_pose_vec[2][2] << std::endl;
 //  std::cout << "Ts " << Ts << std::endl;
   std::cout << "next stance foot height " << nxt_stance_foot_pose.translation()[2] << std::endl;
 
 
   return pelvisTraj;
 }
+}// plan_eval

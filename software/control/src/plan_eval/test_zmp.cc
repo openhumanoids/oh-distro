@@ -3,7 +3,10 @@
 #include <fstream>
 #include <iostream>
 
+
+
 int main() {
+  using namespace plan_eval;
   ZMPPlanner zmp;
 
   std::vector<double> Ts;

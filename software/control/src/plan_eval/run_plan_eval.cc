@@ -2,6 +2,7 @@
 #include <string>
 
 int main(int argc, const char *argv[]) {
+  using namespace plan_eval;
   if (argc != 3 && argc != 1) {
     std::cerr << "usage: sf_plan_eval <urdf_path> <config.yaml>\n";
     return -1;

@@ -27,74 +27,66 @@ kinematic_tree_metadata:
     back_bky: back_bky
     back_bkx: back_bkx
 
-foot_contact_offsets:
-  *L_FOOT_NAME :
-    left_toe: {x: 0.1728, y: 0.0626, z: -0.07645}
-    right_toe: {x: 0.1728, y: -0.0626, z: -0.07645}
-    left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
-    right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
-  *R_FOOT_NAME :
-    left_toe: {x: 0.1728, y: 0.0626, z: -0.07645}
-    right_toe: {x: 0.1728, y: -0.0626, z: -0.07645}
-    left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
-    right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
-
-foot_contact_offsets:
-  *L_FOOT_NAME :
-    left_toe: {x: 0.1728, y: 0.0626, z: -0.07645}
-    right_toe: {x: 0.1728, y: -0.0626, z: -0.07645}
-    left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
-    right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
-  *R_FOOT_NAME :
-    left_toe: {x: 0.1728, y: 0.0626, z: -0.07645}
-    right_toe: {x: 0.1728, y: -0.0626, z: -0.07645}
-    left_heel: {x: -0.0876, y: 0.0626, z: -0.07645}
-    right_heel: {x: -0.0876, y: -0.0626, z: -0.07645}
+# stored in xyz order
+contact_points:
+  foot_contact_points:
+    left:
+      left_toe: [0.1728, 0.0626, -0.07645]
+      right_toe: [0.1728, -0.0626, -0.07645]
+      left_heel: [0.0876, 0.0626, -0.07645]
+      right_heel: [-0.0876, -0.0626, -0.07645]
+    right:
+      left_toe: [0.1728, 0.0626, -0.07645]
+      right_toe: [0.1728, -0.0626, -0.07645]
+      left_heel: [0.0876, 0.0626, -0.07645]
+      right_heel: [-0.0876, -0.0626, -0.07645]
 
 # shared by manip and walking
 # put general label here
-mu: 0.7
-zmp_height: 1.0 # note we may need to turn this down
-initial_transition_time: 0.2
-transition_trq_alpha_filter: 0.9
-flip_foot_ft_sensor: 0
+general:
+  mu: 0.7
+  zmp_height: 1.0 # note we may need to turn this down
+  initial_transition_time: 0.2
+  transition_trq_alpha_filter: 0.9
+  flip_foot_ft_sensor: False
 
 # walking, put it in the form
 # walking:
-pelvis_height: 0.75 # measured as height from ankles
-ss_duration: 1.5
-ds_duration: 1.0
-pre_weight_transfer_scale: 0.3 # what does this actually do?
-min_Fz: 5.0
-use_force_bounds: True
-extend_foot_down_z_vel: -0.05
-swing_touchdown_z_vel: 0.0
-swing_touchdown_z_offset: 0.0
+walking:
+  pelvis_height: 0.75 # measured as height from ankles
+  ss_duration: 1.5
+  ds_duration: 1.0
+  pre_weight_transfer_scale: 0.3 # what does this actually do?
+  min_Fz: 5.0
+  use_force_bounds: True
+  extend_foot_down_z_vel: -0.05
+  swing_touchdown_z_vel: 0.0
+  swing_touchdown_z_offset: 0.0
 
-swing_foot_xy_weight_mulitplier: 1.0
-swing_foot_z_weight_mulitplier: 1.0
-pelvis_z_weight_mulitplier: 1.0
-left_foot_zmp_y_shift: 0.0
-right_foot_zmp_y_shift: -0.0
+  swing_foot_xy_weight_multiplier: 1.0
+  swing_foot_z_weight_multiplier: 1.0
+  pelvis_z_weight_multiplier: 1.0
+  left_foot_zmp_y_shift: 0.0
+  right_foot_zmp_y_shift: -0.0
 
 # note this interacts with the torso orientation tracking constraint
 # so be careful
-constrainBackJoints:
-  back_bkx: false
-  back_bky: true
-  back_bkz: true
+  constrainBackJoints:
+    back_bkx: false
+    back_bky: true
+    back_bkz: true
 
 
 
-# FOR DEBUGGING PURPOSES
-# this is currently just copied over from Atlas.m where default walking params are
-nominal_LIP_COM_height: 0.8 # nominal height used to construct D_ls for our linear inverted pendulum model, this is D_control
+# # FOR DEBUGGING PURPOSES
+# # this is currently just copied over from Atlas.m where default walking params are
+# nominal_LIP_COM_height: 0.8 # nominal height used to construct D_ls for our linear inverted pendulum model, this is D_control
 
-# the actual com height during walking, i.e. com height given that
-# the pelvis is at 0.83 is something like 1.08
+# # the actual com height during walking, i.e. com height given that
+# # the pelvis is at 0.83 is something like 1.08
 
-# I think that c_plan_eval uses the real COM height
+# # I think that c_plan_eval uses the real COM height
 
-# copied from Atlas.m
-pelvis_height_above_foot_sole: 0.83 # this is D_control
+# # copied from Atlas.m
+# pelvis_height_above_foot_sole: 0.83 # this is D_control
 
