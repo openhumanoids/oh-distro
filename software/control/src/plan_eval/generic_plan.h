@@ -62,13 +62,13 @@ protected:
   BodyMotionData MakeDefaultBodyMotionData(size_t num_segments) const;
 
   drake::lcmt_qp_controller_input
-  MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name,
+  MakeDefaultQPInput(const double& real_time, const double& plan_time, const std::string &param_set_name,
                      bool apply_torque_alpha_filter) const;
 
   // make lcm messages
   drake::lcmt_support_data EncodeSupportData(const RigidBodySupportStateElement &element) const;
 
-  drake::lcmt_body_motion_data EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const;
+  drake::lcmt_body_motion_data EncodeBodyMotionData(const double& plan_start_time, const double& plan_time, const BodyMotionData &body_motion) const;
 
   // stores some default debug information in debug_data_ field.
   // It is recommenede to call this method from inside the plan's MakeQPInput method

@@ -73,6 +73,8 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
                                 const ContactState &planned_cs) {
   // current state
 
+  std::cout << "Call to GenerateTrajs: plan_time = " << plan_time << std::endl;
+
   clock_t start_clock_time = clock();
 
   KinematicsCache<double> cache_est = robot_.doKinematics(est_q, est_qd);
@@ -179,11 +181,15 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
   // figure out where we want the desired zmp for NOW
   // current contact state is double support
+
+  // this means that we are making the plan for the firs time
   if (planned_cs.is_double_support()) {
     zmp_d0 = (Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]) +
               Footstep2DesiredZMP(Side::RIGHT, feet_pose[Side::RIGHT])) / 2.;
     zmpd_d0.setZero();
   }
+    // the two that follow are exactly the same, can be consolidated.
+    // they are just the standard case, when not planning from the first time
     // single support left
   else if (planned_cs.is_single_support_left()) {
     //zmp_d0 = Footstep2DesiredZMP(Side::LEFT, feet_pose[Side::LEFT]);
@@ -204,7 +210,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
   // plan the zmp trajectory
   generic_plan_state_.zmp_traj = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, zmpd_d0,
-                                             wait_period_before_weight_shift);
+                                             plan_time, wait_period_before_weight_shift);
 
   // solve the LQR problem for tracking the generic_plan_state_.zmp_traj
   // note, what we are controlling is the pelvis height, this indirectly affects the zmp_height
@@ -224,9 +230,12 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   // time tape for body motion data and joint trajectories
   // This function is only getting called when we make contact (or in the initial timestep)
   // These tapes last until the next touchdown event
+
+  // These tapes start from the current plan time
+  // Ts[1] is the next touchdown time
   std::vector<double> Ts(2);
-  Ts[0] = 0;
-  Ts[1] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration +
+  Ts[0] = plan_time;
+  Ts[1] = Ts[0] + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration +
           generic_plan_config_.walking_plan_config.ds_duration;
 
 
@@ -234,7 +243,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 
   /// Initialize body motion data
   for (size_t i = 0; i < generic_plan_state_.body_motions.size(); i++)
-    generic_plan_state_.body_motions[i] = MakeDefaultBodyMotionData(Ts.size());
+    generic_plan_state_.body_motions[i] = this->MakeDefaultBodyMotionData(Ts.size());
 
   // hold all joints. I am assuming the leg joints will just be ignored in the qp..
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
@@ -252,19 +261,28 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
 //  std::vector<Eigen::Vector7d> pelv_knots(Ts.size());
 //  pelv_knots[0] = pelv0;
 //  pelv_knots[1] = pelv1;
+
   BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
   pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
 
   int num_knots_in_pelvis_traj = 3;
+
+  // these are all in the plan_time frame
   pelvis_BMD.control_pose_when_in_contact.resize(num_knots_in_pelvis_traj, true);
-  double liftoff_time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration;
-  double next_liftoff_time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration +
-                             generic_plan_config_.walking_plan_config.ds_duration;
-  pelvis_BMD.trajectory = this->GeneratePelvisTraj(cache_est, generic_plan_config_.walking_plan_config.pelvis_height,
-                                                   liftoff_time, next_liftoff_time,
+  double liftoff_time = plan_time + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
+  double next_liftoff_time = liftoff_time
+      + generic_plan_config_.walking_plan_config.ss_duration
+  + generic_plan_config_.walking_plan_config.ds_duration;
+
+
+  pelvis_BMD.trajectory = this->GeneratePelvisTraj(cache_est,
+                                                   generic_plan_config_.walking_plan_config.pelvis_height,
+                                                   plan_time, liftoff_time, next_liftoff_time,
                                                    nxt_stance_foot_pose, nxt_swing_foot_pose);
 
-  // make torso
+  // make torso BodyMotionData'
+  // using the Ts from above used for DefaultBodyMotionData
+  // TODO (manuelli): Break this out into a separate method, very confusing ATM
   Eigen::Vector4d foot_quat(feet0[nxt_stance_foot.underlying()].tail(4));
   double yaw = quat2rpy(foot_quat)[2];
   torso1 = torso0; // this is just so that plotting looks reasonable
@@ -300,15 +318,16 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   // setup contact state
   walking_plan_state_.contact_state.clear();
 
-  // 0: start of weight tranfer
-  // 1: end of weight transfer
-  // 2: swing phase
+  // This Ts is being used to define the times when thee contact state changes
   Ts.resize(3);
-  Ts[0] = 0;
-  Ts[1] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
-  Ts[2] = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration +
-          generic_plan_config_.walking_plan_config.ds_duration;
+  Ts[0] = plan_time; // current plan time
+  // liftoff time
+  Ts[1] = Ts[0] + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
+  // next touchdown time
+  Ts[2] = Ts[1] + generic_plan_config_.walking_plan_config.ss_duration;
   std::cout << "lift off time " << Ts[1] << std::endl;
+  std::cout << "touchdown time " << Ts[2] << std::endl;
+
   // run out of step, set transition tape's time to inf
   if (walking_plan_state_.footstep_plan.empty()) {
     walking_plan_state_.contact_state.push_back(std::pair<ContactState, double>(nxt_contact_state, INFINITY));
@@ -317,12 +336,13 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
     walking_plan_state_.contact_state.push_back(std::pair<ContactState, double>(nxt_contact_state, Ts[2]));
   }
 
-  // make weight distribuition
+  // make weight distribution
   std::vector <Eigen::Matrix<double, 1, 1>> WL(Ts.size());
   WL[0](0, 0) = get_weight_distribution(planned_cs);
   WL[1](0, 0) = get_weight_distribution(nxt_contact_state);
   WL[2](0, 0) = get_weight_distribution(nxt_contact_state);
-  Ts[0] = wait_period_before_weight_shift;
+  // what is this doing exactly? Why not use the standard TS from above?
+//  Ts[0] = wait_period_before_weight_shift;
   weight_distribution_ = GenerateCubicSpline(Ts, WL);
 
   // pelvis Z weight multiplier
@@ -337,7 +357,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
     get_torso_body_motion_data().weight_multiplier[i] = 0;
 
   // reset clock
-  generic_plan_state_.plan_start_time = -1; // what does this do exactly?
+//  generic_plan_state_.plan_start_time = -1; // what does this do exactly?
 
 
   float elapsedTimeInSeconds = ((float) (clock() - start_clock_time)) / CLOCKS_PER_SEC;
@@ -420,7 +440,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   init_q_ = est_rs.q;
 
   // generate all trajs
-  GenerateTrajs(0, est_rs.q, est_rs.qd, ContactState::DS());
+  GenerateTrajs(this->generic_plan_state_.plan_time, est_rs.q, est_rs.qd, ContactState::DS());
 
   // constrained DOFs
   constrained_dofs_.clear();
@@ -471,8 +491,11 @@ void WalkingPlan::TareSwingLegForceTorque() {
   walking_plan_state_.have_tared_swing_leg_ft = true;
 }
 
-PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector <Eigen::Vector2d> &zmp_d, int num_of_zmp_knots,
-                                                     const Eigen::Vector2d &zmp_d0, const Eigen::Vector2d &zmpd_d0,
+PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector <Eigen::Vector2d> &zmp_d,
+                                                     int num_of_zmp_knots,
+                                                     const Eigen::Vector2d &zmp_d0,
+                                                     const Eigen::Vector2d &zmpd_d0,
+                                                     const double & plan_time,
                                                      double time_before_first_weight_shift) const {
   if (zmp_d.size() < 1)
     throw std::runtime_error("zmp_d traj must have size >= 1");
@@ -482,7 +505,10 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector <Eigen::V
 
   int min_size = std::min(num_of_zmp_knots, (int) zmp_d.size());
 
-  double cur_time = 0;
+  // TODO (manuelli): this is really bad code should.
+  // Should plan out the times at the beginning rather than doing this incremental stuff.
+  // The ds_duration and ss_duration appear in too many places
+  double cur_time = plan_time;
   zmp_knots.push_back(zmp_d0);
   zmp_T.push_back(cur_time);
 
@@ -511,6 +537,11 @@ PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector <Eigen::V
     zmp_T.push_back(cur_time);
   }
 
+  std::cout << "zmp_T \n";
+  for(const auto & t: zmp_T){
+    std::cout << t << std::endl;
+  }
+
   Eigen::Vector2d zero = Eigen::Vector2d::Zero();
   return GeneratePCHIPSpline(zmp_T, zmp_knots, zmpd_d0, zero);
 }
@@ -521,16 +552,19 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   double dt = std::min(cur_time - last_time, 1.0);
   last_time = cur_time;
 
-  if (generic_plan_state_.plan_start_time == -1)
+  if (generic_plan_state_.plan_start_time == -1){
+    std::cout << "initializing plan_start_time " << std::endl;
     generic_plan_state_.plan_start_time = cur_time;
+  }
 
+  // TODO (manuelli): I think we can remove this, superseded by setting generic_plan_state_.plan_time
   double plan_time = cur_time - generic_plan_state_.plan_start_time;
 
   // update plan time
   this->generic_plan_state_.plan_time = cur_time - generic_plan_state_.plan_start_time;
 
   // update the plan status depending on whether or not we are finished
-  if (walking_plan_state_.footstep_plan.empty() && (plan_time > generic_plan_config_.walking_plan_config.ds_duration)) {
+  if (walking_plan_state_.footstep_plan.empty() && (this->generic_plan_state_.plan_time > generic_plan_config_.walking_plan_config.ds_duration)) {
     generic_plan_state_.plan_status.executionStatus = PlanExecutionStatus::FINISHED;
   } else {
     generic_plan_state_.plan_status.executionStatus = PlanExecutionStatus::EXECUTING;
@@ -549,7 +583,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   // state machine part
   switch (walking_plan_state_.walking_state) {
     case WEIGHT_TRANSFER:
-      if (plan_time >= planned_contact_swith_time) {
+      if (this->generic_plan_state_.plan_time >= planned_contact_swith_time) {
         // replace the swing up segment with a new one that starts from the current foot pose.
         KinematicsCache<double> cache = robot_.doKinematics(est_rs.q, est_rs.qd);
         Eigen::Isometry3d swing_foot0 = robot_.relativeTransform(cache, 0, rpc_.foot_ids.at(swing_foot));
@@ -563,7 +597,8 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
         swing_BMD.body_or_frame_id = rpc_.foot_ids.at(swing_foot);
         swing_BMD.trajectory = GenerateSwingTraj(Isometry3dToVector7d(swing_foot0), swing_touchdown_pose,
-                                                 cur_step.params.step_height, plan_time,
+                                                 cur_step.params.step_height,
+                                                 this->generic_plan_state_.plan_time,
                                                  generic_plan_config_.walking_plan_config.ss_duration / 3.,
                                                  generic_plan_config_.walking_plan_config.ss_duration / 3.,
                                                  generic_plan_config_.walking_plan_config.ss_duration / 3.);
@@ -577,14 +612,14 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         walking_plan_state_.walking_state = SWING;
 
         walking_plan_state_.next_contact_switch_time = cur_time + generic_plan_config_.walking_plan_config.ss_duration;
-        std::cout << "Weight transfer -> Swing @ " << plan_time << std::endl;
+        std::cout << "Weight transfer -> Swing @ " << this->generic_plan_state_.plan_time << std::endl;
       }
 
       break;
 
     case SWING:
       // hack the swing traj if we are past the planned touchdown time
-      if (plan_time >= planned_contact_swith_time) {
+      if (this->generic_plan_state_.plan_time >= planned_contact_swith_time) {
         late_touchdown = true;
 
         BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
@@ -610,7 +645,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       }
 
       // tare the FT sensor during swing if we haven't already
-      if ((plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration) &&
+      if ((this->generic_plan_state_.plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration) &&
           !walking_plan_state_.have_tared_swing_leg_ft) {
         this->TareSwingLegForceTorque();
       }
@@ -618,12 +653,12 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       // check for touch down only after half swing
       // if we are in contact switch to the double support contact state and
       // plan/re-plan all trajectories (i.e. zmp, body motion, foot swing etc.)
-      if (plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration &&
+      if (this->generic_plan_state_.plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration &&
           est_cs.is_foot_in_contact(swing_foot)) {
         // change contact
         SwitchContactState(cur_time);
         walking_plan_state_.walking_state = WEIGHT_TRANSFER;
-        std::cout << "Swing -> Weight transfer @ " << plan_time << std::endl;
+        std::cout << "Swing -> Weight transfer @ " << this->generic_plan_state_.plan_time << std::endl;
 
         // dequeue foot steps
         walking_plan_state_.footstep_plan.pop_front(); // this could potentially be empty after this pop if it's the last step
@@ -631,12 +666,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 
         walking_plan_state_.footstep_plan_ptr->incrementCounter();
         // generate new trajectories
-        GenerateTrajs(plan_time, est_rs.q, est_rs.qd, planned_cs);
-
-        // all tapes assumes 0 sec start, so need to reset clock
-        // TODO (manuelli) we should only ever set this one, this is REALLY bad
-        generic_plan_state_.plan_start_time = cur_time;
-        plan_time = cur_time - generic_plan_state_.plan_start_time;
+        GenerateTrajs(this->generic_plan_state_.plan_time, est_rs.q, est_rs.qd, planned_cs);
         late_touchdown = false;
       }
       break;
@@ -648,7 +678,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   // make contact support data
   generic_plan_state_.support_state = MakeDefaultSupportState(cur_planned_contact_state());
   // interp weight distribution
-  double wl = weight_distribution_.value(plan_time).value();
+  double wl = weight_distribution_.value(this->generic_plan_state_.plan_time).value();
   wl = std::min(wl, 1.0);
   wl = std::max(wl, 0.0);
 
@@ -679,7 +709,9 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   bool apply_torque_alpha_filter = false; // (plan_time < generic_plan_config_.initial_transition_time) || (cur_time - walking_plan_state_.contact_switch_time < generic_plan_config_.initial_transition_time);
 
   // make qp input
-  drake::lcmt_qp_controller_input qp_input = MakeDefaultQPInput(cur_time, plan_time, "walking",
+  drake::lcmt_qp_controller_input qp_input = MakeDefaultQPInput(cur_time,
+                                                                this->generic_plan_state_.plan_time,
+                                                                "walking",
                                                                 apply_torque_alpha_filter);
 
   // late touch down logic
@@ -687,21 +719,32 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   //  qp_input.zmp_data = zmp_planner_.EncodeZMPData(planned_contact_swith_time);
 
   // record some debug data
-  this->RecordDefaultDebugData(plan_time);
+  this->RecordDefaultDebugData(this->generic_plan_state_.plan_time);
   debug_data_.plan_type = "walking";
 
   return qp_input;
 }
 
-
+// This function is called only from the beginning of double support,
+// namely at first tick or when touchdown into double support occurs
+// all times are in the plan_time convention
+// plan_time --> the current plan time
+// liftoff_time --> time of transition from double support to single support
+// next_liftoff_time --> time of transition from next double support to single support.
+// Returns a trajectory that smoothly interpolates between current pelvis pose,
+// pose of nxt stance foot and then nxt swing foot.
+// The trajectory will only be used for orientation and z height, NOT x,y.
+// TODO (manuelli) be careful with final knot point here . . .
 PiecewisePolynomial<double> WalkingPlan::GeneratePelvisTraj(KinematicsCache<double> cache,
-                                                            double &pelvis_height_above_sole, double &liftoff_time,
+                                                            double &pelvis_height_above_sole,
+                                                            double &plan_time,
+                                                            double &liftoff_time,
                                                             double &next_liftoff_time,
                                                             Eigen::Isometry3d nxt_stance_foot_pose,
                                                             Eigen::Isometry3d nxt_swing_foot_pose) {
 
   std::vector<double> Ts(3);
-  Ts[0] = 0;
+  Ts[0] = plan_time;
   Ts[1] = liftoff_time;
   Ts[2] = next_liftoff_time;
 

@@ -112,8 +112,12 @@ private:
   Eigen::Vector2d Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const;
 
   PiecewisePolynomial<double>
-  PlanZMPTraj(const std::vector <Eigen::Vector2d> &zmp_d, int num_of_zmp_knots, const Eigen::Vector2d &zmp_d0,
-              const Eigen::Vector2d &zmpd_d0, double time_before_weight_shift) const;
+  PlanZMPTraj(const std::vector <Eigen::Vector2d> &zmp_d,
+              int num_of_zmp_knots,
+              const Eigen::Vector2d &zmp_d0,
+              const Eigen::Vector2d &zmpd_d0,
+              const double & plan_time,
+              double time_before_weight_shift) const;
 
   void SwitchContactState(double cur_time);
 
@@ -124,7 +128,9 @@ private:
                     double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur,
                     double swing_down_dur) const;
 
-  PiecewisePolynomial<double> GeneratePelvisTraj(KinematicsCache<double> cache, double &pelvis_height_above_sole,
+  PiecewisePolynomial<double> GeneratePelvisTraj(KinematicsCache<double> cache,
+                                                 double &pelvis_height_above_sole,
+                                                 double &plan_time,
                                                  double &liftoff_time, double &next_liftoff_time,
                                                  Eigen::Isometry3d nxt_stance_foot_pose,
                                                  Eigen::Isometry3d nxt_swing_foot_pose);

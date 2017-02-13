@@ -89,8 +89,11 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
 }
 
 drake::lcmt_qp_controller_input
-GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::string &param_set_name,
+GenericPlan::MakeDefaultQPInput(const double& real_time, const double & plan_time, const std::string &param_set_name,
                                 bool apply_torque_alpha_filter) const {
+
+  double plan_start_time = generic_plan_state_.plan_start_time;
+
   drake::lcmt_qp_controller_input qp_input;
   qp_input.be_silent = false;
   qp_input.timestamp = static_cast<int64_t>(real_time * 1e6);
@@ -118,7 +121,7 @@ GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::s
       std::min(2, q_trajs_.getNumberOfSegments() - qtrajSegmentIdx);
   PiecewisePolynomial<double> qtrajSlice =
       q_trajs_.slice(qtrajSegmentIdx, num_segments);
-  qtrajSlice.shiftRight(generic_plan_state_.plan_start_time);
+  qtrajSlice.shiftRight(plan_start_time);
 
   encodePiecewisePolynomial(qtrajSlice, qp_input.whole_body_data.spline);
 
@@ -143,7 +146,7 @@ GenericPlan::MakeDefaultQPInput(double real_time, double plan_time, const std::s
   qp_input.num_tracked_bodies = generic_plan_state_.body_motions.size();
   qp_input.body_motion_data.resize(qp_input.num_tracked_bodies);
   for (size_t b = 0; b < qp_input.body_motion_data.size(); b++)
-    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, generic_plan_state_.body_motions[b]);
+    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_start_time, plan_time, generic_plan_state_.body_motions[b]);
 
   ////////////////////////////////////////
   // encode support data
@@ -268,7 +271,7 @@ drake::lcmt_support_data GenericPlan::EncodeSupportData(const RigidBodySupportSt
 }
 
 drake::lcmt_body_motion_data
-GenericPlan::EncodeBodyMotionData(double plan_time, const BodyMotionData &body_motion) const {
+GenericPlan::EncodeBodyMotionData(const double& plan_start_time, const double& plan_time, const BodyMotionData &body_motion) const {
   int body_or_frame_id = body_motion.getBodyOrFrameId();
   int segment_index = body_motion.findSegmentIndex(plan_time);
 
@@ -278,7 +281,7 @@ GenericPlan::EncodeBodyMotionData(double plan_time, const BodyMotionData &body_m
           segment_index,
           std::min(2, body_motion.getTrajectory().getNumberOfSegments() -
                       segment_index));
-  body_motion_trajectory_slice.shiftRight(generic_plan_state_.plan_start_time);
+  body_motion_trajectory_slice.shiftRight(plan_start_time);
 
   // make message
   drake::lcmt_body_motion_data msg;
