@@ -136,6 +136,8 @@ struct GenericPlanState{
   PiecewisePolynomial<double> zmp_traj;
 };
 
+void printContactState(ContactState contact_state);
+
 }// plan_eval
 
 

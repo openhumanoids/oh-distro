@@ -69,11 +69,17 @@ Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(Side side, const Eigen::Isometr
 }
 
 // called on every touch down
-void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd,
+// planned_cs should really be the planned ContactState right before touchdown,
+// ContactState::DS means it is the first tick
+// ContactState::L_FOOT means the right foot just came down.
+// ContactState::R_FOOT means the left foot just came down.
+void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
+                                const Eigen::VectorXd &est_qd,
                                 const ContactState &planned_cs) {
   // current state
 
   std::cout << "Call to GenerateTrajs: plan_time = " << plan_time << std::endl;
+  printContactState(planned_cs);
 
   clock_t start_clock_time = clock();
 
@@ -137,11 +143,13 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   }
   nxt_stance_foot_pose = feet_pose[nxt_stance_foot.underlying()];
 
+  // check if this is the first step
   // wait before the weight shift if this is the first step
   bool is_first_step = planned_cs.is_double_support();
   double wait_period_before_weight_shift = 0;
-  if (is_first_step)
+  if (is_first_step) {
     wait_period_before_weight_shift = 2;
+  }
 
   // make zmp
   // this determines how many steps we should be looking ahead
@@ -151,12 +159,10 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   // presumably these are just the center of the feet, maybe with a bit of offsets hacked in
   std::vector <Eigen::Vector2d> desired_zmps;
 
-
-
-  // the foot that we want to shift weight to
+  // Put in the first location in desired_zmps, it is just the foot that we
+  // just put down. Note that PlanZMPTraj has special logic to handle the fact
+  // that it may be the last footstep and then we are going into double support.
   if (walking_plan_state_.footstep_plan.empty()) {
-
-
     // note there is special logic inside planZMP to detect if it's the final footstep or not
     // figure out which foot we just put down
     if (planned_cs.is_single_support_left())
@@ -336,6 +342,25 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
     walking_plan_state_.contact_state.push_back(std::pair<ContactState, double>(nxt_contact_state, Ts[2]));
   }
 
+  // use contact plan logic
+  this->walking_plan_state_.contact_plan->clear();
+  // add the current contact state and increment counter, since it has already happened.
+  this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), Ts[0]);
+  this->walking_plan_state_.contact_plan->incrementCounter();
+
+
+  if (walking_plan_state_.footstep_plan.empty()){
+    // no more steps, set transition tape's time to inf
+    this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), INFINITY);
+  } else {
+    // contact state just after liftoff
+    this->walking_plan_state_.contact_plan->addContactState(nxt_contact_state, Ts[1]);
+    //contact state at next double support
+    this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), Ts[2]);
+  }
+
+  walking_plan_state_.contact_plan->printDebugInfo();
+
   // make weight distribution
   std::vector <Eigen::Matrix<double, 1, 1>> WL(Ts.size());
   WL[0](0, 0) = get_weight_distribution(planned_cs);
@@ -343,7 +368,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, 
   WL[2](0, 0) = get_weight_distribution(nxt_contact_state);
   // what is this doing exactly? Why not use the standard TS from above?
 //  Ts[0] = wait_period_before_weight_shift;
-  weight_distribution_ = GenerateCubicSpline(Ts, WL);
+  walking_plan_state_.weight_distribution = GenerateCubicSpline(Ts, WL);
 
   // pelvis Z weight multiplier
   // This is really dumb, but the multiplier is ang then pos, check instQP.
@@ -420,8 +445,8 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // state machine
   walking_plan_state_.walking_state = WEIGHT_TRANSFER;
 
-  walking_plan_state_.footstep_plan.clear();
   walking_plan_state_.contact_state.clear();
+  walking_plan_state_.contact_plan.reset(new ContactPlan());
 
   const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *) plan_msg;
   if (msg->footstep_plan.footsteps.size() <= 2)
@@ -465,14 +490,18 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
 void WalkingPlan::SwitchContactState(double cur_time) {
   walking_plan_state_.contact_state.pop_front();
   walking_plan_state_.contact_switch_time = cur_time;
+
+
   //reset the tare FT flag
   walking_plan_state_.have_tared_swing_leg_ft = false;
+
+
 }
 
 void WalkingPlan::TareSwingLegForceTorque() {
   drc::string_t msg;
 
-  const ContactState planned_cs = cur_planned_contact_state();
+  const ContactState planned_cs = walking_plan_state_.contact_plan->getCurrentContactState();
 
   // need to tare the opposite foot of the one that is in contact
   if (planned_cs.is_in_contact(ContactState::ContactBody::L_FOOT)) {
@@ -491,6 +520,7 @@ void WalkingPlan::TareSwingLegForceTorque() {
   walking_plan_state_.have_tared_swing_leg_ft = true;
 }
 
+// zmp_d is the desired ZMP locations
 PiecewisePolynomial<double> WalkingPlan::PlanZMPTraj(const std::vector <Eigen::Vector2d> &zmp_d,
                                                      int num_of_zmp_knots,
                                                      const Eigen::Vector2d &zmp_d0,
@@ -557,9 +587,6 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     generic_plan_state_.plan_start_time = cur_time;
   }
 
-  // TODO (manuelli): I think we can remove this, superseded by setting generic_plan_state_.plan_time
-  double plan_time = cur_time - generic_plan_state_.plan_start_time;
-
   // update plan time
   this->generic_plan_state_.plan_time = cur_time - generic_plan_state_.plan_start_time;
 
@@ -570,10 +597,9 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
     generic_plan_state_.plan_status.executionStatus = PlanExecutionStatus::EXECUTING;
   }
 
-  // can't use reference for this one because ref becomes invalid when queue pops
-  const ContactState planned_cs = cur_planned_contact_state();
+  const ContactState planned_contact_state = this->walking_plan_state_.contact_plan->getCurrentContactState();
   const ContactState &est_cs = est_rs.contact_state;
-  double planned_contact_swith_time = cur_planned_contact_swith_time();
+  double next_contact_switch_time = this->walking_plan_state_.contact_plan->getNextContactStateTime();
 
   bool late_touchdown = false;
 
@@ -583,7 +609,8 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   // state machine part
   switch (walking_plan_state_.walking_state) {
     case WEIGHT_TRANSFER:
-      if (this->generic_plan_state_.plan_time >= planned_contact_swith_time) {
+      // End of double support time to pickup the foot. This transitionis based purely off of time
+      if (this->generic_plan_state_.plan_time >= next_contact_switch_time) {
         // replace the swing up segment with a new one that starts from the current foot pose.
         KinematicsCache<double> cache = robot_.doKinematics(est_rs.q, est_rs.qd);
         Eigen::Isometry3d swing_foot0 = robot_.relativeTransform(cache, 0, rpc_.foot_ids.at(swing_foot));
@@ -607,8 +634,9 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
         swing_BMD.weight_multiplier[4] = generic_plan_config_.walking_plan_config.swing_foot_xy_weight_multiplier;
         swing_BMD.weight_multiplier[5] = generic_plan_config_.walking_plan_config.swing_foot_z_weight_multiplier;
 
-        // change contact
+        // change contact, and record the contact time
         SwitchContactState(cur_time);
+        this->walking_plan_state_.contact_plan->recordContactEvent(this->generic_plan_state_.plan_time);
         walking_plan_state_.walking_state = SWING;
 
         walking_plan_state_.next_contact_switch_time = cur_time + generic_plan_config_.walking_plan_config.ss_duration;
@@ -618,8 +646,9 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       break;
 
     case SWING:
-      // hack the swing traj if we are past the planned touchdown time
-      if (this->generic_plan_state_.plan_time >= planned_contact_swith_time) {
+      // We are in swing, pas the expected contact time, but we haven't yet made contact
+      if (this->generic_plan_state_.plan_time >= next_contact_switch_time) {
+        // hack the swing traj if we are past the planned touchdown time
         late_touchdown = true;
 
         BodyMotionData &swing_BMD = get_swing_foot_body_motion_data();
@@ -645,7 +674,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       }
 
       // tare the FT sensor during swing if we haven't already
-      if ((this->generic_plan_state_.plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration) &&
+      if ((this->generic_plan_state_.plan_time >= next_contact_switch_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration) &&
           !walking_plan_state_.have_tared_swing_leg_ft) {
         this->TareSwingLegForceTorque();
       }
@@ -653,10 +682,13 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       // check for touch down only after half swing
       // if we are in contact switch to the double support contact state and
       // plan/re-plan all trajectories (i.e. zmp, body motion, foot swing etc.)
-      if (this->generic_plan_state_.plan_time >= planned_contact_swith_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration &&
+      if (this->generic_plan_state_.plan_time >= next_contact_switch_time - 0.5 * generic_plan_config_.walking_plan_config.ss_duration &&
           est_cs.is_foot_in_contact(swing_foot)) {
         // change contact
         SwitchContactState(cur_time);
+
+        //change contact
+        this->walking_plan_state_.contact_plan->recordContactEvent(this->generic_plan_state_.plan_time);
         walking_plan_state_.walking_state = WEIGHT_TRANSFER;
         std::cout << "Swing -> Weight transfer @ " << this->generic_plan_state_.plan_time << std::endl;
 
@@ -666,7 +698,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 
         walking_plan_state_.footstep_plan_ptr->incrementCounter();
         // generate new trajectories
-        GenerateTrajs(this->generic_plan_state_.plan_time, est_rs.q, est_rs.qd, planned_cs);
+        GenerateTrajs(this->generic_plan_state_.plan_time, est_rs.q, est_rs.qd, planned_contact_state);
         late_touchdown = false;
       }
       break;
@@ -675,13 +707,14 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
       throw std::runtime_error("Unknown walking state");
   }
 
-  // make contact support data
-  generic_plan_state_.support_state = MakeDefaultSupportState(cur_planned_contact_state());
+
+  generic_plan_state_.support_state = MakeDefaultSupportState(this->walking_plan_state_.contact_plan->getCurrentContactState());
   // interp weight distribution
-  double wl = weight_distribution_.value(this->generic_plan_state_.plan_time).value();
+  double wl = walking_plan_state_.weight_distribution.value(this->generic_plan_state_.plan_time).value();
   wl = std::min(wl, 1.0);
   wl = std::max(wl, 0.0);
 
+  // Applies the force bounds based on the weight distribution
   for (size_t s = 0; s < generic_plan_state_.support_state.size(); s++) {
 
     if (generic_plan_config_.walking_plan_config.use_force_bounds) {
@@ -711,13 +744,7 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
   // make qp input
   drake::lcmt_qp_controller_input qp_input = MakeDefaultQPInput(cur_time,
                                                                 this->generic_plan_state_.plan_time,
-                                                                "walking",
-                                                                apply_torque_alpha_filter);
-
-  // late touch down logic
-  //if (late_touchdown)
-  //  qp_input.zmp_data = zmp_planner_.EncodeZMPData(planned_contact_swith_time);
-
+                                                                "walking", apply_torque_alpha_filter);
   // record some debug data
   this->RecordDefaultDebugData(this->generic_plan_state_.plan_time);
   debug_data_.plan_type = "walking";

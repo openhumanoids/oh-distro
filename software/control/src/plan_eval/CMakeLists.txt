@@ -1,4 +1,5 @@
 set(PLAN_EVAL_SRC
+    contact_plan.cc
     plan_eval.cc
     footstep_plan.cc
     zmp_planner.cc
@@ -24,6 +25,7 @@ target_link_libraries(plan-eval
     yaml-cpp)
 pods_install_libraries(plan-eval)
 pods_install_headers(
+    contact_plan.h
     footstep_plan.h
     generate_spline.h
     generic_plan.h

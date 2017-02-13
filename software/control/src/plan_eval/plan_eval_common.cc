@@ -53,5 +53,18 @@ Eigen::Matrix3Xd FootContactPointData::getAllContactPoints() const{
 Eigen::Matrix3Xd FootContactPointData::getToeContactPoints() const{
   return this->toe_contact_points_;
 }
+
+
+void printContactState(ContactState contact_state){
+  if (contact_state.is_double_support()){
+    std::cout << "contact state = DS \n";
+  }else if (contact_state.is_single_support_left()){
+    std::cout << "contact state = SSL \n";
+  } else if (contact_state.is_single_support_right()){
+    std::cout << "contact state is SSR \n";
+  } else{
+    std::cout << "contact state is UNKNOWN \n";
+  }
+}
 }
 

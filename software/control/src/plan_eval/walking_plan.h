@@ -2,6 +2,7 @@
 
 #include "footstep_plan.h"
 #include "generic_plan.h"
+#include "contact_plan.h"
 #include <list>
 #include <utility>
 #include <memory>
@@ -30,6 +31,7 @@ struct WalkingPlanState {
   WalkingState walking_state;
   std::list <drc::footstep_t> footstep_plan;
   std::list <std::pair<ContactState, double>> contact_state;
+  PiecewisePolynomial<double> weight_distribution;
   double contact_switch_time = -INFINITY;
   double next_contact_switch_time;
   bool have_tared_swing_leg_ft = false;
@@ -37,6 +39,7 @@ struct WalkingPlanState {
 
   //new stuff
   std::shared_ptr<FootstepPlan> footstep_plan_ptr;
+  std::shared_ptr<ContactPlan> contact_plan;
 };
 
 class WalkingPlan : public GenericPlan {
@@ -67,8 +70,6 @@ private:
   lcm::LCM lcm_handle_;
 
   WalkingPlanState walking_plan_state_;
-
-  PiecewisePolynomial<double> weight_distribution_;
   Eigen::VectorXd init_q_;
 
   void GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd,
