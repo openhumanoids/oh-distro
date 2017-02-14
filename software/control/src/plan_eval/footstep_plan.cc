@@ -40,19 +40,24 @@ FootstepPlan::FootstepPlan(std::vector <drc::footstep_t> footstep_msgs) {
 }
 
 void FootstepPlan::incrementCounter() {
+  std::cout << "FootstepPlan incremetCounter() called \n";
   next_footstep_idx_++;
 }
 
 std::shared_ptr<Footstep> FootstepPlan::getNextFootstep() {
-  return footsteps_[next_footstep_idx_];
+  return footsteps_.at(next_footstep_idx_);
 }
 
 std::shared_ptr<const Footstep> FootstepPlan::getNextFootstep() const{
   return footsteps_[next_footstep_idx_];
 }
 
+const drc::footstep_t & FootstepPlan::getNextFootstepMsg() const{
+  return this->footstep_msgs_.at(next_footstep_idx_);
+}
+
 bool FootstepPlan::hasNextFootstep() const {
-  bool has_next_footstep = (next_footstep_idx_ < num_footsteps_);
+  bool has_next_footstep = (next_footstep_idx_ < this->footsteps_.size());
   return has_next_footstep;
 }
 
@@ -60,7 +65,14 @@ Side FootstepPlan::sideOfNextFootstep() const {
   if (!this->hasNextFootstep()){
     throw std::out_of_range("there are no more footsteps");
   }
-  this->footsteps_[next_footstep_idx_]->getSide();
+  return this->footsteps_[next_footstep_idx_]->getSide();
+}
+
+void FootstepPlan::printDebugInfo() const {
+  std::cout << "--------FootstepPlan Debug Info------- \n";
+  std::cout << "num footsteps " << footsteps_.size() << std::endl;
+  std::cout << "next footstep idx " << next_footstep_idx_ << std::endl;
+  std::cout << "------------------------------ \n \n \n";
 }
 
 

@@ -30,24 +30,23 @@ namespace plan_eval {
 
   class FootstepPlan {
   public:
-    FootstepPlan(){};
-    FootstepPlan(std::vector <drc::footstep_t> footstep_msgs);
 
-    void incrementCounter();
-
-    std::shared_ptr <Footstep> getNextFootstep();
-
-    std::shared_ptr<const Footstep> getNextFootstep() const;
-
-    bool hasNextFootstep() const;
-
-    Side sideOfNextFootstep() const;
-
-  private:
     std::vector <std::shared_ptr<Footstep>> footsteps_;
     int next_footstep_idx_;
     int num_footsteps_;
     std::vector <drc::footstep_t> footstep_msgs_;
+
+    FootstepPlan(){};
+    FootstepPlan(std::vector <drc::footstep_t> footstep_msgs);
+    void incrementCounter();
+    std::shared_ptr <Footstep> getNextFootstep();
+    std::shared_ptr<const Footstep> getNextFootstep() const;
+    const drc::footstep_t & getNextFootstepMsg() const;
+    bool hasNextFootstep() const;
+    Side sideOfNextFootstep() const;
+    void printDebugInfo() const;
+  private:
+
   };
 }// plan_eval
 

@@ -130,6 +130,7 @@ struct DebugData{
 struct GenericPlanState{
   double plan_start_time = -1; // should only be set once
   double plan_time = -INFINITY; // should be updated every time through MakeQPInput
+  double dt = 0;
   PlanStatus plan_status;
   RigidBodySupportState support_state;
   std::vector<BodyMotionData> body_motions;

@@ -29,27 +29,22 @@ enum WalkingState {
 // everything stateful about the walking planner should be contained here
 struct WalkingPlanState {
   WalkingState walking_state;
-  std::list <drc::footstep_t> footstep_plan;
   std::list <std::pair<ContactState, double>> contact_state;
   PiecewisePolynomial<double> weight_distribution;
   double contact_switch_time = -INFINITY;
   double next_contact_switch_time;
   bool have_tared_swing_leg_ft = false;
-  int step_count;
-
-  //new stuff
   std::shared_ptr<FootstepPlan> footstep_plan_ptr;
   std::shared_ptr<ContactPlan> contact_plan;
 };
+
+
 
 class WalkingPlan : public GenericPlan {
 public:
   WalkingPlan(const std::string &urdf_name, const std::string &config_name) : GenericPlan(urdf_name, config_name) {
 
-    // this is the version in walking_plan.cc, NOT the one in generic_plan.cc
-//    this->LoadConfigurationFromYAML(config_name);
     generic_plan_state_.plan_status.planType = PlanType::WALKING;
-    walking_plan_state_.step_count = 0;
 
     // check the lcm handle initialization was good
     if (!lcm_handle_.good()) {
@@ -72,8 +67,20 @@ private:
   WalkingPlanState walking_plan_state_;
   Eigen::VectorXd init_q_;
 
+  WalkingState checkGuards(const DrakeRobotState &est_rs) const;
+  void doTransitionActions(const DrakeRobotState &est_rs, WalkingState next_state);
+  void doStandardActions(const DrakeRobotState &est_rs);
+
   void GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q, const Eigen::VectorXd &est_qd,
                      const ContactState &cur_contact_state);
+
+  WalkingState WeightTransferToSwingGuard(const DrakeRobotState &est_rs) const;
+
+  WalkingState SwingToWeightTransferGuard(const DrakeRobotState &est_rs) const;
+
+  void WeightTransferToSwingActions(const DrakeRobotState &est_rs);
+  void SwingToWeightTransferActions(const DrakeRobotState &est_rs);
+  void SwingStandardActions(const DrakeRobotState &est_rs);
 
   inline BodyMotionData &get_pelvis_body_motion_data() { return generic_plan_state_.body_motions[0]; }
 
@@ -94,18 +101,6 @@ private:
     pose[6] = p.rotation.z;
     pose.tail(4).normalize();
     return pose;
-  }
-
-  inline const ContactState &cur_planned_contact_state() const {
-    if (walking_plan_state_.contact_state.empty())
-      throw std::runtime_error("empty planned contact_state");
-    return walking_plan_state_.contact_state.front().first;
-  }
-
-  inline double cur_planned_contact_swith_time() const {
-    if (walking_plan_state_.contact_state.empty())
-      throw std::runtime_error("empty planned contact_state");
-    return walking_plan_state_.contact_state.front().second;
   }
 
   static Eigen::Isometry3d FootstepMsgToPose(drc::footstep_t msg);

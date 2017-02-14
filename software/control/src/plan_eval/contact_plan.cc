@@ -2,6 +2,8 @@
 // Created by manuelli on 2/13/17.
 //
 #include "contact_plan.h"
+#include "plan_eval_common.h"
+
 namespace plan_eval{
 
 ContactPlan::ContactPlan() {
@@ -16,7 +18,7 @@ bool ContactPlan::hasNextContactState() {
   return (next_contact_state_idx_ < contact_states_.size());
 }
 
-ContactState ContactPlan::getCurrentContactState() {
+ContactState ContactPlan::getCurrentContactState() const{
   return this->contact_states_.at(next_contact_state_idx_ - 1).first;
 }
 
@@ -52,6 +54,8 @@ void ContactPlan::printDebugInfo() const {
   std::cout << "contact_states_.size() = " << contact_states_.size() << std::endl;
   std::cout << "next_contact_state_idx_ = " << next_contact_state_idx_ << std::endl;
   std::cout << "last_contact_event_time_ = " << last_contact_event_time_ << std::endl;
+  ContactState contact_state = this->getCurrentContactState();
+  printContactState(contact_state);
   std::cout << "----------------- \n ";
 }
 

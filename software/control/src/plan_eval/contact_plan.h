@@ -17,7 +17,7 @@ public:
   ContactPlan();
   void addContactState(ContactState contact_state, double time);
   bool hasNextContactState();
-  ContactState getCurrentContactState();
+  ContactState getCurrentContactState() const;
   ContactState getNextContactState();
   std::pair<ContactState, double> getNextContactStatePair();
   double getNextContactStateTime();
