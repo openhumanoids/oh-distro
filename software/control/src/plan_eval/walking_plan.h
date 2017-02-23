@@ -31,8 +31,8 @@ struct WalkingPlanState {
   WalkingState walking_state;
   std::list <std::pair<ContactState, double>> contact_state;
   PiecewisePolynomial<double> weight_distribution;
-  double contact_switch_time = -INFINITY;
-  double next_contact_switch_time;
+  double contact_switch_time = -INFINITY; // deprecated
+  double next_contact_switch_time; // deprecated
   bool have_tared_swing_leg_ft = false;
   std::shared_ptr<FootstepPlan> footstep_plan_ptr;
   std::shared_ptr<ContactPlan> contact_plan;
@@ -124,12 +124,8 @@ private:
                     double mid_z_offset, double pre_swing_dur, double swing_up_dur, double swing_transfer_dur,
                     double swing_down_dur) const;
 
-  PiecewisePolynomial<double> GeneratePelvisTraj(KinematicsCache<double> cache,
-                                                 double &pelvis_height_above_sole,
-                                                 double &plan_time,
-                                                 double &liftoff_time, double &next_liftoff_time,
-                                                 Eigen::Isometry3d nxt_stance_foot_pose,
-                                                 Eigen::Isometry3d nxt_swing_foot_pose);
+  PiecewisePolynomial<double> GeneratePelvisTraj(const std::vector<double>& times,
+                                                 const std::vector<Eigen::Isometry3d>& pelvis_poses);
 
   static double get_weight_distribution(const ContactState &cs);
 };

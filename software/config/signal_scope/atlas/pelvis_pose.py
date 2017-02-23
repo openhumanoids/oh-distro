@@ -84,34 +84,38 @@ bdi_pose_channel = "POSE_BODY_ALT"
 addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
 
 addSignalFunction('EST_ROBOT_STATE', myFunction)
-addSignal('EST_ROBOT_STATE', msg.utime, msg.pose.translation.x);
 
-# addSignalFunction('EST_ROBOT_STATE_1', myFunction)
-# addSignalFunction('EST_ROBOT_STATE_ORIGINAL', myFunction)
-addSignalFunction('POSE_BODY', myFunctionBDI)
+addSignal('CONTROLLER_STATE', msg.timestamp, msg.desired_body_motions[0].body_q_d[5])
+# addSignal('EST_ROBOT_STATE', msg.utime, msg.pose.translation.x);
+
+# # addSignalFunction('EST_ROBOT_STATE_1', myFunction)
+# # addSignalFunction('EST_ROBOT_STATE_ORIGINAL', myFunction)
+# addSignalFunction('POSE_BODY', myFunctionBDI)
 addSignalFunction(bdi_pose_channel, myFunctionBDI)
 
-# addSignalFunction('EST_ROBOT_STATE', poseY)
-# addSignalFunction(pose_body_alt, poseYBDI)
+# # addSignalFunction('EST_ROBOT_STATE', poseY)
+# # addSignalFunction(pose_body_alt, poseYBDI)
 
 
-# velocity plot
-addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
-#addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
-#addSignal('POSE_BODY_ORIGINAL', msg.utime, msg.rotation_rate[2])
-
-addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.z)
-addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
 
 
-# addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.y)
-# addSignal('POSE_BDI', msg.utime, msg.rotation_rate[1])
+# # velocity plot
+# addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
+# #addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
+# #addSignal('POSE_BODY_ORIGINAL', msg.utime, msg.rotation_rate[2])
 
-addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
-# addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.linear_velocity.x)
-addSignal('POSE_BODY', msg.utime, msg.vel[0])
-addSignal(bdi_pose_channel, msg.utime, msg.vel[0])
-#addSignalFunction(bdi_pose_channel, x_velInBodyFrame)
+# addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.z)
+# addSignal('POSE_BODY', msg.utime, msg.rotation_rate[2])
+
+
+# # addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.angular_velocity.y)
+# # addSignal('POSE_BDI', msg.utime, msg.rotation_rate[1])
+
+# addPlot(timeWindow=5, yLimits=[-1.5, 1.5])
+# # addSignal('EST_ROBOT_STATE', msg.utime, msg.twist.linear_velocity.x)
+# addSignal('POSE_BODY', msg.utime, msg.vel[0])
+# addSignal(bdi_pose_channel, msg.utime, msg.vel[0])
+# #addSignalFunction(bdi_pose_channel, x_velInBodyFrame)
 
 
 

@@ -131,7 +131,8 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   x0.head(2) = com0;
   x0.tail(2) = comd0;
 
-  pelv0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.pelvis_id));
+  Eigen::Isometry3d cur_pelvis_pose = robot_.relativeTransform(cache_est, 0, rpc_.pelvis_id);
+  pelv0 = Isometry3dToVector7d(cur_pelvis_pose);
   torso0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.torso_id));
 
   feet_pose[Side::LEFT] = robot_.relativeTransform(cache_est, 0, rpc_.foot_ids.at(Side::LEFT));
@@ -151,6 +152,9 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   Eigen::Isometry3d nxt_stance_foot_pose;
   Eigen::Isometry3d nxt_swing_foot_pose;
 
+  std::vector<double> pelvis_time_knots;
+  std::vector<Eigen::Isometry3d> pelvis_pose_knots;
+
   ContactState nxt_contact_state;
   // empty queue, going to double support at the center
   if (!walking_plan_state_.footstep_plan_ptr->hasNextFootstep()) {
@@ -162,6 +166,31 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
     // if there isn't a next swing foot, i.e. this is the end of the plan, then this doesn't really matter
     // this is used in generating pelvis trajectory
     nxt_swing_foot_pose = feet_pose[nxt_swing_foot.underlying()];
+
+    pelvis_time_knots.resize(2);
+    pelvis_pose_knots.resize(2);
+    // first knot point is just current pelvis pose
+    pelvis_time_knots[0] = plan_time;
+    pelvis_pose_knots[0] = cur_pelvis_pose;
+
+
+    // set time and pose for 1st not points
+    pelvis_time_knots[1] = pelvis_time_knots[0] + this->generic_plan_config_.walking_plan_config.ds_duration;
+    
+    double avg_foot_height =1/2.0*(feet_pose[Side::LEFT].translation()[2] + feet_pose[Side::RIGHT].translation()[2]);
+    pelvis_pose_knots[1] = cur_pelvis_pose;
+    pelvis_pose_knots[1].translation()[2] = avg_foot_height + this->generic_plan_config_.walking_plan_config.pelvis_height;
+
+    
+    // need to be careful when averaging yaws
+    std::vector<double> foot_yaw(2);
+    foot_yaw[0] = rotmat2rpy(feet_pose[Side::LEFT].linear())[2];
+    foot_yaw[1] = rotmat2rpy(feet_pose[Side::RIGHT].linear())[2];
+    double avg_foot_yaw = foot_yaw[0] + 1/2.0*angleDiff(foot_yaw[0], foot_yaw[1]);
+
+    // set rotation part of this pose
+    pelvis_pose_knots[1].linear() = rpy2rotmat(Eigen::Vector3d(0,0,avg_foot_yaw));
+
   } else {
     nxt_swing_foot = walking_plan_state_.footstep_plan_ptr->sideOfNextFootstep();
     nxt_stance_foot = nxt_swing_foot.oppositeSide();
@@ -172,6 +201,41 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
       nxt_contact_state = ContactState::SSR();
     }
     nxt_swing_foot_pose = walking_plan_state_.footstep_plan_ptr->getNextFootstep()->getPose();
+    nxt_stance_foot_pose = feet_pose[nxt_stance_foot.underlying()];
+
+
+    // pelvis stuff
+    // all pelvis movement will happen during single support
+    pelvis_time_knots.resize(2);
+    pelvis_pose_knots.resize(2);
+
+    // liftoff time
+    pelvis_time_knots[0] = plan_time + this->generic_plan_config_.walking_plan_config.ds_duration;
+
+    // liftoff pose is just current pose
+    pelvis_pose_knots[0] = cur_pelvis_pose;
+
+
+    // touchdown time
+    pelvis_time_knots[1] = pelvis_time_knots[0] + this->generic_plan_config_.walking_plan_config.ss_duration;
+
+    // touchdown pose is avg of next two footsteps
+    double avg_foot_height = 1/2.0*(nxt_stance_foot_pose.translation()[2] +  nxt_swing_foot_pose.translation()[2]);
+    pelvis_pose_knots[1] = cur_pelvis_pose;
+    pelvis_pose_knots[1].translation()[2] = avg_foot_height + this->generic_plan_config_.walking_plan_config.pelvis_height;
+
+    // set orientation
+    std::vector<double> foot_yaw(2);
+    foot_yaw[0] = rotmat2rpy(nxt_swing_foot_pose.linear())[2];
+    foot_yaw[1] = rotmat2rpy(nxt_stance_foot_pose.linear())[2];
+    double avg_foot_yaw = foot_yaw[0] + 1/2.0*angleDiff(foot_yaw[0], foot_yaw[1]);
+    // set rotation part of this pose
+    pelvis_pose_knots[1].linear() = rpy2rotmat(Eigen::Vector3d(0,0,avg_foot_yaw));
+
+    std::cout << "next swing foot yaw " << foot_yaw[0] << std::endl;
+    std::cout << "next stance foot yaw " << foot_yaw[1] << std::endl;
+    std::cout << "avg yaw " << avg_foot_yaw << std::endl;
+
   }
   nxt_stance_foot_pose = feet_pose[nxt_stance_foot.underlying()];
 
@@ -282,8 +346,9 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   // for pelvis stuff should add another knot point at time = wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ss_duration (this is just before liftoff)
 
   /// Initialize body motion data
-  for (size_t i = 0; i < generic_plan_state_.body_motions.size(); i++)
+  for (size_t i = 0; i < generic_plan_state_.body_motions.size(); i++){
     generic_plan_state_.body_motions[i] = this->MakeDefaultBodyMotionData(Ts.size());
+  }
 
   // hold all joints. I am assuming the leg joints will just be ignored in the qp..
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
@@ -305,20 +370,16 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
   pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
 
-  int num_knots_in_pelvis_traj = 3;
+  // int num_knots_in_pelvis_traj = 3;
 
-  // these are all in the plan_time frame
-  pelvis_BMD.control_pose_when_in_contact.resize(num_knots_in_pelvis_traj, true);
-  double liftoff_time = plan_time + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
-  double next_liftoff_time = liftoff_time
-      + generic_plan_config_.walking_plan_config.ss_duration
-  + generic_plan_config_.walking_plan_config.ds_duration;
+  // // these are all in the plan_time frame
+  // pelvis_BMD.control_pose_when_in_contact.resize(num_knots_in_pelvis_traj, true);
+  // double liftoff_time = plan_time + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
+  // double next_liftoff_time = liftoff_time
+  //     + generic_plan_config_.walking_plan_config.ss_duration
+  // + generic_plan_config_.walking_plan_config.ds_duration;
 
-
-  pelvis_BMD.trajectory = this->GeneratePelvisTraj(cache_est,
-                                                   generic_plan_config_.walking_plan_config.pelvis_height,
-                                                   plan_time, liftoff_time, next_liftoff_time,
-                                                   nxt_stance_foot_pose, nxt_swing_foot_pose);
+  pelvis_BMD.trajectory = this->GeneratePelvisTraj(pelvis_time_knots, pelvis_pose_knots);
 
   // make torso BodyMotionData'
   // using the Ts from above used for DefaultBodyMotionData
@@ -355,20 +416,21 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   swing_BMD.trajectory = GenerateCubicCartesianSpline(Ts, swing_knots,
                                                       std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero()));
 
-  // This Ts is being used to define the times when thee contact state changes
-  Ts.resize(3);
-  Ts[0] = plan_time; // current plan time
+  // This Ts is being used to define the times when the contact state changes
+  std::vector<double> Ts_contact_state(3);
+  Ts_contact_state[0] = plan_time; // current plan time
   // liftoff time
-  Ts[1] = Ts[0] + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
+  Ts_contact_state[1] = Ts_contact_state[0] + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
   // next touchdown time
-  Ts[2] = Ts[1] + generic_plan_config_.walking_plan_config.ss_duration;
-  std::cout << "lift off time " << Ts[1] << std::endl;
-  std::cout << "touchdown time " << Ts[2] << std::endl;
+  Ts_contact_state[2] = Ts_contact_state[1] + generic_plan_config_.walking_plan_config.ss_duration;
+  std::cout << "plan time " << Ts_contact_state[0] << std::endl;
+  std::cout << "lift off time " << Ts_contact_state[1] << std::endl;
+  std::cout << "touchdown time " << Ts_contact_state[2] << std::endl;
 
   // use contact plan logic
   this->walking_plan_state_.contact_plan->clear();
   // add the current contact state and increment counter, since it has already happened.
-  this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), Ts[0]);
+  this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), Ts_contact_state[0]);
   this->walking_plan_state_.contact_plan->incrementCounter();
 
 
@@ -377,21 +439,24 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
     this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), INFINITY);
   } else {
     // contact state just after liftoff
-    this->walking_plan_state_.contact_plan->addContactState(nxt_contact_state, Ts[1]);
+    this->walking_plan_state_.contact_plan->addContactState(nxt_contact_state, Ts_contact_state[1]);
     //contact state at next double support
-    this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), Ts[2]);
+    this->walking_plan_state_.contact_plan->addContactState(ContactState::DS(), Ts_contact_state[2]);
   }
 
   walking_plan_state_.contact_plan->printDebugInfo();
 
+  std::vector<double> Ts_weight_distribution = Ts_contact_state;
+  Ts_weight_distribution[0] = Ts[0] + wait_period_before_weight_shift;
+
   // make weight distribution
-  std::vector <Eigen::Matrix<double, 1, 1>> WL(Ts.size());
+  std::vector <Eigen::Matrix<double, 1, 1>> WL(Ts_weight_distribution.size());
   WL[0](0, 0) = get_weight_distribution(planned_cs);
   WL[1](0, 0) = get_weight_distribution(nxt_contact_state);
   WL[2](0, 0) = get_weight_distribution(nxt_contact_state);
   // what is this doing exactly? Why not use the standard TS from above?
 //  Ts[0] = wait_period_before_weight_shift;
-  walking_plan_state_.weight_distribution = GenerateCubicSpline(Ts, WL);
+  walking_plan_state_.weight_distribution = GenerateCubicSpline(Ts_weight_distribution, WL);
 
   // pelvis Z weight multiplier
   // This is really dumb, but the multiplier is ang then pos, check instQP.
@@ -958,55 +1023,19 @@ drake::lcmt_qp_controller_input WalkingPlan::MakeQPInput(const DrakeRobotState &
 // This function is called only from the beginning of double support,
 // namely at first tick or when touchdown into double support occurs
 // all times are in the plan_time convention
-// plan_time --> the current plan time
-// liftoff_time --> time of transition from double support to single support
-// next_liftoff_time --> time of transition from next double support to single support.
-// Returns a trajectory that smoothly interpolates between current pelvis pose,
-// pose of nxt stance foot and then nxt swing foot.
-// The trajectory will only be used for orientation and z height, NOT x,y.
-// TODO (manuelli) be careful with final knot point here . . .
-PiecewisePolynomial<double> WalkingPlan::GeneratePelvisTraj(KinematicsCache<double> cache,
-                                                            double &pelvis_height_above_sole,
-                                                            double &plan_time,
-                                                            double &liftoff_time,
-                                                            double &next_liftoff_time,
-                                                            Eigen::Isometry3d nxt_stance_foot_pose,
-                                                            Eigen::Isometry3d nxt_swing_foot_pose) {
+PiecewisePolynomial<double> WalkingPlan::GeneratePelvisTraj(const std::vector<double>& times,
+                                               const std::vector<Eigen::Isometry3d>& pelvis_poses) {
 
-  std::vector<double> Ts(3);
-  Ts[0] = plan_time;
-  Ts[1] = liftoff_time;
-  Ts[2] = next_liftoff_time;
+  std::vector<Eigen::Vector7d> pelvis_poses_7d;
+  pelvis_poses_7d.reserve(pelvis_poses.size());
 
-  // there will be three knot points
-  std::vector <Eigen::Matrix<double, 7, 1>> pelvis_pose_vec(3);
-  pelvis_pose_vec[0] = Isometry3dToVector7d(robot_.relativeTransform(cache, 0, rpc_.pelvis_id));
+  for (int i = 0; i < pelvis_poses.size(); i++){
+    pelvis_poses_7d.push_back(Isometry3dToVector7d(pelvis_poses[i]));
+  }
 
-  // need to adjust z-height on poses 1 and 2;
-  pelvis_pose_vec[1][2] = nxt_stance_foot_pose.translation()[2] + pelvis_height_above_sole;
-  Eigen::Vector4d foot_quat1(Isometry3dToVector7d(nxt_stance_foot_pose).tail(4));
-  double yaw1 = quat2rpy(foot_quat1)[2];
-  pelvis_pose_vec[1].tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw1));
-
-
-  pelvis_pose_vec[2][2] = nxt_swing_foot_pose.translation()[2] + pelvis_height_above_sole;
-  Eigen::Vector4d foot_quat2(Isometry3dToVector7d(nxt_swing_foot_pose).tail(4));
-  double yaw2 = quat2rpy(foot_quat2)[2];
-  pelvis_pose_vec[2].tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw2));
-
-  // need to create velocities, should be zero everywhere
-  std::vector <Eigen::Vector7d> velocities = std::vector<Eigen::Vector7d>(Ts.size(), Eigen::Vector7d::Zero());
-  PiecewisePolynomial<double> pelvisTraj = GenerateCubicCartesianSpline(Ts, pelvis_pose_vec, velocities);
-
-
-
-  // some debugging stuff
-  std::cout << "pelvis heights " << pelvis_pose_vec[0][2] << " " << pelvis_pose_vec[1][2] << " "
-            << pelvis_pose_vec[2][2] << std::endl;
-//  std::cout << "Ts " << Ts << std::endl;
-  std::cout << "next stance foot height " << nxt_stance_foot_pose.translation()[2] << std::endl;
-
-
+    // velocities should all be zero
+  std::vector <Eigen::Vector7d> velocities = std::vector<Eigen::Vector7d>(times.size(), Eigen::Vector7d::Zero());
+  PiecewisePolynomial<double> pelvisTraj = GenerateCubicCartesianSpline(times, pelvis_poses_7d, velocities);
   return pelvisTraj;
 }
 }// plan_eval
