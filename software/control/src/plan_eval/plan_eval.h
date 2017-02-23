@@ -14,21 +14,22 @@
 #include "utils/rate_limiter.h"
 #include "bot_core/utime_t.hpp"
 
-
-// only working on manip now, need to think about how to switch between manip
-// and walking
+namespace plan_eval {
 class PlanEval {
- public:
+public:
   PlanEval(const std::string &urdf_name, const std::string &config_name);
+
   void Start();
+
   void Stop();
 
   inline bool isReceiverRunning() const { return receiver_thread_.joinable(); }
+
   inline bool isPublisherRunning() const {
     return publisher_thread_.joinable();
   }
 
- private:
+private:
   std::string urdf_name_;
   std::string config_name_;
 
@@ -40,7 +41,7 @@ class PlanEval {
   DrakeRobotState est_robot_state_receiver_;
   DrakeRobotState est_robot_state_publisher_;
   bot_core::robot_state_t est_robot_state_msg_;
-  std::shared_ptr<RobotStateDriver> state_driver_;
+  std::shared_ptr <RobotStateDriver> state_driver_;
 
   // input
   std::mutex plan_lock_;
@@ -50,7 +51,7 @@ class PlanEval {
   std::atomic<bool> new_robot_state_;
   bool new_robot_state_publisher_loop_;
   bool new_robot_state_receiver_loop_;
-  std::shared_ptr<GenericPlan> current_plan_;
+  std::shared_ptr <GenericPlan> current_plan_;
 
   // output
   std::thread publisher_thread_;
@@ -60,6 +61,7 @@ class PlanEval {
   RateLimiter plan_status_rate_limiter_;
 
   void ReceiverLoop();
+
   void PublisherLoop();
 
   // handle plans
@@ -72,26 +74,27 @@ class PlanEval {
   void MakeManipPlan(const drc::robot_plan_t *msg);
 
   void HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
-                       const std::string &channel,
-                       const drc::walking_plan_request_t *msg);
+                         const std::string &channel,
+                         const drc::walking_plan_request_t *msg);
 
   // handle robot state msg
   void HandleEstRobotStateReceiverLoop(const lcm::ReceiveBuffer *rbuf,
-                           const std::string &channel,
-                           const bot_core::robot_state_t *msg);
+                                       const std::string &channel,
+                                       const bot_core::robot_state_t *msg);
 
   // handle robot state msg
   void HandleEstRobotStatePublisherLoop(const lcm::ReceiveBuffer *rbuf,
-                           const std::string &channel,
-                           const bot_core::robot_state_t *msg);
+                                        const std::string &channel,
+                                        const bot_core::robot_state_t *msg);
 
   void HandleEstContactStateReceiverLoop(const lcm::ReceiveBuffer *rbuf,
-                             const std::string &channel,
-                             const drc::foot_contact_estimate_t *msg);
-
-  void HandleEstContactStatePublisherLoop(const lcm::ReceiveBuffer *rbuf,
                                          const std::string &channel,
                                          const drc::foot_contact_estimate_t *msg);
 
+  void HandleEstContactStatePublisherLoop(const lcm::ReceiveBuffer *rbuf,
+                                          const std::string &channel,
+                                          const drc::foot_contact_estimate_t *msg);
+
   void publishPlanStatus(PlanStatus plan_status);
 };
+} // plan_eval

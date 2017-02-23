@@ -4,9 +4,10 @@
 #include "drake/systems/trajectories/ExponentialPlusPiecewisePolynomial.h"
 #include "drake/lcmt_zmp_data.hpp"
 
+namespace plan_eval {
 class ZMPPlanner {
- public:
- //private:
+public:
+  //private:
   PiecewisePolynomial<double> zmp_traj_;
   PiecewisePolynomial<double> zmpd_traj_;
   ExponentialPlusPiecewisePolynomial<double> com_traj_;
@@ -27,6 +28,7 @@ class ZMPPlanner {
   Eigen::Vector2d u0_;
 
   void Plan(const PiecewisePolynomial<double> &zmp_d, const Eigen::Vector4d &x0, double height);
+
   drake::lcmt_zmp_data EncodeZMPData(double time) const;
 
   void WriteToFile(const std::string &name, double dt) const;
@@ -47,3 +49,5 @@ class ZMPPlanner {
     return comd_traj_.value(time);
   }
 };
+
+}// plan_eval

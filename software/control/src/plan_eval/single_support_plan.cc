@@ -6,10 +6,10 @@
 #include <iomanip>
 
 void SingleSupportPlan::LoadConfigurationFromYAML(const std::string &name) {
-  p_ss_duration_ = config_["ss_duration"].as<double>();
+  generic_plan_config_.walking_plan_config.ss_duration = config_["ss_duration"].as<double>();
   p_ds_duration_ = config_["ds_duration"].as<double>();
 
-  std::cout << "p_ss_duration_: " << p_ss_duration_ << std::endl;
+  std::cout << "generic_plan_config_.walking_plan_config.ss_duration: " << generic_plan_config_.walking_plan_config.ss_duration << std::endl;
   std::cout << "p_ds_duration_: " << p_ds_duration_ << std::endl;
 }
 
@@ -42,7 +42,7 @@ void SingleSupportPlan::HandleCommittedRobotPlan(const void *plan_msg,
   Eigen::Matrix<double,7,1> pelv0 = Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, rpc_.pelvis_id));
   Eigen::Matrix<double,7,1> pelv1;
   pelv1.segment<3>(0) = com_end_d.translation();
-  pelv1[2] += p_zmp_height_;
+  pelv1[2] += generic_plan_config_.zmp_height;
   pelv1.segment<4>(3) = rotmat2quat(feet_pose[stance_foot].linear());
 
   std::cout << "pelv0" << pelv0.transpose() << std::endl;
@@ -58,49 +58,49 @@ void SingleSupportPlan::HandleCommittedRobotPlan(const void *plan_msg,
     com_d[i] = com0 + a * (com1 - com0);
     printf("t %g %g %g\n", Ts[i], com_d[i][0], com_d[i][1]);
   }
-  zmp_traj_ = GeneratePCHIPSpline(Ts, com_d);
+  generic_plan_state_.zmp_traj = GeneratePCHIPSpline(Ts, com_d);
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
+  zmp_planner_.Plan(generic_plan_state_.zmp_traj, x0, generic_plan_config_.zmp_height);
 
   // make pelvis traj, 0 is pelvis,
-  body_motions_.resize(3);
+  generic_plan_state_.body_motions.resize(3);
   num_T = 2;
   Ts.resize(num_T);
   Ts[0] = 0;
   Ts[1] = p_ds_duration_;
 
   for (int i = 0; i < 3; i++)
-    body_motions_[i] = MakeDefaultBodyMotionData(num_T);
+    generic_plan_state_.body_motions[i] = MakeDefaultBodyMotionData(num_T);
 
   // pelvis body motion data
-  body_motions_[0].body_or_frame_id = rpc_.pelvis_id;
-  body_motions_[0].control_pose_when_in_contact.resize(num_T, true);
+  generic_plan_state_.body_motions[0].body_or_frame_id = rpc_.pelvis_id;
+  generic_plan_state_.body_motions[0].control_pose_when_in_contact.resize(num_T, true);
   std::vector<Eigen::Vector7d> pelv_knots(num_T);
   pelv_knots[0] = pelv0;
   pelv_knots[1] = pelv1;
-  body_motions_[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+  generic_plan_state_.body_motions[0].trajectory = GenerateCubicCartesianSpline(Ts, pelv_knots, std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
   // stance foot body motion data
   int id = rpc_.foot_ids[stance_foot];
-  body_motions_[1].body_or_frame_id = id;
-  body_motions_[1].trajectory = GenerateCubicCartesianSpline(Ts, std::vector<Eigen::Vector7d>(num_T, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id))), std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
+  generic_plan_state_.body_motions[1].body_or_frame_id = id;
+  generic_plan_state_.body_motions[1].trajectory = GenerateCubicCartesianSpline(Ts, std::vector<Eigen::Vector7d>(num_T, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id))), std::vector<Eigen::Vector7d>(num_T, Eigen::Vector7d::Zero()));
 
 
   // swing foot body motion data make swing up traj for right foot
   id = rpc_.foot_ids[swing_foot];
-  body_motions_[2] = MakeDefaultBodyMotionData(3);
-  body_motions_[2].body_or_frame_id = id;
+  generic_plan_state_.body_motions[2] = MakeDefaultBodyMotionData(3);
+  generic_plan_state_.body_motions[2].body_or_frame_id = id;
   std::vector<double> swingTs(3);
   swingTs[0] = 0;
   swingTs[1] = p_ds_duration_;
-  swingTs[2] = p_ss_duration_ + p_ds_duration_;
+  swingTs[2] = generic_plan_config_.walking_plan_config.ss_duration + p_ds_duration_;
 
   std::vector<Eigen::Vector7d> swing_foot_d;
   swing_foot_d.resize(3, Isometry3dToVector7d(robot_.relativeTransform(cache_est, 0, id)));
   swing_foot_d[2][2] += 0.2;
   std::vector<Eigen::Vector7d> swing_footd_d = std::vector<Eigen::Vector7d>(swingTs.size(), Eigen::Vector7d::Zero());
-  body_motions_[2].trajectory = GenerateCubicCartesianSpline(swingTs, swing_foot_d, swing_footd_d);
+  generic_plan_state_.body_motions[2].trajectory = GenerateCubicCartesianSpline(swingTs, swing_foot_d, swing_footd_d);
 
   // hold arm joints, I am assuming the leg joints will just be ignored..
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_rs.q.size());
@@ -193,10 +193,10 @@ drake::lcmt_qp_controller_input SingleSupportPlan::MakeQPInput(const DrakeRobotS
 
   ////////////////////////////////////////
   // encode body motion data
-  qp_input.num_tracked_bodies = body_motions_.size();
+  qp_input.num_tracked_bodies = generic_plan_state_.body_motions.size();
   qp_input.body_motion_data.resize(qp_input.num_tracked_bodies);
   for (size_t b = 0; b < qp_input.body_motion_data.size(); b++)
-    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, body_motions_[b]);
+    qp_input.body_motion_data[b] = EncodeBodyMotionData(plan_time, generic_plan_state_.body_motions[b]);
 
   ////////////////////////////////////////
   // encode support data
@@ -209,7 +209,7 @@ drake::lcmt_qp_controller_input SingleSupportPlan::MakeQPInput(const DrakeRobotS
   ////////////////////////////////////////
   // torque alpha filter
   //qp_input.torque_alpha_filter = 0.;
-  if (plan_time < p_initial_transition_time_ || cur_time - contact_switch_time_ < p_initial_transition_time_)
+  if (plan_time < generic_plan_config_.initial_transition_time || cur_time - contact_switch_time_ < generic_plan_config_.initial_transition_time)
     qp_input.torque_alpha_filter = 0.9;
   else
     qp_input.torque_alpha_filter = 0.;

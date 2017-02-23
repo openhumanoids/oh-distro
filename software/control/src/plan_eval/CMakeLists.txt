@@ -1,11 +1,14 @@
 set(PLAN_EVAL_SRC
+    contact_plan.cc
     plan_eval.cc
+    footstep_plan.cc
     zmp_planner.cc
     generic_plan.cc
     manip_plan.cc
     walking_plan.cc
+    plan_eval_common.cc
     utils/rate_limiter.cpp)
-#single_support_plan.cc)
+
 
 add_library(plan-eval SHARED ${PLAN_EVAL_SRC})
 pods_use_pkg_config_packages(plan-eval drake-qp-common drake-control-util drake-side drake-rbm)
@@ -22,13 +25,15 @@ target_link_libraries(plan-eval
     yaml-cpp)
 pods_install_libraries(plan-eval)
 pods_install_headers(
+    contact_plan.h
+    footstep_plan.h
     generate_spline.h
     generic_plan.h
     manip_plan.h
     plan_eval.h
-    single_support_plan.h
     walking_plan.h
     zmp_planner.h
+    plan_eval_common.h
     DESTINATION control)
 
 
@@ -42,3 +47,6 @@ pods_install_executables(c_plan_eval)
 add_executable(sf_test_zmp test_zmp.cc)
 target_link_libraries(sf_test_zmp plan-eval)
 pods_install_executables(sf_test_zmp)
+
+add_subdirectory(test)
+

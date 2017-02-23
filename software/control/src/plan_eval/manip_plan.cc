@@ -5,14 +5,16 @@
 #include <fstream>
 #include <iomanip>
 
+namespace plan_eval {
+
 drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &est_rs) {
   double cur_time = est_rs.t;
 
-  if (interp_t0_ == -1)
-    interp_t0_ = cur_time;
-  double plan_time = cur_time - interp_t0_;
+  if (generic_plan_state_.plan_start_time == -1)
+    generic_plan_state_.plan_start_time = cur_time;
+  double plan_time = cur_time - generic_plan_state_.plan_start_time;
 
-  bool apply_torque_alpha_filter = plan_time < p_initial_transition_time_;
+  bool apply_torque_alpha_filter = plan_time < generic_plan_config_.initial_transition_time;
 
   // record some debug data
   this->RecordDefaultDebugData(plan_time);
@@ -21,9 +23,9 @@ drake::lcmt_qp_controller_input ManipPlan::MakeQPInput(const DrakeRobotState &es
 }
 
 Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
-  if (interp_t0_ == -1)
-    interp_t0_ = cur_time;
-  double plan_time = cur_time - interp_t0_;
+  if (generic_plan_state_.plan_start_time == -1)
+    generic_plan_state_.plan_start_time = cur_time;
+  double plan_time = cur_time - generic_plan_state_.plan_start_time;
 
   return q_trajs_.value(plan_time);
 }
@@ -31,7 +33,7 @@ Eigen::VectorXd ManipPlan::GetLatestKeyFrame(double cur_time) {
 void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                          const DrakeRobotState &est_rs,
                                          const Eigen::VectorXd &last_q_d) {
-  const drc::robot_plan_t *msg = (const drc::robot_plan_t *)plan_msg;
+  const drc::robot_plan_t *msg = (const drc::robot_plan_t *) plan_msg;
   std::cout << "committed robot plan handler called\n";
   std::ofstream out;
 
@@ -42,18 +44,19 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   //size_t num_T = msg->plan.size() + 1;
 
   std::vector<double> Ts(num_T);
-  std::vector<Eigen::Vector2d> com_d(num_T);
-  std::vector<Eigen::VectorXd> q_d(num_T);  // t steps by n
+  std::vector <Eigen::Vector2d> com_d(num_T);
+  std::vector <Eigen::VectorXd> q_d(num_T);  // t steps by n
 
-  std::vector<std::string> body_names;
+  std::vector <std::string> body_names;
   body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
+    std::cout << "ManipPlan: foot_ids = " << it->second << std::endl;
     body_names.push_back(robot_.getBodyOrFrameName(it->second));
   }
   size_t num_bodies = body_names.size();
 
-  std::vector<std::vector<Eigen::Matrix<double,7,1>>> x_d(num_bodies);
-  std::vector<std::vector<Eigen::Matrix<double,7,1>>> xd_d(num_bodies);
+  std::vector <std::vector<Eigen::Matrix<double, 7, 1>>> x_d(num_bodies);
+  std::vector <std::vector<Eigen::Matrix<double, 7, 1>>> xd_d(num_bodies);
   for (size_t i = 0; i < num_bodies; i++) {
     x_d[i].resize(num_T);
     xd_d[i].resize(num_T);
@@ -62,7 +65,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // generate the current tracked body poses from the estimated robot state
   // maybe useful eventually
   KinematicsCache<double> cache_est = robot_.doKinematics(est_rs.q, est_rs.qd);
-  std::vector<Eigen::Matrix<double,7,1>> x_est(num_bodies);
+  std::vector <Eigen::Matrix<double, 7, 1>> x_est(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
     int id = robot_.findLink(body_names[b])->body_index;
     Eigen::Isometry3d pose = robot_.relativeTransform(cache_est, 0, id);
@@ -75,7 +78,7 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   for (size_t t = 0; t < num_T; t++) {
     const bot_core::robot_state_t &keyframe = msg->plan[t];
     KeyframeToState(keyframe, q_, v_);
-    Ts[t] = (double)keyframe.utime / 1e6;
+    Ts[t] = (double) keyframe.utime / 1e6;
     q_d[t] = q_;
   }
 
@@ -113,29 +116,29 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
   // make zmp traj, since we are manip, com ~= zmp, zmp is created with pchip
   Eigen::Vector2d zero2(Eigen::Vector2d::Zero());
-  zmp_traj_ = GeneratePCHIPSpline(Ts, com_d, zero2, zero2);
+  generic_plan_state_.zmp_traj = GeneratePCHIPSpline(Ts, com_d, zero2, zero2);
   // TODO: make traj for s1, and com
   // drake/examples/ZMP/LinearInvertedPendulum.m
 
   Eigen::Vector4d x0(Eigen::Vector4d::Zero());
   x0.head(2) = com_d[0];
-  zmp_planner_.Plan(zmp_traj_, x0, p_zmp_height_);
+  zmp_planner_.Plan(generic_plan_state_.zmp_traj, x0, generic_plan_config_.zmp_height);
 
   // make body motion splines
-  body_motions_.resize(num_bodies);
+  generic_plan_state_.body_motions.resize(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
-    body_motions_[b] = MakeDefaultBodyMotionData(num_T);
+    generic_plan_state_.body_motions[b] = MakeDefaultBodyMotionData(num_T);
 
-    body_motions_[b].body_or_frame_id =
+    generic_plan_state_.body_motions[b].body_or_frame_id =
         robot_.findLink(body_names[b])->body_index;
-    body_motions_[b].trajectory =
+    generic_plan_state_.body_motions[b].trajectory =
         GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
     if (body_names[b].compare(robot_.getBodyOrFrameName(rpc_.pelvis_id)) == 0)
-      body_motions_[b].control_pose_when_in_contact.resize(num_T, true);
+      generic_plan_state_.body_motions[b].control_pose_when_in_contact.resize(num_T, true);
   }
 
   // make support, dummy here since we are always in double support
-  support_state_ = MakeDefaultSupportState(ContactState::DS());
+  generic_plan_state_.support_state = MakeDefaultSupportState(ContactState::DS());
 
   // constrained DOFs
   // TODO: this is not true for dragging hands around
@@ -154,4 +157,4 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
 
   std::cout << "committed robot plan proced\n";
 }
-
+}// plan_eval
