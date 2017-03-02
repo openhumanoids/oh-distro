@@ -34,7 +34,9 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                          const DrakeRobotState &est_rs,
                                          const Eigen::VectorXd &last_q_d) {
   const drc::robot_plan_t *msg = (const drc::robot_plan_t *) plan_msg;
-  std::cout << "committed robot plan handler called\n";
+
+  // record time at which this plan was constructed
+  this->plan_construction_time_in_seconds_ = est_rs.t;
   std::ofstream out;
 
   // record the param set name to use

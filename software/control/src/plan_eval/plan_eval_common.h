@@ -113,6 +113,7 @@ enum class PlanType{
   WALKING,
   BRACING,
   RECOVERING,
+  MANIP,
 };
 
 struct PlanStatus {
