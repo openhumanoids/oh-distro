@@ -526,6 +526,8 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
                                            const DrakeRobotState &est_rs,
                                            const Eigen::VectorXd &last_q_d) {
 
+  // record time at which this plan was constructed
+  this->plan_construction_time_in_seconds_ = est_rs.t;
 
   // set plan time to zero
   this->generic_plan_state_.plan_time = 0;
@@ -536,6 +538,7 @@ void WalkingPlan::HandleCommittedRobotPlan(const void *plan_msg,
   walking_plan_state_.contact_plan.reset(new ContactPlan());
 
   const drc::walking_plan_request_t *msg = (const drc::walking_plan_request_t *) plan_msg;
+
   if (msg->footstep_plan.footsteps.size() <= 2)
     throw std::runtime_error("too few number of steps.");
 

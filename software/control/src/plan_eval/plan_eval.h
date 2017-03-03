@@ -7,6 +7,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 
+#include "plan_eval_common.h"
 #include "generic_plan.h"
 #include "drake/Path.h"
 #include "../RobotStateDriver.hpp"
@@ -51,11 +52,17 @@ private:
   std::atomic<bool> new_robot_state_;
   bool new_robot_state_publisher_loop_;
   bool new_robot_state_receiver_loop_;
-  std::shared_ptr <GenericPlan> current_plan_;
+  std::shared_ptr<GenericPlan> current_plan_;
+
+  // new plan container
+  std::map<PlanType, std::shared_ptr <GenericPlan>> blank_plans_;
 
   // output
   std::thread publisher_thread_;
   std::atomic<bool> publisher_stop_;
+
+  //debugging
+  std::atomic<double> new_plan_receive_time_in_seconds_;
 
   PlanStatus current_plan_status_;
   RateLimiter plan_status_rate_limiter_;
@@ -63,6 +70,11 @@ private:
   void ReceiverLoop();
 
   void PublisherLoop();
+
+  void ConstructNewBlankPlan(const PlanType& plan_type);
+
+  // populates the blank_plans_ map
+  void InitializeBlankPlans();
 
   // handle plans
   void HandleManipPlan(const lcm::ReceiveBuffer *rbuf,

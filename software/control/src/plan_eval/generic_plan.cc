@@ -7,8 +7,6 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
 
 
   // create the robot property cache
-  std::cout << "in function GenericPlan::LoadConfigurationFromYAML" << std::endl;
-  std::cout << "-------------" << std::endl;
   config_ = YAML::LoadFile(name);
   rpc_ = parseKinematicTreeMetadata(config_["kinematic_tree_metadata"], robot_);
 
@@ -18,7 +16,6 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   rpc_.pelvis_id = robot_.findLinkId(pelvis_name);
   rpc_.torso_id = robot_.findLinkId(torso_name);
 
-  std::cout << "parsed kinematic tree metadata " << std::endl;
 
   // Parse contact point information
   // right now we only have contact points on the feet
@@ -41,13 +38,8 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
         new FootContactPointData(foot_contact_points_config[side_string]));
     generic_plan_config_.contact_point_data[contact_body] = std::shared_ptr<FootContactPointData>(
         new FootContactPointData(foot_contact_points_config[side_string]));;
-
-
-    std::cout << "generic_plan_config_.contact_point_data[contact_body].getAllContactPoints().size() "
-              << generic_plan_config_.contact_point_data.at(contact_body)->getAllContactPoints().size() << std::endl;
   }
 
-  std::cout << "parsing general params " << std::endl;
 
   // parse general params
   YAML::Node general_params_node = config_["general"];
@@ -57,7 +49,6 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   generic_plan_config_.transition_trq_alpha_filter = general_params_node["transition_trq_alpha_filter"].as<double>();
   generic_plan_config_.flip_foot_ft_sensor = general_params_node["flip_foot_ft_sensor"].as<bool>();
 
-  std::cout << "parsing walking params" << std::endl;
   // parse walking params
   WalkingPlanConfig walking_plan_config;
   YAML::Node walking_params_node = config_["walking"];
@@ -84,7 +75,6 @@ void GenericPlan::LoadConfigurationFromYAML(const std::string &name) {
   // save walking params into general config
   generic_plan_config_.walking_plan_config = walking_plan_config;
 
-  std::cout << "finished parsing plan eval config " << std::endl;
 
 }
 

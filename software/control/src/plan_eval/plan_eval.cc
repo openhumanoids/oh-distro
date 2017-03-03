@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
-
+#include <stdexcept>
 #include "manip_plan.h"
 #include "walking_plan.h"
 #include "drc/plan_status_t.hpp"
@@ -47,27 +47,44 @@ PlanEval::PlanEval(const std::string &urdf_name, const std::string &config_name)
   if (!lcm_handle_publisher_.good()) {
     throw std::runtime_error("lcm is not good()");
   }
+
+  this->InitializeBlankPlans();
 }
 
 void PlanEval::HandleManipPlan(const lcm::ReceiveBuffer *rbuf,
                                const std::string &channel,
                                const drc::robot_plan_t *msg) {
-  std::cout << "Makeing Manip plan\n";
-  std::cout << " received plan at " << msg->utime * 1.0 / 1e6 << std::endl;
+  std::cout << "\n \n \n Makeing Manip plan\n";
   this->MakeManipPlan(msg);
+}
+
+void PlanEval::ConstructNewBlankPlan(const PlanType& plan_type) {
+  if(plan_type == PlanType::MANIP){
+    std::shared_ptr <GenericPlan> plan_ptr(new ManipPlan(urdf_name_, config_name_));
+    blank_plans_[plan_type] = plan_ptr;
+  }else if(plan_type == PlanType::WALKING) {
+    std::shared_ptr <GenericPlan> plan_ptr(new WalkingPlan(urdf_name_, config_name_));
+    blank_plans_[plan_type] = plan_ptr;
+  }else{
+    throw std::invalid_argument("unknown PlanType in ConstructNewBlankPlan");
+  }
+}
+
+void PlanEval::InitializeBlankPlans() {
+  std::vector<PlanType> plan_types = {PlanType::MANIP, PlanType::WALKING};
+  for (const auto & plan_type: plan_types){
+    this->ConstructNewBlankPlan(plan_type);
+  }
 }
 
 
 void PlanEval::MakeManipPlan(const drc::robot_plan_t *msg) {
-//  state_lock_.lock();
-//  DrakeRobotState local_est_rs = est_robot_state_receiver_;
-//  state_lock_.unlock();
 
   using namespace plan_eval::utils;
   SimpleTimer simple_timer;
   simple_timer.Start();
 
-  std::shared_ptr <GenericPlan> new_plan_ptr(new ManipPlan(urdf_name_, config_name_));
+  std::shared_ptr <GenericPlan> new_plan_ptr = this->blank_plans_.at(PlanType::MANIP);
   Eigen::VectorXd last_key_frame = est_robot_state_receiver_.q;
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(est_robot_state_receiver_.t);
@@ -80,19 +97,22 @@ void PlanEval::MakeManipPlan(const drc::robot_plan_t *msg) {
   plan_lock_.unlock();
 
   std::cout << "handling manip plan took " << simple_timer.Elapsed().count() << " ms" << std::endl;
+
+  // replace the ManipPlan object we just took over in blank_plans_
+  this->ConstructNewBlankPlan(PlanType::MANIP);
 }
 
 
 void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
                                  const std::string &channel,
                                  const drc::walking_plan_request_t *msg) {
-  std::cout << "Making Walking plan\n";
+  std::cout << "\n \n \n Making Walking plan\n";
 
   using namespace plan_eval::utils;
   SimpleTimer simple_timer;
   simple_timer.Start();
 
-  std::shared_ptr <GenericPlan> new_plan_ptr(new WalkingPlan(urdf_name_, config_name_));
+  std::shared_ptr <GenericPlan> new_plan_ptr = this->blank_plans_.at(PlanType::WALKING);;
   Eigen::VectorXd last_key_frame = est_robot_state_receiver_.q;
   if (current_plan_) {
     last_key_frame = current_plan_->GetLatestKeyFrame(est_robot_state_receiver_.t);
@@ -105,6 +125,9 @@ void PlanEval::HandleWalkingPlan(const lcm::ReceiveBuffer *rbuf,
   plan_lock_.unlock();
 
   std::cout << "handling walking plan took " << simple_timer.Elapsed().count() << " ms" << std::endl;
+
+  // replace the WalkingPlan that we just used in blank_plans_
+  this->ConstructNewBlankPlan(PlanType::WALKING);
 }
 
 void PlanEval::HandleEstContactStateReceiverLoop(const lcm::ReceiveBuffer *rbuf,
@@ -214,6 +237,12 @@ void PlanEval::PublisherLoop() {
         new_robot_state_publisher_loop_ = false; // wait for the next robot state to come in so we don't use an old one by accident
         plan_lock_.unlock();
         has_plan = true;
+
+        // print some debugging info about how long it took to
+        // swap in this plan
+        double plan_swap_time = est_robot_state_publisher_.t - local_ptr->plan_construction_time_in_seconds_;
+        std::cout << "\n \n Publisher Thread: swapping in plan took " << plan_swap_time/1000.0 << " ms \n";
+
       }
 
       if (has_plan && new_robot_state_publisher_loop_) {

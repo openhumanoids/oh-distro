@@ -28,6 +28,7 @@ protected:
   GenericPlanConfig generic_plan_config_;
   RobotPropertyCache rpc_;
 
+
   // all the state of GenericPlan is contained here
   GenericPlanState generic_plan_state_;
 
@@ -102,6 +103,9 @@ public:
 
   // converts the DebugDataStruct into a message
   drc::plan_eval_debug_t EncodeDebugData(double &real_time);
+
+  // time at which HandleCommittedRobotPlan was called
+  double plan_construction_time_in_seconds_ = 0;
 };
 
 std::string PrimaryBodyOrFrameName(const std::string &full_body_name);

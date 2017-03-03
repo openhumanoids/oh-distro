@@ -573,11 +573,11 @@ void threadLoop(std::shared_ptr<ThreadedControllerOptions> ctrl_opts) {
           if (infocount == ctrl_opts->max_infocount) {
             std::cout << "Infocount exceeded. Freezing Atlas!" << std::endl;
           }
-          /*
+          
           robot_behavior_msg.utime = 0;
           robot_behavior_msg.command = "freeze";
           lcmHandler.LCMHandle->publish(ctrl_opts->robot_behavior_channel, &robot_behavior_msg);
-          */
+          
           // we've lost control and are probably falling. cross fingers...
           drc::recovery_trigger_t trigger_msg;
           trigger_msg.utime = static_cast<int64_t> (robot_state->t * 1e6);
