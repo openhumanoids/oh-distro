@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
   std::string control_config_filename = std::string(drc_path) + "/software/drake/drake/examples/Atlas/config/control_config_sim.yaml";
   bool fixedBase = false;
   bool publishControllerState = false;
-  int max_infocount = 30;
+  int max_infocount = 10;
 
   ConciseArgs parser(argc, argv);
   parser.add(urdf, "u", "urdf", "Robot URDF");
