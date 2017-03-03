@@ -10,13 +10,6 @@
 
 namespace plan_eval {
 
-// should really get all the walking specific params into one place rather than littered around in different places
-struct WalkingParams {
-  bool constrain_back_bkx;
-  bool constrain_back_bky;
-  bool constrain_back_bkz;
-  bool use_force_bounds;
-};
 
 // seems redundant with ContactState which can be
 // SSL, SSR, or DS
