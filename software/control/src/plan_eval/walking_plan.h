@@ -96,9 +96,9 @@ private:
     return pose;
   }
 
-  static Eigen::Isometry3d FootstepMsgToPose(drc::footstep_t msg);
-
   Eigen::Vector2d Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const;
+  Eigen::Vector2d Footstep2DesiredZMP(const Footstep & footstep ) const;
+
 
   PiecewisePolynomial<double>
   PlanZMPTraj(const std::vector <Eigen::Vector2d> &zmp_d,

@@ -66,15 +66,6 @@ double WalkingPlan::get_weight_distribution(const ContactState &cs) {
   return 0.5;
 }
 
-Eigen::Isometry3d WalkingPlan::FootstepMsgToPose(drc::footstep_t msg) {
-  Eigen::Isometry3d footstep;
-  footstep.translation() = Eigen::Vector3d(msg.pos.translation.x, msg.pos.translation.y, msg.pos.translation.z);
-  Eigen::Quaterniond rot(msg.pos.rotation.w, msg.pos.rotation.x, msg.pos.rotation.y, msg.pos.rotation.z);
-  footstep.linear() = Eigen::Matrix3d(rot.normalized());
-
-  return footstep;
-}
-
 
 Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const {
 
@@ -102,6 +93,12 @@ Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(Side side, const Eigen::Isometr
   mid_stance_foot = step * mid_stance_foot;
   return mid_stance_foot.translation().head(2);
 }
+
+// utility method that calls Footstep2DesiredZMP with a Footstep object
+Eigen::Vector2d WalkingPlan::Footstep2DesiredZMP(const Footstep & footstep) const{
+  return this->Footstep2DesiredZMP(footstep.getSide(), footstep.getPose());
+}
+
 
 // called on every touch down
 // planned_cs should really be the planned ContactState right before touchdown,
@@ -271,15 +268,6 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
     desired_zmps.push_back(Footstep2DesiredZMP(nxt_stance_foot, feet_pose[nxt_stance_foot.underlying()]));
   }
 
-//  for (const auto &msg : walking_plan_state_.footstep_plan) {
-//    Eigen::Isometry3d footstep;
-//    footstep.translation() = Eigen::Vector3d(msg.pos.translation.x, msg.pos.translation.y, msg.pos.translation.z);
-//    Eigen::Quaterniond rot(msg.pos.rotation.w, msg.pos.rotation.x, msg.pos.rotation.y, msg.pos.rotation.z);
-//    footstep.linear() = Eigen::Matrix3d(rot.normalized());
-//    Side side = msg.is_right_foot ? Side::RIGHT : Side::LEFT;
-//
-//    desired_zmps.push_back(Footstep2DesiredZMP(side, footstep));
-//  }
 
   // add desired_zmp knot points coming from the footstep plan.
   const FootstepPlan & footstep_plan = *walking_plan_state_.footstep_plan_ptr;
@@ -287,9 +275,7 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   for (int i = footstep_plan.next_footstep_idx_; i < footstep_plan.footsteps_.size(); i++){
     // have to dereference because it's stored as a shared_ptr
     const Footstep & footstep = *footstep_plan.footsteps_.at(i);
-    Side side = footstep.getSide();
-    Eigen::Isometry3d footstep_pose = footstep.getPose();
-    desired_zmps.push_back(Footstep2DesiredZMP(side, footstep_pose));
+    desired_zmps.push_back(Footstep2DesiredZMP(footstep));
   }
 
   // figure out the initial ZMP state. Namely position and vel.
@@ -309,8 +295,6 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
     zmp_d0 = zmp_planner_.GetDesiredZMP(plan_time);
     zmpd_d0 = zmp_planner_.GetDesiredZMPd(plan_time);
   }
-
-
 
   // plan the zmp trajectory
   generic_plan_state_.zmp_traj = PlanZMPTraj(desired_zmps, num_look_ahead, zmp_d0, zmpd_d0,
