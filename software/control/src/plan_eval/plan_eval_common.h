@@ -135,6 +135,7 @@ struct GenericPlanState{
   PlanStatus plan_status;
   RigidBodySupportState support_state;
   std::vector<BodyMotionData> body_motions;
+  std::map<int, BodyMotionData> body_motion_data_map_;
   PiecewisePolynomial<double> zmp_traj;
 };
 

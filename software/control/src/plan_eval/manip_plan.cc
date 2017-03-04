@@ -49,12 +49,26 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   std::vector <Eigen::Vector2d> com_d(num_T);
   std::vector <Eigen::VectorXd> q_d(num_T);  // t steps by n
 
-  std::vector <std::string> body_names;
-  body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
+  // BodyMotionData tracking for the pelvis and both feet
+  std::vector<int> body_ids;
+  body_ids.push_back(rpc_.pelvis_id);
   for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
     std::cout << "ManipPlan: foot_ids = " << it->second << std::endl;
-    body_names.push_back(robot_.getBodyOrFrameName(it->second));
+    body_ids.push_back(it->second);
   }
+
+  // for some reason RBT.findLink wants the string name
+  std::vector<std::string> body_names;
+  for (int i = 0; i < body_ids.size(); i++){
+    body_names.push_back(this->robot_.getBodyOrFrameName(body_ids[i]));
+  }
+
+
+  // body_names.push_back(robot_.getBodyOrFrameName(rpc_.pelvis_id));
+  // for (auto it = rpc_.foot_ids.begin(); it != rpc_.foot_ids.end(); it++) {
+  //   std::cout << "ManipPlan: foot_ids = " << it->second << std::endl;
+  //   body_names.push_back(robot_.getBodyOrFrameName(it->second));
+  // }
   size_t num_bodies = body_names.size();
 
   std::vector <std::vector<Eigen::Matrix<double, 7, 1>>> x_d(num_bodies);
@@ -69,7 +83,8 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   KinematicsCache<double> cache_est = robot_.doKinematics(est_rs.q, est_rs.qd);
   std::vector <Eigen::Matrix<double, 7, 1>> x_est(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
-    int id = robot_.findLink(body_names[b])->body_index;
+    // int id = robot_.findLink(body_names[b])->body_index;
+    int id = body_ids[b];
     Eigen::Isometry3d pose = robot_.relativeTransform(cache_est, 0, id);
     x_est[b].segment<3>(0) = pose.translation();
     x_est[b].segment<4>(3) = rotmat2quat(pose.linear());
@@ -129,14 +144,34 @@ void ManipPlan::HandleCommittedRobotPlan(const void *plan_msg,
   // make body motion splines
   generic_plan_state_.body_motions.resize(num_bodies);
   for (size_t b = 0; b < num_bodies; b++) {
-    generic_plan_state_.body_motions[b] = MakeDefaultBodyMotionData(num_T);
 
+    
+
+    // old code
+    generic_plan_state_.body_motions[b] = MakeDefaultBodyMotionData(num_T);
     generic_plan_state_.body_motions[b].body_or_frame_id =
         robot_.findLink(body_names[b])->body_index;
     generic_plan_state_.body_motions[b].trajectory =
         GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
-    if (body_names[b].compare(robot_.getBodyOrFrameName(rpc_.pelvis_id)) == 0)
+
+    if (body_names[b].compare(robot_.getBodyOrFrameName(rpc_.pelvis_id)) == 0){
       generic_plan_state_.body_motions[b].control_pose_when_in_contact.resize(num_T, true);
+    }
+
+
+
+    //new code
+    int body_id = this->robot_.findLink(body_names[b])->body_index;
+    this->generic_plan_state_.body_motion_data_map_[body_id] = MakeDefaultBodyMotionData(num_T);
+    // shorter name for referencing
+    BodyMotionData& body_motion_data = this->generic_plan_state_.body_motion_data_map_[body_id];
+    body_motion_data.trajectory = GenerateCubicCartesianSpline(Ts, x_d[b], xd_d[b]);
+
+    // if it's the pelvis then control while in contact
+    if (body_names[b].compare(robot_.getBodyOrFrameName(rpc_.pelvis_id)) == 0){
+      generic_plan_state_.body_motions[b].control_pose_when_in_contact.resize(num_T, true);
+    }    
+
   }
 
   // make support, dummy here since we are always in double support

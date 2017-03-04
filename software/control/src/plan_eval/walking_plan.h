@@ -60,6 +60,9 @@ private:
   WalkingPlanState walking_plan_state_;
   Eigen::VectorXd init_q_;
 
+  // the bodies that will have associated body motion datas
+  std::vector<int> body_motion_data_ids_; 
+
   WalkingState checkGuards(const DrakeRobotState &est_rs) const;
   void doTransitionActions(const DrakeRobotState &est_rs, WalkingState next_state);
   void doStandardActions(const DrakeRobotState &est_rs);
@@ -97,7 +100,7 @@ private:
   }
 
   Eigen::Vector2d Footstep2DesiredZMP(Side side, const Eigen::Isometry3d &step) const;
-  Eigen::Vector2d Footstep2DesiredZMP(const Footstep & footstep ) const;
+  Eigen::Vector2d Footstep2DesiredZMP(const Footstep & footstep) const;
 
 
   PiecewisePolynomial<double>

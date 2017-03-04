@@ -139,6 +139,8 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
 
   // reinit body trajs
   generic_plan_state_.body_motions.resize(4);  /// 0 is pelvis, 1 is stance foot, 2 is swing foot
+  // clear body_motion_data_map_
+  generic_plan_state_.body_motion_data_map_.clear();
 
   if (planned_cs.is_double_support() && !walking_plan_state_.footstep_plan_ptr->hasNextFootstep()) {
     throw std::runtime_error("Should not call generate trajectory from rest with empty steps");
@@ -338,31 +340,9 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   Eigen::VectorXd zero = Eigen::VectorXd::Zero(est_q.size());
   q_trajs_ = GenerateCubicSpline(Ts, std::vector<Eigen::VectorXd>(Ts.size(), init_q_), zero, zero);
 
-//  // make pelv
-//  pelv1.head(2) = generic_plan_state_.zmp_traj.value(generic_plan_state_.zmp_traj.getEndTime());
-//
-//  ///< This offset the pelv z relative to foot frame
-//  pelv1[2] = generic_plan_config_.walking_plan_config.pelvis_height + feet_pose[nxt_stance_foot.underlying()].translation()[2];
-//  Eigen::Vector4d foot_quat(feet0[nxt_stance_foot.underlying()].tail(4));
-//  double yaw = quat2rpy(foot_quat)[2];
-//  pelv1.tail(4) = rpy2quat(Eigen::Vector3d(0, 0, yaw));
-//
-//  std::vector<Eigen::Vector7d> pelv_knots(Ts.size());
-//  pelv_knots[0] = pelv0;
-//  pelv_knots[1] = pelv1;
 
   BodyMotionData &pelvis_BMD = get_pelvis_body_motion_data();
   pelvis_BMD.body_or_frame_id = rpc_.pelvis_id;
-
-  // int num_knots_in_pelvis_traj = 3;
-
-  // // these are all in the plan_time frame
-  // pelvis_BMD.control_pose_when_in_contact.resize(num_knots_in_pelvis_traj, true);
-  // double liftoff_time = plan_time + wait_period_before_weight_shift + generic_plan_config_.walking_plan_config.ds_duration;
-  // double next_liftoff_time = liftoff_time
-  //     + generic_plan_config_.walking_plan_config.ss_duration
-  // + generic_plan_config_.walking_plan_config.ds_duration;
-
   pelvis_BMD.trajectory = this->GeneratePelvisTraj(pelvis_time_knots, pelvis_pose_knots);
 
   // make torso BodyMotionData'
@@ -450,8 +430,9 @@ void WalkingPlan::GenerateTrajs(double plan_time, const Eigen::VectorXd &est_q,
   get_pelvis_body_motion_data().weight_multiplier[3] = 0;
 
   // don't track xyz of the torso
-  for (int i = 3; i < 6; i++)
+  for (int i = 3; i < 6; i++){
     get_torso_body_motion_data().weight_multiplier[i] = 0;
+  }
 
   // reset clock
 //  generic_plan_state_.plan_start_time = -1; // what does this do exactly?
