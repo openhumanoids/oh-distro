@@ -75,8 +75,6 @@ private:
   std::string chestLinkName_;
 
   // Parameters and Variables:
-  double default_transfer_time_;
-  double default_swing_time_;
   // Seconds to offset the plan so that the controller
   // can blend from the current desired joint position to the plan joint position
   // this was added to avoid controller jerks when starting short plans.
@@ -152,8 +150,6 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_in, ros::NodeHandle &nh_in, st
 
   // Hard Coded Parameters:
   // Conservative values for real Valkyrie, using defaults used by IHMC
-  default_transfer_time_ = 1.0;
-  default_swing_time_ = 1.0;
   planDesiredOffset_ = 1.0;
   // Variable to set what part of a whole body plan gets passed through to Val:
   outputTrajectoryMode_ = TrajectoryMode::wholeBody;
@@ -342,8 +338,8 @@ void LCM2ROS::footstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   ROS_ERROR("LCM2ROS got WALKING_CONTROLLER_PLAN_REQUEST (non-pronto and drake mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = default_transfer_time_;
-  mout.swing_time = default_swing_time_;
+  mout.transfer_time = msg->footstep_plan.footsteps[0].params.ihmc_transfer_time;
+  mout.swing_time = msg->footstep_plan.footsteps[0].params.ihmc_swing_time;
   for (int i = 2; i < msg->footstep_plan.num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footstep_plan.footsteps[i]));
@@ -357,8 +353,8 @@ void LCM2ROS::footstepPlanBDIModeHandler(const lcm::ReceiveBuffer* rbuf, const s
   ROS_ERROR("LCM2ROS got BDI_ADJUSTED_FOOTSTEP_PLAN or COMMITTED_FOOTSTEP_PLAN (pronto and bdi mode)");
 
   ihmc_msgs::FootstepDataListMessage mout;
-  mout.transfer_time = default_transfer_time_;
-  mout.swing_time = default_swing_time_;
+  mout.transfer_time = msg->footsteps[0].params.ihmc_transfer_time;
+  mout.swing_time = msg->footsteps[0].params.ihmc_swing_time;
   for (int i = 2; i < msg->num_steps; i++)  // skip the first two standing steps
   {
     mout.footstep_data_list.push_back(convertFootStepToIHMC(msg->footsteps[i]));
