@@ -153,12 +153,15 @@ set(swigmake_revision 7e4fcbeb46c5fc7b1efb651b4365ba8b777ef184)
 set(swigmake_depends )
 
 set(iris_url https://github.com/rdeits/iris-distro.git)
-set(iris_revision f6cdf5a4f7896054922fd93276754f83a5497eff)
+set(iris_revision 60e16367ad9712678a3c77f4879363d4939df35d)
 set(iris_depends Eigen_pod)
 set(iris_external_args
   CMAKE_CACHE_ARGS
     ${default_cmake_args}
+    -DPYBIND11_PYTHON_VERSION:STRING=2.7
     -DIRIS_WITH_EIGEN:BOOL=OFF
+    -DCMAKE_MODULE_PATH=${CMAKE_INSTALL_PREFIX}/share/cmake
+    INSTALL_COMMAND ""
   )
 
 set(pypolyhedron_url https://github.com/rdeits/pypolyhedron.git)
