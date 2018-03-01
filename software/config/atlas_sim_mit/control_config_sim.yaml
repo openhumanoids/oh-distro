@@ -158,7 +158,7 @@ qp_controller_params:
           k_q_i: 0
           k_qd_p: 0
           ff_qd: 0
-          ff_f_d: 0
+          ff_f_d: 1
           ff_const: 0
           ff_qd_d: 0
 
