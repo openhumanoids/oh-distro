@@ -160,6 +160,7 @@ set(iris_external_args
     ${default_cmake_args}
     -DPYBIND11_PYTHON_VERSION:STRING=2.7
     -DIRIS_WITH_EIGEN:BOOL=OFF
+    -DIRIS_WITH_MATLAB:BOOL=ON
     -DCMAKE_MODULE_PATH=${CMAKE_INSTALL_PREFIX}/share/cmake
     INSTALL_COMMAND ""
   )
