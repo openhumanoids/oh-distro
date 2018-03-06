@@ -1,2 +1,4 @@
-packages
+packages/*
+!packages/v0.6/HumanoidLCMSim
+!packages/v0.6/AtlasRobot
 config

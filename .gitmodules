@@ -28,12 +28,9 @@
 [submodule "catkin_ws/src/valkyrie_translator"]
 	path = catkin_ws/src/valkyrie_translator
 	url = https://github.com/openhumanoids/valkyrie_translator.git
-[submodule "software/julia-humanoids/submodules/AtlasRobot"]
-	path = software/julia-humanoids/submodules/AtlasRobot
-	url = https://github.com/drcbot/AtlasRobot.jl
-[submodule "software/julia-humanoids/submodules/HumanoidLCMSim"]
-	path = software/julia-humanoids/submodules/HumanoidLCMSim
-	url = https://github.com/rdeits/HumanoidLCMSim.jl
-[submodule "software/julia-humanoids/submodules/RoguePkg"]
-	path = software/julia-humanoids/submodules/RoguePkg
-	url = git@github.com:tpapp/RoguePkg.jl
+[submodule "software/julia-humanoids/packages/v0.6/HumanoidLCMSim"]
+	path = software/julia-humanoids/packages/v0.6/HumanoidLCMSim
+	url = git@github.com:tkoolen/HumanoidLCMSim.jl.git
+[submodule "software/julia-humanoids/packages/v0.6/AtlasRobot"]
+	path = software/julia-humanoids/packages/v0.6/AtlasRobot
+	url = git@github.com:tkoolen/AtlasRobot.jl.git
