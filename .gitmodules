@@ -33,4 +33,7 @@
 	url = https://github.com/tkoolen/AtlasRobot.jl
 [submodule "software/julia-humanoids/submodules/HumanoidLCMSim"]
 	path = software/julia-humanoids/submodules/HumanoidLCMSim
-	url = https://github.com/tkoolen/HumanoidLCMSim.jl
+	url = https://github.com/rdeits/HumanoidLCMSim.jl
+[submodule "software/julia-humanoids/submodules/RoguePkg"]
+	path = software/julia-humanoids/submodules/RoguePkg
+	url = git@github.com:tpapp/RoguePkg.jl
