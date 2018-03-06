@@ -202,6 +202,23 @@ script "0.run_all_but_simul_and_controller" {
     start cmd "director";
 }
 
+script "1.(re)start_controller" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    stop group "1.state_mit";
+    stop group "2.plan_and_control";
+    wait ms 1000;
+    start group "1.state_mit";
+    start cmd "CombinedPlanner";
+    start cmd "contact_monitor";
+    start group "5.maps";
+    start cmd "c_plan_eval";
+    start cmd "InstQP";
+    start cmd "FallDetector";
+    start cmd "director";
+}
+
 script "1.run_walking_flat" {
     start cmd "base_deputy";
     wait ms 1000;
