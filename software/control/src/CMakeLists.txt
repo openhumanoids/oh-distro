@@ -92,7 +92,10 @@ target_link_libraries(runDRCInstQP RobotStateDriver AtlasCommandDriver FootConta
 target_link_libraries (runDRCInstQP ${CMAKE_THREAD_LIBS_INIT})
 pods_install_executables(runDRCInstQP)
 
-add_subdirectory(sf_logging1)
+# sf_logging1 is disabled because it relied on a modified
+# definition of the bot_core force_torque_t lcmtype which is not
+# compatible with any other software.
+# add_subdirectory(sf_logging1)
 
 add_subdirectory(plan_eval)
 
