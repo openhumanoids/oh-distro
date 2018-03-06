@@ -30,7 +30,7 @@
 	url = https://github.com/openhumanoids/valkyrie_translator.git
 [submodule "software/julia-humanoids/submodules/AtlasRobot"]
 	path = software/julia-humanoids/submodules/AtlasRobot
-	url = https://github.com/tkoolen/AtlasRobot.jl
+	url = https://github.com/drcbot/AtlasRobot.jl
 [submodule "software/julia-humanoids/submodules/HumanoidLCMSim"]
 	path = software/julia-humanoids/submodules/HumanoidLCMSim
 	url = https://github.com/rdeits/HumanoidLCMSim.jl
